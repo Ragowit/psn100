@@ -31,8 +31,8 @@ Remove unobtainable trophies from score tracking. Example:
 ### Milestone 4
 More advanced merging of games. More discussion needs to be made before doing this. Example:
 - [WipEout HD](https://psnprofiles.com/trophies/36-wipeout-hd) + [WipEout 2048](https://psnprofiles.com/trophies/1340-wipeout-2048) --> [WipEout Omega Collection](https://psnprofiles.com/trophies/6222-wipeout-omega-collection)
-- - Omega Collection is both HD (+Fury) and 2048, but the trophy list is somewhat different from each other.
+  - Omega Collection is both HD (+Fury) and 2048, but the trophy list is somewhat different from each other.
 - [PixelJunk Shooter](https://psnprofiles.com/trophies/236-pixeljunk-shooter) + [PixelJunk Shooter 2](https://psnprofiles.com/trophies/806-pixeljunk-shooter-2) --> [PixelJunk Shooter Ultimate](https://psnprofiles.com/trophies/2647-pixeljunk-shooter-ultimate)
-- - Ultimate is both 1 and 2, but the trophy list is very different from each other.
+  - Ultimate is both 1 and 2, but the trophy list is very different from each other.
 - [Shovel Knight: Specter of Torment](https://psnprofiles.com/trophies/6078-shovel-knight-specter-of-torment) --> [Shovel Knight: Treasure Trove](https://psnprofiles.com/trophies/3514-shovel-knight-treasure-trove)
-- - Specter of Torment into the Treasure Trove DLC, or lift out the DLC into Specter of Torment game entry?
+  - Specter of Torment into the Treasure Trove DLC, or lift out the DLC into Specter of Torment game entry?
