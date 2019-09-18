@@ -1,8 +1,8 @@
 ---
 name: Merge games
 about: Merge games into one combined list
-title: "[MERGE] Game title"
-labels: ''
+title: Game title
+labels: merge games
 assignees: ''
 
 ---

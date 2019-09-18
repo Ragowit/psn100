@@ -1,8 +1,8 @@
 ---
 name: Delisted game
 about: Report a game that is no longer available
-title: "[DELISTED] Game title"
-labels: ''
+title: Game title
+labels: delisted game
 assignees: ''
 
 ---
