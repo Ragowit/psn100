@@ -29,6 +29,10 @@ Remove unobtainable trophies from score tracking. Example:
 - [Luftrausers](https://psnprofiles.com/trophies/2470-luftrausers), "MASTER RAUSER" and "DONT MESS WITH THE RAUSER" are unobtainable.
 
 ### Milestone 4
+Join trophy lists that are split up. Example:
+- [Dead By Daylight](https://psnprofiles.com/trophies/6272-dead-by-daylight) + [Dead by Daylight • Additional Expansions](https://psnprofiles.com/trophies/9668-dead-by-daylight-additional-expansions)
+
+### Milestone 5
 More advanced merging of games. More discussion needs to be made before doing this. Example:
 - [WipEout HD](https://psnprofiles.com/trophies/36-wipeout-hd) + [WipEout 2048](https://psnprofiles.com/trophies/1340-wipeout-2048) --> [WipEout Omega Collection](https://psnprofiles.com/trophies/6222-wipeout-omega-collection)
   - Omega Collection is both HD (+Fury) and 2048, but the trophy list is somewhat different from each other.
