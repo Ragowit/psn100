@@ -7,9 +7,9 @@ PSN 100% is a trophy tracking website, focusing on merging game stacks and remov
 PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handles this with greatness, please use them.
 
 ## Other sites
-- PSN Profiles: https://psnprofiles.com
-- PlaystationTrophies: https://www.playstationtrophies.org
-- PSN Trophy Leaders: https://psntrophyleaders.com
+- PSN Profiles <[https://psnprofiles.com](https://psnprofiles.com)>
+- PlaystationTrophies <[https://www.playstationtrophies.org](https://www.playstationtrophies.org)>
+- PSN Trophy Leaders <[https://psntrophyleaders.com](https://psntrophyleaders.com)>
 
 ## Milestones
 
