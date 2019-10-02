@@ -40,3 +40,7 @@ More advanced merging of games. More discussion needs to be made before doing th
   - Ultimate is both 1 and 2, but the trophy list is very different from each other.
 - [Shovel Knight: Specter of Torment](https://psnprofiles.com/trophies/6078-shovel-knight-specter-of-torment) --> [Shovel Knight: Treasure Trove](https://psnprofiles.com/trophies/3514-shovel-knight-treasure-trove)
   - Specter of Torment into the Treasure Trove DLC, or lift out the DLC into Specter of Torment game entry?
+- [Trine](https://psnprofiles.com/trophies/228-trine) --> [Trine: Enchanted Edition](https://psnprofiles.com/trophies/3267-trine-enchanted-edition)
+  - Enchanted Edition is a remake of Trine that uses Trine 2's updated engine (and includes online multiplayer). Merge these into one list? And how, if so?
+- [Trine 2](https://psnprofiles.com/trophies/1241-trine-2) --> [Trine 2: Complete Story (EU)](https://psnprofiles.com/trophies/2290-trine-2-complete-story) / [(NA)](https://psnprofiles.com/trophies/2250-trine-2-complete-story)
+  - Complete Story is with all DLCs, while the original Trine 2 didn't have any. Merge these into one list? And how, if so?
