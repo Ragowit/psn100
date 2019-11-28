@@ -10,6 +10,7 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 - PSN Profiles <[https://psnprofiles.com](https://psnprofiles.com)>
 - PlaystationTrophies <[https://www.playstationtrophies.org](https://www.playstationtrophies.org)>
 - PSN Trophy Leaders <[https://psntrophyleaders.com](https://psntrophyleaders.com)>
+- PlayStation games stats <[http://gamstat.com/](http://gamstat.com/)>
 
 ## Milestones
 
