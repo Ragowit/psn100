@@ -4,7 +4,7 @@
 PSN 100% is a trophy tracking website, focusing on merging game stacks and removal of unobtainable trophies to create one list of only obtainable trophies where all users have the chance to get to the same level, without the need to replay the same game multiple times.
 
 ## What isn't PSN 100%?
-PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handles this with greatness, please use them.
+PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handle this with greatness, please use them.
 
 ## Other sites
 - PSN Profiles <[https://psnprofiles.com](https://psnprofiles.com)>
