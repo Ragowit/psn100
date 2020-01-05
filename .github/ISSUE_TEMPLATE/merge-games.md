@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-The games are:
-- First link
-- Second link
+**Games**
+- https://psn100.net/game/...
+- https://psn100.net/game/...
 - ...nth link

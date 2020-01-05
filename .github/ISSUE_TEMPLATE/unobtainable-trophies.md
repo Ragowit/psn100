@@ -7,12 +7,12 @@ assignees: ''
 
 ---
 
-**Game URL**
-- Game link
+**Game**
+- https://psn100.net/game/...
 
-**Trophy URLs**
-- Trophy link
-- Another trophy link
+**Trophy**
+- https://psn100.net/trophy/...
+- https://psn100.net/trophy/...
 - ...nth trophy link
 
 **Source**

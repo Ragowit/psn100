@@ -7,4 +7,8 @@ assignees: ''
 
 ---
 
-Please link to the player profile you are reporting, along with an explanation on why this player is a cheater. Pictures helps as well.
+**Player**
+- https://psn100.net/player/...
+
+**Explanation**
+An explanation on why this player is a cheater. Pictures helps as well.

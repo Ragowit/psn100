@@ -7,8 +7,8 @@ assignees: ''
 
 ---
 
-**URL to the game**
-- URL
+**Game**
+- https://psn100.net/game/...
 
 **Source(s)**
 - https://delistedgames.com/
