@@ -1,0 +1,11 @@
+#To Force non-www:
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^www.psn100.net [NC]
+RewriteRule ^(.*)$ http://psn100.net/$1 [L,R=301]
+#FallbackResource /index.php # The webhost only have Apache (httpd) 2.2.14. FallbackResource was launched with 2.2.16.
+#RewriteRule ^player/([^/]+)/?$ /index2.php?page=player&profile=$1 [L]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]

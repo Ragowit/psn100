@@ -1,0 +1,6 @@
+{
+    "require": {
+        "tustin/psn-php": "^2.1",
+        "spatie/guzzle-rate-limiter-middleware": "^1.0"
+    }
+}
