@@ -403,7 +403,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                         <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player_game["progress"]; ?>%;" aria-valuenow="<?= $player_game["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"><?= $player_game["progress"]; ?>%</div>
                                     </div>
                                     <?php
-                                    if ($player["status"] == 0) {
+                                    if ($player["status"] == 0 && $player_game["status"] == 0) {
                                         echo $player_game["rarity_point"] ." Rarity Points";
                                     } ?>
 
