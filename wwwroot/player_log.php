@@ -318,9 +318,9 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
                     <?php
                     if (isset($_GET["sort"])) {
-                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, tt.id AS game_id, tt.name AS game_name FROM trophy_earned te LEFT JOIN trophy_group tg ON tg.np_communication_id = te.np_communication_id AND tg.group_id = te.group_id LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id and t.order_Id = te.order_id LEFT JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id WHERE te.account_id = :account_id ORDER BY t.rarity_percent LIMIT :offset, :limit");
+                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te LEFT JOIN trophy_group tg ON tg.np_communication_id = te.np_communication_id AND tg.group_id = te.group_id LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id and t.order_Id = te.order_id LEFT JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id WHERE te.account_id = :account_id ORDER BY t.rarity_percent LIMIT :offset, :limit");
                     } else {
-                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, tt.id AS game_id, tt.name AS game_name FROM trophy_earned te LEFT JOIN trophy_group tg ON tg.np_communication_id = te.np_communication_id AND tg.group_id = te.group_id LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id and t.order_Id = te.order_id LEFT JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id WHERE te.account_id = :account_id ORDER BY te.earned_date DESC LIMIT :offset, :limit");
+                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te LEFT JOIN trophy_group tg ON tg.np_communication_id = te.np_communication_id AND tg.group_id = te.group_id LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id and t.order_Id = te.order_id LEFT JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id WHERE te.account_id = :account_id ORDER BY te.earned_date DESC LIMIT :offset, :limit");
                     }
                     $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                     $query->bindParam(":offset", $offset, PDO::PARAM_INT);
@@ -336,8 +336,13 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                         <?php
                     } else {
                         foreach ($trophies as $trophy) {
-                            ?>
-                            <tr>
+                            if ($trophy["game_status"] == 1) {
+                                echo "<tr class=\"table-warning\" title=\"This game is delisted and the trophy will not be accounted for on any leaderboard.\">";
+                            } elseif ($trophy["trophy_status"] == 1) {
+                                echo "<tr class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\">";
+                            } else {
+                                echo "<tr>";
+                            } ?>
                                 <td>
                                     <a href="/game/<?= $trophy["game_id"] . "-" . str_replace(" ", "-", $trophy["game_name"]); ?>/<?= $player["online_id"]; ?>">
                                         <img src="/img/group/<?= $trophy["group_icon_url"]; ?>" alt="<?= $trophy["group_name"]; ?>" title="<?= $trophy["group_name"]; ?>" width="100" />
@@ -359,7 +364,9 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                 <td class="text-center">
                                     <?= $trophy["rarity_percent"]; ?>%<br>
                                     <?php
-                                    if ($trophy["rarity_percent"] <= 1.00) {
+                                    if ($trophy["trophy_status"] == 1) {
+                                        echo "Unobtainable";
+                                    } elseif ($trophy["rarity_percent"] <= 1.00) {
                                         echo "Legendary";
                                     } elseif ($trophy["rarity_percent"] <= 5.00) {
                                         echo "Epic";
