@@ -198,8 +198,8 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 if ($sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$game->npCommunicationId])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
 
-                    if ($skippedGames >= 350 && $playerLastUpdatedDate != "0000-00-00 00:00:00") { // New players have "0000-00-00 00:00:00", and will thus continue with a full scan.
-                        // 350 skipped games, we can assume we are done with this player.
+                    if ($skippedGames >= 248 && $playerLastUpdatedDate != "0000-00-00 00:00:00") { // New players have "0000-00-00 00:00:00", and will thus continue with a full scan.
+                        // 248 skipped games (a little bit less then two trophyTitles() fetches), we can assume we are done with this player.
                         break 2;
                     }
 
