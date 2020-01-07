@@ -380,10 +380,10 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                             }
                                         }
 
-                                        if ($second == -1) {
-                                            echo "Completed in ". $completionTimes[$first];
-                                        } else {
+                                        if ($first >= 0 && $second >= 0) {
                                             echo "Completed in ". $completionTimes[$first] .", ". $completionTimes[$second];
+                                        } elseif ($first >= 0 && $second == -1) {
+                                            echo "Completed in ". $completionTimes[$first];
                                         }
                                     } ?>
                                 </td>
