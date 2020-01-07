@@ -156,7 +156,9 @@ require_once("header.php");
                     }
 
                     foreach ($games as $game) {
-                        if ($playerGames[$game["np_communication_id"]] == 100) {
+                        if ($game["status"] == 1) {
+                            echo "<tr class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\">";
+                        } elseif ($playerGames[$game["np_communication_id"]] == 100) {
                             echo "<tr class=\"table-success\">";
                         } else {
                             echo "<tr>";
