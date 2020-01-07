@@ -1,5 +1,5 @@
-wwwroot\admin\.htaccess
-wwwroot\admin\.htpasswd
-wwwroot\cron\.htaccess
-wwwroot\composer.lock
-wwwroot\database.php
+wwwroot/admin/.htaccess
+wwwroot/admin/.htpasswd
+wwwroot/cron/.htaccess
+wwwroot/composer.lock
+wwwroot/database.php
