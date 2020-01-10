@@ -194,8 +194,10 @@ require_once("header.php");
                                 $query = $database->prepare("SELECT SUM(rarity_point) FROM trophy WHERE np_communication_id = :np_communication_id");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
-                        $rarityPoints = $query->fetchColumn(); ?>
-                                <?= $rarityPoints; ?> Rarity Points
+                        $rarityPoints = $query->fetchColumn();
+                        if ($game["status"] == 0) {
+                            echo $rarityPoints ." Rarity Points";
+                        } ?>
                             </td>
                             <td class="text-center">
                                 <?= $game["difficulty"]; ?>%
