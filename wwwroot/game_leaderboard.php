@@ -131,7 +131,14 @@ require_once("header.php");
                 <div class="row">
                     <table class="table table-responsive table-striped">
                         <?php
-                        $query = $database->prepare("SELECT ttp.*, p.online_id AS name, p.avatar_url, p.country FROM trophy_title_player ttp JOIN player p USING (account_id) WHERE np_communication_id = :np_communication_id AND p.status = 0 ORDER BY progress DESC, last_updated_date LIMIT :offset, :limit");
+                        // Get Original Max Score, regardless of unobtainable trophy status
+                        $query = $database->prepare("SELECT SUM(type = 'bronze')*15+SUM(type = 'silver')*30+SUM(type = 'gold')*90 AS max_score FROM trophy WHERE np_communication_id = :np_communication_id");
+                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                        $query->execute();
+                        $maxScore = $query->fetchColumn();
+
+                        $query = $database->prepare("SELECT p.account_id, p.avatar_url, p.country, p.online_id AS name, SUM(t.type = 'bronze') AS bronze, SUM(t.type = 'silver') AS silver, SUM(t.type = 'gold') AS gold, SUM(t.type = 'platinum') AS platinum, GREATEST(FLOOR((SUM(t.type = 'bronze')*15+SUM(t.type = 'silver')*30+SUM(t.type = 'gold')*90)/:max_score*100), 1) progress, ttp.last_updated_date FROM trophy t JOIN trophy_earned te USING (np_communication_id, group_id, order_id) JOIN trophy_title_player ttp USING (account_id, np_communication_id) JOIN player p USING (account_id) WHERE np_communication_id = :np_communication_id AND ttp.progress > 0 AND p.status = 0 GROUP BY account_id UNION SELECT p.account_id, p.avatar_url, p.country, p.online_id AS name, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date FROM player p JOIN trophy_title_player ttp USING (account_id) WHERE np_communication_id = :np_communication_id AND ttp.progress = 0 AND p.status = 0 ORDER BY progress DESC, last_updated_date LIMIT :offset, :limit");
+                        $query->bindParam(":max_score", $maxScore, PDO::PARAM_INT);
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                         $query->bindParam(":limit", $limit, PDO::PARAM_INT);
