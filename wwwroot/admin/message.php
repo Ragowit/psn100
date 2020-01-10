@@ -29,9 +29,15 @@ if (ctype_digit(strval($_POST["game"]))) {
             Game ID:<br>
             <input type="number" name="game"><br>
             Message:<br>
-            <textarea name="message"></textarea><br><br>
+            <textarea name="message" rows="4" cols="50"></textarea><br><br>
             <input type="submit" value="Submit">
         </form>
+
+        <p>
+            Standard messages:<br>
+            <?= htmlentities("This game have unobtainable trophies (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>)."); ?><br>
+            <?= htmlentities("This game is delisted (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>). No trophies will be accounted for on any leaderboard."); ?><br>
+        </p>
 
         <?php
         if (isset($success)) {
