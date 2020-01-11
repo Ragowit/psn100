@@ -16,7 +16,7 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /game/" . $game["id"] . "-" . str_replace(" ", "-", $game["name"]), true, 303);
+        header("Location: /game/" . $game["id"] ."-". slugify($game["name"]), true, 303);
         die();
     }
 }
@@ -59,11 +59,11 @@ require_once("header.php");
                 <?php
                 if (isset($player)) {
                     ?>
-                    <h5><a href="/game-leaderboard/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>/<?= $player; ?>">Leaderboard</a></h5>
+                    <h5><a href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $player; ?>">Leaderboard</a></h5>
                     <?php
                 } else {
                     ?>
-                    <h5><a href="/game-leaderboard/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>">Leaderboard</a></h5>
+                    <h5><a href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?>">Leaderboard</a></h5>
                     <?php
                 }
                 ?>
@@ -136,13 +136,13 @@ require_once("header.php");
                                     <?php
                                     if (isset($player)) {
                                         ?>
-                                        <a href="/trophy/<?= $trophy["id"] . "-" . str_replace(" ", "-", $trophy["name"]); ?>/<?= $player; ?>">
+                                        <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>/<?= $player; ?>">
                                             <b><?= $trophy["name"]; ?></b>
                                         </a>
                                         <?php
                                     } else {
                                         ?>
-                                        <a href="/trophy/<?= $trophy["id"] . "-" . str_replace(" ", "-", $trophy["name"]); ?>">
+                                        <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>">
                                             <b><?= $trophy["name"]; ?></b>
                                         </a>
                                         <?php
@@ -248,13 +248,13 @@ require_once("header.php");
                                         <?php
                                         if (isset($player)) {
                                             ?>
-                                            <a href="/trophy/<?= $trophy["id"] . "-" . str_replace(" ", "-", $trophy["name"]); ?>/<?= $player; ?>">
+                                            <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>/<?= $player; ?>">
                                                 <b><?= $trophy["name"]; ?></b>
                                             </a>
                                             <?php
                                         } else {
                                             ?>
-                                            <a href="/trophy/<?= $trophy["id"] . "-" . str_replace(" ", "-", $trophy["name"]); ?>">
+                                            <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>">
                                                 <b><?= $trophy["name"]; ?></b>
                                             </a>
                                             <?php
@@ -371,7 +371,7 @@ require_once("header.php");
                                             <img src="/img/avatar/<?= $recentPlayer["avatar_url"]; ?>" alt="" height="25" />
                                         </td>
                                         <td>
-                                            <a href="/game/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>/<?= $recentPlayer["online_id"]; ?>"><?= $recentPlayer["online_id"]; ?></a>
+                                            <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $recentPlayer["online_id"]; ?>"><?= $recentPlayer["online_id"]; ?></a>
                                             <br>
                                             <?= $recentPlayer["last_updated_date"]; ?>
                                             <br>

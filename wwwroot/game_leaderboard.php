@@ -16,7 +16,7 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /game-leaderboard/" . $game["id"] . "-" . str_replace(" ", "-", $game["name"]), true, 303);
+        header("Location: /game-leaderboard/". $game["id"] ."-". slugify($game["name"]), true, 303);
         die();
     }
 }
@@ -37,11 +37,11 @@ require_once("header.php");
                 <?php
                 if (isset($player)) {
                     ?>
-                    <h5><a href="/game/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>/<?= $player; ?>">Trophies</a></h5>
+                    <h5><a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $player; ?>">Trophies</a></h5>
                     <?php
                 } else {
                     ?>
-                    <h5><a href="/game/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>">Trophies</a></h5>
+                    <h5><a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">Trophies</a></h5>
                     <?php
                 }
                 ?>

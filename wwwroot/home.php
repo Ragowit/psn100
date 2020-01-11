@@ -58,7 +58,7 @@ require_once("header.php");
                                 ?>
                                 <tr>
                                     <td class="text-center" width="150">
-                                        <a href="/game/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>">
+                                        <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
                                             <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" width="100" />
                                         </a>
                                         <br>
@@ -68,7 +68,7 @@ require_once("header.php");
                                         } ?>
                                     </td>
                                     <td>
-                                        <a href="/game/<?= $game["id"] . "-" . str_replace(" ", "-", $game["name"]); ?>">
+                                        <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
                                             <?= $game["name"]; ?>
                                         </a>
                                     </td>
@@ -100,7 +100,7 @@ require_once("header.php");
                                 ?>
                                 <tr>
                                     <td class="text-center" width="150">
-                                        <a href="/game/<?= $dlc["id"] . "-" . str_replace(" ", "-", $dlc["game_name"]); ?>">
+                                        <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>">
                                             <img src="/img/group/<?= $dlc["icon_url"]; ?>" alt="" width="100" />
                                         </a>
                                         <br>
@@ -110,7 +110,7 @@ require_once("header.php");
                                         } ?>
                                     </td>
                                     <td>
-                                        <a href="/game/<?= $dlc["id"] . "-" . str_replace(" ", "-", $dlc["game_name"]); ?>">
+                                        <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>">
                                             <small><?= $dlc["game_name"]; ?></small><br><?= $dlc["group_name"]; ?>
                                         </a>
                                     </td>
@@ -142,7 +142,7 @@ require_once("header.php");
                                 ?>
                                 <tr>
                                     <td class="text-center" width="150">
-                                        <a href="/game/<?= $popular_game["id"] . "-" . str_replace(" ", "-", $popular_game["name"]); ?>">
+                                        <a href="/game/<?= $popular_game["id"] ."-". slugify($popular_game["name"]); ?>">
                                             <img src="/img/title/<?= $popular_game["icon_url"]; ?>" alt="" width="100" />
                                         </a>
                                         <br>
@@ -152,7 +152,7 @@ require_once("header.php");
                                         } ?>
                                     </td>
                                     <td>
-                                        <a href="/game/<?= $popular_game["id"] . "-" . str_replace(" ", "-", $popular_game["name"]); ?>">
+                                        <a href="/game/<?= $popular_game["id"] ."-". slugify($popular_game["name"]); ?>">
                                             <?= $popular_game["name"]; ?>
                                         </a>
                                     </td>

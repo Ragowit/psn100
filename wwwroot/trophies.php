@@ -141,17 +141,17 @@ require_once("header.php");
                         ?>
                         <tr>
                             <td scope="row">
-                                <a href="/game/<?= $trophy["game_id"] . "-" . str_replace(" ", "-", $trophy["game_name"]); ?>">
+                                <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>">
                                     <img src="/img/title/<?= $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" height="60" />
                                 </a>
                             </td>
                             <td>
-                                <a href="/trophy/<?= $trophy["trophy_id"] . "-" . str_replace(" ", "-", $trophy["trophy_name"]); ?>">
+                                <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
                                     <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" height="60" />
                                 </a>
                             </td>
                             <td>
-                                <a href="/trophy/<?= $trophy["trophy_id"] . "-" . str_replace(" ", "-", $trophy["trophy_name"]); ?>">
+                                <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
                                     <b><?= $trophy["trophy_name"]; ?></b><br>
                                 </a>
                                 <?= $trophy["trophy_detail"]; ?>

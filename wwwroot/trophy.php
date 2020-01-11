@@ -16,7 +16,7 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /trophy/" . $trophy["trophy_id"] . "-" . str_replace(" ", "-", $trophy["trophy_name"]), true, 303);
+        header("Location: /trophy/". $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]), true, 303);
         die();
     }
 }
@@ -40,7 +40,7 @@ require_once("header.php");
             ?>
 
             <div class="col-2">
-                <a href="/game/<?= $trophy["game_id"] . "-" . str_replace(" ", "-", $trophy["game_name"]); ?>">
+                <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>">
                     <img src="/img/title/<?= $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" height="60" />
                 </a>
             </div>
@@ -54,11 +54,11 @@ require_once("header.php");
                 <?php
                 if (isset($player)) {
                     ?>
-                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] . "-" . str_replace(" ", "-", $trophy["game_name"]); ?>/<?= $player; ?>"><?= $trophy["game_name"]; ?></a></small>
+                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $player; ?>"><?= $trophy["game_name"]; ?></a></small>
                     <?php
                 } else {
                     ?>
-                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] . "-" . str_replace(" ", "-", $trophy["game_name"]); ?>"><?= $trophy["game_name"]; ?></a></small>
+                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>"><?= $trophy["game_name"]; ?></a></small>
                     <?php
                 }
                 ?>

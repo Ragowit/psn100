@@ -19,7 +19,7 @@ require_once("../init.php");
         $possibleCheaters = $query->fetchAll();
 
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". str_replace(" ", "-", $possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ."</a><br>";
+            echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ."</a><br>";
         }
         ?>
     </body>

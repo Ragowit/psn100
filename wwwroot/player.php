@@ -344,12 +344,12 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                             } ?>
                             <tr<?= $trClass; ?>>
                                 <td scope="row">
-                                    <a href="/game/<?= $player_game["id"] . "-" . str_replace(" ", "-", $player_game["name"]); ?>/<?= $player["online_id"]; ?>">
+                                    <a href="/game/<?= $player_game["id"] ."-". slugify($player_game["name"]); ?>/<?= $player["online_id"]; ?>">
                                         <img src="/img/title/<?= $player_game["icon_url"]; ?>" alt="" height="55" width="100" />
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="/game/<?= $player_game["id"] . "-" . str_replace(" ", "-", $player_game["name"]); ?>/<?= $player["online_id"]; ?>">
+                                    <a href="/game/<?= $player_game["id"] ."-". slugify($player_game["name"]); ?>/<?= $player["online_id"]; ?>">
                                         <?= $player_game["name"]; ?>
                                     </a>
                                     <br>

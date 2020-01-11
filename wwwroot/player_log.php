@@ -344,7 +344,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                 echo "<tr>";
                             } ?>
                                 <td>
-                                    <a href="/game/<?= $trophy["game_id"] . "-" . str_replace(" ", "-", $trophy["game_name"]); ?>/<?= $player["online_id"]; ?>">
+                                    <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $player["online_id"]; ?>">
                                         <img src="/img/group/<?= $trophy["group_icon_url"]; ?>" alt="<?= $trophy["group_name"]; ?>" title="<?= $trophy["group_name"]; ?>" width="100" />
                                     </a>
                                 </td>
@@ -352,7 +352,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                     <img src="/img/trophy/<?= $trophy["trophy_icon_url"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" width="44" />
                                 </td>
                                 <td style="width: 100%;">
-                                    <a href="/trophy/<?= $trophy["trophy_id"] . "-" . str_replace(" ", "-", $trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
+                                    <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
                                         <b><?= $trophy["trophy_name"]; ?></b>
                                     </a>
                                     <br>

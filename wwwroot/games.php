@@ -164,7 +164,7 @@ require_once("header.php");
                             echo "<tr>";
                         }
 
-                        $gameLink = $game["id"] . "-" . str_replace(" ", "-", $game["name"]);
+                        $gameLink = $game["id"] ."-". slugify($game["name"]);
                         if (isset($player)) {
                             $gameLink .= "/". $player;
                         } ?>
