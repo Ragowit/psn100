@@ -163,6 +163,7 @@ if (ctype_digit(strval($_POST["trophy"]))) {
         <title>Admin ~ Unobtainable Trophy</title>
     </head>
     <body>
+        <a href="/admin/">Back</a><br><br>
         <form method="post">
             Trophy ID:<br>
             <input type="number" name="trophy"><br><br>

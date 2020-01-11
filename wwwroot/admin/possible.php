@@ -10,6 +10,7 @@ require_once("../init.php");
         <title>Admin ~ Possible Cheaters</title>
     </head>
     <body>
+        <a href="/admin/">Back</a><br><br>
         <?php
         $query = $database->prepare("SELECT p.online_id AS player_name, tt.id AS game_id, tt.name AS game_name FROM player p JOIN trophy_earned te USING (account_id) JOIN trophy_title tt USING (np_communication_id) WHERE (
         (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 2) OR

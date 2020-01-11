@@ -25,6 +25,7 @@ if (ctype_digit(strval($_POST["game"]))) {
         <title>Admin ~ Game Message</title>
     </head>
     <body>
+        <a href="/admin/">Back</a><br><br>
         <form method="post">
             Game ID:<br>
             <input type="number" name="game"><br>

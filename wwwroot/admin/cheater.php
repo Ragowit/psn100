@@ -23,6 +23,7 @@ if (isset($_POST["player"])) {
         <title>Admin ~ Cheater</title>
     </head>
     <body>
+        <a href="/admin/">Back</a><br><br>
         <form method="post">
             Player:<br>
             <input type="text" name="player"><br><br>
