@@ -3,9 +3,11 @@ require_once("../init.php");
 
 if (ctype_digit(strval($_POST["trophy"]))) {
     $trophyId = $_POST["trophy"];
+    $status = $_POST["status"];
 
     $database->beginTransaction();
-    $query = $database->prepare("UPDATE trophy SET status = 1 WHERE id = :trophy_id");
+    $query = $database->prepare("UPDATE trophy SET status = :status WHERE id = :trophy_id");
+    $query->bindParam(":status", $status, PDO::PARAM_INT);
     $query->bindParam(":trophy_id", $trophyId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
@@ -150,7 +152,13 @@ if (ctype_digit(strval($_POST["trophy"]))) {
         $query->execute();
     }
 
-    $success = "<p>Trophy ID ". $trophyId ." (". $trophy["name"] .") is now set as unobtainable.</p>";
+    if ($status == 1) {
+        $statusText = "unobtainable";
+    } else {
+        $statusText = "obtainable";
+    }
+
+    $success = "<p>Trophy ID ". $trophyId ." (". $trophy["name"] .") is now set as ". $statusText .".</p>";
 }
 
 ?>
@@ -166,7 +174,12 @@ if (ctype_digit(strval($_POST["trophy"]))) {
         <a href="/admin/">Back</a><br><br>
         <form method="post">
             Trophy ID:<br>
-            <input type="number" name="trophy"><br><br>
+            <input type="number" name="trophy"><br>
+            Status:<br>
+            <select name="status">
+                <option value="1">Unobtainable</option>
+                <option value="0">Obtainable</option>
+            </select><br><br>
             <input type="submit" value="Submit">
         </form>
 
