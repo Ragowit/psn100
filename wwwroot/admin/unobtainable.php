@@ -10,7 +10,7 @@ if (ctype_digit(strval($_POST["trophy"]))) {
     $query->execute();
     $database->commit();
 
-    $query = $database->prepare("SELECT np_communication_id, group_id FROM trophy WHERE id = :trophy_id");
+    $query = $database->prepare("SELECT np_communication_id, group_id, name FROM trophy WHERE id = :trophy_id");
     $query->bindParam(":trophy_id", $trophyId, PDO::PARAM_INT);
     $query->execute();
     $trophy = $query->fetch();
@@ -142,7 +142,7 @@ if (ctype_digit(strval($_POST["trophy"]))) {
         $query->execute();
     }
 
-    $success = "<p>Trophy ID ". $trophyId ." is now set as unobtainable.</p>";
+    $success = "<p>Trophy ID ". $trophyId ." (". $trophy["name"] .") is now set as unobtainable.</p>";
 }
 
 ?>
