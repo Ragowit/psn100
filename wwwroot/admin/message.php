@@ -30,7 +30,7 @@ if (ctype_digit(strval($_POST["game"]))) {
             Game ID:<br>
             <input type="number" name="game"><br>
             Message:<br>
-            <textarea name="message" rows="4" cols="50"></textarea><br><br>
+            <textarea name="message" rows="6" cols="120"></textarea><br><br>
             <input type="submit" value="Submit">
         </form>
 
