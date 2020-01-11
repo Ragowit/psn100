@@ -182,7 +182,14 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     $trophyTitles = $users[$client]->trophyTitles($offset);
                     $fetchTrophyTitles = false;
                 } catch (Exception $e) {
-                    // Ignore exception, just try again!
+                    // Increase the request_time and continue with the next one in the queue.
+                    $database->beginTransaction();
+                    $query = $database->prepare("UPDATE player_queue SET request_time = DATE_ADD(request_time, INTERVAL 1 MINUTE) WHERE online_id = :online_id");
+                    $query->bindParam(":online_id", $info->onlineId, PDO::PARAM_STR);
+                    $query->execute();
+                    $database->commit();
+
+                    continue 3;
                 }
 
                 $client++;
