@@ -336,7 +336,7 @@ require_once("header.php");
 
                     <div class="col-12 text-center">
                         <?php
-                        $query = $database->prepare("SELECT SUM(rarity_point) FROM trophy WHERE np_communication_id = :np_communication_id AND status = 0");
+                        $query = $database->prepare("SELECT IFNULL(SUM(rarity_point), 0) FROM trophy WHERE np_communication_id = :np_communication_id AND status = 0");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
                         $rarityPoints = $query->fetchColumn();
