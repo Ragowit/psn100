@@ -168,36 +168,36 @@ require_once("header.php");
                         if (isset($player)) {
                             $gameLink .= "/". $player;
                         } ?>
-                            <td scope="row">
-                                <a href="/game/<?= $gameLink; ?>">
-                                    <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" width="100" />
-                                </a>
-                            </td>
-                            <td>
-                                <a href="/game/<?= $gameLink; ?>">
-                                    <?= $game["name"]; ?>
-                                </a>
-                            </td>
-                            <td class="text-center">
-                                <?php
-                                foreach (explode(",", $game["platform"]) as $platform) {
-                                    echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
-                                } ?>
-                            </td>
-                            <td class="text-center" style="white-space: nowrap;">
-                                <?= $game["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
-                                <?= $game["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
-                                <?= $game["gold"]; ?> <img src="/img/playstation/gold.png" alt="Gold" width="24" />
-                                <?= $game["platinum"]; ?> <img src="/img/playstation/platinum.png" alt="Platinum" width="24" />
-                                <br>
-                                <?php
-                                $query = $database->prepare("SELECT SUM(rarity_point) FROM trophy WHERE np_communication_id = :np_communication_id");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->execute();
-                        $rarityPoints = $query->fetchColumn();
-                        if ($game["status"] == 0) {
-                            echo $rarityPoints ." Rarity Points";
-                        } ?>
+                        <td scope="row">
+                            <a href="/game/<?= $gameLink; ?>">
+                                <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" width="100" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="/game/<?= $gameLink; ?>">
+                                <?= $game["name"]; ?>
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            foreach (explode(",", $game["platform"]) as $platform) {
+                                echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
+                            } ?>
+                        </td>
+                        <td class="text-center" style="white-space: nowrap;">
+                            <?= $game["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
+                            <?= $game["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
+                            <?= $game["gold"]; ?> <img src="/img/playstation/gold.png" alt="Gold" width="24" />
+                            <?= $game["platinum"]; ?> <img src="/img/playstation/platinum.png" alt="Platinum" width="24" />
+                            <br>
+                            <?php
+                            $query = $database->prepare("SELECT IFNULL(SUM(rarity_point), 0) FROM trophy WHERE np_communication_id = :np_communication_id AND status = 0");
+                            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                            $query->execute();
+                            $rarityPoints = $query->fetchColumn();
+                            if ($game["status"] == 0) {
+                                echo $rarityPoints ." Rarity Points";
+                            } ?>
                             </td>
                             <td class="text-center">
                                 <?= $game["difficulty"]; ?>%
