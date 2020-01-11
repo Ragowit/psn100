@@ -70,9 +70,13 @@ if (ctype_digit(strval($_POST["trophy"]))) {
             $trophyTypes["platinum"] = 0;
         }
         $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-        $progress = floor($userScore/$maxScore*100);
-        if ($userScore != 0 && $progress == 0) {
-            $progress = 1;
+        if ($maxScore == 0) {
+            $progress = 100;
+        } else {
+            $progress = floor($userScore/$maxScore*100);
+            if ($userScore != 0 && $progress == 0) {
+                $progress = 1;
+            }
         }
         $database->beginTransaction();
         $query = $database->prepare("UPDATE trophy_group_player SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum, progress = :progress WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND account_id = :account_id");
@@ -115,9 +119,13 @@ if (ctype_digit(strval($_POST["trophy"]))) {
         $query->execute();
         $trophyTypes = $query->fetch();
         $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-        $progress = floor($userScore/$maxScore*100);
-        if ($userScore != 0 && $progress == 0) {
-            $progress = 1;
+        if ($maxScore == 0) {
+            $progress = 100;
+        } else {
+            $progress = floor($userScore/$maxScore*100);
+            if ($userScore != 0 && $progress == 0) {
+                $progress = 1;
+            }
         }
         $database->beginTransaction();
         $query = $database->prepare("UPDATE trophy_title_player SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum, progress = :progress WHERE np_communication_id = :np_communication_id AND account_id = :account_id");

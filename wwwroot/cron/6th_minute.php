@@ -388,9 +388,13 @@ while ($tempPlayer = $queueQuery->fetch()) {
                         $trophyTypes["platinum"] = 0;
                     }
                     $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-                    $progress = floor($userScore/$maxScore*100);
-                    if ($userScore != 0 && $progress == 0) {
-                        $progress = 1;
+                    if ($maxScore == 0) {
+                        $progress = 100;
+                    } else {
+                        $progress = floor($userScore/$maxScore*100);
+                        if ($userScore != 0 && $progress == 0) {
+                            $progress = 1;
+                        }
                     }
                     $database->beginTransaction();
                     $query = $database->prepare("INSERT INTO trophy_group_player (np_communication_id, group_id, account_id, bronze, silver, gold, platinum, progress) VALUES (:np_communication_id, :group_id, :account_id, :bronze, :silver, :gold, :platinum, :progress) ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress)");
@@ -429,9 +433,13 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 $query->execute();
                 $trophyTypes = $query->fetch();
                 $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-                $progress = floor($userScore/$maxScore*100);
-                if ($userScore != 0 && $progress == 0) {
-                    $progress = 1;
+                if ($maxScore == 0) {
+                    $progress = 100;
+                } else {
+                    $progress = floor($userScore/$maxScore*100);
+                    if ($userScore != 0 && $progress == 0) {
+                        $progress = 1;
+                    }
                 }
                 $database->beginTransaction();
                 $query = $database->prepare("INSERT INTO trophy_title_player (np_communication_id, account_id, bronze, silver, gold, platinum, progress, last_updated_date) VALUES (:np_communication_id, :account_id, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date) ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress), last_updated_date=VALUES(last_updated_date)");
