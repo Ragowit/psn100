@@ -322,14 +322,14 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                             SUM(t.rarity_point) AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) JOIN trophy t USING (np_communication_id) JOIN trophy_earned te USING
                             (np_communication_id, group_id, order_id, account_id) WHERE t.status = 0 AND ttp.account_id = :account_id GROUP BY np_communication_id UNION SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url,
                             tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, 0 AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING
-                            (np_communication_id) WHERE ttp.account_id = :account_id AND ttp.progress = 0 AND ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 ORDER BY rarity_point DESC, name LIMIT :offset,
+                            (np_communication_id) WHERE ttp.account_id = :account_id AND ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 ORDER BY rarity_point DESC, name LIMIT :offset,
                             :limit");
                     } else {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date,
                             SUM(t.rarity_point) AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) JOIN trophy t USING (np_communication_id) JOIN trophy_earned te USING
                             (np_communication_id, group_id, order_id, account_id) WHERE t.status = 0 AND ttp.account_id = :account_id GROUP BY np_communication_id UNION SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url,
                             tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, 0 AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING
-                            (np_communication_id) WHERE ttp.account_id = :account_id AND ttp.progress = 0 AND ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 ORDER BY last_updated_date DESC LIMIT :offset,
+                            (np_communication_id) WHERE ttp.account_id = :account_id AND ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 ORDER BY last_updated_date DESC LIMIT :offset,
                             :limit");
                     }
                     $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
