@@ -134,30 +134,30 @@ require_once("header.php");
                     <div class="col-12 table-responsive">
                         <table class="table table-striped">
                             <?php
-                            $query = $database->prepare("SELECT COUNT(DISTINCT account_id) AS count, tt.* FROM trophy_earned te JOIN trophy_title tt USING (np_communication_id) WHERE earned_date >= DATE(NOW()) - INTERVAL 7 DAY GROUP BY np_communication_id ORDER BY count DESC LIMIT 10");
+                            $query = $database->prepare("SELECT COUNT(DISTINCT account_id) AS count, tt.id, tt.icon_url, tt.platform, tt.name FROM trophy_earned te JOIN player p USING (account_id) JOIN trophy_title tt USING (np_communication_id) WHERE p.status = 0 AND te.earned_date >= DATE(NOW()) - INTERVAL 7 DAY GROUP BY np_communication_id ORDER BY count DESC LIMIT 10");
                             $query->execute();
-                            $popular_games = $query->fetchAll();
+                            $popularGames = $query->fetchAll();
 
-                            foreach ($popular_games as $popular_game) {
+                            foreach ($popularGames as $popularGame) {
                                 ?>
                                 <tr>
                                     <td class="text-center" width="150">
-                                        <a href="/game/<?= $popular_game["id"] ."-". slugify($popular_game["name"]); ?>">
-                                            <img src="/img/title/<?= $popular_game["icon_url"]; ?>" alt="" width="100" />
+                                        <a href="/game/<?= $popularGame["id"] ."-". slugify($popularGame["name"]); ?>">
+                                            <img src="/img/title/<?= $popularGame["icon_url"]; ?>" alt="" width="100" />
                                         </a>
                                         <br>
                                         <?php
-                                        foreach (explode(",", $popular_game["platform"]) as $platform) {
-                                            echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
+                                        foreach (explode(",", $popularGame["platform"]) as $platform) {
+                                            echo "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
                                         } ?>
                                     </td>
                                     <td>
-                                        <a href="/game/<?= $popular_game["id"] ."-". slugify($popular_game["name"]); ?>">
-                                            <?= $popular_game["name"]; ?>
+                                        <a href="/game/<?= $popularGame["id"] ."-". slugify($popularGame["name"]); ?>">
+                                            <?= $popularGame["name"]; ?>
                                         </a>
                                     </td>
                                     <td class="text-center">
-                                        <?= $popular_game["count"]; ?> Players
+                                        <?= $popularGame["count"]; ?> Players
                                     </td>
                                 </tr>
                                 <?php
