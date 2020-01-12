@@ -172,7 +172,7 @@ if (ctype_digit(strval($_POST["trophy"]))) {
     </head>
     <body>
         <a href="/admin/">Back</a><br><br>
-        <form method="post">
+        <form method="post" autocomplete="off">
             Trophy ID:<br>
             <input type="number" name="trophy"><br>
             Status:<br>

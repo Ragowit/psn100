@@ -24,7 +24,7 @@ if (isset($_POST["player"])) {
     </head>
     <body>
         <a href="/admin/">Back</a><br><br>
-        <form method="post">
+        <form method="post" autocomplete="off">
             Player:<br>
             <input type="text" name="player"><br><br>
             <input type="submit" value="Submit">
