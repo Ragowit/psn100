@@ -319,7 +319,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                     <?php
                     if (isset($_GET["sort"])) {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date,
-                            ttp.rarity_points FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE ttp.account_id = :account_id ORDER BY rarity_point DESC, name LIMIT :offset,
+                            ttp.rarity_points FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE ttp.account_id = :account_id ORDER BY rarity_points DESC, name LIMIT :offset,
                             :limit");
                     } else {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date,
