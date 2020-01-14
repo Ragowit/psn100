@@ -31,26 +31,21 @@ while ($player = $query->fetch()) {
 
     $points = $player["points"];
 
-    $database->beginTransaction();
     $queryRank = $database->prepare("UPDATE player SET rank = :rank, rank_country = :rank_country WHERE account_id = :account_id");
     $queryRank->bindParam(":rank", $rank, PDO::PARAM_INT);
     $queryRank->bindParam(":rank_country", $countryRanks[$player["country"]][1], PDO::PARAM_INT);
     $queryRank->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
     $queryRank->execute();
-    $database->commit();
 }
 
 // Recalculate owners for each game, but only for those ranked 100k or higher
-$database->beginTransaction();
 $query = $database->prepare("UPDATE trophy_title tt SET tt.owners = (
     SELECT COUNT(*) FROM trophy_title_player ttp
     JOIN player p USING (account_id)
     WHERE ttp.np_communication_id = tt.np_communication_id AND p.status = 0 AND p.rank <= 100000)");
 $query->execute();
-$database->commit();
 
 // Update game difficulty
-$database->beginTransaction();
 $query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = ((
     SELECT COUNT(*) FROM trophy_title_player ttp
     JOIN player p USING (account_id)
@@ -58,10 +53,8 @@ $query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = ((
     ) / tt.owners
     ) * 100");
 $query->execute();
-$database->commit();
 
 // Recalculate trophy rarity. THIS ONE IS SLOW! TODO: How to speed it up?
-$database->beginTransaction();
 $query = $database->prepare("UPDATE trophy t SET t.rarity_percent = (
     SELECT COUNT(*) FROM trophy_earned te
     JOIN player p USING (account_id)
@@ -70,16 +63,12 @@ $query = $database->prepare("UPDATE trophy t SET t.rarity_percent = (
     SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id
     ) * 100");
 $query->execute();
-$database->commit();
 
 // Recalculate trophy rarity point
-$database->beginTransaction();
 $query = $database->prepare("UPDATE trophy SET rarity_point = FLOOR(1 / (GREATEST(rarity_percent, 0.01) / 100) - 1)");
 $query->execute();
-$database->commit();
 
 // Recalculate rarity points for each game for each players. SLOW!
-$database->beginTransaction();
 $query = $database->prepare("UPDATE trophy_title_player ttp, (
     SELECT account_id, np_communication_id, SUM(t.rarity_point) AS points FROM trophy t
     JOIN trophy_earned USING (np_communication_id, group_id, order_id)
@@ -89,13 +78,10 @@ $query = $database->prepare("UPDATE trophy_title_player ttp, (
     SET ttp.rarity_points = tsum.points
     WHERE ttp.account_id = tsum.account_id AND ttp.np_communication_id = tsum.np_communication_id");
 $query->execute();
-$database->commit();
 
 // Recalculate rarity points for each player.
-$database->beginTransaction();
 $query = $database->prepare("UPDATE player p, (SELECT account_id, SUM(rarity_points) AS rarity_points FROM trophy_title_player GROUP BY account_id) ttp SET p.rarity_points = ttp.rarity_points AND p.account_id = ttp.account_id");
 $query->execute();
-$database->commit();
 
 // Recalculate rarity levels for players. THIS ONE IS SLOW! TODO: How to speed it up?
 $query = $database->prepare("UPDATE player p, (
@@ -137,11 +123,9 @@ while ($player = $query->fetch()) {
 
     $points = $player["rarity_points"];
 
-    $database->beginTransaction();
     $queryRank = $database->prepare("UPDATE player SET rarity_rank = :rarity_rank, rarity_rank_country = :rarity_rank_country WHERE account_id = :account_id");
     $queryRank->bindParam(":rarity_rank", $rank, PDO::PARAM_INT);
     $queryRank->bindParam(":rarity_rank_country", $countryRanks[$player["country"]][1], PDO::PARAM_INT);
     $queryRank->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
     $queryRank->execute();
-    $database->commit();
 }
