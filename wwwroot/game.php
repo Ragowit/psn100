@@ -98,12 +98,15 @@ require_once("header.php");
                             $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                             $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                             $query->execute();
-                            $progress = $query->fetchColumn(); ?>
-                            <br>
-                            <div class="progress">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
-                            </div>
-                            <?php
+                            $progress = $query->fetchColumn();
+                            if ($progress != false) {
+                                ?>
+                                <br>
+                                <div class="progress">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
+                                </div>
+                                <?php
+                            }
                         }
                         ?>
                     </div>
@@ -208,12 +211,15 @@ require_once("header.php");
                                 $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
                                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                                 $query->execute();
-                                $progress = $query->fetchColumn(); ?>
-                                <br>
-                                <div class="progress">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
-                                </div>
-                                <?php
+                                $progress = $query->fetchColumn();
+                                if ($progress != false) {
+                                    ?>
+                                    <br>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
+                                    </div>
+                                    <?php
+                                }
                             } ?>
                         </div>
                     </div>
@@ -324,13 +330,16 @@ require_once("header.php");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                         $query->execute();
-                        $progress = $query->fetchColumn(); ?>
-                        <div class="col-12 text-center">
-                            <div class="progress">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
+                        $progress = $query->fetchColumn();
+                        if ($progress != false) {
+                            ?>
+                            <div class="col-12 text-center">
+                                <div class="progress">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
+                                </div>
                             </div>
-                        </div>
-                        <?php
+                            <?php
+                        }
                     }
                     ?>
 
