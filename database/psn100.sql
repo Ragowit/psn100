@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS `trophy_title_player` (
   `platinum` smallint(5) unsigned NOT NULL,
   `progress` tinyint(3) unsigned NOT NULL,
   `last_updated_date` datetime NOT NULL,
+  `rarity_points` smallint(5) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `np_communication_id` (`np_communication_id`,`account_id`),
   KEY `np_communication_id_2` (`np_communication_id`),
