@@ -128,7 +128,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
     $plus = (bool)$info->plus;
 
     // Add/update player into database
-    $database->beginTransaction();
     $query = $database->prepare("INSERT INTO player (account_id, online_id, country, avatar_url, plus, about_me) VALUES (:account_id, :online_id, :country, :avatar_url, :plus, :about_me) ON DUPLICATE KEY UPDATE online_id=VALUES(online_id), avatar_url=VALUES(avatar_url), plus=VALUES(plus), about_me=VALUES(about_me)");
     $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
     $query->bindParam(":online_id", $info->onlineId, PDO::PARAM_STR);
@@ -138,7 +137,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
     $query->bindParam(":about_me", $info->aboutMe, PDO::PARAM_STR);
     // Don't insert level/progress/platinum/gold/silver/bronze here since our site recalculate this.
     $query->execute();
-    $database->commit();
 
     if ($info->trophySummary->level === 1 && $info->trophySummary->progress === 0) {
         // Profile most likely set to private, remove all trophy data we have for this player
@@ -183,11 +181,9 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     $fetchTrophyTitles = false;
                 } catch (Exception $e) {
                     // Increase the request_time and continue with the next one in the queue.
-                    $database->beginTransaction();
                     $query = $database->prepare("UPDATE player_queue SET request_time = DATE_ADD(request_time, INTERVAL 1 MINUTE) WHERE online_id = :online_id");
                     $query->bindParam(":online_id", $info->onlineId, PDO::PARAM_STR);
                     $query->execute();
-                    $database->commit();
 
                     continue 3;
                 }
@@ -223,7 +219,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 }
 
                 // Add trophy title (game) information into database
-                $database->beginTransaction();
                 // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
                 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title WHERE np_communication_id = :np_communication_id");
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
@@ -241,7 +236,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 $query->bindParam(":platform", $game->trophyTitlePlatfrom, PDO::PARAM_STR);
                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                 $query->execute();
-                $database->commit();
 
                 // Get "groups" (game and DLCs)
                 $trophyGroups = $users[$client]->trophyGroups($game->npCommunicationId)->trophyGroups;
@@ -259,7 +253,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     }
 
                     // Add trophy group (game + dlcs) into database
-                    $database->beginTransaction();
                     // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
                     $query = $database->prepare("SELECT COUNT(*) FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
                     $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
@@ -278,7 +271,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     $query->bindParam(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                     $query->execute();
-                    $database->commit();
 
                     $result = $users[$client]->trophies($game->npCommunicationId, $trophyGroup->trophyGroupId);
                     $client++;
@@ -297,7 +289,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                             }
 
                             // Add trophies into database
-                            $database->beginTransaction();
                             // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
                             $query = $database->prepare("SELECT COUNT(*) FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
                             $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
@@ -322,18 +313,15 @@ while ($tempPlayer = $queueQuery->fetch()) {
                             $queryInsertTrophy->bindParam(":earned_rate", $trophy->trophyEarnedRate, PDO::PARAM_STR);
                             // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                             $queryInsertTrophy->execute();
-                            $database->commit();
 
                             // If the player have earned the trophy, add it into the database
                             if ($trophy->comparedUser->earned == "1") {
-                                $database->beginTransaction();
                                 $queryInsertTrophyEarned->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                                 $queryInsertTrophyEarned->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
                                 $queryInsertTrophyEarned->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
                                 $queryInsertTrophyEarned->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
                                 $queryInsertTrophyEarned->bindParam(":earned_date", $trophy->comparedUser->earnedDate, PDO::PARAM_STR);
                                 $queryInsertTrophyEarned->execute();
-                                $database->commit();
                             }
                         }
                     }
@@ -356,7 +344,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     if (!isset($trophyTypes["platinum"])) {
                         $trophyTypes["platinum"] = 0;
                     }
-                    $database->beginTransaction();
                     $query = $database->prepare("UPDATE trophy_group SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
                     $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
                     $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
@@ -365,7 +352,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                     $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
                     $query->execute();
-                    $database->commit();
 
                     // Recalculate trophies for trophy group for the player
                     $maxScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
@@ -396,7 +382,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                             $progress = 1;
                         }
                     }
-                    $database->beginTransaction();
                     $query = $database->prepare("INSERT INTO trophy_group_player (np_communication_id, group_id, account_id, bronze, silver, gold, platinum, progress) VALUES (:np_communication_id, :group_id, :account_id, :bronze, :silver, :gold, :platinum, :progress) ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress)");
                     $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                     $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
@@ -407,7 +392,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
                     $query->bindParam(":progress", $progress, PDO::PARAM_INT);
                     $query->execute();
-                    $database->commit();
                 }
 
                 // Recalculate trophies for trophy title
@@ -415,7 +399,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                 $query->execute();
                 $trophies = $query->fetch();
-                $database->beginTransaction();
                 $query = $database->prepare("UPDATE trophy_title SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum WHERE np_communication_id = :np_communication_id");
                 $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
                 $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);
@@ -423,7 +406,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 $query->bindParam(":platinum", $trophies["platinum"], PDO::PARAM_INT);
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                 $query->execute();
-                $database->commit();
 
                 // Recalculate trophies for trophy title for the player
                 $maxScore = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90; // Platinum isn't counted for
@@ -441,7 +423,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                         $progress = 1;
                     }
                 }
-                $database->beginTransaction();
                 $query = $database->prepare("INSERT INTO trophy_title_player (np_communication_id, account_id, bronze, silver, gold, platinum, progress, last_updated_date) VALUES (:np_communication_id, :account_id, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date) ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress), last_updated_date=VALUES(last_updated_date)");
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                 $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
@@ -452,7 +433,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 $query->bindParam(":progress", $progress, PDO::PARAM_INT);
                 $query->bindParam(":last_updated_date", $game->comparedUser->lastUpdateDate, PDO::PARAM_STR);
                 $query->execute();
-                $database->commit();
             }
 
             $offset += 128 - 8; // Subtract a little bit in-case the player have gotten new games while we are scanning
@@ -489,7 +469,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
             $level = 26 + floor(($points - 128000) / 10000);
             $progress = floor(($points - 128000 - ($level - 26) * 10000) / 10000 * 100);
         }
-        $database->beginTransaction();
         $query = $database->prepare("UPDATE player SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum, level = :level, progress = :progress, points = :points WHERE account_id = :account_id");
         $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
         $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);
@@ -500,20 +479,15 @@ while ($tempPlayer = $queueQuery->fetch()) {
         $query->bindParam(":points", $points, PDO::PARAM_INT);
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
-        $database->commit();
     }
 
     // Done with the user, update the date
-    $database->beginTransaction();
     $query = $database->prepare("UPDATE player SET last_updated_date = NOW() WHERE account_id = :account_id");
     $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
     $query->execute();
-    $database->commit();
 
     // Delete user from the queue
-    $database->beginTransaction();
     $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
     $query->bindParam(":online_id", $info->onlineId, PDO::PARAM_STR);
     $query->execute();
-    $database->commit();
 }
