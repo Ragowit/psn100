@@ -319,55 +319,49 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                     <?php
                     if (isset($_GET["sort"])) {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date,
-                            SUM(t.rarity_point) AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) JOIN trophy t USING (np_communication_id) JOIN trophy_earned te USING
-                            (np_communication_id, group_id, order_id, account_id) WHERE t.status = 0 AND ttp.account_id = :account_id GROUP BY np_communication_id UNION SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url,
-                            tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, 0 AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING
-                            (np_communication_id) WHERE ttp.account_id = :account_id AND ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 ORDER BY rarity_point DESC, name LIMIT :offset,
+                            ttp.rarity_points FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE ttp.account_id = :account_id ORDER BY rarity_point DESC, name LIMIT :offset,
                             :limit");
                     } else {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date,
-                            SUM(t.rarity_point) AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) JOIN trophy t USING (np_communication_id) JOIN trophy_earned te USING
-                            (np_communication_id, group_id, order_id, account_id) WHERE t.status = 0 AND ttp.account_id = :account_id GROUP BY np_communication_id UNION SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url,
-                            tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, 0 AS rarity_point FROM trophy_title_player ttp JOIN trophy_title tt USING
-                            (np_communication_id) WHERE ttp.account_id = :account_id AND ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 ORDER BY last_updated_date DESC LIMIT :offset,
+                            ttp.rarity_points FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE ttp.account_id = :account_id ORDER BY last_updated_date DESC LIMIT :offset,
                             :limit");
                     }
                     $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                     $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                     $query->bindParam(":limit", $limit, PDO::PARAM_INT);
                     $query->execute();
-                    $player_games = $query->fetchAll();
+                    $playerGames = $query->fetchAll();
 
-                    if (count($player_games) === 0) {
+                    if (count($playerGames) === 0) {
                         ?>
                         <tr>
                             <td colspan="4" class="text-center"><h3>This player seems to have a private profile.</h3></td>
                         </tr>
                         <?php
                     } else {
-                        foreach ($player_games as $player_game) {
+                        foreach ($playerGames as $playerGame) {
                             $trClass = "";
-                            if ($player_game["status"] == 1) {
+                            if ($playerGame["status"] == 1) {
                                 $trClass = " class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\"";
-                            } elseif ($player_game["progress"] == 100) {
+                            } elseif ($playerGame["progress"] == 100) {
                                 $trClass = " class=\"table-success\"";
                             } ?>
                             <tr<?= $trClass; ?>>
                                 <td scope="row">
-                                    <a href="/game/<?= $player_game["id"] ."-". slugify($player_game["name"]); ?>/<?= $player["online_id"]; ?>">
-                                        <img src="/img/title/<?= $player_game["icon_url"]; ?>" alt="" height="55" width="100" />
+                                    <a href="/game/<?= $playerGame["id"] ."-". slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
+                                        <img src="/img/title/<?= $playerGame["icon_url"]; ?>" alt="" height="55" width="100" />
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="/game/<?= $player_game["id"] ."-". slugify($player_game["name"]); ?>/<?= $player["online_id"]; ?>">
-                                        <?= $player_game["name"]; ?>
+                                    <a href="/game/<?= $playerGame["id"] ."-". slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
+                                        <?= $playerGame["name"]; ?>
                                     </a>
                                     <br>
-                                    <?= $player_game["last_updated_date"]; ?>
+                                    <?= $playerGame["last_updated_date"]; ?>
                                     <?php
-                                    if ($player_game["progress"] == 100) {
+                                    if ($playerGame["progress"] == 100) {
                                         $query = $database->prepare("SELECT MIN(earned_date) AS first_trophy, MAX(earned_date) AS last_trophy FROM trophy_earned WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
-                                        $query->bindParam(":np_communication_id", $player_game["np_communication_id"], PDO::PARAM_STR);
+                                        $query->bindParam(":np_communication_id", $playerGame["np_communication_id"], PDO::PARAM_STR);
                                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                                         $query->execute();
                                         $completionDates = $query->fetch();
@@ -399,22 +393,22 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                 </td>
                                 <td class="text-center">
                                     <?php
-                                    foreach (explode(",", $player_game["platform"]) as $platform) {
+                                    foreach (explode(",", $playerGame["platform"]) as $platform) {
                                         echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
                                     } ?>
                                 </td>
                                 <td class="text-center" style="white-space: nowrap;">
-                                    <?= $player_game["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
-                                    <?= $player_game["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
-                                    <?= $player_game["gold"]; ?> <img src="/img/playstation/gold.png" alt="Gold" width="24" />
-                                    <?= $player_game["platinum"]; ?> <img src="/img/playstation/platinum.png" alt="Platinum" width="24" />
+                                    <?= $playerGame["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
+                                    <?= $playerGame["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
+                                    <?= $playerGame["gold"]; ?> <img src="/img/playstation/gold.png" alt="Gold" width="24" />
+                                    <?= $playerGame["platinum"]; ?> <img src="/img/playstation/platinum.png" alt="Platinum" width="24" />
                                     <br>
                                     <div class="progress">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player_game["progress"]; ?>%;" aria-valuenow="<?= $player_game["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"><?= $player_game["progress"]; ?>%</div>
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $playerGame["progress"]; ?>%;" aria-valuenow="<?= $playerGame["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"><?= $playerGame["progress"]; ?>%</div>
                                     </div>
                                     <?php
-                                    if ($player["status"] == 0 && $player_game["status"] == 0) {
-                                        echo $player_game["rarity_point"] ." Rarity Points";
+                                    if ($player["status"] == 0 && $playerGame["status"] == 0) {
+                                        echo $playerGame["rarity_points"] ." Rarity Points";
                                     } ?>
 
                                 </td>
