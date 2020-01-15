@@ -118,7 +118,7 @@ while ($tempPlayer = $queueQuery->fetch()) {
 
     // Get the avatar url we want to save
     $avatarUrl = $info->avatarUrls[0]->avatarUrl;
-    $avatarFilename = substr($avatarUrl, strrpos($avatarUrl, "/") + 1);
+    $avatarFilename = md5_file($avatarUrl) . substr($avatarUrl, strrpos($avatarUrl, "."));
     // Download the avatar if we don't have it
     if (!file_exists("../img/avatar/". $avatarFilename)) {
         file_put_contents("../img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
@@ -128,7 +128,8 @@ while ($tempPlayer = $queueQuery->fetch()) {
     $plus = (bool)$info->plus;
 
     // Add/update player into database
-    $query = $database->prepare("INSERT INTO player (account_id, online_id, country, avatar_url, plus, about_me) VALUES (:account_id, :online_id, :country, :avatar_url, :plus, :about_me) ON DUPLICATE KEY UPDATE online_id=VALUES(online_id), avatar_url=VALUES(avatar_url), plus=VALUES(plus), about_me=VALUES(about_me)");
+    $query = $database->prepare("INSERT INTO player (account_id, online_id, country, avatar_url, plus, about_me) VALUES (:account_id, :online_id, :country, :avatar_url, :plus, :about_me)
+        ON DUPLICATE KEY UPDATE online_id=VALUES(online_id), avatar_url=VALUES(avatar_url), plus=VALUES(plus), about_me=VALUES(about_me)");
     $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
     $query->bindParam(":online_id", $info->onlineId, PDO::PARAM_STR);
     $query->bindParam(":country", substr(base64_decode($info->npId), -2), PDO::PARAM_STR);
