@@ -14,7 +14,7 @@ require_once("header.php");
             <div class="col-12">
                 <nav aria-label="Page navigation">
                     <?php
-                    $query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player");
+                    $query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player WHERE status = 0");
                     $query->execute();
                     $total_pages = $query->fetchColumn();
 
@@ -87,7 +87,7 @@ require_once("header.php");
         <div class="row">
             <?php
             // This feature does not limit by the 100k player count
-            $query = $database->prepare("SELECT COUNT(*) AS count, avatar_url FROM player GROUP BY avatar_url ORDER BY count DESC LIMIT :offset, :limit");
+            $query = $database->prepare("SELECT COUNT(*) AS count, avatar_url FROM player WHERE status = 0 GROUP BY avatar_url ORDER BY count DESC LIMIT :offset, :limit");
             $query->bindParam(":offset", $offset, PDO::PARAM_INT);
             $query->bindParam(":limit", $limit, PDO::PARAM_INT);
             $query->execute();
