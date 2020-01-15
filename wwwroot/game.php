@@ -129,7 +129,7 @@ require_once("header.php");
                         while ($trophy = $query->fetch()) {
                             $trClass = "";
                             if ($trophy["status"] == 1) {
-                                $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable.\"";
+                                $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
                             } elseif (isset($earnedTrophies[$trophy["order_id"]])) {
                                 $trClass = " class=\"table-success\"";
                             } ?>
@@ -244,7 +244,7 @@ require_once("header.php");
                             while ($trophy = $trophies->fetch()) {
                                 $trClass = "";
                                 if ($trophy["status"] == 1) {
-                                    $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable.\"";
+                                    $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
                                 } elseif (isset($earnedTrophies[$trophy["order_id"]])) {
                                     $trClass = " class=\"table-success\"";
                                 } ?>

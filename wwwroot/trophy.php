@@ -32,7 +32,7 @@ require_once("header.php");
                 ?>
                 <div class="col-12">
                     <div class="alert alert-warning" role="alert">
-                        This trophy is unobtainable.
+                        This trophy is unobtainable and not accounted for on any leaderboard.
                     </div>
                 </div>
                 <?php
