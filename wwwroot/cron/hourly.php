@@ -53,28 +53,3 @@ $query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = ((
     ) / tt.owners
     ) * 100");
 $query->execute();
-
-// Recalculate trophy rarity. THIS ONE IS SLOW! TODO: How to speed it up?
-$query = $database->prepare("UPDATE trophy t SET t.rarity_percent = (
-    SELECT COUNT(*) FROM trophy_earned te
-    JOIN player p USING (account_id)
-    WHERE te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
-    ) / (
-    SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id
-    ) * 100");
-$query->execute();
-
-// Recalculate trophy rarity point
-$query = $database->prepare("UPDATE trophy SET rarity_point = FLOOR(1 / (GREATEST(rarity_percent, 0.01) / 100) - 1)");
-$query->execute();
-
-// Recalculate rarity points for each game for each players. SLOW!
-$query = $database->prepare("UPDATE trophy_title_player ttp, (
-    SELECT account_id, np_communication_id, SUM(t.rarity_point) AS points FROM trophy t
-    JOIN trophy_earned USING (np_communication_id, group_id, order_id)
-    JOIN trophy_title tt USING (np_communication_id)
-    WHERE t.status = 0 AND tt.status = 0
-    GROUP BY account_id, np_communication_id) tsum
-    SET ttp.rarity_points = tsum.points
-    WHERE ttp.account_id = tsum.account_id AND ttp.np_communication_id = tsum.np_communication_id");
-$query->execute();

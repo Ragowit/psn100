@@ -5,6 +5,40 @@ set_time_limit(0);
 // The lines above doesn't seem to do anything on my webhost. 504 after about 5 minutes anyway.
 require_once("../init.php");
 
+// Recalculate trophy rarity & rarity point. SLOW!
+$query = $database->prepare("SELECT np_communication_id, owners FROM trophy_title");
+$query->execute();
+$gameOwners = $query->fetchAll(PDO::FETCH_KEY_PAIR);
+$query = $database->prepare("SELECT te.np_communication_id, te.group_id, te.order_id, COUNT(*) AS count
+    FROM trophy_earned te
+    JOIN player p USING (account_id)
+    WHERE p.status = 0 AND p.rank <= 100000
+    GROUP BY np_communication_id, group_id, order_id");
+$query->execute();
+while ($trophyOwners = $query->fetch()) {
+    $rarityPercent = $trophyOwners["count"] / $gameOwners[$trophyOwners["np_communication_id"]] * 100;
+    $rarityPoint = floor(1 / (max($rarityPercent, 0.01) / 100) - 1);
+
+    $update = $database->prepare("UPDATE trophy SET rarity_percent = :rarity_percent, rarity_point = :rarity_point WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
+    $update->bindParam(":rarity_percent", $rarityPercent, PDO::PARAM_STR);
+    $update->bindParam(":rarity_point", $rarityPoint, PDO::PARAM_INT);
+    $update->bindParam(":np_communication_id", $trophyOwners["np_communication_id"], PDO::PARAM_STR);
+    $update->bindParam(":group_id", $trophyOwners["group_id"], PDO::PARAM_STR);
+    $update->bindParam(":order_id", $trophyOwners["order_id"], PDO::PARAM_INT);
+    $update->execute();
+}
+
+// Recalculate rarity points for each game for each players. SLOW!
+$query = $database->prepare("UPDATE trophy_title_player ttp, (
+    SELECT account_id, np_communication_id, SUM(t.rarity_point) AS points FROM trophy t
+    JOIN trophy_earned USING (np_communication_id, group_id, order_id)
+    JOIN trophy_title tt USING (np_communication_id)
+    WHERE t.status = 0 AND tt.status = 0
+    GROUP BY account_id, np_communication_id) tsum
+    SET ttp.rarity_points = tsum.points
+    WHERE ttp.account_id = tsum.account_id AND ttp.np_communication_id = tsum.np_communication_id");
+$query->execute();
+
 // Recalculate rarity points for each player.
 $query = $database->prepare("UPDATE player p, (SELECT account_id, SUM(rarity_points) AS rarity_points FROM trophy_title_player GROUP BY account_id) ttp SET p.rarity_points = ttp.rarity_points WHERE p.account_id = ttp.account_id");
 $query->execute();
