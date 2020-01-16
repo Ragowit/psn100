@@ -49,7 +49,7 @@ $query->execute();
 $query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = ((
     SELECT COUNT(*) FROM trophy_title_player ttp
     JOIN player p USING (account_id)
-    WHERE p.status = 0 AND ttp.progress = 100 AND ttp.np_communication_id = tt.np_communication_id
+    WHERE p.status = 0 AND p.rank <= 100000 AND ttp.progress = 100 AND ttp.np_communication_id = tt.np_communication_id
     ) / tt.owners
     ) * 100");
 $query->execute();
