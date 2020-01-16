@@ -128,7 +128,13 @@ require_once("header.php");
                     <div class="col-12 table-responsive">
                         <table class="table table-striped">
                             <?php
-                            $query = $database->prepare("SELECT COUNT(DISTINCT account_id) AS count, tt.id, tt.icon_url, tt.platform, tt.name FROM trophy_earned te JOIN player p USING (account_id) JOIN trophy_title tt USING (np_communication_id) WHERE p.status = 0 AND te.earned_date >= DATE(NOW()) - INTERVAL 7 DAY GROUP BY np_communication_id ORDER BY count DESC LIMIT 10");
+                            $query = $database->prepare("SELECT COUNT(DISTINCT account_id) AS count, tt.id, tt.icon_url, tt.platform, tt.name FROM trophy_title_player ttp
+                                JOIN player p USING (account_id)
+                                JOIN trophy_title tt USING (np_communication_id)
+                                WHERE p.status = 0 AND p.rank <= 1000000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
+                                GROUP BY np_communication_id
+                                ORDER BY count DESC
+                                LIMIT 10");
                             $query->execute();
                             $popularGames = $query->fetchAll();
 
