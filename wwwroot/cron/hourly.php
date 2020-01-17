@@ -53,3 +53,17 @@ $query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = ((
     ) / tt.owners
     ) * 100");
 $query->execute();
+
+// Recalculate trophy rarity. THIS ONE IS SLOW! TODO: How to speed it up?
+$query = $database->prepare("UPDATE trophy t SET t.rarity_percent = (
+    SELECT COUNT(*) FROM trophy_earned te
+    JOIN player p USING (account_id)
+    WHERE te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
+    ) / (
+    SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id
+    ) * 100");
+$query->execute();
+
+// Recalculate trophy rarity point
+$query = $database->prepare("UPDATE trophy SET rarity_point = FLOOR(1 / (GREATEST(rarity_percent, 0.01) / 100) - 1)");
+$query->execute();
