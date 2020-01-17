@@ -155,18 +155,23 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                     $players = $query->fetchAll();
 
                     foreach ($players as $player) {
-                        $countryName = Locale::getDisplayRegion("-" . $player["country"], "en"); ?>
-                        <tr>
+                        $countryName = Locale::getDisplayRegion("-" . $player["country"], "en");
+
+                        if (isset($_GET["player"]) && $_GET["player"] == $player["online_id"]) {
+                            echo "<tr class=\"table-success\">";
+                        } else {
+                            echo "<tr>";
+                        }
+
+                        if (isset($_GET["country"])) {
+                            ?>
+                            <th scope="row" class="align-middle"><?= $player["rarity_rank_country"]; ?></th>
                             <?php
-                            if (isset($_GET["country"])) {
-                                ?>
-                                <th scope="row" class="align-middle"><?= $player["rarity_rank_country"]; ?></th>
-                                <?php
-                            } else {
-                                ?>
-                                <th scope="row" class="align-middle"><?= $player["rarity_rank"]; ?></th>
-                                <?php
-                            } ?>
+                        } else {
+                            ?>
+                            <th scope="row" class="align-middle"><?= $player["rarity_rank"]; ?></th>
+                            <?php
+                        } ?>
                             <td class="text-center">
                                 <div style="position:relative;">
                                     <a href="/player/<?= $player["online_id"]; ?>">
