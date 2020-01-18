@@ -34,7 +34,9 @@ require_once("../init.php");
         (te.np_communication_id = 'NPWR05839_00' AND te.group_id = 'default' AND te.order_id = 28) OR
         (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 0) OR
         (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 25) OR
-        (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 26)
+        (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 26) OR
+        (te.np_communication_id = 'NPWR10400_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+        (te.np_communication_id = 'NPWR10400_00' AND te.group_id = 'default' AND te.order_id = 12)
         ) AND p.status = 0 GROUP BY player_name ORDER BY player_name");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
