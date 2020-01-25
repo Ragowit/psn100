@@ -1,7 +1,7 @@
 <?php
-ini_set("max_execution_time", "0");
-ini_set("mysql.connect_timeout", "0");
-set_time_limit(0);
+ini_set("max_execution_time", "1800");
+ini_set("mysql.connect_timeout", "1800");
+set_time_limit(1800);
 // The lines above doesn't seem to do anything on my webhost. 504 after about 5 minutes anyway.
 require_once("../vendor/autoload.php");
 require_once("../init.php");
