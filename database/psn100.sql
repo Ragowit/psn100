@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 25, 2020 at 10:26 AM
+-- Generation Time: Jan 25, 2020 at 05:23 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -178,7 +178,8 @@ CREATE TABLE `trophy_title` (
   `owners` int(10) UNSIGNED NOT NULL,
   `difficulty` decimal(5,2) UNSIGNED NOT NULL,
   `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` tinyint(3) UNSIGNED NOT NULL
+  `status` tinyint(3) UNSIGNED NOT NULL,
+  `recent_players` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

@@ -129,3 +129,14 @@ while ($player = $query->fetch()) {
     $queryRank->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
     $queryRank->execute();
 }
+
+// Recalculate recent players
+$query = $database->prepare("UPDATE trophy_title tt, (
+    SELECT np_communication_id, COUNT(*) AS count FROM trophy_title_player ttp
+    JOIN player p USING (account_id)
+    JOIN trophy_title tt USING (np_communication_id)
+    WHERE p.status = 0 AND p.rank <= 1000000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
+    GROUP BY np_communication_id) x
+    SET tt.recent_players = x.count
+    WHERE tt.np_communication_id = x.np_communication_id");
+$query->execute();
