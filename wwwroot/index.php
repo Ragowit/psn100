@@ -6,7 +6,7 @@ if (!isset($_COOKIE["seen_cookie"])) {
     $showCookie = true;
 }
 
-$path = ltrim($_SERVER["REDIRECT_URL"], "/"); // Trim leading slash(es)
+$path = ltrim($_SERVER["REQUEST_URI"], "/"); // Trim leading slash(es)
 $elements = explode("/", $path); // Split path on slashes
 
 if (empty($elements[0])) { // No path elements means home
