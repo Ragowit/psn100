@@ -47,12 +47,11 @@ while ($tempPlayer = $queueQuery->fetch()) {
             array_push($users, $user);
         }
     } catch (Exception $e) {
-        // User doesn't exist, remove from the queue.
-        $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
-        $query->bindParam(":online_id", $player, PDO::PARAM_STR);
-        $query->execute();
-
         if (strpos($e->getMessage(), "User not found") !== false) {
+            $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
+            $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+            $query->execute();
+
             $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
             $query->bindParam(":online_id", $player, PDO::PARAM_STR);
             $query->execute();
@@ -82,12 +81,11 @@ while ($tempPlayer = $queueQuery->fetch()) {
     try {
         $info = $users[$client]->info();
     } catch (Exception $e) {
-        // User doesn't exist, remove from the queue.
-        $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
-        $query->bindParam(":online_id", $player, PDO::PARAM_STR);
-        $query->execute();
-
         if (strpos($e->getMessage(), "User not found") !== false) {
+            $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
+            $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+            $query->execute();
+
             $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
             $query->bindParam(":online_id", $player, PDO::PARAM_STR);
             $query->execute();
@@ -118,7 +116,7 @@ while ($tempPlayer = $queueQuery->fetch()) {
 
     // Get the avatar url we want to save
     $avatarUrl = $info->avatarUrls[0]->avatarUrl;
-    $avatarFilename = md5_file($avatarUrl) . substr($avatarUrl, strrpos($avatarUrl, "."));
+    $avatarFilename = md5_file($avatarUrl) . strtolower(substr($avatarUrl, strrpos($avatarUrl, ".")));
     // Download the avatar if we don't have it
     if (!file_exists("../img/avatar/". $avatarFilename)) {
         file_put_contents("../img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
@@ -213,7 +211,7 @@ while ($tempPlayer = $queueQuery->fetch()) {
 
                 // Get the title icon url we want to save
                 $trophyTitleIconUrl = $game->trophyTitleIconUrl;
-                $trophyTitleIconFilename = substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, "/") + 1);
+                $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
                 // Download the title icon if we don't have it
                 if (!file_exists("../img/title/". $trophyTitleIconFilename)) {
                     file_put_contents("../img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
@@ -247,7 +245,7 @@ while ($tempPlayer = $queueQuery->fetch()) {
 
                 foreach ($trophyGroups as $trophyGroup) {
                     $trophyGroupIconUrl = $trophyGroup->trophyGroupIconUrl;
-                    $trophyGroupIconFilename = substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, "/") + 1);
+                    $trophyGroupIconFilename = md5_file($trophyGroupIconUrl) . strtolower(substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, ".")));
                     // Download the group icon if we don't have it
                     if (!file_exists("../img/group/". $trophyGroupIconFilename)) {
                         file_put_contents("../img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
@@ -283,7 +281,7 @@ while ($tempPlayer = $queueQuery->fetch()) {
 
                         foreach ($trophies as $trophy) {
                             $trophyIconUrl = $trophy->trophyIconUrl;
-                            $trophyIconFilename = substr($trophyIconUrl, strrpos($trophyIconUrl, "/") + 1);
+                            $trophyIconFilename = md5_file($trophyIconUrl) . strtolower(substr($trophyIconUrl, strrpos($trophyIconUrl, ".")));
                             // Download the trophy icon if we don't have it
                             if (!file_exists("../img/trophy/". $trophyIconFilename)) {
                                 file_put_contents("../img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
