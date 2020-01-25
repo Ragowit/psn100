@@ -12,6 +12,8 @@ $elements = explode("/", $path); // Split path on slashes
 if (empty($elements[0])) { // No path elements means home
     require_once("home.php");
 } else {
+    $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
+
     switch (array_shift($elements)) {
         case "about":
             if (empty($elements[0])) {

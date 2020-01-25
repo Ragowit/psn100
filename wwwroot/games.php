@@ -26,12 +26,8 @@ require_once("header.php");
                 <nav aria-label="Page navigation">
                     <?php
                     if (isset($_GET["search"])) {
-                        $search = "%". $_GET["search"] ."%";
-
-                        // Tried with "SELECT * FROM trophy_title WHERE MATCH(name) AGAINST (:search WITH QUERY EXPANSION) UNION SELECT * FROM trophy_title WHERE MATCH(name) AGAINST (:search IN BOOLEAN MODE) GROUP BY np_communication_id"
-                        // before, but it didn't turn up as good as expected. Tried to search for Final Exam which is an exact title in the database, and turned up with Final Fantasy XV. Final Exam was in place 30.
-                        // Also, the webhost provider uses an old version of MySQL so it required MyISAM instead if InnoDB to even work. So, until a better search function is found, use the standard LIKE query and InnoDB database.
-                        $query = $database->prepare("SELECT COUNT(*) FROM trophy_title WHERE name LIKE :search");
+                        $search = $_GET["search"];
+                        $query = $database->prepare("SELECT COUNT(*) FROM `trophy_title` WHERE (MATCH(name) AGAINST (:search)) > 0");
                         $query->bindParam(":search", $search, PDO::PARAM_STR);
                     } else {
                         $query = $database->prepare("SELECT COUNT(*) FROM trophy_title");
@@ -121,12 +117,8 @@ require_once("header.php");
 
                     <?php
                     if (isset($_GET["search"])) {
-                        $search = "%". $_GET["search"] ."%";
-
-                        // Tried with "SELECT * FROM trophy_title WHERE MATCH(name) AGAINST (:search WITH QUERY EXPANSION) UNION SELECT * FROM trophy_title WHERE MATCH(name) AGAINST (:search IN BOOLEAN MODE) GROUP BY np_communication_id"
-                        // before, but it didn't turn up as good as expected. Tried to search for Final Exam which is an exact title in the database, and turned up with Final Fantasy XV. Final Exam was in place 30.
-                        // Also, the webhost provider uses an old version of MySQL so it required MyISAM instead if InnoDB to even work. So, until a better search function is found, use the standard LIKE query and InnoDB database.
-                        $games = $database->prepare("SELECT * FROM trophy_title WHERE name LIKE :search LIMIT :offset, :limit");
+                        $search = $_GET["search"];
+                        $games = $database->prepare("SELECT *, MATCH(name) AGAINST (:search) AS score FROM `trophy_title` WHERE (MATCH(name) AGAINST (:search)) > 0 ORDER BY score DESC LIMIT :offset, :limit");
                         $games->bindParam(":search", $search, PDO::PARAM_STR);
                         $games->bindParam(":offset", $offset, PDO::PARAM_INT);
                         $games->bindParam(":limit", $limit, PDO::PARAM_INT);
