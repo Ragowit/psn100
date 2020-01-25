@@ -209,14 +209,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     continue;
                 }
 
-                // Get the title icon url we want to save
-                $trophyTitleIconUrl = $game->trophyTitleIconUrl;
-                $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
-                // Download the title icon if we don't have it
-                if (!file_exists("../img/title/". $trophyTitleIconFilename)) {
-                    file_put_contents("../img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
-                }
-
                 // Add trophy title (game) information into database
                 // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
                 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title WHERE np_communication_id = :np_communication_id");
@@ -224,6 +216,14 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 $query->execute();
                 $check = $query->fetchColumn();
                 if ($check == 0) {
+                    // Get the title icon url we want to save
+                    $trophyTitleIconUrl = $game->trophyTitleIconUrl;
+                    $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
+                    // Download the title icon if we don't have it
+                    if (!file_exists("../img/title/". $trophyTitleIconFilename)) {
+                        file_put_contents("../img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
+                    }
+
                     $query = $database->prepare("INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform) VALUES (:np_communication_id, :name, :detail, :icon_url, :platform)");
                 } else {
                     $query = $database->prepare("UPDATE trophy_title SET name = :name, detail = :detail, icon_url = :icon_url, platform = :platform WHERE np_communication_id = :np_communication_id");
@@ -244,13 +244,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                 }
 
                 foreach ($trophyGroups as $trophyGroup) {
-                    $trophyGroupIconUrl = $trophyGroup->trophyGroupIconUrl;
-                    $trophyGroupIconFilename = md5_file($trophyGroupIconUrl) . strtolower(substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, ".")));
-                    // Download the group icon if we don't have it
-                    if (!file_exists("../img/group/". $trophyGroupIconFilename)) {
-                        file_put_contents("../img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
-                    }
-
                     // Add trophy group (game + dlcs) into database
                     // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
                     $query = $database->prepare("SELECT COUNT(*) FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
@@ -259,6 +252,13 @@ while ($tempPlayer = $queueQuery->fetch()) {
                     $query->execute();
                     $check = $query->fetchColumn();
                     if ($check == 0) {
+                        $trophyGroupIconUrl = $trophyGroup->trophyGroupIconUrl;
+                        $trophyGroupIconFilename = md5_file($trophyGroupIconUrl) . strtolower(substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, ".")));
+                        // Download the group icon if we don't have it
+                        if (!file_exists("../img/group/". $trophyGroupIconFilename)) {
+                            file_put_contents("../img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
+                        }
+
                         $query = $database->prepare("INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url) VALUES (:np_communication_id, :group_id, :name, :detail, :icon_url)");
                     } else {
                         $query = $database->prepare("UPDATE trophy_group SET name = :name, detail = :detail, icon_url = :icon_url WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
@@ -280,13 +280,6 @@ while ($tempPlayer = $queueQuery->fetch()) {
                         $queryInsertTrophyEarned = $database->prepare("INSERT IGNORE INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date) VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)");
 
                         foreach ($trophies as $trophy) {
-                            $trophyIconUrl = $trophy->trophyIconUrl;
-                            $trophyIconFilename = md5_file($trophyIconUrl) . strtolower(substr($trophyIconUrl, strrpos($trophyIconUrl, ".")));
-                            // Download the trophy icon if we don't have it
-                            if (!file_exists("../img/trophy/". $trophyIconFilename)) {
-                                file_put_contents("../img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
-                            }
-
                             // Add trophies into database
                             // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
                             $query = $database->prepare("SELECT COUNT(*) FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
@@ -296,6 +289,13 @@ while ($tempPlayer = $queueQuery->fetch()) {
                             $query->execute();
                             $check = $query->fetchColumn();
                             if ($check == 0) {
+                                $trophyIconUrl = $trophy->trophyIconUrl;
+                                $trophyIconFilename = md5_file($trophyIconUrl) . strtolower(substr($trophyIconUrl, strrpos($trophyIconUrl, ".")));
+                                // Download the trophy icon if we don't have it
+                                if (!file_exists("../img/trophy/". $trophyIconFilename)) {
+                                    file_put_contents("../img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
+                                }
+
                                 $queryInsertTrophy = $database->prepare("INSERT INTO trophy (np_communication_id, group_id, order_id, hidden, type, name, detail, icon_url, rare, earned_rate) VALUES (:np_communication_id, :group_id, :order_id, :hidden, :type, :name, :detail, :icon_url, :rare, :earned_rate)");
                             } else {
                                 $queryInsertTrophy = $database->prepare("UPDATE trophy SET hidden = :hidden, type = :type, name = :name, detail = :detail, icon_url = :icon_url, rare = :rare, earned_rate = :earned_rate WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
