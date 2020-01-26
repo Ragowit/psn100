@@ -54,13 +54,21 @@ $query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = CASE WHE
 $query->execute();
 
 // Recalculate trophy rarity. THIS ONE IS SLOW! TODO: How to speed it up?
-$query = $database->prepare("UPDATE trophy t SET t.rarity_percent = IF((SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id) = 0, 0, (
-    SELECT COUNT(*) FROM trophy_earned te
-    JOIN player p USING (account_id)
-    WHERE te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
-    ) / (
-    SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id
-    ) * 100)");
+$query = $database->prepare("UPDATE trophy t SET t.rarity_percent = CASE
+    WHEN (SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id) = 0 THEN 0
+    WHEN (SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id) <= (
+        SELECT COUNT(*) FROM trophy_earned te
+        JOIN player p USING (account_id)
+        WHERE te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
+        ) THEN 100
+    ELSE
+        ((SELECT COUNT(*) FROM trophy_earned te
+        JOIN player p USING (account_id)
+        WHERE te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
+        ) / (
+            SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id
+        ) * 100)
+    END");
 $query->execute();
 
 // Recalculate trophy rarity point
