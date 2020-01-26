@@ -33,11 +33,16 @@ foreach ($workers as $worker) {
 }
 $database->commit();
 
-// Get our queue. Prioritize user requests, and then just old scanned players from our database.
-$queueQuery = $database->prepare("SELECT * FROM (SELECT 1 AS tier, online_id, request_time FROM player_queue UNION ALL SELECT 2 AS tier, online_id, last_updated_date FROM player WHERE rank <= 100000) a ORDER BY tier, request_time, online_id");
-$queueQuery->execute();
-while ($tempPlayer = $queueQuery->fetch()) {
-    $player = $tempPlayer["online_id"];
+while (true) {
+    // Get our queue. Prioritize user requests, and then just old scanned players from our database.
+    $query = $database->prepare("SELECT online_id FROM (
+        SELECT 1 AS tier, online_id, request_time FROM player_queue
+        UNION ALL
+        SELECT 2 AS tier, online_id, last_updated_date FROM player WHERE rank <= 100000) a
+        ORDER BY tier, request_time, online_id
+        LIMIT 1");
+    $query->execute();
+    $player = $query->fetchColumn();
 
     // Initialize the current player
     $users = array();
