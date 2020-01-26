@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 26, 2020 at 06:19 PM
+-- Generation Time: Jan 26, 2020 at 11:28 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -43,7 +43,7 @@ CREATE TABLE `player` (
   `level` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
   `progress` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
   `points` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_points` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `rarity_points` int(10) UNSIGNED NOT NULL DEFAULT '0',
   `rank` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `rank_last_week` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
@@ -52,11 +52,11 @@ CREATE TABLE `player` (
   `rank_country_last_week` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_country` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_country_last_week` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
-  `common` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `uncommon` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `rare` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `epic` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `legendary` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `common` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `uncommon` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `rare` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `epic` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `legendary` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint(3) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -198,7 +198,7 @@ CREATE TABLE `trophy_title_player` (
   `platinum` smallint(5) UNSIGNED NOT NULL,
   `progress` tinyint(3) UNSIGNED NOT NULL,
   `last_updated_date` datetime NOT NULL,
-  `rarity_points` smallint(5) UNSIGNED NOT NULL DEFAULT '0'
+  `rarity_points` mediumint(8) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
