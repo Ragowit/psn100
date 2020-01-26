@@ -6,13 +6,12 @@ if (!isset($_COOKIE["seen_cookie"])) {
     $showCookie = true;
 }
 
-$path = ltrim($_SERVER["REQUEST_URI"], "/"); // Trim leading slash(es)
+$path = ltrim($_SERVER["SCRIPT_URL"], "/"); // Trim leading slash(es)
 $elements = explode("/", $path); // Split path on slashes
 
 if (empty($elements[0])) { // No path elements means home
     require_once("home.php");
 } else {
-    $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
     switch (array_shift($elements)) {
         case "about":
             if (empty($elements[0])) {
@@ -34,7 +33,6 @@ if (empty($elements[0])) { // No path elements means home
             if (empty($elements[0])) {
                 require_once("games.php");
             } else {
-                $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
                 $gameId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy_title WHERE id = :id");
                 $query->bindParam(":id", $gameId, PDO::PARAM_INT);
@@ -55,7 +53,6 @@ if (empty($elements[0])) { // No path elements means home
                 header("Location: /game/", true, 303);
                 die();
             } else {
-                $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
                 $gameId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy_title WHERE id = :id");
                 $query->bindParam(":id", $gameId, PDO::PARAM_INT);
@@ -76,7 +73,6 @@ if (empty($elements[0])) { // No path elements means home
                 header("Location: /leaderboard/main", true, 303);
                 die();
             } else {
-                $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
                 switch (array_shift($elements)) {
                     case "main":
                         require_once("leaderboard_main.php");
@@ -95,7 +91,6 @@ if (empty($elements[0])) { // No path elements means home
                 header("Location: /leaderboard/main", true, 303);
                 die();
             } else {
-                $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
                 $onlineId = array_shift($elements);
                 $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
                 $query->bindParam(":online_id", $onlineId, PDO::PARAM_STR);
@@ -108,7 +103,6 @@ if (empty($elements[0])) { // No path elements means home
                     die();
                 }
 
-                $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
                 switch (array_shift($elements)) {
                     case "":
                         require_once("player.php");
@@ -129,7 +123,6 @@ if (empty($elements[0])) { // No path elements means home
             if (empty($elements[0])) {
                 require_once("trophies.php");
             } else {
-                $elements[0] = strstr($elements[0], "?", true) ?: $elements[0];
                 $trophyId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy WHERE id = :id");
                 $query->bindParam(":id", $trophyId, PDO::PARAM_INT);
