@@ -2,9 +2,8 @@
 ini_set("max_execution_time", "1800");
 ini_set("mysql.connect_timeout", "1800");
 set_time_limit(1800);
-// The lines above doesn't seem to do anything on my webhost. 504 after about 5 minutes anyway.
-require_once("../vendor/autoload.php");
-require_once("../init.php");
+require_once("/home/psn100/public_html/vendor/autoload.php");
+require_once("/home/psn100/public_html/init.php");
 
 use PlayStation\Client;
 
@@ -123,8 +122,8 @@ while (true) {
     $avatarUrl = $info->avatarUrls[0]->avatarUrl;
     $avatarFilename = md5_file($avatarUrl) . strtolower(substr($avatarUrl, strrpos($avatarUrl, ".")));
     // Download the avatar if we don't have it
-    if (!file_exists("../img/avatar/". $avatarFilename)) {
-        file_put_contents("../img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
+    if (!file_exists("/home/psn100/public_html/img/avatar/". $avatarFilename)) {
+        file_put_contents("/home/psn100/public_html/img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
     }
 
     // Plus is null or 1, we don't want null so this will make it 0 if so.
@@ -205,7 +204,7 @@ while (true) {
                 if ($sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$game->npCommunicationId])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
 
-                    if ($skippedGames >= 248 && $playerLastUpdatedDate != "0000-00-00 00:00:00") { // New players have "0000-00-00 00:00:00", and will thus continue with a full scan.
+                    if ($skippedGames >= 248 && $playerLastUpdatedDate != null) { // New players have null as last updated date, and will thus continue with a full scan.
                         // 248 skipped games (a little bit less then two trophyTitles() fetches), we can assume we are done with this player.
                         break 2;
                     }
@@ -225,18 +224,18 @@ while (true) {
                     $trophyTitleIconUrl = $game->trophyTitleIconUrl;
                     $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
                     // Download the title icon if we don't have it
-                    if (!file_exists("../img/title/". $trophyTitleIconFilename)) {
-                        file_put_contents("../img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
+                    if (!file_exists("/home/psn100/public_html/img/title/". $trophyTitleIconFilename)) {
+                        file_put_contents("/home/psn100/public_html/img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
                     }
 
                     $query = $database->prepare("INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform) VALUES (:np_communication_id, :name, :detail, :icon_url, :platform)");
+                    $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                 } else {
-                    $query = $database->prepare("UPDATE trophy_title SET name = :name, detail = :detail, icon_url = :icon_url, platform = :platform WHERE np_communication_id = :np_communication_id");
+                    $query = $database->prepare("UPDATE trophy_title SET name = :name, detail = :detail, platform = :platform WHERE np_communication_id = :np_communication_id");
                 }
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                 $query->bindParam(":name", $game->trophyTitleName, PDO::PARAM_STR);
                 $query->bindParam(":detail", $game->trophyTitleDetail, PDO::PARAM_STR);
-                $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                 $query->bindParam(":platform", $game->trophyTitlePlatfrom, PDO::PARAM_STR);
                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                 $query->execute();
@@ -260,19 +259,19 @@ while (true) {
                         $trophyGroupIconUrl = $trophyGroup->trophyGroupIconUrl;
                         $trophyGroupIconFilename = md5_file($trophyGroupIconUrl) . strtolower(substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, ".")));
                         // Download the group icon if we don't have it
-                        if (!file_exists("../img/group/". $trophyGroupIconFilename)) {
-                            file_put_contents("../img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
+                        if (!file_exists("/home/psn100/public_html/img/group/". $trophyGroupIconFilename)) {
+                            file_put_contents("/home/psn100/public_html/img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
                         }
 
                         $query = $database->prepare("INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url) VALUES (:np_communication_id, :group_id, :name, :detail, :icon_url)");
+                        $query->bindParam(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
                     } else {
-                        $query = $database->prepare("UPDATE trophy_group SET name = :name, detail = :detail, icon_url = :icon_url WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
+                        $query = $database->prepare("UPDATE trophy_group SET name = :name, detail = :detail WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
                     }
                     $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                     $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
                     $query->bindParam(":name", $trophyGroup->trophyGroupName, PDO::PARAM_STR);
                     $query->bindParam(":detail", $trophyGroup->trophyGroupDetail, PDO::PARAM_STR);
-                    $query->bindParam(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                     $query->execute();
 
@@ -297,13 +296,14 @@ while (true) {
                                 $trophyIconUrl = $trophy->trophyIconUrl;
                                 $trophyIconFilename = md5_file($trophyIconUrl) . strtolower(substr($trophyIconUrl, strrpos($trophyIconUrl, ".")));
                                 // Download the trophy icon if we don't have it
-                                if (!file_exists("../img/trophy/". $trophyIconFilename)) {
-                                    file_put_contents("../img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
+                                if (!file_exists("/home/psn100/public_html/img/trophy/". $trophyIconFilename)) {
+                                    file_put_contents("/home/psn100/public_html/img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
                                 }
 
                                 $queryInsertTrophy = $database->prepare("INSERT INTO trophy (np_communication_id, group_id, order_id, hidden, type, name, detail, icon_url, rare, earned_rate) VALUES (:np_communication_id, :group_id, :order_id, :hidden, :type, :name, :detail, :icon_url, :rare, :earned_rate)");
+                                $queryInsertTrophy->bindParam(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
                             } else {
-                                $queryInsertTrophy = $database->prepare("UPDATE trophy SET hidden = :hidden, type = :type, name = :name, detail = :detail, icon_url = :icon_url, rare = :rare, earned_rate = :earned_rate WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
+                                $queryInsertTrophy = $database->prepare("UPDATE trophy SET hidden = :hidden, type = :type, name = :name, detail = :detail, rare = :rare, earned_rate = :earned_rate WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
                             }
                             $queryInsertTrophy->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                             $queryInsertTrophy->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
@@ -312,7 +312,6 @@ while (true) {
                             $queryInsertTrophy->bindParam(":type", $trophy->trophyType, PDO::PARAM_STR);
                             $queryInsertTrophy->bindParam(":name", $trophy->trophyName, PDO::PARAM_STR);
                             $queryInsertTrophy->bindParam(":detail", $trophy->trophyDetail, PDO::PARAM_STR);
-                            $queryInsertTrophy->bindParam(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
                             $queryInsertTrophy->bindParam(":rare", $trophy->trophyRare, PDO::PARAM_INT);
                             $queryInsertTrophy->bindParam(":earned_rate", $trophy->trophyEarnedRate, PDO::PARAM_STR);
                             // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
@@ -427,6 +426,8 @@ while (true) {
                         $progress = 1;
                     }
                 }
+                $dateTimeObject = DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $game->comparedUser->lastUpdateDate);
+                $dtAsTextForInsert = $dateTimeObject->format("Y-m-d H:i:s");
                 $query = $database->prepare("INSERT INTO trophy_title_player (np_communication_id, account_id, bronze, silver, gold, platinum, progress, last_updated_date) VALUES (:np_communication_id, :account_id, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date) ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress), last_updated_date=VALUES(last_updated_date)");
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                 $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
@@ -435,7 +436,7 @@ while (true) {
                 $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
                 $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
                 $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-                $query->bindParam(":last_updated_date", $game->comparedUser->lastUpdateDate, PDO::PARAM_STR);
+                $query->bindParam(":last_updated_date", $dtAsTextForInsert, PDO::PARAM_STR);
                 $query->execute();
             }
 
