@@ -2,8 +2,7 @@
 ini_set("max_execution_time", "0");
 ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
-// The lines above doesn't seem to do anything on my webhost. 504 after about 5 minutes anyway.
-require_once("../init.php");
+require_once("/home/psn100/public_html/init.php");
 
 // Update ranks
 $query = $database->prepare("SELECT account_id, points, country FROM player WHERE status = 0 ORDER BY points DESC, platinum DESC, gold DESC, silver DESC, bronze DESC");
@@ -46,12 +45,12 @@ $query = $database->prepare("UPDATE trophy_title tt SET tt.owners = (
 $query->execute();
 
 // Update game difficulty
-$query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = ((
+$query = $database->prepare("UPDATE trophy_title tt SET tt.difficulty = CASE WHEN tt.owners = 0 THEN 0 ELSE ((
     SELECT COUNT(*) FROM trophy_title_player ttp
     JOIN player p USING (account_id)
     WHERE p.status = 0 AND p.rank <= 100000 AND ttp.progress = 100 AND ttp.np_communication_id = tt.np_communication_id
     ) / tt.owners
-    ) * 100");
+) * 100 END");
 $query->execute();
 
 // Recalculate trophy rarity. THIS ONE IS SLOW! TODO: How to speed it up?
@@ -59,7 +58,7 @@ $query = $database->prepare("UPDATE trophy t SET t.rarity_percent = (
     SELECT COUNT(*) FROM trophy_earned te
     JOIN player p USING (account_id)
     WHERE te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
-    ) / (
+    ) / GREATEST(1,
     SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id
     ) * 100");
 $query->execute();
