@@ -12,7 +12,9 @@ require_once("../init.php");
     <body>
         <a href="/admin/">Back</a><br><br>
         <?php
-        $query = $database->prepare("SELECT p.online_id AS player_name, tt.id AS game_id, tt.name AS game_name FROM player p JOIN trophy_earned te USING (account_id) JOIN trophy_title tt USING (np_communication_id) WHERE (
+        $query = $database->prepare("SELECT p.online_id AS player_name, MIN(tt.id) AS game_id, MIN(tt.name) AS game_name FROM player p
+        JOIN trophy_earned te USING (account_id)
+        JOIN trophy_title tt USING (np_communication_id) WHERE (
         (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 2) OR
         (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 9) OR
         (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 19) OR
