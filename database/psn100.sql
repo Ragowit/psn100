@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 26, 2020 at 11:28 PM
+-- Generation Time: Jan 27, 2020 at 08:14 AM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -134,10 +134,10 @@ CREATE TABLE `trophy_group` (
   `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `detail` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `icon_url` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `bronze` smallint(5) UNSIGNED NOT NULL,
-  `silver` smallint(5) UNSIGNED NOT NULL,
-  `gold` smallint(5) UNSIGNED NOT NULL,
-  `platinum` smallint(5) UNSIGNED NOT NULL
+  `bronze` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `silver` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `gold` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `platinum` smallint(5) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -171,15 +171,15 @@ CREATE TABLE `trophy_title` (
   `detail` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `icon_url` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `platform` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `bronze` smallint(5) UNSIGNED NOT NULL,
-  `silver` smallint(5) UNSIGNED NOT NULL,
-  `gold` smallint(5) UNSIGNED NOT NULL,
-  `platinum` smallint(5) UNSIGNED NOT NULL,
-  `owners` int(10) UNSIGNED NOT NULL,
-  `difficulty` decimal(5,2) UNSIGNED NOT NULL,
+  `bronze` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `silver` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `gold` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `platinum` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `owners` int(10) UNSIGNED NOT NULL DEFAULT '0',
+  `difficulty` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` tinyint(3) UNSIGNED NOT NULL,
-  `recent_players` int(10) UNSIGNED NOT NULL
+  `status` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
+  `recent_players` int(10) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
