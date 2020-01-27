@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 27, 2020 at 08:14 AM
+-- Generation Time: Jan 27, 2020 at 06:12 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -100,10 +100,10 @@ CREATE TABLE `trophy` (
   `icon_url` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `rare` tinyint(3) UNSIGNED NOT NULL,
   `earned_rate` decimal(5,2) UNSIGNED NOT NULL,
-  `rarity_percent` decimal(5,2) UNSIGNED NOT NULL,
-  `rarity_point` smallint(5) UNSIGNED NOT NULL,
-  `status` tinyint(3) UNSIGNED NOT NULL,
-  `owners` int(10) UNSIGNED NOT NULL
+  `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
+  `rarity_point` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `status` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
+  `owners` int(10) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
