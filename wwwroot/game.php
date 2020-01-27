@@ -116,7 +116,7 @@ require_once("header.php");
                     <table class="table table-responsive table-striped">
                         <?php
                         if (isset($accountId)) {
-                            $query = $database->prepare("SELECT order_id, earned_date FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = 'default' AND account_id = :account_id");
+                            $query = $database->prepare("SELECT order_id, IFNULL(earned_date, 'No Timestamp') AS earned_date FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = 'default' AND account_id = :account_id");
                             $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                             $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                             $query->execute();
@@ -226,7 +226,7 @@ require_once("header.php");
 
                     <?php
                     if (isset($accountId)) {
-                        $query = $database->prepare("SELECT order_id, earned_date FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND account_id = :account_id");
+                        $query = $database->prepare("SELECT order_id, IFNULL(earned_date, 'No Timestamp') AS earned_date FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND account_id = :account_id");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
                         $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
