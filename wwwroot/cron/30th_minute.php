@@ -204,13 +204,15 @@ while (true) {
                 if ($sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$game->npCommunicationId])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
 
-                    if ($skippedGames >= 248 && $playerLastUpdatedDate != null) { // New players have null as last updated date, and will thus continue with a full scan.
-                        // 248 skipped games (a little bit less then two trophyTitles() fetches), we can assume we are done with this player.
-                        break 2;
-                    }
+                    if ($playerLastUpdatedDate != null) { // New players have null as last updated date, and will thus continue with a full scan.
+                        if ($skippedGames >= 248) {
+                            // 248 skipped games (a little bit less then two trophyTitles() fetches), we can assume we are done with this player.
+                            break 2;
+                        }
 
-                    // Game seems scanned already, skip to next.
-                    continue;
+                        // Game seems scanned already, skip to next.
+                        continue;
+                    }
                 }
 
                 // Add trophy title (game) information into database
@@ -228,7 +230,7 @@ while (true) {
                         file_put_contents("/home/psn100/public_html/img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
                     }
 
-                    $query = $database->prepare("INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform) VALUES (:np_communication_id, :name, :detail, :icon_url, :platform)");
+                    $query = $database->prepare("INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, message) VALUES (:np_communication_id, :name, :detail, :icon_url, :platform, '')");
                     $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                 } else {
                     $query = $database->prepare("UPDATE trophy_title SET name = :name, detail = :detail, platform = :platform WHERE np_communication_id = :np_communication_id");
@@ -281,8 +283,6 @@ while (true) {
                         $client = 0;
                     }
                     foreach ($result as $trophies) {
-                        $queryInsertTrophyEarned = $database->prepare("INSERT IGNORE INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date) VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)");
-
                         foreach ($trophies as $trophy) {
                             // Add trophies into database
                             // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
@@ -319,12 +319,31 @@ while (true) {
 
                             // If the player have earned the trophy, add it into the database
                             if ($trophy->comparedUser->earned == "1") {
-                                $queryInsertTrophyEarned->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
-                                $queryInsertTrophyEarned->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
-                                $queryInsertTrophyEarned->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
-                                $queryInsertTrophyEarned->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-                                $queryInsertTrophyEarned->bindParam(":earned_date", $trophy->comparedUser->earnedDate, PDO::PARAM_STR);
-                                $queryInsertTrophyEarned->execute();
+                                // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
+                                $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id AND account_id = :account_id");
+                                $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                                $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
+                                $query->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
+                                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                                $query->execute();
+                                $check = $query->fetchColumn();
+                                if ($check == 0) {
+                                    $query = $database->prepare("INSERT IGNORE INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date) VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)");
+                                } else {
+                                    $query = $database->prepare("UPDATE trophy_earned SET earned_date = :earned_date WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id AND account_id = :account_id");
+                                }
+                                $dateTimeObject = DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $trophy->comparedUser->earnedDate);
+                                if ($dateTimeObject === false) {
+                                    $dtAsTextForInsert = null;
+                                } else {
+                                    $dtAsTextForInsert = $dateTimeObject->format("Y-m-d H:i:s");
+                                }
+                                $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                                $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
+                                $query->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
+                                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                                $query->bindParam(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
+                                $query->execute();
                             }
                         }
                     }
