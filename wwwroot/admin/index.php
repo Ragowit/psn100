@@ -12,6 +12,7 @@
             <li><a href="/admin/delisting.php">Delisted Game</a></li>
             <li><a href="/admin/message.php">Game Message</a></li>
             <li><a href="/admin/possible.php">Possible Cheaters</a></li>
+            <li><a href="/admin/rescan.php">Rescan Game</a></li>
             <li><a href="/admin/unobtainable.php">Unobtainable trophy</a></li>
         </ul>
     </body>
