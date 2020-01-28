@@ -138,12 +138,15 @@ while ($player = $query->fetch()) {
 }
 
 // Recalculate recent players
-$query = $database->prepare("UPDATE trophy_title tt, (
-    SELECT np_communication_id, COUNT(*) AS count FROM trophy_title_player ttp
+$select = $database->prepare("SELECT np_communication_id, COUNT(*) AS count
+    FROM trophy_title_player ttp
     JOIN player p USING (account_id)
-    JOIN trophy_title tt USING (np_communication_id)
     WHERE p.status = 0 AND p.rank <= 1000000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
-    GROUP BY np_communication_id) x
-    SET tt.recent_players = x.count
-    WHERE tt.np_communication_id = x.np_communication_id");
-$query->execute();
+    GROUP BY np_communication_id");
+$select->execute();
+while ($row = $select->fetch()) {
+    $update = $database->prepare("UPDATE trophy_title SET recent_players = :recent_players WHERE np_communication_id = :np_communication_id");
+    $update->bindParam(":recent_players", $row["count"], PDO::PARAM_INT);
+    $update->bindParam(":np_communication_id", $row["np_communication_id"], PDO::PARAM_STR);
+    $update->execute();
+}
