@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 28, 2020 at 07:38 PM
+-- Generation Time: Jan 28, 2020 at 09:19 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -336,24 +336,6 @@ ALTER TABLE `trophy_title`
 --
 ALTER TABLE `trophy_title_player`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `trophy_group_player`
---
-ALTER TABLE `trophy_group_player`
-  ADD CONSTRAINT `fk_p_tgp` FOREIGN KEY (`account_id`) REFERENCES `player` (`account_id`),
-  ADD CONSTRAINT `fk_tg_tgp` FOREIGN KEY (`np_communication_id`,`group_id`) REFERENCES `trophy_group` (`np_communication_id`, `group_id`);
-
---
--- Constraints for table `trophy_title_player`
---
-ALTER TABLE `trophy_title_player`
-  ADD CONSTRAINT `fk_p_ttp` FOREIGN KEY (`account_id`) REFERENCES `player` (`account_id`),
-  ADD CONSTRAINT `fk_tt_ttp` FOREIGN KEY (`np_communication_id`) REFERENCES `trophy_title` (`np_communication_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
