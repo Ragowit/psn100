@@ -189,7 +189,7 @@ while (true) {
                 {
                     die();
                 }
-    
+
                 try {
                     $trophyTitles = $users[$client]->trophyTitles($offset);
                     $fetchTrophyTitles = false;
@@ -227,7 +227,7 @@ while (true) {
                 }
 
                 // Add trophy title (game) information into database
-                // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
+                // INSERT IGNORE  makes the autoincrement tick as well. We don't want that.
                 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title WHERE np_communication_id = :np_communication_id");
                 $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                 $query->execute();
@@ -242,16 +242,14 @@ while (true) {
                     }
 
                     $query = $database->prepare("INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, message) VALUES (:np_communication_id, :name, :detail, :icon_url, :platform, '')");
+                    $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                    $query->bindParam(":name", $game->trophyTitleName, PDO::PARAM_STR);
+                    $query->bindParam(":detail", $game->trophyTitleDetail, PDO::PARAM_STR);
                     $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
-                } else {
-                    $query = $database->prepare("UPDATE trophy_title SET name = :name, detail = :detail, platform = :platform WHERE np_communication_id = :np_communication_id");
+                    $query->bindParam(":platform", $game->trophyTitlePlatfrom, PDO::PARAM_STR);
+                    // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
+                    $query->execute();
                 }
-                $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
-                $query->bindParam(":name", $game->trophyTitleName, PDO::PARAM_STR);
-                $query->bindParam(":detail", $game->trophyTitleDetail, PDO::PARAM_STR);
-                $query->bindParam(":platform", $game->trophyTitlePlatfrom, PDO::PARAM_STR);
-                // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                $query->execute();
 
                 // Get "groups" (game and DLCs)
                 if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
@@ -266,7 +264,7 @@ while (true) {
 
                 foreach ($trophyGroups as $trophyGroup) {
                     // Add trophy group (game + dlcs) into database
-                    // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
+                    // INSERT IGNORE  makes the autoincrement tick as well. We don't want that.
                     $query = $database->prepare("SELECT COUNT(*) FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
                     $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                     $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
@@ -281,16 +279,14 @@ while (true) {
                         }
 
                         $query = $database->prepare("INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url) VALUES (:np_communication_id, :group_id, :name, :detail, :icon_url)");
+                        $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                        $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
+                        $query->bindParam(":name", $trophyGroup->trophyGroupName, PDO::PARAM_STR);
+                        $query->bindParam(":detail", $trophyGroup->trophyGroupDetail, PDO::PARAM_STR);
                         $query->bindParam(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
-                    } else {
-                        $query = $database->prepare("UPDATE trophy_group SET name = :name, detail = :detail WHERE np_communication_id = :np_communication_id AND group_id = :group_id");
+                        // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
+                        $query->execute();
                     }
-                    $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
-                    $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
-                    $query->bindParam(":name", $trophyGroup->trophyGroupName, PDO::PARAM_STR);
-                    $query->bindParam(":detail", $trophyGroup->trophyGroupDetail, PDO::PARAM_STR);
-                    // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                    $query->execute();
 
                     if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
                     {
@@ -304,7 +300,7 @@ while (true) {
                     foreach ($result as $trophies) {
                         foreach ($trophies as $trophy) {
                             // Add trophies into database
-                            // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
+                            // INSERT IGNORE  makes the autoincrement tick as well. We don't want that.
                             $query = $database->prepare("SELECT COUNT(*) FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
                             $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                             $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
@@ -320,21 +316,19 @@ while (true) {
                                 }
 
                                 $queryInsertTrophy = $database->prepare("INSERT INTO trophy (np_communication_id, group_id, order_id, hidden, type, name, detail, icon_url, rare, earned_rate) VALUES (:np_communication_id, :group_id, :order_id, :hidden, :type, :name, :detail, :icon_url, :rare, :earned_rate)");
+                                $queryInsertTrophy->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                                $queryInsertTrophy->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
+                                $queryInsertTrophy->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
+                                $queryInsertTrophy->bindParam(":hidden", $trophy->trophyHidden, PDO::PARAM_INT);
+                                $queryInsertTrophy->bindParam(":type", $trophy->trophyType, PDO::PARAM_STR);
+                                $queryInsertTrophy->bindParam(":name", $trophy->trophyName, PDO::PARAM_STR);
+                                $queryInsertTrophy->bindParam(":detail", $trophy->trophyDetail, PDO::PARAM_STR);
                                 $queryInsertTrophy->bindParam(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
-                            } else {
-                                $queryInsertTrophy = $database->prepare("UPDATE trophy SET hidden = :hidden, type = :type, name = :name, detail = :detail, rare = :rare, earned_rate = :earned_rate WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id");
+                                $queryInsertTrophy->bindParam(":rare", $trophy->trophyRare, PDO::PARAM_INT);
+                                $queryInsertTrophy->bindParam(":earned_rate", $trophy->trophyEarnedRate, PDO::PARAM_STR);
+                                // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
+                                $queryInsertTrophy->execute();
                             }
-                            $queryInsertTrophy->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
-                            $queryInsertTrophy->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
-                            $queryInsertTrophy->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
-                            $queryInsertTrophy->bindParam(":hidden", $trophy->trophyHidden, PDO::PARAM_INT);
-                            $queryInsertTrophy->bindParam(":type", $trophy->trophyType, PDO::PARAM_STR);
-                            $queryInsertTrophy->bindParam(":name", $trophy->trophyName, PDO::PARAM_STR);
-                            $queryInsertTrophy->bindParam(":detail", $trophy->trophyDetail, PDO::PARAM_STR);
-                            $queryInsertTrophy->bindParam(":rare", $trophy->trophyRare, PDO::PARAM_INT);
-                            $queryInsertTrophy->bindParam(":earned_rate", $trophy->trophyEarnedRate, PDO::PARAM_STR);
-                            // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                            $queryInsertTrophy->execute();
 
                             // If the player have earned the trophy, add it into the database
                             if ($trophy->comparedUser->earned == "1") {
@@ -479,7 +473,7 @@ while (true) {
             }
 
             $offset += 128 - 8; // Subtract a little bit in-case the player have gotten new games while we are scanning
-            
+
             $query = $database->prepare("INSERT INTO player_queue (online_id, offset) VALUES (:online_id, :offset) ON DUPLICATE KEY UPDATE offset=VALUES(offset)");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->bindParam(":offset", $offset, PDO::PARAM_INT);
