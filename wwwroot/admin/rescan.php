@@ -128,7 +128,7 @@ if (isset($_POST["game"])) {
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <title>Admin ~ Cheater</title>
+        <title>Admin ~ Rescan Game</title>
     </head>
     <body>
         <a href="/admin/">Back</a><br><br>
