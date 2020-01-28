@@ -1,11 +1,13 @@
 <?php
-ini_set("max_execution_time", "1800");
-ini_set("mysql.connect_timeout", "1800");
-set_time_limit(1800);
+ini_set("max_execution_time", "0");
+ini_set("mysql.connect_timeout", "0");
+set_time_limit(0);
 require_once("/home/psn100/public_html/vendor/autoload.php");
 require_once("/home/psn100/public_html/init.php");
 
 use PlayStation\Client;
+
+$maxTime = 1800; // 1800 seconds = 30 minutes
 
 // Get current tokens
 $query = $database->prepare("SELECT * FROM setting");
@@ -34,30 +36,30 @@ $database->commit();
 
 while (true) {
     // Get our queue. Prioritize user requests, and then just old scanned players from our database.
-    $query = $database->prepare("SELECT online_id FROM (
-        SELECT 1 AS tier, online_id, request_time FROM player_queue
+    $query = $database->prepare("SELECT online_id, offset FROM (
+        SELECT 1 AS tier, online_id, request_time, offset FROM player_queue
         UNION ALL
-        SELECT 2 AS tier, online_id, last_updated_date FROM player WHERE rank <= 100000) a
+        SELECT 2 AS tier, online_id, last_updated_date, 0 AS offset FROM player WHERE rank <= 100000) a
         ORDER BY tier, request_time, online_id
         LIMIT 1");
     $query->execute();
-    $player = $query->fetchColumn();
+    $player = $query->fetch();
 
     // Initialize the current player
     $users = array();
     try {
         foreach ($clients as $client) {
-            $user = $client->user($player);
+            $user = $client->user($player["online_id"]);
             array_push($users, $user);
         }
     } catch (Exception $e) {
         if (strpos($e->getMessage(), "User not found") !== false) {
             $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
-            $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
 
             $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
-            $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
             $accountId = $query->fetchColumn();
 
@@ -81,17 +83,21 @@ while (true) {
     }
 
     // Get basic info of the current player
+    if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
+    {
+        die();
+    }
     $client = 0;
     try {
         $info = $users[$client]->info();
     } catch (Exception $e) {
         if (strpos($e->getMessage(), "User not found") !== false) {
             $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
-            $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
 
             $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
-            $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
             $accountId = $query->fetchColumn();
 
@@ -161,7 +167,7 @@ while (true) {
         $query->execute();
         $database->commit();
     } else {
-        $offset = 0;
+        $offset = $player["offset"];
         $totalResults = 0;
         $skippedGames = 0;
 
@@ -179,6 +185,11 @@ while (true) {
             // Try and get the player games until we succeed (have only gotten HTTP 500 for ikemenzi from time to time, but you never know)
             $fetchTrophyTitles = true;
             while ($fetchTrophyTitles) {
+                if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
+                {
+                    die();
+                }
+    
                 try {
                     $trophyTitles = $users[$client]->trophyTitles($offset);
                     $fetchTrophyTitles = false;
@@ -243,6 +254,10 @@ while (true) {
                 $query->execute();
 
                 // Get "groups" (game and DLCs)
+                if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
+                {
+                    die();
+                }
                 $trophyGroups = $users[$client]->trophyGroups($game->npCommunicationId)->trophyGroups;
                 $client++;
                 if ($client >= count($clients)) {
@@ -277,6 +292,10 @@ while (true) {
                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                     $query->execute();
 
+                    if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
+                    {
+                        die();
+                    }
                     $result = $users[$client]->trophies($game->npCommunicationId, $trophyGroup->trophyGroupId);
                     $client++;
                     if ($client >= count($clients)) {
@@ -460,6 +479,11 @@ while (true) {
             }
 
             $offset += 128 - 8; // Subtract a little bit in-case the player have gotten new games while we are scanning
+            
+            $query = $database->prepare("INSERT INTO player_queue (online_id, offset) VALUES (:online_id, :offset) ON DUPLICATE KEY UPDATE offset=VALUES(offset)");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->bindParam(":offset", $offset, PDO::PARAM_INT);
+            $query->execute();
         }
 
         // Recalculate trophy count, level & progress for the player

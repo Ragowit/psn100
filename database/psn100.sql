@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 27, 2020 at 06:12 PM
+-- Generation Time: Jan 28, 2020 at 07:38 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -68,7 +68,8 @@ CREATE TABLE `player` (
 
 CREATE TABLE `player_queue` (
   `online_id` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `offset` smallint(5) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
