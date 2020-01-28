@@ -332,19 +332,9 @@ while (true) {
 
                             // If the player have earned the trophy, add it into the database
                             if ($trophy->comparedUser->earned == "1") {
-                                // I know there is a INSERT INTO ... ON DUPLICATE KEY UPDATE, however it makes the autoincrement tick as well. I don't want that.
-                                $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id AND account_id = :account_id");
-                                $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
-                                $query->bindParam(":group_id", $trophyGroup->trophyGroupId, PDO::PARAM_STR);
-                                $query->bindParam(":order_id", $trophy->trophyId, PDO::PARAM_INT);
-                                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-                                $query->execute();
-                                $check = $query->fetchColumn();
-                                if ($check == 0) {
-                                    $query = $database->prepare("INSERT IGNORE INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date) VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)");
-                                } else {
-                                    $query = $database->prepare("UPDATE trophy_earned SET earned_date = :earned_date WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id AND account_id = :account_id");
-                                }
+                                $query = $database->prepare("INSERT INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date)
+                                    VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)
+                                    ON DUPLICATE KEY UPDATE earned_date=VALUES(earned_date)");
                                 $dateTimeObject = DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $trophy->comparedUser->earnedDate);
                                 if ($dateTimeObject === false) {
                                     $dtAsTextForInsert = null;
