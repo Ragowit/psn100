@@ -435,6 +435,7 @@ while (true) {
                 $maxScore = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90; // Platinum isn't counted for
                 if ($newDLC === true) {
                     $select = $database->prepare("SELECT account_id FROM trophy_title_player WHERE np_communication_id = :np_communication_id");
+                    $select->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                     $select->execute();
                     while ($row = $select->fetch()) {
                         if ($row["account_id"] == $info->accountId) {
