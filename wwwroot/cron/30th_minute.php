@@ -510,7 +510,10 @@ while (true) {
         }
 
         // Recalculate trophy count, level & progress for the player
-        $query = $database->prepare("SELECT SUM(ttp.bronze) AS bronze, SUM(ttp.silver) AS silver, SUM(ttp.gold) AS gold, SUM(ttp.platinum) AS platinum FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
+        $query = $database->prepare("SELECT IFNULL(SUM(ttp.bronze), 0) AS bronze, IFNULL(SUM(ttp.silver), 0) AS silver, IFNULL(SUM(ttp.gold), 0) AS gold, IFNULL(SUM(ttp.platinum), 0) AS platinum
+            FROM trophy_title_player ttp
+            JOIN trophy_title tt USING (np_communication_id)
+            WHERE tt.status = 0 AND ttp.account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
         $trophies = $query->fetch();
