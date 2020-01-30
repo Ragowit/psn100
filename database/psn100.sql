@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 28, 2020 at 09:19 PM
+-- Generation Time: Jan 30, 2020 at 07:11 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -36,10 +36,10 @@ CREATE TABLE `player` (
   `plus` tinyint(1) NOT NULL,
   `about_me` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `last_updated_date` datetime DEFAULT NULL,
-  `bronze` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `silver` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `gold` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
-  `platinum` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+  `bronze` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `silver` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `gold` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+  `platinum` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `level` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
   `progress` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
   `points` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
