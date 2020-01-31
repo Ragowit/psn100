@@ -1,5 +1,5 @@
 #To Force non-www:
 RewriteEngine on
 RewriteCond %{HTTP_HOST} ^www.psn100.net [NC]
-RewriteRule ^(.*)$ http://psn100.net/$1 [L,R=301]
+RewriteRule ^(.*)$ https://psn100.net/$1 [L,R=301]
 FallbackResource /index.php
