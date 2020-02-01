@@ -147,7 +147,7 @@ if (ctype_digit(strval($_POST["trophy"]))) {
     $players->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
     $players->execute();
     while ($player = $players->fetch()) {
-        $query = $database->prepare("INSERT INTO player_queue (online_id, request_time) VALUES (:online_id, '2000-01-01 00:00:00') ON DUPLICATE KEY UPDATE request_time='2000-01-01 00:00:00'"); // An early date like '2000-01-01 00:00:00' makes it first in queue
+        $query = $database->prepare("INSERT INTO player_queue (online_id) VALUES (:online_id) ON DUPLICATE KEY UPDATE request_time=NOW()");
         $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
         $query->execute();
     }
