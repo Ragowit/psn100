@@ -100,7 +100,10 @@ require_once("header.php");
                     <div class="col-12">
                         <table class="table table-responsive table-striped">
                             <?php
-                            $query = $database->prepare("SELECT p.avatar_url, p.online_id, te.earned_date FROM trophy_earned te JOIN player p USING (account_id) WHERE p.status = 0 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id ORDER BY te.earned_date LIMIT 50");
+                            $query = $database->prepare("SELECT p.avatar_url, p.online_id, te.earned_date FROM trophy_earned te
+                                JOIN player p USING (account_id)
+                                WHERE p.status = 0 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id AND te.earned_date IS NOT NULL
+                                ORDER BY te.earned_date LIMIT 50");
                             $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
                             $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
                             $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
@@ -146,7 +149,10 @@ require_once("header.php");
                     <div class="col-12">
                         <table class="table table-responsive table-striped">
                             <?php
-                            $query = $database->prepare("SELECT p.avatar_url, p.online_id, te.earned_date FROM trophy_earned te JOIN player p USING (account_id) WHERE p.status = 0 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id ORDER BY te.earned_date DESC LIMIT 50");
+                            $query = $database->prepare("SELECT p.avatar_url, p.online_id, IFNULL(te.earned_date, 'No Timestamp') AS earned_date FROM trophy_earned te
+                                JOIN player p USING (account_id)
+                                WHERE p.status = 0 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id
+                                ORDER BY te.earned_date DESC LIMIT 50");
                             $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
                             $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
                             $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
