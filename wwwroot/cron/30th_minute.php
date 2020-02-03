@@ -168,7 +168,6 @@ while (true) {
         $database->commit();
     } else {
         $offset = $player["offset"];
-        $totalResults = 0;
         $skippedGames = 0;
 
         $query = $database->prepare("SELECT last_updated_date FROM player WHERE account_id = :account_id");
@@ -181,7 +180,7 @@ while (true) {
         $query->execute();
         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
-        while ($offset <= $totalResults) {
+        do {
             // Try and get the player games until we succeed (have only gotten HTTP 500 for ikemenzi from time to time, but you never know)
             $fetchTrophyTitles = true;
             while ($fetchTrophyTitles) {
@@ -507,7 +506,7 @@ while (true) {
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->bindParam(":offset", $offset, PDO::PARAM_INT);
             $query->execute();
-        }
+        } while ($offset <= $totalResults);
 
         // Recalculate trophy count, level & progress for the player
         $query = $database->prepare("SELECT IFNULL(SUM(ttp.bronze), 0) AS bronze, IFNULL(SUM(ttp.silver), 0) AS silver, IFNULL(SUM(ttp.gold), 0) AS gold, IFNULL(SUM(ttp.platinum), 0) AS platinum
