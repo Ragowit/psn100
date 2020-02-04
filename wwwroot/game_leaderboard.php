@@ -131,10 +131,19 @@ require_once("header.php");
                 <div class="row">
                     <table class="table table-responsive table-striped">
                         <?php
-                        $query = $database->prepare("SELECT p.account_id, p.avatar_url, p.country, p.online_id AS name, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date
-                            FROM trophy_title_player ttp
+                        $query = $database->prepare("SELECT p.account_id, p.avatar_url, p.country, p.online_id AS name,
+                            IFNULL(SUM(t.type = 'bronze'), 0) AS bronze,
+                            IFNULL(SUM(t.type = 'silver'), 0) AS silver,
+                            IFNULL(SUM(t.type = 'gold'), 0) AS gold,
+                            IFNULL(SUM(t.type = 'platinum'), 0) AS platinum,
+                            IFNULL(GREATEST(FLOOR((SUM(t.type = 'bronze')*15+SUM(t.type = 'silver')*30+SUM(t.type = 'gold')*90)/(SELECT SUM(type = 'bronze')*15+SUM(type = 'silver')*30+SUM(type = 'gold')*90 AS max_score FROM trophy WHERE np_communication_id = :np_communication_id)*100), 1), 0) progress,
+                            ttp.last_updated_date
+                            FROM trophy_earned te
+                            JOIN trophy t USING (np_communication_id, group_id, order_id)
+                            RIGHT JOIN trophy_title_player ttp USING (account_id, np_communication_id)
                             JOIN player p USING (account_id)
-                            WHERE ttp.np_communication_id = :np_communication_id AND p.status = 0
+                            WHERE np_communication_id = :np_communication_id AND p.status = 0
+                            GROUP BY account_id
                             ORDER BY progress DESC, platinum DESC, gold DESC, silver DESC, bronze DESC, last_updated_date
                             LIMIT :offset, :limit");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
