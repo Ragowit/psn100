@@ -271,7 +271,7 @@ require_once("header.php");
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php
                                         if (isset($earnedTrophies[$trophy["order_id"]])) {
-                                            echo "<i>" . str_replace(" ", "<br>", $earnedTrophies[$trophy["order_id"]]) . "</i>";
+                                            echo str_replace(" ", "<br>", $earnedTrophies[$trophy["order_id"]]);
                                         } ?>
                                     </td>
                                     <td class="text-center">
