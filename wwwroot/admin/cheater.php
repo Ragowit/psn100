@@ -10,7 +10,7 @@ if (isset($_POST["player"])) {
     $query->execute();
     $database->commit();
 
-    $success = "<p>Player ". $onlineId ." is now tagged as a cheater. Stats will be recalculated next whole hour.</p>";
+    $success = "<p>Player ". $onlineId ." is now tagged as a cheater. Stats will be recalculated next cron job.</p>";
 }
 
 ?>
