@@ -12,36 +12,39 @@ require_once("../init.php");
     <body>
         <a href="/admin/">Back</a><br><br>
         <?php
-        $query = $database->prepare("SELECT p.online_id AS player_name, MIN(tt.id) AS game_id, MIN(tt.name) AS game_name FROM player p
-        JOIN trophy_earned te USING (account_id)
-        JOIN trophy_title tt USING (np_communication_id) WHERE (
-        (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 2) OR
-        (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 9) OR
-        (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 19) OR
-        (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 20) OR
-        (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 21) OR
-        (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 22) OR
-        (te.np_communication_id = 'NPWR08208_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR08208_00' AND te.group_id = 'default' AND te.order_id = 10) OR
-        (te.np_communication_id = 'NPWR08208_00' AND te.group_id = 'default' AND te.order_id = 12) OR
-        (te.np_communication_id = 'NPWR03899_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR03899_00' AND te.group_id = 'default' AND te.order_id = 10) OR
-        (te.np_communication_id = 'NPWR04024_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR04024_00' AND te.group_id = 'default' AND te.order_id = 10) OR
-        (te.np_communication_id = 'NPWR01472_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR01472_00' AND te.group_id = 'default' AND te.order_id = 11) OR
-        (te.np_communication_id = 'NPWR03558_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR03558_00' AND te.group_id = 'default' AND te.order_id = 30) OR
-        (te.np_communication_id = 'NPWR05839_00' AND te.group_id = 'default' AND te.order_id = 30) OR
-        (te.np_communication_id = 'NPWR05839_00' AND te.group_id = 'default' AND te.order_id = 28) OR
-        (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 25) OR
-        (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 26) OR
-        (te.np_communication_id = 'NPWR10400_00' AND te.group_id = 'default' AND te.order_id = 0) OR
-        (te.np_communication_id = 'NPWR10400_00' AND te.group_id = 'default' AND te.order_id = 12) OR
-        (te.np_communication_id = 'NPWR01064_00' AND te.group_id = '001' AND te.order_id = 51) OR
-        (te.np_communication_id = 'NPWR01064_00' AND te.group_id = '001' AND te.order_id = 57)
-        ) AND p.status = 0 GROUP BY player_name ORDER BY player_name");
+        $query = $database->prepare("SELECT x.online_id AS player_name, id AS game_id, name AS game_name FROM trophy_title
+            JOIN (
+                SELECT p.online_id, MIN(tt.np_communication_id) AS np_communication_id FROM trophy_earned te
+                JOIN player p USING (account_id)
+                JOIN trophy_title tt USING (np_communication_id) WHERE (
+                (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 2) OR
+                (te.np_communication_id = 'NPWR05066_00' AND te.group_id = 'default' AND te.order_id = 9) OR
+                (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 19) OR
+                (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 20) OR
+                (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 21) OR
+                (te.np_communication_id = 'NPWR00382_00' AND te.group_id = 'default' AND te.order_id = 22) OR
+                (te.np_communication_id = 'NPWR08208_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR08208_00' AND te.group_id = 'default' AND te.order_id = 10) OR
+                (te.np_communication_id = 'NPWR08208_00' AND te.group_id = 'default' AND te.order_id = 12) OR
+                (te.np_communication_id = 'NPWR03899_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR03899_00' AND te.group_id = 'default' AND te.order_id = 10) OR
+                (te.np_communication_id = 'NPWR04024_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR04024_00' AND te.group_id = 'default' AND te.order_id = 10) OR
+                (te.np_communication_id = 'NPWR01472_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR01472_00' AND te.group_id = 'default' AND te.order_id = 11) OR
+                (te.np_communication_id = 'NPWR03558_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR03558_00' AND te.group_id = 'default' AND te.order_id = 30) OR
+                (te.np_communication_id = 'NPWR05839_00' AND te.group_id = 'default' AND te.order_id = 30) OR
+                (te.np_communication_id = 'NPWR05839_00' AND te.group_id = 'default' AND te.order_id = 28) OR
+                (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 25) OR
+                (te.np_communication_id = 'NPWR08881_00' AND te.group_id = 'default' AND te.order_id = 26) OR
+                (te.np_communication_id = 'NPWR10400_00' AND te.group_id = 'default' AND te.order_id = 0) OR
+                (te.np_communication_id = 'NPWR10400_00' AND te.group_id = 'default' AND te.order_id = 12) OR
+                (te.np_communication_id = 'NPWR01064_00' AND te.group_id = '001' AND te.order_id = 51) OR
+                (te.np_communication_id = 'NPWR01064_00' AND te.group_id = '001' AND te.order_id = 57)
+                ) AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
+            ORDER BY player_name");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
 
