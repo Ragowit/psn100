@@ -75,7 +75,6 @@ while (true) {
                 $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
                 $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
                 $query->execute();
-                $database->commit();
             }
         }
 
@@ -113,7 +112,6 @@ while (true) {
                 $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
                 $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
                 $query->execute();
-                $database->commit();
             }
         }
 
@@ -157,7 +155,6 @@ while (true) {
 
     if ($info->trophySummary->level === 1 && $info->trophySummary->progress === 0) {
         // Profile most likely set to private, remove all trophy data we have for this player
-        $database->beginTransaction();
         $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0 WHERE account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
@@ -173,7 +170,6 @@ while (true) {
         $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
-        $database->commit();
     } else {
         $offset = $player["offset"];
         $skippedGames = 0;
