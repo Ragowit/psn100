@@ -231,7 +231,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     <?php
                     $total_pages = $unearnedTrophies;
 
-                    $page = isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1;
+                    $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
                     $limit = 50;
 
                     $offset = ($page - 1) * $limit;

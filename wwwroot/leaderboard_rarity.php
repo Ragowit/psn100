@@ -43,7 +43,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                     $query->execute();
                     $total_pages = $query->fetchColumn();
 
-                    $page = isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1;
+                    $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
                     $limit = 50;
 
                     $offset = ($page - 1) * $limit;
