@@ -56,15 +56,13 @@ $query = $database->prepare("UPDATE trophy t SET t.rarity_percent = CASE
 $query->execute();
 
 // Recalculate trophy rarity point
-$query = $database->prepare("UPDATE trophy SET rarity_point = FLOOR(1 / (GREATEST(rarity_percent, 0.01) / 100) - 1)");
+$query = $database->prepare("UPDATE trophy t JOIN trophy_title tt USING (np_communication_id) SET t.rarity_point = IF(t.status = 1 OR tt.status = 1, 0, FLOOR(1 / (GREATEST(t.rarity_percent, 0.01) / 100) - 1))");
 $query->execute();
 
 // Recalculate rarity points for each game for each players. SLOW!
 $query = $database->prepare("UPDATE trophy_title_player ttp, (
-    SELECT account_id, np_communication_id, SUM(t.rarity_point) AS points FROM trophy t
+    SELECT account_id, np_communication_id, SUM(rarity_point) AS points FROM trophy
     JOIN trophy_earned USING (np_communication_id, group_id, order_id)
-    JOIN trophy_title tt USING (np_communication_id)
-    WHERE t.status = 0 AND tt.status = 0
     GROUP BY account_id, np_communication_id) tsum
     SET ttp.rarity_points = tsum.points
     WHERE ttp.account_id = tsum.account_id AND ttp.np_communication_id = tsum.np_communication_id");
