@@ -12,7 +12,7 @@ $player = $query->fetch();
 $title = $player["online_id"] . "'s Trophy Log ~ PSN100.net";
 require_once("header.php");
 
-$aboutMe = htmlentities($player["about_me"], ENT_QUOTES, 'UTF-8');
+$aboutMe = nl2br(htmlentities($player["about_me"], ENT_QUOTES, 'UTF-8'));
 $countryName = Locale::getDisplayRegion("-" . $player["country"], 'en');
 $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["platinum"];
 
