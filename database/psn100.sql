@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 30, 2020 at 07:11 PM
+-- Generation Time: Feb 17, 2020 at 06:50 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -212,10 +212,8 @@ CREATE TABLE `trophy_title_player` (
 ALTER TABLE `player`
   ADD PRIMARY KEY (`account_id`),
   ADD UNIQUE KEY `online_id` (`online_id`),
-  ADD KEY `points` (`points`,`rarity_points`,`rank`,`rarity_rank`),
-  ADD KEY `account_id` (`account_id`,`rank`),
   ADD KEY `rank` (`rank`),
-  ADD KEY `rarity_points` (`rarity_points`);
+  ADD KEY `rarity_rank` (`rarity_rank`);
 
 --
 -- Indexes for table `player_queue`
@@ -235,11 +233,7 @@ ALTER TABLE `setting`
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`group_id`,`order_id`),
-  ADD KEY `np_communication_id_2` (`np_communication_id`),
-  ADD KEY `rarity_percent` (`rarity_percent`),
-  ADD KEY `np_communication_id_3` (`np_communication_id`,`group_id`,`order_id`,`rarity_point`),
-  ADD KEY `np_communication_id_4` (`np_communication_id`,`rarity_percent`),
-  ADD KEY `np_communication_id_5` (`np_communication_id`,`group_id`,`order_id`,`rarity_percent`,`rarity_point`,`status`);
+  ADD KEY `rarity_percent` (`rarity_percent`);
 
 --
 -- Indexes for table `trophy_earned`
@@ -247,19 +241,15 @@ ALTER TABLE `trophy`
 ALTER TABLE `trophy_earned`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`group_id`,`order_id`,`account_id`),
-  ADD KEY `np_communication_id_2` (`np_communication_id`,`group_id`,`order_id`),
-  ADD KEY `np_communication_id_3` (`np_communication_id`),
-  ADD KEY `np_communication_id_4` (`np_communication_id`,`earned_date`),
-  ADD KEY `earned_date` (`earned_date`),
-  ADD KEY `fk_p_te` (`account_id`);
+  ADD KEY `fk_p_te` (`account_id`),
+  ADD KEY `np_communication_id_5` (`np_communication_id`,`account_id`,`earned_date`);
 
 --
 -- Indexes for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `np_communication_id_2` (`np_communication_id`,`group_id`),
-  ADD KEY `np_communication_id` (`np_communication_id`);
+  ADD UNIQUE KEY `np_communication_id_2` (`np_communication_id`,`group_id`);
 
 --
 -- Indexes for table `trophy_group_player`
@@ -267,16 +257,14 @@ ALTER TABLE `trophy_group`
 ALTER TABLE `trophy_group_player`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`group_id`,`account_id`),
-  ADD KEY `fk_p_tgp` (`account_id`),
-  ADD KEY `fk_tg_tgp` (`np_communication_id`,`group_id`);
+  ADD KEY `fk_p_tgp` (`account_id`);
 
 --
 -- Indexes for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `np_communication_id` (`np_communication_id`),
-  ADD KEY `np_communication_id_2` (`np_communication_id`,`status`);
+  ADD UNIQUE KEY `np_communication_id` (`np_communication_id`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `name` (`name`);
 
 --
@@ -287,9 +275,7 @@ ALTER TABLE `trophy_title_player`
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`account_id`),
   ADD KEY `progress` (`progress`),
   ADD KEY `np_communication_id_3` (`np_communication_id`,`progress`),
-  ADD KEY `np_communication_id_4` (`np_communication_id`,`account_id`,`last_updated_date`),
-  ADD KEY `fk_p_ttp` (`account_id`),
-  ADD KEY `fk_tt_ttp` (`np_communication_id`);
+  ADD KEY `fk_p_ttp` (`account_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
