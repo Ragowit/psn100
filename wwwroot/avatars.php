@@ -1,6 +1,14 @@
 <?php
 $title = "Avatars ~ PSN100.net";
 require_once("header.php");
+
+$query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player WHERE status = 0");
+$query->execute();
+$total_pages = $query->fetchColumn();
+
+$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
+$limit = 48;
+$offset = ($page - 1) * $limit;
 ?>
 <main role="main">
     <div class="container">
@@ -11,18 +19,28 @@ require_once("header.php");
         </div>
 
         <div class="row">
+            <?php
+            // This feature does not limit by the 100k player count
+            $query = $database->prepare("SELECT COUNT(*) AS count, avatar_url FROM player WHERE status = 0 GROUP BY avatar_url ORDER BY count DESC LIMIT :offset, :limit");
+            $query->bindParam(":offset", $offset, PDO::PARAM_INT);
+            $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $query->execute();
+            $avatars = $query->fetchAll();
+
+            foreach ($avatars as $avatar) {
+                ?>
+                <div class="col-4 col-md-3 col-lg-2 text-center">
+                    <img src="/img/avatar/<?= $avatar["avatar_url"] ?>" alt"" width="100" />
+                    <h5><?= $avatar["count"]; ?> players</h5>
+                </div>
+                <?php
+            }
+            ?>
+        </div>
+
+        <div class="row">
             <div class="col-12">
                 <nav aria-label="Page navigation">
-                    <?php
-                    $query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player WHERE status = 0");
-                    $query->execute();
-                    $total_pages = $query->fetchColumn();
-
-                    $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-                    $limit = 48;
-
-                    $offset = ($page - 1) * $limit;
-                    ?>
                     <ul class="pagination justify-content-center">
                         <?php
                         if ($page > 1) {
@@ -82,26 +100,6 @@ require_once("header.php");
                     </ul>
                 </nav>
             </div>
-        </div>
-
-        <div class="row">
-            <?php
-            // This feature does not limit by the 100k player count
-            $query = $database->prepare("SELECT COUNT(*) AS count, avatar_url FROM player WHERE status = 0 GROUP BY avatar_url ORDER BY count DESC LIMIT :offset, :limit");
-            $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-            $query->bindParam(":limit", $limit, PDO::PARAM_INT);
-            $query->execute();
-            $avatars = $query->fetchAll();
-
-            foreach ($avatars as $avatar) {
-                ?>
-                <div class="col-4 col-md-3 col-lg-2 text-center">
-                    <img src="/img/avatar/<?= $avatar["avatar_url"] ?>" alt"" width="100" />
-                    <h5><?= $avatar["count"]; ?> players</h5>
-                </div>
-                <?php
-            }
-            ?>
         </div>
     </div>
 </main>

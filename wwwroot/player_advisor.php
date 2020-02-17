@@ -11,6 +11,18 @@ $player = $query->fetch();
 
 $title = $player["online_id"] . "'s Trophy Advisor ~ PSN100.net";
 require_once("player_header.php");
+
+$query = $database->prepare("SELECT SUM(tg.bronze-tgp.bronze + tg.silver-tgp.silver + tg.gold-tgp.gold + tg.platinum-tgp.platinum) FROM trophy_group_player tgp
+    JOIN trophy_group tg USING (np_communication_id, group_id)
+    JOIN trophy_title tt USING (np_communication_id)
+    WHERE tt.status = 0 AND tgp.account_id = :account_id");
+$query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+$query->execute();
+$result_count = $query->fetchColumn();
+
+$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
+$limit = 50;
+$offset = ($page - 1) * $limit;
 ?>
         <div class="row">
             <div class="col-2 text-center">
@@ -24,84 +36,6 @@ require_once("player_header.php");
             </div>
             <div class="col-2 text-center">
                 <h5><a href="/game?sort=completion&player=<?= $player["online_id"]; ?>">Game Advisor</a></h5>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <nav aria-label="Page navigation">
-                    <?php
-                    $query = $database->prepare("SELECT SUM(tg.bronze-tgp.bronze + tg.silver-tgp.silver + tg.gold-tgp.gold + tg.platinum-tgp.platinum) FROM trophy_group_player tgp
-                        JOIN trophy_group tg USING (np_communication_id, group_id)
-                        JOIN trophy_title tt USING (np_communication_id)
-                        WHERE tt.status = 0 AND tgp.account_id = :account_id");
-                    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                    $query->execute();
-                    $result_count = $query->fetchColumn();
-
-                    $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-                    $limit = 50;
-
-                    $offset = ($page - 1) * $limit;
-                    ?>
-                    <ul class="pagination justify-content-center">
-                        <?php
-                        if ($page > 1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>">Prev</a></li>
-                            <?php
-                        }
-
-                        if ($page > 3) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <?php
-                        }
-
-                        if ($page-2 > 0) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page-2; ?>"><?= $page-2; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page-1 > 0) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>"><?= $page-1; ?></a></li>
-                            <?php
-                        }
-                        ?>
-
-                        <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $page; ?>"><?= $page; ?></a></li>
-
-                        <?php
-                        if ($page+1 < ceil($result_count / $limit)+1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>"><?= $page+1; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page+2 < ceil($result_count / $limit)+1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page+2; ?>"><?= $page+2; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page < ceil($result_count / $limit)-2) {
-                            ?>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <li class="page-item"><a class="page-link" href="?page=<?= ceil($result_count / $limit); ?>"><?= ceil($result_count / $limit); ?></a></li>
-                            <?php
-                        }
-
-                        if ($page < ceil($result_count / $limit)) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>">Next</a></li>
-                            <?php
-                        }
-                        ?>
-                    </ul>
-                </nav>
             </div>
         </div>
 
@@ -180,6 +114,70 @@ require_once("player_header.php");
                     }
                     ?>
                 </table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <?php
+                        if ($page > 1) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>">Prev</a></li>
+                            <?php
+                        }
+
+                        if ($page > 3) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
+                            <?php
+                        }
+
+                        if ($page-2 > 0) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?= $page-2; ?>"><?= $page-2; ?></a></li>
+                            <?php
+                        }
+
+                        if ($page-1 > 0) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>"><?= $page-1; ?></a></li>
+                            <?php
+                        }
+                        ?>
+
+                        <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $page; ?>"><?= $page; ?></a></li>
+
+                        <?php
+                        if ($page+1 < ceil($result_count / $limit)+1) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>"><?= $page+1; ?></a></li>
+                            <?php
+                        }
+
+                        if ($page+2 < ceil($result_count / $limit)+1) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?= $page+2; ?>"><?= $page+2; ?></a></li>
+                            <?php
+                        }
+
+                        if ($page < ceil($result_count / $limit)-2) {
+                            ?>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
+                            <li class="page-item"><a class="page-link" href="?page=<?= ceil($result_count / $limit); ?>"><?= ceil($result_count / $limit); ?></a></li>
+                            <?php
+                        }
+
+                        if ($page < ceil($result_count / $limit)) {
+                            ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>">Next</a></li>
+                            <?php
+                        }
+                        ?>
+                    </ul>
+                </nav>
             </div>
         </div>
     </div>

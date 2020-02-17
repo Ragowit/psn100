@@ -10,6 +10,21 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 } else {
     $params = array();
 }
+
+if (isset($_GET["country"])) {
+    $country = $_GET["country"];
+
+    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rank != 0 AND country = :country");
+    $query->bindParam(":country", $country, PDO::PARAM_STR);
+} else {
+    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rank != 0");
+}
+$query->execute();
+$total_pages = $query->fetchColumn();
+
+$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
+$limit = 50;
+$offset = ($page - 1) * $limit;
 ?>
 <main role="main">
     <div class="container">
@@ -25,90 +40,6 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
             </div>
             <div class="col-2 text-center">
                 <h5><a href="/leaderboard/rarity">Rarity</a></h5>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <nav aria-label="Page navigation">
-                    <?php
-                    if (isset($_GET["country"])) {
-                        $country = $_GET["country"];
-
-                        $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rank != 0 AND country = :country");
-                        $query->bindParam(":country", $country, PDO::PARAM_STR);
-                    } else {
-                        $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rank != 0");
-                    }
-                    $query->execute();
-                    $total_pages = $query->fetchColumn();
-
-                    $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-                    $limit = 50;
-
-                    $offset = ($page - 1) * $limit;
-                    ?>
-                    <ul class="pagination justify-content-center">
-                        <?php
-                        if ($page > 1) {
-                            $params["page"] = $page - 1; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">Prev</a></li>
-                            <?php
-                        }
-
-                        if ($page > 3) {
-                            $params["page"] = 1; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <?php
-                        }
-
-                        if ($page-2 > 0) {
-                            $params["page"] = $page - 2; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page-1 > 0) {
-                            $params["page"] = $page - 1; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
-                            <?php
-                        }
-                        ?>
-
-                        <?php
-                        $params["page"] = $page;
-                        ?>
-                        <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
-
-                        <?php
-                        if ($page+1 < ceil($total_pages / $limit)+1) {
-                            $params["page"] = $page + 1; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page+2 < ceil($total_pages / $limit)+1) {
-                            $params["page"] = $page + 2; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page < ceil($total_pages / $limit)-2) {
-                            $params["page"] = ceil($total_pages / $limit); ?>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
-                            <?php
-                        }
-
-                        if ($page < ceil($total_pages / $limit)) {
-                            $params["page"] = $page + 1; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">Next</a></li>
-                            <?php
-                        }
-                        ?>
-                    </ul>
-                </nav>
             </div>
         </div>
 
@@ -232,6 +163,73 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                     }
                     ?>
                 </table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <?php
+                        if ($page > 1) {
+                            $params["page"] = $page - 1; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">Prev</a></li>
+                            <?php
+                        }
+
+                        if ($page > 3) {
+                            $params["page"] = 1; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
+                            <?php
+                        }
+
+                        if ($page-2 > 0) {
+                            $params["page"] = $page - 2; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
+                            <?php
+                        }
+
+                        if ($page-1 > 0) {
+                            $params["page"] = $page - 1; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
+                            <?php
+                        }
+                        ?>
+
+                        <?php
+                        $params["page"] = $page;
+                        ?>
+                        <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
+
+                        <?php
+                        if ($page+1 < ceil($total_pages / $limit)+1) {
+                            $params["page"] = $page + 1; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
+                            <?php
+                        }
+
+                        if ($page+2 < ceil($total_pages / $limit)+1) {
+                            $params["page"] = $page + 2; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
+                            <?php
+                        }
+
+                        if ($page < ceil($total_pages / $limit)-2) {
+                            $params["page"] = ceil($total_pages / $limit); ?>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
+                            <?php
+                        }
+
+                        if ($page < ceil($total_pages / $limit)) {
+                            $params["page"] = $page + 1; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">Next</a></li>
+                            <?php
+                        }
+                        ?>
+                    </ul>
+                </nav>
             </div>
         </div>
     </div>
