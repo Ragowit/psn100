@@ -122,6 +122,16 @@ while (true) {
         $client = 0;
     }
 
+    // The profiles currently known as "Platastical", "Platasium" and "ShadowsGodly" are bugged and can't fetch trophy titles. Not even on the official website. Ignore them.
+    if ($info->accountId == 2985983827926904402 ||
+        $info->accountId == 4835369520272949900 ||
+        $info->accountId == 6549517298327131420) {
+        $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
+        $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+        $query->execute();
+        continue;
+    }
+
     if (is_null($info->currentOnlineId) === false) {
         $query = $database->prepare("UPDATE player_queue SET online_id = :new_online_id WHERE online_id = :old_online_id");
         $query->bindParam(":new_online_id", $info->currentOnlineId, PDO::PARAM_STR);
