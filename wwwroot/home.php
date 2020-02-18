@@ -20,7 +20,7 @@ require_once("header.php");
         <div class="row justify-content-center">
             <div class="col-6">
                 <div class="form-inline justify-content-center">
-                    <input type="text" class="form-control" id="player" placeholder="PSN name...">
+                    <input type="text" class="form-control" id="player" maxlength="16" placeholder="PSN name...">
                     <button type="button" class="btn btn-primary" id="player-button" onclick="addToQueue()">Update</button>
                 </div>
             </div>
