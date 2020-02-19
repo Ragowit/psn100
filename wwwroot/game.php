@@ -72,125 +72,14 @@ require_once("header.php");
 
         <div class="row">
             <div class="col-9">
-                <div class="row" style="background: #b8daff;">
-                    <?php
-                    $query = $database->prepare("SELECT * FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id = 'default'");
-                    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                    $query->execute();
-                    $group = $query->fetch();
-                    ?>
-                    <div class="col-auto">
-                        <img src="/img/group/<?= $group["icon_url"]; ?>" alt="<?= $group["name"]; ?>" height="100" style="margin: 10px 0px;" />
-                    </div>
-                    <div class="col align-self-center">
-                        <b><?= $group["name"]; ?></b><br>
-                        <?= $group["detail"]; ?>
-                    </div>
-                    <div class="col-auto align-self-center">
-                        <?= $group["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
-                        <?= $group["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
-                        <?= $group["gold"]; ?> <img src="/img/playstation/gold.png" alt="Gold" width="24" />
-                        <?= $group["platinum"]; ?> <img src="/img/playstation/platinum.png" alt="Platinum" width="24" />
-
-                        <?php
-                        if (isset($accountId)) {
-                            $query = $database->prepare("SELECT progress FROM trophy_group_player WHERE np_communication_id = :np_communication_id AND group_id = 'default' AND account_id = :account_id");
-                            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                            $query->execute();
-                            $progress = $query->fetchColumn();
-                            if ($progress != false) {
-                                ?>
-                                <br>
-                                <div class="progress">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
-                                </div>
-                                <?php
-                            }
-                        }
-                        ?>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <table class="table table-responsive table-striped">
-                        <?php
-                        if (isset($accountId)) {
-                            $query = $database->prepare("SELECT order_id, IFNULL(earned_date, 'No Timestamp') AS earned_date FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = 'default' AND account_id = :account_id");
-                            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                            $query->execute();
-                            $earnedTrophies = $query->fetchAll(PDO::FETCH_KEY_PAIR);
-                        }
-
-                        $query = $database->prepare("SELECT * FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = 'default' ORDER BY order_id");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->execute();
-                        while ($trophy = $query->fetch()) {
-                            $trClass = "";
-                            if ($trophy["status"] == 1) {
-                                $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                            } elseif (isset($earnedTrophies[$trophy["order_id"]])) {
-                                $trClass = " class=\"table-success\"";
-                            } ?>
-                            <tr<?= $trClass; ?>>
-                                <td><img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" height="60" /></td>
-                                <td style="width: 100%;">
-                                    <?php
-                                    if (isset($player)) {
-                                        ?>
-                                        <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>/<?= $player; ?>">
-                                            <b><?= $trophy["name"]; ?></b>
-                                        </a>
-                                        <?php
-                                    } else {
-                                        ?>
-                                        <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>">
-                                            <b><?= $trophy["name"]; ?></b>
-                                        </a>
-                                        <?php
-                                    } ?>
-                                    <br>
-                                    <?= $trophy["detail"]; ?>
-                                </td>
-                                <td class="text-center" style="white-space: nowrap;">
-                                    <?php
-                                    if (isset($earnedTrophies[$trophy["order_id"]])) {
-                                        echo str_replace(" ", "<br>", $earnedTrophies[$trophy["order_id"]]);
-                                    } ?>
-                                </td>
-                                <td class="text-center">
-                                    <h5><?= $trophy["rarity_percent"]; ?>%</h5>
-                                    <?php
-                                    if ($trophy["status"] == 1) {
-                                        echo "Unobtainable";
-                                    } elseif ($trophy["rarity_percent"] <= 1.00) {
-                                        echo "Legendary";
-                                    } elseif ($trophy["rarity_percent"] <= 5.00) {
-                                        echo "Epic";
-                                    } elseif ($trophy["rarity_percent"] <= 20.00) {
-                                        echo "Rare";
-                                    } elseif ($trophy["rarity_percent"] <= 50.00) {
-                                        echo "Uncommon";
-                                    } else {
-                                        echo "Common";
-                                    } ?>
-                                </td>
-                                <td><img src="/img/playstation/<?= $trophy["type"]; ?>.png" alt="<?= ucfirst($trophy["type"]); ?>" title="<?= ucfirst($trophy["type"]); ?>" /></td>
-                            </tr>
-                            <?php
-                        }
-                        ?>
-                    </table>
-                </div>
-
                 <?php
-                $trophyGroups = $database->prepare("SELECT * FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id != 'default' ORDER BY group_id");
+                $trophyGroups = $database->prepare("SELECT * FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id = 'default'
+                    UNION
+                    (SELECT * FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id != 'default' ORDER BY group_id)");
                 $trophyGroups->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                 $trophyGroups->execute();
                 while ($trophyGroup = $trophyGroups->fetch()) {
                     ?>
-                    <br>
                     <div class="row" style="background: #b8daff;">
                         <div class="col-auto">
                             <img src="/img/group/<?= $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="margin: 10px 0px;" />
