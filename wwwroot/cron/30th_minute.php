@@ -113,6 +113,11 @@ while (true) {
                 $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
                 $query->execute();
             }
+        } elseif (strpos($e->getMessage(), "Internal server error") !== false) {
+            // Something isn't right about this one, just remove it from the queue.
+            $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
         }
 
         continue;
