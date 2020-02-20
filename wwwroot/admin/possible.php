@@ -76,5 +76,21 @@ require_once("../init.php");
             echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ."</a><br>";
         }
         ?>
+        <br>
+        Lots of completions on the same date:<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, p.online_id, DATE(ttp.last_updated_date) AS date, COUNT(*) AS count FROM trophy_title_player ttp
+            JOIN player p USING (account_id)
+            WHERE ttp.progress = 100 AND p.status = 0
+            GROUP BY account_id, DATE(ttp.last_updated_date)
+            HAVING count >= 35
+            ORDER BY count DESC");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo $possibleCheater["count"] .", ". $possibleCheater["date"] .", <a href=\"/player/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ."</a><br>";
+        }
+        ?>
     </body>
 </html>
