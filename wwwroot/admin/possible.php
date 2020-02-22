@@ -83,7 +83,7 @@ require_once("../init.php");
             JOIN player p USING (account_id)
             WHERE ttp.progress = 100 AND p.status = 0
             GROUP BY account_id, DATE(ttp.last_updated_date)
-            HAVING count >= 35
+            HAVING count >= 60
             ORDER BY count DESC");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
