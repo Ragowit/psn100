@@ -128,6 +128,10 @@ while (true) {
     }
 
     if (is_null($info->currentOnlineId) === false) {
+        $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :new_online_id");
+        $query->bindParam(":new_online_id", $info->currentOnlineId, PDO::PARAM_STR);
+        $query->execute();
+        
         $query = $database->prepare("UPDATE player_queue SET online_id = :new_online_id WHERE online_id = :old_online_id");
         $query->bindParam(":new_online_id", $info->currentOnlineId, PDO::PARAM_STR);
         $query->bindParam(":old_online_id", $info->onlineId, PDO::PARAM_STR);
