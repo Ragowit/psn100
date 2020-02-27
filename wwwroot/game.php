@@ -115,26 +115,44 @@ require_once("header.php");
 
                     <?php
                     if (isset($accountId)) {
-                        $query = $database->prepare("SELECT order_id, IFNULL(earned_date, 'No Timestamp') AS earned_date FROM trophy_earned WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND account_id = :account_id");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                        $query->execute();
-                        $earnedTrophies = $query->fetchAll(PDO::FETCH_KEY_PAIR);
-                    }
+                        $queryText = "SELECT * FROM (SELECT t.id, t.order_id, t.type, t.name, t.detail, t.icon_url, t.rarity_percent, t.status, te.earned_date FROM trophy t
+                            LEFT JOIN (SELECT np_communication_id, group_id, order_id, IFNULL(earned_date, 'No Timestamp') AS earned_date FROM trophy_earned WHERE account_id = :account_id) AS te USING (np_communication_id, group_id, order_id)
+                            WHERE t.np_communication_id = :np_communication_id AND t.group_id = :group_id) AS x";
 
-                    $trophies = $database->prepare("SELECT * FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id ORDER BY order_id");
-                    $trophies->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                    $trophies->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                    $trophies->execute(); ?>
+                        if (isset($_GET["order"]) && $_GET["order"] == "date") {
+                            $queryText = $queryText ." ORDER BY x.earned_date IS NULL, x.earned_date, x.order_id";
+                        } elseif (isset($_GET["order"]) && $_GET["order"] == "rarity") {
+                            $queryText = $queryText ." ORDER BY x.rarity_percent DESC, x.order_id";
+                        } else {
+                            $queryText = $queryText ." ORDER BY x.order_id";
+                        }
+
+                        $query = $database->prepare($queryText);
+                        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                    } else {
+                        $queryText = "SELECT t.id, t.order_id, t.type, t.name, t.detail, t.icon_url, t.rarity_percent, t.status FROM trophy t
+                            WHERE t.np_communication_id = :np_communication_id AND t.group_id = :group_id";
+
+                        if (isset($_GET["order"]) && $_GET["order"] == "rarity") {
+                            $queryText = $queryText ." ORDER BY rarity_percent DESC, order_id";
+                        } else {
+                            $queryText = $queryText ." ORDER BY order_id";
+                        }
+
+                        $query = $database->prepare($queryText);
+                    }
+                    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                    $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
+                    $query->execute();
+                    $trophies = $query->fetchAll(); ?>
                     <div class="row">
                         <table class="table table-responsive table-striped">
                             <?php
-                            while ($trophy = $trophies->fetch()) {
+                            foreach ($trophies as $trophy) {
                                 $trClass = "";
                                 if ($trophy["status"] == 1) {
                                     $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                } elseif (isset($earnedTrophies[$trophy["order_id"]])) {
+                                } elseif (is_null($trophy["earned_date"]) === false) {
                                     $trClass = " class=\"table-success\"";
                                 } ?>
                                 <tr<?= $trClass; ?>>
@@ -159,8 +177,33 @@ require_once("header.php");
                                     </td>
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php
-                                        if (isset($earnedTrophies[$trophy["order_id"]])) {
-                                            echo str_replace(" ", "<br>", $earnedTrophies[$trophy["order_id"]]);
+                                        if (is_null($trophy["earned_date"]) === false) {
+                                            echo str_replace(" ", "<br>", $trophy["earned_date"]);
+                                            if (isset($_GET["order"]) && $_GET["order"] == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
+                                                echo "<br>";
+                                                $datetime1 = date_create($previousTimeStamp);
+                                                $datetime2 = date_create($trophy["earned_date"]);
+                                                $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
+                                                $first = -1;
+                                                $second = -1;
+                                                for ($i = 0; $i < count($completionTimes); $i++) {
+                                                    if ($completionTimes[$i][0] == "0") {
+                                                        continue;
+                                                    }
+
+                                                    if ($first == -1) {
+                                                        $first = $i;
+                                                    } elseif ($second == -1) {
+                                                        $second = $i;
+                                                    }
+                                                }
+
+                                                if ($first >= 0 && $second >= 0) {
+                                                    echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
+                                                } elseif ($first >= 0 && $second == -1) {
+                                                    echo "(+". $completionTimes[$first] .")";
+                                                }
+                                            }
                                         } ?>
                                     </td>
                                     <td class="text-center">
@@ -183,6 +226,9 @@ require_once("header.php");
                                     <td><img src="/img/playstation/<?= $trophy["type"]; ?>.png" alt="<?= ucfirst($trophy["type"]); ?>" /></td>
                                 </tr>
                                 <?php
+                                if (isset($_GET["order"]) && $_GET["order"] == "date") {
+                                    $previousTimeStamp = $trophy["earned_date"];
+                                }
                             } ?>
                         </table>
                     </div>
@@ -246,6 +292,15 @@ require_once("header.php");
                         ?>
                         <span title="<?= $ownersCompleted; ?> of <?= $game["owners"]; ?> players have 100% this game."><?= $game["difficulty"]; ?>% Completion Rate</span><br>
                         <?= $rarityPoints; ?> Rarity Points
+                    </div>
+
+                    <div class="col-12 text-center">
+                        <b>Order By</b><br>
+                        <a href="?">Default</a> ~ <a href="?order=rarity">Rarity</a>
+                        <?php
+                        if (isset($accountId)) {
+                            echo " ~ <a href=\"?order=date\">Date</a>";
+                        } ?>
                     </div>
                 </div>
 
