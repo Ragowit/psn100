@@ -97,6 +97,23 @@ require_once("../init.php");
         }
         ?>
         <br>
+        FUEL:<br>
+        <?php
+        $query = $database->prepare("SELECT online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00481_00' AND group_id = 'default' AND order_id = 33) fuel_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00481_00' AND group_id = 'default' AND order_id = 34) fuel_end USING (account_id)
+            WHERE p.status = 0
+            HAVING time_difference <= 60
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/4390-fuel/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ."</a><br>";
+        }
+        ?>
+        <br>
         Lots of completions on the same date:<br>
         <?php
         $query = $database->prepare("SELECT account_id, p.online_id, DATE(ttp.last_updated_date) AS date, COUNT(*) AS count FROM trophy_title_player ttp
