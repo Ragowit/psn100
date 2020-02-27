@@ -15,6 +15,8 @@ if (isset($_GET["search"])) {
     $search = $_GET["search"];
     $query = $database->prepare("SELECT COUNT(*) FROM `trophy_title` WHERE (MATCH(name) AGAINST (:search)) > 0");
     $query->bindParam(":search", $search, PDO::PARAM_STR);
+} elseif (isset($_GET["sort"])) {
+    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title WHERE status = 0 AND (bronze+silver+gold+platinum) != 0");
 } else {
     $query = $database->prepare("SELECT COUNT(*) FROM trophy_title");
 }
@@ -53,7 +55,7 @@ $offset = ($page - 1) * $limit;
                         $games->bindParam(":limit", $limit, PDO::PARAM_INT);
                     } else {
                         if (isset($_GET["sort"])) {
-                            $games = $database->prepare("SELECT * FROM trophy_title ORDER BY difficulty DESC, owners DESC LIMIT :offset, :limit");
+                            $games = $database->prepare("SELECT * FROM trophy_title WHERE status = 0 AND (bronze+silver+gold+platinum) != 0 ORDER BY difficulty DESC, owners DESC LIMIT :offset, :limit");
                         } else {
                             $games = $database->prepare("SELECT * FROM trophy_title ORDER BY id DESC LIMIT :offset, :limit");
                         }
