@@ -114,6 +114,23 @@ require_once("../init.php");
         }
         ?>
         <br>
+        SOCOM: U.S. NAVY SEALS CONFRONTATION:<br>
+        <?php
+        $query = $database->prepare("SELECT online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 32) socom_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 35) socom_end USING (account_id)
+            WHERE p.status = 0
+            HAVING time_difference <= 60
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/4233-socom-us-navy-seals-confrontation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ."</a><br>";
+        }
+        ?>
+        <br>
         Lots of completions on the same date:<br>
         <?php
         $query = $database->prepare("SELECT account_id, p.online_id, DATE(ttp.last_updated_date) AS date, COUNT(*) AS count FROM trophy_title_player ttp
