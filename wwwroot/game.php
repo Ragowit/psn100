@@ -173,7 +173,7 @@ require_once("header.php");
                                             <?php
                                         } ?>
                                         <br>
-                                        <?= $trophy["detail"]; ?>
+                                        <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
                                     </td>
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php

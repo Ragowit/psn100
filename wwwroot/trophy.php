@@ -49,7 +49,7 @@ require_once("header.php");
             </div>
             <div class="col-7">
                 <h5><?= $trophy["trophy_name"]; ?></h5>
-                <?= $trophy["trophy_detail"]; ?>
+                <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
                 <br>
                 <?php
                 if (isset($player)) {
