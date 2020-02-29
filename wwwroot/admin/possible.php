@@ -124,6 +124,16 @@ require_once("../init.php");
                 OR (te.np_communication_id = 'NPWR16018_00' AND te.group_id = 'default' AND te.order_id = 15)
                 OR (te.np_communication_id = 'NPWR16018_00' AND te.group_id = 'default' AND te.order_id = 16)
                 OR (te.np_communication_id = 'NPWR16018_00' AND te.group_id = 'default' AND te.order_id = 23)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 71)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 72)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 73)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 74)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 75)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 76)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 77)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 78)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 79)
+                OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 80)
                 ) AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name");
         $query->execute();
