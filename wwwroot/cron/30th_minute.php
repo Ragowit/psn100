@@ -64,16 +64,20 @@ while (true) {
             $accountId = $query->fetchColumn();
 
             if (!$accountId) {
+                $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0, points = 0, rarity_points = 0 WHERE account_id = :account_id");
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->execute();
+
                 $query = $database->prepare("DELETE FROM trophy_earned WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
 
                 $query = $database->prepare("DELETE FROM trophy_group_player WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
 
                 $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
             }
         }
@@ -101,16 +105,20 @@ while (true) {
             $accountId = $query->fetchColumn();
 
             if (!$accountId) {
+                $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0, points = 0, rarity_points = 0 WHERE account_id = :account_id");
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->execute();
+
                 $query = $database->prepare("DELETE FROM trophy_earned WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
 
                 $query = $database->prepare("DELETE FROM trophy_group_player WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
 
                 $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
             }
         } elseif (strpos($e->getMessage(), "Internal server error") !== false) {
@@ -131,7 +139,7 @@ while (true) {
         $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :new_online_id");
         $query->bindParam(":new_online_id", $info->currentOnlineId, PDO::PARAM_STR);
         $query->execute();
-        
+
         $query = $database->prepare("UPDATE player_queue SET online_id = :new_online_id WHERE online_id = :old_online_id");
         $query->bindParam(":new_online_id", $info->currentOnlineId, PDO::PARAM_STR);
         $query->bindParam(":old_online_id", $info->onlineId, PDO::PARAM_STR);
@@ -179,7 +187,7 @@ while (true) {
 
     if ($info->trophySummary->level === 1 && $info->trophySummary->progress === 0) {
         // Profile most likely set to private, remove all trophy data we have for this player
-        $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0 WHERE account_id = :account_id");
+        $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0, points = 0, rarity_points = 0 WHERE account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
 
