@@ -153,6 +153,8 @@ require_once("../init.php");
                 OR (te.np_communication_id = 'NPWR04029_00' AND te.group_id = 'default' AND te.order_id = 10 AND te.earned_date >= '2019-12-06')
                 OR (te.np_communication_id = 'NPWR04029_00' AND te.group_id = 'default' AND te.order_id = 11 AND te.earned_date >= '2019-12-06')
                 OR (te.np_communication_id = 'NPWR04029_00' AND te.group_id = 'default' AND te.order_id = 12 AND te.earned_date >= '2019-12-06')
+                OR (te.np_communication_id = 'NPWR14225_00' AND te.group_id = 'default' AND te.order_id = 6)
+                OR (te.np_communication_id = 'NPWR14225_00' AND te.group_id = 'default' AND te.order_id = 9)
                 ) AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name");
         $query->execute();
