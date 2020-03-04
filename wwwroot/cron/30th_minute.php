@@ -204,7 +204,6 @@ while (true) {
         $query->execute();
     } else {
         $offset = $player["offset"];
-        $skippedGames = 0;
 
         $query = $database->prepare("SELECT last_updated_date FROM player WHERE account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
@@ -244,6 +243,7 @@ while (true) {
             }
 
             $totalResults = $trophyTitles->totalResults;
+            $skippedGames = 0;
 
             foreach ($trophyTitles->trophyTitles as $game) {
                 $newDLC = false;
@@ -252,8 +252,8 @@ while (true) {
                     $skippedGames++;
 
                     if ($playerLastUpdatedDate != null) { // New players have null as last updated date, and will thus continue with a full scan.
-                        if ($skippedGames >= 248) {
-                            // 248 skipped games (a little bit less then two trophyTitles() fetches), we can assume we are done with this player.
+                        if ($skippedGames >= 128) {
+                            // 128 skipped games (one full trophyTitles() fetch), we can assume we are done with this player.
                             break 2;
                         }
 
