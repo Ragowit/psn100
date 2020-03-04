@@ -44,7 +44,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
             <div class="col-8">
                 <h1><?= $player["online_id"] ?></h1>
-                <p><?= $aboutMe ?></p>
+                <p class="overflow-auto" style="height: 5rem;"><?= $aboutMe ?></p>
             </div>
             <div class="col-2 text-right">
                 <img src="/img/country/<?= $player["country"]; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName ?>" height="50" width="50" style="border-radius: 50%;" />
