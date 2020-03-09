@@ -170,11 +170,12 @@ while (true) {
     // Don't insert level/progress/platinum/gold/silver/bronze here since our site recalculate this.
     $query->execute();
 
-    // The profiles currently known as "Platastical", "Platasium" and "ShadowsGodly" are bugged and can't fetch trophy
-    // titles. Not even on the official website. Ignore them.
+    // The profiles currently known as "Platastical", "Platasium", "ShadowsGodly" and "ikemenzi" are bugged and can't
+    // fetch trophy titles. Not even on the official website. Ignore them.
     if ($info->accountId == 2985983827926904402 ||
         $info->accountId == 4835369520272949900 ||
-        $info->accountId == 6549517298327131420) {
+        $info->accountId == 6549517298327131420 ||
+        $info->accountId == 6515971742264256071) {
         $query = $database->prepare("UPDATE player SET last_updated_date = NOW() WHERE account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
