@@ -86,7 +86,10 @@ require_once("header.php");
                     <div class="col-12 table-responsive">
                         <table class="table table-striped">
                             <?php
-                            $query = $database->prepare("SELECT tt.id, tt.name AS game_name, tt.platform, tg.icon_url, tg.name AS group_name FROM trophy_group tg JOIN trophy_title tt USING (np_communication_id) WHERE tg.group_id != 'default' ORDER BY tg.id DESC LIMIT 10");
+                            $query = $database->prepare("SELECT tt.id, tt.name AS game_name, tt.platform, tg.icon_url, tg.name AS group_name, tg.group_id FROM trophy_group tg
+                                JOIN trophy_title tt USING (np_communication_id)
+                                WHERE tg.group_id != 'default'
+                                ORDER BY tg.id DESC LIMIT 10");
                             $query->execute();
                             $dlcs = $query->fetchAll();
 
@@ -94,7 +97,7 @@ require_once("header.php");
                                 ?>
                                 <tr>
                                     <td class="text-center" width="150">
-                                        <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>">
+                                        <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>#<?= $dlc["group_id"]; ?>">
                                             <img src="/img/group/<?= $dlc["icon_url"]; ?>" alt="" width="100" />
                                         </a>
                                         <br>
@@ -104,7 +107,7 @@ require_once("header.php");
                                         } ?>
                                     </td>
                                     <td>
-                                        <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>">
+                                        <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>#<?= $dlc["group_id"]; ?>">
                                             <small><?= $dlc["game_name"]; ?></small><br><?= $dlc["group_name"]; ?>
                                         </a>
                                     </td>

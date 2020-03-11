@@ -80,7 +80,7 @@ require_once("header.php");
                 $trophyGroups->execute();
                 while ($trophyGroup = $trophyGroups->fetch()) {
                     ?>
-                    <div class="row" style="background: #b8daff;">
+                    <div id="<?= $trophyGroup["group_id"]; ?>" class="row" style="background: #b8daff;">
                         <div class="col-auto">
                             <img src="/img/group/<?= $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="margin: 10px 0px;" />
                         </div>
