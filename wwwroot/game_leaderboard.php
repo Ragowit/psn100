@@ -100,7 +100,7 @@ $offset = ($page - 1) * $limit;
                                     <img src="/img/country/<?= $row["country"]; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
                                 </td>
                                 <td class="align-middle" style="width: 100%;">
-                                    <a href="/player/<?= $row["name"]; ?>"><?= $row["name"]; ?></a>
+                                    <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $row["name"]; ?>"><?= $row["name"]; ?></a>
                                 </td>
                                 <td class="align-middle text-center" style="white-space: nowrap;">
                                     <?= str_replace(" ", "<br>", $row["last_updated_date"]); ?>
