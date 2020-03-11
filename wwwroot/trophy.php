@@ -124,7 +124,7 @@ require_once("header.php");
                                         <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
                                     </td>
                                     <td class="align-middle" width="100%">
-                                        <a href="/player/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                        <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                     </td>
                                     <td class="align-middle text-center" style="white-space: nowrap;">
                                         <?= str_replace(" ", "<br>", $result["earned_date"]); ?>
@@ -173,7 +173,7 @@ require_once("header.php");
                                         <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
                                     </td>
                                     <td class="align-middle" width="100%">
-                                        <a href="/player/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                        <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                     </td>
                                     <td class="align-middle text-center" style="white-space: nowrap;">
                                         <?= str_replace(" ", "<br>", $result["earned_date"]); ?>
