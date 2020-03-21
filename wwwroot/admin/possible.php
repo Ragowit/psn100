@@ -244,6 +244,10 @@ require_once("../init.php");
                 OR (te.np_communication_id = 'NPWR19583_00' AND te.group_id = 'default' AND te.order_id = 7)
                 OR (te.np_communication_id = 'NPWR09492_00' AND te.group_id = 'default' AND te.order_id = 0)
                 OR (te.np_communication_id = 'NPWR09492_00' AND te.group_id = 'default' AND te.order_id = 55)
+                OR (te.np_communication_id = 'NPWR17124_00' AND te.group_id = 'default' AND te.order_id = 0)
+                OR (te.np_communication_id = 'NPWR17124_00' AND te.group_id = 'default' AND te.order_id = 7)
+                OR (te.np_communication_id = 'NPWR17124_00' AND te.group_id = 'default' AND te.order_id = 8)
+                OR (te.np_communication_id = 'NPWR17124_00' AND te.group_id = 'default' AND te.order_id = 9)
                 ) AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name");
         $query->execute();
