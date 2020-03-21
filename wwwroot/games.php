@@ -93,7 +93,7 @@ $offset = ($page - 1) * $limit;
                         } ?>
                         <td scope="row">
                             <a href="/game/<?= $gameLink; ?>">
-                                <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" width="100" />
+                                <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                             </a>
                         </td>
                         <td>

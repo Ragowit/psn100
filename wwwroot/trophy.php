@@ -41,11 +41,11 @@ require_once("header.php");
 
             <div class="col-2">
                 <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>">
-                    <img src="/img/title/<?= $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" height="60" />
+                    <img src="/img/title/<?= $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
                 </a>
             </div>
             <div class="col-1">
-                <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" height="60" />
+                <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
             </div>
             <div class="col-7">
                 <h5><?= $trophy["trophy_name"]; ?></h5>

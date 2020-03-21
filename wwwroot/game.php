@@ -82,7 +82,7 @@ require_once("header.php");
                     ?>
                     <div id="<?= $trophyGroup["group_id"]; ?>" class="row" style="background: #b8daff;">
                         <div class="col-auto">
-                            <img src="/img/group/<?= $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="margin: 10px 0px;" />
+                            <img src="/img/group/<?= $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%); margin: 10px 0px;" />
                         </div>
                         <div class="col align-self-center">
                             <b><?= $trophyGroup["name"]; ?></b><br>
@@ -156,7 +156,7 @@ require_once("header.php");
                                     $trClass = " class=\"table-success\"";
                                 } ?>
                                 <tr<?= $trClass; ?>>
-                                    <td><img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" height="60" /></td>
+                                    <td><img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" /></td>
                                     <td style="width: 100%;">
                                         <?php
                                         if (isset($player)) {
@@ -239,7 +239,7 @@ require_once("header.php");
             <div class="col-3">
                 <div class="row">
                     <div class="col-12 text-center">
-                        <img src="/img/title/<?= $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" width="250" />
+                        <img src="/img/title/<?= $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="250" />
                     </div>
                 </div>
 
