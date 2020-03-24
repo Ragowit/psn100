@@ -21,7 +21,9 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$query = $database->prepare("SELECT COUNT(*) FROM trophy_earned te WHERE te.account_id = :account_id");
+$query = $database->prepare("SELECT COUNT(*) FROM trophy_earned te
+    JOIN trophy_title tt USING (np_communication_id)
+    WHERE tt.status != 2 AND te.account_id = :account_id");
 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
 $query->execute();
 $result_count = $query->fetchColumn();
@@ -59,9 +61,21 @@ $offset = ($page - 1) * $limit;
 
                     <?php
                     if (isset($_GET["sort"])) {
-                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te LEFT JOIN trophy_group tg ON tg.np_communication_id = te.np_communication_id AND tg.group_id = te.group_id LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id and t.order_Id = te.order_id LEFT JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id WHERE te.account_id = :account_id ORDER BY t.rarity_percent LIMIT :offset, :limit");
+                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
+                        LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
+                        LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
+                        LEFT JOIN trophy_title tt USING (np_communication_id)
+                        WHERE tt.status != 2 AND te.account_id = :account_id
+                        ORDER BY t.rarity_percent
+                        LIMIT :offset, :limit");
                     } else {
-                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te LEFT JOIN trophy_group tg ON tg.np_communication_id = te.np_communication_id AND tg.group_id = te.group_id LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id and t.order_Id = te.order_id LEFT JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id WHERE te.account_id = :account_id ORDER BY te.earned_date DESC LIMIT :offset, :limit");
+                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
+                        LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
+                        LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
+                        LEFT JOIN trophy_title tt USING (np_communication_id)
+                        WHERE tt.status != 2 AND te.account_id = :account_id
+                        ORDER BY te.earned_date DESC
+                        LIMIT :offset, :limit");
                     }
                     $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                     $query->bindParam(":offset", $offset, PDO::PARAM_INT);

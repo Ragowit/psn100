@@ -21,7 +21,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp WHERE ttp.account_id = :account_id");
+$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status != 2 AND ttp.account_id = :account_id");
 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
 $query->execute();
 $result_count = $query->fetchColumn();
@@ -61,13 +61,13 @@ $offset = ($page - 1) * $limit;
                     if (isset($_GET["sort"])) {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, ttp.rarity_points FROM trophy_title_player ttp
                             JOIN trophy_title tt USING (np_communication_id)
-                            WHERE ttp.account_id = :account_id
+                            WHERE ttp.account_id = :account_id AND tt.status != 2
                             ORDER BY rarity_points DESC, name
                             LIMIT :offset, :limit");
                     } else {
                         $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, ttp.rarity_points FROM trophy_title_player ttp
                             JOIN trophy_title tt USING (np_communication_id)
-                            WHERE ttp.account_id = :account_id
+                            WHERE ttp.account_id = :account_id AND tt.status != 2
                             ORDER BY last_updated_date DESC
                             LIMIT :offset, :limit");
                     }

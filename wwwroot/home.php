@@ -44,7 +44,10 @@ require_once("header.php");
                     <div class="col-12 table-responsive">
                         <table class="table table-striped">
                             <?php
-                            $query = $database->prepare("SELECT * FROM trophy_title ORDER BY id DESC LIMIT 10");
+                            $query = $database->prepare("SELECT * FROM trophy_title
+                                WHERE status != 2
+                                ORDER BY id DESC
+                                LIMIT 10");
                             $query->execute();
                             $games = $query->fetchAll();
 
@@ -88,8 +91,9 @@ require_once("header.php");
                             <?php
                             $query = $database->prepare("SELECT tt.id, tt.name AS game_name, tt.platform, tg.icon_url, tg.name AS group_name, tg.group_id FROM trophy_group tg
                                 JOIN trophy_title tt USING (np_communication_id)
-                                WHERE tg.group_id != 'default'
-                                ORDER BY tg.id DESC LIMIT 10");
+                                WHERE tt.status != 2 AND tg.group_id != 'default'
+                                ORDER BY tg.id DESC
+                                LIMIT 10");
                             $query->execute();
                             $dlcs = $query->fetchAll();
 
@@ -132,6 +136,7 @@ require_once("header.php");
                         <table class="table table-striped">
                             <?php
                             $query = $database->prepare("SELECT id, icon_url, platform, name, recent_players FROM trophy_title
+                                WHERE status != 2
                                 ORDER BY recent_players DESC
                                 LIMIT 10");
                             $query->execute();

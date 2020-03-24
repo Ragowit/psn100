@@ -13,12 +13,15 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
 if (isset($_GET["search"])) {
     $search = $_GET["search"];
-    $query = $database->prepare("SELECT COUNT(*) FROM `trophy_title` WHERE (MATCH(name) AGAINST (:search)) > 0");
+    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title
+        WHERE status != 2 AND (MATCH(name) AGAINST (:search)) > 0");
     $query->bindParam(":search", $search, PDO::PARAM_STR);
 } elseif (isset($_GET["sort"])) {
-    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title WHERE status = 0 AND (bronze+silver+gold+platinum) != 0");
+    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title
+        WHERE status = 0 AND (bronze+silver+gold+platinum) != 0");
 } else {
-    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title");
+    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title
+        WHERE status != 2");
 }
 $query->execute();
 $total_pages = $query->fetchColumn();
@@ -49,15 +52,24 @@ $offset = ($page - 1) * $limit;
                     <?php
                     if (isset($_GET["search"])) {
                         $search = $_GET["search"];
-                        $games = $database->prepare("SELECT *, MATCH(name) AGAINST (:search) AS score FROM `trophy_title` WHERE (MATCH(name) AGAINST (:search)) > 0 ORDER BY score DESC LIMIT :offset, :limit");
+                        $games = $database->prepare("SELECT *, MATCH(name) AGAINST (:search) AS score FROM trophy_title
+                            WHERE status != 2 AND (MATCH(name) AGAINST (:search)) > 0
+                            ORDER BY score DESC
+                            LIMIT :offset, :limit");
                         $games->bindParam(":search", $search, PDO::PARAM_STR);
                         $games->bindParam(":offset", $offset, PDO::PARAM_INT);
                         $games->bindParam(":limit", $limit, PDO::PARAM_INT);
                     } else {
                         if (isset($_GET["sort"])) {
-                            $games = $database->prepare("SELECT * FROM trophy_title WHERE status = 0 AND (bronze+silver+gold+platinum) != 0 ORDER BY difficulty DESC, owners DESC LIMIT :offset, :limit");
+                            $games = $database->prepare("SELECT * FROM trophy_title
+                                WHERE status = 0 AND (bronze+silver+gold+platinum) != 0
+                                ORDER BY difficulty DESC, owners DESC
+                                LIMIT :offset, :limit");
                         } else {
-                            $games = $database->prepare("SELECT * FROM trophy_title ORDER BY id DESC LIMIT :offset, :limit");
+                            $games = $database->prepare("SELECT * FROM trophy_title
+                            WHERE status != 2
+                            ORDER BY id DESC
+                            LIMIT :offset, :limit");
                         }
                         $games->bindParam(":offset", $offset, PDO::PARAM_INT);
                         $games->bindParam(":limit", $limit, PDO::PARAM_INT);
@@ -67,12 +79,14 @@ $offset = ($page - 1) * $limit;
 
                     if (isset($_GET["player"])) {
                         $player = $_GET["player"];
-                        $playerQuery = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
+                        $playerQuery = $database->prepare("SELECT account_id FROM player
+                            WHERE online_id = :online_id");
                         $playerQuery->bindParam(":online_id", $player, PDO::PARAM_STR);
                         $playerQuery->execute();
                         $accountId = $playerQuery->fetchColumn();
 
-                        $playerGamesQuery = $database->prepare("SELECT np_communication_id, progress FROM trophy_title_player WHERE account_id = :account_id");
+                        $playerGamesQuery = $database->prepare("SELECT np_communication_id, progress FROM trophy_title_player
+                            WHERE account_id = :account_id");
                         $playerGamesQuery->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                         $playerGamesQuery->execute();
                         $playerGames = $playerGamesQuery->fetchAll(PDO::FETCH_KEY_PAIR);

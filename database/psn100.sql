@@ -1,9 +1,9 @@
 -- phpMyAdmin SQL Dump
--- version 4.9.0.1
+-- version 4.9.4
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 17, 2020 at 06:50 PM
+-- Generation Time: Mar 24, 2020 at 08:57 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -162,6 +162,21 @@ CREATE TABLE `trophy_group_player` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `trophy_merge`
+--
+
+CREATE TABLE `trophy_merge` (
+  `child_np_communication_id` varchar(12) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `child_group_id` varchar(7) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `child_order_id` smallint(5) UNSIGNED NOT NULL,
+  `parent_np_communication_id` varchar(12) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `parent_group_id` varchar(7) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `parent_order_id` smallint(5) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `trophy_title`
 --
 
@@ -258,6 +273,12 @@ ALTER TABLE `trophy_group_player`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`group_id`,`account_id`),
   ADD KEY `fk_p_tgp` (`account_id`);
+
+--
+-- Indexes for table `trophy_merge`
+--
+ALTER TABLE `trophy_merge`
+  ADD PRIMARY KEY (`child_np_communication_id`,`child_group_id`,`child_order_id`);
 
 --
 -- Indexes for table `trophy_title`
