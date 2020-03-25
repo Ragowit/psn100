@@ -11,7 +11,9 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$query = $database->prepare("SELECT COUNT(*) FROM trophy");
+$query = $database->prepare("SELECT COUNT(*) FROM trophy t
+    JOIN trophy_title tt USING (np_communication_id)
+    WHERE tt.status != 2");
 $query->execute();
 $total_pages = $query->fetchColumn();
 
@@ -41,6 +43,7 @@ $offset = ($page - 1) * $limit;
                     <?php
                     $trophies = $database->prepare("SELECT t.id AS trophy_id, t.type AS trophy_type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon, t.rarity_percent, tt.id AS game_id, tt.name AS game_name, tt.icon_url AS game_icon FROM trophy t
                         JOIN trophy_title tt USING (np_communication_id)
+                        WHERE tt.status != 2
                         ORDER BY t.id DESC
                         LIMIT :offset, :limit");
                     $trophies->bindParam(":offset", $offset, PDO::PARAM_INT);
