@@ -493,6 +493,17 @@ while (true) {
                         $query->execute();
 
                         $newDLC = true;
+                        
+                        $query = $database->prepare("SELECT status FROM trophy_title WHERE np_communication_id = :np_communication_id");
+                        $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                        $query->execute();
+                        $status = $query->fetchColumn();
+                        if ($status == 2) { // A "Merge Title" have gotten a DLC. Add a log about it so admin can check it out later and fix this.
+                            $message = "DLC added. ". $game->npCommunicationId . ", ". $trophyGroup->trophyGroupId .", ". $trophyGroup->trophyGroupName;
+                            $query = $database->prepare("INSERT INTO log (message) VALUES (:message)");
+                            $query->bindParam(":message", $message, PDO::PARAM_STR);
+                            $query->execute();
+                        }
                     }
 
                     if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
