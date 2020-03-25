@@ -1,4 +1,8 @@
 <?php
+ini_set("max_execution_time", "0");
+ini_set("max_input_time", "0");
+ini_set("mysql.connect_timeout", "0");
+set_time_limit(0);
 require_once("../init.php");
 
 if (ctype_digit(strval($_POST["parent"])) && ctype_digit(strval($_POST["child"]))) {
@@ -24,143 +28,157 @@ if (ctype_digit(strval($_POST["parent"])) && ctype_digit(strval($_POST["child"])
     $database->commit();
 
     // Go through all players with child trophies
-    $selectQuery = $database->prepare("SELECT * FROM trophy_earned
+    $players = $database->prepare("SELECT account_id, last_updated_date FROM trophy_title_player
         WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :game_id)");
-    $selectQuery->bindParam(":game_id", $childId, PDO::PARAM_INT);
-    $selectQuery->execute();
-    while ($child = $selectQuery->fetch()) {
-        $query = $database->prepare("SELECT parent_np_communication_id, parent_group_id, parent_order_id FROM trophy_merge
-            WHERE child_np_communication_id = :child_np_communication_id AND child_group_id = :child_group_id AND child_order_id = :child_order_id");
-        $query->bindParam(":child_np_communication_id", $child["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":child_group_id", $child["group_id"], PDO::PARAM_STR);
-        $query->bindParam(":child_order_id", $child["order_id"], PDO::PARAM_INT);
-        $query->execute();
-        $parent = $query->fetch();
+    $players->bindParam(":game_id", $childId, PDO::PARAM_INT);
+    $players->execute();
+    while ($player = $players->fetch()) {
+        // Copy the trophies
+        $childTrophies = $database->prepare("SELECT np_communication_id, group_id, order_id, earned_date FROM trophy_earned
+            WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :game_id) AND account_id = :account_id");
+        $childTrophies->bindParam(":game_id", $childId, PDO::PARAM_INT);
+        $childTrophies->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+        $childTrophies->execute();
+        while ($child = $childTrophies->fetch()) {
+            $query = $database->prepare("SELECT parent_np_communication_id, parent_group_id, parent_order_id FROM trophy_merge
+                WHERE child_np_communication_id = :child_np_communication_id AND child_group_id = :child_group_id AND child_order_id = :child_order_id");
+            $query->bindParam(":child_np_communication_id", $child["np_communication_id"], PDO::PARAM_STR);
+            $query->bindParam(":child_group_id", $child["group_id"], PDO::PARAM_STR);
+            $query->bindParam(":child_order_id", $child["order_id"], PDO::PARAM_INT);
+            $query->execute();
+            $parent = $query->fetch();
 
-        $query = $database->prepare("INSERT INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date)
-            VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)
-            ON DUPLICATE KEY UPDATE earned_date = IF(earned_date < VALUES(earned_date), earned_date, VALUES(earned_date))");
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
-        $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
-        $query->bindParam(":account_id", $child["account_id"], PDO::PARAM_INT);
-        $query->bindParam(":earned_date", $child["earned_date"], PDO::PARAM_STR);
-        $query->execute();
+            $query = $database->prepare("INSERT INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date)
+                VALUES (:np_communication_id, :group_id, :order_id, :account_id, :earned_date)
+                ON DUPLICATE KEY UPDATE earned_date = IF(earned_date < VALUES(earned_date), earned_date, VALUES(earned_date))");
+            $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
+            $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
+            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+            $query->bindParam(":earned_date", $child["earned_date"], PDO::PARAM_STR);
+            $query->execute();
+        }
 
         // trophy_group_player
-        $query = $database->prepare("SELECT type, COUNT(*) AS count FROM trophy
-            WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND status = 0
-            GROUP BY type");
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
-        $query->execute();
-        $trophyTypes = $query->fetchAll(PDO::FETCH_KEY_PAIR);
-        if (!isset($trophyTypes["bronze"])) {
-            $trophyTypes["bronze"] = 0;
-        }
-        if (!isset($trophyTypes["silver"])) {
-            $trophyTypes["silver"] = 0;
-        }
-        if (!isset($trophyTypes["gold"])) {
-            $trophyTypes["gold"] = 0;
-        }
-        if (!isset($trophyTypes["platinum"])) {
-            $trophyTypes["platinum"] = 0;
+        $groups = $database->prepare("SELECT DISTINCT parent_np_communication_id, parent_group_id FROM trophy_merge
+                WHERE child_np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :game_id)");
+        $groups->bindParam(":game_id", $childId, PDO::PARAM_INT);
+        $groups->execute();
+        while ($group = $groups->fetch()) {
+            $query = $database->prepare("SELECT type, COUNT(*) AS count FROM trophy
+                WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND status = 0
+                GROUP BY type");
+            $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
+            $query->execute();
+            $trophyTypes = $query->fetchAll(PDO::FETCH_KEY_PAIR);
+            if (!isset($trophyTypes["bronze"])) {
+                $trophyTypes["bronze"] = 0;
+            }
+            if (!isset($trophyTypes["silver"])) {
+                $trophyTypes["silver"] = 0;
+            }
+            if (!isset($trophyTypes["gold"])) {
+                $trophyTypes["gold"] = 0;
+            }
+            if (!isset($trophyTypes["platinum"])) {
+                $trophyTypes["platinum"] = 0;
+            }
+
+            // Recalculate trophies for trophy group for the player
+            $maxScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
+            $query = $database->prepare("SELECT type, COUNT(type) AS count FROM trophy_earned te
+                LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND t.status = 0
+                WHERE account_id = :account_id AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id
+                GROUP BY type");
+            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+            $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
+            $query->execute();
+            $trophyTypes = $query->fetchAll(PDO::FETCH_KEY_PAIR);
+            if (!isset($trophyTypes["bronze"])) {
+                $trophyTypes["bronze"] = 0;
+            }
+            if (!isset($trophyTypes["silver"])) {
+                $trophyTypes["silver"] = 0;
+            }
+            if (!isset($trophyTypes["gold"])) {
+                $trophyTypes["gold"] = 0;
+            }
+            if (!isset($trophyTypes["platinum"])) {
+                $trophyTypes["platinum"] = 0;
+            }
+            $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
+            if ($maxScore == 0) {
+                $progress = 100;
+            } else {
+                $progress = floor($userScore/$maxScore*100);
+                if ($userScore != 0 && $progress == 0) {
+                    $progress = 1;
+                }
+            }
+            $query = $database->prepare("INSERT INTO trophy_group_player (np_communication_id, group_id, account_id, bronze, silver, gold, platinum, progress)
+                VALUES (:np_communication_id, :group_id, :account_id, :bronze, :silver, :gold, :platinum, :progress)
+                ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress)");
+            $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
+            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+            $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
+            $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
+            $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
+            $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
+            $query->bindParam(":progress", $progress, PDO::PARAM_INT);
+            $query->execute();
         }
 
-        // Recalculate trophies for trophy group for the player
-        $maxScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-        $query = $database->prepare("SELECT type, COUNT(type) AS count FROM trophy_earned te
-            LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND t.status = 0
-            WHERE account_id = :account_id AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id
-            GROUP BY type");
-        $query->bindParam(":account_id", $child["account_id"], PDO::PARAM_INT);
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
-        $query->execute();
-        $trophyTypes = $query->fetchAll(PDO::FETCH_KEY_PAIR);
-        if (!isset($trophyTypes["bronze"])) {
-            $trophyTypes["bronze"] = 0;
-        }
-        if (!isset($trophyTypes["silver"])) {
-            $trophyTypes["silver"] = 0;
-        }
-        if (!isset($trophyTypes["gold"])) {
-            $trophyTypes["gold"] = 0;
-        }
-        if (!isset($trophyTypes["platinum"])) {
-            $trophyTypes["platinum"] = 0;
-        }
-        $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-        if ($maxScore == 0) {
-            $progress = 100;
-        } else {
-            $progress = floor($userScore/$maxScore*100);
-            if ($userScore != 0 && $progress == 0) {
-                $progress = 1;
-            }
-        }
-        $query = $database->prepare("INSERT INTO trophy_group_player (np_communication_id, group_id, account_id, bronze, silver, gold, platinum, progress)
-            VALUES (:np_communication_id, :group_id, :account_id, :bronze, :silver, :gold, :platinum, :progress)
-            ON DUPLICATE KEY UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress)");
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
-        $query->bindParam(":account_id", $child["account_id"], PDO::PARAM_INT);
-        $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
-        $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
-        $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
-        $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
-        $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-        $query->execute();
         
         // trophy_title_player
-        $query = $database->prepare("SELECT SUM(bronze) AS bronze, SUM(silver) AS silver, SUM(gold) AS gold, SUM(platinum) AS platinum FROM trophy_group
-            WHERE np_communication_id = :np_communication_id");
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->execute();
-        $trophies = $query->fetch();
+        $titles = $database->prepare("SELECT DISTINCT parent_np_communication_id FROM trophy_merge
+                WHERE child_np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :game_id)");
+        $titles->bindParam(":game_id", $childId, PDO::PARAM_INT);
+        $titles->execute();
+        while ($title = $titles->fetch()) {
+            $query = $database->prepare("SELECT SUM(bronze) AS bronze, SUM(silver) AS silver, SUM(gold) AS gold, SUM(platinum) AS platinum FROM trophy_group
+                WHERE np_communication_id = :np_communication_id");
+            $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->execute();
+            $trophies = $query->fetch();
 
-        // Recalculate trophies for trophy title for the player(s)
-        $maxScore = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90; // Platinum isn't counted for
-        
-        $query = $database->prepare("SELECT SUM(bronze) AS bronze, SUM(silver) AS silver, SUM(gold) AS gold, SUM(platinum) AS platinum
-            FROM trophy_group_player
-            WHERE account_id = :account_id AND np_communication_id = :np_communication_id");
-        $query->bindParam(":account_id", $child["account_id"], PDO::PARAM_INT);
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->execute();
-        $trophyTypes = $query->fetch();
-        $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
-        if ($maxScore == 0) {
-            $progress = 100;
-        } else {
-            $progress = floor($userScore/$maxScore*100);
-            if ($userScore != 0 && $progress == 0) {
-                $progress = 1;
+            // Recalculate trophies for trophy title for the player(s)
+            $maxScore = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90; // Platinum isn't counted for
+            
+            $query = $database->prepare("SELECT SUM(bronze) AS bronze, SUM(silver) AS silver, SUM(gold) AS gold, SUM(platinum) AS platinum
+                FROM trophy_group_player
+                WHERE account_id = :account_id AND np_communication_id = :np_communication_id");
+            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+            $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->execute();
+            $trophyTypes = $query->fetch();
+            $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
+            if ($maxScore == 0) {
+                $progress = 100;
+            } else {
+                $progress = floor($userScore/$maxScore*100);
+                if ($userScore != 0 && $progress == 0) {
+                    $progress = 1;
+                }
             }
+            
+            $query = $database->prepare("INSERT INTO trophy_title_player (np_communication_id, account_id, bronze, silver, gold, platinum, progress, last_updated_date)
+                VALUES (:np_communication_id, :account_id, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date)
+                ON DUPLICATE KEY
+                UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress),
+                    last_updated_date = IF(last_updated_date < VALUES(last_updated_date), VALUES(last_updated_date), last_updated_date)");
+            $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+            $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
+            $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
+            $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
+            $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
+            $query->bindParam(":progress", $progress, PDO::PARAM_INT);
+            $query->bindParam(":last_updated_date", $player["last_updated_date"], PDO::PARAM_STR);
+            $query->execute();
         }
-        
-        $query = $database->prepare("SELECT last_updated_date FROM trophy_title_player
-            WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
-        $query->bindParam(":np_communication_id", $child["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":account_id", $child["account_id"], PDO::PARAM_STR);
-        $query->execute();
-        $dtAsTextForInsert = $query->fetchColumn();
-
-        $query = $database->prepare("INSERT INTO trophy_title_player (np_communication_id, account_id, bronze, silver, gold, platinum, progress, last_updated_date)
-            VALUES (:np_communication_id, :account_id, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date)
-            ON DUPLICATE KEY
-            UPDATE bronze=VALUES(bronze), silver=VALUES(silver), gold=VALUES(gold), platinum=VALUES(platinum), progress=VALUES(progress),
-                last_updated_date = IF(last_updated_date < VALUES(last_updated_date), VALUES(last_updated_date), last_updated_date)");
-        $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":account_id", $child["account_id"], PDO::PARAM_INT);
-        $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
-        $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
-        $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
-        $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
-        $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-        $query->bindParam(":last_updated_date", $dtAsTextForInsert, PDO::PARAM_STR);
-        $query->execute();
     }
 
     // Add all affected players to the queue to recalculate trophy count, level and level progress
