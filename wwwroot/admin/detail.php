@@ -70,7 +70,6 @@ if (ctype_digit(strval($_POST["game"]))) {
                 Standard messages:<br>
                 <?= htmlentities("This game have unobtainable trophies (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>)."); ?><br>
                 <?= htmlentities("This game is delisted (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>). No trophies will be accounted for on any leaderboard."); ?><br>
-                <?= htmlentities("This game have been merged, please check the <a href=\"https://psn100.net/game/\">parent game</a>. Earned trophies in this entry will not be accounted for on any leaderboard but have been transfered to the parent game."); ?><br>
             </p>
             <?php
         }

@@ -39,6 +39,18 @@ require_once("header.php");
             </div>
 
             <?php
+            if ($game["status"] == 2) {
+                ?>
+                <div class="col-12">
+                    <div class="alert alert-warning" role="alert">
+                        This game have been merged, please search for the parent game. Earned trophies in this entry will not be accounted for on any leaderboard but have been transfered to the parent game.
+                    </div>
+                </div>
+                <?php
+            }
+            ?>
+
+            <?php
             if (!empty($game["message"])) {
                 ?>
                 <div class="col-12">
