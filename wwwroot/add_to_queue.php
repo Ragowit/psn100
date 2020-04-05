@@ -7,7 +7,7 @@ if (!isset($player) || $player === "") {
     echo "PSN name can't be empty.";
 } elseif ($player == "ikemenzi") {
     echo "ikemenzi is unfortunately currently bugged and can't be updated. Not even on the official website. <a href=\"https://my.playstation.com/profile/ikemenzi/trophies\">https://my.playstation.com/profile/ikemenzi/trophies</a>";
-} else {
+} elseif (preg_match("/^[\w\-]{3,16}$/", $player)) {
     // Insert player into the queue
     //$query = $database->prepare("INSERT IGNORE INTO player_queue (online_id) VALUES (:online_id)");
     $query = $database->prepare("INSERT INTO player_queue (online_id) VALUES (:online_id) ON DUPLICATE KEY UPDATE request_time=NOW()"); // Currently our initial backlog is huge, so use this for a while.
@@ -22,4 +22,6 @@ if (!isset($player) || $player === "") {
 
     $player = htmlentities($player, ENT_QUOTES, "UTF-8");
     echo "<a href=\"/player/". $player ."\">". $player ."</a> is in the update queue, currently in position ". $position;
+} else {
+    echo "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
 }
