@@ -190,20 +190,35 @@ $clients = array();
 // Login with all the tokens
 $database->beginTransaction();
 foreach ($workers as $worker) {
-    $client = new Client();
-    $refreshToken = $worker["refresh_token"];
-    $client->login($refreshToken);
+    try {
+        $client = new Client();
+        $refreshToken = $worker["refresh_token"];
+        $client->login($refreshToken);
 
-    // Store new token
-    $refreshToken = $client->refreshToken();
-    $query = $database->prepare("UPDATE setting SET refresh_token = :refresh_token WHERE id = :id");
-    $query->bindParam(":refresh_token", $refreshToken, PDO::PARAM_STR);
-    $query->bindParam(":id", $worker["id"], PDO::PARAM_INT);
-    $query->execute();
+        // Store new token
+        $refreshToken = $client->refreshToken();
+        $query = $database->prepare("UPDATE setting SET refresh_token = :refresh_token WHERE id = :id");
+        $query->bindParam(":refresh_token", $refreshToken, PDO::PARAM_STR);
+        $query->bindParam(":id", $worker["id"], PDO::PARAM_INT);
+        $query->execute();
 
-    array_push($clients, $client);
+        array_push($clients, $client);
+    } catch (Exception $e) {
+        $message = "Can't login with worker ". $worker["id"];
+        $query = $database->prepare("INSERT INTO log (message) VALUES (:message)");
+        $query->bindParam(":message", $message, PDO::PARAM_STR);
+        $query->execute();
+    }
 }
 $database->commit();
+
+if (count($clients) == 0) {
+    $message = "No workers available.";
+    $query = $database->prepare("INSERT INTO log (message) VALUES (:message)");
+    $query->bindParam(":message", $message, PDO::PARAM_STR);
+    $query->execute();
+    die();
+}
 
 while (true) {
     // Get our queue. Prioritize user requests, and then just old scanned players from our database.
@@ -493,7 +508,7 @@ while (true) {
                         $query->execute();
 
                         $newDLC = true;
-                        
+
                         $query = $database->prepare("SELECT status FROM trophy_title WHERE np_communication_id = :np_communication_id");
                         $query->bindParam(":np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
                         $query->execute();
