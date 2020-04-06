@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Mar 24, 2020 at 08:57 PM
+-- Generation Time: Apr 06, 2020 at 10:11 PM
 -- Server version: 5.7.29
 -- PHP Version: 7.3.6
 
@@ -21,6 +21,18 @@ SET time_zone = "+00:00";
 --
 -- Database: `psn100`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log`
+--
+
+CREATE TABLE `log` (
+  `id` int(11) NOT NULL,
+  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `message` text COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -57,7 +69,8 @@ CREATE TABLE `player` (
   `rare` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `epic` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `legendary` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
-  `status` tinyint(3) UNSIGNED NOT NULL DEFAULT '0'
+  `status` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
+  `private_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -222,6 +235,12 @@ CREATE TABLE `trophy_title_player` (
 --
 
 --
+-- Indexes for table `log`
+--
+ALTER TABLE `log`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `player`
 --
 ALTER TABLE `player`
@@ -301,6 +320,12 @@ ALTER TABLE `trophy_title_player`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `log`
+--
+ALTER TABLE `log`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `setting`

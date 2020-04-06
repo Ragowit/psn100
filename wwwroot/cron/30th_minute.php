@@ -374,21 +374,32 @@ while (true) {
 
     if ($info->trophySummary->level === 1 && $info->trophySummary->progress === 0) {
         // Profile most likely set to private, remove all trophy data we have for this player
-        $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0, points = 0, rarity_points = 0 WHERE account_id = :account_id");
+        $query = $database->prepare("SELECT private_date FROM player WHERE account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
+        $playerPrivateDate = $query->fetchColumn();
+        
+        if ($playerPrivateDate == null) {
+            $query = $database->prepare("UPDATE player SET private_date = NOW() WHERE account_id = :account_id");
+            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+            $query->execute();
+        } elseif (strtotime($playerPrivateDate) < strtotime("-3 days")) { // We have got odd results from Sony where the result says the player is private, when it's not. So if the player have been private for 3 days, then we go on and remove all data.
+            $query = $database->prepare("UPDATE player SET level = 1, progress = 0, platinum = 0, gold = 0, silver = 0, bronze = 0, points = 0, rarity_points = 0 WHERE account_id = :account_id");
+            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+            $query->execute();
 
-        $query = $database->prepare("DELETE FROM trophy_earned WHERE account_id = :account_id");
-        $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-        $query->execute();
+            $query = $database->prepare("DELETE FROM trophy_earned WHERE account_id = :account_id");
+            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+            $query->execute();
 
-        $query = $database->prepare("DELETE FROM trophy_group_player WHERE account_id = :account_id");
-        $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-        $query->execute();
+            $query = $database->prepare("DELETE FROM trophy_group_player WHERE account_id = :account_id");
+            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+            $query->execute();
 
-        $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
-        $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-        $query->execute();
+            $query = $database->prepare("DELETE FROM trophy_title_player WHERE account_id = :account_id");
+            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+            $query->execute();
+        }
     } else {
         $offset = $player["offset"];
 
@@ -668,7 +679,7 @@ while (true) {
             $level = 26 + floor(($points - 128000) / 10000);
             $progress = floor(($points - 128000 - ($level - 26) * 10000) / 10000 * 100);
         }
-        $query = $database->prepare("UPDATE player SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum, level = :level, progress = :progress, points = :points WHERE account_id = :account_id");
+        $query = $database->prepare("UPDATE player SET bronze = :bronze, silver = :silver, gold = :gold, platinum = :platinum, level = :level, progress = :progress, points = :points, private_date = NULL WHERE account_id = :account_id");
         $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
         $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);
         $query->bindParam(":gold", $trophies["gold"], PDO::PARAM_INT);
