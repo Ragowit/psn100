@@ -60,36 +60,36 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if (isset($_GET["sort"])) {
-                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
-                        LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
-                        LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
-                        LEFT JOIN trophy_title tt USING (np_communication_id)
-                        WHERE tt.status != 2 AND te.account_id = :account_id
-                        ORDER BY t.rarity_percent
-                        LIMIT :offset, :limit");
-                    } else {
-                        $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
-                        LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
-                        LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
-                        LEFT JOIN trophy_title tt USING (np_communication_id)
-                        WHERE tt.status != 2 AND te.account_id = :account_id
-                        ORDER BY te.earned_date DESC
-                        LIMIT :offset, :limit");
-                    }
-                    $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
-                    $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-                    $query->bindParam(":limit", $limit, PDO::PARAM_INT);
-                    $query->execute();
-                    $trophies = $query->fetchAll();
-
-                    if (count($trophies) === 0) {
+                    if ($player["level"] === 0) {
                         ?>
                         <tr>
                             <td colspan="6" class="text-center"><h3>This player seems to have a private profile.</h3></td>
                         </tr>
                         <?php
                     } else {
+                        if (isset($_GET["sort"])) {
+                            $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
+                            LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
+                            LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
+                            LEFT JOIN trophy_title tt USING (np_communication_id)
+                            WHERE tt.status != 2 AND te.account_id = :account_id
+                            ORDER BY t.rarity_percent
+                            LIMIT :offset, :limit");
+                        } else {
+                            $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
+                            LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
+                            LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
+                            LEFT JOIN trophy_title tt USING (np_communication_id)
+                            WHERE tt.status != 2 AND te.account_id = :account_id
+                            ORDER BY te.earned_date DESC
+                            LIMIT :offset, :limit");
+                        }
+                        $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+                        $query->bindParam(":offset", $offset, PDO::PARAM_INT);
+                        $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+                        $query->execute();
+                        $trophies = $query->fetchAll();
+                        
                         foreach ($trophies as $trophy) {
                             if ($trophy["game_status"] == 1) {
                                 echo "<tr class=\"table-warning\" title=\"This game is delisted and the trophy will not be accounted for on any leaderboard.\">";
