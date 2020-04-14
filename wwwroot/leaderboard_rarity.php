@@ -14,10 +14,10 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 if (isset($_GET["country"])) {
     $country = $_GET["country"];
 
-    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rank != 0 AND country = :country");
+    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rarity_rank != 0 AND country = :country");
     $query->bindParam(":country", $country, PDO::PARAM_STR);
 } else {
-    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rank != 0");
+    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rarity_rank != 0");
 }
 $query->execute();
 $total_pages = $query->fetchColumn();
