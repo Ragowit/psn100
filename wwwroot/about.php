@@ -15,6 +15,15 @@ require_once("header.php");
                     PSN 100% is a trophy tracking website, focusing on merging game stacks and removal of unobtainable trophies to create one list of only obtainable trophies where all users have the chance to get to the same level, without the need to replay the same game multiple times. Furthermore so does PSN 100% only calculate stats from the top 100k players in order to try and be more accurate for those who considers themselves as a trophy hunter. PSN 100% is made by trophy hunters, for trophy hunters.
                 </p>
 
+                <div class="alert alert-info" role="alert">
+                    <?php
+                    $query = $database->prepare("SELECT COUNT(*) FROM player_queue WHERE request_time = '2020-12-25'");
+                    $query->execute();
+                    $queue = $query->fetchColumn();
+                    ?>
+                    Until the site have reached 100k users so may the statistics on this site change drastically. We have <?= $queue; ?> players in the queue. Players added on the front page take priority.
+                </div>
+
                 <h2>What isn't PSN 100%?</h2>
                 <p>
                     PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handle this with greatness, please use them.

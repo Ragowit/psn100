@@ -4,19 +4,6 @@ require_once("header.php");
 ?>
 <main role="main">
     <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-info" role="alert">
-                    <?php
-                    $query = $database->prepare("SELECT COUNT(*) FROM player_queue");
-                    $query->execute();
-                    $queue = $query->fetchColumn();
-                    ?>
-                    This site is newly launched and currently scanning through the trophy list of <?= $queue; ?> players. The statistics on this site can change drastically until this is complete.
-                </div>
-            </div>
-        </div>
-
         <div class="row justify-content-center">
             <div class="col-6">
                 <div class="form-inline justify-content-center">
