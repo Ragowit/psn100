@@ -44,7 +44,7 @@ while ($player = $query->fetch()) {
     $queryRank->execute();
 }
 
-// Recalculate trophy rarity. THIS ONE IS SLOW! TODO: How to speed it up?
+// Recalculate trophy rarity.
 $query = $database->prepare("UPDATE trophy t SET t.rarity_percent = CASE
     WHEN (SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id) = 0 THEN 0
     WHEN (SELECT owners FROM trophy_title tt WHERE tt.np_communication_id = t.np_communication_id) <= (
@@ -63,35 +63,100 @@ $query = $database->prepare("UPDATE trophy t SET t.rarity_percent = CASE
 $query->execute();
 
 // Recalculate trophy rarity point
-$query = $database->prepare("UPDATE trophy t JOIN trophy_title tt USING (np_communication_id) SET t.rarity_point = IF(t.status = 1 OR tt.status = 1, 0, FLOOR(1 / (GREATEST(t.rarity_percent, 0.01) / 100) - 1))");
-$query->execute();
-
-// Recalculate rarity points for each game for each players. SLOW!
-$query = $database->prepare("UPDATE trophy_title_player ttp, (
-    SELECT account_id, np_communication_id, SUM(rarity_point) AS points FROM trophy
-    JOIN trophy_earned USING (np_communication_id, group_id, order_id)
-    GROUP BY account_id, np_communication_id) tsum
-    SET ttp.rarity_points = tsum.points
-    WHERE ttp.account_id = tsum.account_id AND ttp.np_communication_id = tsum.np_communication_id");
-$query->execute();
-
-// Recalculate rarity points for each player.
-$query = $database->prepare("UPDATE player p, (SELECT account_id, SUM(rarity_points) AS rarity_points FROM trophy_title_player GROUP BY account_id) ttp SET p.rarity_points = ttp.rarity_points WHERE p.account_id = ttp.account_id");
-$query->execute();
-
-// Recalculate rarity levels for players. THIS ONE IS SLOW! TODO: How to speed it up?
-$query = $database->prepare("UPDATE player p, (
-    SELECT te.account_id,
-    SUM(t.rarity_percent > 50) common,
-    SUM(t.rarity_percent <= 50 AND t.rarity_percent > 20) uncommon,
-    SUM(t.rarity_percent <= 20 AND t.rarity_percent > 5) rare,
-    SUM(t.rarity_percent <= 5 AND t.rarity_percent > 1) epic,
-    SUM(t.rarity_percent <= 1) legendary FROM trophy t
-    JOIN trophy_earned te USING (np_communication_id, group_id, order_id)
+$query = $database->prepare("UPDATE trophy t
     JOIN trophy_title tt USING (np_communication_id)
-    WHERE t.status = 0 AND tt.status = 0 GROUP BY te.account_id
-    ) x SET p.common = x.common, p.uncommon = x.uncommon, p.rare = x.rare, p.epic = x.epic, p.legendary = x.legendary WHERE p.account_id = x.account_id");
+    SET t.rarity_point = IF(t.status = 1 OR tt.status != 0, 0, FLOOR(1 / (GREATEST(t.rarity_percent, 0.01) / 100) - 1))");
 $query->execute();
+
+// Recalculate rarity points and rarity levels for each players.
+$query = $database->prepare("SELECT account_id FROM player WHERE status = 0");
+$query->execute();
+while ($row = $query->fetch()) {
+    // Rarity points for each game
+    $queryUpdate = $database->prepare("UPDATE
+            trophy_title_player ttp
+        INNER JOIN(
+            SELECT
+                account_id,
+                np_communication_id,
+                SUM(rarity_point) AS points
+            FROM
+                trophy_earned
+            JOIN trophy USING(
+                    np_communication_id,
+                    group_id,
+                    order_id
+                )
+            WHERE
+                account_id = :account_id
+            GROUP BY
+                np_communication_id
+        ) x USING(
+            account_id,
+            np_communication_id
+        )
+        SET
+            ttp.rarity_points = x.points");
+    $queryUpdate->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
+    $queryUpdate->execute();
+
+    // Total rarity points
+    $queryUpdate = $database->prepare("UPDATE
+            player p
+        INNER JOIN(
+            SELECT account_id,
+                SUM(rarity_points) AS rarity_points
+            FROM
+                trophy_title_player
+            WHERE
+                account_id = :account_id
+            GROUP BY
+                account_id
+        ) ttp USING(account_id)
+        SET
+            p.rarity_points = ttp.rarity_points");
+    $queryUpdate->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
+    $queryUpdate->execute();
+
+    // Rarity levels
+    $queryUpdate = $database->prepare("UPDATE
+                player p
+            INNER JOIN (
+            SELECT
+                te.account_id,
+                SUM(t.rarity_percent > 50) common,
+                SUM(
+                    t.rarity_percent <= 50 AND t.rarity_percent > 20
+                ) uncommon,
+                SUM(
+                    t.rarity_percent <= 20 AND t.rarity_percent > 5
+                ) rare,
+                SUM(
+                    t.rarity_percent <= 5 AND t.rarity_percent > 1
+                ) epic,
+                SUM(t.rarity_percent <= 1) legendary
+            FROM
+                trophy_earned te
+            JOIN trophy t USING(
+                    np_communication_id,
+                    group_id,
+                    order_id
+                )
+            JOIN trophy_title tt USING(np_communication_id)
+            WHERE
+                te.account_id = :account_id AND t.status = 0 AND tt.status = 0
+            GROUP BY
+                te.account_id
+        ) x USING(account_id)
+        SET
+            p.common = x.common,
+            p.uncommon = x.uncommon,
+            p.rare = x.rare,
+            p.epic = x.epic,
+            p.legendary = x.legendary");
+    $queryUpdate->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
+    $queryUpdate->execute();
+}
 
 // Update rarity ranks
 $query = $database->prepare("SELECT account_id, rarity_points, country, level FROM player
