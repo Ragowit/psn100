@@ -12,13 +12,18 @@ $player = $query->fetch();
 $title = $player["online_id"] . "'s Trophy Advisor ~ PSN100.net";
 require_once("player_header.php");
 
+$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status != 2 AND ttp.account_id = :account_id");
+$query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+$query->execute();
+$gameCount = $query->fetchColumn();
+
 $query = $database->prepare("SELECT SUM(tg.bronze-tgp.bronze + tg.silver-tgp.silver + tg.gold-tgp.gold + tg.platinum-tgp.platinum) FROM trophy_group_player tgp
     JOIN trophy_group tg USING (np_communication_id, group_id)
     JOIN trophy_title tt USING (np_communication_id)
     WHERE tt.status = 0 AND tgp.account_id = :account_id");
 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
-$result_count = $query->fetchColumn();
+$trophyCount = $query->fetchColumn();
 
 $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
 $limit = 50;
@@ -51,7 +56,7 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if ($player["level"] == 0) {
+                    if ($player["level"] == 0 && $gameCount == 0) {
                         ?>
                         <tr>
                             <td colspan="5" class="text-center"><h3>This player seems to have a private profile.</h3></td>
@@ -151,26 +156,26 @@ $offset = ($page - 1) * $limit;
                         <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $page; ?>"><?= $page; ?></a></li>
 
                         <?php
-                        if ($page+1 < ceil($result_count / $limit)+1) {
+                        if ($page+1 < ceil($trophyCount / $limit)+1) {
                             ?>
                             <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>"><?= $page+1; ?></a></li>
                             <?php
                         }
 
-                        if ($page+2 < ceil($result_count / $limit)+1) {
+                        if ($page+2 < ceil($trophyCount / $limit)+1) {
                             ?>
                             <li class="page-item"><a class="page-link" href="?page=<?= $page+2; ?>"><?= $page+2; ?></a></li>
                             <?php
                         }
 
-                        if ($page < ceil($result_count / $limit)-2) {
+                        if ($page < ceil($trophyCount / $limit)-2) {
                             ?>
                             <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <li class="page-item"><a class="page-link" href="?page=<?= ceil($result_count / $limit); ?>"><?= ceil($result_count / $limit); ?></a></li>
+                            <li class="page-item"><a class="page-link" href="?page=<?= ceil($trophyCount / $limit); ?>"><?= ceil($trophyCount / $limit); ?></a></li>
                             <?php
                         }
 
-                        if ($page < ceil($result_count / $limit)) {
+                        if ($page < ceil($trophyCount / $limit)) {
                             ?>
                             <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>">Next</a></li>
                             <?php

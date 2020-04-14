@@ -21,12 +21,17 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
+$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status != 2 AND ttp.account_id = :account_id");
+$query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+$query->execute();
+$gameCount = $query->fetchColumn();
+
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned te
     JOIN trophy_title tt USING (np_communication_id)
     WHERE tt.status != 2 AND te.account_id = :account_id");
 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
 $query->execute();
-$result_count = $query->fetchColumn();
+$trophyCount = $query->fetchColumn();
 
 $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
 $limit = 50;
@@ -60,7 +65,7 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if ($player["level"] == 0) {
+                    if ($player["level"] == 0 && $gameCount == 0) {
                         ?>
                         <tr>
                             <td colspan="6" class="text-center"><h3>This player seems to have a private profile.</h3></td>
@@ -182,26 +187,26 @@ $offset = ($page - 1) * $limit;
                         <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
 
                         <?php
-                        if ($page+1 < ceil($result_count / $limit)+1) {
+                        if ($page+1 < ceil($trophyCount / $limit)+1) {
                             $params["page"] = $page + 1; ?>
                             <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
                             <?php
                         }
 
-                        if ($page+2 < ceil($result_count / $limit)+1) {
+                        if ($page+2 < ceil($trophyCount / $limit)+1) {
                             $params["page"] = $page + 2; ?>
                             <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
                             <?php
                         }
 
-                        if ($page < ceil($result_count / $limit)-2) {
-                            $params["page"] = ceil($result_count / $limit); ?>
+                        if ($page < ceil($trophyCount / $limit)-2) {
+                            $params["page"] = ceil($trophyCount / $limit); ?>
                             <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($result_count / $limit); ?></a></li>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($trophyCount / $limit); ?></a></li>
                             <?php
                         }
 
-                        if ($page < ceil($result_count / $limit)) {
+                        if ($page < ceil($trophyCount / $limit)) {
                             $params["page"] = $page + 1; ?>
                             <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">Next</a></li>
                             <?php
