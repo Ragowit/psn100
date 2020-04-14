@@ -58,7 +58,7 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if ($player["level"] === 0) {
+                    if ($player["level"] == 0) {
                         ?>
                         <tr>
                             <td colspan="4" class="text-center"><h3>This player seems to have a private profile.</h3></td>
@@ -83,7 +83,7 @@ $offset = ($page - 1) * $limit;
                         $query->bindParam(":limit", $limit, PDO::PARAM_INT);
                         $query->execute();
                         $playerGames = $query->fetchAll();
-                        
+
                         foreach ($playerGames as $playerGame) {
                             $trClass = "";
                             if ($playerGame["status"] == 1) {

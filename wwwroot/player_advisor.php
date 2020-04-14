@@ -51,7 +51,7 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if ($player["level"] === 0) {
+                    if ($player["level"] == 0) {
                         ?>
                         <tr>
                             <td colspan="5" class="text-center"><h3>This player seems to have a private profile.</h3></td>
@@ -71,7 +71,7 @@ $offset = ($page - 1) * $limit;
                         $query->bindParam(":limit", $limit, PDO::PARAM_INT);
                         $query->execute();
                         $trophies = $query->fetchAll();
-                        
+
                         foreach ($trophies as $trophy) {
                             ?>
                             <tr>
