@@ -5,30 +5,37 @@ set_time_limit(0);
 require_once("/home/psn100/public_html/init.php");
 
 // Update ranks
-$query = $database->prepare("SELECT account_id, points, country FROM player WHERE status = 0 ORDER BY points DESC, platinum DESC, gold DESC, silver DESC, bronze DESC");
+$query = $database->prepare("SELECT account_id, points, country, level FROM player
+    WHERE status = 0
+    ORDER BY points DESC, platinum DESC, gold DESC, silver DESC, bronze DESC, level DESC");
 $query->execute();
 $rank = 1;
-$row_count = 0;
-$points = 0;
+$rowCount = 0;
+$previousPlayerPoints = -999;
 $countryRanks = array();
 while ($player = $query->fetch()) {
-    if (!isset($countryRanks[$player["country"]])) {
-        $countryRanks[$player["country"]] = array($player["points"], 1, 0); // Points, Current Country Rank, Current Country Row
+    $playerPoints = $player["points"];
+    if ($player["level"] == 0) {
+        $playerPoints = -1;
     }
 
-    $row_count++;
+    if (!isset($countryRanks[$player["country"]])) {
+        $countryRanks[$player["country"]] = array($playerPoints, 1, 0); // Points, Current Country Rank, Current Country Row
+    }
+
+    $rowCount++;
     $countryRanks[$player["country"]][2] = $countryRanks[$player["country"]][2] + 1;
 
     // Only change rank if the points differs from the previous player
-    if ($player["points"] !== $points) {
-        $rank = $row_count;
+    if ($playerPoints !== $previousPlayerPoints) {
+        $rank = $rowCount;
     }
-    if ($player["points"] !== $countryRanks[$player["country"]][0]) {
-        $countryRanks[$player["country"]][0] = $player["points"];
+    if ($playerPoints !== $countryRanks[$player["country"]][0]) {
+        $countryRanks[$player["country"]][0] = $playerPoints;
         $countryRanks[$player["country"]][1] = $countryRanks[$player["country"]][2];
     }
 
-    $points = $player["points"];
+    $previousPlayerPoints = $playerPoints;
 
     $queryRank = $database->prepare("UPDATE player SET rank = :rank, rank_country = :rank_country WHERE account_id = :account_id");
     $queryRank->bindParam(":rank", $rank, PDO::PARAM_INT);
@@ -87,30 +94,37 @@ $query = $database->prepare("UPDATE player p, (
 $query->execute();
 
 // Update rarity ranks
-$query = $database->prepare("SELECT account_id, rarity_points, country FROM player WHERE status = 0 ORDER BY rarity_points DESC, legendary DESC, epic DESC, rare DESC, uncommon DESC, common DESC");
+$query = $database->prepare("SELECT account_id, rarity_points, country, level FROM player
+    WHERE status = 0
+    ORDER BY rarity_points DESC, legendary DESC, epic DESC, rare DESC, uncommon DESC, common DESC, level DESC");
 $query->execute();
 $rank = 1;
-$row_count = 0;
-$points = 0;
+$rowCount = 0;
+$previousPlayerRarityPoints = -999;
 $countryRanks = array();
 while ($player = $query->fetch()) {
-    if (!isset($countryRanks[$player["country"]])) {
-        $countryRanks[$player["country"]] = array($player["rarity_points"], 1, 0); // Points, Current Country Rank, Current Country Row
+    $playerRarityPoints = $player["rarity_points"];
+    if ($player["level"] == 0) {
+        $playerRarityPoints = -1;
     }
 
-    $row_count++;
+    if (!isset($countryRanks[$player["country"]])) {
+        $countryRanks[$player["country"]] = array($playerRarityPoints, 1, 0); // Points, Current Country Rank, Current Country Row
+    }
+
+    $rowCount++;
     $countryRanks[$player["country"]][2] = $countryRanks[$player["country"]][2] + 1;
 
     // Only change rank if the points differs from the previous player
-    if ($player["rarity_points"] !== $points) {
-        $rank = $row_count;
+    if ($playerRarityPoints !== $previousPlayerRarityPoints) {
+        $rank = $rowCount;
     }
-    if ($player["rarity_points"] !== $countryRanks[$player["country"]][0]) {
-        $countryRanks[$player["country"]][0] = $player["rarity_points"];
+    if ($playerRarityPoints !== $countryRanks[$player["country"]][0]) {
+        $countryRanks[$player["country"]][0] = $playerRarityPoints;
         $countryRanks[$player["country"]][1] = $countryRanks[$player["country"]][2];
     }
 
-    $points = $player["rarity_points"];
+    $previousPlayerRarityPoints = $playerRarityPoints;
 
     $queryRank = $database->prepare("UPDATE player SET rarity_rank = :rarity_rank, rarity_rank_country = :rarity_rank_country WHERE account_id = :account_id");
     $queryRank->bindParam(":rarity_rank", $rank, PDO::PARAM_INT);
