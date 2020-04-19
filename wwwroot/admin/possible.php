@@ -269,6 +269,8 @@ require_once("../init.php");
                 OR (te.np_communication_id = 'NPWR18992_00' AND te.group_id = 'default' AND te.order_id = 23)
                 OR (te.np_communication_id = 'NPWR17688_00' AND te.group_id = 'default' AND te.order_id = 0)
                 OR (te.np_communication_id = 'NPWR17688_00' AND te.group_id = 'default' AND te.order_id = 23)
+                OR (te.np_communication_id = 'NPWR13165_00' AND te.group_id = '001' AND te.order_id = 31)
+                OR (te.np_communication_id = 'NPWR13165_00' AND te.group_id = '002' AND te.order_id = 39)
                 ) AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name");
         $query->execute();
