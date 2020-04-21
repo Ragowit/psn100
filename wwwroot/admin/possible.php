@@ -225,8 +225,6 @@ require_once("../init.php");
                 OR (te.np_communication_id = 'NPWR11297_00' AND te.group_id = 'default' AND te.order_id = 5)
                 OR (te.np_communication_id = 'NPWR11297_00' AND te.group_id = 'default' AND te.order_id = 7)
                 OR (te.np_communication_id = 'NPWR11297_00' AND te.group_id = 'default' AND te.order_id = 16)
-                OR (te.np_communication_id = 'NPWR14869_00' AND te.group_id = 'default' AND te.order_id = 0)
-                OR (te.np_communication_id = 'NPWR14869_00' AND te.group_id = 'default' AND te.order_id = 2)
                 OR (te.np_communication_id = 'NPWR11977_00' AND te.group_id = 'default' AND te.order_id = 0)
                 OR (te.np_communication_id = 'NPWR11977_00' AND te.group_id = 'default' AND te.order_id = 18)
                 OR (te.np_communication_id = 'NPWR17220_00' AND te.group_id = 'default' AND te.order_id = 0)
