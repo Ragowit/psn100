@@ -26,7 +26,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                child.order_id,
                parent.np_communication_id,
                parent.group_id,
-               parent.order_id 
+               parent.order_id
         FROM   trophy child,
                trophy parent
         WHERE  child.id = :child_trophy_id
@@ -493,40 +493,41 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
             $query->bindParam(":child_group_id", $child["group_id"], PDO::PARAM_STR);
             $query->bindParam(":child_order_id", $child["order_id"], PDO::PARAM_INT);
             $query->execute();
-            $parent = $query->fetch();
 
-            $query = $database->prepare("INSERT INTO trophy_earned
-                            (
-                                        np_communication_id,
-                                        group_id,
-                                        order_id,
-                                        account_id,
-                                        earned_date
-                            )
-                            VALUES
-                            (
-                                        :np_communication_id,
-                                        :group_id,
-                                        :order_id,
-                                        :account_id,
-                                        :earned_date
-                            )
-                on duplicate KEY
-                UPDATE earned_date = IF(earned_date < VALUES
-                       (
-                              earned_date
-                       )
-                       , earned_date, VALUES
-                       (
-                              earned_date
-                       )
-                       )");
-            $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-            $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
-            $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
-            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
-            $query->bindParam(":earned_date", $child["earned_date"], PDO::PARAM_STR);
-            $query->execute();
+            if ($parent = $query->fetch()) {
+                $query = $database->prepare("INSERT INTO trophy_earned
+                                (
+                                            np_communication_id,
+                                            group_id,
+                                            order_id,
+                                            account_id,
+                                            earned_date
+                                )
+                                VALUES
+                                (
+                                            :np_communication_id,
+                                            :group_id,
+                                            :order_id,
+                                            :account_id,
+                                            :earned_date
+                                )
+                    on duplicate KEY
+                    UPDATE earned_date = IF(earned_date < VALUES
+                           (
+                                  earned_date
+                           )
+                           , earned_date, VALUES
+                           (
+                                  earned_date
+                           )
+                           )");
+                $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
+                $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
+                $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
+                $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+                $query->bindParam(":earned_date", $child["earned_date"], PDO::PARAM_STR);
+                $query->execute();
+            }
         }
 
         // trophy_group_player
