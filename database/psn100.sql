@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Apr 06, 2020 at 10:11 PM
--- Server version: 5.7.29
+-- Generation Time: Apr 29, 2020 at 10:25 PM
+-- Server version: 5.7.30
 -- PHP Version: 7.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -247,7 +247,9 @@ ALTER TABLE `player`
   ADD PRIMARY KEY (`account_id`),
   ADD UNIQUE KEY `online_id` (`online_id`),
   ADD KEY `rank` (`rank`),
-  ADD KEY `rarity_rank` (`rarity_rank`);
+  ADD KEY `rarity_rank` (`rarity_rank`),
+  ADD KEY `account_id` (`account_id`,`rank`,`status`),
+  ADD KEY `rank_2` (`rank`,`status`);
 
 --
 -- Indexes for table `player_queue`
@@ -267,7 +269,8 @@ ALTER TABLE `setting`
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`group_id`,`order_id`),
-  ADD KEY `rarity_percent` (`rarity_percent`);
+  ADD KEY `rarity_percent` (`rarity_percent`),
+  ADD KEY `np_communication_id_2` (`np_communication_id`,`group_id`,`order_id`,`status`,`rarity_percent`);
 
 --
 -- Indexes for table `trophy_earned`
@@ -304,7 +307,9 @@ ALTER TABLE `trophy_merge`
 --
 ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `np_communication_id` (`np_communication_id`);
+  ADD UNIQUE KEY `np_communication_id` (`np_communication_id`),
+  ADD KEY `np_communication_id_2` (`np_communication_id`,`status`),
+  ADD KEY `status` (`status`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `name` (`name`);
 
 --
