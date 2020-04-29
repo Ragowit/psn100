@@ -188,16 +188,17 @@ while ($row = $query->fetch()) {
                                           Sum(t.rarity_percent <= 1)     legendary
                                    FROM   trophy_earned te
                                           JOIN trophy t USING( np_communication_id, group_id,
-                                                               order_id
-                                          )
+                                                               order_id)
                                           JOIN trophy_title tt USING(np_communication_id)
+                                          JOIN trophy_title_player ttp USING(
+                                          np_communication_id, account_id)
                                    WHERE  te.account_id = :account_id
                                           AND t.status = 0
                                           AND tt.status = 0
                                    GROUP  BY te.account_id) x USING(account_id)
                 SET    p.common = x.common,
                        p.uncommon = x.uncommon,
-                       p.rare = x.rare,
+                       p.rare = x.rare, 
                        p.epic = x.epic,
                        p.legendary = x.legendary ");
             $queryUpdate->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
