@@ -10,6 +10,28 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
     $trophyParentId = $_POST["trophyparent"];
     $titleHavePlatinum = false;
 
+    // Sanity checks
+    $query = $database->prepare("SELECT np_communication_id
+        FROM   trophy
+        WHERE  id = :id ");
+    $query->bindParam(":id", $trophyChildId, PDO::PARAM_INT);
+    $query->execute();
+    $childNpCommunicationId = $query->fetchColumn();
+    if (substr($childNpCommunicationId, 0, 5) === "MERGE") {
+        echo "Child can't be a merge title.";
+        die();
+    }
+    $query = $database->prepare("SELECT np_communication_id
+        FROM   trophy
+        WHERE  id = :id ");
+    $query->bindParam(":id", $trophyParentId, PDO::PARAM_INT);
+    $query->execute();
+    $parentNpCommunicationId = $query->fetchColumn();
+    if (substr($parentNpCommunicationId, 0, 5) !== "MERGE") {
+        echo "Parent must be a merge title.";
+        die();
+    }
+
     // Grab the trophy data from child, and merge them with parent
     $database->beginTransaction();
     $query = $database->prepare("INSERT IGNORE
@@ -424,6 +446,28 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
     $method = $_POST["method"];
     $titleHavePlatinum = false;
     $message = "";
+
+    // Sanity checks
+    $query = $database->prepare("SELECT np_communication_id
+        FROM   trophy_title
+        WHERE  id = :id ");
+    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->execute();
+    $childNpCommunicationId = $query->fetchColumn();
+    if (substr($childNpCommunicationId, 0, 5) === "MERGE") {
+        echo "Child can't be a merge title.";
+        die();
+    }
+    $query = $database->prepare("SELECT np_communication_id
+        FROM   trophy_title
+        WHERE  id = :id ");
+    $query->bindParam(":id", $parentId, PDO::PARAM_INT);
+    $query->execute();
+    $parentNpCommunicationId = $query->fetchColumn();
+    if (substr($parentNpCommunicationId, 0, 5) !== "MERGE") {
+        echo "Parent must be a merge title.";
+        die();
+    }
 
     // Grab the trophy data from child, and merge them with parent
     $database->beginTransaction();
@@ -884,6 +928,18 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
 } elseif (ctype_digit(strval($_POST["child"]))) {
     // Clone the game. This will be the master game for the others.
     $childId = $_POST["child"];
+
+    // Sanity checks
+    $query = $database->prepare("SELECT np_communication_id
+        FROM   trophy_title
+        WHERE  id = :id ");
+    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->execute();
+    $childNpCommunicationId = $query->fetchColumn();
+    if (substr($childNpCommunicationId, 0, 5) === "MERGE") {
+        echo "Can't clone an already cloned game.";
+        die();
+    }
 
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
