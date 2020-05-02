@@ -8,6 +8,7 @@ require_once("../init.php");
 if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["trophychild"]))) {
     $trophyChildId = $_POST["trophychild"];
     $trophyParentId = $_POST["trophyparent"];
+    $titleHavePlatinum = false;
 
     // Grab the trophy data from child, and merge them with parent
     $database->beginTransaction();
@@ -163,6 +164,8 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
             }
             if (!isset($trophyTypes["platinum"])) {
                 $trophyTypes["platinum"] = 0;
+            } else {
+                $titleHavePlatinum = true;
             }
 
             // Recalculate trophies for trophy group for the player
@@ -203,6 +206,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 $progress = floor($userScore/$maxScore*100);
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
+                }
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                    $progress = 99;
                 }
             }
             $query = $database->prepare("INSERT INTO trophy_group_player
@@ -303,6 +309,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 $progress = floor($userScore/$maxScore*100);
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
+                }
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                    $progress = 99;
                 }
             }
 
@@ -412,6 +421,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
 } elseif (ctype_digit(strval($_POST["parent"])) && ctype_digit(strval($_POST["child"]))) {
     $childId = $_POST["child"];
     $parentId = $_POST["parent"];
+    $titleHavePlatinum = false;
     $message = "";
 
     // Grab the trophy data from child, and merge them with parent
@@ -449,7 +459,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                               parent_np_communication_id,
                               parent_group_id,
                               parent_order_id
-                       ) 
+                       )
                        VALUES
                        (
                               :child_np_communication_id,
@@ -585,6 +595,8 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
             }
             if (!isset($trophyTypes["platinum"])) {
                 $trophyTypes["platinum"] = 0;
+            } else {
+                $titleHavePlatinum = true;
             }
 
             // Recalculate trophies for trophy group for the player
@@ -625,6 +637,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 $progress = floor($userScore/$maxScore*100);
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
+                }
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                    $progress = 99;
                 }
             }
             $query = $database->prepare("INSERT INTO trophy_group_player
@@ -725,6 +740,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 $progress = floor($userScore/$maxScore*100);
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
+                }
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                    $progress = 99;
                 }
             }
 

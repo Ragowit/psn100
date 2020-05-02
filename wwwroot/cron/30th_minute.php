@@ -11,6 +11,8 @@ $maxTime = 1800; // 1800 seconds = 30 minutes
 
 function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
     $database = new Database();
+    $titleHavePlatinum = false;
+
     $query = $database->prepare("SELECT type,
                Count(*) AS count
         FROM   trophy
@@ -33,6 +35,8 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
     }
     if (!isset($trophyTypes["platinum"])) {
         $trophyTypes["platinum"] = 0;
+    } else {
+        $titleHavePlatinum = true;
     }
     $query = $database->prepare("UPDATE trophy_group
         SET    bronze = :bronze,
@@ -87,6 +91,9 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
         $progress = floor($userScore/$maxScore*100);
         if ($userScore != 0 && $progress == 0) {
             $progress = 1;
+        }
+        if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+            $progress = 99;
         }
     }
     $query = $database->prepare("INSERT INTO trophy_group_player
@@ -149,6 +156,8 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
 
 function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $accountId, $merge) {
     $database = new Database();
+    $titleHavePlatinum = false;
+
     $query = $database->prepare("SELECT Sum(bronze)   AS bronze,
                Sum(silver)   AS silver,
                Sum(gold)     AS gold,
@@ -170,6 +179,10 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $a
     $query->bindParam(":platinum", $trophies["platinum"], PDO::PARAM_INT);
     $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->execute();
+
+    if ($trophies["platinum"] == 1) {
+        $titleHavePlatinum = true;
+    }
 
     // Recalculate trophies for trophy title for the player(s)
     $maxScore = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90; // Platinum isn't counted for
@@ -203,6 +216,9 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $a
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
                 }
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                    $progress = 99;
+                }
             }
             $query = $database->prepare("UPDATE trophy_title_player
                 SET    progress = :progress
@@ -233,6 +249,9 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $a
         $progress = floor($userScore/$maxScore*100);
         if ($userScore != 0 && $progress == 0) {
             $progress = 1;
+        }
+        if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+            $progress = 99;
         }
     }
     $dateTimeObject = DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $lastUpdateDate);
