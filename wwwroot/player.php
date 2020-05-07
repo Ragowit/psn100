@@ -4,7 +4,9 @@ if (!isset($accountId)) {
     die();
 }
 
-$query = $database->prepare("SELECT * FROM player WHERE account_id = :account_id");
+$query = $database->prepare("SELECT *
+    FROM   player
+    WHERE  account_id = :account_id ");
 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $player = $query->fetch();
@@ -21,7 +23,11 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status != 2 AND ttp.account_id = :account_id");
+$query = $database->prepare("SELECT Count(*)
+    FROM   trophy_title_player ttp
+           JOIN trophy_title tt USING (np_communication_id)
+    WHERE  tt.status != 2
+           AND ttp.account_id = :account_id ");
 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
 $query->execute();
 $gameCount = $query->fetchColumn();
@@ -66,17 +72,50 @@ $offset = ($page - 1) * $limit;
                         <?php
                     } else {
                         if (isset($_GET["sort"])) {
-                            $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, ttp.rarity_points FROM trophy_title_player ttp
-                                JOIN trophy_title tt USING (np_communication_id)
-                                WHERE ttp.account_id = :account_id AND tt.status != 2
-                                ORDER BY rarity_points DESC, name
-                                LIMIT :offset, :limit");
+                            $query = $database->prepare("SELECT tt.id,
+                                       tt.np_communication_id,
+                                       tt.name,
+                                       tt.icon_url,
+                                       tt.platform,
+                                       tt.status,
+                                       ttp.bronze,
+                                       ttp.silver,
+                                       ttp.gold,
+                                       ttp.platinum,
+                                       ttp.progress,
+                                       Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date,
+                                       ttp.rarity_points
+                                FROM   trophy_title_player ttp
+                                       JOIN trophy_title tt USING (np_communication_id)
+                                       LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
+                                WHERE  ttp.account_id = :account_id
+                                       AND tt.status != 2
+                                GROUP  BY np_communication_id
+                                ORDER  BY rarity_points DESC,
+                                          name
+                                LIMIT  :offset, :limit ");
                         } else {
-                            $query = $database->prepare("SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.status, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date, ttp.rarity_points FROM trophy_title_player ttp
-                                JOIN trophy_title tt USING (np_communication_id)
-                                WHERE ttp.account_id = :account_id AND tt.status != 2
-                                ORDER BY last_updated_date DESC
-                                LIMIT :offset, :limit");
+                            $query = $database->prepare("SELECT tt.id,
+                                       tt.np_communication_id,
+                                       tt.name,
+                                       tt.icon_url,
+                                       tt.platform,
+                                       tt.status,
+                                       ttp.bronze,
+                                       ttp.silver,
+                                       ttp.gold,
+                                       ttp.platinum,
+                                       ttp.progress,
+                                       Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date,
+                                       ttp.rarity_points
+                                FROM   trophy_title_player ttp
+                                       JOIN trophy_title tt USING(np_communication_id)
+                                       LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
+                                WHERE  ttp.account_id = :account_id
+                                       AND tt.status != 2
+                                GROUP  BY np_communication_id
+                                ORDER  BY last_known_date DESC
+                                LIMIT  :offset, :limit ");
                         }
                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                         $query->bindParam(":offset", $offset, PDO::PARAM_INT);
@@ -102,11 +141,14 @@ $offset = ($page - 1) * $limit;
                                         <?= $playerGame["name"]; ?>
                                     </a>
                                     <br>
-                                    <?= $playerGame["last_updated_date"]; ?>
+                                    <?= $playerGame["last_known_date"]; ?>
                                     <?php
                                     if ($playerGame["progress"] == 100) {
-                                        $query = $database->prepare("SELECT MIN(earned_date) AS first_trophy, MAX(earned_date) AS last_trophy FROM trophy_earned
-                                            WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
+                                        $query = $database->prepare("SELECT Min(earned_date) AS first_trophy,
+                                                   Max(earned_date) AS last_trophy
+                                            FROM   trophy_earned
+                                            WHERE  np_communication_id = :np_communication_id
+                                                   AND account_id = :account_id ");
                                         $query->bindParam(":np_communication_id", $playerGame["np_communication_id"], PDO::PARAM_STR);
                                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                                         $query->execute();
