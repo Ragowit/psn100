@@ -8,7 +8,6 @@ require_once("../init.php");
 if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["trophychild"]))) {
     $trophyChildId = $_POST["trophychild"];
     $trophyParentId = $_POST["trophyparent"];
-    $titleHavePlatinum = false;
 
     // Sanity checks
     $query = $database->prepare("SELECT np_communication_id
@@ -163,7 +162,10 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                                                 WHERE  id = :child_trophy_id) ");
         $groups->bindParam(":child_trophy_id", $trophyChildId, PDO::PARAM_INT);
         $groups->execute();
+        $titleHavePlatinum = false;
         while ($group = $groups->fetch()) {
+            $groupHavePlatinum = false;
+    
             $query = $database->prepare("SELECT type,
                        Count(*) AS count
                 FROM   trophy
@@ -188,6 +190,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 $trophyTypes["platinum"] = 0;
             } else {
                 $titleHavePlatinum = true;
+                $groupHavePlatinum = true;
             }
 
             // Recalculate trophies for trophy group for the player
@@ -229,7 +232,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
                 }
-                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $groupHavePlatinum) {
                     $progress = 99;
                 }
             }
@@ -444,7 +447,6 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
     $childId = $_POST["child"];
     $parentId = $_POST["parent"];
     $method = $_POST["method"];
-    $titleHavePlatinum = false;
     $message = "";
 
     // Sanity checks
@@ -655,7 +657,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                                                 WHERE  id = :game_id) ");
         $groups->bindParam(":game_id", $childId, PDO::PARAM_INT);
         $groups->execute();
+        $titleHavePlatinum = false;
         while ($group = $groups->fetch()) {
+            $groupHavePlatinum = false;
             $query = $database->prepare("SELECT type,
                        Count(*) AS count
                 FROM   trophy
@@ -680,6 +684,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 $trophyTypes["platinum"] = 0;
             } else {
                 $titleHavePlatinum = true;
+                $groupHavePlatinum = true;
             }
 
             // Recalculate trophies for trophy group for the player
@@ -721,7 +726,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
                 if ($userScore != 0 && $progress == 0) {
                     $progress = 1;
                 }
-                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $titleHavePlatinum) {
+                if ($progress == 100 && $trophyTypes["platinum"] == 0 && $groupHavePlatinum) {
                     $progress = 99;
                 }
             }
