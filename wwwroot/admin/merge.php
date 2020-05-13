@@ -69,20 +69,13 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
     $query->execute();
     $database->commit();
 
-    // Go through all players with child trophy
+    // Go through all players from child game
     $players = $database->prepare("SELECT account_id,
                last_updated_date
         FROM   trophy_title_player
-               JOIN trophy_earned USING (np_communication_id, account_id)
         WHERE  np_communication_id = (SELECT np_communication_id
                                       FROM   trophy
-                                      WHERE  id = :child_trophy_id)
-               AND group_id = (SELECT group_id
-                               FROM   trophy
-                               WHERE  id = :child_trophy_id)
-               AND order_id = (SELECT order_id
-                               FROM   trophy
-                               WHERE  id = :child_trophy_id) ");
+                                      WHERE  id = :child_trophy_id) ");
     $players->bindParam(":child_trophy_id", $trophyChildId, PDO::PARAM_INT);
     $players->execute();
     while ($player = $players->fetch()) {
@@ -165,7 +158,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && ctype_digit(strval($_POST["tr
         $titleHavePlatinum = false;
         while ($group = $groups->fetch()) {
             $groupHavePlatinum = false;
-    
+
             $query = $database->prepare("SELECT type,
                        Count(*) AS count
                 FROM   trophy
