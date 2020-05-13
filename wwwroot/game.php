@@ -127,26 +127,60 @@ require_once("header.php");
 
                     <?php
                     if (isset($accountId)) {
-                        $queryText = "SELECT * FROM (SELECT t.id, t.order_id, t.type, t.name, t.detail, t.icon_url, t.rarity_percent, t.status, te.earned_date FROM trophy t
-                            LEFT JOIN (SELECT np_communication_id, group_id, order_id, IFNULL(earned_date, 'No Timestamp') AS earned_date FROM trophy_earned WHERE account_id = :account_id) AS te USING (np_communication_id, group_id, order_id)
-                            WHERE t.np_communication_id = :np_communication_id AND t.group_id = :group_id) AS x";
+                        $queryText = "SELECT * 
+                            FROM   (SELECT t.id, 
+                                         t.order_id, 
+                                         t.type, 
+                                         t.name, 
+                                         t.detail, 
+                                         t.icon_url, 
+                                         t.rarity_percent, 
+                                         t.status, 
+                                         te.earned_date 
+                                  FROM   trophy t 
+                                         LEFT JOIN (SELECT np_communication_id, 
+                                                           group_id, 
+                                                           order_id, 
+                                                           Ifnull(earned_date, 'No Timestamp') AS 
+                                                           earned_date 
+                                                    FROM   trophy_earned 
+                                                    WHERE  account_id = :account_id) AS te USING ( 
+                                         np_communication_id, group_id, order_id) 
+                                  WHERE  t.np_communication_id = :np_communication_id 
+                                         AND t.group_id = :group_id) AS x ";
 
                         if (isset($_GET["order"]) && $_GET["order"] == "date") {
-                            $queryText = $queryText ." ORDER BY x.earned_date IS NULL, x.earned_date, x.order_id";
+                            $queryText = $queryText ." ORDER  BY x.earned_date IS NULL, 
+                                x.earned_date, 
+                                Field(x.type, 'bronze', 'silver', 'gold', 'platinum'),
+                                x.order_id ";
                         } elseif (isset($_GET["order"]) && $_GET["order"] == "rarity") {
-                            $queryText = $queryText ." ORDER BY x.rarity_percent DESC, x.order_id";
+                            $queryText = $queryText ." ORDER  BY x.rarity_percent DESC, 
+                                Field(x.type, 'bronze', 'silver', 'gold', 'platinum'), 
+                                x.order_id ";
                         } else {
-                            $queryText = $queryText ." ORDER BY x.order_id";
+                            $queryText = $queryText ." ORDER  BY x.order_id ";
                         }
 
                         $query = $database->prepare($queryText);
                         $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                     } else {
-                        $queryText = "SELECT t.id, t.order_id, t.type, t.name, t.detail, t.icon_url, t.rarity_percent, t.status FROM trophy t
-                            WHERE t.np_communication_id = :np_communication_id AND t.group_id = :group_id";
+                        $queryText = "SELECT t.id, 
+                                   t.order_id, 
+                                   t.type, 
+                                   t.name, 
+                                   t.detail, 
+                                   t.icon_url, 
+                                   t.rarity_percent, 
+                                   t.status 
+                            FROM   trophy t 
+                            WHERE  t.np_communication_id = :np_communication_id 
+                                   AND t.group_id = :group_id ";
 
                         if (isset($_GET["order"]) && $_GET["order"] == "rarity") {
-                            $queryText = $queryText ." ORDER BY rarity_percent DESC, order_id";
+                            $queryText = $queryText ." ORDER BY  rarity_percent DESC,
+                                Field(type, 'bronze', 'silver', 'gold', 'platinum'),
+                                order_id ";
                         } else {
                             $queryText = $queryText ." ORDER BY order_id";
                         }
