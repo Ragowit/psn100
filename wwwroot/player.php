@@ -23,11 +23,15 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$query = $database->prepare("SELECT Count(*)
+$queryText = "SELECT Count(*)
     FROM   trophy_title_player ttp
            JOIN trophy_title tt USING (np_communication_id)
     WHERE  tt.status != 2
-           AND ttp.account_id = :account_id ");
+           AND ttp.account_id = :account_id ";
+if ($_GET["filter"] == "incomplete") {
+    $queryText .= " AND ttp.progress != 100 ";
+}
+$query = $database->prepare($queryText);
 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
 $query->execute();
 $gameCount = $query->fetchColumn();
@@ -52,15 +56,48 @@ $offset = ($page - 1) * $limit;
         </div>
 
         <div class="row">
+            <div class="col-6 text-center">
+                <b>Filter</b><br>
+                <?php
+                unset($params["filter"]);
+                $httpQuery = "?". http_build_query($params);
+                ?>
+                <a href="<?= ($httpQuery == "?") ? $player["online_id"] : $httpQuery; ?>">Default</a>
+                 ~
+                <?php
+                $params["filter"] = "incomplete";
+                ?>
+                <a href="?<?= http_build_query($params); ?>">Not 100%</a>
+                <?php
+                $params["filter"] = $_GET["filter"];
+                ?>
+            </div>
+            <div class="col-6 text-center">
+                <b>Order By</b><br>
+                <?php
+                unset($params["sort"]);
+                $httpQuery = "?". http_build_query($params);
+                ?>
+                <a href="<?= ($httpQuery == "?") ? $player["online_id"] : $httpQuery; ?>">Default</a>
+                 ~
+                <?php
+                $params["sort"] = "rarity";
+                ?>
+                <a href="?<?= http_build_query($params); ?>">Rarity</a>
+                <?php
+                $params["sort"] = $_GET["sort"];
+                ?>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-12">
                 <table class="table table-responsive table-striped">
                     <tr class="table-primary">
                         <th scope="col">Icon</th>
                         <th scope="col" width="100%">Game Title</th>
                         <th scope="col">Platform</th>
-                        <th scope="col" class="text-center">
-                            <a href="?sort=rarity"><img src="/img/playstation/trophies.png" alt="Trophies" width="50" /></a>
-                        </th>
+                        <th scope="col" class="text-center"><img src="/img/playstation/trophies.png" alt="Trophies" width="50" /></th>
                     </tr>
 
                     <?php
@@ -72,7 +109,7 @@ $offset = ($page - 1) * $limit;
                         <?php
                     } else {
                         if (isset($_GET["sort"])) {
-                            $query = $database->prepare("SELECT tt.id,
+                            $queryText = "SELECT tt.id,
                                        tt.np_communication_id,
                                        tt.name,
                                        tt.icon_url,
@@ -89,13 +126,17 @@ $offset = ($page - 1) * $limit;
                                        JOIN trophy_title tt USING (np_communication_id)
                                        LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
                                 WHERE  ttp.account_id = :account_id
-                                       AND tt.status != 2
-                                GROUP  BY np_communication_id
+                                       AND tt.status != 2 ";
+                            if ($_GET["filter"] == "incomplete") {
+                                $queryText .= " AND ttp.progress != 100 ";
+                            }
+                            $queryText .= " GROUP  BY np_communication_id
                                 ORDER  BY rarity_points DESC,
                                           name
-                                LIMIT  :offset, :limit ");
+                                LIMIT  :offset, :limit ";
+                            $query = $database->prepare($queryText);
                         } else {
-                            $query = $database->prepare("SELECT tt.id,
+                            $queryText = "SELECT tt.id,
                                        tt.np_communication_id,
                                        tt.name,
                                        tt.icon_url,
@@ -112,10 +153,14 @@ $offset = ($page - 1) * $limit;
                                        JOIN trophy_title tt USING(np_communication_id)
                                        LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
                                 WHERE  ttp.account_id = :account_id
-                                       AND tt.status != 2
-                                GROUP  BY np_communication_id
+                                       AND tt.status != 2 ";
+                            if ($_GET["filter"] == "incomplete") {
+                                $queryText .= " AND ttp.progress != 100 ";
+                            }
+                            $queryText .= " GROUP  BY np_communication_id
                                 ORDER  BY last_known_date DESC
-                                LIMIT  :offset, :limit ");
+                                LIMIT  :offset, :limit ";
+                            $query = $database->prepare($queryText);
                         }
                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                         $query->bindParam(":offset", $offset, PDO::PARAM_INT);
