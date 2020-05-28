@@ -21,7 +21,9 @@ if (substr($url, 0, strlen("/leaderboard")) === "/leaderboard" || substr($url, 0
 }
 ?>
         <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-            <a class="navbar-brand" href="/">PSN 100%</a>
+            <a class="navbar-brand" href="/">
+                <img src="/img/logo-via-logohub.png" alt="PSN 100%" height="24px">
+            </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbars" aria-controls="navbars" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
