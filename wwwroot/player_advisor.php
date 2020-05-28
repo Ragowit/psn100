@@ -9,7 +9,7 @@ $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $player = $query->fetch();
 
-$title = $player["online_id"] . "'s Trophy Advisor ~ PSN100.net";
+$title = $player["online_id"] . "'s Trophy Advisor ~ PSN 100%";
 require_once("player_header.php");
 
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status != 2 AND ttp.account_id = :account_id");

@@ -21,7 +21,7 @@ if (isset($player)) {
     }
 }
 
-$title = $game["name"] . " Leaderboard ~ PSN100.net";
+$title = $game["name"] . " Leaderboard ~ PSN 100%";
 require_once("header.php");
 
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp

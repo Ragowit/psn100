@@ -1,5 +1,5 @@
 <?php
-$title = "Avatars ~ PSN100.net";
+$title = "Avatars ~ PSN 100%";
 require_once("header.php");
 
 $query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player WHERE status = 0");

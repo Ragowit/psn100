@@ -1,5 +1,5 @@
 <?php
-$title = "Rarity Leaderboard ~ PSN100.net";
+$title = "Rarity Leaderboard ~ PSN 100%";
 require_once("header.php");
 
 $url = $_SERVER["REQUEST_URI"];

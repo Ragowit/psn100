@@ -1,5 +1,5 @@
 <?php
-$title = "About ~ PSN100.net";
+$title = "About ~ PSN 100%";
 require_once("header.php");
 ?>
 <main>

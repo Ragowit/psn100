@@ -9,7 +9,7 @@ $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $player = $query->fetch();
 
-$title = $player["online_id"] . "'s Trophy Log ~ PSN100.net";
+$title = $player["online_id"] . "'s Trophy Log ~ PSN 100%";
 require_once("player_header.php");
 
 $url = $_SERVER["REQUEST_URI"];

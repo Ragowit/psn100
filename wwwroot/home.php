@@ -1,5 +1,5 @@
 <?php
-$title = "PSN100.net ~ PlayStation Leaderboards & Trophies";
+$title = "PSN 100% ~ PlayStation Leaderboards & Trophies";
 require_once("header.php");
 ?>
 <main role="main">

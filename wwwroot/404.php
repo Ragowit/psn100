@@ -1,5 +1,5 @@
 <?php
-$title = "404 ~ PSN100.net";
+$title = "404 ~ PSN 100%";
 require_once("header.php");
 ?>
 <main role="main">

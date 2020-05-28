@@ -21,7 +21,7 @@ if (isset($player)) {
     }
 }
 
-$title = $game["name"] . " Trophies ~ PSN100.net";
+$title = $game["name"] . " Trophies ~ PSN 100%";
 require_once("header.php");
 ?>
 <main role="main">

@@ -21,7 +21,7 @@ if (isset($player)) {
     }
 }
 
-$title = $trophy["trophy_name"] . " Trophy ~ PSN100.net";
+$title = $trophy["trophy_name"] . " Trophy ~ PSN 100%";
 require_once("header.php");
 ?>
 <main role="main">

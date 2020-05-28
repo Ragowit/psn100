@@ -1,5 +1,5 @@
 <?php
-$title = "Trophies ~ PSN100.net";
+$title = "Trophies ~ PSN 100%";
 require_once("header.php");
 
 $url = $_SERVER["REQUEST_URI"];
