@@ -557,11 +557,15 @@ while (true) {
                 $query->execute();
             }
         } elseif (strpos($e->getMessage(), "Internal server error") !== false) {
-            // Something isn't right about this one, just remove it from the queue.
-            $query = $database->prepare("DELETE FROM player_queue
-                WHERE  online_id = :online_id ");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            // Sony seems to have some kind of random error.
+            $message = "Internal server error from Sony when scanning ". $player["online_id"] .".";
+            $query = $database->prepare("INSERT INTO log
+                            (message)
+                VALUES      (:message) ");
+            $query->bindParam(":message", $message, PDO::PARAM_STR);
             $query->execute();
+            
+            sleep(3);
         }
 
         continue;
