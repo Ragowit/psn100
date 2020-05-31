@@ -42,6 +42,9 @@ $offset = ($page - 1) * $limit;
             <div class="col-2 text-center">
                 <h5><a href="/game?sort=completion&player=<?= $player["online_id"]; ?>">Game Advisor</a></h5>
             </div>
+            <div class="col-2 text-center">
+                <h5><a href="/player/<?= $player["online_id"]; ?>/timeline">Timeline</a></h5>
+            </div>
         </div>
 
         <div class="row">

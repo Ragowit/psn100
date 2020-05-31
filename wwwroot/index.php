@@ -116,6 +116,9 @@ if ($maintenance) {
                     case "log":
                         require_once("player_log.php");
                         break;
+                    case "timeline":
+                        require_once("player_timeline.php");
+                        break;
                     default:
                         header("Location: /player/". $onlineId, true, 303);
                         die();
