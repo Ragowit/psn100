@@ -883,7 +883,6 @@ while (true) {
                     $client = 0;
                 }
 
-                $parents = array();
                 foreach ($trophyGroups as $trophyGroup) {
                     // Add trophy group (game + dlcs) into database
                     // INSERT IGNORE  makes the autoincrement tick as well. We don't want that.
@@ -1089,11 +1088,6 @@ while (true) {
                                     $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
                                     $query->bindParam(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
                                     $query->execute();
-
-                                    if (!isset($parents[$parent["parent_np_communication_id"]])) {
-                                        $parents[$parent["parent_np_communication_id"]] = array();
-                                    }
-                                    array_push($parents[$parent["parent_np_communication_id"]], $parent["parent_group_id"]);
                                 }
                             }
                         }
@@ -1106,12 +1100,16 @@ while (true) {
                 // Recalculate trophies for trophy title and player
                 RecalculateTrophyTitle($game->npCommunicationId, $game->comparedUser->lastUpdateDate, $newDLC, $info->accountId, false);
 
-                // Trophy Merge stuff
-                foreach ($parents as $parentNpCommunicationId => $parentGroupIds) {
-                    foreach ($parentGroupIds as $parentGroupId) {
-                        RecalculateTrophyGroup($parentNpCommunicationId, $parentGroupId, $info->accountId);
-                    }
-                    RecalculateTrophyTitle($parentNpCommunicationId, $game->comparedUser->lastUpdateDate, false, $info->accountId, true);
+                // Game Merge stuff
+                $query = $database->prepare("SELECT DISTINCT parent_np_communication_id, 
+                                    parent_group_id 
+                    FROM   trophy_merge 
+                    WHERE  child_np_communication_id = :child_np_communication_id ");
+                $query->bindParam(":child_np_communication_id", $game->npCommunicationId, PDO::PARAM_STR);
+                $query->execute();
+                while ($row = $query->fetch()) {
+                    RecalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], $info->accountId);
+                    RecalculateTrophyTitle($row["parent_np_communication_id"], $game->comparedUser->lastUpdateDate, false, $info->accountId, true);
                 }
             }
 
