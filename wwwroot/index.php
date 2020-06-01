@@ -1,4 +1,10 @@
 <?php
+$maintenance = false;
+if ($maintenance) {
+    require_once("maintenance.php");
+    die();
+}
+
 require_once("init.php");
 
 if (!isset($_COOKIE["seen_cookie"])) {
@@ -6,13 +12,10 @@ if (!isset($_COOKIE["seen_cookie"])) {
     $showCookie = true;
 }
 
-$maintenance = false;
 $path = ltrim($_SERVER["SCRIPT_URL"], "/"); // Trim leading slash(es)
 $elements = explode("/", $path); // Split path on slashes
 
-if ($maintenance) {
-    require_once("maintenance.php");
-} elseif (empty($elements[0])) { // No path elements means home
+if (empty($elements[0])) { // No path elements means home
     require_once("home.php");
 } else {
     switch (array_shift($elements)) {
