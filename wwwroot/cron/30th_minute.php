@@ -442,7 +442,7 @@ while (true) {
                        last_updated_date,
                        0 AS offset
                 FROM   player
-                WHERE  rank <= 100000) a
+                WHERE  `rank` <= 100000) a
         ORDER  BY tier,
                   request_time,
                   online_id

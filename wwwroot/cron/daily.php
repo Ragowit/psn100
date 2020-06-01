@@ -47,7 +47,7 @@ while ($player = $query->fetch()) {
     $previousPlayerPoints = $playerPoints;
 
     $queryRank = $database->prepare("UPDATE player
-        SET    rank = :rank,
+        SET    `rank` = :rank,
                rank_country = :rank_country
         WHERE  account_id = :account_id ");
     $queryRank->bindParam(":rank", $rank, PDO::PARAM_INT);
