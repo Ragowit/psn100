@@ -132,17 +132,18 @@ while ($row = $query->fetch()) {
     // Rarity points for each game
     do {
         try {
-            $queryUpdate = $database->prepare("UPDATE trophy_title_player ttp
-                       INNER JOIN(SELECT account_id,
-                                         np_communication_id,
-                                         Sum(rarity_point) AS points
-                                  FROM   trophy_earned
-                                         JOIN trophy USING( np_communication_id, group_id,
-                                                            order_id )
-                                  WHERE  account_id = :account_id
-                                  GROUP  BY np_communication_id) x USING(
-                       account_id, np_communication_id )
-                SET    ttp.rarity_points = x.points ");
+            $queryUpdate = $database->prepare("UPDATE trophy_title_player ttp 
+                        INNER JOIN(SELECT account_id, 
+                                        np_communication_id, 
+                                        Sum(rarity_point) AS points 
+                                FROM   trophy_earned 
+                                        JOIN trophy USING( np_communication_id, group_id, 
+                                                            order_id ) 
+                                WHERE  account_id = :account_id 
+                                GROUP  BY np_communication_id) x USING( 
+                        account_id, np_communication_id ) 
+                SET    ttp.rarity_points = x.points 
+                WHERE  ttp.account_id = :account_id ");
             $queryUpdate->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
             $queryUpdate->execute();
 
