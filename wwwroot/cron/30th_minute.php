@@ -799,20 +799,7 @@ while (true) {
 
                 try {
                     $trophyTitles = $users[$client]->trophyTitles($offset);
-
-                    if ($trophyTitles->totalResults > 0 || ($info->trophySummary->level == 1 && $info->trophySummary->progress == 0)) {
-                        $fetchTrophyTitles = false;
-                    } else {
-                        // Sony is currently giving us strange results... Retry.
-                        $message = "Problems fetching trophy titles for ". $info->onlineId;
-                        $query = $database->prepare("INSERT INTO log
-                                        (message)
-                            VALUES      (:message) ");
-                        $query->bindParam(":message", $message, PDO::PARAM_STR);
-                        $query->execute();
-                        
-                        sleep(5);
-                    }
+                    $fetchTrophyTitles = false;
                 } catch (Exception $e) {
                     // Increase the request_time and continue with the next one in the queue.
                     $query = $database->prepare("UPDATE player_queue
