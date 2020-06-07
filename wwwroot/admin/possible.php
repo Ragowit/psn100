@@ -167,9 +167,6 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 78)
             OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 79)
             OR (te.np_communication_id = 'NPWR01486_00' AND te.group_id = '004' AND te.order_id = 80)";
-        // Dead End Job
-        $sql .= " OR (te.np_communication_id = 'NPWR17186_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR17186_00' AND te.group_id = 'default' AND te.order_id = 34)";
         // Defiance 2050
         $sql .= " OR (te.np_communication_id = 'NPWR14294_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR14294_00' AND te.group_id = 'default' AND te.order_id = 10)
