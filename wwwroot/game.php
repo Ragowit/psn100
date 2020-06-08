@@ -4,13 +4,17 @@ if (!isset($gameId)) {
     die();
 }
 
-$query = $database->prepare("SELECT * FROM trophy_title WHERE id = :id");
+$query = $database->prepare("SELECT * 
+    FROM   trophy_title 
+    WHERE  id = :id ");
 $query->bindParam(":id", $gameId, PDO::PARAM_INT);
 $query->execute();
 $game = $query->fetch();
 
 if (isset($player)) {
-    $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
+    $query = $database->prepare("SELECT account_id 
+        FROM   player 
+        WHERE  online_id = :online_id ");
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
     $accountId = $query->fetchColumn();
@@ -85,9 +89,16 @@ require_once("header.php");
         <div class="row">
             <div class="col-9">
                 <?php
-                $trophyGroups = $database->prepare("SELECT * FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id = 'default'
-                    UNION
-                    (SELECT * FROM trophy_group WHERE np_communication_id = :np_communication_id AND group_id != 'default' ORDER BY group_id)");
+                $trophyGroups = $database->prepare("SELECT * 
+                    FROM   trophy_group 
+                    WHERE  np_communication_id = :np_communication_id 
+                        AND group_id = 'default' 
+                    UNION 
+                    (SELECT * 
+                    FROM   trophy_group 
+                    WHERE  np_communication_id = :np_communication_id 
+                            AND group_id != 'default' 
+                    ORDER  BY group_id) ");
                 $trophyGroups->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                 $trophyGroups->execute();
                 while ($trophyGroup = $trophyGroups->fetch()) {
@@ -107,7 +118,11 @@ require_once("header.php");
 
                             <?php
                             if (isset($accountId)) {
-                                $query = $database->prepare("SELECT progress FROM trophy_group_player WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND account_id = :account_id");
+                                $query = $database->prepare("SELECT progress 
+                                    FROM   trophy_group_player 
+                                    WHERE  np_communication_id = :np_communication_id 
+                                        AND group_id = :group_id 
+                                        AND account_id = :account_id ");
                                 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
                                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
@@ -307,7 +322,10 @@ require_once("header.php");
 
                     <?php
                     if (isset($accountId)) {
-                        $query = $database->prepare("SELECT progress FROM trophy_title_player WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
+                        $query = $database->prepare("SELECT progress 
+                            FROM   trophy_title_player 
+                            WHERE  np_communication_id = :np_communication_id 
+                                AND account_id = :account_id ");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                         $query->execute();
@@ -326,12 +344,20 @@ require_once("header.php");
 
                     <div class="col-12 text-center">
                         <?php
-                        $query = $database->prepare("SELECT IFNULL(SUM(rarity_point), 0) FROM trophy WHERE np_communication_id = :np_communication_id AND status = 0");
+                        $query = $database->prepare("SELECT Ifnull(Sum(rarity_point), 0) 
+                            FROM   trophy 
+                            WHERE  np_communication_id = :np_communication_id 
+                                AND status = 0 ");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
                         $rarityPoints = $query->fetchColumn();
 
-                        $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN player p USING (account_id) WHERE p.status = 0 AND ttp.progress = 100 AND ttp.np_communication_id = :np_communication_id");
+                        $query = $database->prepare("SELECT Count(*) 
+                            FROM   trophy_title_player ttp 
+                                JOIN player p USING (account_id) 
+                            WHERE  p.status = 0 
+                                AND ttp.progress = 100 
+                                AND ttp.np_communication_id = :np_communication_id ");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
                         $ownersCompleted = $query->fetchColumn();
@@ -358,7 +384,20 @@ require_once("header.php");
                             </thead>
                             <tbody>
                                 <?php
-                                $query = $database->prepare("SELECT p.online_id, p.avatar_url, ttp.bronze, ttp.silver, ttp.gold, ttp.platinum, ttp.progress, ttp.last_updated_date FROM trophy_title_player ttp JOIN player p USING (account_id) WHERE p.status = 0 AND ttp.np_communication_id = :np_communication_id ORDER BY ttp.last_updated_date DESC LIMIT 10");
+                                $query = $database->prepare("SELECT p.online_id, 
+                                            p.avatar_url, 
+                                            ttp.bronze, 
+                                            ttp.silver, 
+                                            ttp.gold, 
+                                            ttp.platinum, 
+                                            ttp.progress, 
+                                            ttp.last_updated_date 
+                                    FROM   trophy_title_player ttp 
+                                            JOIN player p USING (account_id) 
+                                    WHERE  p.status = 0 
+                                            AND ttp.np_communication_id = :np_communication_id 
+                                    ORDER  BY ttp.last_updated_date DESC 
+                                    LIMIT  10 ");
                                 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                                 $query->execute();
                                 $recentPlayers = $query->fetchAll();
