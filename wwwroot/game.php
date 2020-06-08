@@ -391,12 +391,15 @@ require_once("header.php");
                                             ttp.gold, 
                                             ttp.platinum, 
                                             ttp.progress, 
-                                            ttp.last_updated_date 
+                                            Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date 
                                     FROM   trophy_title_player ttp 
                                             JOIN player p USING (account_id) 
+                                            LEFT JOIN trophy_earned te USING (account_id, np_communication_id) 
                                     WHERE  p.status = 0 
                                             AND ttp.np_communication_id = :np_communication_id 
-                                    ORDER  BY ttp.last_updated_date DESC 
+                                    GROUP  BY account_id, 
+                                            np_communication_id 
+                                    ORDER  BY last_known_date DESC 
                                     LIMIT  10 ");
                                 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                                 $query->execute();
@@ -411,7 +414,7 @@ require_once("header.php");
                                         <td>
                                             <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $recentPlayer["online_id"]; ?>"><?= $recentPlayer["online_id"]; ?></a>
                                             <br>
-                                            <?= $recentPlayer["last_updated_date"]; ?>
+                                            <?= $recentPlayer["last_known_date"]; ?>
                                             <br>
                                             <?= $recentPlayer["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
                                             <?= $recentPlayer["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
