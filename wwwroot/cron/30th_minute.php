@@ -1073,7 +1073,7 @@ while (true) {
                                                                 :earned_date
                                                     )
                                         on duplicate KEY
-                                        UPDATE earned_date = IF(earned_date < VALUES
+                                        UPDATE earned_date = IF(earned_date > VALUES
                                                (
                                                       earned_date
                                                )

@@ -133,7 +133,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
                                             :earned_date
                                 )
                     on duplicate KEY
-                    UPDATE earned_date = IF(earned_date < VALUES
+                    UPDATE earned_date = IF(earned_date > VALUES
                            (
                                   earned_date
                            )
@@ -628,7 +628,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
                                             :earned_date
                                 )
                     on duplicate KEY
-                    UPDATE earned_date = IF(earned_date < VALUES
+                    UPDATE earned_date = IF(earned_date > VALUES
                            (
                                   earned_date
                            )
