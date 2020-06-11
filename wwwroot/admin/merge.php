@@ -385,7 +385,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
                                   progress
                            )
                            ,
-                           last_updated_date = IF(last_updated_date < VALUES
+                           last_updated_date = IF(last_updated_date > VALUES
                            (
                                   last_updated_date
                            )
@@ -880,7 +880,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
                               progress
                        )
                        ,
-                       last_updated_date = IF(last_updated_date < VALUES
+                       last_updated_date = IF(last_updated_date > VALUES
                        (
                               last_updated_date
                        )

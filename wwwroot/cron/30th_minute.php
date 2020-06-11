@@ -306,7 +306,7 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $a
                           progress
                    )
                    ,
-                   last_updated_date = IF(last_updated_date < VALUES
+                   last_updated_date = IF(last_updated_date > VALUES
                    (
                           last_updated_date
                    )
