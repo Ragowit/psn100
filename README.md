@@ -6,8 +6,12 @@ PSN 100% is a trophy tracking website, focusing on merging game stacks and remov
 ## What isn't PSN 100%?
 PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handle this with greatness, please use them.
 
-## Merge Guidelines
-In the case where the game have different trophy list while still being the same game so do we go by console priority. PS4 > PS3 > PSVITA.
+## Merge Guideline Priorities
+1. Available > Delisted
+2. English language > Other language
+3. Digital > Physical
+4. Remaster > Original
+5. PS4 > PS3 > PSVITA
 
 ## Other sites
 - PSN Profiles <[https://psnprofiles.com](https://psnprofiles.com)>
