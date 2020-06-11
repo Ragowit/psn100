@@ -35,9 +35,15 @@ require_once("header.php");
                     <li><a href="http://gamstat.com/">PlayStation games stats</a></li>
                 </ul>
 
-                <h2>Merge Guidelines</h2>
+                <h2>Merge Guideline Priorities</h2>
                 <p>
-                    In the case where the game have different trophy list while still being the same game so do we go by console priority. PS4 > PS3 > PSVITA.
+                    <ol>
+                        <li>Available > Delisted</li>
+                        <li>English language > Other language</li>
+                        <li>Digital > Physical</li>
+                        <li>Remaster > Original</li>
+                        <li>PS4 > PS3 > PSVITA</li>
+                    </ol>
                 </p>
             </div>
 
