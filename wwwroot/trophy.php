@@ -21,6 +21,12 @@ if (isset($player)) {
     }
 }
 
+$metaData = new stdClass();
+$metaData->title = $trophy["trophy_name"] ." Trophy";
+$metaData->description = htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8");
+$metaData->image = "https://psn100.net/img/trophy/". $trophy["trophy_icon"];
+$metaData->url = "https://psn100.net/trophy/". $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]);
+
 $title = $trophy["trophy_name"] . " Trophy ~ PSN 100%";
 require_once("header.php");
 ?>

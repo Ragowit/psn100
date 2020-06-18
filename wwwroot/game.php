@@ -20,12 +20,18 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /game/" . $game["id"] ."-". slugify($game["name"]), true, 303);
+        header("Location: /game/". $game["id"] ."-". slugify($game["name"]), true, 303);
         die();
     }
 }
 
-$title = $game["name"] . " Trophies ~ PSN 100%";
+$metaData = new stdClass();
+$metaData->title = $game["name"] ." Trophies";
+$metaData->description = $game["bronze"] ." Bronze ~ ". $game["silver"] ." Silver ~ ". $game["gold"] ." Gold ~ ". $game["platinum"] ." Platinum";
+$metaData->image = "https://psn100.net/img/title/". $game["icon_url"];
+$metaData->url = "https://psn100.net/game/". $game["id"] ."-". slugify($game["name"]);
+
+$title = $game["name"] ." Trophies ~ PSN 100%";
 require_once("header.php");
 ?>
 <main role="main">

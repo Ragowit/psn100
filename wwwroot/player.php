@@ -11,6 +11,17 @@ $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $player = $query->fetch();
 
+$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
+$query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+$query->execute();
+$numberOfGames = $query->fetchColumn();
+
+$metaData = new stdClass();
+$metaData->title = $player["online_id"] ."'s Trophy Progress";
+$metaData->description = "Level ". $player["level"] .".". $player["progress"] ." ~ ". $numberOfGames ." Unique Games ~ ". $player["platinum"] ." Unique Platinums";
+$metaData->image = "https://psn100.net/img/avatar/". $player["avatar_url"];
+$metaData->url = "https://psn100.net/player/". $player["online_id"];
+
 $title = $player["online_id"] . "'s Trophy Progress ~ PSN 100%";
 require_once("player_header.php");
 
