@@ -790,6 +790,7 @@ while (true) {
 
         do {
             // Try and get the player games until we succeed (have only gotten HTTP 500 for ikemenzi from time to time, but you never know)
+            $errorCount = 0;
             $fetchTrophyTitles = true;
             while ($fetchTrophyTitles) {
                 if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
@@ -803,13 +804,34 @@ while (true) {
                     if ($trophyTitles->totalResults > 0) {
                         $fetchTrophyTitles = false;
                     } else {
+                        $errorCount++;
+
                         // Sony is currently giving us strange results... Retry.
-                        $message = "Problems fetching trophy titles for ". $info->onlineId;
-                        $query = $database->prepare("INSERT INTO log
-                                        (message)
-                            VALUES      (:message) ");
-                        $query->bindParam(":message", $message, PDO::PARAM_STR);
-                        $query->execute();
+                        if ($errorCount == 1) {
+                            $message = "Problems fetching trophy titles for ". $info->onlineId;
+                            $query = $database->prepare("INSERT INTO log
+                                            (message)
+                                VALUES      (:message) ");
+                            $query->bindParam(":message", $message, PDO::PARAM_STR);
+                            $query->execute();
+                        }
+
+                        if ($errorCount > 100) {
+                            // The user have probably hidden all their games, but is not set to private.
+                            $message = "Removing ". $info->onlineId ." from the queue.";
+                            $query = $database->prepare("INSERT INTO log
+                                            (message)
+                                VALUES      (:message) ");
+                            $query->bindParam(":message", $message, PDO::PARAM_STR);
+                            $query->execute();
+
+                            $query = $database->prepare("DELETE FROM player_queue
+                                WHERE  online_id = :online_id ");
+                            $query->bindParam(":online_id", $info->onlineId, PDO::PARAM_STR);
+                            $query->execute();
+
+                            continue 3;
+                        }
 
                         sleep(5);
                     }
