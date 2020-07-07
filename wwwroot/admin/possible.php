@@ -12,9 +12,9 @@ require_once("../init.php");
     <body>
         <a href="/admin/">Back</a><br><br>
         <?php
-        $sql = "SELECT x.online_id AS player_name, id AS game_id, name AS game_name FROM trophy_title
+        $sql = "SELECT x.account_id, x.online_id AS player_name, id AS game_id, name AS game_name FROM trophy_title
         JOIN (
-            SELECT p.online_id, MIN(tt.np_communication_id) AS np_communication_id FROM trophy_earned te
+            SELECT p.account_id, p.online_id, MIN(tt.np_communication_id) AS np_communication_id FROM trophy_earned te
             JOIN player p USING (account_id)
             JOIN trophy_title tt USING (np_communication_id) WHERE (";
         // Luftrausers
@@ -351,13 +351,13 @@ require_once("../init.php");
         $possibleCheaters = $query->fetchAll();
 
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ."</a><br>";
+            echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
         <br>
         FUEL:<br>
         <?php
-        $query = $database->prepare("SELECT online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+        $query = $database->prepare("SELECT account_id, online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
             FROM player p
             JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00481_00' AND group_id = 'default' AND order_id = 33) fuel_start USING (account_id)
             JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00481_00' AND group_id = 'default' AND order_id = 34) fuel_end USING (account_id)
@@ -368,13 +368,13 @@ require_once("../init.php");
         $possibleCheaters = $query->fetchAll();
 
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4390-fuel/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ."</a><br>";
+            echo "<a href=\"/game/4390-fuel/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
         <br>
         SOCOM: U.S. NAVY SEALS CONFRONTATION:<br>
         <?php
-        $query = $database->prepare("SELECT online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+        $query = $database->prepare("SELECT account_id, online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
             FROM player p
             JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 32) socom_start USING (account_id)
             JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 35) socom_end USING (account_id)
@@ -385,7 +385,7 @@ require_once("../init.php");
         $possibleCheaters = $query->fetchAll();
 
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4233-socom-us-navy-seals-confrontation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ."</a><br>";
+            echo "<a href=\"/game/4233-socom-us-navy-seals-confrontation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
         <br>
@@ -401,7 +401,7 @@ require_once("../init.php");
         $possibleCheaters = $query->fetchAll();
 
         foreach ($possibleCheaters as $possibleCheater) {
-            echo $possibleCheater["count"] .", ". $possibleCheater["date"] .", <a href=\"/player/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ."</a><br>";
+            echo $possibleCheater["count"] .", ". $possibleCheater["date"] .", <a href=\"/player/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
     </body>
