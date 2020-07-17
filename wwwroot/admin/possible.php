@@ -327,10 +327,6 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR12063_00' AND te.group_id = '001' AND te.order_id = 33)";
         // Super Mutant Alien Assault
         $sql .= " OR (te.np_communication_id = 'NPWR11013_00' AND te.group_id = 'default' AND te.order_id = 16)";
-        // Blacksad
-        $sql .= " OR (te.np_communication_id = 'NPWR16138_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR16138_00' AND te.group_id = 'default' AND te.order_id = 17)
-            OR (te.np_communication_id = 'NPWR16138_00' AND te.group_id = 'default' AND te.order_id = 25)";
         // Felix The Reaper
         $sql .= " OR (te.np_communication_id = 'NPWR18992_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR18992_00' AND te.group_id = 'default' AND te.order_id = 23)";
