@@ -352,6 +352,8 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 21)
             OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 27)";
+        // Sid Meier's Civilization VI
+        $sql .= " OR (te.np_communication_id = 'MERGE_010744' AND te.group_id = '004' AND te.order_id = 61)";
         $sql .= ") AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
         ORDER BY player_name";
 
