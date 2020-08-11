@@ -348,6 +348,10 @@ require_once("../init.php");
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 27)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 35)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 56)";
+        // Hunting Simulator 2
+        $sql .= " OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 0)
+            OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 21)
+            OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 27)";
         $sql .= ") AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
         ORDER BY player_name";
 
