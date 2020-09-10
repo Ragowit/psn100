@@ -17,11 +17,15 @@ require_once("header.php");
 
                 <div class="alert alert-info" role="alert">
                     <?php
-                    $query = $database->prepare("SELECT COUNT(*) FROM player_queue WHERE request_time = '2020-12-25'");
+                    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE last_updated_date >= now() - INTERVAL 1 DAY");
                     $query->execute();
-                    $queue = $query->fetchColumn();
+                    $scannedPlayers = $query->fetchColumn();
+
+                    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE last_updated_date >= now() - INTERVAL 1 DAY AND status = 0 AND rank_last_week = 0");
+                    $query->execute();
+                    $scannedNewPlayers = $query->fetchColumn();
                     ?>
-                    Until the site have reached 100k users so may the statistics on this site change drastically. We have <?= $queue; ?> players in the queue. Players added on the front page take priority.
+                    In the last 24 hours have we scanned <?= $scannedPlayers; ?> players, and out of those are <?= $scannedNewPlayers; ?> new!
                 </div>
 
                 <h2>What isn't PSN 100%?</h2>
