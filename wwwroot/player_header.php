@@ -23,7 +23,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 ?>
                 <div class="col-12">
                     <div class="alert alert-warning" role="alert">
-                        This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards.
+                        This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>">Dispute</a>?
                     </div>
                 </div>
                 <?php
