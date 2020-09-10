@@ -54,17 +54,17 @@ require_once("header.php");
                 <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
             </div>
             <div class="col-7">
-                <h5><?= $trophy["trophy_name"]; ?></h5>
+                <h5><?= htmlentities($trophy["trophy_name"]); ?></h5>
                 <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
                 <br>
                 <?php
                 if (isset($player)) {
                     ?>
-                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $player; ?>"><?= $trophy["game_name"]; ?></a></small>
+                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $player; ?>"><?= htmlentities($trophy["game_name"]); ?></a></small>
                     <?php
                 } else {
                     ?>
-                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>"><?= $trophy["game_name"]; ?></a></small>
+                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>"><?= htmlentities($trophy["game_name"]); ?></a></small>
                     <?php
                 }
                 ?>

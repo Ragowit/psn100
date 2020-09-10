@@ -53,7 +53,7 @@ require_once("header.php");
                                     </td>
                                     <td>
                                         <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
-                                            <?= $game["name"]; ?>
+                                            <?= htmlentities($game["name"]); ?>
                                         </a>
                                     </td>
                                 </tr>
@@ -99,7 +99,7 @@ require_once("header.php");
                                     </td>
                                     <td>
                                         <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>#<?= $dlc["group_id"]; ?>">
-                                            <small><?= $dlc["game_name"]; ?></small><br><?= $dlc["group_name"]; ?>
+                                            <small><?= htmlentities($dlc["game_name"]); ?></small><br><?= htmlentities($dlc["group_name"]); ?>
                                         </a>
                                     </td>
                                 </tr>
@@ -144,7 +144,7 @@ require_once("header.php");
                                     </td>
                                     <td>
                                         <a href="/game/<?= $popularGame["id"] ."-". slugify($popularGame["name"]); ?>">
-                                            <?= $popularGame["name"]; ?>
+                                            <?= htmlentities($popularGame["name"]); ?>
                                         </a>
                                     </td>
                                     <td class="text-center">

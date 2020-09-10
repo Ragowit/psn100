@@ -112,7 +112,7 @@ $offset = ($page - 1) * $limit;
                         </td>
                         <td>
                             <a href="/game/<?= $gameLink; ?>">
-                                <?= $game["name"]; ?>
+                                <?= htmlentities($game["name"]); ?>
                             </a>
                         </td>
                         <td class="text-center">

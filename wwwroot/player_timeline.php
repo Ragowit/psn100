@@ -179,7 +179,7 @@ require_once("player_header.php");
                                 }
                                 
                                 echo "<li style='margin-left: ". (date_diff($lastGameDate, $firstTrophy)->days - 1) * 5 ."px; width: ". (date_diff($firstTrophy, $lastTrophy)->days + 1) * 5 ."px;'>";
-                                echo "<a class='". $class ."' href='https://psn100.net/game/". $game->url ."/". $player["online_id"] ."' title=\"". $game->name ." (". $game->firstTrophy ." - ". $game->lastTrophy .")\">". $game->name ."</a>";
+                                echo "<a class='". $class ."' href='https://psn100.net/game/". $game->url ."/". $player["online_id"] ."' title=\"". $game->name ." (". $game->firstTrophy ." - ". $game->lastTrophy .")\">". htmlentities($game->name) ."</a>";
                                 echo "</li>";
                                 
                                 $lastGameDate = $lastTrophy;

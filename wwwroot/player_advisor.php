@@ -93,10 +93,10 @@ $offset = ($page - 1) * $limit;
                                 </td>
                                 <td style="width: 100%;">
                                     <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
-                                        <b><?= $trophy["trophy_name"]; ?></b>
+                                        <b><?= htmlentities($trophy["trophy_name"]); ?></b>
                                     </a>
                                     <br>
-                                    <?= $trophy["trophy_detail"]; ?>
+                                    <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
                                 </td>
                                 <td class="text-center">
                                     <?= $trophy["rarity_percent"]; ?>%<br>

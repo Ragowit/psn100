@@ -197,7 +197,7 @@ $offset = ($page - 1) * $limit;
                                 </td>
                                 <td>
                                     <a href="/game/<?= $playerGame["id"] ."-". slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
-                                        <?= $playerGame["name"]; ?>
+                                        <?= htmlentities($playerGame["name"]); ?>
                                     </a>
                                     <br>
                                     <?= $playerGame["last_known_date"]; ?>

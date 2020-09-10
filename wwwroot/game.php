@@ -38,7 +38,7 @@ require_once("header.php");
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <h1><?= $game["name"] ?></h1>
+                <h1><?= htmlentities($game["name"]) ?></h1>
                 <?php
                 if (isset($player)) {
                     ?>
@@ -114,8 +114,8 @@ require_once("header.php");
                             <img src="/img/group/<?= $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%); margin: 10px 0px;" />
                         </div>
                         <div class="col align-self-center">
-                            <b><?= $trophyGroup["name"]; ?></b><br>
-                            <?= $trophyGroup["detail"]; ?>
+                            <b><?= htmlentities($trophyGroup["name"]); ?></b><br>
+                            <?= nl2br(htmlentities($trophyGroup["detail"], ENT_QUOTES, "UTF-8")); ?>
                         </div>
                         <div class="col-auto align-self-center">
                             <?= $trophyGroup["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
@@ -229,13 +229,13 @@ require_once("header.php");
                                         if (isset($player)) {
                                             ?>
                                             <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>/<?= $player; ?>">
-                                                <b><?= $trophy["name"]; ?></b>
+                                                <b><?= htmlentities($trophy["name"]); ?></b>
                                             </a>
                                             <?php
                                         } else {
                                             ?>
                                             <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>">
-                                                <b><?= $trophy["name"]; ?></b>
+                                                <b><?= htmlentities($trophy["name"]); ?></b>
                                             </a>
                                             <?php
                                         } ?>
