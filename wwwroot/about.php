@@ -32,6 +32,7 @@ require_once("header.php");
                     <li><a href="https://psnprofiles.com/">PSN Profiles</a></li>
                     <li><a href="https://www.playstationtrophies.org/">PlaystationTrophies</a></li>
                     <li><a href="https://psntrophyleaders.com/">PSN Trophy Leaders</a></li>
+                    <li><a href="https://www.truetrophies.com/">TrueTrophies</a></li>
                     <li><a href="http://gamstat.com/">PlayStation games stats</a></li>
                 </ul>
 
