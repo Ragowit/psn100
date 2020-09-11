@@ -649,12 +649,11 @@ while (true) {
     // Don't insert level/progress/platinum/gold/silver/bronze here since our site recalculate this.
     $query->execute();
 
-    // The profiles currently known as "Platastical", "Platasium", "ShadowsGodly" and "ikemenzi" are bugged and can't
+    // The profiles currently known as "Platastical", "Platasium", "ShadowsGodly" are bugged and can't
     // fetch trophy titles. Not even on the official website. Ignore them.
     if ($info->accountId == 2985983827926904402 ||
         $info->accountId == 4835369520272949900 ||
-        $info->accountId == 6549517298327131420 ||
-        $info->accountId == 6515971742264256071) {
+        $info->accountId == 6549517298327131420) {
         // Recalculate trophy count, level & progress for the player
         $query = $database->prepare("SELECT Ifnull(Sum(ttp.bronze), 0)   AS bronze,
                    Ifnull(Sum(ttp.silver), 0)   AS silver,

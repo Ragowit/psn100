@@ -5,8 +5,6 @@ $player = trim($_REQUEST["q"]);
 
 if (!isset($player) || $player === "") {
     echo "PSN name can't be empty.";
-} elseif ($player == "ikemenzi") {
-    echo "ikemenzi is unfortunately currently bugged and can't be updated. Not even on the official website. <a href=\"https://my.playstation.com/profile/ikemenzi/trophies\">https://my.playstation.com/profile/ikemenzi/trophies</a>";
 } elseif (preg_match("/^[\w\-]{3,16}$/", $player)) {
     // Insert player into the queue
     //$query = $database->prepare("INSERT IGNORE INTO player_queue (online_id) VALUES (:online_id)");
