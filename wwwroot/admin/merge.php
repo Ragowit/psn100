@@ -425,17 +425,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
         $players->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
         $players->execute();
         while ($player = $players->fetch()) {
-            $query = $database->prepare("INSERT INTO player_queue
-                            (
-                                        online_id
-                            )
-                            VALUES
-                            (
-                                        :online_id
-                            )
-                on duplicate KEY
-                UPDATE request_time=now()");
+            $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, request_time) VALUES (:online_id, :request_time)");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->bindValue(":request_time", "2030-12-24 00:00:00", PDO::PARAM_STR);
             $query->execute();
         }
     }
@@ -913,17 +905,9 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
     $players->bindParam(":game_id", $childId, PDO::PARAM_INT);
     $players->execute();
     while ($player = $players->fetch()) {
-        $query = $database->prepare("INSERT INTO player_queue
-                        (
-                                    online_id
-                        )
-                        VALUES
-                        (
-                                    :online_id
-                        )
-            on duplicate KEY
-            UPDATE request_time=now()");
+        $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, request_time) VALUES (:online_id, :request_time)");
         $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+        $query->bindValue(":request_time", "2030-12-24 00:00:00", PDO::PARAM_STR);
         $query->execute();
     }
 

@@ -167,8 +167,9 @@ if (isset($_POST["trophy"])) {
         $players->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
         $players->execute();
         while ($player = $players->fetch()) {
-            $query = $database->prepare("INSERT INTO player_queue (online_id) VALUES (:online_id) ON DUPLICATE KEY UPDATE request_time=NOW()");
+            $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, request_time) VALUES (:online_id, :request_time)");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->bindValue(":request_time", "2030-12-24 00:00:00", PDO::PARAM_STR);
             $query->execute();
         }
     }

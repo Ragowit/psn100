@@ -8,7 +8,7 @@ if (!isset($player) || $player === "") {
 } elseif (preg_match("/^[\w\-]{3,16}$/", $player)) {
     // Insert player into the queue
     //$query = $database->prepare("INSERT IGNORE INTO player_queue (online_id) VALUES (:online_id)");
-    $query = $database->prepare("INSERT INTO player_queue (online_id) VALUES (:online_id) ON DUPLICATE KEY UPDATE request_time=IF(request_time = '2020-12-25 00:00:00', NOW(), request_time)"); // Currently our initial backlog is huge, so use this for a while.
+    $query = $database->prepare("INSERT INTO player_queue (online_id) VALUES (:online_id) ON DUPLICATE KEY UPDATE request_time=IF(request_time >= '2030-01-01 00:00:00', NOW(), request_time)"); // Currently our initial backlog is huge, so use this for a while.
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
 
