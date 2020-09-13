@@ -27,6 +27,14 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     </div>
                 </div>
                 <?php
+            } elseif ($player["status"] == 2) {
+                ?>
+                <div class="col-12">
+                    <div class="alert alert-warning" role="alert">
+                        This player have hidden some of their trophies. All data from this player will not be in any of the site statistics or leaderboards. Make sure this player have no longer any hidden trophies, and create a new <a href="https://github.com/Ragowit/psn100/issues">issue</a> about it to make us do a forced rescan of the entire profile.
+                    </div>
+                </div>
+                <?php
             }
             ?>
 
