@@ -119,6 +119,9 @@ if (empty($elements[0])) { // No path elements means home
                     case "log":
                         require_once("player_log.php");
                         break;
+                    case "random":
+                        require_once("player_random.php");
+                        break;
                     case "timeline":
                         require_once("player_timeline.php");
                         break;

@@ -28,6 +28,9 @@ require_once("player_header.php");
             <div class="col-2 text-center">
                 <h5>Timeline</h5>
             </div>
+            <div class="col-2 text-center">
+                <h5><a href="/player/<?= $player["online_id"]; ?>/random">Random Games</a></h5>
+            </div>
         </div>
 
         <div class="row">
