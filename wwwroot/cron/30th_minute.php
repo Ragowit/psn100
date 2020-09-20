@@ -1227,29 +1227,29 @@ while (true) {
         $query->bindParam(":points", $points, PDO::PARAM_INT);
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
-    }
 
-    // Check for hidden trophies
-    $totalTrophies = $info->trophySummary->earnedTrophies->platinum + $info->trophySummary->earnedTrophies->gold + $info->trophySummary->earnedTrophies->silver + $info->trophySummary->earnedTrophies->bronze;
-    $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND account_id = :account_id");
-    $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-    $query->execute();
-    $ourTotalTrophies = $query->fetchColumn();
-    if ($ourTotalTrophies < $totalTrophies) {
-        $query = $database->prepare("UPDATE player
-            SET    status = 2,
-                   `rank` = 0,
-                   rank_last_week = 0,
-                   rarity_rank = 0,
-                   rarity_rank_last_week = 0,
-                   rank_country = 0,
-                   rank_country_last_week = 0,
-                   rarity_rank_country = 0,
-                   rarity_rank_country_last_week = 0
-            WHERE  account_id = :account_id 
-                   AND status = 0");
+        // Check for hidden trophies
+        $totalTrophies = $info->trophySummary->earnedTrophies->platinum + $info->trophySummary->earnedTrophies->gold + $info->trophySummary->earnedTrophies->silver + $info->trophySummary->earnedTrophies->bronze;
+        $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND account_id = :account_id");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
+        $ourTotalTrophies = $query->fetchColumn();
+        if ($ourTotalTrophies < $totalTrophies) {
+            $query = $database->prepare("UPDATE player
+                SET    status = 2,
+                    `rank` = 0,
+                    rank_last_week = 0,
+                    rarity_rank = 0,
+                    rarity_rank_last_week = 0,
+                    rank_country = 0,
+                    rank_country_last_week = 0,
+                    rarity_rank_country = 0,
+                    rarity_rank_country_last_week = 0
+                WHERE  account_id = :account_id 
+                    AND status = 0");
+            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+            $query->execute();
+        }
     }
 
     // Done with the user, update the date
