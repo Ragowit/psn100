@@ -351,7 +351,7 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 27)";
         // Sid Meier's Civilization VI
         $sql .= " OR (te.np_communication_id = 'MERGE_010744' AND te.group_id = '004' AND te.order_id = 61)";
-        $sql .= ") AND p.status = 0 GROUP BY online_id) x USING (np_communication_id)
+        $sql .= ") AND p.status != 1 GROUP BY online_id) x USING (np_communication_id)
         ORDER BY player_name";
 
         $query = $database->prepare($sql);
@@ -369,7 +369,7 @@ require_once("../init.php");
             FROM player p
             JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00481_00' AND group_id = 'default' AND order_id = 33) fuel_start USING (account_id)
             JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00481_00' AND group_id = 'default' AND order_id = 34) fuel_end USING (account_id)
-            WHERE p.status = 0
+            WHERE p.status != 1
             HAVING time_difference <= 60
             ORDER BY online_id");
         $query->execute();
@@ -386,7 +386,7 @@ require_once("../init.php");
             FROM player p
             JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 32) socom_start USING (account_id)
             JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 35) socom_end USING (account_id)
-            WHERE p.status = 0
+            WHERE p.status != 1
             HAVING time_difference <= 60
             ORDER BY online_id");
         $query->execute();
