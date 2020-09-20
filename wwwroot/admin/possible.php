@@ -138,15 +138,13 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR09796_00' AND te.group_id = 'default' AND te.order_id = 33)
             OR (te.np_communication_id = 'NPWR09796_00' AND te.group_id = 'default' AND te.order_id = 34)
             OR (te.np_communication_id = 'NPWR09796_00' AND te.group_id = 'default' AND te.order_id = 35)";
-        // Boundless
+        // Boundless (EU)
         $sql .= " OR (te.np_communication_id = 'NPWR16180_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR16180_00' AND te.group_id = 'default' AND te.order_id = 4)
             OR (te.np_communication_id = 'NPWR16180_00' AND te.group_id = 'default' AND te.order_id = 5)
             OR (te.np_communication_id = 'NPWR16180_00' AND te.group_id = 'default' AND te.order_id = 6)
             OR (te.np_communication_id = 'NPWR16180_00' AND te.group_id = 'default' AND te.order_id = 54)";
-        // Boundless
+        // Boundless (NA)
         $sql .= " OR (te.np_communication_id = 'NPWR16181_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR16181_00' AND te.group_id = 'default' AND te.order_id = 4)
             OR (te.np_communication_id = 'NPWR16181_00' AND te.group_id = 'default' AND te.order_id = 5)
             OR (te.np_communication_id = 'NPWR16181_00' AND te.group_id = 'default' AND te.order_id = 6)
             OR (te.np_communication_id = 'NPWR16181_00' AND te.group_id = 'default' AND te.order_id = 54)";
