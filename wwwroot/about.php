@@ -63,6 +63,21 @@ require_once("header.php");
                     <li><img src="/img/playstation/gold.png" alt="Gold" width="24" /> ~ 90 points</li>
                     <li><img src="/img/playstation/platinum.png" alt="Platinum" width="24" /> ~ 300 points</li>
                 </ul>
+                <p>
+                    These are the requirements for each level:
+                </p>
+                <ul>
+                    <li>1-100 ~ 60 points (4 bronze trophies)</li>
+                    <li>101-200 ~ 90 points (6 bronze trophies)</li>
+                    <li>201-300 ~ 450 points (30 bronze trophies)</li>
+                    <li>301-400 ~ 900 points (60 bronze trophies)</li>
+                    <li>401-500 ~ 1350 points (90 bronze trophies)</li>
+                    <li>501-600 ~ 1800 points (120 bronze trophies)</li>
+                    <li>601-700 ~ 2250 points (150 bronze trophies)</li>
+                    <li>701-800 ~ 2700 points (180 bronze trophies)</li>
+                    <li>801-900 ~ 3150 points (210 bronze trophies)</li>
+                    <li>901+ ~ 3600 points (240 bronze trophies)</li>
+                </ul>
 
                 <h2>Rarity Leaderboard</h2>
                 <p>The rarity leaderboard uses the formula <kbd>1/x - 1, rounded down</kbd></p>
