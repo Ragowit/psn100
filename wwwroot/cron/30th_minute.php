@@ -666,31 +666,37 @@ while (true) {
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
         $trophies = $query->fetch();
-        $points = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90 + $trophies["platinum"]*180;
-        if ($points < 200) {
-            $level = 1;
-            $progress = floor($points / 200 * 100);
-        } elseif ($points < 600) {
-            $level = 2;
-            $progress = floor(($points - 200) / 400 * 100);
-        } elseif ($points < 1200) {
-            $level = 3;
-            $progress = floor(($points - 600) / 600 * 100);
-        } elseif ($points < 2400) {
-            $level = 4;
-            $progress = floor(($points - 1200) / 1200 * 100);
-        } elseif ($points < 4000) {
-            $level = 5;
-            $progress = floor(($points - 2400) / 1600 * 100);
-        } elseif ($points < 16000) {
-            $level = 6 + floor(($points - 4000) / 2000);
-            $progress = floor(($points - 4000 - ($level - 6) * 2000) / 2000 * 100);
-        } elseif ($points < 128000) {
-            $level = 12 + floor(($points - 16000) / 8000);
-            $progress = floor(($points - 16000 - ($level - 12) * 8000) / 8000 * 100);
+        $points = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90 + $trophies["platinum"]*300;
+        if ($points <= 5940) {
+            $level = floor($points / 60) + 1;
+            $progress = floor(($points / 60 * 100) % 100);
+        } elseif ($points <= 14940) {
+            $level = floor(($points - 5940) / 90) + 100;
+            $progress = floor((($points - 5940) / 90 * 100) % 100);
+        } elseif ($points <= 59940) {
+            $level = floor(($points - 14940) / 450) + 200;
+            $progress = floor((($points - 14940) / 450 * 100) % 100);
+        } elseif ($points <= 149940) {
+            $level = floor(($points - 59940) / 900) + 300;
+            $progress = floor((($points - 59940) / 900 * 100) % 100);
+        } elseif ($points <= 284940) {
+            $level = floor(($points - 149940) / 1350) + 400;
+            $progress = floor((($points - 149940) / 1350 * 100) % 100);
+        } elseif ($points <= 464940) {
+            $level = floor(($points - 284940) / 1800) + 500;
+            $progress = floor((($points - 284940) / 1800 * 100) % 100);
+        } elseif ($points <= 689940) {
+            $level = floor(($points - 464940) / 2250) + 600;
+            $progress = floor((($points - 464940) / 2250 * 100) % 100);
+        } elseif ($points <= 959940) {
+            $level = floor(($points - 689940) / 2700) + 700;
+            $progress = floor((($points - 689940) / 2700 * 100) % 100);
+        } elseif ($points <= 1274940) {
+            $level = floor(($points - 959940) / 3150) + 800;
+            $progress = floor((($points - 959940) / 3150 * 100) % 100);
         } else {
-            $level = 26 + floor(($points - 128000) / 10000);
-            $progress = floor(($points - 128000 - ($level - 26) * 10000) / 10000 * 100);
+            $level = floor(($points - 1274940) / 3600) + 900;
+            $progress = floor((($points - 1274940) / 3600 * 100) % 100);
         }
         $query = $database->prepare("UPDATE player
             SET    bronze = :bronze,
@@ -1182,31 +1188,37 @@ while (true) {
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
         $trophies = $query->fetch();
-        $points = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90 + $trophies["platinum"]*180;
-        if ($points < 200) {
-            $level = 1;
-            $progress = floor($points / 200 * 100);
-        } elseif ($points < 600) {
-            $level = 2;
-            $progress = floor(($points - 200) / 400 * 100);
-        } elseif ($points < 1200) {
-            $level = 3;
-            $progress = floor(($points - 600) / 600 * 100);
-        } elseif ($points < 2400) {
-            $level = 4;
-            $progress = floor(($points - 1200) / 1200 * 100);
-        } elseif ($points < 4000) {
-            $level = 5;
-            $progress = floor(($points - 2400) / 1600 * 100);
-        } elseif ($points < 16000) {
-            $level = 6 + floor(($points - 4000) / 2000);
-            $progress = floor(($points - 4000 - ($level - 6) * 2000) / 2000 * 100);
-        } elseif ($points < 128000) {
-            $level = 12 + floor(($points - 16000) / 8000);
-            $progress = floor(($points - 16000 - ($level - 12) * 8000) / 8000 * 100);
+        $points = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90 + $trophies["platinum"]*300;
+        if ($points <= 5940) {
+            $level = floor($points / 60) + 1;
+            $progress = floor(($points / 60 * 100) % 100);
+        } elseif ($points <= 14940) {
+            $level = floor(($points - 5940) / 90) + 100;
+            $progress = floor((($points - 5940) / 90 * 100) % 100);
+        } elseif ($points <= 59940) {
+            $level = floor(($points - 14940) / 450) + 200;
+            $progress = floor((($points - 14940) / 450 * 100) % 100);
+        } elseif ($points <= 149940) {
+            $level = floor(($points - 59940) / 900) + 300;
+            $progress = floor((($points - 59940) / 900 * 100) % 100);
+        } elseif ($points <= 284940) {
+            $level = floor(($points - 149940) / 1350) + 400;
+            $progress = floor((($points - 149940) / 1350 * 100) % 100);
+        } elseif ($points <= 464940) {
+            $level = floor(($points - 284940) / 1800) + 500;
+            $progress = floor((($points - 284940) / 1800 * 100) % 100);
+        } elseif ($points <= 689940) {
+            $level = floor(($points - 464940) / 2250) + 600;
+            $progress = floor((($points - 464940) / 2250 * 100) % 100);
+        } elseif ($points <= 959940) {
+            $level = floor(($points - 689940) / 2700) + 700;
+            $progress = floor((($points - 689940) / 2700 * 100) % 100);
+        } elseif ($points <= 1274940) {
+            $level = floor(($points - 959940) / 3150) + 800;
+            $progress = floor((($points - 959940) / 3150 * 100) % 100);
         } else {
-            $level = 26 + floor(($points - 128000) / 10000);
-            $progress = floor(($points - 128000 - ($level - 26) * 10000) / 10000 * 100);
+            $level = floor(($points - 1274940) / 3600) + 900;
+            $progress = floor((($points - 1274940) / 3600 * 100) % 100);
         }
         $query = $database->prepare("UPDATE player
             SET    bronze = :bronze,
