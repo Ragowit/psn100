@@ -61,7 +61,7 @@ require_once("header.php");
                     <li><img src="/img/playstation/bronze.png" alt="Bronze" width="24" /> ~ 15 points</li>
                     <li><img src="/img/playstation/silver.png" alt="Silver" width="24" /> ~ 30 points</li>
                     <li><img src="/img/playstation/gold.png" alt="Gold" width="24" /> ~ 90 points</li>
-                    <li><img src="/img/playstation/platinum.png" alt="Platinum" width="24" /> ~ 180 points</li>
+                    <li><img src="/img/playstation/platinum.png" alt="Platinum" width="24" /> ~ 300 points</li>
                 </ul>
 
                 <h2>Rarity Leaderboard</h2>
