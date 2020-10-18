@@ -3,9 +3,11 @@ require_once("../init.php");
 
 if (ctype_digit(strval($_POST["game"]))) {
     $gameId = $_POST["game"];
+    $status = $_POST["status"];
 
     $database->beginTransaction();
-    $query = $database->prepare("UPDATE trophy_title SET status = 1 WHERE id = :game_id");
+    $query = $database->prepare("UPDATE trophy_title SET status = :status WHERE id = :game_id");
+    $query->bindParam(":status", $status, PDO::PARAM_INT);
     $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
@@ -21,7 +23,13 @@ if (ctype_digit(strval($_POST["game"]))) {
         $query->execute();
     }
 
-    $success = "<p>Game ". $gameId ." is now set as delisted. All affected players will be updated soon, and ranks updated the next whole hour.</p>";
+    if ($status == 1) {
+        $statusText = "delisted";
+    } else {
+        $statusText = "relisted";
+    }
+
+    $success = "<p>Game ". $gameId ." is now set as ". $statusText .". All affected players will be updated soon, and ranks updated the next whole hour.</p>";
 }
 
 ?>
@@ -37,7 +45,12 @@ if (ctype_digit(strval($_POST["game"]))) {
         <a href="/admin/">Back</a><br><br>
         <form method="post" autocomplete="off">
             Game ID:<br>
-            <input type="number" name="game"><br><br>
+            <input type="number" name="game"><br>
+            Status:<br>
+            <select name="status">
+                <option value="1">Delisted</option>
+                <option value="0">Relisted</option>
+            </select><br><br>
             <input type="submit" value="Submit">
         </form>
 
