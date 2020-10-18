@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Oct 18, 2020 at 08:50 PM
+-- Generation Time: Oct 18, 2020 at 09:02 PM
 -- Server version: 8.0.21
 -- PHP Version: 7.3.6
 
@@ -260,6 +260,18 @@ CREATE TABLE `view_merge_name` (
 -- (See below for the actual view)
 --
 CREATE TABLE `view_player_last_updated_date` (
+`account_id` bigint unsigned
+,`bronze` mediumint unsigned
+,`country` varchar(2)
+,`gold` mediumint unsigned
+,`last_updated_date` datetime
+,`level` smallint unsigned
+,`online_id` varchar(16)
+,`platinum` mediumint unsigned
+,`points` mediumint unsigned
+,`progress` tinyint unsigned
+,`silver` mediumint unsigned
+,`status` tinyint unsigned
 );
 
 -- --------------------------------------------------------
@@ -287,7 +299,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIE
 --
 DROP TABLE IF EXISTS `view_player_last_updated_date`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIEW `view_player_last_updated_date`  AS  select `player`.`account_id` AS `account_id`,`player`.`online_id` AS `online_id`,`player`.`country` AS `country`,`player`.`last_updated_date` AS `last_updated_date`,`player`.`bronze` AS `bronze`,`player`.`silver` AS `silver`,`player`.`gold` AS `gold`,`player`.`platinum` AS `platinum`,`player`.`level` AS `level`,`player`.`progress` AS `progress`,`player`.`points` AS `points`,`player`.`status` AS `status`,`player`.`private_date` AS `private_date` from `player` order by -(`player`.`last_updated_date`) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIEW `view_player_last_updated_date`  AS  select `player`.`account_id` AS `account_id`,`player`.`online_id` AS `online_id`,`player`.`country` AS `country`,`player`.`last_updated_date` AS `last_updated_date`,`player`.`bronze` AS `bronze`,`player`.`silver` AS `silver`,`player`.`gold` AS `gold`,`player`.`platinum` AS `platinum`,`player`.`level` AS `level`,`player`.`progress` AS `progress`,`player`.`points` AS `points`,`player`.`status` AS `status` from `player` order by -(`player`.`last_updated_date`) ;
 
 --
 -- Indexes for dumped tables
