@@ -705,8 +705,7 @@ while (true) {
                    platinum = :platinum,
                    level = :level,
                    progress = :progress,
-                   points = :points,
-                   private_date = NULL
+                   points = :points
             WHERE  account_id = :account_id ");
         $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
         $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);
@@ -732,49 +731,21 @@ while (true) {
     }
 
     if ($info->trophySummary->level === 0) {
-        // Profile seem to be private, remove all trophy data we have for this player
-        $query = $database->prepare("SELECT private_date
-            FROM   player
-            WHERE  account_id = :account_id ");
+        // Profile seem to be private, set status to 3 to hide all trophies.
+        $query = $database->prepare("UPDATE player
+                SET    status = 3,
+                    `rank` = 0,
+                    rank_last_week = 0,
+                    rarity_rank = 0,
+                    rarity_rank_last_week = 0,
+                    rank_country = 0,
+                    rank_country_last_week = 0,
+                    rarity_rank_country = 0,
+                    rarity_rank_country_last_week = 0
+                WHERE  account_id = :account_id 
+                    AND status != 1");
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
-        $playerPrivateDate = $query->fetchColumn();
-
-        if ($playerPrivateDate == null) {
-            $query = $database->prepare("UPDATE player
-                SET    private_date = Now()
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-            $query->execute();
-        } elseif (strtotime($playerPrivateDate) < strtotime("-3 days")) { // We have got odd results from Sony where the result says the player is private, when it's not. So if the player have been private for 3 days, then we go on and remove all data.
-            $query = $database->prepare("UPDATE player
-                SET    level = 0,
-                       progress = 0,
-                       platinum = 0,
-                       gold = 0,
-                       silver = 0,
-                       bronze = 0,
-                       points = 0,
-                       rarity_points = 0
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_earned
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_group_player
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_title_player
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-            $query->execute();
-        }
     } else {
         $offset = $player["offset"];
 
@@ -1227,8 +1198,7 @@ while (true) {
                    platinum = :platinum,
                    level = :level,
                    progress = :progress,
-                   points = :points,
-                   private_date = NULL
+                   points = :points
             WHERE  account_id = :account_id ");
         $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
         $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);

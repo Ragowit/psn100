@@ -21,11 +21,6 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status != 2 AND ttp.account_id = :account_id");
-$query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
-$query->execute();
-$gameCount = $query->fetchColumn();
-
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned te
     JOIN trophy_title tt USING (np_communication_id)
     WHERE tt.status != 2 AND te.account_id = :account_id");
@@ -71,7 +66,7 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if ($player["level"] == 0 && $gameCount == 0) {
+                    if ($player["status"] == 3) {
                         ?>
                         <tr>
                             <td colspan="6" class="text-center"><h3>This player seems to have a private profile.</h3></td>

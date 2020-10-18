@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 02, 2020 at 11:36 PM
--- Server version: 8.0.20
+-- Generation Time: Oct 18, 2020 at 08:50 PM
+-- Server version: 8.0.21
 -- PHP Version: 7.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -69,8 +69,7 @@ CREATE TABLE `player` (
   `rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
-  `private_date` date DEFAULT NULL
+  `status` tinyint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -229,6 +228,66 @@ CREATE TABLE `trophy_title_player` (
   `last_updated_date` datetime NOT NULL,
   `rarity_points` mediumint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `view_merge_icon_url`
+-- (See below for the actual view)
+--
+CREATE TABLE `view_merge_icon_url` (
+`icon_url` varchar(36)
+,`occurrences` bigint
+,`owners` int unsigned
+);
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `view_merge_name`
+-- (See below for the actual view)
+--
+CREATE TABLE `view_merge_name` (
+`name` text
+,`occurrences` bigint
+,`owners` int unsigned
+);
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `view_player_last_updated_date`
+-- (See below for the actual view)
+--
+CREATE TABLE `view_player_last_updated_date` (
+);
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `view_merge_icon_url`
+--
+DROP TABLE IF EXISTS `view_merge_icon_url`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIEW `view_merge_icon_url`  AS  select `trophy_title`.`icon_url` AS `icon_url`,max(`trophy_title`.`owners`) AS `owners`,count(0) AS `occurrences` from `trophy_title` where (`trophy_title`.`status` <> 2) group by `trophy_title`.`icon_url` having (count(0) > 1) order by `owners` desc ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `view_merge_name`
+--
+DROP TABLE IF EXISTS `view_merge_name`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIEW `view_merge_name`  AS  select `trophy_title`.`name` AS `name`,max(`trophy_title`.`owners`) AS `owners`,count(0) AS `occurrences` from `trophy_title` where (`trophy_title`.`status` <> 2) group by `trophy_title`.`name` having (count(0) > 1) order by `owners` desc ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `view_player_last_updated_date`
+--
+DROP TABLE IF EXISTS `view_player_last_updated_date`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIEW `view_player_last_updated_date`  AS  select `player`.`account_id` AS `account_id`,`player`.`online_id` AS `online_id`,`player`.`country` AS `country`,`player`.`last_updated_date` AS `last_updated_date`,`player`.`bronze` AS `bronze`,`player`.`silver` AS `silver`,`player`.`gold` AS `gold`,`player`.`platinum` AS `platinum`,`player`.`level` AS `level`,`player`.`progress` AS `progress`,`player`.`points` AS `points`,`player`.`status` AS `status`,`player`.`private_date` AS `private_date` from `player` order by -(`player`.`last_updated_date`) ;
 
 --
 -- Indexes for dumped tables

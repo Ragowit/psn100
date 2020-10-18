@@ -118,7 +118,7 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    if ($player["level"] == 0 && $gameCount == 0) {
+                    if ($player["status"] == 3) {
                         ?>
                         <tr>
                             <td colspan="4" class="text-center"><h3>This player seems to have a private profile.</h3></td>
