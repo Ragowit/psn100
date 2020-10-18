@@ -60,42 +60,14 @@ while ($player = $query->fetch()) {
 do {
     try {
         $query = $database->prepare("UPDATE trophy t
-            SET    t.rarity_percent = CASE
-                                        WHEN (SELECT owners
-                                              FROM   trophy_title tt
-                                              WHERE  tt.np_communication_id =
-                                             t.np_communication_id) = 0 THEN 0
-                                        WHEN (SELECT owners
-                                              FROM   trophy_title tt
-                                              WHERE  tt.np_communication_id =
-                                             t.np_communication_id) <=
-                                                    (SELECT Count(*)
-                                                     FROM
-                                                    trophy_earned te
-                                                    JOIN player p USING (account_id)
-                                                    WHERE
-                                                    te.np_communication_id =
-                                                    t.np_communication_id
-                                                    AND te.group_id = t.group_id
-                                                    AND te.order_id = t.order_id
-                                                    AND p.status = 0
-                                                    AND p.rank <= 100000) THEN 100
-                                        ELSE ( (SELECT Count(*)
+            SET    t.rarity_percent = (SELECT Count(*)
                                                 FROM   trophy_earned te
                                                        JOIN player p USING (account_id)
-                                                WHERE  te.np_communication_id =
-                                                       t.np_communication_id
+                                                WHERE  te.np_communication_id = t.np_communication_id
                                                        AND te.group_id = t.group_id
                                                        AND te.order_id = t.order_id
                                                        AND p.status = 0
-                                                       AND p.rank <= 100000) / (SELECT
-                                               owners
-                                                                                FROM
-                                               trophy_title tt
-                                                                                WHERE
-                                                        tt.np_communication_id =
-                                                        t.np_communication_id) * 100 )
-                                      end ");
+                                                       AND p.rank <= 100000) / (SELECT LEAST(COUNT(*), 100000) FROM player p2 WHERE p2.status = 0) * 100 ) ");
         $query->execute();
 
         $deadlock = false;
