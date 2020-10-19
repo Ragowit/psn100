@@ -1232,6 +1232,16 @@ while (true) {
             $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
             $query->execute();
         }
+
+        // Set player as active if private
+        $query = $database->prepare("UPDATE
+                player p
+            SET
+                p.status = 0
+            WHERE
+                p.account_id = :account_id AND p.status = 3");
+        $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+        $query->execute();
     }
 
     // Done with the user, update the date
