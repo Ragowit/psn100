@@ -59,15 +59,26 @@ while ($player = $query->fetch()) {
 // Recalculate trophy rarity.
 do {
     try {
-        $query = $database->prepare("UPDATE trophy t
-            SET    t.rarity_percent = (SELECT Count(*)
-                                                FROM   trophy_earned te
-                                                       JOIN player p USING (account_id)
-                                                WHERE  te.np_communication_id = t.np_communication_id
-                                                       AND te.group_id = t.group_id
-                                                       AND te.order_id = t.order_id
-                                                       AND p.status = 0
-                                                       AND p.rank <= 100000) / (SELECT LEAST(COUNT(*), 100000) FROM player p2 WHERE p2.status = 0) * 100 ) ");
+        $query = $database->prepare("UPDATE
+                trophy t
+            SET
+                t.rarity_percent =(
+                SELECT
+                    COUNT(*)
+                FROM
+                    trophy_earned te
+                JOIN player p USING(account_id)
+                WHERE
+                    te.np_communication_id = t.np_communication_id AND te.group_id = t.group_id AND te.order_id = t.order_id AND p.status = 0 AND p.rank <= 100000
+            ) /(
+                SELECT
+                    LEAST(COUNT(*),
+                    100000)
+                FROM
+                    player p2
+                WHERE
+                    p2.status = 0
+            ) * 100");
         $query->execute();
 
         $deadlock = false;
