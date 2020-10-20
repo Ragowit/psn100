@@ -13,7 +13,23 @@ if (!isset($player) || $player === "") {
     $query->execute();
 
     // Check position
-    $query = $database->prepare("SELECT id FROM (SELECT *, @rownum:=@rownum + 1 AS id FROM player_queue, (SELECT @rownum:=0) r ORDER BY request_time) d WHERE d.online_id = :online_id");
+    $query = $database->prepare("WITH
+            temp AS(
+            SELECT
+                request_time,
+                online_id,
+                ROW_NUMBER() OVER(
+            ORDER BY
+                request_time
+            ) AS 'rownum'
+        FROM
+            player_queue)
+            SELECT
+                rownum
+            FROM
+                temp
+            WHERE
+                online_id = :online_id");
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
     $position = $query->fetchColumn();
