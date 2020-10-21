@@ -76,7 +76,8 @@ require_once("header.php");
                     <li>601-700 ~ 2250 points (150 bronze trophies)</li>
                     <li>701-800 ~ 2700 points (180 bronze trophies)</li>
                     <li>801-900 ~ 3150 points (210 bronze trophies)</li>
-                    <li>901+ ~ 3600 points (240 bronze trophies)</li>
+                    <li>901-1000 ~ 3600 points (240 bronze trophies)</li>
+                    <li>...and so on, every 100th level increases the level requirement with 450 points.</li>
                 </ul>
 
                 <h2>Rarity Leaderboard</h2>

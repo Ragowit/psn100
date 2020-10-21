@@ -673,30 +673,16 @@ while (true) {
         } elseif ($points <= 14940) {
             $level = floor(($points - 5940) / 90) + 100;
             $progress = floor((($points - 5940) / 90 * 100) % 100);
-        } elseif ($points <= 59940) {
-            $level = floor(($points - 14940) / 450) + 200;
-            $progress = floor((($points - 14940) / 450 * 100) % 100);
-        } elseif ($points <= 149940) {
-            $level = floor(($points - 59940) / 900) + 300;
-            $progress = floor((($points - 59940) / 900 * 100) % 100);
-        } elseif ($points <= 284940) {
-            $level = floor(($points - 149940) / 1350) + 400;
-            $progress = floor((($points - 149940) / 1350 * 100) % 100);
-        } elseif ($points <= 464940) {
-            $level = floor(($points - 284940) / 1800) + 500;
-            $progress = floor((($points - 284940) / 1800 * 100) % 100);
-        } elseif ($points <= 689940) {
-            $level = floor(($points - 464940) / 2250) + 600;
-            $progress = floor((($points - 464940) / 2250 * 100) % 100);
-        } elseif ($points <= 959940) {
-            $level = floor(($points - 689940) / 2700) + 700;
-            $progress = floor((($points - 689940) / 2700 * 100) % 100);
-        } elseif ($points <= 1274940) {
-            $level = floor(($points - 959940) / 3150) + 800;
-            $progress = floor((($points - 959940) / 3150 * 100) % 100);
         } else {
-            $level = floor(($points - 1274940) / 3600) + 900;
-            $progress = floor((($points - 1274940) / 3600 * 100) % 100);
+            $stage = 1;
+            $leftovers = $points - 14940;
+            while ($leftovers > 45000 * $stage) {
+                $leftovers -= 45000 * $stage;
+                $stage++;
+            }
+            
+            $level = floor($leftovers / (450 * $stage)) + (100 + 100 * $stage);
+            $progress = floor($leftovers / (450 * $stage) * 100) % 100;
         }
         $query = $database->prepare("UPDATE player
             SET    bronze = :bronze,
@@ -1166,30 +1152,16 @@ while (true) {
         } elseif ($points <= 14940) {
             $level = floor(($points - 5940) / 90) + 100;
             $progress = floor((($points - 5940) / 90 * 100) % 100);
-        } elseif ($points <= 59940) {
-            $level = floor(($points - 14940) / 450) + 200;
-            $progress = floor((($points - 14940) / 450 * 100) % 100);
-        } elseif ($points <= 149940) {
-            $level = floor(($points - 59940) / 900) + 300;
-            $progress = floor((($points - 59940) / 900 * 100) % 100);
-        } elseif ($points <= 284940) {
-            $level = floor(($points - 149940) / 1350) + 400;
-            $progress = floor((($points - 149940) / 1350 * 100) % 100);
-        } elseif ($points <= 464940) {
-            $level = floor(($points - 284940) / 1800) + 500;
-            $progress = floor((($points - 284940) / 1800 * 100) % 100);
-        } elseif ($points <= 689940) {
-            $level = floor(($points - 464940) / 2250) + 600;
-            $progress = floor((($points - 464940) / 2250 * 100) % 100);
-        } elseif ($points <= 959940) {
-            $level = floor(($points - 689940) / 2700) + 700;
-            $progress = floor((($points - 689940) / 2700 * 100) % 100);
-        } elseif ($points <= 1274940) {
-            $level = floor(($points - 959940) / 3150) + 800;
-            $progress = floor((($points - 959940) / 3150 * 100) % 100);
         } else {
-            $level = floor(($points - 1274940) / 3600) + 900;
-            $progress = floor((($points - 1274940) / 3600 * 100) % 100);
+            $stage = 1;
+            $leftovers = $points - 14940;
+            while ($leftovers > 45000 * $stage) {
+                $leftovers -= 45000 * $stage;
+                $stage++;
+            }
+            
+            $level = floor($leftovers / (450 * $stage)) + (100 + 100 * $stage);
+            $progress = floor($leftovers / (450 * $stage) * 100) % 100;
         }
         $query = $database->prepare("UPDATE player
             SET    bronze = :bronze,
