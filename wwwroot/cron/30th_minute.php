@@ -1182,6 +1182,16 @@ while (true) {
         $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
         $query->execute();
 
+        // Set player as active if private
+        $query = $database->prepare("UPDATE
+                player p
+            SET
+                p.status = 0
+            WHERE
+                p.account_id = :account_id AND p.status = 3");
+        $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
+        $query->execute();
+
         // Check for hidden trophies
         $totalTrophies = $info->trophySummary->earnedTrophies->platinum + $info->trophySummary->earnedTrophies->gold + $info->trophySummary->earnedTrophies->silver + $info->trophySummary->earnedTrophies->bronze;
         $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND account_id = :account_id");
@@ -1204,16 +1214,6 @@ while (true) {
             $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
             $query->execute();
         }
-
-        // Set player as active if private
-        $query = $database->prepare("UPDATE
-                player p
-            SET
-                p.status = 0
-            WHERE
-                p.account_id = :account_id AND p.status = 3");
-        $query->bindParam(":account_id", $info->accountId, PDO::PARAM_INT);
-        $query->execute();
     }
 
     // Done with the user, update the date
