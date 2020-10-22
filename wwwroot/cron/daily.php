@@ -92,13 +92,21 @@ do {
 do {
     try {
         $query = $database->prepare(
-            "UPDATE trophy t 
-                    JOIN trophy_title tt USING (np_communication_id) 
-            SET    t.rarity_point = IF(t.status = 1 
-                                        OR tt.status != 0 
-                                        OR t.rarity_percent = 0, 0, 
-                                    Floor(1 / ( t.rarity_percent / 
-                                                100 ) - 1)) ");
+            "UPDATE
+                trophy t
+            JOIN trophy_title tt USING(np_communication_id)
+            SET
+                t.rarity_point = IF(
+                    t.status != 0 OR tt.status != 0,
+                    0,
+                    IF(
+                        t.rarity_percent = 0,
+                        99999,
+                        FLOOR(
+                            1 /(t.rarity_percent / 100) - 1
+                        )
+                    )
+                )");
         $query->execute();
 
         $deadlock = false;

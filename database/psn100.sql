@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Oct 18, 2020 at 09:02 PM
--- Server version: 8.0.21
+-- Generation Time: Oct 22, 2020 at 10:37 PM
+-- Server version: 8.0.22
 -- PHP Version: 7.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -114,7 +114,7 @@ CREATE TABLE `trophy` (
   `rare` tinyint UNSIGNED NOT NULL,
   `earned_rate` decimal(5,2) UNSIGNED NOT NULL,
   `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
-  `rarity_point` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `owners` int UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -237,8 +237,8 @@ CREATE TABLE `trophy_title_player` (
 --
 CREATE TABLE `view_merge_icon_url` (
 `icon_url` varchar(36)
-,`occurrences` bigint
 ,`owners` int unsigned
+,`occurrences` bigint
 );
 
 -- --------------------------------------------------------
@@ -249,8 +249,8 @@ CREATE TABLE `view_merge_icon_url` (
 --
 CREATE TABLE `view_merge_name` (
 `name` text
-,`occurrences` bigint
 ,`owners` int unsigned
+,`occurrences` bigint
 );
 
 -- --------------------------------------------------------
@@ -261,16 +261,16 @@ CREATE TABLE `view_merge_name` (
 --
 CREATE TABLE `view_player_last_updated_date` (
 `account_id` bigint unsigned
-,`bronze` mediumint unsigned
-,`country` varchar(2)
-,`gold` mediumint unsigned
-,`last_updated_date` datetime
-,`level` smallint unsigned
 ,`online_id` varchar(16)
-,`platinum` mediumint unsigned
-,`points` mediumint unsigned
-,`progress` tinyint unsigned
+,`country` varchar(2)
+,`last_updated_date` datetime
+,`bronze` mediumint unsigned
 ,`silver` mediumint unsigned
+,`gold` mediumint unsigned
+,`platinum` mediumint unsigned
+,`level` smallint unsigned
+,`progress` tinyint unsigned
+,`points` mediumint unsigned
 ,`status` tinyint unsigned
 );
 
