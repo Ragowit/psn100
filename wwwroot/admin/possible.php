@@ -344,8 +344,6 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 0 AND te.earned_date < '2020-09-01')
             OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 21 AND te.earned_date < '2020-09-01')
             OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 27 AND te.earned_date < '2020-09-01')";
-        // Sid Meier's Civilization VI
-        $sql .= " OR (te.np_communication_id = 'MERGE_010744' AND te.group_id = '004' AND te.order_id = 61)";
         // Hotshot Racing
         $sql .= " OR (te.np_communication_id = 'NPWR15213_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR15213_00' AND te.group_id = 'default' AND te.order_id = 43)
