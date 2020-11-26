@@ -287,13 +287,12 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR06434_00' AND te.group_id = 'default' AND te.order_id = 10)";
         // Trickster VR
         $sql .= " OR (te.np_communication_id = 'NPWR15045_00' AND te.group_id = 'default' AND te.order_id = 11)";
-        // Wander
+        // Wander (EU)
         $sql .= " OR (te.np_communication_id = 'NPWR08948_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR08948_00' AND te.group_id = 'default' AND te.order_id = 18)
             OR (te.np_communication_id = 'NPWR08948_00' AND te.group_id = 'default' AND te.order_id = 30)";
-        // Wander
+        // Wander (NA)
         $sql .= " OR (te.np_communication_id = 'NPWR08982_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR08982_00' AND te.group_id = 'default' AND te.order_id = 16)
             OR (te.np_communication_id = 'NPWR08982_00' AND te.group_id = 'default' AND te.order_id = 18)
             OR (te.np_communication_id = 'NPWR08982_00' AND te.group_id = 'default' AND te.order_id = 30)";
         // Five Nights at Freddy's 2
