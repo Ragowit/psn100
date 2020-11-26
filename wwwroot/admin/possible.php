@@ -216,13 +216,10 @@ require_once("../init.php");
         // Kerbal Space Program
         $sql .= " OR (te.np_communication_id = 'NPWR10806_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR10806_00' AND te.group_id = 'default' AND te.order_id = 23)";
-        // Locks' Quest
-        $sql .= " OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 3)
-            OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 4)
+        // Lock's Quest
+        $sql .= " OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 4)
             OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 7)
-            OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 8)
             OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 9)
-            OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 10)
             OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 11)";
         // Lovecraft's Untold Stories
         $sql .= " OR (te.np_communication_id = 'NPWR17151_00' AND te.group_id = 'default' AND te.order_id = 0)
