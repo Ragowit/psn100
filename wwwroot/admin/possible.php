@@ -338,7 +338,6 @@ require_once("../init.php");
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 24)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 25)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 27)
-            OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 35)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 56)";
         // Hunting Simulator 2
         $sql .= " OR (te.np_communication_id = 'NPWR19903_00' AND te.group_id = 'default' AND te.order_id = 0 AND te.earned_date < '2020-09-01')
