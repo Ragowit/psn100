@@ -247,12 +247,6 @@ require_once("../init.php");
         // Rugby 18
         $sql .= " OR (te.np_communication_id = 'NPWR13717_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR13717_00' AND te.group_id = 'default' AND te.order_id = 2)";
-        // Shadowgate
-        $sql .= " OR (te.np_communication_id = 'NPWR12262_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR12262_00' AND te.group_id = 'default' AND te.order_id = 11)
-            OR (te.np_communication_id = 'NPWR12262_00' AND te.group_id = 'default' AND te.order_id = 17)
-            OR (te.np_communication_id = 'NPWR12262_00' AND te.group_id = 'default' AND te.order_id = 28)
-            OR (te.np_communication_id = 'NPWR12262_00' AND te.group_id = 'default' AND te.order_id = 38)";
         // Shiny
         $sql .= " OR (te.np_communication_id = 'NPWR13751_00' AND te.group_id = 'default' AND te.order_id = 0 AND te.earned_date < '2020-09-24')
             OR (te.np_communication_id = 'NPWR13751_00' AND te.group_id = 'default' AND te.order_id = 1 AND te.earned_date < '2020-09-24')
