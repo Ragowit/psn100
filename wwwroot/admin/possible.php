@@ -186,9 +186,6 @@ require_once("../init.php");
         // Drunkn Bar Fight
         $sql .= " OR (te.np_communication_id = 'NPWR14225_00' AND te.group_id = 'default' AND te.order_id = 6 AND te.earned_date <= '2020-04-12')
             OR (te.np_communication_id = 'NPWR14225_00' AND te.group_id = 'default' AND te.order_id = 9 AND te.earned_date <= '2020-04-12')";
-        // Duck Game
-        $sql .= " OR (te.np_communication_id = 'NPWR11004_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR11004_00' AND te.group_id = 'default' AND te.order_id = 15)";
         // Dungeon Rushers
         $sql .= " OR (te.np_communication_id = 'NPWR12850_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR12850_00' AND te.group_id = 'default' AND te.order_id = 20)";
