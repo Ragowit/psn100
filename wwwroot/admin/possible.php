@@ -349,10 +349,6 @@ require_once("../init.php");
         // Tokyo Tattoo Girls
         $sql .= " OR (te.np_communication_id = 'NPWR14063_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR14063_00' AND te.group_id = 'default' AND te.order_id = 35)";
-        // Bounty Battle
-        $sql .= " OR (te.np_communication_id = 'NPWR20751_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR20751_00' AND te.group_id = 'default' AND te.order_id = 12)
-            OR (te.np_communication_id = 'NPWR20751_00' AND te.group_id = 'default' AND te.order_id = 13)";
         // Indivisible
         $sql .= " OR (te.np_communication_id = 'MERGE_011589' AND te.group_id = '001' AND te.order_id = 34)
             OR (te.np_communication_id = 'MERGE_011589' AND te.group_id = '001' AND te.order_id = 35)
