@@ -95,7 +95,7 @@ $offset = ($page - 1) * $limit;
                     foreach ($games as $game) {
                         if ($game["status"] == 1) {
                             echo "<tr class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\">";
-                        } elseif ($playerGames[$game["np_communication_id"]] == 100) {
+                        } elseif (isset($playerGames) && array_key_exists($game["np_communication_id"], $playerGames) && $playerGames[$game["np_communication_id"]] == 100) {
                             echo "<tr class=\"table-success\">";
                         } else {
                             echo "<tr>";

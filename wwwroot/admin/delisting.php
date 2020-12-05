@@ -1,7 +1,7 @@
 <?php
 require_once("../init.php");
 
-if (ctype_digit(strval($_POST["game"]))) {
+if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $gameId = $_POST["game"];
     $status = $_POST["status"];
 

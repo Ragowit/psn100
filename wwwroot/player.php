@@ -39,7 +39,7 @@ $queryText = "SELECT Count(*)
            JOIN trophy_title tt USING (np_communication_id)
     WHERE  tt.status != 2
            AND ttp.account_id = :account_id ";
-if ($_GET["filter"] == "incomplete") {
+if (isset($_GET["filter"]) && $_GET["filter"] == "incomplete") {
     $queryText .= " AND ttp.progress != 100 ";
 }
 $query = $database->prepare($queryText);
@@ -86,7 +86,7 @@ $offset = ($page - 1) * $limit;
                 ?>
                 <a href="?<?= http_build_query($params); ?>">Not 100%</a>
                 <?php
-                $params["filter"] = $_GET["filter"];
+                $params["filter"] = isset($_GET["filter"]) ? $_GET["filter"] : null;
                 ?>
             </div>
             <div class="col-6 text-center">
@@ -102,7 +102,7 @@ $offset = ($page - 1) * $limit;
                 ?>
                 <a href="?<?= http_build_query($params); ?>">Rarity</a>
                 <?php
-                $params["sort"] = $_GET["sort"];
+                $params["sort"] = isset($_GET["sort"]) ? $_GET["sort"] : null;
                 ?>
             </div>
         </div>
@@ -144,7 +144,7 @@ $offset = ($page - 1) * $limit;
                                        LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
                                 WHERE  ttp.account_id = :account_id
                                        AND tt.status != 2 ";
-                            if ($_GET["filter"] == "incomplete") {
+                            if (isset($_GET["filter"]) && $_GET["filter"] == "incomplete") {
                                 $queryText .= " AND ttp.progress != 100 ";
                             }
                             $queryText .= " GROUP  BY np_communication_id
@@ -171,7 +171,7 @@ $offset = ($page - 1) * $limit;
                                        LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
                                 WHERE  ttp.account_id = :account_id
                                        AND tt.status != 2 ";
-                            if ($_GET["filter"] == "incomplete") {
+                            if (isset($_GET["filter"]) && $_GET["filter"] == "incomplete") {
                                 $queryText .= " AND ttp.progress != 100 ";
                             }
                             $queryText .= " GROUP  BY np_communication_id

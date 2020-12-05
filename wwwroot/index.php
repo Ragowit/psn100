@@ -44,7 +44,7 @@ if (empty($elements[0])) { // No path elements means home
                 $query->bindParam(":id", $gameId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
-                $player = $elements[0];
+                $player = array_key_exists(0, $elements) ? $elements[0] : null;
 
                 if ($result === false) {
                     header("Location: /game/", true, 303);
@@ -64,7 +64,7 @@ if (empty($elements[0])) { // No path elements means home
                 $query->bindParam(":id", $gameId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
-                $player = $elements[0];
+                $player = array_key_exists(0, $elements) ? $elements[0] : null;
 
                 if ($result === false) {
                     header("Location: /game/", true, 303);
@@ -140,7 +140,7 @@ if (empty($elements[0])) { // No path elements means home
                 $query->bindParam(":id", $trophyId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
-                $player = $elements[0];
+                $player = array_key_exists(0, $elements) ? $elements[0] : null;
 
                 if ($result === false) {
                     header("Location: /trophy/", true, 303);

@@ -1,5 +1,18 @@
 <?php
 $url = $_SERVER["REQUEST_URI"];
+$leaderboardActiveLi = "";
+$leaderboardActiveSpan = "";
+$gameActiveLi = "";
+$gameActiveSpan = "";
+$trophyActiveLi = "";
+$trophyActiveSpan = "";
+$avatarActiveLi = "";
+$avatarActiveSpan = "";
+$aboutActiveLi = "";
+$aboutActiveSpan = "";
+$homeActiveLi = "";
+$homeActiveSpan = "";
+
 if (substr($url, 0, strlen("/leaderboard")) === "/leaderboard" || substr($url, 0, strlen("/player")) === "/player") {
     $leaderboardActiveLi = " active";
     $leaderboardActiveSpan = " <span class=\"sr-only\">(current)</span>";

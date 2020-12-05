@@ -575,7 +575,7 @@ while (true) {
         $client = 0;
     }
 
-    if (is_null($info->currentOnlineId) === false) {
+    if (property_exists($info, "currentOnlineId") && is_null($info->currentOnlineId) === false) {
         $query = $database->prepare("DELETE FROM player_queue
             WHERE  online_id = :new_online_id ");
         $query->bindParam(":new_online_id", $info->currentOnlineId, PDO::PARAM_STR);
@@ -820,7 +820,7 @@ while (true) {
             foreach ($trophyTitles->trophyTitles as $game) {
                 $newDLC = false;
                 $sonyLastUpdatedDate = date_create($game->comparedUser->lastUpdateDate);
-                if ($sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$game->npCommunicationId])->format("Y-m-d H:i:s")) {
+                if (array_key_exists($game->npCommunicationId, $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$game->npCommunicationId])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
 
                     if ($playerLastUpdatedDate != null) { // New players have null as last updated date, and will thus continue with a full scan.
@@ -1004,7 +1004,7 @@ while (true) {
 
                             // If the player have earned the trophy, add it into the database
                             if ($trophy->comparedUser->earned == "1") {
-                                $dateTimeObject = DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $trophy->comparedUser->earnedDate);
+                                $dateTimeObject = property_exists($trophy->comparedUser, "earnedDate") ? DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $trophy->comparedUser->earnedDate) : false;
                                 if ($dateTimeObject === false) {
                                     $dtAsTextForInsert = null;
                                 } else {

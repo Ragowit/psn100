@@ -219,7 +219,7 @@ require_once("header.php");
                                 $trClass = "";
                                 if ($trophy["status"] == 1) {
                                     $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                } elseif (is_null($trophy["earned_date"]) === false) {
+                                } elseif (isset($trophy["earned_date"])) {
                                     $trClass = " class=\"table-success\"";
                                 } ?>
                                 <tr<?= $trClass; ?>>
@@ -244,7 +244,7 @@ require_once("header.php");
                                     </td>
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php
-                                        if (is_null($trophy["earned_date"]) === false) {
+                                        if (isset($trophy["earned_date"])) {
                                             echo str_replace(" ", "<br>", $trophy["earned_date"]);
                                             if (isset($_GET["order"]) && $_GET["order"] == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
                                                 echo "<br>";

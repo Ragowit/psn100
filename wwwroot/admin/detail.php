@@ -1,7 +1,7 @@
 <?php
 require_once("../init.php");
 
-if (ctype_digit(strval($_POST["game"]))) {
+if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $gameId = $_POST["game"];
     $name = $_POST["name"];
     $iconUrl = $_POST["icon_url"];
@@ -24,7 +24,7 @@ if (ctype_digit(strval($_POST["game"]))) {
     $trophyTitle = $query->fetch();
 
     $success = "<p>Game ID ". $gameId ." is updated.</p>";
-} elseif (ctype_digit(strval($_GET["game"]))) {
+} elseif (isset($_GET["game"]) && ctype_digit(strval($_GET["game"]))) {
     $gameId = $_GET["game"];
 
     $query = $database->prepare("SELECT name, icon_url, platform, message FROM trophy_title WHERE id = :game_id");

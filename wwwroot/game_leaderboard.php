@@ -91,7 +91,7 @@ $offset = ($page - 1) * $limit;
                         $rank = $offset;
                         foreach ($rows as $row) {
                             $countryName = Locale::getDisplayRegion("-" . $row["country"], 'en'); ?>
-                            <tr<?php if ($row["account_id"] === $accountId) {
+                            <tr<?php if (isset($accountId) && $row["account_id"] === $accountId) {
                                 echo " class=\"table-success\"";
                             } ?>>
                                 <th class="align-middle"><?= ++$rank; ?></th>

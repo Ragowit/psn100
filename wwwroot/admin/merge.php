@@ -4,8 +4,9 @@ ini_set("max_input_time", "0");
 ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
 require_once("../init.php");
+$message = "";
 
-if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"])) {
+if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"])) {
     $trophyChildId = $_POST["trophychild"];
     $trophyParentId = $_POST["trophyparent"];
     $children = explode(",", $trophyChildId);
@@ -433,11 +434,10 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
     }
 
     $message = "The trophies have been merged.";
-} elseif (ctype_digit(strval($_POST["parent"])) && ctype_digit(strval($_POST["child"]))) {
+} elseif (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
     $childId = $_POST["child"];
     $parentId = $_POST["parent"];
     $method = $_POST["method"];
-    $message = "";
 
     // Sanity checks
     $query = $database->prepare("SELECT np_communication_id
@@ -912,7 +912,7 @@ if (ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"]))
     }
 
     $message .= "The games have been merged.";
-} elseif (ctype_digit(strval($_POST["child"]))) {
+} elseif (isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
     // Clone the game. This will be the master game for the others.
     $childId = $_POST["child"];
 
