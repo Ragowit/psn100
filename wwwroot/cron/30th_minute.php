@@ -458,7 +458,7 @@ while (true) {
             array_push($users, $user);
         }
     } catch (Exception $e) {
-        if (strpos($e->getMessage(), "User not found") !== false) {
+        if (str_contains($e->getMessage(), "User not found")) {
             $query = $database->prepare("DELETE FROM player_queue
                 WHERE  online_id = :online_id ");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
@@ -514,7 +514,7 @@ while (true) {
     try {
         $info = $users[$client]->info();
     } catch (Exception $e) {
-        if (strpos($e->getMessage(), "User not found") !== false) {
+        if (str_contains($e->getMessage(), "User not found")) {
             $query = $database->prepare("DELETE FROM player_queue
                 WHERE  online_id = :online_id ");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
@@ -556,7 +556,7 @@ while (true) {
                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
             }
-        } elseif (strpos($e->getMessage(), "Internal server error") !== false) {
+        } elseif (str_contains($e->getMessage(), "Internal server error")) {
             // Sony seems to have some kind of random error.
             $message = "Internal server error from Sony when scanning ". $player["online_id"] .".";
             $query = $database->prepare("INSERT INTO log

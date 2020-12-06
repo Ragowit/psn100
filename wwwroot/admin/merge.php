@@ -19,7 +19,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
         $query->bindParam(":id", $childId, PDO::PARAM_INT);
         $query->execute();
         $childNpCommunicationId = $query->fetchColumn();
-        if (substr($childNpCommunicationId, 0, 5) === "MERGE") {
+        if (str_starts_with($childNpCommunicationId, "MERGE")) {
             echo "Child can't be a merge title.";
             die();
         }
@@ -30,7 +30,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":id", $trophyParentId, PDO::PARAM_INT);
     $query->execute();
     $parentNpCommunicationId = $query->fetchColumn();
-    if (substr($parentNpCommunicationId, 0, 5) !== "MERGE") {
+    if (!str_starts_with($parentNpCommunicationId, "MERGE")) {
         echo "Parent must be a merge title.";
         die();
     }
@@ -446,7 +446,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":id", $childId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
-    if (substr($childNpCommunicationId, 0, 5) === "MERGE") {
+    if (str_starts_with($childNpCommunicationId, "MERGE")) {
         echo "Child can't be a merge title.";
         die();
     }
@@ -456,7 +456,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":id", $parentId, PDO::PARAM_INT);
     $query->execute();
     $parentNpCommunicationId = $query->fetchColumn();
-    if (substr($parentNpCommunicationId, 0, 5) !== "MERGE") {
+    if (!str_starts_with($parentNpCommunicationId, "MERGE")) {
         echo "Parent must be a merge title.";
         die();
     }
@@ -923,7 +923,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":id", $childId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
-    if (substr($childNpCommunicationId, 0, 5) === "MERGE") {
+    if (str_starts_with($childNpCommunicationId, "MERGE")) {
         echo "Can't clone an already cloned game.";
         die();
     }

@@ -13,19 +13,19 @@ $aboutActiveSpan = "";
 $homeActiveLi = "";
 $homeActiveSpan = "";
 
-if (substr($url, 0, strlen("/leaderboard")) === "/leaderboard" || substr($url, 0, strlen("/player")) === "/player") {
+if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
     $leaderboardActiveLi = " active";
     $leaderboardActiveSpan = " <span class=\"sr-only\">(current)</span>";
-} elseif (substr($url, 0, strlen("/game")) === "/game") {
+} elseif (str_starts_with($url, "/game")) {
     $gameActiveLi = " active";
     $gameActiveSpan = " <span class=\"sr-only\">(current)</span>";
-} elseif (substr($url, 0, strlen("/trophy")) === "/trophy") {
+} elseif (str_starts_with($url, "/trophy")) {
     $trophyActiveLi = " active";
     $trophyActiveSpan = " <span class=\"sr-only\">(current)</span>";
-} elseif (substr($url, 0, strlen("/avatar")) === "/avatar") {
+} elseif (str_starts_with($url, "/avatar")) {
     $avatarActiveLi = " active";
     $avatarActiveSpan = " <span class=\"sr-only\">(current)</span>";
-} elseif (substr($url, 0, strlen("/about")) === "/about") {
+} elseif (str_starts_with($url, "/about")) {
     $aboutActiveLi = " active";
     $aboutActiveSpan = " <span class=\"sr-only\">(current)</span>";
 } else {
