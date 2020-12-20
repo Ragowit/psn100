@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Oct 22, 2020 at 10:37 PM
+-- Generation Time: Dec 20, 2020 at 11:43 AM
 -- Server version: 8.0.22
 -- PHP Version: 7.3.6
 
@@ -116,7 +116,8 @@ CREATE TABLE `trophy` (
   `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
-  `owners` int UNSIGNED NOT NULL DEFAULT '0'
+  `owners` int UNSIGNED NOT NULL DEFAULT '0',
+  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -226,7 +227,18 @@ CREATE TABLE `trophy_title_player` (
   `platinum` smallint UNSIGNED NOT NULL,
   `progress` tinyint UNSIGNED NOT NULL,
   `last_updated_date` datetime NOT NULL,
-  `rarity_points` mediumint UNSIGNED NOT NULL DEFAULT '0'
+  `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
+  `temp_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
+  `common` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `uncommon` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `rare` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `epic` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `legendary` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `temp_common` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `temp_uncommon` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `temp_rare` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `temp_epic` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `temp_legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -344,7 +356,12 @@ ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `np_communication_id` (`np_communication_id`,`group_id`,`order_id`),
   ADD KEY `rarity_percent` (`rarity_percent`),
-  ADD KEY `np_communication_id_2` (`np_communication_id`,`group_id`,`order_id`,`status`,`rarity_percent`);
+  ADD KEY `np_communication_id_2` (`np_communication_id`,`group_id`,`order_id`,`status`,`rarity_percent`),
+  ADD KEY `trophy_idx_status_np_id` (`status`,`np_communication_id`),
+  ADD KEY `trophy_idx_status_np_id_rarity_name` (`status`,`np_communication_id`,`rarity_name`),
+  ADD KEY `trophy_idx_ids_rarity_point` (`np_communication_id`,`group_id`,`order_id`,`rarity_point`),
+  ADD KEY `trophy_idx_rarity_point` (`rarity_point`),
+  ADD KEY `trophy_idx_status` (`status`);
 
 --
 -- Indexes for table `trophy_earned`

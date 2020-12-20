@@ -49,20 +49,32 @@ do {
 } while ($deadlock);
 
 // Recalculate recent players
-$select = $database->prepare("SELECT np_communication_id,
-           Count(*) AS recent_players
-    FROM   trophy_title_player ttp
-           JOIN player p USING(account_id)
-    WHERE  p.status = 0
-           AND p.rank <= 1000000
-           AND ttp.last_updated_date >= Date(Now()) - INTERVAL 7 day
-    GROUP  BY np_communication_id ");
-$select->execute();
-while ($row = $select->fetch()) {
-    $update = $database->prepare("UPDATE trophy_title 
-        SET    recent_players = :recent_players
-        WHERE  np_communication_id = :np_communication_id ");
-    $update->bindParam(":recent_players", $row["recent_players"], PDO::PARAM_INT);
-    $update->bindParam(":np_communication_id", $row["np_communication_id"], PDO::PARAM_STR);
-    $update->execute();
-}
+do {
+    try {
+        $query = $database->prepare("WITH
+            recent AS(
+            SELECT
+                np_communication_id,
+                COUNT(*) AS recent_players
+            FROM
+                trophy_title_player ttp
+            JOIN player p USING(account_id)
+            WHERE
+                p.status = 0 AND p.rank <= 1000000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
+            GROUP BY
+                np_communication_id)
+            UPDATE
+                trophy_title tt,
+                recent r
+            SET
+                tt.recent_players = r.recent_players
+            WHERE
+                tt.np_communication_id = r.np_communication_id");
+        $query->execute();
+
+        $deadlock = false;
+    } catch (Exception $e) {
+        sleep(3);
+        $deadlock = true;
+    }
+} while ($deadlock);
