@@ -322,7 +322,6 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 17)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 18)
-            OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 24)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 25)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 27)
             OR (te.np_communication_id = 'MERGE_011562' AND te.group_id = 'default' AND te.order_id = 56)";
