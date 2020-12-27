@@ -7,13 +7,27 @@ require_once("/home/psn100/public_html/init.php");
 // Recalculate owners for each game, but only for those ranked 100k or higher
 do {
     try {
-        $query = $database->prepare("UPDATE trophy_title tt
-            SET    tt.owners = (SELECT Count(*)
-                                FROM   trophy_title_player ttp
-                                       JOIN player p USING(account_id)
-                                WHERE  ttp.np_communication_id = tt.np_communication_id
-                                       AND p.status = 0
-                                       AND p.rank <= 100000) ");
+        $query = $database->prepare("WITH
+                game AS(
+                SELECT
+                    np_communication_id,
+                    COUNT(*) AS owners
+                FROM
+                    trophy_title_player ttp
+                JOIN player p USING(account_id)
+                WHERE
+                    p.status = 0 AND p.rank <= 100000
+                GROUP BY
+                    np_communication_id
+                ORDER BY NULL
+            )
+            UPDATE
+                trophy_title tt,
+                game g
+            SET
+                tt.owners = g.owners
+            WHERE
+                tt.np_communication_id = g.np_communication_id");
         $query->execute();
 
         $deadlock = false;
@@ -26,19 +40,31 @@ do {
 // Update game difficulty
 do {
     try {
-        $query = $database->prepare("UPDATE trophy_title tt
-            SET    tt.difficulty = CASE
-                                     WHEN tt.owners = 0 THEN 0
-                                     ELSE( (SELECT Count(*)
-                                            FROM   trophy_title_player ttp
-                                                   JOIN player p USING(account_id)
-                                            WHERE  p.status = 0
-                                                   AND p.rank <= 100000
-                                                   AND ttp.progress = 100
-                                                   AND ttp.np_communication_id =
-                                                       tt.np_communication_id) /
-                                           tt.owners ) * 100
-                                   end ");
+        $query = $database->prepare("WITH
+                game_players AS(
+                SELECT
+                    np_communication_id,
+                    COUNT(*) AS completed_players
+                FROM
+                    trophy_title_player ttp
+                JOIN player p USING(account_id)
+                WHERE
+                    p.status = 0 AND p.rank <= 100000 AND ttp.progress = 100
+                GROUP BY
+                    np_communication_id
+                ORDER BY NULL
+            )
+            UPDATE
+                trophy_title tt,
+                game_players gp
+            SET
+                tt.difficulty = IF(
+                    tt.owners = 0,
+                    0,
+                    (gp.completed_players / tt.owners) * 100
+                )
+            WHERE
+                tt.np_communication_id = gp.np_communication_id");
         $query->execute();
 
         $deadlock = false;
