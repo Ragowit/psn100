@@ -1003,7 +1003,7 @@ while (true) {
                             }
 
                             // If the player have earned the trophy, add it into the database
-                            if ($trophy->comparedUser->earned == "1") {
+                            if (property_exists($trophy, "comparedUser") && $trophy->comparedUser->earned == "1") {
                                 $dateTimeObject = property_exists($trophy->comparedUser, "earnedDate") ? DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $trophy->comparedUser->earnedDate) : false;
                                 if ($dateTimeObject === false) {
                                     $dtAsTextForInsert = null;
