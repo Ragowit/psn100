@@ -46,8 +46,9 @@ require_once("header.php");
                         <li>Available > Delisted</li>
                         <li>English language > Other language</li>
                         <li>Digital > Physical</li>
-                        <li>Remaster > Original</li>
-                        <li>PS4 > PS3 > PSVITA</li>
+                        <li>Remaster/Remake > Original</li>
+                        <li>PS5 > PS4 > PS3 > PSVITA</li>
+                        <li>Collection/Bundle > Single entry</li>
                     </ol>
                 </p>
             </div>

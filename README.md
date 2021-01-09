@@ -10,8 +10,9 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 1. Available > Delisted
 2. English language > Other language
 3. Digital > Physical
-4. Remaster > Original
-5. PS4 > PS3 > PSVITA
+4. Remaster/Remake > Original
+5. PS5 > PS4 > PS3 > PSVITA
+6. Collection/Bundle > Single entry
 
 ## Other sites
 - PSN Profiles <[https://psnprofiles.com](https://psnprofiles.com)>
