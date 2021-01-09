@@ -18,4 +18,4 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 - PlaystationTrophies <[https://www.playstationtrophies.org](https://www.playstationtrophies.org)>
 - PSN Trophy Leaders <[https://psntrophyleaders.com](https://psntrophyleaders.com)>
 - TrueTropies <[https://www.truetrophies.com](https://www.truetrophies.com)>
-- PlayStation games stats <[http://gamstat.com/](http://gamstat.com/)>
+- Exophase <[https://www.exophase.com/](https://www.exophase.com/)>
