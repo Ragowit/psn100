@@ -93,8 +93,6 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR04361_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR04361_00' AND te.group_id = 'default' AND te.order_id = 39)
             OR (te.np_communication_id = 'NPWR04361_00' AND te.group_id = 'default' AND te.order_id = 40)";
-        // Pinball Heroes: Complete
-        $sql .= " OR (te.np_communication_id = 'NPWR03434_00' AND te.group_id = 'default' AND te.order_id = 4)";
         // Night Trap - 25th Anniversary Edition
         $sql .= " OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 12)
