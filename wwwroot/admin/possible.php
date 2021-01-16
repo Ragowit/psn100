@@ -375,7 +375,7 @@ require_once("../init.php");
         $query = $database->prepare("SELECT account_id, online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
             FROM player p
             JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 32) socom_start USING (account_id)
-            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 35) socom_end USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00302_00' AND group_id = 'default' AND order_id = 33) socom_end USING (account_id)
             WHERE p.status != 1
             HAVING time_difference <= 60
             ORDER BY online_id");
