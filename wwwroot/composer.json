@@ -1,6 +1,1 @@
-{
-    "require": {
-        "tustin/psn-php": "^2.1",
-        "spatie/guzzle-rate-limiter-middleware": "^1.0"
-    }
-}
+{"name":"dummy app","description":"This app is only a dummy for downloading with the option require.","homepage":"https://php-download.com/","type":"project","require":{"spatie/guzzle-rate-limiter-middleware":"^2.0.1.0","tustin/psn-php":"9999999-dev"}}

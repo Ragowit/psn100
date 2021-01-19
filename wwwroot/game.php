@@ -156,14 +156,17 @@ require_once("header.php");
                                          t.detail, 
                                          t.icon_url, 
                                          t.rarity_percent, 
-                                         t.status, 
-                                         te.earned_date 
+                                         t.status,
+                                         t.progress_target_value,
+                                         te.earned_date,
+                                         te.progress
                                   FROM   trophy t 
                                          LEFT JOIN (SELECT np_communication_id, 
                                                            group_id, 
                                                            order_id, 
                                                            Ifnull(earned_date, 'No Timestamp') AS 
-                                                           earned_date 
+                                                           earned_date,
+                                                           progress
                                                     FROM   trophy_earned 
                                                     WHERE  account_id = :account_id) AS te USING ( 
                                          np_communication_id, group_id, order_id) 
@@ -193,7 +196,8 @@ require_once("header.php");
                                    t.detail, 
                                    t.icon_url, 
                                    t.rarity_percent, 
-                                   t.status 
+                                   t.status,
+                                   t.progress_target_value
                             FROM   trophy t 
                             WHERE  t.np_communication_id = :np_communication_id 
                                    AND t.group_id = :group_id ";
@@ -241,6 +245,17 @@ require_once("header.php");
                                         } ?>
                                         <br>
                                         <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
+                                        <?php
+                                        if ($trophy["progress_target_value"] != null) {
+                                            echo "<h3>";
+                                            if (isset($trophy["progress"])) {
+                                                echo $trophy["progress"];
+                                            } else {
+                                                echo "0";
+                                            }
+                                            echo "/". $trophy["progress_target_value"] ."</h3>";
+                                        }
+                                        ?>
                                     </td>
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php
