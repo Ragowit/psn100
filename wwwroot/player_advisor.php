@@ -64,13 +64,32 @@ $offset = ($page - 1) * $limit;
                         </tr>
                         <?php
                     } else {
-                        $query = $database->prepare("SELECT tt.id AS game_id, tt.name AS game_name, tg.icon_url AS group_icon_url, tg.name AS group_name, t.id AS trophy_id, t.icon_url AS trophy_icon_url, t.name AS trophy_name, t.detail AS trophy_detail, t.rarity_percent, t.type FROM trophy t
-                            JOIN trophy_title tt USING (np_communication_id)
-                            JOIN trophy_group tg USING (np_communication_id, group_id)
-                            LEFT JOIN trophy_earned te ON t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND te.account_id = :account_id
-                            JOIN trophy_title_player ttp ON t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
-                            WHERE te.id IS NULL AND tt.status = 0 AND t.status = 0
-                            ORDER BY rarity_percent DESC
+                        $query = $database->prepare("SELECT
+                                tt.id AS game_id,
+                                tt.name AS game_name,
+                                tg.icon_url AS group_icon_url,
+                                tg.name AS group_name,
+                                t.id AS trophy_id,
+                                t.icon_url AS trophy_icon_url,
+                                t.name AS trophy_name,
+                                t.detail AS trophy_detail,
+                                t.rarity_percent,
+                                t.type,
+                                t.progress_target_value,
+                                te.progress
+                            FROM
+                                trophy t
+                            JOIN trophy_title tt USING(np_communication_id)
+                            JOIN trophy_group tg USING(np_communication_id, group_id)
+                            LEFT JOIN trophy_earned te ON
+                                t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND te.account_id = :account_id
+                            JOIN trophy_title_player ttp ON
+                                t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
+                            WHERE
+                                (te.id IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0
+                            ORDER BY
+                                rarity_percent
+                            DESC                    
                             LIMIT :offset, :limit");
                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                         $query->bindParam(":offset", $offset, PDO::PARAM_INT);
@@ -95,6 +114,17 @@ $offset = ($page - 1) * $limit;
                                     </a>
                                     <br>
                                     <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
+                                    <?php
+                                    if ($trophy["progress_target_value"] != null) {
+                                        echo "<br><b>";
+                                        if (isset($trophy["progress"])) {
+                                            echo $trophy["progress"];
+                                        } else {
+                                            echo "0";
+                                        }
+                                        echo "/". $trophy["progress_target_value"] ."</b>";
+                                    }
+                                    ?>
                                 </td>
                                 <td class="text-center">
                                     <?= $trophy["rarity_percent"]; ?>%<br>

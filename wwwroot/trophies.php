@@ -41,10 +41,24 @@ $offset = ($page - 1) * $limit;
                     </tr>
 
                     <?php
-                    $trophies = $database->prepare("SELECT t.id AS trophy_id, t.type AS trophy_type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon, t.rarity_percent, tt.id AS game_id, tt.name AS game_name, tt.icon_url AS game_icon FROM trophy t
-                        JOIN trophy_title tt USING (np_communication_id)
-                        WHERE tt.status != 2
-                        ORDER BY t.id DESC
+                    $trophies = $database->prepare("SELECT
+                            t.id AS trophy_id,
+                            t.type AS trophy_type,
+                            t.name AS trophy_name,
+                            t.detail AS trophy_detail,
+                            t.icon_url AS trophy_icon,
+                            t.rarity_percent,
+                            t.progress_target_value,
+                            tt.id AS game_id,
+                            tt.name AS game_name,
+                            tt.icon_url AS game_icon
+                        FROM
+                            trophy t
+                        JOIN trophy_title tt USING(np_communication_id)
+                        WHERE
+                            tt.status != 2
+                        ORDER BY
+                            t.id DESC
                         LIMIT :offset, :limit");
                     $trophies->bindParam(":offset", $offset, PDO::PARAM_INT);
                     $trophies->bindParam(":limit", $limit, PDO::PARAM_INT);
@@ -68,6 +82,11 @@ $offset = ($page - 1) * $limit;
                                     <b><?= htmlentities($trophy["trophy_name"]); ?></b><br>
                                 </a>
                                 <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
+                                <?php
+                                if ($trophy["progress_target_value"] != null) {
+                                    echo "<br><b>0/". $trophy["progress_target_value"] ."</b>";
+                                }
+                                ?>
                             </td>
                             <td class="text-center">
                                 <?= $trophy["rarity_percent"]; ?>%<br>

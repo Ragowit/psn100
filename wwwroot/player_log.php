@@ -74,21 +74,66 @@ $offset = ($page - 1) * $limit;
                         <?php
                     } else {
                         if (isset($_GET["sort"])) {
-                            $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
-                            LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
-                            LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
-                            LEFT JOIN trophy_title tt USING (np_communication_id)
-                            WHERE tt.status != 2 AND te.account_id = :account_id
-                            ORDER BY t.rarity_percent
-                            LIMIT :offset, :limit");
+                            $query = $database->prepare("SELECT
+                                    te.*,
+                                    tg.name AS group_name,
+                                    tg.icon_url AS group_icon_url,
+                                    t.id AS trophy_id,
+                                    t.type,
+                                    t.name AS trophy_name,
+                                    t.detail AS trophy_detail,
+                                    t.icon_url AS trophy_icon_url,
+                                    t.rarity_percent,
+                                    t.status AS trophy_status,
+                                    t.progress_target_value AS trophy_progress_target_value,
+                                    tt.id AS game_id,
+                                    tt.name AS game_name,
+                                    tt.status AS game_status
+                                FROM
+                                    trophy_earned te
+                                LEFT JOIN trophy_group tg USING(np_communication_id, group_id)
+                                LEFT JOIN trophy t USING(
+                                        np_communication_id,
+                                        group_id,
+                                        order_id
+                                    )
+                                LEFT JOIN trophy_title tt USING(np_communication_id)
+                                WHERE
+                                    tt.status != 2 AND te.account_id = :account_id AND te.earned = 1
+                                ORDER BY
+                                    t.rarity_percent
+                                LIMIT :offset, :limit");
                         } else {
-                            $query = $database->prepare("SELECT te.*, tg.name AS group_name, tg.icon_url AS group_icon_url, t.id AS trophy_id, t.type, t.name AS trophy_name, t.detail AS trophy_detail, t.icon_url AS trophy_icon_url, t.rarity_percent, t.status AS trophy_status, tt.id AS game_id, tt.name AS game_name, tt.status AS game_status FROM trophy_earned te
-                            LEFT JOIN trophy_group tg USING (np_communication_id, group_id)
-                            LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
-                            LEFT JOIN trophy_title tt USING (np_communication_id)
-                            WHERE tt.status != 2 AND te.account_id = :account_id
-                            ORDER BY te.earned_date DESC
-                            LIMIT :offset, :limit");
+                            $query = $database->prepare("SELECT
+                                    te.*,
+                                    tg.name AS group_name,
+                                    tg.icon_url AS group_icon_url,
+                                    t.id AS trophy_id,
+                                    t.type,
+                                    t.name AS trophy_name,
+                                    t.detail AS trophy_detail,
+                                    t.icon_url AS trophy_icon_url,
+                                    t.rarity_percent,
+                                    t.status AS trophy_status,
+                                    t.progress_target_value AS trophy_progress_target_value,
+                                    tt.id AS game_id,
+                                    tt.name AS game_name,
+                                    tt.status AS game_status
+                                FROM
+                                    trophy_earned te
+                                LEFT JOIN trophy_group tg USING(np_communication_id, group_id)
+                                LEFT JOIN trophy t USING(
+                                        np_communication_id,
+                                        group_id,
+                                        order_id
+                                    )
+                                LEFT JOIN trophy_title tt USING(np_communication_id)
+                                WHERE
+                                    tt.status != 2 AND te.account_id = :account_id AND te.earned = 1
+                                ORDER BY
+                                    te.earned_date
+                                DESC                        
+                                LIMIT :offset, :limit");
                         }
                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                         $query->bindParam(":offset", $offset, PDO::PARAM_INT);
@@ -97,6 +142,11 @@ $offset = ($page - 1) * $limit;
                         $trophies = $query->fetchAll();
 
                         foreach ($trophies as $trophy) {
+                            // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
+                            if ($trophy["progress"] == null && $trophy["trophy_progress_target_value"] != null) {
+                                $trophy["progress"] = $trophy["trophy_progress_target_value"];
+                            }
+
                             if ($trophy["game_status"] == 1) {
                                 echo "<tr class=\"table-warning\" title=\"This game is delisted and the trophy will not be accounted for on any leaderboard.\">";
                             } elseif ($trophy["trophy_status"] == 1) {
@@ -118,6 +168,11 @@ $offset = ($page - 1) * $limit;
                                     </a>
                                     <br>
                                     <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
+                                    <?php
+                                    if ($trophy["trophy_progress_target_value"] != null) {
+                                        echo "<br><b>". $trophy["progress"] ."/". $trophy["trophy_progress_target_value"] ."</b>";
+                                    }
+                                    ?>
                                 </td>
                                 <td class="text-center" style="white-space: nowrap;">
                                     <?= str_replace(" ", "<br>", $trophy["earned_date"]); ?>

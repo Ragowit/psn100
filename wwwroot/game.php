@@ -159,14 +159,16 @@ require_once("header.php");
                                          t.status,
                                          t.progress_target_value,
                                          te.earned_date,
-                                         te.progress
+                                         te.progress,
+                                         te.earned
                                   FROM   trophy t 
                                          LEFT JOIN (SELECT np_communication_id, 
                                                            group_id, 
                                                            order_id, 
                                                            Ifnull(earned_date, 'No Timestamp') AS 
                                                            earned_date,
-                                                           progress
+                                                           progress,
+                                                           earned
                                                     FROM   trophy_earned 
                                                     WHERE  account_id = :account_id) AS te USING ( 
                                          np_communication_id, group_id, order_id) 
@@ -220,10 +222,15 @@ require_once("header.php");
                         <table class="table table-responsive table-striped">
                             <?php
                             foreach ($trophies as $trophy) {
+                                // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
+                                if ($trophy["earned"] == 1 && $trophy["progress"] == null && $trophy["progress_target_value"] != null) {
+                                    $trophy["progress"] = $trophy["progress_target_value"];
+                                }
+
                                 $trClass = "";
                                 if ($trophy["status"] == 1) {
                                     $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                } elseif (isset($trophy["earned_date"])) {
+                                } elseif ($trophy["earned"] == 1) {
                                     $trClass = " class=\"table-success\"";
                                 } ?>
                                 <tr<?= $trClass; ?>>
@@ -247,19 +254,19 @@ require_once("header.php");
                                         <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
                                         <?php
                                         if ($trophy["progress_target_value"] != null) {
-                                            echo "<h3>";
+                                            echo "<br><b>";
                                             if (isset($trophy["progress"])) {
                                                 echo $trophy["progress"];
                                             } else {
                                                 echo "0";
                                             }
-                                            echo "/". $trophy["progress_target_value"] ."</h3>";
+                                            echo "/". $trophy["progress_target_value"] ."</b>";
                                         }
                                         ?>
                                     </td>
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php
-                                        if (isset($trophy["earned_date"])) {
+                                        if ($trophy["earned"] == 1) {
                                             echo str_replace(" ", "<br>", $trophy["earned_date"]);
                                             if (isset($_GET["order"]) && $_GET["order"] == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
                                                 echo "<br>";
