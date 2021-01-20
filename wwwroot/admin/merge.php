@@ -88,7 +88,9 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             $childTrophies = $database->prepare("SELECT np_communication_id,
                        group_id,
                        order_id,
-                       earned_date
+                       earned_date,
+                       progress,
+                       earned
                 FROM   trophy_earned
                 WHERE  np_communication_id = (SELECT np_communication_id
                                               FROM   trophy
@@ -117,37 +119,41 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                 $query->execute();
                 $parent = $query->fetch();
 
-                $query = $database->prepare("INSERT INTO trophy_earned
-                                (
-                                            np_communication_id,
-                                            group_id,
-                                            order_id,
-                                            account_id,
-                                            earned_date
-                                )
-                                VALUES
-                                (
-                                            :np_communication_id,
-                                            :group_id,
-                                            :order_id,
-                                            :account_id,
-                                            :earned_date
-                                )
-                    on duplicate KEY
-                    UPDATE earned_date = IF(earned_date > VALUES
-                           (
-                                  earned_date
-                           )
-                           , earned_date, VALUES
-                           (
-                                  earned_date
-                           )
-                           )");
+                $query = $database->prepare("INSERT INTO trophy_earned(
+                        np_communication_id,
+                        group_id,
+                        order_id,
+                        account_id,
+                        earned_date,
+                        progress,
+                        earned
+                    )
+                    VALUES(
+                        :np_communication_id,
+                        :group_id,
+                        :order_id,
+                        :account_id,
+                        :earned_date,
+                        :progress,
+                        :earned
+                    )
+                    ON DUPLICATE KEY
+                    UPDATE
+                        earned_date = IF(
+                            earned_date >
+                        VALUES(earned_date),
+                        earned_date,
+                    VALUES(earned_date)
+                        ), progress =
+                    VALUES(progress), earned =
+                    VALUES(earned)");
                 $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
                 $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
                 $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
                 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                 $query->bindParam(":earned_date", $child["earned_date"], PDO::PARAM_STR);
+                $query->bindParam(":progress", $child["progress"], PDO::PARAM_INT);
+                $query->bindParam(":earned", $child["earned"], PDO::PARAM_INT);
                 $query->execute();
             }
 
@@ -204,6 +210,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                     WHERE  account_id = :account_id
                            AND te.np_communication_id = :np_communication_id
                            AND te.group_id = :group_id
+                           AND te.earned = 1
                     GROUP  BY type ");
                 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                 $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
@@ -408,29 +415,49 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
         }
 
         // Add all affected players to the queue to recalculate trophy count, level and level progress
-        $players = $database->prepare("SELECT online_id
-            FROM   player p
-            WHERE  EXISTS (SELECT 1
-                           FROM   trophy_title_player
-                                  JOIN trophy_earned USING (np_communication_id, account_id)
-                           WHERE  np_communication_id = (SELECT np_communication_id
-                                                         FROM   trophy
-                                                         WHERE  id = :child_trophy_id)
-                                  AND group_id = (SELECT group_id
-                                                  FROM   trophy
-                                                  WHERE  id = :child_trophy_id)
-                                  AND order_id = (SELECT order_id
-                                                  FROM   trophy
-                                                  WHERE  id = :child_trophy_id)
-                                  AND account_id = p.account_id) ");
-        $players->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
-        $players->execute();
-        while ($player = $players->fetch()) {
-            $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, request_time) VALUES (:online_id, :request_time)");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->bindValue(":request_time", "2030-12-24 00:00:00", PDO::PARAM_STR);
-            $query->execute();
-        }
+        $query = $database->prepare("INSERT IGNORE
+            INTO player_queue(online_id, request_time)
+            SELECT
+                online_id,
+                '2030-12-24 00:00:00'
+            FROM
+                player p
+            WHERE EXISTS
+                (
+                SELECT
+                    1
+                FROM
+                    trophy_title_player
+                JOIN trophy_earned USING(
+                        np_communication_id,
+                        account_id
+                    )
+                WHERE
+                    np_communication_id =(
+                    SELECT
+                        np_communication_id
+                    FROM
+                        trophy
+                    WHERE
+                        id = :child_trophy_id
+                ) AND group_id =(
+                SELECT
+                    group_id
+                FROM
+                    trophy
+                WHERE
+                    id = :child_trophy_id
+            ) AND order_id =(
+                SELECT
+                    order_id
+                FROM
+                    trophy
+                WHERE
+                    id = :child_trophy_id
+            ) AND account_id = p.account_id
+            )");
+        $query->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
+        $query->execute();
     }
 
     $message = "The trophies have been merged.";
@@ -580,7 +607,9 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
         $childTrophies = $database->prepare("SELECT np_communication_id,
                    group_id,
                    order_id,
-                   earned_date
+                   earned_date,
+                   progress,
+                   earned
             FROM   trophy_earned
             WHERE  np_communication_id = (SELECT np_communication_id
                                           FROM   trophy_title
@@ -603,37 +632,41 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             $query->execute();
 
             if ($parent = $query->fetch()) {
-                $query = $database->prepare("INSERT INTO trophy_earned
-                                (
-                                            np_communication_id,
-                                            group_id,
-                                            order_id,
-                                            account_id,
-                                            earned_date
-                                )
-                                VALUES
-                                (
-                                            :np_communication_id,
-                                            :group_id,
-                                            :order_id,
-                                            :account_id,
-                                            :earned_date
-                                )
-                    on duplicate KEY
-                    UPDATE earned_date = IF(earned_date > VALUES
-                           (
-                                  earned_date
-                           )
-                           , earned_date, VALUES
-                           (
-                                  earned_date
-                           )
-                           )");
+                $query = $database->prepare("INSERT INTO trophy_earned(
+                        np_communication_id,
+                        group_id,
+                        order_id,
+                        account_id,
+                        earned_date,
+                        progress,
+                        earned
+                    )
+                    VALUES(
+                        :np_communication_id,
+                        :group_id,
+                        :order_id,
+                        :account_id,
+                        :earned_date,
+                        :progress,
+                        :earned
+                    )
+                    ON DUPLICATE KEY
+                    UPDATE
+                        earned_date = IF(
+                            earned_date >
+                        VALUES(earned_date),
+                        earned_date,
+                    VALUES(earned_date)
+                        ), progress =
+                    VALUES(progress), earned =
+                    VALUES(earned)");
                 $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
                 $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
                 $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
                 $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                 $query->bindParam(":earned_date", $child["earned_date"], PDO::PARAM_STR);
+                $query->bindParam(":progress", $child["progress"], PDO::PARAM_INT);
+                $query->bindParam(":earned", $child["earned"], PDO::PARAM_INT);
                 $query->execute();
             }
         }
@@ -690,6 +723,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                 WHERE  account_id = :account_id
                        AND te.np_communication_id = :np_communication_id
                        AND te.group_id = :group_id
+                       AND te.earned = 1
                 GROUP  BY type ");
             $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
             $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
@@ -894,22 +928,31 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     }
 
     // Add all affected players to the queue to recalculate trophy count, level and level progress
-    $players = $database->prepare("SELECT online_id
-        FROM   player p
-        WHERE  EXISTS (SELECT 1
-                       FROM   trophy_title_player ttp
-                       WHERE  ttp.np_communication_id = (SELECT np_communication_id
-                                                         FROM   trophy_title
-                                                         WHERE  id = :game_id)
-                              AND ttp.account_id = p.account_id) ");
-    $players->bindParam(":game_id", $childId, PDO::PARAM_INT);
-    $players->execute();
-    while ($player = $players->fetch()) {
-        $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, request_time) VALUES (:online_id, :request_time)");
-        $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-        $query->bindValue(":request_time", "2030-12-24 00:00:00", PDO::PARAM_STR);
-        $query->execute();
-    }
+    $query = $database->prepare("INSERT IGNORE
+        INTO player_queue(online_id, request_time)
+        SELECT
+            online_id,
+            '2030-12-24 00:00:00'
+        FROM
+            player p
+        WHERE EXISTS
+            (
+            SELECT
+                1
+            FROM
+                trophy_title_player ttp
+            WHERE
+                ttp.np_communication_id =(
+                SELECT
+                    np_communication_id
+                FROM
+                    trophy_title
+                WHERE
+                    id = :game_id
+            ) AND ttp.account_id = p.account_id
+        )");
+    $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
+    $query->execute();
 
     $message .= "The games have been merged.";
 } elseif (isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
@@ -952,7 +995,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                      silver,
                      gold,
                      platinum,
-                     message)
+                     message,
+                     set_version)
         SELECT :np_communication_id,
                name,
                detail,
@@ -962,7 +1006,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                silver,
                gold,
                platinum,
-               message
+               message,
+               set_version
         FROM   trophy_title
         WHERE  id = :id ");
     $query->bindParam(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
@@ -1005,7 +1050,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                      icon_url,
                      rare,
                      earned_rate,
-                     status)
+                     status,
+                     progress_target_value)
         SELECT :np_communication_id,
                group_id,
                order_id,
@@ -1016,7 +1062,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                icon_url,
                0,
                0,
-               status
+               status,
+               progress_target_value
         FROM   trophy
         WHERE  np_communication_id = :child_np_communication_id ");
     $query->bindParam(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
