@@ -56,17 +56,14 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
     // Recalculate trophies for trophy group for the player
     $maxScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
     $query = $database->prepare("SELECT type,
-               Count(type) AS count
-        FROM   trophy_earned te
-               LEFT JOIN trophy t
-                      ON t.np_communication_id = te.np_communication_id
-                         AND t.group_id = te.group_id
-                         AND t.order_id = te.order_id
-                         AND t.status = 0
-        WHERE  account_id = :account_id
-               AND te.np_communication_id = :np_communication_id
-               AND te.group_id = :group_id
-        GROUP  BY type ");
+            COUNT(type) AS count
+        FROM
+            trophy_earned te
+        LEFT JOIN trophy t ON
+            t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND t.status = 0
+        WHERE
+            account_id = :account_id AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
+        GROUP BY type ");
     $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
     $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":group_id", $groupId, PDO::PARAM_STR);
@@ -662,21 +659,20 @@ while (true) {
                             // 128 skipped games, we can assume we are done with this player.
                             break 2;
                         }
-
-                        // Game seems scanned already, skip to next.
-                        continue;
                     }
+
+                    // Game seems scanned already, skip to next.
+                    continue;
                 }
 
                 // Add trophy title (game) information into database
-                // INSERT IGNORE makes the autoincrement tick as well. We don't want that.
-                $query = $database->prepare("SELECT Count(*)
+                $query = $database->prepare("SELECT set_version
                     FROM   trophy_title
                     WHERE  np_communication_id = :np_communication_id ");
                 $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                 $query->execute();
-                $check = $query->fetchColumn();
-                if ($check == 0) {
+                $setVersion = $query->fetchColumn();
+                if (!$setVersion || $setVersion != $trophyTitle->trophySetVersion()) {
                     // Get the title icon url we want to save
                     $trophyTitleIconUrl = $trophyTitle->iconUrl();
                     $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
@@ -685,21 +681,29 @@ while (true) {
                         file_put_contents("/home/psn100/public_html/img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
                     }
 
-                    $query = $database->prepare("INSERT INTO trophy_title
-                                    (np_communication_id,
-                                     name,
-                                     detail,
-                                     icon_url,
-                                     platform,
-                                     message,
-                                     set_version)
-                        VALUES      (:np_communication_id,
-                                     :name,
-                                     :detail,
-                                     :icon_url,
-                                     :platform,
-                                     '',
-                                     :set_version) ");
+                    $query = $database->prepare("INSERT INTO trophy_title(
+                            np_communication_id,
+                            name,
+                            detail,
+                            icon_url,
+                            platform,
+                            message,
+                            set_version
+                        )
+                        VALUES(
+                            :np_communication_id,
+                            :name,
+                            :detail,
+                            :icon_url,
+                            :platform,
+                            '',
+                            :set_version
+                        )
+                        ON DUPLICATE KEY
+                        UPDATE
+                            icon_url =
+                        VALUES(icon_url), set_version =
+                        VALUES(set_version)");
                     $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                     $query->bindParam(":name", $trophyTitle->name(), PDO::PARAM_STR);
                     $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
@@ -708,22 +712,11 @@ while (true) {
                     $query->bindParam(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                     $query->execute();
-                } else { // Temp solution to get the new set_version variable
-                    $query = $database->prepare("UPDATE
-                            trophy_title
-                        SET
-                            set_version = :set_version
-                        WHERE
-                            np_communication_id = :np_communication_id");
-                    $query->bindParam(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
-                    $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
-                    $query->execute();
                 }
 
                 // Get "groups" (game and DLCs)
                 foreach ($client->trophies($trophyTitle->npCommunicationId(), $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
                     // Add trophy group (game + dlcs) into database
-                    // INSERT IGNORE  makes the autoincrement tick as well. We don't want that.
                     $query = $database->prepare("SELECT Count(*)
                         FROM   trophy_group
                         WHERE  np_communication_id = :np_communication_id
@@ -732,7 +725,7 @@ while (true) {
                     $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                     $query->execute();
                     $check = $query->fetchColumn();
-                    if ($check == 0) {
+                    if ($check == 0 || $setVersion != $trophyTitle->trophySetVersion()) {
                         $trophyGroupIconUrl = $trophyGroup->iconUrl();
                         $trophyGroupIconFilename = md5_file($trophyGroupIconUrl) . strtolower(substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, ".")));
                         // Download the group icon if we don't have it
@@ -740,17 +733,24 @@ while (true) {
                             file_put_contents("/home/psn100/public_html/img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
                         }
 
-                        $query = $database->prepare("INSERT INTO trophy_group
-                                        (np_communication_id,
-                                         group_id,
-                                         name,
-                                         detail,
-                                         icon_url)
-                            VALUES      (:np_communication_id,
-                                         :group_id,
-                                         :name,
-                                         '',
-                                         :icon_url) ");
+                        $query = $database->prepare("INSERT INTO trophy_group(
+                                np_communication_id,
+                                group_id,
+                                name,
+                                detail,
+                                icon_url
+                            )
+                            VALUES(
+                                :np_communication_id,
+                                :group_id,
+                                :name,
+                                '',
+                                :icon_url
+                            )
+                            ON DUPLICATE KEY
+                            UPDATE
+                                icon_url =
+                            VALUES(icon_url)");
                         $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                         $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                         $query->bindParam(":name", $trophyGroup->name(), PDO::PARAM_STR);
@@ -760,7 +760,6 @@ while (true) {
                         $query->execute();
 
                         // Add trophies into database
-                        // INSERT IGNORE  makes the autoincrement tick as well. We don't want that.
                         foreach ($trophyGroup->trophies() as $trophy) {
                             $query = $database->prepare("SELECT Count(*)
                                 FROM   trophy
@@ -772,7 +771,7 @@ while (true) {
                             $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
                             $query->execute();
                             $check = $query->fetchColumn();
-                            if ($check == 0) {
+                            if ($check == 0 || $setVersion != $trophyTitle->trophySetVersion()) {
                                 $trophyIconUrl = $trophy->iconUrl();
                                 $trophyIconFilename = md5_file($trophyIconUrl) . strtolower(substr($trophyIconUrl, strrpos($trophyIconUrl, ".")));
                                 // Download the trophy icon if we don't have it
@@ -780,25 +779,37 @@ while (true) {
                                     file_put_contents("/home/psn100/public_html/img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
                                 }
 
-                                $query = $database->prepare("INSERT INTO trophy
-                                                (np_communication_id,
-                                                 group_id,
-                                                 order_id,
-                                                 hidden,
-                                                 type,
-                                                 name,
-                                                 detail,
-                                                 icon_url,
-                                                 progress_target_value)
-                                    VALUES      (:np_communication_id,
-                                                 :group_id,
-                                                 :order_id,
-                                                 :hidden,
-                                                 :type,
-                                                 :name,
-                                                 :detail,
-                                                 :icon_url,
-                                                 :progress_target_value) ");
+                                $query = $database->prepare("INSERT INTO trophy(
+                                        np_communication_id,
+                                        group_id,
+                                        order_id,
+                                        hidden,
+                                        type,
+                                        name,
+                                        detail,
+                                        icon_url,
+                                        progress_target_value
+                                    )
+                                    VALUES(
+                                        :np_communication_id,
+                                        :group_id,
+                                        :order_id,
+                                        :hidden,
+                                        :type,
+                                        :name,
+                                        :detail,
+                                        :icon_url,
+                                        :progress_target_value
+                                    )
+                                    ON DUPLICATE KEY
+                                    UPDATE
+                                        hidden =
+                                    VALUES(hidden), type =
+                                    VALUES(type), name =
+                                    VALUES(name), detail =
+                                    VALUES(detail), icon_url =
+                                    VALUES(icon_url), progress_target_value =
+                                    VALUES(progress_target_value)");
                                 $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                                 $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
@@ -845,7 +856,7 @@ while (true) {
                 // Fetch user trophies
                 foreach ($trophyTitle->trophyGroups() as $trophyGroup) {
                     foreach ($trophyGroup->trophies() as $trophy) {
-                        if ($trophy->earned()) {
+                        if ($trophy->earned() || ($trophy->progress() != '' && intval($trophy->progress()) > 0)) {
                             if ($trophy->earnedDateTime() === '') {
                                 $dtAsTextForInsert = null;
                             } else {
@@ -859,7 +870,8 @@ while (true) {
                                     order_id,
                                     account_id,
                                     earned_date,
-                                    progress
+                                    progress,
+                                    earned
                                 )
                                 VALUES(
                                     :np_communication_id,
@@ -867,24 +879,26 @@ while (true) {
                                     :order_id,
                                     :account_id,
                                     :earned_date,
-                                    :progress
+                                    :progress,
+                                    :earned
                                 )
                                 ON DUPLICATE KEY
                                 UPDATE
-                                    earned_date =
-                                VALUES(earned_date), progress =
-                                VALUES(progress)");
+                                    earned_date = VALUES(earned_date),
+                                    progress = VALUES(progress),
+                                    earned = VALUES(earned)");
                             $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                             $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                             $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
                             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                             $query->bindParam(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
-                            if ($trophy->progress() == '') {
+                            if ($trophy->progress() === '') {
                                 $progress = null;
                             } else {
                                 $progress = intval($trophy->progress());
                             }
                             $query->bindParam(":progress", $progress, PDO::PARAM_INT);
+                            $query->bindParam(":earned", $trophy->earned(), PDO::PARAM_INT);
                             $query->execute();
 
                             // Check if "merge"-trophy
@@ -908,7 +922,8 @@ while (true) {
                                                             order_id,
                                                             account_id,
                                                             earned_date,
-                                                            progress
+                                                            progress,
+                                                            earned
                                                 )
                                                 VALUES
                                                 (
@@ -917,7 +932,8 @@ while (true) {
                                                             :order_id,
                                                             :account_id,
                                                             :earned_date,
-                                                            :progress
+                                                            :progress,
+                                                            :earned
                                                 )
                                     on duplicate KEY
                                     UPDATE earned_date = IF(earned_date > VALUES
@@ -928,13 +944,16 @@ while (true) {
                                             (
                                                     earned_date
                                             )
-                                            ), progress = VALUES(progress)");
+                                            ),
+                                            progress = VALUES(progress),
+                                            earned = VALUES(earned)");
                                 $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
                                 $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
                                 $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                                 $query->bindParam(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
                                 $query->bindParam(":progress", $progress, PDO::PARAM_INT);
+                                $query->bindParam(":earned", $trophy->earned(), PDO::PARAM_INT);
                                 $query->execute();
                             }
                         }
@@ -1045,7 +1064,7 @@ while (true) {
 
         // Check for hidden trophies
         $totalTrophies = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
-        $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND account_id = :account_id");
+        $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND earned = 1 AND account_id = :account_id");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
         $ourTotalTrophies = $query->fetchColumn();
