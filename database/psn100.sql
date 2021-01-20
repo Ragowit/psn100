@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 20, 2020 at 11:43 AM
--- Server version: 8.0.22
+-- Generation Time: Jan 20, 2021 at 11:14 PM
+-- Server version: 8.0.23
 -- PHP Version: 7.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -92,7 +92,8 @@ CREATE TABLE `player_queue` (
 
 CREATE TABLE `setting` (
   `id` int UNSIGNED NOT NULL,
-  `refresh_token` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL
+  `refresh_token` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `npsso` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -111,13 +112,12 @@ CREATE TABLE `trophy` (
   `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `detail` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `rare` tinyint UNSIGNED NOT NULL,
-  `earned_rate` decimal(5,2) UNSIGNED NOT NULL,
   `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') COLLATE utf8mb4_unicode_ci NOT NULL
+  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `progress_target_value` int UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -132,7 +132,9 @@ CREATE TABLE `trophy_earned` (
   `group_id` varchar(7) COLLATE utf8mb4_unicode_ci NOT NULL,
   `order_id` smallint UNSIGNED NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
-  `earned_date` datetime DEFAULT NULL
+  `earned_date` datetime DEFAULT NULL,
+  `progress` int UNSIGNED DEFAULT NULL,
+  `earned` tinyint NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -208,7 +210,8 @@ CREATE TABLE `trophy_title` (
   `difficulty` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
-  `recent_players` int UNSIGNED NOT NULL DEFAULT '0'
+  `recent_players` int UNSIGNED NOT NULL DEFAULT '0',
+  `set_version` text COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
