@@ -108,7 +108,7 @@ $highId = 0;
 do {
     if (!$deadlock) {
         $lowId = $highId;
-        $highId += 10000;
+        $highId += 5000;
     }
     
     try {
