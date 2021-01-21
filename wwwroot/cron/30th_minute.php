@@ -151,7 +151,7 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
     $query->execute();
 }
 
-function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $accountId, $merge) {
+function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophies, $accountId, $merge) {
     $database = new Database();
     $titleHavePlatinum = false;
 
@@ -183,7 +183,7 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newDLC, $a
 
     // Recalculate trophies for trophy title for the player(s)
     $maxScore = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90; // Platinum isn't counted for
-    if ($newDLC === true) {
+    if ($newTrophies === true) {
         $select = $database->prepare("SELECT account_id
             FROM   trophy_title_player
             WHERE  np_communication_id = :np_communication_id ");
@@ -649,7 +649,7 @@ while (true) {
             $skippedGames = 0;
             
             foreach ($user->trophyTitles() as $trophyTitle) {
-                $newDLC = false;
+                $newTrophies = false;
                 $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
                 if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
@@ -826,24 +826,33 @@ while (true) {
                                 $query->bindParam(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
                                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                 $query->execute();
+                                
+                                $newTrophies = true;
                             }
                         }
 
-                        $newDLC = true;
-
-                        $query = $database->prepare("SELECT status
-                            FROM   trophy_title
-                            WHERE  np_communication_id = :np_communication_id ");
-                        $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
-                        $query->execute();
-                        $status = $query->fetchColumn();
-                        if ($status == 2) { // A "Merge Title" have gotten a DLC. Add a log about it so admin can check it out later and fix this.
-                            $message = "DLC added for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name();
-                            $query = $database->prepare("INSERT INTO log
-                                            (message)
-                                VALUES      (:message) ");
-                            $query->bindParam(":message", $message, PDO::PARAM_STR);
+                        if ($newTrophies) {
+                            $query = $database->prepare("SELECT status
+                                FROM   trophy_title
+                                WHERE  np_communication_id = :np_communication_id ");
+                            $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                             $query->execute();
+                            $status = $query->fetchColumn();
+                            if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
+                                $message = "New trophies added for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name();
+                                $query = $database->prepare("INSERT INTO log
+                                                (message)
+                                    VALUES      (:message) ");
+                                $query->bindParam(":message", $message, PDO::PARAM_STR);
+                                $query->execute();
+                            } else {
+                                $message = "SET VERSION for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name();
+                                $query = $database->prepare("INSERT INTO log
+                                                (message)
+                                    VALUES      (:message) ");
+                                $query->bindParam(":message", $message, PDO::PARAM_STR);
+                                $query->execute();
+                            }
                         }
                     }
                 }
@@ -964,7 +973,7 @@ while (true) {
                 }
 
                 // Recalculate trophies for trophy title and player
-                RecalculateTrophyTitle($trophyTitle->npCommunicationId(), $trophyTitle->lastUpdatedDateTime(), $newDLC, $user->accountId(), false);
+                RecalculateTrophyTitle($trophyTitle->npCommunicationId(), $trophyTitle->lastUpdatedDateTime(), $newTrophies, $user->accountId(), false);
 
                 // Game Merge stuff
                 $query = $database->prepare("SELECT DISTINCT parent_np_communication_id, 
