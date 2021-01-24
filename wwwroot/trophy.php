@@ -145,7 +145,7 @@ require_once("header.php");
 
                     <div class="col-12 text-center">
                         <?php
-                        if ($playerTrophy["earned"] == 1) {
+                        if (isset($playerTrophy) && $playerTrophy["earned"] == 1) {
                             echo "<span class=\"badge badge-pill badge-success\">Earned ". $playerTrophy["earned_date"] ."</span>";
                         }
                         ?>

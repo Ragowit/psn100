@@ -223,14 +223,14 @@ require_once("header.php");
                             <?php
                             foreach ($trophies as $trophy) {
                                 // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-                                if ($trophy["earned"] == 1 && $trophy["progress"] == null && $trophy["progress_target_value"] != null) {
+                                if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress"] == null && $trophy["progress_target_value"] != null) {
                                     $trophy["progress"] = $trophy["progress_target_value"];
                                 }
 
                                 $trClass = "";
                                 if ($trophy["status"] == 1) {
                                     $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                } elseif ($trophy["earned"] == 1) {
+                                } elseif (isset($accountId) && $trophy["earned"] == 1) {
                                     $trClass = " class=\"table-success\"";
                                 } ?>
                                 <tr<?= $trClass; ?>>
@@ -266,7 +266,7 @@ require_once("header.php");
                                     </td>
                                     <td class="text-center" style="white-space: nowrap">
                                         <?php
-                                        if ($trophy["earned"] == 1) {
+                                        if (isset($accountId) && $trophy["earned"] == 1) {
                                             echo str_replace(" ", "<br>", $trophy["earned_date"]);
                                             if (isset($_GET["order"]) && $_GET["order"] == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
                                                 echo "<br>";
