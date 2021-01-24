@@ -702,8 +702,7 @@ while (true) {
                         ON DUPLICATE KEY
                         UPDATE
                             icon_url =
-                        VALUES(icon_url), set_version =
-                        VALUES(set_version)");
+                        VALUES(icon_url)");
                     $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                     $query->bindParam(":name", $trophyTitle->name(), PDO::PARAM_STR);
                     $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
@@ -855,6 +854,19 @@ while (true) {
                             }
                         }
                     }
+                }
+
+                // Successfully went through title, groups and trophies. Set the version.
+                if (!$setVersion || $setVersion != $trophyTitle->trophySetVersion()) {
+                    $query = $database->prepare("UPDATE
+                            trophy_title
+                        SET
+                            set_version = :set_version
+                        WHERE
+                            np_communication_id = :np_communication_id");
+                    $query->bindParam(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
+                    $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->execute();
                 }
 
                 if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
