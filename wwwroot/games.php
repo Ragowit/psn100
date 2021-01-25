@@ -136,7 +136,12 @@ $offset = ($page - 1) * $limit;
                             $rarityPoints = $query->fetchColumn();
                             if ($game["status"] == 0) {
                                 echo $rarityPoints ." Rarity Points";
-                            } ?>
+                            } elseif ($game["status"] == 1) {
+                                echo "<span class=\"badge badge-pill badge-warning\">Delisted</span>";
+                            } elseif ($game["status"] == 3) {
+                                echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
+                            }
+                            ?>
                             </td>
                             <td class="text-center">
                                 <?= $game["difficulty"]; ?>%

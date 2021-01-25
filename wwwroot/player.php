@@ -261,8 +261,12 @@ $offset = ($page - 1) * $limit;
                                     <?php
                                     if ($player["status"] == 0 && $playerGame["status"] == 0) {
                                         echo $playerGame["rarity_points"] ." Rarity Points";
-                                    } ?>
-
+                                    } elseif ($playerGame["status"] == 1) {
+                                        echo "<span class=\"badge badge-pill badge-warning\">Delisted</span>";
+                                    } elseif ($playerGame["status"] == 3) {
+                                        echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
+                                    }
+                                    ?>
                                 </td>
                             </tr>
                             <?php
