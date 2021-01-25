@@ -1048,8 +1048,6 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                      name,
                      detail,
                      icon_url,
-                     rare,
-                     earned_rate,
                      status,
                      progress_target_value)
         SELECT :np_communication_id,
@@ -1060,8 +1058,6 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                name,
                detail,
                icon_url,
-               0,
-               0,
                status,
                progress_target_value
         FROM   trophy
