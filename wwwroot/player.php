@@ -189,6 +189,8 @@ $offset = ($page - 1) * $limit;
                             $trClass = "";
                             if ($playerGame["status"] == 1) {
                                 $trClass = " class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\"";
+                            } elseif ($playerGame["status"] == 3) {
+                                $trClass = " class=\"table-warning\" title=\"This game is obsolete, no trophies will be accounted for on any leaderboard.\"";
                             } elseif ($playerGame["progress"] == 100) {
                                 $trClass = " class=\"table-success\"";
                             } ?>
