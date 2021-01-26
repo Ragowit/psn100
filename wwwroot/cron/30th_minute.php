@@ -936,38 +936,49 @@ while (true) {
                             $query->execute();
                             $parent = $query->fetch();
                             if ($parent !== false) {
-                                $query = $database->prepare("INSERT INTO trophy_earned
-                                                (
-                                                            np_communication_id,
-                                                            group_id,
-                                                            order_id,
-                                                            account_id,
-                                                            earned_date,
-                                                            progress,
-                                                            earned
-                                                )
-                                                VALUES
-                                                (
-                                                            :np_communication_id,
-                                                            :group_id,
-                                                            :order_id,
-                                                            :account_id,
-                                                            :earned_date,
-                                                            :progress,
-                                                            :earned
-                                                )
-                                    on duplicate KEY
-                                    UPDATE earned_date = IF(earned_date > VALUES
-                                            (
-                                                    earned_date
-                                            )
-                                            , earned_date, VALUES
-                                            (
-                                                    earned_date
-                                            )
-                                            ),
-                                            progress = VALUES(progress),
-                                            earned = VALUES(earned)");
+                                $query = $database->prepare("INSERT INTO trophy_earned(
+                                        np_communication_id,
+                                        group_id,
+                                        order_id,
+                                        account_id,
+                                        earned_date,
+                                        progress,
+                                        earned
+                                    )
+                                    VALUES(
+                                        :np_communication_id,
+                                        :group_id,
+                                        :order_id,
+                                        :account_id,
+                                        :earned_date,
+                                        :progress,
+                                        :earned
+                                    )
+                                    ON DUPLICATE KEY
+                                    UPDATE
+                                        earned_date = IF(
+                                            earned_date >
+                                        VALUES(earned_date),
+                                        earned_date,
+                                    VALUES(earned_date)
+                                        ), progress = IF(
+                                            progress IS NULL,
+                                        VALUES(progress),
+                                        IF(
+                                        VALUES(progress) IS NULL,
+                                        progress,
+                                        IF(
+                                            progress >
+                                        VALUES(progress),
+                                        progress,
+                                    VALUES(progress)
+                                        )
+                                    )
+                                        ), earned = IF(
+                                            earned = 1,
+                                            earned,
+                                        VALUES(earned)
+                                        )");
                                 $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
                                 $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
