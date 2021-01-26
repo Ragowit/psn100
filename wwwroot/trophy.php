@@ -18,7 +18,8 @@ $query = $database->prepare("SELECT
         t.progress_target_value,
         tt.id AS game_id,
         tt.name AS game_name,
-        tt.icon_url AS game_icon
+        tt.icon_url AS game_icon,
+        tt.platform
     FROM
         trophy t
     JOIN trophy_title tt USING(np_communication_id)
@@ -27,6 +28,13 @@ $query = $database->prepare("SELECT
 $query->bindParam(":id", $trophyId, PDO::PARAM_INT);
 $query->execute();
 $trophy = $query->fetch();
+
+$trophyIconHeight = 0;
+if (str_contains($trophy["platform"], "PS5")) {
+    $trophyIconHeight = 64;
+} else {
+    $trophyIconHeight = 60;
+}
 
 if (isset($player)) {
     $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
@@ -90,7 +98,7 @@ require_once("header.php");
                 </a>
             </div>
             <div class="col-1">
-                <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
+                <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
             </div>
             <div class="col-7">
                 <h5><?= htmlentities($trophy["trophy_name"]); ?></h5>

@@ -232,9 +232,17 @@ require_once("header.php");
                                     $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
                                 } elseif (isset($accountId) && $trophy["earned"] == 1) {
                                     $trClass = " class=\"table-success\"";
-                                } ?>
+                                }
+
+                                $trophyIconHeight = 0;
+                                if (str_contains($game["platform"], "PS5")) {
+                                    $trophyIconHeight = 64;
+                                } else {
+                                    $trophyIconHeight = 60;
+                                }
+                                ?>
                                 <tr<?= $trClass; ?>>
-                                    <td><img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" /></td>
+                                    <td><img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" /></td>
                                     <td style="width: 100%;">
                                         <?php
                                         if (isset($player)) {
