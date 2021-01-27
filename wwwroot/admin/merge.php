@@ -647,27 +647,35 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             ON DUPLICATE KEY
             UPDATE
                 earned_date = IF(
-                    child.earned_date >
-                VALUES(earned_date),
-                child.earned_date,
-            VALUES(earned_date)
-                ), progress = IF(
+                    child.earned_date IS NULL,
+                    trophy_earned.earned_date,
+                    IF(
+                        trophy_earned.earned_date IS NULL,
+                        child.earned_date,
+                        IF(
+                            child.earned_date > trophy_earned.earned_date,
+                            child.earned_date,
+                            trophy_earned.earned_date
+                        )
+                    )
+                ),
+                progress = IF(
                     child.progress IS NULL,
-                VALUES(progress),
-                IF(
-                VALUES(progress) IS NULL,
-                child.progress,
-                IF(
-                    child.progress >
-                VALUES(progress),
-                child.progress,
-            VALUES(progress)
-                )
-            )
-                ), earned = IF(
+                    trophy_earned.progress,
+                    IF(
+                        trophy_earned.progress IS NULL,
+                        child.progress,
+                        IF(
+                            child.progress > trophy_earned.progress,
+                            child.progress,
+                            trophy_earned.progress
+                        )
+                    )
+                ),
+                earned = IF(
                     child.earned = 1,
                     child.earned,
-                VALUES(earned)
+                    trophy_earned.earned
                 )");
         $insertQuery->bindParam(":child_np_communication_id", $trophyMerge["child_np_communication_id"], PDO::PARAM_STR);
         $insertQuery->bindParam(":child_group_id", $trophyMerge["child_group_id"], PDO::PARAM_STR);
