@@ -742,36 +742,87 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                     account_id
             )
             SELECT
+                *
+            FROM
+                (
+                SELECT
+                    :np_communication_id,
+                    :group_id,
+                    player.account_id,
+                    player.bronze,
+                    player.silver,
+                    player.gold,
+                    player.platinum,
+                    IF(
+                        player.score = 0,
+                        0,
+                        IFNULL(
+                            GREATEST(
+                                FLOOR(
+                                    IF(
+                                        (player.score / tg.max_score) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
+                                        99,
+                                        (player.score / tg.max_score) * 100
+                                    )
+                                ),
+                                1
+                            ),
+                            0
+                        )
+                    ) AS progress
+                FROM
+                    tg,
+                    player
+            ) AS NEW
+            ON DUPLICATE KEY
+            UPDATE
+                bronze = NEW.bronze,
+                silver = NEW.silver,
+                gold = NEW.gold,
+                platinum = NEW.platinum,
+                progress = NEW.progress");
+        $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
+        $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
+        $query->execute();
+
+        // Don't forget the players who own the game but haven't earned a single trophy.
+        $query = $database->prepare("INSERT IGNORE
+            INTO trophy_group_player(
+                np_communication_id,
+                group_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress
+            ) WITH player AS(
+                SELECT
+                    account_id
+                FROM
+                    trophy_group_player tgp
+                WHERE
+                    tgp.bronze = 0 AND tgp.silver = 0 AND tgp.gold = 0 AND tgp.platinum = 0 AND tgp.progress = 0 AND tgp.np_communication_id =(
+                    SELECT
+                        np_communication_id
+                    FROM
+                        trophy_title
+                    WHERE
+                        id = :game_id
+                ) AND tgp.group_id = :group_id
+            )
+            SELECT
                 :np_communication_id,
                 :group_id,
                 player.account_id,
-                player.bronze,
-                player.silver,
-                player.gold,
-                player.platinum,
-                IFNULL(
-                    GREATEST(
-                        FLOOR(
-                            IF(
-                                (player.score / tg.max_score) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
-                                99,
-                                (player.score / tg.max_score) * 100
-                            )
-                        ),
-                        1
-                    ),
-                    0
-                )
+                0,
+                0,
+                0,
+                0,
+                0
             FROM
-                tg,
-                player
-            ON DUPLICATE KEY
-            UPDATE
-                bronze = trophy_group_player.bronze,
-                silver = trophy_group_player.silver,
-                gold = trophy_group_player.gold,
-                platinum = trophy_group_player.platinum,
-                progress = trophy_group_player.progress");
+                player");
+        $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
         $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
         $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
         $query->execute();
@@ -839,39 +890,48 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             last_updated_date
         )
         SELECT
-            :np_communication_id,
-            player.account_id,
-            player.bronze,
-            player.silver,
-            player.gold,
-            player.platinum,
-            IFNULL(
-                GREATEST(
-                    FLOOR(
-                        IF(
-                            (player.score / tt.max_score) * 100 = 100 AND tt.platinum = 1 AND player.platinum = 0,
-                            99,
-                            (player.score / tt.max_score) * 100
-                        )
-                    ),
-                    1
-                ),
-                0
-            ),
-            player.last_updated_date
+            *
         FROM
-            tt,
-            player
+            (
+            SELECT
+                :np_communication_id,
+                player.account_id,
+                player.bronze,
+                player.silver,
+                player.gold,
+                player.platinum,
+                IF(
+                    player.score = 0,
+                    0,
+                    IFNULL(
+                        GREATEST(
+                            FLOOR(
+                                IF(
+                                    (player.score / tt.max_score) * 100 = 100 AND tt.platinum = 1 AND player.platinum = 0,
+                                    99,
+                                    (player.score / tt.max_score) * 100
+                                )
+                            ),
+                            1
+                        ),
+                        0
+                    )
+                ) AS progress,
+                player.last_updated_date
+            FROM
+                tt,
+                player
+        ) AS NEW
         ON DUPLICATE KEY
         UPDATE
-            bronze = trophy_title_player.bronze,
-            silver = trophy_title_player.silver,
-            gold = trophy_title_player.gold,
-            platinum = trophy_title_player.platinum,
-            progress = trophy_title_player.progress,
+            bronze = NEW.bronze,
+            silver = NEW.silver,
+            gold = NEW.gold,
+            platinum = NEW.platinum,
+            progress = NEW.progress,
             last_updated_date = IF(
-                player.last_updated_date > trophy_title_player.last_updated_date,
-                player.last_updated_date,
+                NEW.last_updated_date > trophy_title_player.last_updated_date,
+                NEW.last_updated_date,
                 trophy_title_player.last_updated_date
             )");
     $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
