@@ -938,6 +938,49 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
     $query->execute();
 
+    // Don't forget the players who own the game but haven't earned a single trophy.
+    $query = $database->prepare("INSERT IGNORE
+        INTO trophy_title_player(
+            np_communication_id,
+            account_id,
+            bronze,
+            silver,
+            gold,
+            platinum,
+            progress,
+            last_updated_date
+        ) WITH player AS(
+            SELECT
+                account_id,
+                progress,
+                last_updated_date
+            FROM
+                trophy_title_player ttp
+            WHERE
+                ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 AND ttp.np_communication_id =(
+                SELECT
+                    np_communication_id
+                FROM
+                    trophy_title
+                WHERE
+                    id = :game_id
+            )
+        )
+        SELECT
+            :np_communication_id,
+            player.account_id,
+            0,
+            0,
+            0,
+            0,
+            player.progress,
+            player.last_updated_date
+        FROM
+            player");
+    $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
+    $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+    $query->execute();
+    
     // Add all affected players to the queue to recalculate trophy count, level and level progress
     $query = $database->prepare("INSERT IGNORE
         INTO player_queue(online_id, request_time)
