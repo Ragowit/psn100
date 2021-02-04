@@ -474,6 +474,78 @@ while (true) {
 
             continue;
         }
+        
+        if ($user->token() === "token_invalidated:deleted") {
+            // This user have been deleted from Sony
+            $message = "Sony have deleted ". $player["online_id"] .".";
+            $query = $database->prepare("INSERT INTO log(message)
+                VALUES(:message)");
+            $query->bindParam(":message", $message, PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $database->prepare("DELETE
+                FROM
+                    trophy_earned
+                WHERE
+                    account_id =(
+                    SELECT
+                        account_id
+                    FROM
+                        player
+                    WHERE
+                        online_id = :online_id
+                )");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $database->prepare("DELETE
+                FROM
+                    trophy_group_player
+                WHERE
+                    account_id =(
+                    SELECT
+                        account_id
+                    FROM
+                        player
+                    WHERE
+                        online_id = :online_id
+                )");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $database->prepare("DELETE
+                FROM
+                    trophy_title_player
+                WHERE
+                    account_id =(
+                    SELECT
+                        account_id
+                    FROM
+                        player
+                    WHERE
+                        online_id = :online_id
+                )");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $database->prepare("DELETE
+                FROM
+                    player
+                WHERE
+                    online_id = :online_id");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $database->prepare("DELETE
+                FROM
+                    player_queue
+                WHERE
+                    online_id = :online_id");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
+
+            continue;
+        }
     } catch (Exception $e) {
         if (str_contains($e->getMessage(), "User not found")) {
             $query = $database->prepare("DELETE FROM player_queue
