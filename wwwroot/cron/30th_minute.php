@@ -378,37 +378,39 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
 }
 
 // Get current tokens
-$query = $database->prepare("SELECT *
-    FROM   setting WHERE id = 1");
+$query = $database->prepare("SELECT
+        id,
+        npsso
+    FROM
+        setting");
 $query->execute();
 $workers = $query->fetchAll();
 
-// Login with all the tokens
-$database->beginTransaction();
-foreach ($workers as $worker) {
-    try {
-        $client = new Client();
-        $npsso = $worker["npsso"];
-        $client->loginWithNpsso($npsso);
+// Login with a token
+$loggedIn = false;
+while (!$loggedIn) {
+    foreach ($workers as $worker) {
+        try {
+            $client = new Client();
+            $npsso = $worker["npsso"];
+            $client->loginWithNpsso($npsso);
 
-        // Store new token
-        $refreshToken = $client->getRefreshToken()->getToken();
-        $query = $database->prepare("UPDATE setting
-            SET    refresh_token = :refresh_token
-            WHERE  id = :id ");
-        $query->bindParam(":refresh_token", $refreshToken, PDO::PARAM_STR);
-        $query->bindParam(":id", $worker["id"], PDO::PARAM_INT);
-        $query->execute();
-    } catch (Exception $e) {
-        $message = "Can't login with worker ". $worker["id"];
-        $query = $database->prepare("INSERT INTO log
-                        (message)
-            VALUES      (:message) ");
-        $query->bindParam(":message", $message, PDO::PARAM_STR);
-        $query->execute();
+            $loggedIn = true;
+            break;
+        } catch (Exception $e) {
+            $message = "Can't login with worker ". $worker["id"];
+            $query = $database->prepare("INSERT INTO log(message)
+                VALUES(:message)");
+            $query->bindParam(":message", $message, PDO::PARAM_STR);
+            $query->execute();
+        }
+    }
+    
+    if (!$loggedIn) {
+        // Wait 5 minutes to not hammer login
+        sleep(60 * 5);
     }
 }
-$database->commit();
 
 while (true) {
     // Get our queue. Prioritize user requests, and then just old scanned players from our database.
