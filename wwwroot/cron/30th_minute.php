@@ -441,7 +441,7 @@ while (true) {
         $userFound = false;
         $userCounter = 0;
         foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
-            if ($userSearchResult->onlineId() == $player["online_id"]) {
+            if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
                 $user = $userSearchResult;
                 $userFound = true;
                 break;
