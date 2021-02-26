@@ -399,7 +399,23 @@ require_once("header.php");
                         $ownersCompleted = $query->fetchColumn();
                         ?>
                         <span title="<?= $ownersCompleted; ?> of <?= $game["owners"]; ?> players have 100% this game."><?= $game["difficulty"]; ?>% Completion Rate</span><br>
-                        <?= $rarityPoints; ?> Rarity Points
+                        <?php
+                        switch($game["status"]) {
+                            case 1:
+                                echo "<span class=\"badge badge-pill badge-warning\">Delisted</span>";
+                                break;
+                            case 2:
+                                echo "<span class=\"badge badge-pill badge-warning\">Merged</span>";
+                                break;
+                            case 3:
+                                echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
+                                break;
+                            default:
+                                echo $rarityPoints ." Rarity Points";
+                        }
+                        echo "<br>";
+                        echo "Version: ". $game["set_version"];
+                        ?>
                     </div>
 
                     <div class="col-12 text-center">
