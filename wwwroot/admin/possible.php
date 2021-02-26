@@ -216,10 +216,6 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 7)
             OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 9)
             OR (te.np_communication_id = 'NPWR12464_00' AND te.group_id = 'default' AND te.order_id = 11)";
-        // Lovecraft's Untold Stories
-        $sql .= " OR (te.np_communication_id = 'NPWR17151_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR17151_00' AND te.group_id = 'default' AND te.order_id = 21)
-            OR (te.np_communication_id = 'NPWR17151_00' AND te.group_id = 'default' AND te.order_id = 22)";
         // NBA 2K17
         $sql .= " OR (te.np_communication_id = 'NPWR11010_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR11010_00' AND te.group_id = 'default' AND te.order_id = 22)";
