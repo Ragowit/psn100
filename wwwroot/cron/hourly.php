@@ -43,13 +43,14 @@ do {
         $query = $database->prepare("WITH
                 game_players AS(
                 SELECT
-                    np_communication_id,
-                    COUNT(*) AS completed_players
+                    tt.np_communication_id,
+                    COUNT(p.account_id) AS completed_players
                 FROM
-                    trophy_title_player ttp
-                JOIN player p USING(account_id)
-                WHERE
-                    p.status = 0 AND p.rank <= 100000 AND ttp.progress = 100
+                    trophy_title tt
+                JOIN trophy_title_player ttp ON
+                    ttp.np_communication_id = tt.np_communication_id AND ttp.progress = 100
+                LEFT JOIN player p ON
+                    p.account_id = ttp.account_id AND p.status = 0 AND p.rank <= 100000
                 GROUP BY
                     np_communication_id
                 ORDER BY NULL
@@ -61,7 +62,9 @@ do {
                 tt.difficulty = IF(
                     tt.owners = 0,
                     0,
-                    (gp.completed_players / tt.owners) * 100
+                    (
+                        gp.completed_players / tt.owners
+                    ) * 100
                 )
             WHERE
                 tt.np_communication_id = gp.np_communication_id");
