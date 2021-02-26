@@ -405,7 +405,7 @@ while (!$loggedIn) {
             $query->execute();
         }
     }
-    
+
     if (!$loggedIn) {
         // Wait 5 minutes to not hammer login
         sleep(60 * 5);
@@ -415,22 +415,22 @@ while (!$loggedIn) {
 while (true) {
     // Get our queue. Prioritize user requests, and then just old scanned players from our database.
     $query = $database->prepare("SELECT online_id,
-               offset
+            offset
         FROM   (SELECT 1 AS tier,
-                       online_id,
-                       request_time,
-                       offset
+                    online_id,
+                    request_time,
+                    offset
                 FROM   player_queue
                 UNION ALL
                 SELECT 2 AS tier,
-                       online_id,
-                       last_updated_date,
-                       0 AS offset
+                    online_id,
+                    last_updated_date,
+                    0 AS offset
                 FROM   player
                 WHERE  `rank` <= 100000) a
         ORDER  BY tier,
-                  request_time,
-                  online_id
+                request_time,
+                online_id
         LIMIT  1 ");
     $query->execute();
     $player = $query->fetch();
@@ -438,6 +438,7 @@ while (true) {
     // Initialize the current player
     try {
         // Search the user
+        unset($user);
         $userFound = false;
         $userCounter = 0;
         foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
@@ -455,29 +456,37 @@ while (true) {
         }
 
         if (!$userFound) {
-            // User not found, remove from queue
-            $message = "Couldn't find ". $player["online_id"] .".";
-            $query = $database->prepare("INSERT INTO log
-                            (message)
-                VALUES      (:message) ");
-            $query->bindParam(":message", $message, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM player_queue
-                WHERE  online_id = :online_id ");
+            // User not found, set as private and remove from queue.
+            $query = $database->prepare("UPDATE
+                    player
+                SET
+                    `status` = 3,
+                    `rank` = 0,
+                    rank_last_week = 0,
+                    rarity_rank = 0,
+                    rarity_rank_last_week = 0,
+                    rank_country = 0,
+                    rank_country_last_week = 0,
+                    rarity_rank_country = 0,
+                    rarity_rank_country_last_week = 0,
+                    last_updated_date = NOW()
+                WHERE
+                    online_id = :online_id AND `status` != 1");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
 
-            // $query = $database->prepare("UPDATE player
-            //     SET    last_updated_date = Now()
-            //     WHERE  online_id = :online_id ");
-            // $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            // $query->execute();
+            $query = $database->prepare("DELETE
+                FROM
+                    player_queue
+                WHERE
+                    online_id = :online_id");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
 
             continue;
         }
         
-        if ($user->token() === "token_invalidated:deleted") {
+        if (isset($user) && $user->token() === "token_invalidated:deleted") {
             // This user have been deleted from Sony
             $message = "Sony have deleted ". $player["online_id"] .".";
             $query = $database->prepare("INSERT INTO log(message)
@@ -565,13 +574,13 @@ while (true) {
             if (!$accountId) {
                 $query = $database->prepare("UPDATE player
                     SET    level = 0,
-                           progress = 0,
-                           platinum = 0,
-                           gold = 0,
-                           silver = 0,
-                           bronze = 0,
-                           points = 0,
-                           rarity_points = 0
+                        progress = 0,
+                        platinum = 0,
+                        gold = 0,
+                        silver = 0,
+                        bronze = 0,
+                        points = 0,
+                        rarity_points = 0
                     WHERE  account_id = :account_id ");
                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
@@ -597,8 +606,7 @@ while (true) {
     }
 
     // Get basic info of the current player
-    if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
-    {
+    if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
         die();
     }
 
@@ -650,24 +658,24 @@ while (true) {
                     )
         on duplicate KEY
         UPDATE online_id=VALUES
-               (
-                      online_id
-               )
-               ,
-               avatar_url=VALUES
-               (
-                      avatar_url
-               )
-               ,
-               plus=VALUES
-               (
-                      plus
-               )
-               ,
-               about_me=VALUES
-               (
-                      about_me
-               )");
+            (
+                    online_id
+            )
+            ,
+            avatar_url=VALUES
+            (
+                    avatar_url
+            )
+            ,
+            plus=VALUES
+            (
+                    plus
+            )
+            ,
+            about_me=VALUES
+            (
+                    about_me
+            )");
     $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
     $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
     $query->bindParam(":country", strtolower($user->country()), PDO::PARAM_STR);
@@ -709,7 +717,7 @@ while (true) {
         $playerLastUpdatedDate = $query->fetchColumn();
 
         $query = $database->prepare("SELECT np_communication_id,
-                   last_updated_date
+                last_updated_date
             FROM   trophy_title_player
             WHERE  account_id = :account_id ");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
@@ -793,7 +801,7 @@ while (true) {
                     $query = $database->prepare("SELECT Count(*)
                         FROM   trophy_group
                         WHERE  np_communication_id = :np_communication_id
-                               AND group_id = :group_id ");
+                            AND group_id = :group_id ");
                     $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                     $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                     $query->execute();
@@ -817,17 +825,18 @@ while (true) {
                                 :np_communication_id,
                                 :group_id,
                                 :name,
-                                '',
+                                :detail,
                                 :icon_url
                             )
                             ON DUPLICATE KEY
                             UPDATE
-                                icon_url =
+                                detail =
+                            VALUES(detail), icon_url =
                             VALUES(icon_url)");
                         $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                         $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                         $query->bindParam(":name", $trophyGroup->name(), PDO::PARAM_STR);
-                        //$query->bindParam(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
+                        $query->bindParam(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
                         $query->bindParam(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
                         // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                         $query->execute();
@@ -837,8 +846,8 @@ while (true) {
                             $query = $database->prepare("SELECT Count(*)
                                 FROM   trophy
                                 WHERE  np_communication_id = :np_communication_id
-                                       AND group_id = :group_id
-                                       AND order_id = :order_id ");
+                                    AND group_id = :group_id
+                                    AND order_id = :order_id ");
                             $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                             $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                             $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
@@ -852,6 +861,17 @@ while (true) {
                                     file_put_contents("/home/psn100/public_html/img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
                                 }
 
+                                $rewardImageUrl = $trophy->rewardImageUrl();
+                                if ($rewardImageUrl === '') {
+                                    $rewardImageFilename = null;
+                                } else {
+                                    $rewardImageFilename = md5_file($rewardImageUrl) . strtolower(substr($rewardImageUrl, strrpos($rewardImageUrl, ".")));
+                                    // Download the reward image if we don't have it
+                                    if (!file_exists("/home/psn100/public_html/img/reward/". $rewardImageFilename)) {
+                                        file_put_contents("/home/psn100/public_html/img/reward/". $rewardImageFilename, fopen($rewardImageUrl, "r"));
+                                    }
+                                }
+
                                 $query = $database->prepare("INSERT INTO trophy(
                                         np_communication_id,
                                         group_id,
@@ -861,7 +881,9 @@ while (true) {
                                         name,
                                         detail,
                                         icon_url,
-                                        progress_target_value
+                                        progress_target_value,
+                                        reward_name,
+                                        reward_image_url
                                     )
                                     VALUES(
                                         :np_communication_id,
@@ -872,7 +894,9 @@ while (true) {
                                         :name,
                                         :detail,
                                         :icon_url,
-                                        :progress_target_value
+                                        :progress_target_value,
+                                        :reward_name,
+                                        :reward_image_url
                                     )
                                     ON DUPLICATE KEY
                                     UPDATE
@@ -882,7 +906,9 @@ while (true) {
                                     VALUES(name), detail =
                                     VALUES(detail), icon_url =
                                     VALUES(icon_url), progress_target_value =
-                                    VALUES(progress_target_value)");
+                                    VALUES(progress_target_value), reward_name =
+                                    VALUES(reward_name), reward_image_url =
+                                    VALUES(reward_image_url)");
                                 $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                                 $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
@@ -897,6 +923,13 @@ while (true) {
                                     $progressTargetValue = $trophy->progressTargetValue();
                                 }
                                 $query->bindParam(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
+                                if ($trophy->rewardName() === '') {
+                                    $rewardName = null;
+                                } else {
+                                    $rewardName = $trophy->rewardName();
+                                }
+                                $query->bindParam(":reward_name", $rewardName, PDO::PARAM_STR);
+                                $query->bindParam(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
                                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                 $query->execute();
                                 
@@ -943,8 +976,7 @@ while (true) {
                     $query->execute();
                 }
 
-                if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime)
-                {
+                if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
                     die();
                 }
 
@@ -1111,13 +1143,13 @@ while (true) {
 
         // Recalculate trophy count, level & progress for the player
         $query = $database->prepare("SELECT Ifnull(Sum(ttp.bronze), 0)   AS bronze,
-                   Ifnull(Sum(ttp.silver), 0)   AS silver,
-                   Ifnull(Sum(ttp.gold), 0)     AS gold,
-                   Ifnull(Sum(ttp.platinum), 0) AS platinum
+                Ifnull(Sum(ttp.silver), 0)   AS silver,
+                Ifnull(Sum(ttp.gold), 0)     AS gold,
+                Ifnull(Sum(ttp.platinum), 0) AS platinum
             FROM   trophy_title_player ttp
-                   JOIN trophy_title tt USING (np_communication_id)
+                JOIN trophy_title tt USING (np_communication_id)
             WHERE  tt.status = 0
-                   AND ttp.account_id = :account_id ");
+                AND ttp.account_id = :account_id ");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
         $trophies = $query->fetch();
@@ -1141,12 +1173,12 @@ while (true) {
         }
         $query = $database->prepare("UPDATE player
             SET    bronze = :bronze,
-                   silver = :silver,
-                   gold = :gold,
-                   platinum = :platinum,
-                   level = :level,
-                   progress = :progress,
-                   points = :points
+                silver = :silver,
+                gold = :gold,
+                platinum = :platinum,
+                level = :level,
+                progress = :progress,
+                points = :points
             WHERE  account_id = :account_id ");
         $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
         $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);

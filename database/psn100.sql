@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 20, 2021 at 11:14 PM
+-- Generation Time: Feb 26, 2021 at 10:30 PM
 -- Server version: 8.0.23
 -- PHP Version: 7.3.6
 
@@ -117,7 +117,9 @@ CREATE TABLE `trophy` (
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
   `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `progress_target_value` int UNSIGNED DEFAULT NULL
+  `progress_target_value` int UNSIGNED DEFAULT NULL,
+  `reward_name` text COLLATE utf8mb4_unicode_ci,
+  `reward_image_url` varchar(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -252,8 +254,8 @@ CREATE TABLE `trophy_title_player` (
 --
 CREATE TABLE `view_merge_icon_url` (
 `icon_url` varchar(36)
-,`owners` int unsigned
 ,`occurrences` bigint
+,`owners` int unsigned
 );
 
 -- --------------------------------------------------------
@@ -264,8 +266,8 @@ CREATE TABLE `view_merge_icon_url` (
 --
 CREATE TABLE `view_merge_name` (
 `name` text
-,`owners` int unsigned
 ,`occurrences` bigint
+,`owners` int unsigned
 );
 
 -- --------------------------------------------------------
@@ -276,16 +278,16 @@ CREATE TABLE `view_merge_name` (
 --
 CREATE TABLE `view_player_last_updated_date` (
 `account_id` bigint unsigned
-,`online_id` varchar(16)
-,`country` varchar(2)
-,`last_updated_date` datetime
 ,`bronze` mediumint unsigned
-,`silver` mediumint unsigned
+,`country` varchar(2)
 ,`gold` mediumint unsigned
-,`platinum` mediumint unsigned
+,`last_updated_date` datetime
 ,`level` smallint unsigned
-,`progress` tinyint unsigned
+,`online_id` varchar(16)
+,`platinum` mediumint unsigned
 ,`points` mediumint unsigned
+,`progress` tinyint unsigned
+,`silver` mediumint unsigned
 ,`status` tinyint unsigned
 );
 
