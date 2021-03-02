@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 26, 2021 at 10:30 PM
+-- Generation Time: Mar 02, 2021 at 09:52 PM
 -- Server version: 8.0.23
 -- PHP Version: 7.3.6
 
@@ -82,6 +82,20 @@ CREATE TABLE `player_queue` (
   `online_id` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `offset` smallint UNSIGNED NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `psn100_avatars`
+--
+
+CREATE TABLE `psn100_avatars` (
+  `avatar_id` int UNSIGNED NOT NULL,
+  `size` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `avatar_url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `md5_hash` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `extension` varchar(5) COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -349,6 +363,12 @@ ALTER TABLE `player_queue`
   ADD KEY `request_time` (`request_time`,`online_id`);
 
 --
+-- Indexes for table `psn100_avatars`
+--
+ALTER TABLE `psn100_avatars`
+  ADD PRIMARY KEY (`avatar_id`);
+
+--
 -- Indexes for table `setting`
 --
 ALTER TABLE `setting`
@@ -429,6 +449,12 @@ ALTER TABLE `trophy_title_player`
 --
 ALTER TABLE `log`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `psn100_avatars`
+--
+ALTER TABLE `psn100_avatars`
+  MODIFY `avatar_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `setting`

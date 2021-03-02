@@ -627,11 +627,74 @@ while (true) {
     // }
 
     // Get the avatar url we want to save
-    $avatarUrl = $user->avatarUrl();
-    $avatarFilename = md5_file($avatarUrl) . strtolower(substr($avatarUrl, strrpos($avatarUrl, ".")));
-    // Download the avatar if we don't have it
-    if (!file_exists("/home/psn100/public_html/img/avatar/". $avatarFilename)) {
-        file_put_contents("/home/psn100/public_html/img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
+    $avatarUrls = $user->avatarUrls();
+    for ($i = 0; $i < 4; $i++) { 
+        switch ($i) {
+            case 0:
+                $size = "xl";
+                break;
+            case 1:
+                $size = "l";
+                break;
+            case 2:
+                $size = "m";
+                break;
+            case 3:
+                $size = "s";
+                break;
+        }
+        $avatarUrl = $avatarUrls[$size];
+
+        // Check SQL
+        $query = $database->prepare("SELECT
+                md5_hash,
+                extension
+            FROM
+                psn100_avatars
+            WHERE
+                avatar_url = :avatar_url");
+        $query->bindParam(":avatar_url", $avatarUrl, PDO::PARAM_STR);
+        $query->execute();
+        $result = $query->fetch();
+
+        if (!$result) { // We doesn't seem to have this avatar
+            $md5Hash = md5_file($avatarUrl);
+            if (!$md5Hash) {
+                // File not found. Try next.
+                continue;
+            }
+
+            $extension = strtolower(pathinfo($avatarUrl, PATHINFO_EXTENSION));
+
+            $avatarFilename = $md5Hash .".". $extension;
+            if (!file_exists("/home/psn100/public_html/img/avatar/". $avatarFilename)) {
+                file_put_contents("/home/psn100/public_html/img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
+            }
+
+            // SQL Insert
+            $query = $database->prepare("INSERT INTO psn100_avatars(
+                    size,
+                    avatar_url,
+                    md5_hash,
+                    extension
+                )
+                VALUES(
+                    :size,
+                    :avatar_url,
+                    :md5_hash,
+                    :extension
+                )");
+            $query->bindParam(":size", $size, PDO::PARAM_STR);
+            $query->bindParam(":avatar_url", $avatarUrl, PDO::PARAM_STR);
+            $query->bindParam(":md5_hash", $md5Hash, PDO::PARAM_STR);
+            $query->bindParam(":extension", $extension, PDO::PARAM_STR);
+            $query->execute();
+        } else {
+            $avatarFilename = $result["md5_hash"] .".". $result["extension"];
+        }
+
+        // We are done, no need to check other images.
+        break;
     }
 
     // Plus is null or 1, we don't want null so this will make it 0 if so.
