@@ -47,7 +47,7 @@ do {
                     COUNT(p.account_id) AS completed_players
                 FROM
                     trophy_title tt
-                JOIN trophy_title_player ttp ON
+                LEFT JOIN trophy_title_player ttp ON
                     ttp.np_communication_id = tt.np_communication_id AND ttp.progress = 100
                 LEFT JOIN player p ON
                     p.account_id = ttp.account_id AND p.status = 0 AND p.rank <= 100000
