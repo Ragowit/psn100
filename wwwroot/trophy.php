@@ -65,7 +65,7 @@ if (isset($player)) {
     $playerTrophy = $query->fetch();
 
     // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-    if ($playerTrophy && $playerTrophy["earned"] == 1 && is_null($playerTrophy["progress"]) && !is_null($trophy["progress_target_value"])) {
+    if ($playerTrophy && $playerTrophy["earned"] == 1 && !is_null($trophy["progress_target_value"])) {
         $playerTrophy["progress"] = $trophy["progress_target_value"];
     }
 }
