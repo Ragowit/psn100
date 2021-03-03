@@ -49,6 +49,8 @@ $offset = ($page - 1) * $limit;
                             t.icon_url AS trophy_icon,
                             t.rarity_percent,
                             t.progress_target_value,
+                            t.reward_name,
+                            t.reward_image_url,
                             tt.id AS game_id,
                             tt.name AS game_name,
                             tt.icon_url AS game_icon,
@@ -94,6 +96,10 @@ $offset = ($page - 1) * $limit;
                                 <?php
                                 if ($trophy["progress_target_value"] != null) {
                                     echo "<br><b>0/". $trophy["progress_target_value"] ."</b>";
+                                }
+
+                                if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
+                                    echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
                                 }
                                 ?>
                             </td>
