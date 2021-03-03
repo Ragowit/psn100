@@ -109,8 +109,7 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR12133_00' AND te.group_id = 'default' AND te.order_id = 12)";
         // In Space We Brawl
         $sql .= " OR (te.np_communication_id = 'NPWR09621_00' AND te.group_id = 'default' AND te.order_id = 3)
-            OR (te.np_communication_id = 'NPWR09621_00' AND te.group_id = 'default' AND te.order_id = 8)
-            OR (te.np_communication_id = 'NPWR09621_00' AND te.group_id = 'default' AND te.order_id = 14)";
+            OR (te.np_communication_id = 'NPWR09621_00' AND te.group_id = 'default' AND te.order_id = 8)";
         // SBKX Superbike World Championship
         $sql .= " OR (te.np_communication_id = 'NPWR00934_00' AND te.group_id = 'default' AND te.order_id = 33)";
         // Blues and Bullets
