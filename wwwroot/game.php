@@ -242,7 +242,11 @@ require_once("header.php");
                                 }
                                 ?>
                                 <tr<?= $trClass; ?>>
-                                    <td><img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" /></td>
+                                    <td>
+                                        <div style="height: 64px; width: 64px;" class="d-flex align-items-center justify-content-center">
+                                            <img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
+                                        </div>
+                                    </td>
                                     <td style="width: 100%;">
                                         <?php
                                         if (isset($player)) {
