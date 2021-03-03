@@ -227,7 +227,7 @@ require_once("header.php");
                             <?php
                             foreach ($trophies as $trophy) {
                                 // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-                                if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress"] == null && $trophy["progress_target_value"] != null) {
+                                if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress_target_value"] != null) {
                                     $trophy["progress"] = $trophy["progress_target_value"];
                                 }
 
