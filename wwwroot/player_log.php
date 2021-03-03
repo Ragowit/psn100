@@ -152,7 +152,7 @@ $offset = ($page - 1) * $limit;
                             }
 
                             // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-                            if ($trophy["progress"] == null && $trophy["trophy_progress_target_value"] != null) {
+                            if ($trophy["trophy_progress_target_value"] != null) {
                                 $trophy["progress"] = $trophy["trophy_progress_target_value"];
                             }
 
