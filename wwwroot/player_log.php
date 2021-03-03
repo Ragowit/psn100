@@ -88,7 +88,8 @@ $offset = ($page - 1) * $limit;
                                     t.progress_target_value AS trophy_progress_target_value,
                                     tt.id AS game_id,
                                     tt.name AS game_name,
-                                    tt.status AS game_status
+                                    tt.status AS game_status,
+                                    tt.platform
                                 FROM
                                     trophy_earned te
                                 LEFT JOIN trophy_group tg USING(np_communication_id, group_id)
@@ -118,7 +119,8 @@ $offset = ($page - 1) * $limit;
                                     t.progress_target_value AS trophy_progress_target_value,
                                     tt.id AS game_id,
                                     tt.name AS game_name,
-                                    tt.status AS game_status
+                                    tt.status AS game_status,
+                                    tt.platform
                                 FROM
                                     trophy_earned te
                                 LEFT JOIN trophy_group tg USING(np_communication_id, group_id)
@@ -142,6 +144,13 @@ $offset = ($page - 1) * $limit;
                         $trophies = $query->fetchAll();
 
                         foreach ($trophies as $trophy) {
+                            $trophyIconHeight = 0;
+                            if (str_contains($trophy["platform"], "PS5")) {
+                                $trophyIconHeight = 64;
+                            } else {
+                                $trophyIconHeight = 60;
+                            }
+
                             // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
                             if ($trophy["progress"] == null && $trophy["trophy_progress_target_value"] != null) {
                                 $trophy["progress"] = $trophy["trophy_progress_target_value"];
@@ -160,7 +169,11 @@ $offset = ($page - 1) * $limit;
                                     </a>
                                 </td>
                                 <td>
-                                    <img src="/img/trophy/<?= $trophy["trophy_icon_url"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="44" />
+                                    <div class="d-flex align-items-center justify-content-center" style="height: 64px; width: 64px;">
+                                        <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
+                                            <img src="/img/trophy/<?= $trophy["trophy_icon_url"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
+                                        </a>
+                                    </div>
                                 </td>
                                 <td style="width: 100%;">
                                     <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
