@@ -97,7 +97,7 @@ require_once("header.php");
                     <img src="/img/title/<?= $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
                 </a>
             </div>
-            <div class="col-1">
+            <div class="col-1 d-flex align-items-center justify-content-center" style="height: 64px; width: 64px;">
                 <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
             </div>
             <div class="col-7">
