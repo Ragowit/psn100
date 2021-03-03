@@ -190,18 +190,12 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR12851_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR12851_00' AND te.group_id = 'default' AND te.order_id = 20)";
         // Epic World
-        $sql .= " OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 3)
-            OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 4)
-            OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 5)
+        $sql .= " OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 4)
             OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 6)
-            OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 7)
             OR (te.np_communication_id = 'NPWR13748_00' AND te.group_id = 'default' AND te.order_id = 9)";
         // Epic World
-        $sql .= " OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 3)
-            OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 4)
-            OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 5)
+        $sql .= " OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 4)
             OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 6)
-            OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 7)
             OR (te.np_communication_id = 'NPWR13749_00' AND te.group_id = 'default' AND te.order_id = 9)";
         // Forestry 2017 - The Simulation
         $sql .= " OR (te.np_communication_id = 'NPWR10743_00' AND te.group_id = 'default' AND te.order_id = 9)";
