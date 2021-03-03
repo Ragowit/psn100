@@ -51,7 +51,8 @@ $offset = ($page - 1) * $limit;
                             t.progress_target_value,
                             tt.id AS game_id,
                             tt.name AS game_name,
-                            tt.icon_url AS game_icon
+                            tt.icon_url AS game_icon,
+                            tt.platform
                         FROM
                             trophy t
                         JOIN trophy_title tt USING(np_communication_id)
@@ -65,6 +66,12 @@ $offset = ($page - 1) * $limit;
                     $trophies->execute();
 
                     while ($trophy = $trophies->fetch()) {
+                        $trophyIconHeight = 0;
+                        if (str_contains($trophy["platform"], "PS5")) {
+                            $trophyIconHeight = 64;
+                        } else {
+                            $trophyIconHeight = 60;
+                        }
                         ?>
                         <tr>
                             <td scope="row">
@@ -73,9 +80,11 @@ $offset = ($page - 1) * $limit;
                                 </a>
                             </td>
                             <td>
-                                <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
-                                    <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
-                                </a>
+                                <div class="d-flex align-items-center justify-content-center" style="height: 64px; width: 64px;">
+                                    <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
+                                        <img src="/img/trophy/<?= $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
+                                    </a>
+                                </div>
                             </td>
                             <td>
                                 <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
