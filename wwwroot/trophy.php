@@ -16,6 +16,8 @@ $query = $database->prepare("SELECT
         t.rarity_percent,
         t.status,
         t.progress_target_value,
+        t.reward_name,
+        t.reward_image_url,
         tt.id AS game_id,
         tt.name AS game_name,
         tt.icon_url AS game_icon,
@@ -112,6 +114,10 @@ require_once("header.php");
                         echo "0";
                     }
                     echo "/". $trophy["progress_target_value"] ."</b>";
+                }
+
+                if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
+                    echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
                 }
                 ?>
                 <br>
