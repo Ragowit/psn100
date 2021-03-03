@@ -158,6 +158,8 @@ require_once("header.php");
                                          t.rarity_percent, 
                                          t.status,
                                          t.progress_target_value,
+                                         t.reward_name,
+                                         t.reward_image_url,
                                          te.earned_date,
                                          te.progress,
                                          te.earned
@@ -199,7 +201,9 @@ require_once("header.php");
                                    t.icon_url, 
                                    t.rarity_percent, 
                                    t.status,
-                                   t.progress_target_value
+                                   t.progress_target_value,
+                                   t.reward_name,
+                                   t.reward_image_url
                             FROM   trophy t 
                             WHERE  t.np_communication_id = :np_communication_id 
                                    AND t.group_id = :group_id ";
@@ -273,6 +277,10 @@ require_once("header.php");
                                                 echo "0";
                                             }
                                             echo "/". $trophy["progress_target_value"] ."</b>";
+                                        }
+
+                                        if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
+                                            echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
                                         }
                                         ?>
                                     </td>
