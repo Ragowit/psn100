@@ -67,6 +67,7 @@ $offset = ($page - 1) * $limit;
                         $query = $database->prepare("SELECT
                                 tt.id AS game_id,
                                 tt.name AS game_name,
+                                tt.platform,
                                 tg.icon_url AS group_icon_url,
                                 tg.name AS group_name,
                                 t.id AS trophy_id,
@@ -98,6 +99,12 @@ $offset = ($page - 1) * $limit;
                         $trophies = $query->fetchAll();
 
                         foreach ($trophies as $trophy) {
+                            $trophyIconHeight = 0;
+                            if (str_contains($trophy["platform"], "PS5")) {
+                                $trophyIconHeight = 64;
+                            } else {
+                                $trophyIconHeight = 60;
+                            }
                             ?>
                             <tr>
                                 <td>
@@ -106,7 +113,11 @@ $offset = ($page - 1) * $limit;
                                     </a>
                                 </td>
                                 <td>
-                                    <img src="/img/trophy/<?= $trophy["trophy_icon_url"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="44" />
+                                    <div class="d-flex align-items-center justify-content-center" style="height: 64px; width: 64px;">
+                                        <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
+                                            <img src="/img/trophy/<?= $trophy["trophy_icon_url"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
+                                        </a>
+                                    </div>
                                 </td>
                                 <td style="width: 100%;">
                                     <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
