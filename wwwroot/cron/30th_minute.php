@@ -255,116 +255,69 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
     $dtAsTextForInsert = $dateTimeObject->format("Y-m-d H:i:s");
 
     if ($merge) {
-        $query = $database->prepare("INSERT INTO trophy_title_player
-                        (
-                                    np_communication_id,
-                                    account_id,
-                                    bronze,
-                                    silver,
-                                    gold,
-                                    platinum,
-                                    progress,
-                                    last_updated_date
-                        )
-                        VALUES
-                        (
-                                    :np_communication_id,
-                                    :account_id,
-                                    :bronze,
-                                    :silver,
-                                    :gold,
-                                    :platinum,
-                                    :progress,
-                                    :last_updated_date
-                        )
-            on duplicate KEY
-            UPDATE bronze=VALUES
-                   (
-                          bronze
-                   )
-                   ,
-                   silver=VALUES
-                   (
-                          silver
-                   )
-                   ,
-                   gold=VALUES
-                   (
-                          gold
-                   )
-                   ,
-                   platinum=VALUES
-                   (
-                          platinum
-                   )
-                   ,
-                   progress=VALUES
-                   (
-                          progress
-                   )
-                   ,
-                   last_updated_date = IF(last_updated_date > VALUES
-                   (
-                          last_updated_date
-                   )
-                   , VALUES
-                   (
-                          last_updated_date
-                   )
-                   , last_updated_date)");
+        $query = $database->prepare("INSERT INTO trophy_title_player(
+                np_communication_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress,
+                last_updated_date
+            )
+            VALUES(
+                :np_communication_id,
+                :account_id,
+                :bronze,
+                :silver,
+                :gold,
+                :platinum,
+                :progress,
+                :last_updated_date
+            )
+            ON DUPLICATE KEY
+            UPDATE
+                bronze =
+            VALUES(bronze), silver =
+            VALUES(silver), gold =
+            VALUES(gold), platinum =
+            VALUES(platinum), progress =
+            VALUES(progress), last_updated_date = IF(
+                last_updated_date >
+            VALUES(last_updated_date),
+            last_updated_date,
+            VALUES(last_updated_date)
+            )");
     } else {
-        $query = $database->prepare("INSERT INTO trophy_title_player
-                        (
-                                    np_communication_id,
-                                    account_id,
-                                    bronze,
-                                    silver,
-                                    gold,
-                                    platinum,
-                                    progress,
-                                    last_updated_date
-                        )
-                        VALUES
-                        (
-                                    :np_communication_id,
-                                    :account_id,
-                                    :bronze,
-                                    :silver,
-                                    :gold,
-                                    :platinum,
-                                    :progress,
-                                    :last_updated_date
-                        )
-            on duplicate KEY
-            UPDATE bronze=VALUES
-                   (
-                          bronze
-                   )
-                   ,
-                   silver=VALUES
-                   (
-                          silver
-                   )
-                   ,
-                   gold=VALUES
-                   (
-                          gold
-                   )
-                   ,
-                   platinum=VALUES
-                   (
-                          platinum
-                   )
-                   ,
-                   progress=VALUES
-                   (
-                          progress
-                   )
-                   ,
-                   last_updated_date=VALUES
-                   (
-                          last_updated_date
-                   )");
+        $query = $database->prepare("INSERT INTO trophy_title_player(
+                np_communication_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress,
+                last_updated_date
+            )
+            VALUES(
+                :np_communication_id,
+                :account_id,
+                :bronze,
+                :silver,
+                :gold,
+                :platinum,
+                :progress,
+                :last_updated_date
+            )
+            ON DUPLICATE KEY
+            UPDATE
+                bronze =
+            VALUES(bronze), silver =
+            VALUES(silver), gold =
+            VALUES(gold), platinum =
+            VALUES(platinum), progress =
+            VALUES(progress), last_updated_date =
+            VALUES(last_updated_date)");
     }
     $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
