@@ -448,23 +448,24 @@ require_once("header.php");
                             </thead>
                             <tbody>
                                 <?php
-                                $query = $database->prepare("SELECT p.online_id, 
-                                            p.avatar_url, 
-                                            ttp.bronze, 
-                                            ttp.silver, 
-                                            ttp.gold, 
-                                            ttp.platinum, 
-                                            ttp.progress, 
-                                            Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date 
-                                    FROM   trophy_title_player ttp 
-                                            JOIN player p USING (account_id) 
-                                            LEFT JOIN trophy_earned te USING (account_id, np_communication_id) 
-                                    WHERE  p.status = 0 
-                                            AND ttp.np_communication_id = :np_communication_id 
-                                    GROUP  BY account_id, 
-                                            np_communication_id 
-                                    ORDER  BY last_known_date DESC 
-                                    LIMIT  10 ");
+                                $query = $database->prepare("SELECT
+                                        p.online_id,
+                                        p.avatar_url,
+                                        ttp.bronze,
+                                        ttp.silver,
+                                        ttp.gold,
+                                        ttp.platinum,
+                                        ttp.progress,
+                                        ttp.last_updated_date
+                                    FROM
+                                        trophy_title_player ttp
+                                    JOIN player p USING(account_id)
+                                    WHERE
+                                        p.status = 0 AND ttp.np_communication_id = :np_communication_id
+                                    ORDER BY
+                                        last_updated_date
+                                    DESC
+                                    LIMIT 10");
                                 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                                 $query->execute();
                                 $recentPlayers = $query->fetchAll();
@@ -478,7 +479,7 @@ require_once("header.php");
                                         <td>
                                             <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $recentPlayer["online_id"]; ?>"><?= $recentPlayer["online_id"]; ?></a>
                                             <br>
-                                            <?= $recentPlayer["last_known_date"]; ?>
+                                            <?= $recentPlayer["last_updated_date"]; ?>
                                             <br>
                                             <?= $recentPlayer["bronze"]; ?> <img src="/img/playstation/bronze.png" alt="Bronze" width="24" />
                                             <?= $recentPlayer["silver"]; ?> <img src="/img/playstation/silver.png" alt="Silver" width="24" />
