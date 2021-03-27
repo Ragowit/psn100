@@ -980,7 +980,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
     $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
     $query->execute();
-    
+
     // Add all affected players to the queue to recalculate trophy count, level and level progress
     $query = $database->prepare("INSERT IGNORE
         INTO player_queue(online_id, request_time)
@@ -1032,6 +1032,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
 
+    $query = $database->prepare("ANALYZE TABLE `trophy_title`");
+    $query->execute();
     $query = $database->prepare("SELECT auto_increment
         FROM   information_schema.tables
         WHERE  table_name = 'trophy_title' ");
