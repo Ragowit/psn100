@@ -70,6 +70,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                 Standard messages:<br>
                 <?= htmlentities("Unobtainable trophies (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>).<br>"); ?><br>
                 <?= htmlentities("This game is delisted (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>). No trophies will be accounted for on any leaderboard."); ?><br>
+                <?= htmlentities("This game is obsolete, no trophies will be accounted for on any leaderboard. Please play <a href=\"/game/\"></a> instead."); ?><br>
             </p>
             <?php
         }
