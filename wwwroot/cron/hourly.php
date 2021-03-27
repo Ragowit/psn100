@@ -4,7 +4,7 @@ ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
 require_once("/home/psn100/public_html/init.php");
 
-// Recalculate owners for each game, but only for those ranked 100k or higher
+// Recalculate owners for each game, but only for those ranked 50k or higher
 do {
     try {
         $query = $database->prepare("WITH
@@ -16,7 +16,7 @@ do {
                     trophy_title_player ttp
                 JOIN player p USING(account_id)
                 WHERE
-                    p.status = 0 AND p.rank <= 100000
+                    p.status = 0 AND p.rank <= 50000
                 GROUP BY
                     np_communication_id
                 ORDER BY NULL
@@ -50,7 +50,7 @@ do {
                 LEFT JOIN trophy_title_player ttp ON
                     ttp.np_communication_id = tt.np_communication_id AND ttp.progress = 100
                 LEFT JOIN player p ON
-                    p.account_id = ttp.account_id AND p.status = 0 AND p.rank <= 100000
+                    p.account_id = ttp.account_id AND p.status = 0 AND p.rank <= 50000
                 GROUP BY
                     np_communication_id
                 ORDER BY NULL
@@ -89,7 +89,7 @@ do {
                 trophy_title_player ttp
             JOIN player p USING(account_id)
             WHERE
-                p.status = 0 AND p.rank <= 1000000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
+                p.status = 0 AND p.rank <= 50000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
             GROUP BY
                 np_communication_id)
             UPDATE
