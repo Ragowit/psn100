@@ -89,7 +89,7 @@ $offset = ($page - 1) * $limit;
                             JOIN trophy_title_player ttp ON
                                 t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
                             WHERE
-                                (te.id IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0
+                                (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0
                             ORDER BY
                                 rarity_percent
                             DESC                    
