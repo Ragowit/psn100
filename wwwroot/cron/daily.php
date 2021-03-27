@@ -4,14 +4,6 @@ ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
 require_once("/home/psn100/public_html/init.php");
 
-$query = $database->prepare("SELECT MAX(id) FROM trophy");
-$query->execute();
-$maxTrophyId = $query->fetchColumn();
-
-$query = $database->prepare("SELECT MAX(id) FROM trophy_earned");
-$query->execute();
-$maxTrophyEarnedId = $query->fetchColumn();
-
 // Update ranks
 do {
     try {
@@ -103,12 +95,15 @@ while ($country = $countryQuery->fetch()) {
 }
 
 // Recalculate trophy rarity percent and rarity name.
-$lowId = 0;
-$highId = 0;
+$gameQuery = $database->prepare("SELECT np_communication_id FROM trophy_title");
+$gameQuery->execute();
 do {
     if (!$deadlock) {
-        $lowId = $highId;
-        $highId += 1000;
+        $game = $gameQuery->fetch();
+
+        if (!$game) {
+            break;
+        }
     }
     
     try {
@@ -116,7 +111,6 @@ do {
                 rarity AS(
                 SELECT
                     COUNT(*) AS trophy_owners,
-                    np_communication_id,
                     group_id,
                     order_id
                 FROM
@@ -124,8 +118,8 @@ do {
                 JOIN player p USING(account_id)
                 JOIN trophy t USING(np_communication_id, group_id, order_id)
                 WHERE
-                    p.status = 0 AND p.rank <= 100000 AND t.id > :low_id AND t.id <= :high_id
-                GROUP BY te.np_communication_id, te.group_id, te.order_id
+                    p.status = 0 AND p.rank <= 100000 AND te.np_communication_id = :np_communication_id
+                GROUP BY te.group_id, te.order_id
                     ORDER BY NULL
             ),
             players AS(
@@ -152,9 +146,8 @@ do {
                     ELSE 'NONE'
                 END
             WHERE
-                t.np_communication_id = rarity.np_communication_id AND t.group_id = rarity.group_id AND t.order_id = rarity.order_id");
-        $query->bindParam(":low_id", $lowId, PDO::PARAM_INT);
-        $query->bindParam(":high_id", $highId, PDO::PARAM_INT);
+                t.np_communication_id = :np_communication_id AND t.group_id = rarity.group_id AND t.order_id = rarity.order_id");
+        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
 
         $deadlock = false;
@@ -162,7 +155,7 @@ do {
         sleep(3);
         $deadlock = true;
     }
-} while ($deadlock || $highId < $maxTrophyId);
+} while ($deadlock || $game);
 
 // Recalculate trophy rarity point
 do {
@@ -214,12 +207,15 @@ do {
     }
 } while ($deadlock);
 
-$lowId = 0;
-$highId = 0;
+$gameQuery = $database->prepare("SELECT np_communication_id FROM trophy_title");
+$gameQuery->execute();
 do {
     if (!$deadlock) {
-        $lowId = $highId;
-        $highId += 1000000;
+        $game = $gameQuery->fetch();
+
+        if (!$game) {
+            break;
+        }
     }
     
     try {
@@ -227,7 +223,6 @@ do {
                 rarity AS(
                 SELECT
                     trophy_earned.account_id,
-                    trophy_earned.np_communication_id,
                     SUM(trophy.rarity_point) AS points,
                     SUM(trophy.rarity_name = 'COMMON') common,
                     SUM(trophy.rarity_name = 'UNCOMMON') uncommon,
@@ -236,12 +231,12 @@ do {
                     SUM(trophy.rarity_name = 'LEGENDARY') legendary
                 FROM
                     trophy_earned
-                JOIN trophy ON
-                    (trophy_earned.np_communication_id = trophy.np_communication_id AND trophy_earned.group_id = trophy.group_id AND trophy_earned.order_id = trophy.order_id)
+                JOIN trophy USING 
+                    (np_communication_id, group_id, order_id)
                 WHERE
-                    trophy_earned.id > :low_id AND trophy_earned.id <= :high_id
+                    trophy_earned.np_communication_id = :np_communication_id
                 GROUP BY
-                    trophy_earned.account_id, trophy_earned.np_communication_id
+                    trophy_earned.account_id
                 ORDER BY NULL
             )
             UPDATE
@@ -255,9 +250,8 @@ do {
                 ttp.temp_epic = ttp.temp_epic + rarity.epic,
                 ttp.temp_legendary = ttp.temp_legendary + rarity.legendary
             WHERE
-                ttp.account_id = rarity.account_id AND ttp.np_communication_id = rarity.np_communication_id");
-        $query->bindParam(":low_id", $lowId, PDO::PARAM_INT);
-        $query->bindParam(":high_id", $highId, PDO::PARAM_INT);
+                ttp.account_id = rarity.account_id AND ttp.np_communication_id = :np_communication_id");
+        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
 
         $deadlock = false;
@@ -265,7 +259,7 @@ do {
         sleep(3);
         $deadlock = true;
     }
-} while ($deadlock || $highId < $maxTrophyEarnedId);
+} while ($deadlock || $game);
 
 do {
     try {
