@@ -137,11 +137,10 @@ $offset = ($page - 1) * $limit;
                                        ttp.gold,
                                        ttp.platinum,
                                        ttp.progress,
-                                       Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date,
+                                       ttp.last_updated_date,
                                        ttp.rarity_points
                                 FROM   trophy_title_player ttp
                                        JOIN trophy_title tt USING (np_communication_id)
-                                       LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
                                 WHERE  ttp.account_id = :account_id
                                        AND tt.status != 2 ";
                             if (isset($_GET["filter"]) && $_GET["filter"] == "incomplete") {
@@ -164,18 +163,17 @@ $offset = ($page - 1) * $limit;
                                        ttp.gold,
                                        ttp.platinum,
                                        ttp.progress,
-                                       Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date,
+                                       ttp.last_updated_date,
                                        ttp.rarity_points
                                 FROM   trophy_title_player ttp
                                        JOIN trophy_title tt USING(np_communication_id)
-                                       LEFT JOIN trophy_earned te USING( account_id, np_communication_id )
                                 WHERE  ttp.account_id = :account_id
                                        AND tt.status != 2 ";
                             if (isset($_GET["filter"]) && $_GET["filter"] == "incomplete") {
                                 $queryText .= " AND ttp.progress != 100 ";
                             }
                             $queryText .= " GROUP  BY np_communication_id
-                                ORDER  BY last_known_date DESC
+                                ORDER  BY last_updated_date DESC
                                 LIMIT  :offset, :limit ";
                             $query = $database->prepare($queryText);
                         }
@@ -205,7 +203,7 @@ $offset = ($page - 1) * $limit;
                                         <?= htmlentities($playerGame["name"]); ?>
                                     </a>
                                     <br>
-                                    <?= $playerGame["last_known_date"]; ?>
+                                    <?= $playerGame["last_updated_date"]; ?>
                                     <?php
                                     if ($playerGame["progress"] == 100) {
                                         $query = $database->prepare("SELECT Min(earned_date) AS first_trophy,
