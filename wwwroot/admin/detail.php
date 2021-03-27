@@ -7,18 +7,38 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $iconUrl = $_POST["icon_url"];
     $platform = $_POST["platform"];
     $message = $_POST["message"];
+    $setVersion = $_POST["set_version"];
 
     $database->beginTransaction();
-    $query = $database->prepare("UPDATE trophy_title SET name = :name, icon_url = :icon_url, platform = :platform, message = :message WHERE id = :game_id");
+    $query = $database->prepare("UPDATE
+            trophy_title
+        SET
+            name = :name,
+            icon_url = :icon_url,
+            platform = :platform,
+            message = :message,
+            set_version = :set_version
+        WHERE
+            id = :game_id");
     $query->bindParam(":name", $name, PDO::PARAM_STR);
     $query->bindParam(":icon_url", $iconUrl, PDO::PARAM_STR);
     $query->bindParam(":platform", $platform, PDO::PARAM_STR);
     $query->bindParam(":message", $message, PDO::PARAM_STR);
+    $query->bindParam(":set_version", $setVersion, PDO::PARAM_STR);
     $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
 
-    $query = $database->prepare("SELECT name, icon_url, platform, message FROM trophy_title WHERE id = :game_id");
+    $query = $database->prepare("SELECT 
+            name,
+            icon_url,
+            platform,
+            message,
+            set_version
+        FROM
+            trophy_title
+        WHERE
+            id = :game_id");
     $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $trophyTitle = $query->fetch();
@@ -27,7 +47,16 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
 } elseif (isset($_GET["game"]) && ctype_digit(strval($_GET["game"]))) {
     $gameId = $_GET["game"];
 
-    $query = $database->prepare("SELECT name, icon_url, platform, message FROM trophy_title WHERE id = :game_id");
+    $query = $database->prepare("SELECT 
+            name,
+            icon_url,
+            platform,
+            message,
+            set_version
+        FROM
+            trophy_title
+        WHERE
+            id = :game_id");
     $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $trophyTitle = $query->fetch();
@@ -61,6 +90,8 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                 <input type="text" name="icon_url" style="width: 859px;" value="<?= $trophyTitle["icon_url"]; ?>"><br>
                 Platform:<br>
                 <input type="text" name="platform" style="width: 859px;" value="<?= $trophyTitle["platform"]; ?>"><br>
+                Set Version:<br>
+                <input type="text" name="set_version" style="width: 859px;" value="<?= $trophyTitle["set_version"]; ?>"><br>
                 Message:<br>
                 <textarea name="message" rows="6" cols="120"><?= $trophyTitle["message"]; ?></textarea><br><br>
                 <input type="submit" value="Submit">
