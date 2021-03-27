@@ -12,10 +12,15 @@ $player = $query->fetch();
 $title = $player["online_id"] . "'s Trophy Advisor ~ PSN 100%";
 require_once("player_header.php");
 
-$query = $database->prepare("SELECT SUM(tg.bronze-tgp.bronze + tg.silver-tgp.silver + tg.gold-tgp.gold + tg.platinum-tgp.platinum) FROM trophy_group_player tgp
-    JOIN trophy_group tg USING (np_communication_id, group_id)
-    JOIN trophy_title tt USING (np_communication_id)
-    WHERE tt.status = 0 AND tgp.account_id = :account_id");
+$query = $database->prepare("SELECT
+        SUM(
+            tt.bronze - ttp.bronze + tt.silver - ttp.silver + tt.gold - ttp.gold + tt.platinum - ttp.platinum
+        )
+    FROM
+        trophy_title_player ttp
+    JOIN trophy_title tt USING(np_communication_id)
+    WHERE
+        tt.status = 0 AND ttp.account_id = :account_id");
 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $trophyCount = $query->fetchColumn();
