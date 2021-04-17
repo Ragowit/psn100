@@ -75,10 +75,10 @@ $offset = ($page - 1) * $limit;
                                 IFNULL(GREATEST(FLOOR((SUM(t.type = 'bronze')*15+SUM(t.type = 'silver')*30+SUM(t.type = 'gold')*90)/(SELECT SUM(type = 'bronze')*15+SUM(type = 'silver')*30+SUM(type = 'gold')*90 AS max_score FROM trophy WHERE np_communication_id = :np_communication_id)*100), 1), 0) progress,
                                 Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date
                             FROM trophy_earned te
-                                JOIN trophy t USING (np_communication_id, group_id, order_id)
-                                RIGHT JOIN trophy_title_player ttp USING (account_id, np_communication_id)
-                                JOIN player p USING (account_id)
-                            WHERE np_communication_id = :np_communication_id AND p.status = 0
+                                JOIN trophy t ON t.np_communication_id = :np_communication_id and t.group_id = te.group_id and t.order_id = te.order_id
+                                RIGHT JOIN trophy_title_player ttp ON ttp.account_id = te.account_id and ttp.np_communication_id = :np_communication_id
+                                JOIN player p ON p.account_id = te.account_id AND p.status = 0
+                                WHERE te.np_communication_id = :np_communication_id
                             GROUP BY account_id
                             ORDER BY progress DESC, platinum DESC, gold DESC, silver DESC, bronze DESC, last_known_date
                             LIMIT :offset, :limit");
