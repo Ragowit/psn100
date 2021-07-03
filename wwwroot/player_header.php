@@ -35,6 +35,22 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     </div>
                 </div>
                 <?php
+            } elseif ($player["rank"] > 50000) {
+                ?>
+                <div class="col-12">
+                    <div class="alert alert-warning" role="alert">
+                        This player isn't ranked within the top 50000 and will not have its trophies contributed to the site statistics.
+                        <?php
+                        if ($player["rank"] > 100000) {
+                            ?>
+                            <br>
+                            This player isn't ranked within the top 100000 and will not be included in the automatic player scanning routine.
+                            <?php
+                        }
+                        ?>
+                    </div>
+                </div>
+                <?php
             }
             ?>
 
