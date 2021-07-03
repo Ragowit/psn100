@@ -336,12 +336,13 @@ $query = $database->prepare("SELECT
         npsso
     FROM
         setting");
-$query->execute();
-$workers = $query->fetchAll();
 
 // Login with a token
 $loggedIn = false;
 while (!$loggedIn) {
+    $query->execute();
+    $workers = $query->fetchAll();
+
     foreach ($workers as $worker) {
         try {
             $client = new Client();
