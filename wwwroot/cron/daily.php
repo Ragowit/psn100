@@ -118,7 +118,7 @@ do {
                 JOIN player p USING(account_id)
                 JOIN trophy t USING(np_communication_id, group_id, order_id)
                 WHERE
-                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id
+                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.earned = 1
                 GROUP BY te.group_id, te.order_id
                     ORDER BY NULL
             )
@@ -224,7 +224,7 @@ do {
                 JOIN trophy USING 
                     (np_communication_id, group_id, order_id)
                 WHERE
-                    trophy_earned.np_communication_id = :np_communication_id
+                    trophy_earned.np_communication_id = :np_communication_id AND trophy_earned.earned = 1
                 GROUP BY
                     trophy_earned.account_id
                 ORDER BY NULL
