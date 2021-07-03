@@ -134,18 +134,29 @@ require_once("player_header.php");
                         </ul>
                         
                         <?php
-                        $query = $database->prepare("SELECT tt.id                     AS game_id, 
-                                    tt.name, 
-                                    ttp.progress, 
-                                    Date(Min(te.earned_date)) AS first_trophy, 
-                                    Date(Max(te.earned_date)) AS last_trophy 
-                            FROM   trophy_title_player ttp 
-                                    JOIN trophy_earned te USING (np_communication_id, account_id) 
-                                    JOIN trophy_title tt USING (np_communication_id) 
-                            WHERE  account_id = :account_id 
-                                    AND tt.status != 2 
-                            GROUP  BY np_communication_id 
-                            ORDER  BY first_trophy ");
+                        $query = $database->prepare("SELECT
+                                tt.id AS game_id,
+                                tt.name,
+                                tg.group_id,
+                                tg.name AS dlc_name,
+                                tgp.progress,
+                                DATE(MIN(te.earned_date)) AS first_trophy,
+                                DATE(MAX(te.earned_date)) AS last_trophy
+                            FROM
+                                trophy_group_player tgp
+                            JOIN trophy_earned te USING(
+                                    np_communication_id,
+                                    group_id,
+                                    account_id
+                                )
+                            JOIN trophy_title tt USING(np_communication_id)
+                            JOIN trophy_group tg USING(np_communication_id, group_id)
+                            WHERE
+                                account_id = :account_id AND tt.status != 2
+                            GROUP BY
+                                np_communication_id, group_id
+                            ORDER BY
+                                first_trophy");
                         $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                         $query->execute();
                         
@@ -154,11 +165,17 @@ require_once("player_header.php");
                         {
                             $game = new stdClass();
                             $game->name = $row["name"];
-                            $game->url = $row["game_id"] ."-". slugify($row["name"]);
+                            $game->url = $row["game_id"] ."-". slugify($row["name"]) ."/". $player["online_id"];
                             $game->completed = $row["progress"];
                             $game->firstTrophy = $row["first_trophy"];
                             $game->lastTrophy = $row["last_trophy"];
                             
+                            if ($row["group_id"] !== "default")
+                            {
+                                $game->name .= " ~ ". $row["dlc_name"];
+                                $game->url .= "#". $row["group_id"];
+                            }
+
                             array_push($games, $game);
                         }
                         
@@ -193,7 +210,7 @@ require_once("player_header.php");
                                     }
                                     
                                     echo "<li style='margin-left: ". (date_diff($lastGameDate, $firstTrophy)->days - 1) * 5 ."px; width: ". (date_diff($firstTrophy, $lastTrophy)->days + 1) * 5 ."px;'>";
-                                    echo "<a class='". $class ."' href='https://psn100.net/game/". $game->url ."/". $player["online_id"] ."' title=\"". $game->name ." (". $game->firstTrophy ." - ". $game->lastTrophy .")\">". htmlentities($game->name) ."</a>";
+                                    echo "<a class='". $class ."' href='https://psn100.net/game/". $game->url ."' title=\"". $game->name ." (". $game->firstTrophy ." - ". $game->lastTrophy .")\">". htmlentities($game->name) ."</a>";
                                     echo "</li>";
                                     
                                     $lastGameDate = $lastTrophy;
