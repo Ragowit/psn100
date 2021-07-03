@@ -461,7 +461,7 @@ require_once("header.php");
                                         trophy_title_player ttp
                                     JOIN player p USING(account_id)
                                     WHERE
-                                        p.status = 0 AND ttp.np_communication_id = :np_communication_id
+                                        p.status = 0 AND p.rank <= 50000 AND ttp.np_communication_id = :np_communication_id
                                     ORDER BY
                                         last_updated_date
                                     DESC

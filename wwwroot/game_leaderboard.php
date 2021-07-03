@@ -26,7 +26,7 @@ require_once("header.php");
 
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp
     JOIN player p USING (account_id)
-    WHERE ttp.np_communication_id = :np_communication_id AND ttp.progress != 0 AND p.status = 0");
+    WHERE ttp.np_communication_id = :np_communication_id AND ttp.progress != 0 AND p.status = 0 AND p.rank <= 50000");
 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
 $query->execute();
 $total_pages = $query->fetchColumn();
@@ -77,7 +77,7 @@ $offset = ($page - 1) * $limit;
                             FROM trophy_earned te
                                 JOIN trophy t ON t.np_communication_id = :np_communication_id and t.group_id = te.group_id and t.order_id = te.order_id
                                 RIGHT JOIN trophy_title_player ttp ON ttp.account_id = te.account_id and ttp.np_communication_id = :np_communication_id
-                                JOIN player p ON p.account_id = te.account_id AND p.status = 0
+                                JOIN player p ON p.account_id = te.account_id AND p.status = 0 AND p.rank <= 50000
                                 WHERE te.np_communication_id = :np_communication_id AND te.earned = 1
                             GROUP BY account_id
                             ORDER BY progress DESC, platinum DESC, gold DESC, silver DESC, bronze DESC, last_known_date

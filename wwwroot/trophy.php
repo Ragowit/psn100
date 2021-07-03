@@ -191,7 +191,7 @@ require_once("header.php");
                                     trophy_earned te
                                 JOIN player p USING(account_id)
                                 WHERE
-                                    p.status = 0 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id AND te.earned = 1
+                                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id AND te.earned = 1
                                 ORDER BY
                                     - te.earned_date
                                 DESC
@@ -249,7 +249,7 @@ require_once("header.php");
                                     trophy_earned te
                                 JOIN player p USING(account_id)
                                 WHERE
-                                    p.status = 0 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id AND te.earned = 1
+                                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.order_id = :order_id AND te.earned = 1
                                 ORDER BY
                                     te.earned_date
                                 DESC
