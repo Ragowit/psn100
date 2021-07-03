@@ -9,7 +9,7 @@ $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $player = $query->fetch();
 
-$title = $player["online_id"] . "'s Timeline ~ PSN 100%";
+$title = $player["online_id"] . "'s Random Games ~ PSN 100%";
 require_once("player_header.php");
 ?>
         <div class="row">
