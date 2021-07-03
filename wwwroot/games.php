@@ -63,7 +63,7 @@ $offset = ($page - 1) * $limit;
                         if (isset($_GET["sort"])) {
                             $games = $database->prepare("SELECT * FROM trophy_title
                                 WHERE status = 0 AND (bronze+silver+gold+platinum) != 0
-                                ORDER BY difficulty DESC, owners DESC
+                                ORDER BY difficulty DESC, owners DESC, name
                                 LIMIT :offset, :limit");
                         } else {
                             $games = $database->prepare("SELECT * FROM trophy_title
