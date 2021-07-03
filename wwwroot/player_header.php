@@ -69,19 +69,19 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 </div>
             </div>
             <div class="col-2 text-center">
-                <img src="/img/playstation/bronze.png" alt="Bronze" width="24" /> <?= $player["bronze"]; ?>
+                <img src="/img/playstation/bronze.png" alt="Bronze" width="24" /> <?= number_format($player["bronze"]); ?>
             </div>
             <div class="col-2 text-center">
-                <img src="/img/playstation/silver.png" alt="Silver" width="24" /> <?= $player["silver"]; ?>
+                <img src="/img/playstation/silver.png" alt="Silver" width="24" /> <?= number_format($player["silver"]); ?>
             </div>
             <div class="col-2 text-center">
-                <img src="/img/playstation/gold.png" alt="Gold" width="24" /> <?= $player["gold"]; ?>
+                <img src="/img/playstation/gold.png" alt="Gold" width="24" /> <?= number_format($player["gold"]); ?>
             </div>
             <div class="col-2 text-center">
-                <img src="/img/playstation/platinum.png" alt="Platinum" width="24" /> <?= $player["platinum"]; ?>
+                <img src="/img/playstation/platinum.png" alt="Platinum" width="24" /> <?= number_format($player["platinum"]); ?>
             </div>
             <div class="col-2 text-center">
-                <img src="/img/playstation/trophies.png" alt="Trophies" width="24" /> <?= $trophies; ?>
+                <img src="/img/playstation/trophies.png" alt="Trophies" width="24" /> <?= number_format($trophies); ?>
             </div>
         </div>
 
@@ -116,11 +116,11 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         ?>
         <div class="row">
             <div class="col-2 text-center">
-                <h5><?= $numberOfGames; ?></h5>
+                <h5><?= number_format($numberOfGames); ?></h5>
                 Games
             </div>
             <div class="col-2 text-center">
-                <h5><?= $numberOfCompletedGames; ?></h5>
+                <h5><?= number_format($numberOfCompletedGames); ?></h5>
                 100%
             </div>
             <div class="col-2 text-center">
@@ -128,7 +128,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 Avg. Progress
             </div>
             <div class="col-2 text-center">
-                <h5><?= $unearnedTrophies; ?></h5>
+                <h5><?= number_format($unearnedTrophies); ?></h5>
                 Unearned Trophies
             </div>
             <div class="col-2 text-center">

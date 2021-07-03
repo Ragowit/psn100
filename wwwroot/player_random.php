@@ -100,7 +100,7 @@ require_once("player_header.php");
                                     <br>
                                     <?= $game["owners"]; ?> owners<br>
                                     <?= $game["difficulty"]; ?>% Completion Rate<br>
-                                    <?= $rarityPoints; ?> Rarity Points
+                                    <?= number_format($rarityPoints); ?> Rarity Points
                                 </td>
                             </tr>
                             <?php

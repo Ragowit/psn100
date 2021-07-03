@@ -423,7 +423,7 @@ require_once("header.php");
                                 echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
                                 break;
                             default:
-                                echo $rarityPoints ." Rarity Points";
+                                echo number_format($rarityPoints) ." Rarity Points";
                         }
                         echo "<br>";
                         echo "Version: ". $game["set_version"];

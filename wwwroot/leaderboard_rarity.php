@@ -128,12 +128,12 @@ $offset = ($page - 1) * $limit;
                                     <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"><?= $player["progress"]; ?>%</div>
                                 </div>
                             </td>
-                            <td class="text-center"><?= $player["common"]; ?></td>
-                            <td class="text-center"><?= $player["uncommon"]; ?></td>
-                            <td class="text-center"><?= $player["rare"]; ?></td>
-                            <td class="text-center"><?= $player["epic"]; ?></td>
-                            <td class="text-center"><?= $player["legendary"]; ?></td>
-                            <td class="text-center"><?= $player["rarity_points"]; ?></td>
+                            <td class="text-center"><?= number_format($player["common"]); ?></td>
+                            <td class="text-center"><?= number_format($player["uncommon"]); ?></td>
+                            <td class="text-center"><?= number_format($player["rare"]); ?></td>
+                            <td class="text-center"><?= number_format($player["epic"]); ?></td>
+                            <td class="text-center"><?= number_format($player["legendary"]); ?></td>
+                            <td class="text-center"><?= number_format($player["rarity_points"]); ?></td>
                             <td class="text-center">
                                 <?php
                                 if (isset($_GET["country"])) {
