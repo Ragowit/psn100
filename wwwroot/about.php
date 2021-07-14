@@ -15,7 +15,8 @@ require_once("header.php");
                     PSN 100% is a trophy tracking website, focusing on merging game stacks and removal of unobtainable trophies to create one list of only obtainable trophies where all users have the chance to get to the same level, without the need to replay the same game multiple times. Furthermore so does PSN 100% only calculate stats from the top 50k players in order to try and be more accurate for those who considers themselves as a trophy hunter. PSN 100% is made by trophy hunters, for trophy hunters.
                 </p>
 
-                <div class="alert alert-info" role="alert">
+                <h2>Scan Log</h2>
+                <p>
                     <?php
                     $query = $database->prepare("SELECT COUNT(*) FROM player WHERE last_updated_date >= now() - INTERVAL 1 DAY");
                     $query->execute();
@@ -25,8 +26,83 @@ require_once("header.php");
                     $query->execute();
                     $scannedNewPlayers = $query->fetchColumn();
                     ?>
-                    In the last 24 hours have we scanned <?= $scannedPlayers; ?> players, and out of those are <?= $scannedNewPlayers; ?> new!
-                </div>
+                    <?= $scannedPlayers; ?> players were scanned in the last 24 hours, in which <?= $scannedNewPlayers; ?> are new!
+
+                    <table class="table table-responsive table-striped">
+                        <tr>
+                            <th scope="col" class="align-middle">Rank</th>
+                            <th scope="col" class="align-middle" width="11%">Updated</th>
+                            <th scope="col"></th>
+                            <th scope="col" width="100%"></th>
+                            <th scope="col"></th>
+                            <th scope="col" class="text-center"><img src="/img/playstation/level.png" alt="Level" /></th>
+                            <th scope="col" class="text-center align-middle">Points</th>
+                        </tr>
+
+                        <?php
+                        $query = $database->prepare("SELECT
+                                online_id,
+                                country,
+                                avatar_url,
+                                plus,
+                                last_updated_date,
+                                `level`,
+                                progress,
+                                points,
+                                `rank`,
+                                `status`
+                            FROM
+                                `player`
+                            ORDER BY
+                                last_updated_date
+                            DESC
+                            LIMIT 10");
+                        $query->execute();
+                        $players = $query->fetchAll();
+
+                        foreach ($players as $player) {
+                            $countryName = Locale::getDisplayRegion("-" . $player["country"], "en");
+                            if ($player["status"] != 0) {
+                                $rank = "N/A";
+                            } elseif ($player["rank"] == 0) {
+                                $rank = "New!";
+                            } else {
+                                $rank = $player["rank"];
+                            }
+                            ?>
+                            <tr>
+                                <th scope="row" class="align-middle"><?= $rank; ?></th>
+                                <td class="text-center"><?= str_replace(" ", "<br>", $player["last_updated_date"]); ?></td>
+                                <td class="text-center">
+                                    <div style="position:relative;">
+                                        <a href="/player/<?= $player["online_id"]; ?>">
+                                            <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="50" width="50" />
+                                            <?php
+                                            if ($player["plus"] === "1") {
+                                                ?>
+                                                <img src="/img/playstation/plus.png" style="position:absolute; top:-5px; right:-5px; width:25px;" alt="" />
+                                                <?php
+                                            } ?>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="align-middle"><a href="/player/<?= $player["online_id"]; ?>"><?= $player["online_id"]; ?></a></td>
+                                <td class="text-center">
+                                    <img src="/img/country/<?= $player["country"]; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                </td>
+                                <td class="text-center">
+                                    <?= $player["level"]; ?>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"><?= $player["progress"]; ?>%</div>
+                                    </div>
+                                </td>
+                                <td class="text-center"><?= number_format($player["points"]); ?></td>
+                            </tr>
+                            <?php
+                        }
+                        ?>
+                    </table>
+                </p>
 
                 <h2>What isn't PSN 100%?</h2>
                 <p>
