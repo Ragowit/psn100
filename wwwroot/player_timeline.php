@@ -38,7 +38,7 @@ require_once("player_header.php");
             ?>
             <div class="row">
                 <div class="col-12 text-center">
-                    <h3>This player seems to have a private profile.</h3>
+                    <h3>This player seems to have a <a href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3>
                 </div>
             </div>
             <?php

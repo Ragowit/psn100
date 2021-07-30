@@ -69,7 +69,7 @@ $offset = ($page - 1) * $limit;
                     if ($player["status"] == 3) {
                         ?>
                         <tr>
-                            <td colspan="6" class="text-center"><h3>This player seems to have a private profile.</h3></td>
+                            <td colspan="6" class="text-center"><h3>This player seems to have a <a href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>
                         </tr>
                         <?php
                     } else {
