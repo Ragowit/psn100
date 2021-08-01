@@ -1,1 +1,22 @@
-{"name":"dummy app","description":"This app is only a dummy for downloading with the option require.","homepage":"https://php-download.com/","type":"project","require":{"spatie/guzzle-rate-limiter-middleware":"^2.0.1.0","tustin/psn-php":"9999999-dev"}}
+{
+    "name": "tustin/psn-php",
+    "license": "MIT",
+    "description": "PHP wrapper for the PlayStation API.",
+    "homepage": "https://github.com/Tustin/psn-php",
+    "keywords": ["playstation", "api", "php"],
+    "autoload": {
+        "psr-4": {
+            "Tustin\\PlayStation\\": "src/"
+        }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.0",
+        "php": "^7.2",
+        "tustin/haste": "^1.0",
+        "nesbot/carbon": "^2.41",
+        "myclabs/php-enum": "^1.7"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.1"
+    }
+}
