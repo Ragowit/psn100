@@ -350,13 +350,16 @@ while (!$loggedIn) {
             $client->loginWithNpsso($npsso);
 
             $loggedIn = true;
-            break;
         } catch (Exception $e) {
             $message = "Can't login with worker ". $worker["id"];
             $query = $database->prepare("INSERT INTO log(message)
                 VALUES(:message)");
             $query->bindParam(":message", $message, PDO::PARAM_STR);
             $query->execute();
+        }
+
+        if ($loggedIn) {
+            break 2;
         }
     }
 
