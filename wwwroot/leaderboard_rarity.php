@@ -154,7 +154,7 @@ $offset = ($page - 1) * $limit;
                             } elseif ($delta > 0) {
                                 echo "+". $delta;
                             } else {
-                                echo "-";
+                                echo "=";
                             }
                         } ?>
                             </td>
