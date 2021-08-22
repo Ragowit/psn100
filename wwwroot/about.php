@@ -50,6 +50,7 @@ require_once("header.php");
                                 progress,
                                 points,
                                 `rank`,
+                                rank_last_week,
                                 `status`
                             FROM
                                 `player`
@@ -62,16 +63,35 @@ require_once("header.php");
 
                         foreach ($players as $player) {
                             $countryName = Locale::getDisplayRegion("-" . $player["country"], "en");
+                            
                             if ($player["status"] != 0) {
                                 $rank = "N/A";
-                            } elseif ($player["rank"] == 0) {
-                                $rank = "New!";
                             } else {
                                 $rank = $player["rank"];
                             }
+                            $rank .= "<br>";
+                            if ($player["status"] == 1) {
+                                $rank .= "(Cheater)";
+                            } elseif ($player["status"] == 2) {
+                                $rank .= "(Hidden)";
+                            } elseif ($player["status"] == 3) {
+                                $rank .= "(Private)";
+                            } elseif ($player["rank_last_week"] == 0) {
+                                $rank .= "(New!)";
+                            } else {
+                                $delta = $player["rank_last_week"] - $player["rank"];
+
+                                if ($delta < 0) {
+                                    $rank .= "(". $delta .")";
+                                } elseif ($delta > 0) {
+                                    $rank .= "(+". $delta .")";
+                                } else {
+                                    $rank .= "(=)";
+                                }
+                            }
                             ?>
                             <tr>
-                                <th scope="row" class="align-middle"><?= $rank; ?></th>
+                                <th scope="row" class="align-middle text-center"><?= $rank; ?></th>
                                 <td class="text-center"><?= str_replace(" ", "<br>", $player["last_updated_date"]); ?></td>
                                 <td class="text-center">
                                     <div style="position:relative;">
