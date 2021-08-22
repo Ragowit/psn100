@@ -159,7 +159,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     } elseif ($delta > 0) {
                         $rankTitle = "+". $delta;
                     } else {
-                        $rankTitle = "Unchanged";
+                        $rankTitle = "=";
                     }
                 }
 
@@ -173,16 +173,16 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     } elseif ($delta > 0) {
                         $rarityRankTitle = "+". $delta;
                     } else {
-                        $rarityRankTitle = "Unchanged";
+                        $rarityRankTitle = "=";
                     }
                 }
 
                 if ($player["status"] == 0) {
                     ?>
                     <h5>
-                        <a href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>" title="<?= $rankTitle; ?> on main leaderboard since last week."><?= $player["rank"]; ?></a>
-                         ~
-                        <a href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>" title="<?= $rarityRankTitle; ?> on rarity leaderboard since last week."><?= $player["rarity_rank"]; ?></a>
+                        <a href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rank"]; ?> (<?= $rankTitle; ?>)</a>
+                        <br>
+                        <a href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rarity_rank"]; ?> (<?= $rarityRankTitle; ?>)</a>
                     </h5>
                     <?php
                 } else {
@@ -205,7 +205,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     } elseif ($delta > 0) {
                         $rankCountryTitle = "+". $delta;
                     } else {
-                        $rankCountryTitle = "Unchanged";
+                        $rankCountryTitle = "=";
                     }
                 }
 
@@ -219,16 +219,16 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     } elseif ($delta > 0) {
                         $rarityRankCountryTitle = "+". $delta;
                     } else {
-                        $rarityRankCountryTitle = "Unchanged";
+                        $rarityRankCountryTitle = "=";
                     }
                 }
 
                 if ($player["status"] == 0) {
                     ?>
                     <h5>
-                        <a href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>" title="<?= $rankCountryTitle; ?> on main country leaderboard since last week."><?= $player["rank_country"]; ?></a>
-                         ~
-                        <a href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>" title="<?= $rarityRankCountryTitle; ?> on rarity country leaderboard since last week."><?= $player["rarity_rank_country"]; ?></a>
+                        <a href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?> (<?= $rankCountryTitle; ?>)</a>
+                        <br>
+                        <a href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rarity_rank_country"]; ?> (<?= $rarityRankCountryTitle; ?>)</a>
                     </h5>
                     <?php
                 } else {
