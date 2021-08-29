@@ -1352,12 +1352,12 @@ while (true) {
     $query = $database->prepare("WITH
             rarity AS(
             SELECT
-                SUM(rarity_points) AS rarity_points,
-                SUM(common) AS common,
-                SUM(uncommon) AS uncommon,
-                SUM(rare) AS rare,
-                SUM(epic) AS epic,
-                SUM(legendary) AS legendary
+                IFNULL(SUM(rarity_points), 0) AS rarity_points,
+                IFNULL(SUM(common), 0) AS common,
+                IFNULL(SUM(uncommon), 0) AS uncommon,
+                IFNULL(SUM(rare), 0) AS rare,
+                IFNULL(SUM(epic), 0) AS epic,
+                IFNULL(SUM(legendary), 0) AS legendary
             FROM
                 trophy_title_player
             WHERE
