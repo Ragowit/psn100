@@ -422,7 +422,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                 '2030-12-24 00:00:00'
             FROM
                 player p
-            WHERE EXISTS
+            WHERE p.status = 0 AND EXISTS
                 (
                 SELECT
                     1
@@ -989,7 +989,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             '2030-12-24 00:00:00'
         FROM
             player p
-        WHERE EXISTS
+        WHERE p.status = 0 AND EXISTS
             (
             SELECT
                 1

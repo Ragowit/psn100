@@ -163,15 +163,24 @@ if (isset($_POST["trophy"])) {
         }
 
         // Add all affected players to the queue to recalculate trophy count, level and level progress
-        $players = $database->prepare("SELECT online_id FROM player p WHERE EXISTS (SELECT 1 FROM trophy_title_player ttp WHERE ttp.np_communication_id = :np_communication_id AND ttp.account_id = p.account_id)");
-        $players->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $players->execute();
-        while ($player = $players->fetch()) {
-            $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, request_time) VALUES (:online_id, :request_time)");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->bindValue(":request_time", "2030-12-24 00:00:00", PDO::PARAM_STR);
-            $query->execute();
-        }
+        $query = $database->prepare("INSERT IGNORE
+            INTO player_queue(online_id, request_time)
+            SELECT
+                online_id,
+                '2030-12-24 00:00:00'
+            FROM
+                player p
+            WHERE p.status = 0 AND EXISTS
+                (
+                SELECT
+                    1
+                FROM
+                    trophy_title_player ttp
+                WHERE
+                    ttp.np_communication_id = :np_communication_id AND ttp.account_id = p.account_id
+            )");
+        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->execute();
     }
 
     if ($status == 1) {

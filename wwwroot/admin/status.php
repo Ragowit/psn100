@@ -20,7 +20,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             '2030-12-24 00:00:00'
         FROM
             player p
-        WHERE EXISTS
+        WHERE p.status = 0 AND EXISTS
             (
             SELECT
                 1
