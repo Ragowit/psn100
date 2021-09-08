@@ -410,7 +410,7 @@ require_once("header.php");
                         $query->execute();
                         $ownersCompleted = $query->fetchColumn();
                         ?>
-                        <span title="<?= $ownersCompleted; ?> of <?= $game["owners"]; ?> players have 100% this game."><?= $game["difficulty"]; ?>% Completion Rate</span><br>
+                        <span><?= number_format($ownersCompleted); ?> of <?= number_format($game["owners"]); ?> players (<?= $game["difficulty"]; ?>%)<br>have 100% this game.</span><br>
                         <?php
                         switch($game["status"]) {
                             case 1:
