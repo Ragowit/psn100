@@ -371,24 +371,43 @@ while (!$loggedIn) {
 
 while (true) {
     // Get our queue. Prioritize user requests, and then just old scanned players from our database.
-    $query = $database->prepare("SELECT online_id,
-            offset
-        FROM   (SELECT 1 AS tier,
-                    online_id,
-                    request_time,
-                    offset
-                FROM   player_queue
-                UNION ALL
-                SELECT 2 AS tier,
-                    online_id,
-                    last_updated_date,
-                    0 AS offset
-                FROM   player
-                WHERE  `rank` <= 100000) a
-        ORDER  BY tier,
+    $query = $database->prepare("SELECT
+            online_id,
+            `offset`
+        FROM
+            (
+            SELECT
+                1 AS tier,
+                online_id,
                 request_time,
-                online_id
-        LIMIT  1 ");
+                `offset`
+            FROM
+                player_queue
+            UNION ALL
+        SELECT
+            2 AS tier,
+            online_id,
+            last_updated_date,
+            0 AS `offset`
+        FROM
+            player
+        WHERE
+            `rank` <= 100000
+        UNION ALL
+        SELECT
+            0 AS tier,
+            online_id,
+            last_updated_date,
+            0 AS `offset`
+        FROM
+            player
+        WHERE
+            `rank` <= 10000 AND last_updated_date < NOW() - INTERVAL 7 DAY AND `status` = 0) a
+        ORDER BY
+            tier,
+            request_time,
+            online_id
+        LIMIT 1");
     $query->execute();
     $player = $query->fetch();
 
