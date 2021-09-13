@@ -12,32 +12,32 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $query->execute();
     $database->commit();
 
-    // Add all affected players to the queue to recalculate trophy count, level and level progress
-    $query = $database->prepare("INSERT IGNORE
-        INTO player_queue(online_id, request_time)
-        SELECT
-            online_id,
-            '2030-12-24 00:00:00'
-        FROM
-            player p
-        WHERE p.status = 0 AND EXISTS
-            (
-            SELECT
-                1
-            FROM
-                trophy_title_player ttp
-            WHERE
-                ttp.np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :game_id
-            ) AND ttp.account_id = p.account_id
-        )");
-    $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
-    $query->execute();
+    // // Add all affected players to the queue to recalculate trophy count, level and level progress
+    // $query = $database->prepare("INSERT IGNORE
+    //     INTO player_queue(online_id, request_time)
+    //     SELECT
+    //         online_id,
+    //         '2030-12-24 00:00:00'
+    //     FROM
+    //         player p
+    //     WHERE p.status = 0 AND EXISTS
+    //         (
+    //         SELECT
+    //             1
+    //         FROM
+    //             trophy_title_player ttp
+    //         WHERE
+    //             ttp.np_communication_id =(
+    //             SELECT
+    //                 np_communication_id
+    //             FROM
+    //                 trophy_title
+    //             WHERE
+    //                 id = :game_id
+    //         ) AND ttp.account_id = p.account_id
+    //     )");
+    // $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
+    // $query->execute();
 
     if ($status == 1) {
         $statusText = "delisted";
