@@ -1,4 +1,8 @@
 <?php
+ini_set("max_execution_time", "0");
+ini_set("mysql.connect_timeout", "0");
+ini_set("default_socket_timeout", "6000");
+set_time_limit(0);
 require_once("../init.php");
 
 if (isset($_POST["trophy"])) {
@@ -135,7 +139,19 @@ if (isset($_POST["trophy"])) {
         $players->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
         $players->execute();
         while ($player = $players->fetch()) {
-            $query = $database->prepare("SELECT SUM(bronze) AS bronze, SUM(silver) AS silver, SUM(gold) AS gold, SUM(platinum) AS platinum FROM trophy_group_player tgp WHERE account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
+            $query = $database->prepare("SELECT
+                    IFNULL(SUM(bronze),
+                    0) AS bronze,
+                    IFNULL(SUM(silver),
+                    0) AS silver,
+                    IFNULL(SUM(gold),
+                    0) AS gold,
+                    IFNULL(SUM(platinum),
+                    0) AS platinum
+                FROM
+                    trophy_group_player tgp
+                WHERE
+                    account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
             $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
             $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
             $query->execute();
