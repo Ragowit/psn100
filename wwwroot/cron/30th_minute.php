@@ -370,7 +370,11 @@ while (!$loggedIn) {
 }
 
 while (true) {
-    // Get our queue. Prioritize user requests, and then just old scanned players from our database.
+    // Get our queue.
+    // #1 - Users added from the front page, ordered by time entered
+    // #2 - Top 10k players who haven't been updated within a week, ordered by the oldest one
+    // #3 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
+    // #4 - Top 100k players, ordered by the oldest one
     $query = $database->prepare("SELECT
             online_id,
             `offset`
@@ -383,9 +387,19 @@ while (true) {
                 `offset`
             FROM
                 player_queue
-            UNION ALL
+            WHERE request_time < '2030-12-25 00:00:00'
+        UNION ALL
         SELECT
-            2 AS tier,
+            3 AS tier,
+            online_id,
+            request_time,
+            `offset`
+        FROM
+            player_queue
+        WHERE request_time >= '2030-12-25 00:00:00'
+        UNION ALL
+        SELECT
+            4 AS tier,
             online_id,
             last_updated_date,
             0 AS `offset`
@@ -395,7 +409,7 @@ while (true) {
             `rank` <= 100000
         UNION ALL
         SELECT
-            0 AS tier,
+            2 AS tier,
             online_id,
             last_updated_date,
             0 AS `offset`
