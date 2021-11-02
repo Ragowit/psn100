@@ -1,13 +1,13 @@
 <?php
-ini_set("max_execution_time", "0");
-ini_set("mysql.connect_timeout", "0");
-set_time_limit(0);
+//ini_set("max_execution_time", "0");
+//ini_set("mysql.connect_timeout", "0");
+//set_time_limit(0);
 require_once("/home/psn100/public_html/vendor/autoload.php");
 require_once("/home/psn100/public_html/init.php");
 
 use Tustin\PlayStation\Client;
 
-$maxTime = 1800; // 1800 seconds = 30 minutes
+//$maxTime = 1800; // 1800 seconds = 30 minutes
 
 function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
     $database = new Database();
@@ -431,6 +431,7 @@ while (true) {
         unset($user);
         $userFound = false;
         $userCounter = 0;
+
         foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
             if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
                 $user = $userSearchResult;
@@ -596,9 +597,9 @@ while (true) {
     }
 
     // Get basic info of the current player
-    if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
-        die();
-    }
+    // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+    //     die();
+    // }
 
     // TODO: Find out about currentOnlineId with the new API
     // if (is_null($user->currentOnlineId()) === false) {
@@ -778,12 +779,20 @@ while (true) {
         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
         do {
+            // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+            //     die();
+            // }
+            
             // TODO: Fix total result with the new API
             //$totalResults = $trophyTitles->totalResults;
             $totalResults = 0;
             $skippedGames = 0;
             
             foreach ($user->trophyTitles() as $trophyTitle) {
+                // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+                //     die();
+                // }
+
                 $newTrophies = false;
                 $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
                 if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
@@ -850,6 +859,10 @@ while (true) {
 
                 // Get "groups" (game and DLCs)
                 foreach ($client->trophies($trophyTitle->npCommunicationId(), $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
+                    // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+                    //     die();
+                    // }
+
                     // Add trophy group (game + dlcs) into database
                     $query = $database->prepare("SELECT Count(*)
                         FROM   trophy_group
@@ -896,6 +909,10 @@ while (true) {
 
                         // Add trophies into database
                         foreach ($trophyGroup->trophies() as $trophy) {
+                            // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+                            //     die();
+                            // }
+
                             $query = $database->prepare("SELECT Count(*)
                                 FROM   trophy
                                 WHERE  np_communication_id = :np_communication_id
@@ -1029,13 +1046,17 @@ while (true) {
                     $query->execute();
                 }
 
-                if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
-                    die();
-                }
+                // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+                //     die();
+                // }
 
                 // Fetch user trophies
                 foreach ($trophyTitle->trophyGroups() as $trophyGroup) {
                     foreach ($trophyGroup->trophies() as $trophy) {
+                        // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
+                        //     die();
+                        // }
+                        
                         if ($trophy->earned() || ($trophy->progress() != '' && intval($trophy->progress()) > 0)) {
                             if ($trophy->earnedDateTime() === '') {
                                 $dtAsTextForInsert = null;
@@ -1224,6 +1245,7 @@ while (true) {
             $level = floor($leftovers / (450 * $stage)) + (100 + 100 * $stage);
             $progress = floor($leftovers / (450 * $stage) * 100) % 100;
         }
+
         $query = $database->prepare("UPDATE player
             SET    bronze = :bronze,
                 silver = :silver,
@@ -1286,6 +1308,7 @@ while (true) {
     $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
     $query->execute();
     $playerStatus = $query->fetchColumn();
+
     if ($playerStatus == 0) {
         // Update ranks
         $query = $database->prepare("WITH
