@@ -330,46 +330,46 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
     $query->execute();
 }
 
-// Get current tokens
-$query = $database->prepare("SELECT
-        id,
-        npsso
-    FROM
-        setting");
-
-// Login with a token
-$loggedIn = false;
-while (!$loggedIn) {
-    $query->execute();
-    $workers = $query->fetchAll();
-
-    foreach ($workers as $worker) {
-        try {
-            $client = new Client();
-            $npsso = $worker["npsso"];
-            $client->loginWithNpsso($npsso);
-
-            $loggedIn = true;
-        } catch (Exception $e) {
-            $message = "Can't login with worker ". $worker["id"];
-            $query = $database->prepare("INSERT INTO log(message)
-                VALUES(:message)");
-            $query->bindParam(":message", $message, PDO::PARAM_STR);
-            $query->execute();
-        }
-
-        if ($loggedIn) {
-            break 2;
-        }
-    }
-
-    if (!$loggedIn) {
-        // Wait 5 minutes to not hammer login
-        sleep(60 * 5);
-    }
-}
-
 while (true) {
+    // Get current tokens
+    $query = $database->prepare("SELECT
+            id,
+            npsso
+        FROM
+            setting");
+
+    // Login with a token
+    $loggedIn = false;
+    while (!$loggedIn) {
+        $query->execute();
+        $workers = $query->fetchAll();
+
+        foreach ($workers as $worker) {
+            try {
+                $client = new Client();
+                $npsso = $worker["npsso"];
+                $client->loginWithNpsso($npsso);
+
+                $loggedIn = true;
+            } catch (Exception $e) {
+                $message = "Can't login with worker ". $worker["id"];
+                $query = $database->prepare("INSERT INTO log(message)
+                    VALUES(:message)");
+                $query->bindParam(":message", $message, PDO::PARAM_STR);
+                $query->execute();
+            }
+
+            if ($loggedIn) {
+                break 2;
+            }
+        }
+
+        if (!$loggedIn) {
+            // Wait 5 minutes to not hammer login
+            sleep(60 * 5);
+        }
+    }
+
     // Get our queue.
     // #1 - Users added from the front page, ordered by time entered
     // #2 - Top 10k players who haven't been updated within a week, ordered by the oldest one
