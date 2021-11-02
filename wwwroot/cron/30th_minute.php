@@ -841,7 +841,7 @@ while (true) {
                             :icon_url,
                             :platform,
                             '',
-                            :set_version
+                            ''
                         )
                         ON DUPLICATE KEY
                         UPDATE
@@ -852,7 +852,6 @@ while (true) {
                     $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                     $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                     $query->bindParam(":platform", implode(",", $trophyTitle->platform()), PDO::PARAM_STR);
-                    $query->bindParam(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                     $query->execute();
                 }
