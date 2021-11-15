@@ -436,6 +436,10 @@ while (true) {
             if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
                 $user = $userSearchResult;
                 $userFound = true;
+
+                // To test for exception "Resource not found". Only user known is "FMA_Samurai (6787199674967195080)"
+                $user->aboutMe();
+
                 break;
             }
 
@@ -549,48 +553,47 @@ while (true) {
             continue;
         }
     } catch (Exception $e) {
-        if (str_contains($e->getMessage(), "User not found")) {
-            $query = $database->prepare("DELETE FROM player_queue
-                WHERE  online_id = :online_id ");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+        // $e->getMessage() == "User not found", and another "Resource not found" error
+        $query = $database->prepare("DELETE FROM player_queue
+            WHERE  online_id = :online_id ");
+        $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+        $query->execute();
+
+        $query = $database->prepare("SELECT account_id
+            FROM   player
+            WHERE  online_id = :online_id ");
+        $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+        $query->execute();
+        $accountId = $query->fetchColumn();
+
+        if (!$accountId) {
+            $query = $database->prepare("UPDATE player
+                SET    level = 0,
+                    progress = 0,
+                    platinum = 0,
+                    gold = 0,
+                    silver = 0,
+                    bronze = 0,
+                    points = 0,
+                    rarity_points = 0
+                WHERE  account_id = :account_id ");
+            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
             $query->execute();
 
-            $query = $database->prepare("SELECT account_id
-                FROM   player
-                WHERE  online_id = :online_id ");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query = $database->prepare("DELETE FROM trophy_earned
+                WHERE  account_id = :account_id ");
+            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
             $query->execute();
-            $accountId = $query->fetchColumn();
 
-            if (!$accountId) {
-                $query = $database->prepare("UPDATE player
-                    SET    level = 0,
-                        progress = 0,
-                        platinum = 0,
-                        gold = 0,
-                        silver = 0,
-                        bronze = 0,
-                        points = 0,
-                        rarity_points = 0
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
+            $query = $database->prepare("DELETE FROM trophy_group_player
+                WHERE  account_id = :account_id ");
+            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+            $query->execute();
 
-                $query = $database->prepare("DELETE FROM trophy_earned
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
-
-                $query = $database->prepare("DELETE FROM trophy_group_player
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
-
-                $query = $database->prepare("DELETE FROM trophy_title_player
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
-            }
+            $query = $database->prepare("DELETE FROM trophy_title_player
+                WHERE  account_id = :account_id ");
+            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+            $query->execute();
         }
 
         continue;
