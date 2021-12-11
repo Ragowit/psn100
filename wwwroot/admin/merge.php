@@ -136,17 +136,12 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                         :earned_date,
                         :progress,
                         :earned
-                    )
+                    ) AS new
                     ON DUPLICATE KEY
                     UPDATE
-                        earned_date = IF(
-                            earned_date >
-                        VALUES(earned_date),
-                        earned_date,
-                    VALUES(earned_date)
-                        ), progress =
-                    VALUES(progress), earned =
-                    VALUES(earned)");
+                        earned_date = IF(earned_date < new.earned_date, earned_date, new.earned_date),
+                        progress = new.progress,
+                        earned = new.earned");
                 $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
                 $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
                 $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
