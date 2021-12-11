@@ -193,11 +193,11 @@ require_once("header.php");
                     Our rarity naming uses the following numbers:
                 </p>
                 <ul>
-                    <li>50.01-100% ~ Common</li>
-                    <li>20.01-50% ~ Uncommon</li>
-                    <li>5.01-20% ~ Rare</li>
-                    <li>1.01-5% ~ Epic</li>
-                    <li>0-1% ~ Legendary</li>
+                    <li>0-0.5% ~ Legendary</li>
+                    <li>0.51-2.5% ~ Epic</li>
+                    <li>2.51-10% ~ Rare</li>
+                    <li>10.01-25% ~ Uncommon</li>
+                    <li>25.01-100% ~ Common</li>
                 </ul>
             </div>
         </div>

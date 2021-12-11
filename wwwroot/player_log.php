@@ -203,13 +203,13 @@ $offset = ($page - 1) * $limit;
                                     <?php
                                     if ($trophy["trophy_status"] == 1) {
                                         echo "Unobtainable";
-                                    } elseif ($trophy["rarity_percent"] <= 1.00) {
+                                    } elseif ($trophy["rarity_percent"] <= 0.50) {
                                         echo "Legendary";
-                                    } elseif ($trophy["rarity_percent"] <= 5.00) {
+                                    } elseif ($trophy["rarity_percent"] <= 2.50) {
                                         echo "Epic";
-                                    } elseif ($trophy["rarity_percent"] <= 20.00) {
+                                    } elseif ($trophy["rarity_percent"] <= 10.00) {
                                         echo "Rare";
-                                    } elseif ($trophy["rarity_percent"] <= 50.00) {
+                                    } elseif ($trophy["rarity_percent"] <= 25.00) {
                                         echo "Uncommon";
                                     } else {
                                         echo "Common";
