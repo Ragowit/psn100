@@ -274,20 +274,15 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                 :platinum,
                 :progress,
                 :last_updated_date
-            )
+            ) AS new
             ON DUPLICATE KEY
             UPDATE
-                bronze =
-            VALUES(bronze), silver =
-            VALUES(silver), gold =
-            VALUES(gold), platinum =
-            VALUES(platinum), progress =
-            VALUES(progress), last_updated_date = IF(
-                last_updated_date >
-            VALUES(last_updated_date),
-            last_updated_date,
-            VALUES(last_updated_date)
-            )");
+                bronze = new.bronze,
+                silver = new.silver,
+                gold = new.gold,
+                platinum = new.platinum,
+                progress = new.progress,
+                last_updated_date = IF(last_updated_date > new.last_updated_date, last_updated_date, new.last_updated_date)");
     } else {
         $query = $database->prepare("INSERT INTO trophy_title_player(
                 np_communication_id,
@@ -308,16 +303,15 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                 :platinum,
                 :progress,
                 :last_updated_date
-            )
+            ) AS new
             ON DUPLICATE KEY
             UPDATE
-                bronze =
-            VALUES(bronze), silver =
-            VALUES(silver), gold =
-            VALUES(gold), platinum =
-            VALUES(platinum), progress =
-            VALUES(progress), last_updated_date =
-            VALUES(last_updated_date)");
+                bronze = new.bronze,
+                silver = new.silver,
+                gold = new.gold,
+                platinum = new.platinum,
+                progress = new.progress,
+                last_updated_date = new.last_updated_date");
     }
     $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
@@ -841,11 +835,10 @@ while (true) {
                             :platform,
                             '',
                             ''
-                        )
+                        ) AS new
                         ON DUPLICATE KEY
                         UPDATE
-                            icon_url =
-                        VALUES(icon_url)");
+                            icon_url = new.icon_url");
                     $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                     $query->bindParam(":name", $trophyTitle->name(), PDO::PARAM_STR);
                     $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
@@ -891,12 +884,11 @@ while (true) {
                                 :name,
                                 :detail,
                                 :icon_url
-                            )
+                            ) AS new
                             ON DUPLICATE KEY
                             UPDATE
-                                detail =
-                            VALUES(detail), icon_url =
-                            VALUES(icon_url)");
+                                detail = new.detail,
+                                icon_url = new.icon_url");
                         $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                         $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                         $query->bindParam(":name", $trophyGroup->name(), PDO::PARAM_STR);
@@ -965,18 +957,17 @@ while (true) {
                                         :progress_target_value,
                                         :reward_name,
                                         :reward_image_url
-                                    )
+                                    ) AS new
                                     ON DUPLICATE KEY
                                     UPDATE
-                                        hidden =
-                                    VALUES(hidden), type =
-                                    VALUES(type), name =
-                                    VALUES(name), detail =
-                                    VALUES(detail), icon_url =
-                                    VALUES(icon_url), progress_target_value =
-                                    VALUES(progress_target_value), reward_name =
-                                    VALUES(reward_name), reward_image_url =
-                                    VALUES(reward_image_url)");
+                                        hidden = new.hidden,
+                                        type = new.type,
+                                        name = new.name,
+                                        detail = new.detail,
+                                        icon_url = new.icon_url,
+                                        progress_target_value = new.progress_target_value,
+                                        reward_name = new.reward_name,
+                                        reward_image_url = new.reward_image_url");
                                 $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                                 $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
@@ -1080,12 +1071,12 @@ while (true) {
                                     :earned_date,
                                     :progress,
                                     :earned
-                                )
+                                ) AS new
                                 ON DUPLICATE KEY
                                 UPDATE
-                                    earned_date = VALUES(earned_date),
-                                    progress = VALUES(progress),
-                                    earned = VALUES(earned)");
+                                    earned_date = new.earned_date,
+                                    progress = new.progress,
+                                    earned = new.earned");
                             $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                             $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                             $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
