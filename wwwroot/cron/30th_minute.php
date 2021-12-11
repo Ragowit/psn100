@@ -567,33 +567,29 @@ while (true) {
         $accountId = $query->fetchColumn();
 
         if (!$accountId) {
-            $query = $database->prepare("UPDATE player
-                SET    level = 0,
-                    progress = 0,
-                    platinum = 0,
-                    gold = 0,
-                    silver = 0,
-                    bronze = 0,
-                    points = 0,
-                    rarity_points = 0
-                WHERE  account_id = :account_id ");
+            $query = $database->prepare("UPDATE
+                    player p
+                SET
+                    p.status = 4
+                WHERE
+                    p.account_id = :account_id");
             $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
             $query->execute();
 
-            $query = $database->prepare("DELETE FROM trophy_earned
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-            $query->execute();
+            // $query = $database->prepare("DELETE FROM trophy_earned
+            //     WHERE  account_id = :account_id ");
+            // $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+            // $query->execute();
 
-            $query = $database->prepare("DELETE FROM trophy_group_player
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-            $query->execute();
+            // $query = $database->prepare("DELETE FROM trophy_group_player
+            //     WHERE  account_id = :account_id ");
+            // $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+            // $query->execute();
 
-            $query = $database->prepare("DELETE FROM trophy_title_player
-                WHERE  account_id = :account_id ");
-            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-            $query->execute();
+            // $query = $database->prepare("DELETE FROM trophy_title_player
+            //     WHERE  account_id = :account_id ");
+            // $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+            // $query->execute();
         }
 
         continue;
