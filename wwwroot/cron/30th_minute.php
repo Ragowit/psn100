@@ -762,12 +762,12 @@ while (true) {
     if ($level !== 0) {
         $offset = $player["offset"];
 
-        $query = $database->prepare("SELECT last_updated_date
-            FROM   player
-            WHERE  account_id = :account_id ");
+        $query = $database->prepare("SELECT p.last_updated_date, p.status
+            FROM   player p
+            WHERE  p.account_id = :account_id ");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
-        $playerLastUpdatedDate = $query->fetchColumn();
+        $playerData = $query->fetch();
 
         $query = $database->prepare("SELECT np_communication_id,
                 last_updated_date
@@ -797,7 +797,7 @@ while (true) {
                 if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
 
-                    if ($playerLastUpdatedDate != null) { // New players have null as last updated date, and will thus continue with a full scan.
+                    if ($playerData["last_updated_date"] != null || $playerData["status"] == 2) { // New players have null as last updated date, and will thus continue with a full scan. As will players with hidden games, in order to find if they are unhidden.
                         if ($skippedGames >= 128) {
                             // 128 skipped games, we can assume we are done with this player.
                             break 2;

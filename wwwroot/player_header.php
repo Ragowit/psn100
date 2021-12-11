@@ -31,7 +31,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 ?>
                 <div class="col-12">
                     <div class="alert alert-warning" role="alert">
-                        This player have <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden some of their games</a>. All data from this player will not be in any of the site statistics or leaderboards. Make sure this player have no longer any hidden trophies, and create a new <a href="https://github.com/Ragowit/psn100/issues">issue</a> about it to make us do a forced rescan of the entire profile.
+                        This player have <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden some of their games</a>. All data from this player will not be in any of the site statistics or leaderboards. Make sure this player have no longer any hidden trophies, and then issue a new scan of the profile on the front page.
                     </div>
                 </div>
                 <?php
