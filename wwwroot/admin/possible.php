@@ -95,10 +95,7 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR04361_00' AND te.group_id = 'default' AND te.order_id = 40)";
         // Night Trap - 25th Anniversary Edition
         $sql .= " OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 12)
-            OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 23)
-            OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 24)
-            OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 25)";
+            OR (te.np_communication_id = 'NPWR14011_00' AND te.group_id = 'default' AND te.order_id = 12)";
         // Tachyon Project
         $sql .= " OR (te.np_communication_id = 'NPWR10143_00' AND te.group_id = 'default' AND te.order_id = 11)
             OR (te.np_communication_id = 'NPWR10143_00' AND te.group_id = 'default' AND te.order_id = 12)
