@@ -282,7 +282,7 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                 gold = new.gold,
                 platinum = new.platinum,
                 progress = new.progress,
-                last_updated_date = IF(last_updated_date > new.last_updated_date, last_updated_date, new.last_updated_date)");
+                last_updated_date = IF(trophy_title_player.last_updated_date > new.last_updated_date, trophy_title_player.last_updated_date, new.last_updated_date)");
     } else {
         $query = $database->prepare("INSERT INTO trophy_title_player(
                 np_communication_id,
@@ -1125,13 +1125,13 @@ while (true) {
                                     ) AS new
                                     ON DUPLICATE KEY
                                     UPDATE
-                                        earned_date = IF(earned_date < new.earned_date, earned_date, new.earned_date),
-                                        progress = IF(progress IS NULL, new.progress,
-                                            IF(new.progress IS NULL, progress,
-                                                IF(progress > new.progress, progress, new.progress)
+                                        earned_date = IF(trophy_earned.earned_date < new.earned_date, trophy_earned.earned_date, new.earned_date),
+                                        progress = IF(trophy_earned.progress IS NULL, new.progress,
+                                            IF(new.progress IS NULL, trophy_earned.progress,
+                                                IF(trophy_earned.progress > new.progress, trophy_earned.progress, new.progress)
                                             )
                                         ),
-                                        earned = IF(earned = 1, earned, new.earned)");
+                                        earned = IF(trophy_earned.earned = 1, trophy_earned.earned, new.earned)");
                                 $query->bindParam(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
                                 $query->bindParam(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
