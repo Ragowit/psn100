@@ -331,16 +331,16 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
 }
 
 while (true) {
-    // Get current tokens
-    $query = $database->prepare("SELECT
-            id,
-            npsso
-        FROM
-            setting");
-
     // Login with a token
     $loggedIn = false;
     while (!$loggedIn) {
+        $query = $database->prepare("SELECT
+                id,
+                npsso
+            FROM
+                setting
+            ORDER BY
+                id");
         $query->execute();
         $workers = $query->fetchAll();
 
