@@ -196,7 +196,7 @@ $offset = ($page - 1) * $limit;
                                     ?>
                                 </td>
                                 <td class="text-center" style="white-space: nowrap;">
-                                    <?= str_replace(" ", "<br>", $trophy["earned_date"]); ?>
+                                    <? if (isset($trophy["earned_date"])) echo str_replace(" ", "<br>", $trophy["earned_date"]); ?>
                                 </td>
                                 <td class="text-center">
                                     <?= $trophy["rarity_percent"]; ?>%<br>

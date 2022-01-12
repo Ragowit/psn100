@@ -219,7 +219,7 @@ require_once("header.php");
                                         <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                     </td>
                                     <td class="align-middle text-center" style="white-space: nowrap;">
-                                        <?= str_replace(" ", "<br>", $result["earned_date"]); ?>
+                                        <? if (isset($result["earned_date"])) echo str_replace(" ", "<br>", $result["earned_date"]); ?>
                                     </td>
                                 </tr>
                                 <?php

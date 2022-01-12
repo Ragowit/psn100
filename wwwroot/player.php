@@ -215,9 +215,13 @@ $offset = ($page - 1) * $limit;
                                         $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
                                         $query->execute();
                                         $completionDates = $query->fetch();
-                                        $datetime1 = date_create($completionDates["first_trophy"]);
-                                        $datetime2 = date_create($completionDates["last_trophy"]);
-                                        $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds")); ?>
+                                        if (isset($completionDates["first_trophy"]) && isset($completionDates["last_trophy"])) {
+                                            $datetime1 = date_create($completionDates["first_trophy"]);
+                                            $datetime2 = date_create($completionDates["last_trophy"]);
+                                            $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
+                                        }
+                                        $completionTimes = $completionTimes ?? [];
+                                        ?>
                                         <br>
                                         <?php
                                         $first = -1;

@@ -120,8 +120,14 @@ require_once("player_header.php");
                             $startDate = $result["first_trophy"];
                             $endDate = $result["last_trophy"];
                             
-                            $start    = (new DateTime($startDate))->modify('first day of this month');
-                            $end      = (new DateTime($endDate))->modify('first day of next month');
+                            $start    = null;
+                            if (isset($startDate)) {
+                                $start    = (new DateTime($startDate))->modify('first day of this month');
+                            }
+                            $end      = null;
+                            if (isset($endDate)) {
+                                $end      = (new DateTime($endDate))->modify('first day of next month');
+                            }
                             $interval = DateInterval::createFromDateString('1 month');
                             $period   = new DatePeriod($start, $interval, $end);
                             
@@ -188,6 +194,11 @@ require_once("player_header.php");
                             $lastGameDate->modify('-1 day');
                             foreach ($games as $game)
                             {
+                                if (!isset($game->firstTrophy) || !isset($game->lastTrophy)) {
+                                    $done[$game->url] = true;
+                                    continue;
+                                }
+
                                 $firstTrophy = new DateTime($game->firstTrophy);
                                 $lastTrophy = new DateTime($game->lastTrophy);
                                 

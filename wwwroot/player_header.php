@@ -144,7 +144,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 Avg. Progress
             </div>
             <div class="col-2 text-center">
-                <h5><?= number_format($unearnedTrophies); ?></h5>
+                <h5><?= number_format($unearnedTrophies ?? 0); ?></h5>
                 Unearned Trophies
             </div>
             <div class="col-2 text-center">
