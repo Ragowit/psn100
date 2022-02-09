@@ -78,7 +78,7 @@ require_once("player_header.php");
                             <tr>
                                 <td scope="row">
                                     <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $player["online_id"]; ?>">
-                                        <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="55" width="100" />
+                                        <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                                     </a>
                                 </td>
                                 <td>
