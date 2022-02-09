@@ -73,7 +73,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             <div class="col-2 text-right">
                 <img src="/img/country/<?= $player["country"]; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName ?>" height="50" width="50" style="border-radius: 50%;" />
                 <br>
-                <small><?= str_replace(" ", "<br>", $player["last_updated_date"]); ?></small>
+                <small><?= str_replace(" ", "<br>", $player["last_updated_date"] ?? ""); ?></small>
             </div>
         </div>
 
