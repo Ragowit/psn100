@@ -322,7 +322,7 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR03634_00' AND te.group_id = 'default' AND te.order_id = 6)
             OR (te.np_communication_id = 'NPWR03634_00' AND te.group_id = 'default' AND te.order_id = 11)";
         $sql .= ") AND p.status != 1 GROUP BY online_id) x USING (np_communication_id)
-        ORDER BY player_name";
+            ORDER BY player_name";
 
         $query = $database->prepare($sql);
         $query->execute();
