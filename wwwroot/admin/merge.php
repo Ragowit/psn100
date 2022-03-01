@@ -648,7 +648,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                         trophy_earned.earned_date IS NULL,
                         child.earned_date,
                         IF(
-                            child.earned_date > trophy_earned.earned_date,
+                            child.earned_date < trophy_earned.earned_date,
                             child.earned_date,
                             trophy_earned.earned_date
                         )
