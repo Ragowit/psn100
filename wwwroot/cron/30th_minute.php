@@ -1253,6 +1253,7 @@ while (true) {
         $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND earned = 1 AND account_id = :account_id");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
+        $query->execute(); // Do it twice since it seems the count is occasionally wrong and players are then wrongly marked as hiding trophies.
         $ourTotalTrophies = $query->fetchColumn();
         if ($ourTotalTrophies < $totalTrophies) {
             $query = $database->prepare("UPDATE player
