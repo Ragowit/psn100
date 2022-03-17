@@ -845,8 +845,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             <input type="number" name="parent"><br>
             Method:<br>
             <select name="method">
-                <option value="name">Name</option>
                 <option value="order">Order</option>
+                <option value="name">Name</option>
             </select><br><br>
             Trophy Child ID:<br>
             <input type="text" name="trophychild"><br>
