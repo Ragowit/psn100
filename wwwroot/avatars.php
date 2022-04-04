@@ -2,7 +2,7 @@
 $title = "Avatars ~ PSN 100%";
 require_once("header.php");
 
-$query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player WHERE status = 0");
+$query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player p WHERE p.status = 0 AND (p.rank <= 50000 OR p.rarity_rank <= 50000)");
 $query->execute();
 $total_pages = $query->fetchColumn();
 
