@@ -23,8 +23,9 @@ $offset = ($page - 1) * $limit;
             // This feature does not limit by the 100k player count
             $query = $database->prepare("SELECT Count(*) AS count, 
                         avatar_url 
-                FROM   player 
-                WHERE  status = 0 
+                FROM   player p
+                WHERE  p.status = 0 
+                  AND  (p.rank <= 50000 OR p.rarity_rank <= 50000)
                 GROUP  BY avatar_url 
                 ORDER  BY count DESC, 
                         avatar_url 
