@@ -368,7 +368,7 @@ while (true) {
     // #1 - Users added from the front page, ordered by time entered
     // #2 - Top 10k players who haven't been updated within a week, ordered by the oldest one
     // #3 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
-    // #4 - Top 100k players, ordered by the oldest one
+    // #4 - Oldest scanned player
     $query = $database->prepare("SELECT
             online_id,
             `offset`
@@ -381,41 +381,48 @@ while (true) {
                 `offset`
             FROM
                 player_queue
-            WHERE request_time < '2030-12-25 00:00:00'
-        UNION ALL
-        SELECT
-            3 AS tier,
-            online_id,
-            request_time,
-            `offset`
-        FROM
-            player_queue
-        WHERE request_time >= '2030-12-25 00:00:00'
-        UNION ALL
-        SELECT
-            4 AS tier,
-            online_id,
-            last_updated_date,
-            0 AS `offset`
-        FROM
-            player
-        WHERE
-            `rank` <= 100000
-        UNION ALL
-        SELECT
-            2 AS tier,
-            online_id,
-            last_updated_date,
-            0 AS `offset`
-        FROM
-            player
-        WHERE
-            `rank` <= 10000 AND last_updated_date < NOW() - INTERVAL 7 DAY AND `status` = 0) a
+            WHERE
+                request_time < '2030-12-25 00:00:00'
+            UNION ALL
+            SELECT
+                2 AS tier,
+                online_id,
+                last_updated_date,
+                0 AS `offset`
+            FROM
+                player
+            WHERE
+                (
+                `rank` <= 10000
+                OR rarity_rank <= 10000
+                )
+                AND last_updated_date < NOW() - INTERVAL 7 DAY
+                AND `status` = 0
+            UNION ALL
+            SELECT
+                3 AS tier,
+                online_id,
+                request_time,
+                `offset`
+            FROM
+                player_queue
+            WHERE
+                request_time >= '2030-12-25 00:00:00'
+            UNION ALL
+            SELECT
+                4 AS tier,
+                online_id,
+                last_updated_date,
+                0 AS `offset`
+            FROM
+                player
+            ) a
         ORDER BY
             tier,
             request_time,
             online_id
-        LIMIT 1");
+        LIMIT
+            1");
     $query->execute();
     $player = $query->fetch();
 
