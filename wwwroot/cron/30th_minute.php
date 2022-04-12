@@ -457,17 +457,11 @@ while (true) {
                     player
                 SET
                     `status` = 3,
-                    `rank` = 0,
-                    rank_last_week = 0,
-                    rarity_rank = 0,
-                    rarity_rank_last_week = 0,
-                    rank_country = 0,
-                    rank_country_last_week = 0,
-                    rarity_rank_country = 0,
-                    rarity_rank_country_last_week = 0,
                     last_updated_date = NOW()
                 WHERE
-                    online_id = :online_id AND `status` != 1");
+                    online_id = :online_id
+                    AND `status` != 1
+                ");
             $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
 
@@ -1245,39 +1239,58 @@ while (true) {
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
 
-        // Set player as clean if not a cheater
-        $query = $database->prepare("UPDATE
-                player p
-            SET
-                p.status = 0
-            WHERE
-                p.account_id = :account_id AND p.status != 1");
-        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-        $query->execute();
+        // Set player status if not a cheater
+        $playerStatus = 0;
 
         // Check for hidden trophies
         $totalTrophies = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
-        $query = $database->prepare("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id LIKE 'NPWR%' AND earned = 1 AND account_id = :account_id");
+        $query = $database->prepare("SELECT
+                COUNT(*)
+            FROM
+                trophy_earned
+            WHERE
+                np_communication_id LIKE 'NPWR%'
+                AND earned = 1
+                AND account_id = :account_id
+            ");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
         $query->execute(); // Do it twice since it seems the count is occasionally wrong and players are then wrongly marked as hiding trophies.
         $ourTotalTrophies = $query->fetchColumn();
         if ($ourTotalTrophies < $totalTrophies) {
-            $query = $database->prepare("UPDATE player
-                SET    status = 2,
-                    `rank` = 0,
-                    rank_last_week = 0,
-                    rarity_rank = 0,
-                    rarity_rank_last_week = 0,
-                    rank_country = 0,
-                    rank_country_last_week = 0,
-                    rarity_rank_country = 0,
-                    rarity_rank_country_last_week = 0
-                WHERE  account_id = :account_id 
-                    AND status = 0");
-            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-            $query->execute();
+            $playerStatus = 2;
         }
+
+        // Check for inactive
+        $query = $database->prepare("SELECT
+                IF(
+                MAX(last_updated_date) >= DATE(NOW()) - INTERVAL 1 YEAR,
+                TRUE,
+                FALSE
+                ) AS within_a_year
+            FROM
+                `trophy_title_player`
+            WHERE
+                account_id = :account_id
+            ");
+        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+        $query->execute();
+        $withinAYear = $query->fetchColumn();
+        if ($withinAYear == 0) {
+            $playerStatus = 4;
+        }
+
+        $query = $database->prepare("UPDATE
+                player p
+            SET
+                p.status = :status
+            WHERE
+                p.account_id = :account_id
+                AND p.status != 1
+            ");
+        $query->bindParam(":status", $playerStatus, PDO::PARAM_INT);
+        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+        $query->execute();
     }
 
     $query = $database->prepare("SELECT

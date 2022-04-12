@@ -35,6 +35,14 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     </div>
                 </div>
                 <?php
+            } elseif ($player["status"] == 4) {
+                ?>
+                <div class="col-12">
+                    <div class="alert alert-warning" role="alert">
+                        This player have not played a game over a year and is considered inactive by this site. All data from this player will not be in any of the site statistics or leaderboards.
+                    </div>
+                </div>
+                <?php
             } elseif ($player["rank"] > 50000) {
                 ?>
                 <div class="col-12">

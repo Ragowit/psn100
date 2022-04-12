@@ -76,6 +76,8 @@ require_once("header.php");
                                 $rank .= "(Hiding)";
                             } elseif ($player["status"] == 3) {
                                 $rank .= "(Private)";
+                            } elseif ($player["status"] == 4) {
+                                $rank .= "(Inactive)";
                             } elseif ($player["rank_last_week"] == 0) {
                                 $rank .= "(New!)";
                             } else {
