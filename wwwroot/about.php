@@ -73,7 +73,7 @@ require_once("header.php");
                             if ($player["status"] == 1) {
                                 $rank .= "(Cheater)";
                             } elseif ($player["status"] == 2) {
-                                $rank .= "(Hidden)";
+                                $rank .= "(Hiding)";
                             } elseif ($player["status"] == 3) {
                                 $rank .= "(Private)";
                             } elseif ($player["rank_last_week"] == 0) {
