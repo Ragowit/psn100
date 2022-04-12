@@ -14,10 +14,10 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 if (isset($_GET["country"])) {
     $country = $_GET["country"];
 
-    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rarity_rank != 0 AND country = :country");
+    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE `status` = 0 AND country = :country");
     $query->bindParam(":country", $country, PDO::PARAM_STR);
 } else {
-    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE rarity_rank != 0");
+    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE `status` = 0");
 }
 $query->execute();
 $total_pages = $query->fetchColumn();
@@ -75,10 +75,10 @@ $offset = ($page - 1) * $limit;
                     if (isset($_GET["country"])) {
                         $country = $_GET["country"];
 
-                        $query = $database->prepare("SELECT * FROM player WHERE rarity_rank != 0 AND country = :country ORDER BY rarity_rank LIMIT :offset, :limit");
+                        $query = $database->prepare("SELECT * FROM player WHERE `status` = 0 AND country = :country ORDER BY rarity_rank LIMIT :offset, :limit");
                         $query->bindParam(":country", $country, PDO::PARAM_STR);
                     } else {
-                        $query = $database->prepare("SELECT * FROM player WHERE rarity_rank != 0 ORDER BY rarity_rank LIMIT :offset, :limit");
+                        $query = $database->prepare("SELECT * FROM player WHERE `status` = 0 ORDER BY rarity_rank LIMIT :offset, :limit");
                     }
                     $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                     $query->bindParam(":limit", $limit, PDO::PARAM_INT);
