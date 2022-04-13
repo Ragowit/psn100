@@ -1,21 +1,15 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.0
+-- version 5.2.0-rc1
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 26, 2021 at 08:45 PM
--- Server version: 8.0.23
--- PHP Version: 8.0.3
+-- Generation Time: Apr 13, 2022 at 08:19 PM
+-- Server version: 8.0.28
+-- PHP Version: 8.1.4
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Database: `psn100`
@@ -80,7 +74,8 @@ CREATE TABLE `player` (
 CREATE TABLE `player_queue` (
   `online_id` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `offset` smallint UNSIGNED NOT NULL DEFAULT '0'
+  `offset` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -292,16 +287,16 @@ CREATE TABLE `trophy_title_player` (
 --
 CREATE TABLE `view_player_last_updated_date` (
 `account_id` bigint unsigned
-,`online_id` varchar(16)
-,`country` varchar(2)
-,`last_updated_date` datetime
 ,`bronze` mediumint unsigned
-,`silver` mediumint unsigned
+,`country` varchar(2)
 ,`gold` mediumint unsigned
-,`platinum` mediumint unsigned
+,`last_updated_date` datetime
 ,`level` smallint unsigned
-,`progress` tinyint unsigned
+,`online_id` varchar(16)
+,`platinum` mediumint unsigned
 ,`points` mediumint unsigned
+,`progress` tinyint unsigned
+,`silver` mediumint unsigned
 ,`status` tinyint unsigned
 );
 
@@ -312,7 +307,7 @@ CREATE TABLE `view_player_last_updated_date` (
 --
 DROP TABLE IF EXISTS `view_player_last_updated_date`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`psn100`@`localhost` SQL SECURITY DEFINER VIEW `view_player_last_updated_date`  AS SELECT `player`.`account_id` AS `account_id`, `player`.`online_id` AS `online_id`, `player`.`country` AS `country`, `player`.`last_updated_date` AS `last_updated_date`, `player`.`bronze` AS `bronze`, `player`.`silver` AS `silver`, `player`.`gold` AS `gold`, `player`.`platinum` AS `platinum`, `player`.`level` AS `level`, `player`.`progress` AS `progress`, `player`.`points` AS `points`, `player`.`status` AS `status` FROM `player` ORDER BY -(`player`.`last_updated_date`) ASC ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`psn100_ragowit`@`localhost` SQL SECURITY DEFINER VIEW `view_player_last_updated_date`  AS SELECT `player`.`account_id` AS `account_id`, `player`.`online_id` AS `online_id`, `player`.`country` AS `country`, `player`.`last_updated_date` AS `last_updated_date`, `player`.`bronze` AS `bronze`, `player`.`silver` AS `silver`, `player`.`gold` AS `gold`, `player`.`platinum` AS `platinum`, `player`.`level` AS `level`, `player`.`progress` AS `progress`, `player`.`points` AS `points`, `player`.`status` AS `status` FROM `player` ORDER BY -(`player`.`last_updated_date`) ASC  ;
 
 --
 -- Indexes for dumped tables
@@ -455,7 +450,3 @@ ALTER TABLE `trophy_group`
 ALTER TABLE `trophy_title`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

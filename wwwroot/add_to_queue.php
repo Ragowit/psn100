@@ -3,33 +3,67 @@ require_once("init.php");
 
 $player = trim($_REQUEST["q"]);
 
+$query = $database->prepare("SELECT
+        COUNT(*)
+    FROM
+        player_queue
+    WHERE
+        ip_address = :ip_address
+    ");
+$query->bindParam(":ip_address", $_SERVER["REMOTE_ADDR"], PDO::PARAM_STR);
+$query->execute();
+$count = $query->fetchColumn();
+
 if (!isset($player) || $player === "") {
     echo "PSN name can't be empty.";
+} elseif ($count >= 50) {
+    echo "You have already entered 50 players into the queue. Please wait a while.";
 } elseif (preg_match("/^[\w\-]{3,16}$/", $player)) {
     // Insert player into the queue
-    //$query = $database->prepare("INSERT IGNORE INTO player_queue (online_id) VALUES (:online_id)");
-    $query = $database->prepare("INSERT INTO player_queue (online_id) VALUES (:online_id) ON DUPLICATE KEY UPDATE request_time=IF(request_time >= '2030-01-01 00:00:00', NOW(), request_time)"); // Currently our initial backlog is huge, so use this for a while.
+    // $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, ip_address)
+    //     VALUES
+    //         (:online_id, :ip_address)
+    //     ");
+    // Currently our initial backlog is huge, so use this for a while.
+    $query = $database->prepare("INSERT INTO
+            player_queue (online_id, ip_address)
+        VALUES
+            (:online_id, :ip_address) ON DUPLICATE KEY
+        UPDATE
+            ip_address = IF(
+                request_time >= '2030-01-01 00:00:00',
+                :ip_address,
+                ip_address
+            ),
+            request_time = IF(
+                request_time >= '2030-01-01 00:00:00',
+                NOW(),
+                request_time
+            )
+        ");
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+    $query->bindParam(":ip_address", $_SERVER["REMOTE_ADDR"], PDO::PARAM_STR);
     $query->execute();
 
     // Check position
-    $query = $database->prepare("WITH
-            temp AS(
+    $query = $database->prepare("WITH temp AS(
             SELECT
                 request_time,
                 online_id,
                 ROW_NUMBER() OVER(
-            ORDER BY
-                request_time
-            ) AS 'rownum'
-        FROM
-            player_queue)
-            SELECT
-                rownum
+                    ORDER BY
+                        request_time
+                ) AS 'rownum'
             FROM
-                temp
-            WHERE
-                online_id = :online_id");
+                player_queue
+        )
+        SELECT
+            rownum
+        FROM
+            temp
+        WHERE
+            online_id = :online_id
+        ");
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
     $position = $query->fetchColumn();
