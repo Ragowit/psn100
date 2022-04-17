@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 13, 2022 at 08:19 PM
+-- Generation Time: Apr 17, 2022 at 06:00 PM
 -- Server version: 8.0.28
 -- PHP Version: 8.1.4
 
@@ -62,7 +62,7 @@ CREATE TABLE `player` (
   `rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `status` tinyint UNSIGNED NOT NULL DEFAULT '0'
+  `status` tinyint UNSIGNED NOT NULL DEFAULT '99'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
