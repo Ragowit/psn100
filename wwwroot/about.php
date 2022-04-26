@@ -22,11 +22,11 @@ require_once("header.php");
                     $query->execute();
                     $scannedPlayers = $query->fetchColumn();
 
-                    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE last_updated_date >= now() - INTERVAL 1 DAY AND status = 0 AND rank_last_week = 0");
+                    $query = $database->prepare("SELECT COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0");
                     $query->execute();
                     $scannedNewPlayers = $query->fetchColumn();
                     ?>
-                    <?= $scannedPlayers; ?> players were scanned in the last 24 hours, in which <?= $scannedNewPlayers; ?> are new!
+                    <?= $scannedPlayers; ?> players were scanned in the last 24 hours, and <?= $scannedNewPlayers; ?> new players added to the leadersboards this week!
 
                     <table class="table table-responsive table-striped">
                         <tr>
