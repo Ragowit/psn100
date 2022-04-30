@@ -393,8 +393,8 @@ while (true) {
                 player
             WHERE
                 (
-                `rank` <= 10000
-                OR rarity_rank <= 10000
+                `rank` <= 5000
+                OR rarity_rank <= 5000
                 )
                 AND last_updated_date < NOW() - INTERVAL 7 DAY
                 AND `status` = 0
