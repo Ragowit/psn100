@@ -8,7 +8,7 @@
                     <a href="https://github.com/Ragowit/psn100/issues">Issues</a>
                 </div>
                 <div class="col-md-4 text-right">
-                    <a href="https://github.com/Ragowit/psn100/releases">v6.42.611</a>
+                    <a href="https://github.com/Ragowit/psn100/releases">v6.42.612</a>
                 </div>
             </div>
         </footer>
