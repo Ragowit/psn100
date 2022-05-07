@@ -267,7 +267,7 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR08982_00' AND te.group_id = 'default' AND te.order_id = 18)
             OR (te.np_communication_id = 'NPWR08982_00' AND te.group_id = 'default' AND te.order_id = 30)";
         // Five Nights at Freddy's 2
-        $sql .= " OR (te.np_communication_id = 'NPWR19583_00' AND te.group_id = 'default' AND te.order_id = 7)";
+        $sql .= " OR (te.np_communication_id = 'NPWR19583_00' AND te.group_id = 'default' AND te.order_id = 7 AND te.earned_date < '2022-04-01')";
         // Infinity Runner
         $sql .= " OR (te.np_communication_id = 'NPWR09492_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR09492_00' AND te.group_id = 'default' AND te.order_id = 55)";
