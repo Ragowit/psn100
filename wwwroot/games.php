@@ -97,6 +97,8 @@ $offset = ($page - 1) * $limit;
                             echo "<tr class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\">";
                         } elseif ($game["status"] == 3) {
                             echo "<tr class=\"table-warning\" title=\"This game is obsolete, no trophies will be accounted for on any leaderboard.\">";
+                        } elseif ($game["status"] == 4) {
+                            echo "<tr class=\"table-warning\" title=\"This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.\">";
                         } elseif (isset($playerGames) && array_key_exists($game["np_communication_id"], $playerGames) && $playerGames[$game["np_communication_id"]] == 100) {
                             echo "<tr class=\"table-success\">";
                         } else {
@@ -140,6 +142,8 @@ $offset = ($page - 1) * $limit;
                                 echo "<span class=\"badge badge-pill badge-warning\">Delisted</span>";
                             } elseif ($game["status"] == 3) {
                                 echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
+                            } elseif ($game["status"] == 4) {
+                                echo "<span class=\"badge badge-pill badge-warning\">Delisted &amp; Obsolete</span>";
                             }
                             ?>
                             </td>

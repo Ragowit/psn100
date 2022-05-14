@@ -189,6 +189,8 @@ $offset = ($page - 1) * $limit;
                                 $trClass = " class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\"";
                             } elseif ($playerGame["status"] == 3) {
                                 $trClass = " class=\"table-warning\" title=\"This game is obsolete, no trophies will be accounted for on any leaderboard.\"";
+                            } elseif ($playerGame["status"] == 4) {
+                                $trClass = " class=\"table-warning\" title=\"This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.\"";
                             } elseif ($playerGame["progress"] == 100) {
                                 $trClass = " class=\"table-success\"";
                             } ?>
@@ -267,6 +269,8 @@ $offset = ($page - 1) * $limit;
                                         echo "<span class=\"badge badge-pill badge-warning\">Delisted</span>";
                                     } elseif ($playerGame["status"] == 3) {
                                         echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
+                                    } elseif ($playerGame["status"] == 4) {
+                                        echo "<span class=\"badge badge-pill badge-warning\">Delisted &amp; Obsolete</span>";
                                     }
                                     ?>
                                 </td>

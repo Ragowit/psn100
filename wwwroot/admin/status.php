@@ -43,6 +43,8 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
         $statusText = "delisted";
     } elseif ($status == 3) {
         $statusText = "obsolete";
+    } elseif ($status == 4) {
+        $statusText = "delisted &amp; obsolete";
     } else {
         $statusText = "normal";
     }
@@ -69,6 +71,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                 <option value="0">Normal</option>
                 <option value="1">Delisted</option>
                 <option value="3">Obsolete</option>
+                <option value="4">Delisted &amp; Obsolete</option>
             </select><br><br>
             <input type="submit" value="Submit">
         </form>

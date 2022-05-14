@@ -422,6 +422,9 @@ require_once("header.php");
                             case 3:
                                 echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
                                 break;
+                            case 4:
+                                echo "<span class=\"badge badge-pill badge-warning\">Delisted &amp; Obsolete</span>";
+                                break;
                             default:
                                 echo number_format($rarityPoints) ." Rarity Points";
                         }
