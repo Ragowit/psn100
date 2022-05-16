@@ -321,6 +321,15 @@ require_once("../init.php");
         // Alien Spidy
         $sql .= " OR (te.np_communication_id = 'NPWR03634_00' AND te.group_id = 'default' AND te.order_id = 6)
             OR (te.np_communication_id = 'NPWR03634_00' AND te.group_id = 'default' AND te.order_id = 11)";
+        // Bodycheck
+        $sql .= " OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 0)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 4)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 5)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 9)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 12)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 15)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 29)
+            OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 35)";
         $sql .= ") AND p.status != 1 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name";
 
