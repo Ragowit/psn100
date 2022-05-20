@@ -106,13 +106,13 @@ $offset = ($page - 1) * $limit;
                             <td class="text-center">
                                 <?= $trophy["rarity_percent"]; ?>%<br>
                                 <?php
-                                if ($trophy["rarity_percent"] <= 0.50) {
+                                if ($trophy["rarity_percent"] <= 0.02) {
                                     echo "Legendary";
-                                } elseif ($trophy["rarity_percent"] <= 2.50) {
+                                } elseif ($trophy["rarity_percent"] <= 0.2) {
                                     echo "Epic";
-                                } elseif ($trophy["rarity_percent"] <= 10.00) {
+                                } elseif ($trophy["rarity_percent"] <= 2) {
                                     echo "Rare";
-                                } elseif ($trophy["rarity_percent"] <= 25.00) {
+                                } elseif ($trophy["rarity_percent"] <= 20) {
                                     echo "Uncommon";
                                 } else {
                                     echo "Common";

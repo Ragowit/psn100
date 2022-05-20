@@ -128,11 +128,11 @@ do {
             SET
                 t.rarity_percent =(rarity.trophy_owners / 50000) * 100,
                 t.rarity_name = CASE
-                    WHEN (rarity.trophy_owners / 50000) * 100 > 25 THEN 'COMMON'
-                    WHEN (rarity.trophy_owners / 50000) * 100 <= 25 AND (rarity.trophy_owners / 50000) * 100 > 10 THEN 'UNCOMMON'
-                    WHEN (rarity.trophy_owners / 50000) * 100 <= 10 AND (rarity.trophy_owners / 50000) * 100 > 2.5 THEN 'RARE'
-                    WHEN (rarity.trophy_owners / 50000) * 100 <= 2.5 AND (rarity.trophy_owners / 50000) * 100 > 0.5 THEN 'EPIC'
-                    WHEN (rarity.trophy_owners / 50000) * 100 <= 0.5 THEN 'LEGENDARY'
+                    WHEN (rarity.trophy_owners / 50000) * 100 > 20 THEN 'COMMON'
+                    WHEN (rarity.trophy_owners / 50000) * 100 <= 20 AND (rarity.trophy_owners / 50000) * 100 > 2 THEN 'UNCOMMON'
+                    WHEN (rarity.trophy_owners / 50000) * 100 <= 2 AND (rarity.trophy_owners / 50000) * 100 > 0.2 THEN 'RARE'
+                    WHEN (rarity.trophy_owners / 50000) * 100 <= 0.2 AND (rarity.trophy_owners / 50000) * 100 > 0.02 THEN 'EPIC'
+                    WHEN (rarity.trophy_owners / 50000) * 100 <= 0.02 THEN 'LEGENDARY'
                     ELSE 'NONE'
                 END
             WHERE
