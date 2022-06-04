@@ -93,53 +93,35 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
             $progress = 99;
         }
     }
-    $query = $database->prepare("INSERT INTO trophy_group_player
-                    (
-                                np_communication_id,
-                                group_id,
-                                account_id,
-                                bronze,
-                                silver,
-                                gold,
-                                platinum,
-                                progress
-                    )
-                    VALUES
-                    (
-                                :np_communication_id,
-                                :group_id,
-                                :account_id,
-                                :bronze,
-                                :silver,
-                                :gold,
-                                :platinum,
-                                :progress
-                    )
-        on duplicate KEY
-        UPDATE bronze=VALUES
-               (
-                      bronze
-               )
-               ,
-               silver=VALUES
-               (
-                      silver
-               )
-               ,
-               gold=VALUES
-               (
-                      gold
-               )
-               ,
-               platinum=VALUES
-               (
-                      platinum
-               )
-               ,
-               progress=VALUES
-               (
-                      progress
-               )");
+    $query = $database->prepare("INSERT INTO
+            trophy_group_player (
+                np_communication_id,
+                group_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress
+            )
+        VALUES
+            (
+                :np_communication_id,
+                :group_id,
+                :account_id,
+                :bronze,
+                :silver,
+                :gold,
+                :platinum,
+                :progress
+            ) AS new ON DUPLICATE KEY
+        UPDATE
+            bronze = new.bronze,
+            silver = new.silver,
+            gold = new.gold,
+            platinum = new.platinum,
+            progress = new.progress
+    ");
     $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":group_id", $groupId, PDO::PARAM_STR);
     $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
@@ -686,44 +668,30 @@ while (true) {
     $plus = (bool)$user->hasPlus();
 
     // Add/update player into database
-    $query = $database->prepare("INSERT INTO player
-                    (
-                                account_id,
-                                online_id,
-                                country,
-                                avatar_url,
-                                plus,
-                                about_me
-                    )
-                    VALUES
-                    (
-                                :account_id,
-                                :online_id,
-                                :country,
-                                :avatar_url,
-                                :plus,
-                                :about_me
-                    )
-        on duplicate KEY
-        UPDATE online_id=VALUES
-            (
-                    online_id
+    $query = $database->prepare("INSERT INTO
+            player (
+                account_id,
+                online_id,
+                country,
+                avatar_url,
+                plus,
+                about_me
             )
-            ,
-            avatar_url=VALUES
+        VALUES
             (
-                    avatar_url
-            )
-            ,
-            plus=VALUES
-            (
-                    plus
-            )
-            ,
-            about_me=VALUES
-            (
-                    about_me
-            )");
+                :account_id,
+                :online_id,
+                :country,
+                :avatar_url,
+                :plus,
+                :about_me
+            ) AS new ON DUPLICATE KEY
+        UPDATE
+            online_id = new.online_id,
+            avatar_url = new.avatar_url,
+            plus = new.plus,
+            about_me = new.about_me
+    ");
     $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
     $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
     $query->bindParam(":country", strtolower($user->country()), PDO::PARAM_STR);
