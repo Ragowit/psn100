@@ -348,186 +348,200 @@ while (true) {
 
     // Get our queue.
     // #1 - Users added from the front page, ordered by time entered
-    // #2 - Top 10k players who haven't been updated within a week, ordered by the oldest one
+    // #2 - Top 5k players who haven't been updated within a week, ordered by the oldest one
     // #3 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
-    // #4 - Oldest scanned player
+    // #4 - Oldest scanned player who is not tagged as a cheater
     $query = $database->prepare("SELECT
             online_id,
-            `offset`
+            `offset`,
+            account_id
         FROM
             (
-            SELECT
-                1 AS tier,
-                online_id,
-                request_time,
-                `offset`
-            FROM
-                player_queue
-            WHERE
-                request_time < '2030-12-25 00:00:00'
-            UNION ALL
-            SELECT
-                2 AS tier,
-                online_id,
-                last_updated_date,
-                0 AS `offset`
-            FROM
-                player
-            WHERE
-                (
-                `rank` <= 5000
-                OR rarity_rank <= 5000
-                )
-                AND last_updated_date < NOW() - INTERVAL 7 DAY
-                AND `status` = 0
-            UNION ALL
-            SELECT
-                3 AS tier,
-                online_id,
-                request_time,
-                `offset`
-            FROM
-                player_queue
-            WHERE
-                request_time >= '2030-12-25 00:00:00'
-            UNION ALL
-            SELECT
-                4 AS tier,
-                online_id,
-                last_updated_date,
-                0 AS `offset`
-            FROM
-                player
+                SELECT
+                    1 AS tier,
+                    pq.online_id,
+                    pq.request_time,
+                    pq.offset,
+                    p.account_id
+                FROM
+                    player_queue pq
+                    LEFT JOIN player p ON p.online_id = pq.online_id
+                WHERE
+                    pq.request_time < '2030-12-25 00:00:00'
+                UNION ALL
+                SELECT
+                    2 AS tier,
+                    online_id,
+                    last_updated_date,
+                    0 AS `offset`,
+                    account_id
+                FROM
+                    player
+                WHERE
+                    (
+                        `rank` <= 5000
+                        OR rarity_rank <= 5000
+                    )
+                    AND last_updated_date < NOW() - INTERVAL 7 DAY
+                    AND `status` = 0
+                UNION ALL
+                SELECT
+                    3 AS tier,
+                    pq.online_id,
+                    pq.request_time,
+                    pq.offset,
+                    p.account_id
+                FROM
+                    player_queue pq
+                    LEFT JOIN player p ON p.online_id = pq.online_id
+                WHERE
+                    pq.request_time >= '2030-12-25 00:00:00'
+                UNION ALL
+                SELECT
+                    4 AS tier,
+                    online_id,
+                    last_updated_date,
+                    0 AS `offset`,
+                    account_id
+                FROM
+                    player
+                WHERE
+                    `status` != 1
             ) a
         ORDER BY
             tier,
             request_time,
             online_id
         LIMIT
-            1");
+            1
+    ");
     $query->execute();
     $player = $query->fetch();
 
     // Initialize the current player
     try {
-        // Search the user
-        unset($user);
-        $userFound = false;
-        $userCounter = 0;
+        if (is_numeric($player["account_id"])) {
+            $user = $client->users()->find($player["account_id"]);
+        } else {
+            // Search the user
+            unset($user);
+            $userFound = false;
+            $userCounter = 0;
 
-        foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
-            if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
-                $user = $userSearchResult;
-                $userFound = true;
+            foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
+                if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
+                    $user = $userSearchResult;
+                    $userFound = true;
 
-                // To test for exception "Resource not found". Only user known is "FMA_Samurai (6787199674967195080)"
-                $user->aboutMe();
+                    // To test for exception "Resource not found". Only user known is "FMA_Samurai (6787199674967195080)"
+                    $user->aboutMe();
 
-                break;
+                    break;
+                }
+
+                // Limit to the first 50 search results
+                $userCounter++;
+                if ($userCounter >= 50) {
+                    break;
+                }
             }
 
-            // Limit to the first 50 search results
-            $userCounter++;
-            if ($userCounter >= 50) {
-                break;
+            if (!$userFound) {
+                // User not found, set as private and remove from queue.
+                $query = $database->prepare("UPDATE
+                        player
+                    SET
+                        `status` = 3,
+                        last_updated_date = NOW()
+                    WHERE
+                        online_id = :online_id
+                        AND `status` != 1
+                    ");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
+
+                $query = $database->prepare("DELETE
+                    FROM
+                        player_queue
+                    WHERE
+                        online_id = :online_id");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
+
+                continue;
             }
-        }
+            
+            if (isset($user) && $user->token() === "token_invalidated:deleted") {
+                // This user have been deleted from Sony
+                $message = "Sony have deleted ". $player["online_id"] .".";
+                $query = $database->prepare("INSERT INTO log(message)
+                    VALUES(:message)");
+                $query->bindParam(":message", $message, PDO::PARAM_STR);
+                $query->execute();
 
-        if (!$userFound) {
-            // User not found, set as private and remove from queue.
-            $query = $database->prepare("UPDATE
-                    player
-                SET
-                    `status` = 3,
-                    last_updated_date = NOW()
-                WHERE
-                    online_id = :online_id
-                    AND `status` != 1
-                ");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
+                $query = $database->prepare("DELETE
+                    FROM
+                        trophy_earned
+                    WHERE
+                        account_id =(
+                        SELECT
+                            account_id
+                        FROM
+                            player
+                        WHERE
+                            online_id = :online_id
+                    )");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
 
-            $query = $database->prepare("DELETE
-                FROM
-                    player_queue
-                WHERE
-                    online_id = :online_id");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
+                $query = $database->prepare("DELETE
+                    FROM
+                        trophy_group_player
+                    WHERE
+                        account_id =(
+                        SELECT
+                            account_id
+                        FROM
+                            player
+                        WHERE
+                            online_id = :online_id
+                    )");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
 
-            continue;
-        }
-        
-        if (isset($user) && $user->token() === "token_invalidated:deleted") {
-            // This user have been deleted from Sony
-            $message = "Sony have deleted ". $player["online_id"] .".";
-            $query = $database->prepare("INSERT INTO log(message)
-                VALUES(:message)");
-            $query->bindParam(":message", $message, PDO::PARAM_STR);
-            $query->execute();
+                $query = $database->prepare("DELETE
+                    FROM
+                        trophy_title_player
+                    WHERE
+                        account_id =(
+                        SELECT
+                            account_id
+                        FROM
+                            player
+                        WHERE
+                            online_id = :online_id
+                    )");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
 
-            $query = $database->prepare("DELETE
-                FROM
-                    trophy_earned
-                WHERE
-                    account_id =(
-                    SELECT
-                        account_id
+                $query = $database->prepare("DELETE
                     FROM
                         player
                     WHERE
-                        online_id = :online_id
-                )");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
+                        online_id = :online_id");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
 
-            $query = $database->prepare("DELETE
-                FROM
-                    trophy_group_player
-                WHERE
-                    account_id =(
-                    SELECT
-                        account_id
+                $query = $database->prepare("DELETE
                     FROM
-                        player
+                        player_queue
                     WHERE
-                        online_id = :online_id
-                )");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
+                        online_id = :online_id");
+                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
 
-            $query = $database->prepare("DELETE
-                FROM
-                    trophy_title_player
-                WHERE
-                    account_id =(
-                    SELECT
-                        account_id
-                    FROM
-                        player
-                    WHERE
-                        online_id = :online_id
-                )");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE
-                FROM
-                    player
-                WHERE
-                    online_id = :online_id");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE
-                FROM
-                    player_queue
-                WHERE
-                    online_id = :online_id");
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-            $query->execute();
-
-            continue;
+                continue;
+            }
         }
     } catch (Exception $e) {
         // $e->getMessage() == "User not found", and another "Resource not found" error
@@ -706,18 +720,15 @@ while (true) {
         $level = $user->trophySummary()->level();
     } catch (Exception $e) {
         // Profile seem to be private, set status to 3 to hide all trophies.
-        $query = $database->prepare("UPDATE player
-                SET    status = 3,
-                    `rank` = 0,
-                    rank_last_week = 0,
-                    rarity_rank = 0,
-                    rarity_rank_last_week = 0,
-                    rank_country = 0,
-                    rank_country_last_week = 0,
-                    rarity_rank_country = 0,
-                    rarity_rank_country_last_week = 0
-                WHERE  account_id = :account_id 
-                    AND status != 1");
+        $query = $database->prepare("UPDATE
+                player
+            SET
+                status = 3,
+                last_updated_date = NOW()
+            WHERE
+                account_id = :account_id
+                AND status != 1
+        ");
         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
         $query->execute();
     }
