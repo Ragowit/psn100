@@ -348,7 +348,7 @@ while (true) {
 
     // Get our queue.
     // #1 - Users added from the front page, ordered by time entered
-    // #2 - Top 5k players who haven't been updated within a week, ordered by the oldest one
+    // #2 - Top 5k or players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
     // #3 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
     // #4 - Oldest scanned player who is not tagged as a cheater
     $query = $database->prepare("SELECT
@@ -381,6 +381,14 @@ while (true) {
                     (
                         `rank` <= 5000
                         OR rarity_rank <= 5000
+                        OR (
+                            `rank` >= 49750
+                            AND `rank` <= 50250
+                        )
+                        OR (
+                            `rarity_rank` >= 49750
+                            AND `rarity_rank` <= 50250
+                        )
                     )
                     AND last_updated_date < NOW() - INTERVAL 7 DAY
                     AND `status` = 0
