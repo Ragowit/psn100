@@ -430,6 +430,17 @@ while (true) {
     try {
         if (is_numeric($player["account_id"])) {
             $user = $client->users()->find($player["account_id"]);
+            // ->find() doesn't have country information, but we should have it in our database from the ->search() when user was new to us.
+            $query = $database->prepare("SELECT
+                    country
+                FROM
+                    player
+                WHERE
+                    account_id = :account_id
+            ");
+            $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+            $query->execute();
+            $country = $query->fetchColumn();
         } else {
             // Search the user
             unset($user);
@@ -440,6 +451,7 @@ while (true) {
                 if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
                     $user = $userSearchResult;
                     $userFound = true;
+                    $country = $user->country();
 
                     // To test for exception "Resource not found". Only user known is "FMA_Samurai (6787199674967195080)"
                     $user->aboutMe();
@@ -716,7 +728,7 @@ while (true) {
     ");
     $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
     $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
-    $query->bindParam(":country", strtolower($user->country()), PDO::PARAM_STR);
+    $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
     $query->bindParam(":avatar_url", $avatarFilename, PDO::PARAM_STR);
     $query->bindParam(":plus", $plus, PDO::PARAM_BOOL);
     $query->bindParam(":about_me", $user->aboutMe(), PDO::PARAM_STR);
@@ -1353,7 +1365,7 @@ while (true) {
                 p.rank_country = r.ranking
             WHERE
                 p.account_id = r.account_id");
-        $query->bindParam(":country", strtolower($user->country()), PDO::PARAM_STR);
+        $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
         $query->execute();
 
         // Update user rarity points for each game
@@ -1470,7 +1482,7 @@ while (true) {
                     p.rarity_rank_country = r.ranking
                 WHERE
                     p.account_id = r.account_id");
-        $query->bindParam(":country", strtolower($user->country()), PDO::PARAM_STR);
+        $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
         $query->execute();
     }
 
