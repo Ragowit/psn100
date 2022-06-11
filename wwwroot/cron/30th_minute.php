@@ -791,7 +791,7 @@ while (true) {
                 if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
                     $skippedGames++;
 
-                    if ($playerData["last_updated_date"] != null || $playerData["status"] == 2) { // New players have null as last updated date, and will thus continue with a full scan. As will players with hidden games, in order to find if they are unhidden.
+                    if ($playerData["last_updated_date"] != null && $playerData["status"] != 2) { // New players have null as last updated date, and will thus continue with a full scan. As will players with hidden games, in order to find if they are unhidden.
                         if ($skippedGames >= 128) {
                             // 128 skipped games, we can assume we are done with this player.
                             break 2;
