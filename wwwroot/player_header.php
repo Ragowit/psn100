@@ -188,9 +188,9 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 if ($player["status"] == 0) {
                     ?>
                     <h5>
-                        <a href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rank"]; ?> (<?= $rankTitle; ?>)</a>
+                        <a href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank"]; ?> (<?= $rankTitle; ?>)</a>
                         <br>
-                        <a href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rarity_rank"]; ?> (<?= $rarityRankTitle; ?>)</a>
+                        <a href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank"]; ?> (<?= $rarityRankTitle; ?>)</a>
                     </h5>
                     <?php
                 } else {
@@ -234,9 +234,9 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                 if ($player["status"] == 0) {
                     ?>
                     <h5>
-                        <a href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?> (<?= $rankCountryTitle; ?>)</a>
+                        <a href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?> (<?= $rankCountryTitle; ?>)</a>
                         <br>
-                        <a href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>"><?= $player["rarity_rank_country"]; ?> (<?= $rarityRankCountryTitle; ?>)</a>
+                        <a href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank_country"]; ?> (<?= $rarityRankCountryTitle; ?>)</a>
                     </h5>
                     <?php
                 } else {

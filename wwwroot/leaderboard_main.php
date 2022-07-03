@@ -89,9 +89,9 @@ $offset = ($page - 1) * $limit;
                         $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["platinum"];
                         $countryName = Locale::getDisplayRegion("-" . $player["country"], "en");
                         if (isset($_GET["player"]) && $_GET["player"] == $player["online_id"]) {
-                            echo "<tr class=\"table-success\">";
+                            echo "<tr id=\"". $player["online_id"] ."\" class=\"table-success\">";
                         } else {
-                            echo "<tr>";
+                            echo "<tr id=\"". $player["online_id"] ."\">";
                         }
 
                         if (isset($_GET["country"])) {
