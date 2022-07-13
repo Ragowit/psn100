@@ -139,112 +139,181 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         $unearnedTrophies = $query->fetchColumn();
         ?>
         <div class="row">
-            <div class="col-2 text-center">
-                <h5><?= number_format($numberOfGames); ?></h5>
-                Games
+            <div class="col-3 text-center">
+                <div class="card">
+                    <div class="card-header">Games</div>
+                    <div class="card-body">
+                        <h5 class="card-text"><?= number_format($numberOfGames); ?></h5>
+                    </div>
+                </div>
             </div>
-            <div class="col-2 text-center">
-                <h5><?= number_format($numberOfCompletedGames); ?></h5>
-                100%
+            <div class="col-3 text-center">
+                <div class="card">
+                    <div class="card-header">100%</div>
+                    <div class="card-body">
+                        <h5 class="card-text"><?= number_format($numberOfCompletedGames); ?></h5>
+                    </div>
+                </div>
             </div>
-            <div class="col-2 text-center">
-                <h5><?= $averageProgress; ?>%</h5>
-                Avg. Progress
+            <div class="col-3 text-center">
+                <div class="card">
+                    <div class="card-header">Avg. Progress</div>
+                    <div class="card-body">
+                        <h5 class="card-text"><?= $averageProgress; ?>%</h5>
+                    </div>
+                </div>
             </div>
-            <div class="col-2 text-center">
-                <h5><?= number_format($unearnedTrophies ?? 0); ?></h5>
-                Unearned Trophies
+            <div class="col-3 text-center">
+                <div class="card">
+                    <div class="card-header">Unearned Trophies</div>
+                    <div class="card-body">
+                        <h5 class="card-text"><?= number_format($unearnedTrophies ?? 0); ?></h5>
+                    </div>
+                </div>
             </div>
-            <div class="col-2 text-center">
-                <?php
-                if ($player["rank_last_week"] == 0) {
-                    $rankTitle = "New!";
-                } else {
-                    $delta = $player["rank_last_week"] - $player["rank"];
+        </div>
 
-                    if ($delta < 0) {
-                        $rankTitle = $delta;
-                    } elseif ($delta > 0) {
-                        $rankTitle = "+". $delta;
-                    } else {
-                        $rankTitle = "=";
-                    }
-                }
+        <div class="row">
+            <div class="col-6 text-center">
+                <div class="card">
+                    <div class="card-header">Main Leaderboard</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <h5 class="card-title">World Rank</h5>
+                                <?php
+                                // World Rank
+                                if ($player["rank_last_week"] == 0) {
+                                    $rankTitle = "New!";
+                                } else {
+                                    $delta = $player["rank_last_week"] - $player["rank"];
 
-                if ($player["rarity_rank_last_week"] == 0) {
-                    $rarityRankTitle = "New!";
-                } else {
-                    $delta = $player["rarity_rank_last_week"] - $player["rarity_rank"];
+                                    if ($delta < 0) {
+                                        $rankTitle = $delta;
+                                    } elseif ($delta > 0) {
+                                        $rankTitle = "+". $delta;
+                                    } else {
+                                        $rankTitle = "=";
+                                    }
+                                }
 
-                    if ($delta < 0) {
-                        $rarityRankTitle = $delta;
-                    } elseif ($delta > 0) {
-                        $rarityRankTitle = "+". $delta;
-                    } else {
-                        $rarityRankTitle = "=";
-                    }
-                }
+                                if ($player["status"] == 0) {
+                                    ?>
+                                    <p class="card-text">
+                                        <a href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank"]; ?> (<?= $rankTitle; ?>)</a>
+                                    </p>
+                                    <?php
+                                } else {
+                                    ?>
+                                    <p class="card-text">N/A</p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+                            <div class="col-6">
+                                <h5 class="card-title">Country Rank</h5>
+                                <?php
+                                // Country Rank
+                                if ($player["rank_country_last_week"] == 0) {
+                                    $rankCountryTitle = "New!";
+                                } else {
+                                    $delta = $player["rank_country_last_week"] - $player["rank_country"];
 
-                if ($player["status"] == 0) {
-                    ?>
-                    <h5>
-                        <a href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank"]; ?> (<?= $rankTitle; ?>)</a>
-                        <br>
-                        <a href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank"]; ?> (<?= $rarityRankTitle; ?>)</a>
-                    </h5>
-                    <?php
-                } else {
-                    ?>
-                    <h5>N/A</h5>
-                    <?php
-                }
-                ?>
-                World Rank
+                                    if ($delta < 0) {
+                                        $rankCountryTitle = $delta;
+                                    } elseif ($delta > 0) {
+                                        $rankCountryTitle = "+". $delta;
+                                    } else {
+                                        $rankCountryTitle = "=";
+                                    }
+                                }
+
+                                if ($player["status"] == 0) {
+                                    ?>
+                                    <p class="card-text">
+                                        <a href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?> (<?= $rankCountryTitle; ?>)</a>
+                                </p>
+                                    <?php
+                                } else {
+                                    ?>
+                                    <p class="card-text">N/A</p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-2 text-center">
-                <?php
-                if ($player["rank_country_last_week"] == 0) {
-                    $rankCountryTitle = "New!";
-                } else {
-                    $delta = $player["rank_country_last_week"] - $player["rank_country"];
+            <div class="col-6 text-center">
+                <div class="card">
+                    <div class="card-header">Rarity Leaderboard</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <h5 class="card-title">World Rank</h5>
+                                <?php
+                                // World Rank
+                                if ($player["rarity_rank_last_week"] == 0) {
+                                    $rarityRankTitle = "New!";
+                                } else {
+                                    $delta = $player["rarity_rank_last_week"] - $player["rarity_rank"];
 
-                    if ($delta < 0) {
-                        $rankCountryTitle = $delta;
-                    } elseif ($delta > 0) {
-                        $rankCountryTitle = "+". $delta;
-                    } else {
-                        $rankCountryTitle = "=";
-                    }
-                }
+                                    if ($delta < 0) {
+                                        $rarityRankTitle = $delta;
+                                    } elseif ($delta > 0) {
+                                        $rarityRankTitle = "+". $delta;
+                                    } else {
+                                        $rarityRankTitle = "=";
+                                    }
+                                }
 
-                if ($player["rarity_rank_country_last_week"] == 0) {
-                    $rarityRankCountryTitle = "New!";
-                } else {
-                    $delta = $player["rarity_rank_country_last_week"] - $player["rarity_rank_country"];
+                                if ($player["status"] == 0) {
+                                    ?>
+                                    <p class="card-text">
+                                        <a href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank"]; ?> (<?= $rarityRankTitle; ?>)</a>
+                                    </p>
+                                    <?php
+                                } else {
+                                    ?>
+                                    <p class="card-text">N/A</p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+                            <div class="col-6">
+                                <h5 class="card-title">Country Rank</h5>
+                                <?php
+                                // Country Rank
+                                if ($player["rarity_rank_country_last_week"] == 0) {
+                                    $rarityRankCountryTitle = "New!";
+                                } else {
+                                    $delta = $player["rarity_rank_country_last_week"] - $player["rarity_rank_country"];
 
-                    if ($delta < 0) {
-                        $rarityRankCountryTitle = $delta;
-                    } elseif ($delta > 0) {
-                        $rarityRankCountryTitle = "+". $delta;
-                    } else {
-                        $rarityRankCountryTitle = "=";
-                    }
-                }
+                                    if ($delta < 0) {
+                                        $rarityRankCountryTitle = $delta;
+                                    } elseif ($delta > 0) {
+                                        $rarityRankCountryTitle = "+". $delta;
+                                    } else {
+                                        $rarityRankCountryTitle = "=";
+                                    }
+                                }
 
-                if ($player["status"] == 0) {
-                    ?>
-                    <h5>
-                        <a href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?> (<?= $rankCountryTitle; ?>)</a>
-                        <br>
-                        <a href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank_country"]; ?> (<?= $rarityRankCountryTitle; ?>)</a>
-                    </h5>
-                    <?php
-                } else {
-                    ?>
-                    <h5>N/A</h5>
-                    <?php
-                }
-                ?>
-                Country Rank
+                                if ($player["status"] == 0) {
+                                    ?>
+                                    <p class="card-text">
+                                        <a href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank_country"]; ?> (<?= $rarityRankCountryTitle; ?>)</a>
+                                </p>
+                                    <?php
+                                } else {
+                                    ?>
+                                    <p class="card-text">N/A</p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
