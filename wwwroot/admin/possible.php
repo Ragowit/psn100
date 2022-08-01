@@ -240,8 +240,6 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR13751_00' AND te.group_id = 'default' AND te.order_id = 48 AND te.earned_date < '2020-09-24')";
         // Solitaire
         $sql .= " OR (te.np_communication_id = 'NPWR10988_00' AND te.group_id = 'default' AND te.order_id = 2)";
-        // Sparc
-        $sql .= " OR (te.np_communication_id = 'NPWR12650_00' AND te.group_id = 'default' AND te.order_id = 8 AND te.earned_date >= '2019-05-01')";
         // Tango Fiesta
         $sql .= " OR (te.np_communication_id = 'NPWR11297_00' AND te.group_id = 'default' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR11297_00' AND te.group_id = 'default' AND te.order_id = 5)
