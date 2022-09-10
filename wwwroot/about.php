@@ -26,7 +26,7 @@ require_once("header.php");
                     $query->execute();
                     $scannedNewPlayers = $query->fetchColumn();
                     ?>
-                    <?= $scannedPlayers; ?> players were scanned in the last 24 hours, and <?= $scannedNewPlayers; ?> new players added to the leadersboards this week!
+                    <?= $scannedPlayers; ?> players were scanned in the last 24 hours, and <?= $scannedNewPlayers; ?> new players added to the leaderboards this week!
 
                     <table class="table table-responsive table-striped">
                         <tr>
