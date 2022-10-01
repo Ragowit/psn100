@@ -348,9 +348,10 @@ while (true) {
 
     // Get our queue.
     // #1 - Users added from the front page, ordered by time entered
-    // #2 - Top 5k or players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
-    // #3 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
-    // #4 - Oldest scanned player who is not tagged as a cheater
+    // #2 - Top 100 players who haven't been updated within a day, ordered by the oldest one.
+    // #3 - Top 5k or players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
+    // #4 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
+    // #5 - Oldest scanned player who is not tagged as a cheater
     $query = $database->prepare("SELECT
             online_id,
             `offset`,
@@ -379,6 +380,22 @@ while (true) {
                     player
                 WHERE
                     (
+                        `rank` <= 100
+                        OR rarity_rank <= 100
+                    )
+                    AND last_updated_date < NOW() - INTERVAL 1 DAY
+                    AND `status` = 0
+                UNION ALL
+                SELECT
+                    3 AS tier,
+                    online_id,
+                    last_updated_date,
+                    0 AS `offset`,
+                    account_id
+                FROM
+                    player
+                WHERE
+                    (
                         `rank` <= 5000
                         OR rarity_rank <= 5000
                         OR (
@@ -394,7 +411,7 @@ while (true) {
                     AND `status` = 0
                 UNION ALL
                 SELECT
-                    3 AS tier,
+                    4 AS tier,
                     pq.online_id,
                     pq.request_time,
                     pq.offset,
@@ -406,7 +423,7 @@ while (true) {
                     pq.request_time >= '2030-12-25 00:00:00'
                 UNION ALL
                 SELECT
-                    4 AS tier,
+                    5 AS tier,
                     online_id,
                     last_updated_date,
                     0 AS `offset`,
