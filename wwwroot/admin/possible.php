@@ -407,5 +407,56 @@ require_once("../init.php");
             echo "<a href=\"/game/5703-end-of-eternity/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+        <br>
+        Catherine: Full Body<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, TIMESTAMPDIFF(SECOND, first_trophy, second_trophy) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR17582_00' AND group_id = 'default' AND order_id = 50) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR17582_00' AND group_id = 'default' AND order_id = 51) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 0
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/4556-catherine-full-body/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
+        <br>
+        凱薩琳FULL BODY<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, TIMESTAMPDIFF(SECOND, first_trophy, second_trophy) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR17415_00' AND group_id = 'default' AND order_id = 50) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR17415_00' AND group_id = 'default' AND order_id = 51) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 0
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/7556-kai-sa-linfull-body/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
+        <br>
+        キャサリン・フルボディ<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, TIMESTAMPDIFF(SECOND, first_trophy, second_trophy) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR14836_00' AND group_id = 'default' AND order_id = 50) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR14836_00' AND group_id = 'default' AND order_id = 51) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 0
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/6489-kyasarinfurubodi/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
     </body>
 </html>
