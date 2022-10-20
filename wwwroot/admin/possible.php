@@ -478,18 +478,40 @@ require_once("../init.php");
         <br>
         Terminator Salvation<br>
         <?php
-        $query = $database->prepare("SELECT account_id, online_id, TIMESTAMPDIFF(SECOND, first_trophy, second_trophy) time_difference
-            FROM player p
-            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00623_00' AND group_id = 'default' AND order_id = 8) trophy_start USING (account_id)
-            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00623_00' AND group_id = 'default' AND order_id = 9) trophy_end USING (account_id)
-            WHERE p.status != 1
-            HAVING time_difference <= 0
-            ORDER BY online_id");
+        $query = $database->prepare("SELECT
+                account_id,
+                online_id,
+                trophy_count
+            FROM
+                player p
+            JOIN(
+                SELECT account_id,
+                    COUNT(account_id) AS trophy_count
+                FROM
+                    trophy_earned te
+                WHERE
+                    np_communication_id = 'NPWR00623_00' AND group_id = 'default' AND order_id != 9 AND earned_date >=(
+                    SELECT
+                        earned_date
+                    FROM
+                        trophy_earned
+                    WHERE
+                        account_id = te.account_id AND np_communication_id = 'NPWR00623_00' AND group_id = 'default' AND order_id = 9
+                )
+            GROUP BY
+                account_id
+            ) trophy_counter USING(account_id)
+            WHERE
+                p.status != 1
+            HAVING
+                trophy_count >= 6
+            ORDER BY
+                online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
 
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/294-terminator-salvation/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/294-terminator-salvation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
     </body>
