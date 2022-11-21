@@ -111,7 +111,7 @@ require_once("header.php");
                     ?>
                     <div id="<?= $trophyGroup["group_id"]; ?>" class="row" style="background: #b8daff;">
                         <div class="col-auto">
-                            <img src="/img/group/<?= $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%); margin: 10px 0px;" />
+                            <img src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%); margin: 10px 0px;" />
                         </div>
                         <div class="col align-self-center">
                             <b><?= htmlentities($trophyGroup["name"]); ?></b><br>
@@ -248,7 +248,7 @@ require_once("header.php");
                                 <tr<?= $trClass; ?>>
                                     <td>
                                         <div style="height: 64px; width: 64px;" class="d-flex align-items-center justify-content-center">
-                                            <img src="/img/trophy/<?= $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
+                                            <img src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
                                         </div>
                                     </td>
                                     <td style="width: 100%;">
@@ -348,7 +348,7 @@ require_once("header.php");
             <div class="col-3">
                 <div class="row">
                     <div class="col-12 text-center">
-                        <img src="/img/title/<?= $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="250" />
+                        <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="250" />
                     </div>
                 </div>
 

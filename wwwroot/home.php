@@ -43,7 +43,7 @@ require_once("header.php");
                                 <tr>
                                     <td class="text-center" width="150">
                                         <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
-                                            <img src="/img/title/<?= $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                            <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                                         </a>
                                         <br>
                                         <?php
@@ -89,7 +89,7 @@ require_once("header.php");
                                 <tr>
                                     <td class="text-center" width="150">
                                         <a href="/game/<?= $dlc["id"] ."-". slugify($dlc["game_name"]); ?>#<?= $dlc["group_id"]; ?>">
-                                            <img src="/img/group/<?= $dlc["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                            <img src="/img/group/<?= ($dlc["icon_url"] == ".png") ? ((str_contains($dlc["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $dlc["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                                         </a>
                                         <br>
                                         <?php
@@ -134,7 +134,7 @@ require_once("header.php");
                                 <tr>
                                     <td class="text-center" width="150">
                                         <a href="/game/<?= $popularGame["id"] ."-". slugify($popularGame["name"]); ?>">
-                                            <img src="/img/title/<?= $popularGame["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                            <img src="/img/title/<?= ($popularGame["icon_url"] == ".png") ? ((str_contains($popularGame["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $popularGame["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                                         </a>
                                         <br>
                                         <?php

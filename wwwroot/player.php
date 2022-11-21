@@ -197,7 +197,7 @@ $offset = ($page - 1) * $limit;
                             <tr<?= $trClass; ?>>
                                 <td scope="row">
                                     <a href="/game/<?= $playerGame["id"] ."-". slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
-                                        <img src="/img/title/<?= $playerGame["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                        <img src="/img/title/<?= ($playerGame["icon_url"] == ".png") ? ((str_contains($playerGame["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $playerGame["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                                     </a>
                                 </td>
                                 <td>
