@@ -328,6 +328,10 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 15)
             OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 29)
             OR (te.np_communication_id = 'NPWR06410_00' AND te.group_id = 'default' AND te.order_id = 35)";
+        // The Binding of Isaac: Rebirth (PS4/Vita - Japan)
+        $sql .= " OR (te.np_communication_id = 'NPWR09566_00' AND te.group_id = 'default' AND te.order_id = 0)
+            OR (te.np_communication_id = 'NPWR09566_00' AND te.group_id = 'default' AND te.order_id = 56)
+            OR (te.np_communication_id = 'NPWR09566_00' AND te.group_id = 'default' AND te.order_id = 58)";
         $sql .= ") AND p.status != 1 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name";
 
