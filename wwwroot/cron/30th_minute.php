@@ -508,77 +508,77 @@ while (true) {
                 continue;
             }
             
-            if (isset($user) && $user->token() === "token_invalidated:deleted") {
-                // This user have been deleted from Sony
-                $message = "Sony have deleted ". $player["online_id"] .".";
-                $query = $database->prepare("INSERT INTO log(message)
-                    VALUES(:message)");
-                $query->bindParam(":message", $message, PDO::PARAM_STR);
-                $query->execute();
+            // if (isset($user) && $user->token() === "token_invalidated:deleted") {
+            //     // This user have been deleted from Sony
+            //     $message = "Sony have deleted ". $player["online_id"] .".";
+            //     $query = $database->prepare("INSERT INTO log(message)
+            //         VALUES(:message)");
+            //     $query->bindParam(":message", $message, PDO::PARAM_STR);
+            //     $query->execute();
 
-                $query = $database->prepare("DELETE
-                    FROM
-                        trophy_earned
-                    WHERE
-                        account_id =(
-                        SELECT
-                            account_id
-                        FROM
-                            player
-                        WHERE
-                            online_id = :online_id
-                    )");
-                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
+            //     $query = $database->prepare("DELETE
+            //         FROM
+            //             trophy_earned
+            //         WHERE
+            //             account_id =(
+            //             SELECT
+            //                 account_id
+            //             FROM
+            //                 player
+            //             WHERE
+            //                 online_id = :online_id
+            //         )");
+            //     $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            //     $query->execute();
 
-                $query = $database->prepare("DELETE
-                    FROM
-                        trophy_group_player
-                    WHERE
-                        account_id =(
-                        SELECT
-                            account_id
-                        FROM
-                            player
-                        WHERE
-                            online_id = :online_id
-                    )");
-                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
+            //     $query = $database->prepare("DELETE
+            //         FROM
+            //             trophy_group_player
+            //         WHERE
+            //             account_id =(
+            //             SELECT
+            //                 account_id
+            //             FROM
+            //                 player
+            //             WHERE
+            //                 online_id = :online_id
+            //         )");
+            //     $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            //     $query->execute();
 
-                $query = $database->prepare("DELETE
-                    FROM
-                        trophy_title_player
-                    WHERE
-                        account_id =(
-                        SELECT
-                            account_id
-                        FROM
-                            player
-                        WHERE
-                            online_id = :online_id
-                    )");
-                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
+            //     $query = $database->prepare("DELETE
+            //         FROM
+            //             trophy_title_player
+            //         WHERE
+            //             account_id =(
+            //             SELECT
+            //                 account_id
+            //             FROM
+            //                 player
+            //             WHERE
+            //                 online_id = :online_id
+            //         )");
+            //     $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            //     $query->execute();
 
-                $query = $database->prepare("DELETE
-                    FROM
-                        player
-                    WHERE
-                        online_id = :online_id");
-                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
+            //     $query = $database->prepare("DELETE
+            //         FROM
+            //             player
+            //         WHERE
+            //             online_id = :online_id");
+            //     $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            //     $query->execute();
 
-                $query = $database->prepare("DELETE
-                    FROM
-                        player_queue
-                    WHERE
-                        online_id = :online_id");
-                $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
+            //     $query = $database->prepare("DELETE
+            //         FROM
+            //             player_queue
+            //         WHERE
+            //             online_id = :online_id");
+            //     $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            //     $query->execute();
 
-                continue;
-            }
+            //     continue;
+            // }
         }
     } catch (Exception $e) {
         // $e->getMessage() == "User not found", and another "Resource not found" error
@@ -874,7 +874,12 @@ while (true) {
                         $query->bindParam(":name", $trophyTitle->name(), PDO::PARAM_STR);
                         $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                         $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
-                        $query->bindParam(":platform", implode(",", $trophyTitle->platform()), PDO::PARAM_STR);
+                        $platforms = "";
+                        foreach ($trophyTitle->platform() as $platform) {
+                            $platforms .= $platform->value .",";
+                        }
+                        $platforms = rtrim($platforms, ",");
+                        $query->bindParam(":platform", $platforms, PDO::PARAM_STR);
                         // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                         $query->execute();
                     }
@@ -1003,7 +1008,8 @@ while (true) {
                                     $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                                     $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
                                     $query->bindParam(":hidden", $trophy->hidden(), PDO::PARAM_INT);
-                                    $query->bindParam(":type", $trophy->type(), PDO::PARAM_STR);
+                                    $trophyTypeEnumValue = $trophy->type()->value;
+                                    $query->bindParam(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
                                     $query->bindParam(":name", $trophy->name(), PDO::PARAM_STR);
                                     $query->bindParam(":detail", $trophy->detail(), PDO::PARAM_STR);
                                     $query->bindParam(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
@@ -1077,7 +1083,8 @@ while (true) {
                             //     die();
                             // }
                             
-                            if ($trophy->earned() || ($trophy->progress() != '' && intval($trophy->progress()) > 0)) {
+                            $trophyEarned = $trophy->earned();
+                            if ($trophyEarned || ($trophy->progress() != '' && intval($trophy->progress()) > 0)) {
                                 if ($trophy->earnedDateTime() === '') {
                                     $dtAsTextForInsert = null;
                                 } else {
@@ -1119,7 +1126,7 @@ while (true) {
                                     $progress = intval($trophy->progress());
                                 }
                                 $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-                                $query->bindParam(":earned", $trophy->earned(), PDO::PARAM_INT);
+                                $query->bindParam(":earned", $trophyEarned, PDO::PARAM_INT);
                                 $query->execute();
 
                                 // Check if "merge"-trophy
@@ -1169,7 +1176,7 @@ while (true) {
                                     $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                                     $query->bindParam(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
                                     $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-                                    $query->bindParam(":earned", $trophy->earned(), PDO::PARAM_INT);
+                                    $query->bindParam(":earned", $trophyEarned, PDO::PARAM_INT);
                                     $query->execute();
                                 }
                             }
