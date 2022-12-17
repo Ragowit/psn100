@@ -496,7 +496,8 @@ if (isset($_POST["game"])) {
                 $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                 $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
                 $query->bindParam(":hidden", $trophy->hidden(), PDO::PARAM_INT);
-                $query->bindParam(":type", $trophy->type(), PDO::PARAM_STR);
+                $trophyTypeEnumValue = $trophy->type()->value;
+                $query->bindParam(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
                 $query->bindParam(":name", $trophy->name(), PDO::PARAM_STR);
                 $query->bindParam(":detail", $trophy->detail(), PDO::PARAM_STR);
                 $query->bindParam(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
