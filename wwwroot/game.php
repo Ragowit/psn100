@@ -251,22 +251,22 @@ require_once("header.php");
                                                         <tr>
                                                             <td class="width: 25%;">
                                                                 <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($recentPlayer["bronze"] / $game["bronze"] * 100); ?>%; background-color: #c46438;" aria-valuenow="<?= $recentPlayer["bronze"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["bronze"]; ?>"><?= $recentPlayer["bronze"]; ?></div>
+                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["bronze"] == 0) ? 100 : ($recentPlayer["bronze"] / $game["bronze"] * 100); ?>%; background-color: #c46438;" aria-valuenow="<?= $recentPlayer["bronze"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["bronze"]; ?>"><?= $recentPlayer["bronze"]; ?></div>
                                                                 </div>
                                                             </td>
                                                             <td class="width: 25%;">
                                                                 <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($recentPlayer["silver"] / $game["silver"] * 100); ?>%; background-color: #777777;" aria-valuenow="<?= $recentPlayer["silver"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["silver"]; ?>"><?= $recentPlayer["silver"]; ?></div>
+                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["silver"] == 0) ? 100 : ($recentPlayer["silver"] / $game["silver"] * 100); ?>%; background-color: #777777;" aria-valuenow="<?= $recentPlayer["silver"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["silver"]; ?>"><?= $recentPlayer["silver"]; ?></div>
                                                                 </div>
                                                             </td>
                                                             <td class="width: 25%;">
                                                                 <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($recentPlayer["gold"] / $game["gold"] * 100); ?>%; background-color: #c2903e;" aria-valuenow="<?= $recentPlayer["gold"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["gold"]; ?>"><?= $recentPlayer["gold"]; ?></div>
+                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["gold"] == 0) ? 100 : ($recentPlayer["gold"] / $game["gold"] * 100); ?>%; background-color: #c2903e;" aria-valuenow="<?= $recentPlayer["gold"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["gold"]; ?>"><?= $recentPlayer["gold"]; ?></div>
                                                                 </div>
                                                             </td>
                                                             <td class="width: 25%;">
                                                                 <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($recentPlayer["platinum"] / $game["platinum"] * 100); ?>%; background-color: #667fb2;" aria-valuenow="<?= $recentPlayer["platinum"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["platinum"]; ?>"><?= $recentPlayer["platinum"]; ?></div>
+                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["platinum"] == 0) ? 100 : ($recentPlayer["platinum"] / $game["platinum"] * 100); ?>%; background-color: #667fb2;" aria-valuenow="<?= $recentPlayer["platinum"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["platinum"]; ?>"><?= $recentPlayer["platinum"]; ?></div>
                                                                 </div>
                                                             </td>
                                                         </tr>
