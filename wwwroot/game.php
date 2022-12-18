@@ -94,18 +94,22 @@ require_once("header.php");
 
         <!-- Game Info -->
         <div class="row">
-            <div class="col-3 text-center" style="height: 300px">
-                <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="250" />
-                <br>
-                <?php
-                foreach (explode(",", $game["platform"]) as $platform) {
-                    echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
-                }
-                ?>
-                <br>
-                Version: <?= $game["set_version"]; ?>
+            <div class="col-lg-3 col-sm-12">
+                <div class="row" style="height: 300px">
+                    <div class="col-12 text-center align-self-center">
+                        <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="250" />
+                        <br>
+                        <?php
+                        foreach (explode(",", $game["platform"]) as $platform) {
+                            echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
+                        }
+                        ?>
+                        <br>
+                        Version: <?= $game["set_version"]; ?>
+                    </div>
+                </div>
             </div>
-            <div class="col-9 align-self-center">
+            <div class="col-lg-9 col-sm-12 align-self-center">
                 <div class="row">
                     <div class="col-12 text-center">
                         <div class="progress">
