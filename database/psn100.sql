@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0-rc1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 17, 2022 at 06:00 PM
--- Server version: 8.0.28
--- PHP Version: 8.1.4
+-- Generation Time: Dec 31, 2022 at 11:29 PM
+-- Server version: 8.0.31
+-- PHP Version: 8.1.13
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -62,7 +62,8 @@ CREATE TABLE `player` (
   `rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `status` tinyint UNSIGNED NOT NULL DEFAULT '99'
+  `status` tinyint UNSIGNED NOT NULL DEFAULT '99',
+  `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -144,35 +145,27 @@ CREATE TABLE `trophy_earned` (
   `earned_date` datetime DEFAULT NULL,
   `progress` int UNSIGNED DEFAULT NULL,
   `earned` tinyint NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-PARTITION BY KEY (np_communication_id)
-(
-PARTITION p0 ENGINE=InnoDB,
-PARTITION p1 ENGINE=InnoDB,
-PARTITION p2 ENGINE=InnoDB,
-PARTITION p3 ENGINE=InnoDB,
-PARTITION p4 ENGINE=InnoDB,
-PARTITION p5 ENGINE=InnoDB,
-PARTITION p6 ENGINE=InnoDB,
-PARTITION p7 ENGINE=InnoDB,
-PARTITION p8 ENGINE=InnoDB,
-PARTITION p9 ENGINE=InnoDB,
-PARTITION p10 ENGINE=InnoDB,
-PARTITION p11 ENGINE=InnoDB,
-PARTITION p12 ENGINE=InnoDB,
-PARTITION p13 ENGINE=InnoDB,
-PARTITION p14 ENGINE=InnoDB,
-PARTITION p15 ENGINE=InnoDB,
-PARTITION p16 ENGINE=InnoDB,
-PARTITION p17 ENGINE=InnoDB,
-PARTITION p18 ENGINE=InnoDB,
-PARTITION p19 ENGINE=InnoDB,
-PARTITION p20 ENGINE=InnoDB,
-PARTITION p21 ENGINE=InnoDB,
-PARTITION p22 ENGINE=InnoDB,
-PARTITION p23 ENGINE=InnoDB,
-PARTITION p24 ENGINE=InnoDB
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `trophy_earned`
+--
+DELIMITER $$
+CREATE TRIGGER `after_insert_trophy_earned` AFTER INSERT ON `trophy_earned` FOR EACH ROW BEGIN
+    IF NEW.earned = 1 AND NEW.np_communication_id LIKE 'NPWR%' THEN
+    UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
+END IF;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `after_update_trophy_earned` AFTER UPDATE ON `trophy_earned` FOR EACH ROW BEGIN
+    IF OLD.earned <> NEW.earned AND NEW.np_communication_id LIKE 'NPWR%' THEN
+    UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
+END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -287,16 +280,16 @@ CREATE TABLE `trophy_title_player` (
 --
 CREATE TABLE `view_player_last_updated_date` (
 `account_id` bigint unsigned
-,`bronze` mediumint unsigned
-,`country` varchar(2)
-,`gold` mediumint unsigned
-,`last_updated_date` datetime
-,`level` smallint unsigned
 ,`online_id` varchar(16)
-,`platinum` mediumint unsigned
-,`points` mediumint unsigned
-,`progress` tinyint unsigned
+,`country` varchar(2)
+,`last_updated_date` datetime
+,`bronze` mediumint unsigned
 ,`silver` mediumint unsigned
+,`gold` mediumint unsigned
+,`platinum` mediumint unsigned
+,`level` smallint unsigned
+,`progress` tinyint unsigned
+,`points` mediumint unsigned
 ,`status` tinyint unsigned
 );
 
@@ -355,7 +348,7 @@ ALTER TABLE `setting`
 --
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `u_npcid_gid_oid` (`np_communication_id`,`group_id`,`order_id`),
+  ADD UNIQUE KEY `u_npcid_gid_oid` (`np_communication_id`,`order_id`) USING BTREE,
   ADD KEY `idx_rarity_percent` (`rarity_percent`),
   ADD KEY `idx_npcid_gid_oid_status_rarpercent` (`np_communication_id`,`group_id`,`order_id`,`status`,`rarity_percent`),
   ADD KEY `idx_status_npcid_rarname` (`status`,`np_communication_id`,`rarity_name`),
@@ -366,8 +359,8 @@ ALTER TABLE `trophy`
 -- Indexes for table `trophy_earned`
 --
 ALTER TABLE `trophy_earned`
-  ADD PRIMARY KEY (`np_communication_id`,`group_id`,`order_id`,`account_id`),
-  ADD KEY `idx_account_id` (`account_id`);
+  ADD PRIMARY KEY (`np_communication_id`,`order_id`,`account_id`) USING BTREE,
+  ADD KEY `idx_account_id` (`account_id`) USING BTREE;
 
 --
 -- Indexes for table `trophy_group`

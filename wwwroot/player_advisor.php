@@ -90,7 +90,7 @@ $offset = ($page - 1) * $limit;
                             JOIN trophy_title tt USING(np_communication_id)
                             JOIN trophy_group tg USING(np_communication_id, group_id)
                             LEFT JOIN trophy_earned te ON
-                                t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND te.account_id = :account_id
+                                t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND te.account_id = :account_id
                             JOIN trophy_title_player ttp ON
                                 t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
                             WHERE

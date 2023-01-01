@@ -26,7 +26,7 @@ function TrophyEarned($childNpCommunicationId, $childGroupId, $childOrderId, $pa
             FROM
                 trophy_earned
             WHERE
-                np_communication_id = :child_np_communication_id AND group_id = :child_group_id AND order_id = :child_order_id
+                np_communication_id = :child_np_communication_id AND order_id = :child_order_id
         )
         SELECT
             :parent_np_communication_id,
@@ -72,7 +72,6 @@ function TrophyEarned($childNpCommunicationId, $childGroupId, $childOrderId, $pa
                 trophy_earned.earned
             )");
     $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":child_group_id", $childGroupId, PDO::PARAM_STR);
     $query->bindParam(":child_order_id", $childOrderId, PDO::PARAM_INT);
     $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":parent_group_id", $parentGroupId, PDO::PARAM_STR);
@@ -130,7 +129,7 @@ function TrophyGroupPlayer($childGameId) {
                 FROM
                     trophy_earned te
                 JOIN trophy t ON
-                    t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND t.status = 0
+                    t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND t.status = 0
                 WHERE
                     te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
                 GROUP BY

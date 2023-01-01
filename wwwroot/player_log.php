@@ -97,7 +97,6 @@ $offset = ($page - 1) * $limit;
                                 LEFT JOIN trophy_group tg USING(np_communication_id, group_id)
                                 LEFT JOIN trophy t USING(
                                         np_communication_id,
-                                        group_id,
                                         order_id
                                     )
                                 LEFT JOIN trophy_title tt USING(np_communication_id)
@@ -130,7 +129,6 @@ $offset = ($page - 1) * $limit;
                                 LEFT JOIN trophy_group tg USING(np_communication_id, group_id)
                                 LEFT JOIN trophy t USING(
                                         np_communication_id,
-                                        group_id,
                                         order_id
                                     )
                                 LEFT JOIN trophy_title tt USING(np_communication_id)

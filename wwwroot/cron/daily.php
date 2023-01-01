@@ -111,15 +111,14 @@ do {
                 rarity AS(
                 SELECT
                     COUNT(*) AS trophy_owners,
-                    group_id,
                     order_id
                 FROM
                     trophy_earned te
                 JOIN player p USING(account_id)
-                JOIN trophy t USING(np_communication_id, group_id, order_id)
+                JOIN trophy t USING(np_communication_id, order_id)
                 WHERE
                     p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.earned = 1
-                GROUP BY te.group_id, te.order_id
+                GROUP BY te.order_id
                     ORDER BY NULL
             )
             UPDATE
@@ -136,7 +135,7 @@ do {
                     ELSE 'NONE'
                 END
             WHERE
-                t.np_communication_id = :np_communication_id AND t.group_id = rarity.group_id AND t.order_id = rarity.order_id");
+                t.np_communication_id = :np_communication_id AND t.order_id = rarity.order_id");
         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
 
@@ -222,7 +221,7 @@ do {
                 FROM
                     trophy_earned
                 JOIN trophy USING 
-                    (np_communication_id, group_id, order_id)
+                    (np_communication_id, order_id)
                 WHERE
                     trophy_earned.np_communication_id = :np_communication_id AND trophy_earned.earned = 1
                 GROUP BY

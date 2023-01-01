@@ -60,7 +60,7 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
         FROM
             trophy_earned te
         LEFT JOIN trophy t ON
-            t.np_communication_id = te.np_communication_id AND t.group_id = te.group_id AND t.order_id = te.order_id AND t.status = 0
+            t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND t.status = 0
         WHERE
             account_id = :account_id AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
         GROUP BY type ");
@@ -1281,13 +1281,11 @@ while (true) {
 
             // Check for hidden trophies
             $query = $database->prepare("SELECT
-                    COUNT(*)
+                    trophy_count_npwr
                 FROM
-                    trophy_earned
+                    player
                 WHERE
-                    np_communication_id LIKE 'NPWR%'
-                    AND earned = 1
-                    AND account_id = :account_id
+                    account_id = :account_id
                 ");
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
             $query->execute();
@@ -1422,7 +1420,6 @@ while (true) {
                             trophy_earned
                         JOIN trophy USING(
                                 np_communication_id,
-                                group_id,
                                 order_id
                             )
                         WHERE
