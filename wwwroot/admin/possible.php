@@ -348,6 +348,7 @@ require_once("../init.php");
             echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         FUEL:<br>
         <?php
@@ -360,11 +361,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/4390-fuel/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+        
         <br>
         SOCOM: U.S. NAVY SEALS CONFRONTATION:<br>
         <?php
@@ -377,11 +378,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/4233-socom-us-navy-seals-confrontation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         Resonance of Fate (Lap Two Complete < A New Beginning)<br>
         <?php
@@ -394,11 +395,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/2704-resonance-of-fate/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         End of Eternity (2周目クリア < 2周目突入)<br>
         <?php
@@ -411,11 +412,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/5703-end-of-eternity/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         Catherine: Full Body<br>
         <?php
@@ -428,11 +429,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/4556-catherine-full-body/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         凱薩琳FULL BODY<br>
         <?php
@@ -445,11 +446,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/7556-kai-sa-linfull-body/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         キャサリン・フルボディ<br>
         <?php
@@ -462,11 +463,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/6489-kyasarinfurubodi/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         Lost Planet 2 (Committed 'til the End < Hot Shot)<br>
         <?php
@@ -479,11 +480,11 @@ require_once("../init.php");
             ORDER BY online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/4237-lost-planet-2/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
         <br>
         Terminator Salvation<br>
         <?php
@@ -518,7 +519,6 @@ require_once("../init.php");
                 online_id");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
-
         foreach ($possibleCheaters as $possibleCheater) {
             echo "<a href=\"/game/294-terminator-salvation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
