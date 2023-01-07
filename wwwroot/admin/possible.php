@@ -332,6 +332,11 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR09566_00' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR09566_00' AND te.order_id = 56)
             OR (te.np_communication_id = 'NPWR09566_00' AND te.order_id = 58)";
+        // Need for Speed: The Run
+        $sql .= " OR (te.np_communication_id = 'NPWR01835_00' AND te.order_id = 39 AND te.earned_date >= '2021-09-01')
+            OR (te.np_communication_id = 'NPWR01835_00' AND te.order_id = 40 AND te.earned_date >= '2021-09-01')
+            OR (te.np_communication_id = 'NPWR01835_00' AND te.order_id = 41 AND te.earned_date >= '2021-09-01')
+            OR (te.np_communication_id = 'NPWR01835_00' AND te.order_id = 42 AND te.earned_date >= '2021-09-01')";
         $sql .= ") AND p.status != 1 GROUP BY online_id) x USING (np_communication_id)
             ORDER BY player_name";
 
@@ -463,7 +468,7 @@ require_once("../init.php");
         }
         ?>
         <br>
-        Lost Planet 2<br>
+        Lost Planet 2 (Committed 'til the End < Hot Shot)<br>
         <?php
         $query = $database->prepare("SELECT account_id, online_id, TIMESTAMPDIFF(SECOND, first_trophy, second_trophy) time_difference
             FROM player p
