@@ -808,7 +808,6 @@ while (true) {
                 // TODO: Fix total result with the new API
                 //$totalResults = $trophyTitles->totalResults;
                 $totalResults = 0;
-                $skippedGames = 0;
                 
                 foreach ($user->trophyTitles() as $trophyTitle) {
                     // if (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"] > $maxTime) {
@@ -817,14 +816,12 @@ while (true) {
 
                     $newTrophies = false;
                     $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
+                    // Check if the current game last updated date is the same as in our database
                     if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
-                        if ($playerData["last_updated_date"] != null && $playerData["status"] != 2) { // New players have null as last updated date, and will thus continue with a full scan. As will players with hidden games, in order to find if they are unhidden.
-                            if (date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s") < date_create($playerData["last_updated_date"])->format("Y-m-d H:i:s")) { // Only increase the counter if we have passed player's last update date
-                                $skippedGames++;
-                            }
-
-                            if ($skippedGames >= 10) {
-                                // 10 skipped games, we can assume we are done with this player.
+                        // Check if the current player is not new and doesn't have the hidden game status (these players will continue on with scanning, in order to find if they are unhidden)
+                        if ($playerData["last_updated_date"] != null && $playerData["status"] != 2) {
+                            // Check if we have passed player's last update date, we can assume we are done if so and break out of the scan loop.
+                            if (date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s") < date_create($playerData["last_updated_date"])->format("Y-m-d H:i:s")) {
                                 break 2;
                             }
                         }
