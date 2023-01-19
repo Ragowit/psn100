@@ -32,8 +32,8 @@ if (!isset($player) || $player === "") {
     ?>
     Player '<a href="/player/<?= $player; ?>"><?= $player; ?></a>' is tagged as a cheater and won't be scanned. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player; ?>+OR+<?= $accountId; ?>">Dispute</a>?
     <?php
-} elseif ($count >= 50) {
-    echo "You have already entered 50 players into the queue. Please wait a while.";
+} elseif ($count >= 10) {
+    echo "You have already entered 10 players into the queue. Please wait a while.";
 } elseif (preg_match("/^[\w\-]{3,16}$/", $player)) {
     // Insert player into the queue
     // $query = $database->prepare("INSERT IGNORE INTO player_queue (online_id, ip_address)
