@@ -366,13 +366,53 @@ if (isset($_POST["game"])) {
     $query->execute();
     $gameNpCommunicationId = $query->fetchColumn();
 
-    // Grab the latest player with this game
-    $query = $database->prepare("SELECT account_id FROM trophy_title_player WHERE np_communication_id = :np_communication_id ORDER BY last_updated_date DESC LIMIT 1");
-    $query->bindParam(":np_communication_id", $gameNpCommunicationId, PDO::PARAM_STR);
-    $query->execute();
-    $accountId = $query->fetchColumn();
+    $privateUser = true;
+    while ($privateUser) {
+        // Grab the latest player (that's not private) with this game
+        $query = $database->prepare("SELECT
+                account_id
+            FROM
+                trophy_title_player ttp
+            JOIN player p USING(account_id)
+            WHERE
+                ttp.np_communication_id = :np_communication_id AND p.status != 3
+            ORDER BY
+                ttp.last_updated_date
+            DESC
+            LIMIT 1");
+        $query->bindParam(":np_communication_id", $gameNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+        $accountId = $query->fetchColumn();
 
-    $user = $client->users()->find($accountId);
+        $user = $client->users()->find($accountId);
+
+        $privateUser = false;
+        try {
+            $level = 0;
+            $level = $user->trophySummary()->level();
+        } catch (Exception $e) {
+            // Profile seem to be private, set status to 3 to hide all trophies.
+            $query = $database->prepare("UPDATE
+                    player
+                SET
+                    status = 3,
+                    last_updated_date = NOW()
+                WHERE
+                    account_id = :account_id
+                    AND status != 1
+            ");
+            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+            $query->execute();
+
+            // Delete user from the queue
+            $query = $database->prepare("DELETE FROM player_queue
+                WHERE  online_id = :online_id ");
+            $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
+            $query->execute();
+
+            $privateUser = true;
+        }
+    }
 
     foreach ($user->trophyTitles() as $trophyTitle) {
         if ($trophyTitle->npCommunicationId() != $gameNpCommunicationId) {
