@@ -1,22 +1,6 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <?php
-        if (!isset($showCookie)) {
-            ?>
-            <!-- Global site tag (gtag.js) - Google Analytics -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=UA-153854358-1"></script>
-            <script>
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-
-                gtag('config', 'UA-153854358-1');
-            </script>
-            <?php
-        }
-        ?>
-        
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -49,16 +33,3 @@
     </head>
     <body style="padding-top: 4rem;">
         <?php require_once("nav.php"); ?>
-
-        <?php
-        if (isset($showCookie) && $showCookie === true) {
-            ?>
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                This site uses cookies for analytics and personalized content. By continuing to browse this site, you agree to this use.
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <?php
-        }
-        ?>

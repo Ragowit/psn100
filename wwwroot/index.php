@@ -7,11 +7,6 @@ if ($maintenance) {
 
 require_once("init.php");
 
-if (!isset($_COOKIE["seen_cookie"])) {
-    $showCookie = true;
-}
-setcookie("seen_cookie", "true", time() + (86400 * 30), "/"); // 86400 = 1 day
-
 $path = ltrim($_SERVER["SCRIPT_URL"], "/"); // Trim leading slash(es)
 $elements = explode("/", $path); // Split path on slashes
 
