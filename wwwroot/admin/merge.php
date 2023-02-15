@@ -226,22 +226,36 @@ function TrophyGroupPlayer($childGameId) {
 function TrophyTitlePlayer($childGameId) {
     $database = new Database();
 
+    $query = $database->prepare("SELECT
+            np_communication_id
+        FROM
+            trophy_title
+        WHERE
+            id = :game_id");
+    $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
+    $query->execute();
+    $childNpCommunicationId = $query->fetchColumn();
+
     $query = $database->prepare("SELECT DISTINCT
             parent_np_communication_id
         FROM
             trophy_merge
         WHERE
-            child_np_communication_id =(
-            SELECT
-                np_communication_id
-            FROM
-                trophy_title
-            WHERE
-                id = :game_id
-        )");
-    $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
+            child_np_communication_id = :child_np_communication_id");
+    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
     $title = $query->fetch();
+
+    $query = $database->prepare("SELECT
+            platinum,
+            bronze * 15 + silver * 30 + gold * 90 AS max_score
+        FROM
+            trophy_title
+        WHERE
+            np_communication_id = :np_communication_id");
+    $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+    $query->execute();
+    $trophyTitle = $query->fetch();
 
     $query = $database->prepare("INSERT INTO trophy_title_player(
             np_communication_id,
@@ -252,16 +266,7 @@ function TrophyTitlePlayer($childGameId) {
             platinum,
             progress,
             last_updated_date
-        ) WITH tt AS(
-            SELECT
-                platinum,
-                bronze * 15 + silver * 30 + gold * 90 AS max_score
-            FROM
-                trophy_title
-            WHERE
-                np_communication_id = :np_communication_id
-        ),
-        player AS(
+        ) WITH player AS(
             SELECT
                 account_id,
                 SUM(tgp.bronze) AS bronze,
@@ -274,14 +279,7 @@ function TrophyTitlePlayer($childGameId) {
                 trophy_group_player tgp
             JOIN trophy_title_player ttp USING(account_id)
             WHERE
-                tgp.np_communication_id = :np_communication_id AND ttp.np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :game_id
-            )
+                tgp.np_communication_id = :np_communication_id AND ttp.np_communication_id = :child_np_communication_id
         GROUP BY
             account_id,
             last_updated_date
@@ -304,9 +302,9 @@ function TrophyTitlePlayer($childGameId) {
                         GREATEST(
                             FLOOR(
                                 IF(
-                                    (player.score / tt.max_score) * 100 = 100 AND tt.platinum = 1 AND player.platinum = 0,
+                                    (player.score / :max_score) * 100 = 100 AND :platinum = 1 AND player.platinum = 0,
                                     99,
-                                    (player.score / tt.max_score) * 100
+                                    (player.score / :max_score) * 100
                                 )
                             ),
                             1
@@ -316,7 +314,6 @@ function TrophyTitlePlayer($childGameId) {
                 ) AS progress,
                 player.last_updated_date
             FROM
-                tt,
                 player
         ) AS NEW
         ON DUPLICATE KEY
@@ -333,6 +330,9 @@ function TrophyTitlePlayer($childGameId) {
             )");
     $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
     $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
+    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindParam(":max_score", $trophyTitle["max_score"], PDO::PARAM_INT);
+    $query->bindParam(":platinum", $trophyTitle["platinum"], PDO::PARAM_INT);
     $query->execute();
 
     // Don't forget the players who own the game but haven't earned a single trophy.
