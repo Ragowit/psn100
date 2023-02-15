@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 31, 2022 at 11:29 PM
--- Server version: 8.0.31
--- PHP Version: 8.1.13
+-- Generation Time: Feb 15, 2023 at 11:16 AM
+-- Server version: 8.0.32
+-- PHP Version: 8.1.15
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -65,6 +65,24 @@ CREATE TABLE `player` (
   `status` tinyint UNSIGNED NOT NULL DEFAULT '99',
   `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `player`
+--
+DELIMITER $$
+CREATE TRIGGER `after_update_player` AFTER UPDATE ON `player` FOR EACH ROW BEGIN
+IF OLD.status = 0 AND NEW.status != 0 AND OLD.rank <= 50000 THEN
+UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` - 1, `owners_completed` = IF(progress = 100, `owners_completed` - 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
+ELSEIF OLD.status = 0 AND NEW.status = 0 AND OLD.rank <= 50000 AND NEW.rank > 50000 THEN
+UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` - 1, `owners_completed` = IF(progress = 100, `owners_completed` - 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
+ELSEIF OLD.status = 0 AND NEW.status = 0 AND OLD.rank > 50000 AND NEW.rank <= 50000 THEN
+UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` + 1, `owners_completed` = IF(progress = 100, `owners_completed` + 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
+ELSEIF OLD.status != 0 AND NEW.status = 0 AND NEW.rank <= 50000 THEN
+UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` + 1, `owners_completed` = IF(progress = 100, `owners_completed` + 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
+END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -240,8 +258,21 @@ CREATE TABLE `trophy_title` (
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `recent_players` int UNSIGNED NOT NULL DEFAULT '0',
-  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `owners_completed` int UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `trophy_title`
+--
+DELIMITER $$
+CREATE TRIGGER `before_update_trophy_title` BEFORE UPDATE ON `trophy_title` FOR EACH ROW BEGIN
+IF OLD.owners != NEW.owners OR OLD.owners_completed != NEW.owners_completed THEN
+SET NEW.difficulty = IF(NEW.owners = 0, 0, (NEW.owners_completed / NEW.owners) * 100);
+END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -271,6 +302,36 @@ CREATE TABLE `trophy_title_player` (
   `temp_epic` smallint UNSIGNED NOT NULL DEFAULT '0',
   `temp_legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `trophy_title_player`
+--
+DELIMITER $$
+CREATE TRIGGER `after_insert_trophy_title_player` AFTER INSERT ON `trophy_title_player` FOR EACH ROW BEGIN
+DECLARE player_ok INT;
+SET player_ok = (SELECT COUNT(1) FROM `player` WHERE `account_id` = NEW.account_id AND `status` = 0 AND `rank` <= 50000);
+IF player_ok = 1 THEN
+IF NEW.progress = 100 THEN
+UPDATE `trophy_title` SET `owners` = `owners` + 1, `owners_completed` = `owners_completed` + 1 WHERE `np_communication_id` = NEW.np_communication_id;
+ELSE
+UPDATE `trophy_title` SET `owners` = `owners` + 1 WHERE `np_communication_id` = NEW.np_communication_id;
+END IF;
+END IF;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `after_update_trophy_title_player` AFTER UPDATE ON `trophy_title_player` FOR EACH ROW BEGIN
+DECLARE player_ok INT;
+SET player_ok = (SELECT COUNT(1) FROM `player` WHERE `account_id` = NEW.account_id AND `status` = 0 AND `rank` <= 50000);
+IF player_ok = 1 AND OLD.progress != 100 AND NEW.progress = 100 THEN
+UPDATE `trophy_title` SET `owners_completed` = `owners_completed` + 1 WHERE `np_communication_id` = NEW.np_communication_id;
+ELSEIF player_ok = 1 AND OLD.progress = 100 AND NEW.progress != 100 THEN
+UPDATE `trophy_title` SET `owners_completed` = `owners_completed` - 1 WHERE `np_communication_id` = NEW.np_communication_id;
+END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -319,10 +380,8 @@ ALTER TABLE `player`
   ADD PRIMARY KEY (`account_id`),
   ADD UNIQUE KEY `u_online_id` (`online_id`),
   ADD KEY `idx_rarity_rank` (`rarity_rank`),
-  ADD KEY `idx_aid_rank_status` (`account_id`,`rank`,`status`),
-  ADD KEY `idx_rank_status` (`rank`,`status`),
   ADD KEY `idx_avatar_url` (`avatar_url`),
-  ADD KEY `idx_status` (`status`);
+  ADD KEY `idx_status_rank_aid` (`status`,`rank`,`account_id`);
 
 --
 -- Indexes for table `player_queue`

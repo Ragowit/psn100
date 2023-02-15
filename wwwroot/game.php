@@ -151,18 +151,8 @@ require_once("header.php");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
                         $rarityPoints = $query->fetchColumn();
-
-                        $query = $database->prepare("SELECT Count(*) 
-                            FROM   trophy_title_player ttp 
-                                JOIN player p USING (account_id) 
-                            WHERE  p.status = 0 
-                                AND ttp.progress = 100 
-                                AND ttp.np_communication_id = :np_communication_id ");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->execute();
-                        $ownersCompleted = $query->fetchColumn();
                         ?>
-                        <span><?= number_format($ownersCompleted); ?> of <?= number_format($game["owners"]); ?> players (<?= $game["difficulty"]; ?>%) have 100% this game.</span><br>
+                        <span><?= number_format($game["owners_completed"]); ?> of <?= number_format($game["owners"]); ?> players (<?= $game["difficulty"]; ?>%) have 100% this game.</span><br>
                         <?php
                         switch($game["status"]) {
                             case 1:
