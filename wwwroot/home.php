@@ -43,7 +43,7 @@ require_once("header.php");
                                 <tr>
                                     <td class="text-center" width="150">
                                         <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
-                                            <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                            <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
                                         </a>
                                         <br>
                                         <?php
