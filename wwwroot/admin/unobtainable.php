@@ -331,15 +331,17 @@ if (isset($_POST["trophy"])) {
         $query->execute();
 
         // progress
-        $query = $database->prepare("WITH max_score AS (
-            SELECT
-                bronze * 15 + silver * 30 + gold * 90 AS points
+        $query = $database->prepare("SELECT
+                bronze * 15 + silver * 30 + gold * 90 AS max_score
             FROM
                 trophy_title
             WHERE
-                np_communication_id = :np_communication_id
-            ),
-            user_score AS (
+                np_communication_id = :np_communication_id");
+        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->execute();
+        $maxScore = $query->fetchColumn();
+
+        $query = $database->prepare("WITH user_score AS (
             SELECT
                 account_id,
                 bronze * 15 + silver * 30 + gold * 90 AS points
@@ -352,23 +354,23 @@ if (isset($_POST["trophy"])) {
             )
             UPDATE
                 trophy_title_player ttp,
-                max_score ms,
                 user_score us
             SET
                 ttp.progress = IF(
-                    ms.points = 0,
+                    :max_score = 0,
                     100,
                     IF(
                         us.points != 0
-                        AND FLOOR(us.points / ms.points * 100) = 0,
+                        AND FLOOR(us.points / :max_score * 100) = 0,
                         1,
-                        FLOOR(us.points / ms.points * 100)
+                        FLOOR(us.points / :max_score * 100)
                     )
                 )
             WHERE
                 ttp.np_communication_id = :np_communication_id
                 AND ttp.account_id = us.account_id");
         $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindParam(":max_score", $maxScore, PDO::PARAM_INT);
         $query->execute();
     }
 
