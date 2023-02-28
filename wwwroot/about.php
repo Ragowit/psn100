@@ -138,6 +138,13 @@ require_once("header.php");
                     <li><a href="https://www.exophase.com/">Exophase</a></li>
                 </ul>
 
+                <h2>Thanks</h2>
+                <p>
+                    <ul>
+                        <li><a href="https://psnp-plus.netlify.app/">PSNP+</a> (<a href="https://forum.psnprofiles.com/profile/229685-husky/">HusKy</a>) for allowing PSN100 to use the "Unobtainable Trophies Master List" data.</li>
+                    </ul>
+                </p>
+
                 <h2>Merge Guideline Priorities</h2>
                 <p>
                     <ol>

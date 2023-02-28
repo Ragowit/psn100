@@ -13,6 +13,7 @@
             <li><a href="/admin/merge.php">Game Merge</a></li>
             <li><a href="/admin/status.php">Game Status</a></li>
             <li><a href="/admin/possible.php">Possible Cheaters</a></li>
+            <li><a href="/admin/psnp-plus.php">PSNP+</a></li>
             <li><a href="/admin/rescan.php">Rescan Game</a></li>
             <li><a href="/admin/unobtainable.php">Unobtainable trophy</a></li>
         </ul>

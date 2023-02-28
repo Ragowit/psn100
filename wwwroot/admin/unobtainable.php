@@ -5,6 +5,9 @@ ini_set("default_socket_timeout", "6000");
 set_time_limit(0);
 require_once("../init.php");
 
+$trophyInput = "";
+$statusInput = "1";
+
 if (isset($_POST["trophy"])) {
     $trophyId = $_POST["trophy"];
     $status = $_POST["status"];
@@ -385,6 +388,9 @@ if (isset($_POST["trophy"])) {
         $success .= "Trophy ID ". $trophyName ."<br>";
     }
     $success .= "is now set as ". $statusText ."</p>";
+} elseif (isset($_GET["trophy"])) {
+    $trophyInput = $_GET["trophy"];
+    $statusInput = $_GET["status"];
 }
 
 ?>
@@ -400,11 +406,11 @@ if (isset($_POST["trophy"])) {
         <a href="/admin/">Back</a><br><br>
         <form method="post" autocomplete="off">
             Trophy ID:<br>
-            <input type="text" name="trophy"><br>
+            <input type="text" name="trophy" value="<?= $trophyInput; ?>"><br>
             Status:<br>
             <select name="status">
-                <option value="1">Unobtainable</option>
-                <option value="0">Obtainable</option>
+                <option value="1" <?= ($statusInput == "1" ? "selected" : ""); ?>>Unobtainable</option>
+                <option value="0" <?= ($statusInput == "0" ? "selected" : ""); ?>>Obtainable</option>
             </select><br><br>
             <input type="submit" value="Submit">
         </form>

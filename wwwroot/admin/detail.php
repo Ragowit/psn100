@@ -8,6 +8,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $platform = $_POST["platform"];
     $message = $_POST["message"];
     $setVersion = $_POST["set_version"];
+    $psnprofilesId = (empty($_POST["psnprofiles_id"]) ? null : $_POST["psnprofiles_id"]);
 
     $database->beginTransaction();
     $query = $database->prepare("UPDATE
@@ -17,7 +18,8 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             icon_url = :icon_url,
             platform = :platform,
             message = :message,
-            set_version = :set_version
+            set_version = :set_version,
+            psnprofiles_id = :psnprofiles_id
         WHERE
             id = :game_id");
     $query->bindParam(":name", $name, PDO::PARAM_STR);
@@ -25,16 +27,19 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $query->bindParam(":platform", $platform, PDO::PARAM_STR);
     $query->bindParam(":message", $message, PDO::PARAM_STR);
     $query->bindParam(":set_version", $setVersion, PDO::PARAM_STR);
+    $query->bindParam(":psnprofiles_id", $psnprofilesId, PDO::PARAM_STR);
     $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
 
     $query = $database->prepare("SELECT 
+            np_communication_id,
             name,
             icon_url,
             platform,
             message,
-            set_version
+            set_version,
+            psnprofiles_id
         FROM
             trophy_title
         WHERE
@@ -48,11 +53,13 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $gameId = $_GET["game"];
 
     $query = $database->prepare("SELECT 
+            np_communication_id,
             name,
             icon_url,
             platform,
             message,
-            set_version
+            set_version,
+            psnprofiles_id
         FROM
             trophy_title
         WHERE
@@ -92,6 +99,10 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                 <input type="text" name="platform" style="width: 859px;" value="<?= $trophyTitle["platform"]; ?>"><br>
                 Set Version:<br>
                 <input type="text" name="set_version" style="width: 859px;" value="<?= $trophyTitle["set_version"]; ?>"><br>
+                NP Communication ID:<br>
+                <input type="text" name="np_communication_id" style="width: 859px;" value="<?= $trophyTitle["np_communication_id"]; ?>" readonly><br>
+                PSNProfiles ID:<br>
+                <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= $trophyTitle["psnprofiles_id"]; ?>"><br>
                 Message:<br>
                 <textarea name="message" rows="6" cols="120"><?= $trophyTitle["message"]; ?></textarea><br><br>
                 <input type="submit" value="Submit">
