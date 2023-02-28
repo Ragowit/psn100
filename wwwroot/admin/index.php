@@ -9,6 +9,7 @@
     <body>
         <ul>
             <li><a href="/admin/cheater.php">Cheater</a></li>
+            <li><a href="/admin/copy.php">Copy group and trophy data</a></li>
             <li><a href="/admin/detail.php">Game Details</a></li>
             <li><a href="/admin/merge.php">Game Merge</a></li>
             <li><a href="/admin/status.php">Game Status</a></li>
