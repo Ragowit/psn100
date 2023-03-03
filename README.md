@@ -14,9 +14,12 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 5. PS5 > PS4 > PS3 > PSVITA
 6. Collection/Bundle > Single entry
 
+## Thanks
+- PSNP+ <[https://psnp-plus.netlify.app/](https://psnp-plus.netlify.app/)> ([HusKy](https://forum.psnprofiles.com/profile/229685-husky/)) for allowing PSN100 to use the "Unobtainable Trophies Master List" data.
+
 ## Other sites
-- PSN Profiles <[https://psnprofiles.com](https://psnprofiles.com)>
-- PlaystationTrophies <[https://www.playstationtrophies.org](https://www.playstationtrophies.org)>
-- PSN Trophy Leaders <[https://psntrophyleaders.com](https://psntrophyleaders.com)>
-- TrueTropies <[https://www.truetrophies.com](https://www.truetrophies.com)>
+- PSN Profiles <[https://psnprofiles.com/](https://psnprofiles.com/)>
+- PlaystationTrophies <[https://www.playstationtrophies.org/](https://www.playstationtrophies.org/)>
+- PSN Trophy Leaders <[https://psntrophyleaders.com/](https://psntrophyleaders.com/)>
+- TrueTropies <[https://www.truetrophies.com/](https://www.truetrophies.com/)>
 - Exophase <[https://www.exophase.com/](https://www.exophase.com/)>
