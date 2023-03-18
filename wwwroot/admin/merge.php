@@ -329,7 +329,6 @@ function TrophyTitlePlayer($childGameId) {
                 trophy_title_player.last_updated_date
             )");
     $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
-    $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
     $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":max_score", $trophyTitle["max_score"], PDO::PARAM_INT);
     $query->bindParam(":platinum", $trophyTitle["platinum"], PDO::PARAM_INT);
@@ -354,14 +353,7 @@ function TrophyTitlePlayer($childGameId) {
             FROM
                 trophy_title_player ttp
             WHERE
-                ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 AND ttp.np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :game_id
-            )
+                ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 AND ttp.np_communication_id = :child_np_communication_id
         )
         SELECT
             :np_communication_id,
@@ -374,7 +366,7 @@ function TrophyTitlePlayer($childGameId) {
             player.last_updated_date
         FROM
             player");
-    $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
+    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
     $query->execute();
 }
