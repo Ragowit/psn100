@@ -26,7 +26,7 @@ require_once("header.php");
 
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp
     JOIN player p USING (account_id)
-    WHERE ttp.np_communication_id = :np_communication_id AND ttp.progress != 0 AND p.status = 0 AND p.rank <= 50000");
+    WHERE ttp.np_communication_id = :np_communication_id AND p.status = 0 AND p.rank <= 50000");
 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
 $query->execute();
 $total_pages = $query->fetchColumn();
@@ -67,21 +67,60 @@ $offset = ($page - 1) * $limit;
                 <div class="row">
                     <table class="table table-responsive table-striped">
                         <?php
-                        $query = $database->prepare("SELECT p.account_id, p.avatar_url, p.country, p.online_id AS name,
+                        $query = $database->prepare("SELECT
+                                p.account_id,
+                                p.avatar_url,
+                                p.country,
+                                p.online_id AS name,
                                 IFNULL(SUM(t.type = 'bronze'), 0) AS bronze,
                                 IFNULL(SUM(t.type = 'silver'), 0) AS silver,
                                 IFNULL(SUM(t.type = 'gold'), 0) AS gold,
                                 IFNULL(SUM(t.type = 'platinum'), 0) AS platinum,
-                                IFNULL(GREATEST(FLOOR((SUM(t.type = 'bronze')*15+SUM(t.type = 'silver')*30+SUM(t.type = 'gold')*90)/(SELECT SUM(type = 'bronze')*15+SUM(type = 'silver')*30+SUM(type = 'gold')*90 AS max_score FROM trophy WHERE np_communication_id = :np_communication_id)*100), 1), 0) progress,
-                                Coalesce(Max(te.earned_date), ttp.last_updated_date) last_known_date
-                            FROM trophy_earned te
-                                JOIN trophy t ON t.np_communication_id = :np_communication_id AND t.order_id = te.order_id
-                                RIGHT JOIN trophy_title_player ttp ON ttp.account_id = te.account_id AND ttp.np_communication_id = :np_communication_id
-                                JOIN player p ON p.account_id = te.account_id AND p.status = 0 AND p.rank <= 50000
-                                WHERE te.np_communication_id = :np_communication_id AND te.earned = 1
-                            GROUP BY account_id
-                            ORDER BY progress DESC, platinum DESC, gold DESC, silver DESC, bronze DESC, last_known_date
-                            LIMIT :offset, :limit");
+                                IFNULL(
+                                    GREATEST(
+                                        FLOOR(
+                                            (
+                                                SUM(t.type = 'bronze') * 15 + SUM(t.type = 'silver') * 30 + SUM(t.type = 'gold') * 90
+                                            ) /(
+                                                SELECT
+                                                    SUM(TYPE = 'bronze') * 15 + SUM(TYPE = 'silver') * 30 + SUM(TYPE = 'gold') * 90 AS max_score
+                                                FROM
+                                                    trophy
+                                                WHERE
+                                                    np_communication_id = :np_communication_id
+                                            ) * 100
+                                        ),
+                                        1
+                                    ),
+                                    0
+                                ) progress,
+                                COALESCE(
+                                    MAX(te.earned_date),
+                                    ttp.last_updated_date
+                                ) last_known_date
+                            FROM
+                                trophy_title_player ttp
+                                JOIN player p ON p.account_id = ttp.account_id
+                                    AND p.status = 0
+                                    AND p.rank <= 50000
+                                LEFT JOIN trophy_earned te ON te.account_id = ttp.account_id
+                                    AND te.np_communication_id = ttp.np_communication_id
+                                    AND te.earned = 1
+                                LEFT JOIN trophy t ON t.np_communication_id = ttp.np_communication_id
+                                    AND t.order_id = te.order_id
+                            WHERE
+                                ttp.np_communication_id = :np_communication_id
+                            GROUP BY
+                                account_id
+                            ORDER BY
+                                progress DESC,
+                                platinum DESC,
+                                gold DESC,
+                                silver DESC,
+                                bronze DESC,
+                                last_known_date
+                            LIMIT
+                                :offset, :limit");
                         $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                         $query->bindParam(":limit", $limit, PDO::PARAM_INT);
