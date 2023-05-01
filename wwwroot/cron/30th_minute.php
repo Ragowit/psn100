@@ -349,9 +349,11 @@ while (true) {
     // Get our queue.
     // #1 - Users added from the front page, ordered by time entered
     // #2 - Top 100 players who haven't been updated within a day, ordered by the oldest one.
-    // #3 - Top 2.5k or players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
-    // #4 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
-    // #5 - Oldest scanned player who is not tagged as a cheater
+    // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
+    // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
+    // #5 - Top 50000 players who haven't been updated within six months, ordered by the oldest one.
+    // #6 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
+    // #7 - Oldest scanned player who is not tagged as a cheater
     $query = $database->prepare("SELECT
             online_id,
             `offset`,
@@ -396,8 +398,8 @@ while (true) {
                     player
                 WHERE
                     (
-                        `rank` <= 2500
-                        OR rarity_rank <= 2500
+                        `rank` <= 1000
+                        OR rarity_rank <= 1000
                         OR (
                             `rank` >= 49750
                             AND `rank` <= 50250
@@ -412,6 +414,38 @@ while (true) {
                 UNION ALL
                 SELECT
                     4 AS tier,
+                    online_id,
+                    last_updated_date,
+                    0 AS `offset`,
+                    account_id
+                FROM
+                    player
+                WHERE
+                    (
+                        `rank` <= 10000
+                        OR rarity_rank <= 10000
+                    )
+                    AND last_updated_date < NOW() - INTERVAL 1 MONTH
+                    AND `status` = 0
+                UNION ALL
+                SELECT
+                    5 AS tier,
+                    online_id,
+                    last_updated_date,
+                    0 AS `offset`,
+                    account_id
+                FROM
+                    player
+                WHERE
+                    (
+                        `rank` <= 50000
+                        OR rarity_rank <= 50000
+                    )
+                    AND last_updated_date < NOW() - INTERVAL 6 MONTH
+                    AND `status` = 0
+                UNION ALL
+                SELECT
+                    6 AS tier,
                     pq.online_id,
                     pq.request_time,
                     pq.offset,
@@ -423,7 +457,7 @@ while (true) {
                     pq.request_time >= '2030-12-25 00:00:00'
                 UNION ALL
                 SELECT
-                    5 AS tier,
+                    7 AS tier,
                     online_id,
                     last_updated_date,
                     0 AS `offset`,
