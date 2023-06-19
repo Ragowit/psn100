@@ -1115,7 +1115,8 @@ while (true) {
                             // }
                             
                             $trophyEarned = $trophy->earned();
-                            if ($trophyEarned || ($trophy->progress() != '' && intval($trophy->progress()) > 0)) {
+                            $progress = (clone $trophy)->progress();
+                            if ($trophyEarned || ($progress != '' && intval($progress) > 0)) {
                                 if ($trophy->earnedDateTime() === '') {
                                     $dtAsTextForInsert = null;
                                 } else {
@@ -1151,10 +1152,10 @@ while (true) {
                                 $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
                                 $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                                 $query->bindParam(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
-                                if ($trophy->progress() === '') {
+                                if ($progress === '') {
                                     $progress = null;
                                 } else {
-                                    $progress = intval($trophy->progress());
+                                    $progress = intval($progress);
                                 }
                                 $query->bindParam(":progress", $progress, PDO::PARAM_INT);
                                 $query->bindParam(":earned", $trophyEarned, PDO::PARAM_INT);
