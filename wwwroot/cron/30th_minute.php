@@ -1,4 +1,6 @@
 <?php
+parse_str(implode('&', array_slice($argv, 1)), $_GET);
+
 //ini_set("max_execution_time", "0");
 //ini_set("mysql.connect_timeout", "0");
 //set_time_limit(0);
@@ -322,28 +324,24 @@ while (true) {
     while (!$loggedIn) {
         $query = $database->prepare("SELECT
                 id,
-                npsso
+                npsso,
+                scanning
             FROM
                 setting
-            ORDER BY
-                id");
+            WHERE
+                id = :id");
+        $query->bindParam(":id", $_GET["worker"], PDO::PARAM_INT);
         $query->execute();
-        $workers = $query->fetchAll();
+        $worker = $query->fetch();
 
-        foreach ($workers as $worker) {
-            try {
-                $client = new Client();
-                $npsso = $worker["npsso"];
-                $client->loginWithNpsso($npsso);
+        try {
+            $client = new Client();
+            $npsso = $worker["npsso"];
+            $client->loginWithNpsso($npsso);
 
-                $loggedIn = true;
-            } catch (Exception $e) {
-                Psn100Log("Can't login with worker ". $worker["id"]);
-            }
-
-            if ($loggedIn) {
-                break 2;
-            }
+            $loggedIn = true;
+        } catch (Exception $e) {
+            Psn100Log("Can't login with worker ". $worker["id"]);
         }
 
         if (!$loggedIn) {
@@ -465,6 +463,7 @@ while (true) {
                 WHERE
                     `status` != 1
             ) a
+        WHERE NOT EXISTS (SELECT * FROM setting WHERE scanning = a.online_id AND id != :worker_id)
         ORDER BY
             tier,
             request_time,
@@ -472,8 +471,14 @@ while (true) {
         LIMIT
             1
     ");
+    $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
     $query->execute();
     $player = $query->fetch();
+
+    $query = $database->prepare("UPDATE setting SET scanning = :scanning WHERE id = :worker_id");
+    $query->bindParam(":scanning", $player["online_id"], PDO::PARAM_STR);
+    $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
+    $query->execute();
 
     // Initialize the current player
     try {

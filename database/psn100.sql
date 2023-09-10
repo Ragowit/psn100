@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 15, 2023 at 11:16 AM
--- Server version: 8.0.32
--- PHP Version: 8.1.15
+-- Generation Time: Sep 10, 2023 at 09:06 AM
+-- Server version: 8.0.34
+-- PHP Version: 8.2.9
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -120,7 +120,8 @@ CREATE TABLE `psn100_avatars` (
 CREATE TABLE `setting` (
   `id` int UNSIGNED NOT NULL,
   `refresh_token` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+  `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -259,7 +260,8 @@ CREATE TABLE `trophy_title` (
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `recent_players` int UNSIGNED NOT NULL DEFAULT '0',
   `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `owners_completed` int UNSIGNED NOT NULL DEFAULT '0'
+  `owners_completed` int UNSIGNED NOT NULL DEFAULT '0',
+  `psnprofiles_id` int UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -333,36 +335,6 @@ END
 $$
 DELIMITER ;
 
--- --------------------------------------------------------
-
---
--- Stand-in structure for view `view_player_last_updated_date`
--- (See below for the actual view)
---
-CREATE TABLE `view_player_last_updated_date` (
-`account_id` bigint unsigned
-,`online_id` varchar(16)
-,`country` varchar(2)
-,`last_updated_date` datetime
-,`bronze` mediumint unsigned
-,`silver` mediumint unsigned
-,`gold` mediumint unsigned
-,`platinum` mediumint unsigned
-,`level` smallint unsigned
-,`progress` tinyint unsigned
-,`points` mediumint unsigned
-,`status` tinyint unsigned
-);
-
--- --------------------------------------------------------
-
---
--- Structure for view `view_player_last_updated_date`
---
-DROP TABLE IF EXISTS `view_player_last_updated_date`;
-
-CREATE ALGORITHM=UNDEFINED DEFINER=`psn100_ragowit`@`localhost` SQL SECURITY DEFINER VIEW `view_player_last_updated_date`  AS SELECT `player`.`account_id` AS `account_id`, `player`.`online_id` AS `online_id`, `player`.`country` AS `country`, `player`.`last_updated_date` AS `last_updated_date`, `player`.`bronze` AS `bronze`, `player`.`silver` AS `silver`, `player`.`gold` AS `gold`, `player`.`platinum` AS `platinum`, `player`.`level` AS `level`, `player`.`progress` AS `progress`, `player`.`points` AS `points`, `player`.`status` AS `status` FROM `player` ORDER BY -(`player`.`last_updated_date`) ASC  ;
-
 --
 -- Indexes for dumped tables
 --
@@ -400,7 +372,8 @@ ALTER TABLE `psn100_avatars`
 -- Indexes for table `setting`
 --
 ALTER TABLE `setting`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `scanning` (`scanning`);
 
 --
 -- Indexes for table `trophy`
