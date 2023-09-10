@@ -306,6 +306,16 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
     $query->execute();
 }
 
+function Psn100Log($message) {
+    $database = new Database();
+
+    $query = $database->prepare("INSERT INTO log
+                    (message)
+        VALUES      (:message) ");
+    $query->bindParam(":message", $message, PDO::PARAM_STR);
+    $query->execute();
+}
+
 while (true) {
     // Login with a token
     $loggedIn = false;
@@ -328,11 +338,7 @@ while (true) {
 
                 $loggedIn = true;
             } catch (Exception $e) {
-                $message = "Can't login with worker ". $worker["id"];
-                $query = $database->prepare("INSERT INTO log(message)
-                    VALUES(:message)");
-                $query->bindParam(":message", $message, PDO::PARAM_STR);
-                $query->execute();
+                Psn100Log("Can't login with worker ". $worker["id"]);
             }
 
             if ($loggedIn) {
@@ -1072,19 +1078,9 @@ while (true) {
                                 $query->execute();
                                 $status = $query->fetchColumn();
                                 if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
-                                    $message = "New trophies added for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name();
-                                    $query = $database->prepare("INSERT INTO log
-                                                    (message)
-                                        VALUES      (:message) ");
-                                    $query->bindParam(":message", $message, PDO::PARAM_STR);
-                                    $query->execute();
+                                    Psn100Log("New trophies added for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
                                 } else {
-                                    $message = "SET VERSION for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name();
-                                    $query = $database->prepare("INSERT INTO log
-                                                    (message)
-                                        VALUES      (:message) ");
-                                    $query->bindParam(":message", $message, PDO::PARAM_STR);
-                                    $query->execute();
+                                    Psn100Log("SET VERSION for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
                                 }
                             }
                         }
