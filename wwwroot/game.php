@@ -282,6 +282,80 @@ require_once("header.php");
             </div>
         </div>
 
+        <?php
+        if (str_starts_with($game["np_communication_id"], "MERGE")) {
+            ?>
+            <!-- Stacks -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="accordion" id="accordionStacks">
+                        <div class="card">
+                            <div class="card-header" id="headingStacks">
+                                <h2 class="mb-0">
+                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseStacks" aria-expanded="true" aria-controls="collapseStacks">
+                                        Stacks
+                                    </button>
+                                </h2>
+                            </div>
+                            <div id="collapseStacks" class="collapse" aria-labelledby="headingStacks" data-parent="#accordionStacks">
+                                <div class="card-body">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <th class="table-primary" colspan="2">Stacks</th>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            $query = $database->prepare("SELECT
+                                                    id, `name`, platform, icon_url
+                                                FROM
+                                                    trophy_title
+                                                WHERE
+                                                    parent_np_communication_id = :parent_np_communication_id
+                                                ORDER BY
+                                                    `name`, platform");
+                                            $query->bindParam(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                                            $query->execute();
+                                            $stacks = $query->fetchAll();
+
+                                            foreach ($stacks as $stack) {
+                                                ?>
+                                                <tr>
+                                                    <?php
+                                                    $stackLink = $stack["id"] ."-". slugify($stack["name"]);
+                                                    if (isset($player)) {
+                                                        $stackLink .= "/". $player;
+                                                    } ?>
+                                                    <td scope="row" class="text-center" width="125px">
+                                                        <a href="/game/<?= $stackLink; ?>">
+                                                            <img src="/img/title/<?= ($stack["icon_url"] == ".png") ? ((str_contains($stack["platform"], "PS5") || str_contains($stack["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $stack["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                                        </a>
+                                                        <br>
+                                                        <?php
+                                                        foreach (explode(",", $stack["platform"]) as $platform) {
+                                                            echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
+                                                        } ?>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <a href="/game/<?= $stackLink; ?>">
+                                                            <?= htmlentities($stack["name"]); ?>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php
+        }
+        ?>
+
         <br>
 
         <!-- Trophies -->

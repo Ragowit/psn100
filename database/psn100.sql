@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 10, 2023 at 09:06 AM
+-- Generation Time: Sep 23, 2023 at 08:57 AM
 -- Server version: 8.0.34
--- PHP Version: 8.2.9
+-- PHP Version: 8.2.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -261,7 +261,8 @@ CREATE TABLE `trophy_title` (
   `recent_players` int UNSIGNED NOT NULL DEFAULT '0',
   `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `owners_completed` int UNSIGNED NOT NULL DEFAULT '0',
-  `psnprofiles_id` int UNSIGNED DEFAULT NULL
+  `psnprofiles_id` int UNSIGNED DEFAULT NULL,
+  `parent_np_communication_id` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

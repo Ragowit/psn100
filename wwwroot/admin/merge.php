@@ -464,51 +464,6 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
 
         // trophy_title_player
         TrophyTitlePlayer($childGameId);
-
-        // // Add all affected players to the queue to recalculate trophy count, level and level progress
-        // $query = $database->prepare("INSERT IGNORE
-        //     INTO player_queue(online_id, request_time)
-        //     SELECT
-        //         online_id,
-        //         '2030-12-24 00:00:00'
-        //     FROM
-        //         player p
-        //     WHERE p.status = 0 AND EXISTS
-        //         (
-        //         SELECT
-        //             1
-        //         FROM
-        //             trophy_title_player
-        //         JOIN trophy_earned USING(
-        //                 np_communication_id,
-        //                 account_id
-        //             )
-        //         WHERE
-        //             np_communication_id =(
-        //             SELECT
-        //                 np_communication_id
-        //             FROM
-        //                 trophy
-        //             WHERE
-        //                 id = :child_trophy_id
-        //         ) AND group_id =(
-        //         SELECT
-        //             group_id
-        //         FROM
-        //             trophy
-        //         WHERE
-        //             id = :child_trophy_id
-        //     ) AND order_id =(
-        //         SELECT
-        //             order_id
-        //         FROM
-        //             trophy
-        //         WHERE
-        //             id = :child_trophy_id
-        //     ) AND account_id = p.account_id
-        //     )");
-        // $query->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
-        // $query->execute();
     }
 
     $message = "The trophies have been merged.";
@@ -675,32 +630,10 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     // trophy_title_player
     TrophyTitlePlayer($childId);
 
-    // // Add all affected players to the queue to recalculate trophy count, level and level progress
-    // $query = $database->prepare("INSERT IGNORE
-    //     INTO player_queue(online_id, request_time)
-    //     SELECT
-    //         online_id,
-    //         '2030-12-24 00:00:00'
-    //     FROM
-    //         player p
-    //     WHERE p.status = 0 AND EXISTS
-    //         (
-    //         SELECT
-    //             1
-    //         FROM
-    //             trophy_title_player ttp
-    //         WHERE
-    //             ttp.np_communication_id =(
-    //             SELECT
-    //                 np_communication_id
-    //             FROM
-    //                 trophy_title
-    //             WHERE
-    //                 id = :game_id
-    //         ) AND ttp.account_id = p.account_id
-    //     )");
-    // $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
-    // $query->execute();
+    $query = $database->prepare("UPDATE trophy_title SET parent_np_communication_id = :parent_np_communication_id WHERE np_communication_id = :np_communication_id");
+    $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
+    $query->bindParam(":np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->execute();
 
     $message .= "The games have been merged.";
 } elseif (isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
