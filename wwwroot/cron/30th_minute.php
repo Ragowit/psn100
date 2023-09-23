@@ -342,6 +342,11 @@ while (true) {
             $loggedIn = true;
         } catch (Exception $e) {
             Psn100Log("Can't login with worker ". $worker["id"]);
+
+            // Something went wrong, 'release' the current scanning profile so other workers can pick it up.
+            $query = $database->prepare("UPDATE setting SET scanning = :id WHERE id = :id");
+            $query->bindParam(":id", $worker["id"], PDO::PARAM_INT);
+            $query->execute();
         }
 
         if (!$loggedIn) {
@@ -680,6 +685,17 @@ while (true) {
     $query->bindParam(":about_me", $user->aboutMe(), PDO::PARAM_STR);
     // Don't insert level/progress/platinum/gold/silver/bronze here since our site recalculate this.
     $query->execute();
+
+    try {
+        $level = 0;
+        $level = $user->trophySummary();
+    } catch (Exception $e) {
+        // Wait 5 minutes to not hammer Sony
+        sleep(60 * 5);
+
+        // Something is odd with PSN, break out and try again later.
+        break;
+    }
 
     $privateUser = false;
     try {
