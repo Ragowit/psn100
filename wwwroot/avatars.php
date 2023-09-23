@@ -38,7 +38,7 @@ $offset = ($page - 1) * $limit;
             foreach ($avatars as $avatar) {
                 ?>
                 <div class="col-4 col-md-3 col-lg-2 text-center">
-                    <img src="/img/avatar/<?= $avatar["avatar_url"] ?>" alt"" width="100" />
+                    <img src="/img/avatar/<?= $avatar["avatar_url"] ?>" alt="" width="100" />
                     <h5><?= $avatar["count"]; ?> players</h5>
                 </div>
                 <?php
