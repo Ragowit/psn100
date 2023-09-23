@@ -50,10 +50,21 @@ require_once("header.php");
 
             <?php
             if ($game["status"] == 2) {
+                $query = $database->prepare("SELECT id, `name` 
+                    FROM   trophy_title 
+                    WHERE  np_communication_id = :parent_np_communication_id");
+                $query->bindParam(":parent_np_communication_id", $game["parent_np_communication_id"], PDO::PARAM_STR);
+                $query->execute();
+                $parentGame = $query->fetch();
+
+                $parentLink = $parentGame["id"] ."-". slugify($parentGame["name"]);
+                if (isset($player)) {
+                    $parentLink .= "/". $player;
+                }
                 ?>
                 <div class="col-12">
                     <div class="alert alert-warning" role="alert">
-                        This game have been merged, please search for the parent game. Earned trophies in this entry will not be accounted for on any leaderboard but have been transfered to the parent game.
+                        This game have been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGame["name"]) ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
                     </div>
                 </div>
                 <?php
