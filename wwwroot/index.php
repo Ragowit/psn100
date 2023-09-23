@@ -30,6 +30,14 @@ if (empty($elements[0])) { // No path elements means home
                 die();
             }
             break;
+        case "changelog":
+            if (empty($elements[0])) {
+                require_once("changelog.php");
+            } else {
+                header("Location: /changelog/", true, 303);
+                die();
+            }
+            break;
         case "game":
             if (empty($elements[0])) {
                 require_once("games.php");

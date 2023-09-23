@@ -635,6 +635,11 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query->bindParam(":np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
+    $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_MERGE', :param_1, :param_2)");
+    $query->bindParam(":param_1", $childId, PDO::PARAM_INT);
+    $query->bindParam(":param_2", $parentId, PDO::PARAM_INT);
+    $query->execute();
+
     $message .= "The games have been merged.";
 } elseif (isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
     // Clone the game. This will be the master game for the others.
@@ -747,6 +752,11 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
         WHERE  np_communication_id = :child_np_communication_id ");
     $query->bindParam(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
     $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->execute();
+
+    $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_CLONE', :param_1, :param_2)");
+    $query->bindParam(":param_1", $childId, PDO::PARAM_INT);
+    $query->bindParam(":param_2", $gameId, PDO::PARAM_INT);
     $query->execute();
 
     $message = "The game have been cloned.";

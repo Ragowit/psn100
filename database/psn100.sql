@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 23, 2023 at 08:57 AM
+-- Generation Time: Sep 23, 2023 at 06:08 PM
 -- Server version: 8.0.34
 -- PHP Version: 8.2.10
 
@@ -109,6 +109,20 @@ CREATE TABLE `psn100_avatars` (
   `avatar_url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `md5_hash` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `extension` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `psn100_change`
+--
+
+CREATE TABLE `psn100_change` (
+  `id` int NOT NULL,
+  `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `param_1` int NOT NULL,
+  `param_2` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -370,6 +384,12 @@ ALTER TABLE `psn100_avatars`
   ADD PRIMARY KEY (`avatar_id`);
 
 --
+-- Indexes for table `psn100_change`
+--
+ALTER TABLE `psn100_change`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `setting`
 --
 ALTER TABLE `setting`
@@ -451,6 +471,12 @@ ALTER TABLE `log`
 --
 ALTER TABLE `psn100_avatars`
   MODIFY `avatar_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `psn100_change`
+--
+ALTER TABLE `psn100_change`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `setting`

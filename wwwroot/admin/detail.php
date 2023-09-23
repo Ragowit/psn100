@@ -32,6 +32,10 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $query->execute();
     $database->commit();
 
+    $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UPDATE', :param_1)");
+    $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+    $query->execute();
+
     $query = $database->prepare("SELECT 
             np_communication_id,
             name,
