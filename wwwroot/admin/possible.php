@@ -313,9 +313,11 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR14063_00' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR14063_00' AND te.order_id = 35)";
         // Indivisible
-        $sql .= " OR (te.np_communication_id = 'MERGE_011589' AND te.order_id = 34)
-            OR (te.np_communication_id = 'MERGE_011589' AND te.order_id = 35)
-            OR (te.np_communication_id = 'MERGE_011589' AND te.order_id = 36)";
+        $sql .= " OR (te.np_communication_id = 'NPWR13128_00' AND te.order_id = 34)
+            OR (te.np_communication_id = 'NPWR13128_00' AND te.order_id = 35)
+            OR (te.np_communication_id = 'NPWR13128_00' AND te.order_id = 36)";
+        // Indivisible [JP]
+        $sql .= " OR (te.np_communication_id = 'NPWR19862_00' AND te.order_id = 35)";
         // Alien Spidy
         $sql .= " OR (te.np_communication_id = 'NPWR03634_00' AND te.order_id = 6)
             OR (te.np_communication_id = 'NPWR03634_00' AND te.order_id = 11)";
