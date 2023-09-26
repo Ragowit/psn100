@@ -72,9 +72,29 @@ $offset = ($page - 1) * $limit;
                             <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) was cloned: <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>)
                             <?php
                             break;
+                        case "GAME_DELISTED":
+                            ?>
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to delisted.
+                            <?php
+                            break;
+                        case "GAME_DELISTED_AND_OBSOLETE":
+                            ?>
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to delisted &amp; obsolete.
+                            <?php
+                            break;
                         case "GAME_MERGE":
                             ?>
                             <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) was merged into <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>)
+                            <?php
+                            break;
+                        case "GAME_NORMAL":
+                            ?>
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to normal.
+                            <?php
+                            break;
+                        case "GAME_OBSOLETE":
+                            ?>
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to obsolete.
                             <?php
                             break;
                         case "GAME_UPDATE":

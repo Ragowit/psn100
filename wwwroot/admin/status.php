@@ -12,40 +12,29 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $query->execute();
     $database->commit();
 
-    // // Add all affected players to the queue to recalculate trophy count, level and level progress
-    // $query = $database->prepare("INSERT IGNORE
-    //     INTO player_queue(online_id, request_time)
-    //     SELECT
-    //         online_id,
-    //         '2030-12-24 00:00:00'
-    //     FROM
-    //         player p
-    //     WHERE p.status = 0 AND EXISTS
-    //         (
-    //         SELECT
-    //             1
-    //         FROM
-    //             trophy_title_player ttp
-    //         WHERE
-    //             ttp.np_communication_id =(
-    //             SELECT
-    //                 np_communication_id
-    //             FROM
-    //                 trophy_title
-    //             WHERE
-    //                 id = :game_id
-    //         ) AND ttp.account_id = p.account_id
-    //     )");
-    // $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
-    // $query->execute();
-
     if ($status == 1) {
+        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_DELISTED', :param_1)");
+        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->execute();
+
         $statusText = "delisted";
     } elseif ($status == 3) {
+        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_OBSOLETE', :param_1)");
+        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->execute();
+
         $statusText = "obsolete";
     } elseif ($status == 4) {
+        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_DELISTED_AND_OBSOLETE', :param_1)");
+        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->execute();
+
         $statusText = "delisted &amp; obsolete";
     } else {
+        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_NORMAL', :param_1)");
+        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->execute();
+
         $statusText = "normal";
     }
 
