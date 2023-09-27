@@ -89,6 +89,11 @@ if (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_
     $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
+    $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_COPY', :param_1, :param_2)");
+    $query->bindParam(":param_1", $childId, PDO::PARAM_INT);
+    $query->bindParam(":param_2", $parentId, PDO::PARAM_INT);
+    $query->execute();
+
     $message .= "The group and trophy data have been copied.";
 }
 ?>
