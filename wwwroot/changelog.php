@@ -52,18 +52,18 @@ $offset = ($page - 1) * $limit;
                 </div>
                 <div class="col-11">
                     <?php
-                    $param_1_platforms = $change["param_1_platform"];
+                    $param_1_platforms = "";
                     foreach (explode(",", $change["param_1_platform"]) as $platform) {
-                        $param_1_platforms = str_replace($platform, "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span>", $param_1_platforms);
+                        $param_1_platforms .= "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
                     }
-                    $param_1_platforms = str_replace(",", " ", $param_1_platforms);
+                    $param_1_platforms = trim($param_1_platforms);
 
                     if (!is_null($change["param_2_platform"])) {
-                        $param_2_platforms = $change["param_2_platform"];
+                        $param_2_platforms = "";
                         foreach (explode(",", $change["param_2_platform"]) as $platform) {
-                            $param_2_platforms = str_replace($platform, "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span>", $param_2_platforms);
+                            $param_2_platforms .= "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
                         }
-                        $param_2_platforms = str_replace(",", " ", $param_2_platforms);
+                        $param_2_platforms = trim($param_2_platforms);
                     }
 
                     switch ($change["change_type"]) {
