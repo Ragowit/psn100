@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 27, 2023 at 08:59 PM
+-- Generation Time: Sep 27, 2023 at 09:26 PM
 -- Server version: 8.0.34
 -- PHP Version: 8.2.10
 
@@ -120,7 +120,7 @@ CREATE TABLE `psn100_avatars` (
 CREATE TABLE `psn100_change` (
   `id` int NOT NULL,
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE','GAME_DELISTED','GAME_OBSOLETE','GAME_DELISTED_AND_OBSOLETE','GAME_NORMAL','GAME_COPY','GAME_RESET','GAME_DELETE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE','GAME_DELISTED','GAME_OBSOLETE','GAME_DELISTED_AND_OBSOLETE','GAME_NORMAL','GAME_COPY','GAME_RESET','GAME_DELETE','GAME_RESCAN') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `param_1` int NOT NULL,
   `param_2` int DEFAULT NULL,
   `extra` text COLLATE utf8mb4_unicode_ci

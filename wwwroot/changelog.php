@@ -107,6 +107,11 @@ $offset = ($page - 1) * $limit;
                             <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to obsolete.
                             <?php
                             break;
+                        case "GAME_RESCAN":
+                            ?>
+                            The game <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) have been rescanned for updated/new trophy data and game details.
+                            <?php
+                            break;
                         case "GAME_RESET":
                             ?>
                             Merged trophies have been reset for <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>).
