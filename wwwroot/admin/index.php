@@ -16,6 +16,7 @@
             <li><a href="/admin/possible.php">Possible Cheaters</a></li>
             <li><a href="/admin/psnp-plus.php">PSNP+</a></li>
             <li><a href="/admin/rescan.php">Rescan Game</a></li>
+            <li><a href="/admin/reset.php">Reset Trophy Data or Delete Merged Game</a></li>
             <li><a href="/admin/unobtainable.php">Unobtainable trophy</a></li>
         </ul>
     </body>

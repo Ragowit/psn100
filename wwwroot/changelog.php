@@ -25,7 +25,7 @@ $offset = ($page - 1) * $limit;
                     tt1.name AS param_1_name, tt1.platform AS param_1_platform,
                     tt2.name AS param_2_name, tt2.platform AS param_2_platform
                 FROM psn100_change c
-                JOIN trophy_title tt1 ON tt1.id = c.param_1
+                LEFT JOIN trophy_title tt1 ON tt1.id = c.param_1
                 LEFT JOIN trophy_title tt2 ON tt2.id = c.param_2
                 ORDER BY c.time DESC
                 LIMIT  :offset, :limit ");
@@ -77,6 +77,11 @@ $offset = ($page - 1) * $limit;
                             Copied trophy data from <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) into <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>).
                             <?php
                             break;
+                        case "GAME_DELETE":
+                            ?>
+                            The merged game entry for '<?= $change["extra"]; ?>' have been deleted.
+                            <?php
+                            break;
                         case "GAME_DELISTED":
                             ?>
                             <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to delisted.
@@ -100,6 +105,11 @@ $offset = ($page - 1) * $limit;
                         case "GAME_OBSOLETE":
                             ?>
                             <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) status was set to obsolete.
+                            <?php
+                            break;
+                        case "GAME_RESET":
+                            ?>
+                            Merged trophies have been reset for <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>).
                             <?php
                             break;
                         case "GAME_UPDATE":
