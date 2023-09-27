@@ -9,7 +9,7 @@
                 </div>
                 <div class="col-md-4 text-right">
                     <a href="/changelog">Changelog</a><br>
-                    <a href="https://github.com/Ragowit/psn100/releases">v6.76.906</a>
+                    <a href="https://github.com/Ragowit/psn100/releases">v6.77</a>
                 </div>
             </div>
         </footer>
