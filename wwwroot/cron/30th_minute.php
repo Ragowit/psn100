@@ -966,18 +966,22 @@ while (true) {
                                 Psn100Log("SET VERSION for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
                             }
 
-                            $query = $database->prepare("SELECT id
-                                FROM   trophy_title
-                                WHERE  np_communication_id = :np_communication_id ");
-                            $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
-                            $query->execute();
-                            $id = $query->fetchColumn();
-
-                            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
-                            $query->bindParam(":param_1", $id, PDO::PARAM_INT);
-                            $query->execute();
+                            
                         }
                     }
+                }
+
+                if ($newTrophies) {
+                    $query = $database->prepare("SELECT id
+                        FROM   trophy_title
+                        WHERE  np_communication_id = :np_communication_id ");
+                    $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->execute();
+                    $id = $query->fetchColumn();
+
+                    $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
+                    $query->bindParam(":param_1", $id, PDO::PARAM_INT);
+                    $query->execute();
                 }
 
                 // Successfully went through title, groups and trophies. Set the version.
