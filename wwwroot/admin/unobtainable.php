@@ -378,8 +378,30 @@ if (isset($_POST["trophy"])) {
     }
 
     if ($status == 1) {
+        foreach ($trophyTitles as $trophyTitle) {
+            $query = $database->prepare("SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id");
+            $query->bindParam(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
+            $query->execute();
+            $gameId = $query->fetchColumn();
+
+            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UNOBTAINABLE', :param_1)");
+            $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+            $query->execute();
+        }
+        
         $statusText = "unobtainable";
     } else {
+        foreach ($trophyTitles as $trophyTitle) {
+            $query = $database->prepare("SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id");
+            $query->bindParam(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
+            $query->execute();
+            $gameId = $query->fetchColumn();
+            
+            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_OBTAINABLE', :param_1)");
+            $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+            $query->execute();
+        }
+
         $statusText = "obtainable";
     }
 
