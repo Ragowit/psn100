@@ -511,10 +511,6 @@ while (true) {
                     $user = $userSearchResult;
                     $userFound = true;
                     $country = $user->country();
-
-                    // To test for exception "Resource not found". Only user known is "FMA_Samurai (6787199674967195080)"
-                    $user->aboutMe();
-
                     break;
                 }
 
@@ -550,6 +546,9 @@ while (true) {
                 continue;
             }
         }
+
+        // To test for exception.
+        $user->aboutMe();
     } catch (Exception $e) {
         // $e->getMessage() == "User not found", and another "Resource not found" error
         $query = $database->prepare("DELETE FROM player_queue
@@ -565,10 +564,11 @@ while (true) {
         $accountId = $query->fetchColumn();
 
         if (!$accountId) {
+            // Set as... faulty? Sony error? Unknown?
             $query = $database->prepare("UPDATE
                     player p
                 SET
-                    p.status = 4
+                    p.status = 5
                 WHERE
                     p.account_id = :account_id");
             $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
