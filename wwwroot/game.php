@@ -69,9 +69,21 @@ require_once("header.php");
                 </div>
                 <?php
             }
-            ?>
+            
+            $query = $database->prepare("SELECT COUNT(*) FROM trophy WHERE `status` = 1 AND np_communication_id = :np_communication_id");
+            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+            $query->execute();
+            $unobtainableTrophies = $query->fetchColumn();
+            if ($unobtainableTrophies > 0) {
+                ?>
+                <div class="col-12">
+                    <div class="alert alert-warning" role="alert">
+                        This game have <?= $unobtainableTrophies; ?> unobtainable <?= (($unobtainableTrophies == 1) ? "trophy" : "trophies"); ?>.
+                    </div>
+                </div>
+                <?php
+            }
 
-            <?php
             if (!empty($game["message"])) {
                 ?>
                 <div class="col-12">
