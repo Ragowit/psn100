@@ -52,11 +52,13 @@ $offset = ($page - 1) * $limit;
                 </div>
                 <div class="col-11">
                     <?php
-                    $param_1_platforms = "";
-                    foreach (explode(",", $change["param_1_platform"]) as $platform) {
-                        $param_1_platforms .= "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
+                    if (!is_null($change["param_1_platform"])) {
+                        $param_1_platforms = "";
+                        foreach (explode(",", $change["param_1_platform"]) as $platform) {
+                            $param_1_platforms .= "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
+                        }
+                        $param_1_platforms = trim($param_1_platforms);
                     }
-                    $param_1_platforms = trim($param_1_platforms);
 
                     if (!is_null($change["param_2_platform"])) {
                         $param_2_platforms = "";
