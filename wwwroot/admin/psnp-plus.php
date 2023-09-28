@@ -110,29 +110,7 @@ $obj = json_decode($json);
                         echo "<br>";
                     }
 
-                    $gameLink = $game["id"] ."-". slugify($game["name"]);
-                    echo "<textarea id='github-". $game["id"] ."' hidden>";
-                    echo "**Game**\r\n- https://psn100.net/game/". $gameLink ."\r\n\r\n**Trophy**";
-                    foreach ($trophies as $trophy) {
-                        $orderId = $trophy - 1;
-                        $query = $database->prepare("SELECT
-                                id, `name`
-                            FROM
-                                trophy
-                            WHERE
-                                np_communication_id = :np_communication_id AND order_id = :order_id");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->bindParam(":order_id", $orderId, PDO::PARAM_INT);
-                        $query->execute();
-                        $trophyData = $query->fetch();
-
-                        $trophyLink = $trophyData["id"] ."-". slugify($trophyData["name"]);
-                        echo "\r\n- https://psn100.net/trophy/". $trophyLink;
-                    }
-                    echo "\r\n\r\n**Source**\r\n- https://psnp-plus.netlify.app/";
-                    echo "</textarea>";
-                    echo "<button onclick='myFunction(". $game["id"] .")'>Copy to clipboard for GitHub</button>";
-                    echo "<br><br>";
+                    echo "<br>";
                 }
             }
         }
@@ -171,22 +149,5 @@ $obj = json_decode($json);
             echo "<br><br>";
         }
         ?>
-
-        <script>
-            function myFunction($id) {
-                // Get the text field
-                var copyText = document.getElementById("github-" + $id);
-
-                // Select the text field
-                copyText.select();
-                copyText.setSelectionRange(0, 99999); // For mobile devices
-
-                // Copy the text inside the text field
-                navigator.clipboard.writeText(copyText.value);
-                
-                // Alert the copied text
-                alert("Copied the text: " + copyText.value);
-            }
-        </script>
     </body>
 </html>
