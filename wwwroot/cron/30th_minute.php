@@ -556,23 +556,37 @@ while (true) {
         $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
         $query->execute();
 
-        $query = $database->prepare("SELECT account_id
-            FROM   player
-            WHERE  online_id = :online_id ");
-        $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
-        $query->execute();
-        $accountId = $query->fetchColumn();
-
-        if (!$accountId) {
-            // Set as... faulty? Sony error? Unknown?
-            $query = $database->prepare("UPDATE
-                    player p
-                SET
-                    p.status = 5
-                WHERE
-                    p.account_id = :account_id");
-            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+        if (get_class($e) == "Tustin\Haste\Exception\NotFoundHttpException") {
+            $query = $database->prepare("SELECT account_id
+                FROM   player
+                WHERE  online_id = :online_id ");
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
+            $accountId = $query->fetchColumn();
+
+            if ($accountId) {
+                Psn100Log("Sony issues with ". $player["online_id"] ." (". $accountId ."), deleting.");
+
+                $query = $database->prepare("DELETE FROM trophy_earned
+                    WHERE  account_id = :account_id ");
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->execute();
+    
+                $query = $database->prepare("DELETE FROM trophy_group_player
+                    WHERE  account_id = :account_id ");
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->execute();
+    
+                $query = $database->prepare("DELETE FROM trophy_title_player
+                    WHERE  account_id = :account_id ");
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->execute();
+    
+                $query = $database->prepare("DELETE FROM player
+                    WHERE  accountId = :accountId ");
+                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->execute();
+            }
         }
 
         continue;
