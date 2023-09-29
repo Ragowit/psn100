@@ -565,24 +565,11 @@ while (true) {
             $accountId = $query->fetchColumn();
 
             if ($accountId) {
-                Psn100Log("Sony issues with ". $player["online_id"] ." (". $accountId ."), deleting.");
-
-                $query = $database->prepare("DELETE FROM trophy_earned
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
+                // Doesn't seem to exist on Sonys end anymore. Set to status = 5 and let an admin delete the player from our system later.
+                Psn100Log("Sony issues with ". $player["online_id"] ." (". $accountId .").");
     
-                $query = $database->prepare("DELETE FROM trophy_group_player
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
-    
-                $query = $database->prepare("DELETE FROM trophy_title_player
-                    WHERE  account_id = :account_id ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
-    
-                $query = $database->prepare("DELETE FROM player
+                $query = $database->prepare("UPDATE player
+                    SET `status` = 5, last_updated_date = NOW()
                     WHERE  account_id = :account_id ");
                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
