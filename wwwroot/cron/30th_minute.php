@@ -583,7 +583,7 @@ while (true) {
                 $query->execute();
     
                 $query = $database->prepare("DELETE FROM player
-                    WHERE  accountId = :accountId ");
+                    WHERE  account_id = :account_id ");
                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
             }
