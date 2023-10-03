@@ -22,8 +22,8 @@ $offset = ($page - 1) * $limit;
             <?php
             $query = $database->prepare("SELECT
                     c.*,
-                    tt1.name AS param_1_name, tt1.platform AS param_1_platform,
-                    tt2.name AS param_2_name, tt2.platform AS param_2_platform
+                    tt1.name AS param_1_name, tt1.platform AS param_1_platform, tt1.region AS param_1_region,
+                    tt2.name AS param_2_name, tt2.platform AS param_2_platform, tt2.region AS param_2_region
                 FROM psn100_change c
                 LEFT JOIN trophy_title tt1 ON tt1.id = c.param_1
                 LEFT JOIN trophy_title tt2 ON tt2.id = c.param_2
@@ -60,6 +60,8 @@ $offset = ($page - 1) * $limit;
                         $param_1_platforms = trim($param_1_platforms);
                     }
 
+                    $param_1_region = ((is_null($change["param_1_region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $change["param_1_region"] ."</span>");
+
                     if (!is_null($change["param_2_platform"])) {
                         $param_2_platforms = "";
                         foreach (explode(",", $change["param_2_platform"]) as $platform) {
@@ -67,6 +69,8 @@ $offset = ($page - 1) * $limit;
                         }
                         $param_2_platforms = trim($param_2_platforms);
                     }
+
+                    $param_2_region = ((is_null($change["param_2_region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $change["param_2_region"] ."</span>");
 
                     switch ($change["change_type"]) {
                         case "GAME_CLONE":
@@ -76,7 +80,7 @@ $offset = ($page - 1) * $limit;
                             break;
                         case "GAME_COPY":
                             ?>
-                            Copied trophy data from <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) into <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>).
+                            Copied trophy data from <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>) into <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>).
                             <?php
                             break;
                         case "GAME_DELETE":
@@ -96,7 +100,7 @@ $offset = ($page - 1) * $limit;
                             break;
                         case "GAME_MERGE":
                             ?>
-                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) was merged into <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>)
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>) was merged into <a href="/game/<?= $change["param_2"] ."-". slugify($change["param_2_name"]); ?>"><?= $change["param_2_name"]; ?></a> (<?= $param_2_platforms; ?>)
                             <?php
                             break;
                         case "GAME_NORMAL":
@@ -111,12 +115,12 @@ $offset = ($page - 1) * $limit;
                             break;
                         case "GAME_OBTAINABLE":
                             ?>
-                            Trophies have been tagged as obtainable for <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>).
+                            Trophies have been tagged as obtainable for <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>).
                             <?php
                             break;
                         case "GAME_RESCAN":
                             ?>
-                            The game <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) have been rescanned for updated/new trophy data and game details.
+                            The game <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>) have been rescanned for updated/new trophy data and game details.
                             <?php
                             break;
                         case "GAME_RESET":
@@ -126,17 +130,17 @@ $offset = ($page - 1) * $limit;
                             break;
                         case "GAME_UNOBTAINABLE":
                             ?>
-                            Trophies have been tagged as unobtainable for <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>).
+                            Trophies have been tagged as unobtainable for <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>).
                             <?php
                             break;
                         case "GAME_UPDATE":
                             ?>
-                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) was updated.
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>) was updated.
                             <?php
                             break;
                         case "GAME_VERSION":
                             ?>
-                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a> (<?= $param_1_platforms; ?>) has a new version.
+                            <a href="/game/<?= $change["param_1"] ."-". slugify($change["param_1_name"]); ?>"><?= $change["param_1_name"]; ?></a><?= $param_1_region; ?> (<?= $param_1_platforms; ?>) has a new version.
                             <?php
                             break;
                         default:

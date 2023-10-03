@@ -39,7 +39,7 @@ $offset = ($page - 1) * $limit;
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <h1><?= htmlentities($game["name"]) ?></h1>
+                <h1><?= htmlentities($game["name"]) ?><?= ((is_null($game["region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $game["region"] ."</span>") ?></h1>
             </div>
         </div>
 

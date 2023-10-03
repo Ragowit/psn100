@@ -8,6 +8,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $platform = $_POST["platform"];
     $message = $_POST["message"];
     $setVersion = $_POST["set_version"];
+    $region = (empty($_POST["region"]) ? null : $_POST["region"]);
     $psnprofilesId = (empty($_POST["psnprofiles_id"]) ? null : $_POST["psnprofiles_id"]);
 
     $database->beginTransaction();
@@ -19,6 +20,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             platform = :platform,
             message = :message,
             set_version = :set_version,
+            region = :region,
             psnprofiles_id = :psnprofiles_id
         WHERE
             id = :game_id");
@@ -27,6 +29,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
     $query->bindParam(":platform", $platform, PDO::PARAM_STR);
     $query->bindParam(":message", $message, PDO::PARAM_STR);
     $query->bindParam(":set_version", $setVersion, PDO::PARAM_STR);
+    $query->bindParam(":region", $region, PDO::PARAM_STR);
     $query->bindParam(":psnprofiles_id", $psnprofilesId, PDO::PARAM_STR);
     $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
@@ -43,6 +46,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             platform,
             message,
             set_version,
+            region,
             psnprofiles_id
         FROM
             trophy_title
@@ -63,6 +67,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             platform,
             message,
             set_version,
+            region,
             psnprofiles_id
         FROM
             trophy_title
@@ -103,6 +108,8 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                 <input type="text" name="platform" style="width: 859px;" value="<?= $trophyTitle["platform"]; ?>"><br>
                 Set Version:<br>
                 <input type="text" name="set_version" style="width: 859px;" value="<?= $trophyTitle["set_version"]; ?>"><br>
+                Region:<br>
+                <input type="text" name="region" style="width: 859px;" value="<?= $trophyTitle["region"]; ?>"><br>
                 NP Communication ID:<br>
                 <input type="text" name="np_communication_id" style="width: 859px;" value="<?= $trophyTitle["np_communication_id"]; ?>" readonly><br>
                 PSNProfiles ID:<br>

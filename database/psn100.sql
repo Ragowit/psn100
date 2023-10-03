@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 28, 2023 at 05:34 AM
+-- Generation Time: Oct 03, 2023 at 06:13 AM
 -- Server version: 8.0.34
 -- PHP Version: 8.2.10
 
@@ -277,7 +277,8 @@ CREATE TABLE `trophy_title` (
   `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `owners_completed` int UNSIGNED NOT NULL DEFAULT '0',
   `psnprofiles_id` int UNSIGNED DEFAULT NULL,
-  `parent_np_communication_id` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+  `parent_np_communication_id` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `region` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

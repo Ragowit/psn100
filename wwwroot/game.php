@@ -38,7 +38,7 @@ require_once("header.php");
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <h1><?= htmlentities($game["name"]) ?></h1>
+                <h1><?= htmlentities($game["name"]) ?><?= ((is_null($game["region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $game["region"] ."</span>") ?></h1>
                 <?php
                 if (isset($player)) {
                     ?>
@@ -329,7 +329,7 @@ require_once("header.php");
                                         <tbody>
                                             <?php
                                             $query = $database->prepare("SELECT
-                                                    id, `name`, platform, icon_url
+                                                    id, `name`, platform, icon_url, region
                                                 FROM
                                                     trophy_title
                                                 WHERE
@@ -362,6 +362,7 @@ require_once("header.php");
                                                         <a href="/game/<?= $stackLink; ?>">
                                                             <?= htmlentities($stack["name"]); ?>
                                                         </a>
+                                                        <?= ((is_null($stack["region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $stack["region"] ."</span>") ?>
                                                     </td>
                                                 </tr>
                                                 <?php
