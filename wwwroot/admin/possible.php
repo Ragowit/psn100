@@ -601,7 +601,7 @@ require_once("../init.php");
             WHERE
                 p.status != 1
             HAVING
-                trophy_count >= 6
+                trophy_count >= 9
             ORDER BY
                 online_id");
         $query->execute();
