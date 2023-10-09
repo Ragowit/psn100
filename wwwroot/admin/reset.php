@@ -33,6 +33,10 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             $query = $database->prepare("UPDATE trophy_title SET owners = 0, owners_completed = 0 WHERE np_communication_id = :np_communication_id");
             $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
             $query->execute();
+
+            $query = $database->prepare("UPDATE trophy_title SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id");
+            $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+            $query->execute();            
             $database->commit();
 
             $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_RESET', :param_1)");
