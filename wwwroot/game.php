@@ -335,7 +335,7 @@ require_once("header.php");
                                                 WHERE
                                                     parent_np_communication_id = :parent_np_communication_id
                                                 ORDER BY
-                                                    `name`, platform");
+                                                    `name`, platform, region");
                                             $query->bindParam(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                                             $query->execute();
                                             $stacks = $query->fetchAll();
