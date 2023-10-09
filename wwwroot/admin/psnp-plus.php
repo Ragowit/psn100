@@ -18,8 +18,15 @@ $obj = json_decode($json);
         <h1>PSNP+ changes</h1>
         <?
         $games = array();
+        // PSNProfiles have some unreleased games that PSN100 doesn't have.
+        $unreleasedGames = array(2409, 2410, 2412, 2414, 2552, 4234, 4236, 4237, 4240, 4241, 5012, 5318, 5925, 6317, 6366, 6420, 7082, 7272, 7337, 7886);
 
         foreach ($obj->list as $psnprofiles_id => $trophies) {
+            // Skip unreleased games that PSN100 doesn't have anyway.
+            if (in_array($psnprofiles_id, $unreleasedGames)) {
+                continue;
+            }
+
             $query = $database->prepare("SELECT
                     id, np_communication_id, `name`
                 FROM
