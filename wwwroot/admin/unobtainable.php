@@ -11,7 +11,7 @@ $statusInput = "1";
 if (isset($_POST["trophy"])) {
     $trophyId = $_POST["trophy"];
     $status = $_POST["status"];
-    $trophies = explode(",", $trophyId);
+    $trophies = explode(PHP_EOL, $trophyId);
 
     $trophyNames = array();
     $trophyGroups = array();
@@ -428,7 +428,8 @@ if (isset($_POST["trophy"])) {
         <a href="/admin/">Back</a><br><br>
         <form method="post" autocomplete="off">
             Trophy ID:<br>
-            <input type="text" name="trophy" value="<?= $trophyInput; ?>"><br>
+            <textarea name="trophy" rows="10" cols="30"><?= str_replace(",", PHP_EOL, $trophyInput); ?></textarea>
+            <br>
             Status:<br>
             <select name="status">
                 <option value="1" <?= ($statusInput == "1" ? "selected" : ""); ?>>Unobtainable</option>
