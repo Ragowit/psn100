@@ -20,7 +20,6 @@ $offset = ($page - 1) * $limit;
 
         <div class="row">
             <?php
-            // This feature does not limit by the 100k player count
             $query = $database->prepare("SELECT Count(*) AS count, 
                         avatar_url 
                 FROM   player p
@@ -39,7 +38,7 @@ $offset = ($page - 1) * $limit;
                 ?>
                 <div class="col-4 col-md-3 col-lg-2 text-center">
                     <img src="/img/avatar/<?= $avatar["avatar_url"] ?>" alt="" width="100" />
-                    <h5><?= $avatar["count"]; ?> players</h5>
+                    <h5><?= $avatar["count"]; ?> <?= ($avatar["count"] > 1 ? "players" : "player"); ?></h5>
                 </div>
                 <?php
             }
