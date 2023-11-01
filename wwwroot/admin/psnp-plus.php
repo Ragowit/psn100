@@ -19,7 +19,8 @@ $obj = json_decode($json);
         <?
         $games = array();
         // PSNProfiles have some unreleased games that PSN100 doesn't have.
-        $unreleasedGames = array(2409, 2410, 2412, 2414, 2552, 4234, 4236, 4237, 4240, 4241, 5012, 5318, 5925, 6317, 6366, 6420, 7082, 7272, 7337, 7886);
+        $unreleasedGames = array(2409, 2410, 2412, 2414, 2552, 4234, 4236, 4237, 4240, 4241, 5012, 5318, 5925, 6317, 6366, 6420, 7082, 7272, 7337, 7886, 8352, 8572, 8644, 8672, 9100, 9986,
+            10225, 10314, 10519, 10601, 10834, 11153, 11926, 12139, 13787, 13788);
 
         foreach ($obj->list as $psnprofiles_id => $trophies) {
             // Skip unreleased games that PSN100 doesn't have anyway.
