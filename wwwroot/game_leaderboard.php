@@ -72,46 +72,19 @@ $offset = ($page - 1) * $limit;
                                 p.avatar_url,
                                 p.country,
                                 p.online_id AS name,
-                                IFNULL(SUM(t.type = 'bronze'), 0) AS bronze,
-                                IFNULL(SUM(t.type = 'silver'), 0) AS silver,
-                                IFNULL(SUM(t.type = 'gold'), 0) AS gold,
-                                IFNULL(SUM(t.type = 'platinum'), 0) AS platinum,
-                                IFNULL(
-                                    GREATEST(
-                                        FLOOR(
-                                            (
-                                                SUM(t.type = 'bronze') * 15 + SUM(t.type = 'silver') * 30 + SUM(t.type = 'gold') * 90
-                                            ) /(
-                                                SELECT
-                                                    SUM(TYPE = 'bronze') * 15 + SUM(TYPE = 'silver') * 30 + SUM(TYPE = 'gold') * 90 AS max_score
-                                                FROM
-                                                    trophy
-                                                WHERE
-                                                    np_communication_id = :np_communication_id
-                                            ) * 100
-                                        ),
-                                        1
-                                    ),
-                                    0
-                                ) progress,
-                                COALESCE(
-                                    MAX(te.earned_date),
-                                    ttp.last_updated_date
-                                ) last_known_date
+                                ttp.bronze,
+                                ttp.silver,
+                                ttp.gold,
+                                ttp.platinum,
+                                ttp.progress,
+                                ttp.last_updated_date AS last_known_date
                             FROM
                                 trophy_title_player ttp
                                 JOIN player p ON p.account_id = ttp.account_id
                                     AND p.status = 0
                                     AND p.rank <= 50000
-                                LEFT JOIN trophy_earned te ON te.account_id = ttp.account_id
-                                    AND te.np_communication_id = ttp.np_communication_id
-                                    AND te.earned = 1
-                                LEFT JOIN trophy t ON t.np_communication_id = ttp.np_communication_id
-                                    AND t.order_id = te.order_id
                             WHERE
                                 ttp.np_communication_id = :np_communication_id
-                            GROUP BY
-                                account_id
                             ORDER BY
                                 progress DESC,
                                 platinum DESC,
