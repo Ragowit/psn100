@@ -13,22 +13,19 @@ $title = $player["online_id"] . "'s Random Games ~ PSN 100%";
 require_once("player_header.php");
 ?>
         <div class="row">
-            <div class="col-2 text-center">
+            <div class="col text-center">
                 <h5><a href="/player/<?= $player["online_id"]; ?>">Games</a></h5>
             </div>
-            <div class="col-2 text-center">
+            <div class="col text-center">
                 <h5><a href="/player/<?= $player["online_id"]; ?>/log">Log</a></h5>
             </div>
-            <div class="col-2 text-center">
+            <div class="col text-center">
                 <h5><a href="/player/<?= $player["online_id"]; ?>/advisor">Trophy Advisor</a></h5>
             </div>
-            <div class="col-2 text-center">
+            <div class="col text-center">
                 <h5><a href="/game?sort=completion&player=<?= $player["online_id"]; ?>">Game Advisor</a></h5>
             </div>
-            <div class="col-2 text-center">
-                <h5><a href="/player/<?= $player["online_id"]; ?>/timeline">Timeline</a></h5>
-            </div>
-            <div class="col-2 text-center">
+            <div class="col text-center">
                 <h5>Random Games</h5>
             </div>
         </div>
