@@ -1031,7 +1031,7 @@ while (true) {
                                 ) AS new
                                 ON DUPLICATE KEY
                                 UPDATE
-                                    earned_date = new.earned_date,
+                                    earned_date = IF(trophy_earned.earned = 0, new.earned_date, trophy_earned.earned_date),
                                     progress = new.progress,
                                     earned = new.earned");
                             $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
