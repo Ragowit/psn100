@@ -318,6 +318,8 @@ function Psn100Log($message) {
     $query->execute();
 }
 
+$recheck = "";
+
 while (true) {
     // Login with a token
     $loggedIn = false;
@@ -484,6 +486,12 @@ while (true) {
     $query->bindParam(":scanning", $player["online_id"], PDO::PARAM_STR);
     $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
     $query->execute();
+
+    if ($recheck == $player["online_id"]) {
+        $recheck = "";
+    } else {
+        $recheck = $player["online_id"];
+    }
 
     // Initialize the current player
     try {
@@ -1187,7 +1195,11 @@ while (true) {
             $ourTotalTrophies = $query->fetchColumn();
 
             if ($ourTotalTrophies < $totalTrophiesStart) {
-                $playerStatus = 2;
+                if (!empty($recheck)) { // If the user is about to be hidden, do one more scan from the beginning just to be sure.
+                    continue;
+                }
+
+                $playerStatus = 2; // Hidden trophies
             }
 
             // Check for inactive
