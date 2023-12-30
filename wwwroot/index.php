@@ -77,6 +77,26 @@ if (empty($elements[0])) { // No path elements means home
                 require_once("game_leaderboard.php");
             }
             break;
+        case "game-recent-players":
+            if (empty($elements[0])) {
+                header("Location: /game/", true, 303);
+                die();
+            } else {
+                $gameId = explode("-", array_shift($elements))[0];
+                $query = $database->prepare("SELECT id FROM trophy_title WHERE id = :id");
+                $query->bindParam(":id", $gameId, PDO::PARAM_INT);
+                $query->execute();
+                $result = $query->fetchColumn();
+                $player = array_key_exists(0, $elements) ? $elements[0] : null;
+
+                if ($result === false) {
+                    header("Location: /game/", true, 303);
+                    die();
+                }
+
+                require_once("game_recent_players.php");
+            }
+            break;
         case "leaderboard":
             if (empty($elements[0])) {
                 header("Location: /leaderboard/main", true, 303);
@@ -124,9 +144,6 @@ if (empty($elements[0])) { // No path elements means home
                         break;
                     case "random":
                         require_once("player_random.php");
-                        break;
-                    case "timeline":
-                        require_once("player_timeline.php");
                         break;
                     default:
                         header("Location: /player/". $onlineId, true, 303);

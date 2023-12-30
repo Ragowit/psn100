@@ -10,14 +10,15 @@ $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 
 $limit = 50;
 $offset = ($page - 1) * $limit;
 ?>
-<main role="main">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <h1>Changelog</h1>
-            </div>
-        </div>
 
+<main class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1>Avatars</h1>
+        </div>
+    </div>
+
+    <div class="bg-body-tertiary p-3 rounded">
         <div class="row">
             <?php
             $query = $database->prepare("SELECT
@@ -55,22 +56,22 @@ $offset = ($page - 1) * $limit;
                     if (!is_null($change["param_1_platform"])) {
                         $param_1_platforms = "";
                         foreach (explode(",", $change["param_1_platform"]) as $platform) {
-                            $param_1_platforms .= "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
+                            $param_1_platforms .= "<span class=\"badge rounded-pill text-bg-primary\">". $platform ."</span> ";
                         }
                         $param_1_platforms = trim($param_1_platforms);
                     }
 
-                    $param_1_region = ((is_null($change["param_1_region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $change["param_1_region"] ."</span>");
+                    $param_1_region = ((is_null($change["param_1_region"])) ? "" : " <span class=\"badge rounded-pill text-bg-primary\">". $change["param_1_region"] ."</span>");
 
                     if (!is_null($change["param_2_platform"])) {
                         $param_2_platforms = "";
                         foreach (explode(",", $change["param_2_platform"]) as $platform) {
-                            $param_2_platforms .= "<span class=\"badge badge-pill badge-primary\">". $platform ."</span> ";
+                            $param_2_platforms .= "<span class=\"badge rounded-pill text-bg-primary\">". $platform ."</span> ";
                         }
                         $param_2_platforms = trim($param_2_platforms);
                     }
 
-                    $param_2_region = ((is_null($change["param_2_region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $change["param_2_region"] ."</span>");
+                    $param_2_region = ((is_null($change["param_2_region"])) ? "" : " <span class=\"badge rounded-pill text-bg-primary\">". $change["param_2_region"] ."</span>");
 
                     switch ($change["change_type"]) {
                         case "GAME_CLONE":
@@ -155,72 +156,78 @@ $offset = ($page - 1) * $limit;
             }
             ?>
         </div>
+    </div>
 
-        <div class="row">
-            <div class="col-12">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        <?php
-                        if ($page > 1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>">Prev</a></li>
-                            <?php
-                        }
-
-                        if ($page > 3) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <?php
-                        }
-
-                        if ($page-2 > 0) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page-2; ?>"><?= $page-2; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page-1 > 0) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>"><?= $page-1; ?></a></li>
-                            <?php
-                        }
+    <div class="row">
+        <div class="col-12">
+            <p class="text-center">
+                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages); ?>
+            </p>
+        </div>
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <?php
+                    if ($page > 1) {
                         ?>
-
-                        <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $page; ?>"><?= $page; ?></a></li>
-
+                        <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>">Prev</a></li>
                         <?php
-                        if ($page+1 < ceil($total_pages / $limit)+1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>"><?= $page+1; ?></a></li>
-                            <?php
-                        }
+                    }
 
-                        if ($page+2 < ceil($total_pages / $limit)+1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page+2; ?>"><?= $page+2; ?></a></li>
-                            <?php
-                        }
-
-                        if ($page < ceil($total_pages / $limit)-2) {
-                            ?>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                            <li class="page-item"><a class="page-link" href="?page=<?= ceil($total_pages / $limit); ?>"><?= ceil($total_pages / $limit); ?></a></li>
-                            <?php
-                        }
-
-                        if ($page < ceil($total_pages / $limit)) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>">Next</a></li>
-                            <?php
-                        }
+                    if ($page > 3) {
                         ?>
-                    </ul>
-                </nav>
-            </div>
+                        <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
+                        <?php
+                    }
+
+                    if ($page-2 > 0) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $page-2; ?>"><?= $page-2; ?></a></li>
+                        <?php
+                    }
+
+                    if ($page-1 > 0) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $page-1; ?>"><?= $page-1; ?></a></li>
+                        <?php
+                    }
+                    ?>
+
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $page; ?>"><?= $page; ?></a></li>
+
+                    <?php
+                    if ($page+1 < ceil($total_pages / $limit)+1) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>"><?= $page+1; ?></a></li>
+                        <?php
+                    }
+
+                    if ($page+2 < ceil($total_pages / $limit)+1) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $page+2; ?>"><?= $page+2; ?></a></li>
+                        <?php
+                    }
+
+                    if ($page < ceil($total_pages / $limit)-2) {
+                        ?>
+                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= ceil($total_pages / $limit); ?>"><?= ceil($total_pages / $limit); ?></a></li>
+                        <?php
+                    }
+
+                    if ($page < ceil($total_pages / $limit)) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $page+1; ?>">Next</a></li>
+                        <?php
+                    }
+                    ?>
+                </ul>
+            </nav>
         </div>
     </div>
 </main>
+
 <?php
 require_once("footer.php");
 ?>

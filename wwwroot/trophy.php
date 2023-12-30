@@ -31,13 +31,6 @@ $query->bindParam(":id", $trophyId, PDO::PARAM_INT);
 $query->execute();
 $trophy = $query->fetch();
 
-$trophyIconHeight = 0;
-if (str_contains($trophy["platform"], "PS5")) {
-    $trophyIconHeight = 64;
-} else {
-    $trophyIconHeight = 60;
-}
-
 if (isset($player)) {
     $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
@@ -78,98 +71,122 @@ $metaData->url = "https://psn100.net/trophy/". $trophy["trophy_id"] ."-". slugif
 $title = $trophy["trophy_name"] . " Trophy ~ PSN 100%";
 require_once("header.php");
 ?>
-<main role="main">
-    <div class="container">
+
+<main class="container">
+    <?php
+    if ($trophy["status"] == 1) {
+        ?>
         <div class="row">
-            <?php
-            if ($trophy["status"] == 1) {
-                ?>
-                <div class="col-12">
-                    <div class="alert alert-warning" role="alert">
-                        This trophy is unobtainable and not accounted for on any leaderboard.
-                    </div>
-                </div>
-                <?php
-            }
-            ?>
-
-            <div class="col-2">
-                <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>">
-                    <img src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="60" />
-                </a>
-            </div>
-            <div class="col-1 d-flex align-items-center justify-content-center" style="height: 64px; width: 64px;">
-                <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
-            </div>
-            <div class="col-7">
-                <h5><?= htmlentities($trophy["trophy_name"]); ?></h5>
-                <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
-                <?php
-                if ($trophy["progress_target_value"] != null) {
-                    echo "<br><b>";
-                    if (isset($playerTrophy["progress"])) {
-                        echo $playerTrophy["progress"];
-                    } else {
-                        echo "0";
-                    }
-                    echo "/". $trophy["progress_target_value"] ."</b>";
-                }
-
-                if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
-                    echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
-                }
-                ?>
-                <br>
-                <?php
-                if (isset($player)) {
-                    ?>
-                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $player; ?>"><?= htmlentities($trophy["game_name"]); ?></a></small>
-                    <?php
-                } else {
-                    ?>
-                    <small style="font-style: italic;"><a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>"><?= htmlentities($trophy["game_name"]); ?></a></small>
-                    <?php
-                }
-                ?>
-            </div>
-            <div class="col-2">
-                <div class="row">
-                    <div class="col-6 text-center">
-                        <?= $trophy["rarity_percent"]; ?>%<br>
-                        <?php
-                        if ($trophy["status"] == 1) {
-                            echo "Unobtainable";
-                        } elseif ($trophy["rarity_percent"] <= 0.02) {
-                            echo "Legendary";
-                        } elseif ($trophy["rarity_percent"] <= 0.2) {
-                            echo "Epic";
-                        } elseif ($trophy["rarity_percent"] <= 2) {
-                            echo "Rare";
-                        } elseif ($trophy["rarity_percent"] <= 20) {
-                            echo "Uncommon";
-                        } else {
-                            echo "Common";
-                        }
-                        ?>
-                    </div>
-                    <div class="col-6 text-center">
-                        <img src="/img/playstation/<?= $trophy["trophy_type"]; ?>.png" alt="<?= ucfirst($trophy["trophy_type"]); ?>" title="<?= ucfirst($trophy["trophy_type"]); ?>" />
-                    </div>
-
-                    <div class="col-12 text-center">
-                        <?php
-                        if (isset($playerTrophy) && $playerTrophy && $playerTrophy["earned"] == 1) {
-                            echo "<span class=\"badge badge-pill badge-success\">Earned ". $playerTrophy["earned_date"] ."</span>";
-                        }
-                        ?>
-                    </div>
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    This trophy is unobtainable and not accounted for on any leaderboard.
                 </div>
             </div>
-
         </div>
+        <?php
+    }
+    ?>
 
-        <br>
+    <div class="row">
+        <div class="col-12">
+            <div class="card rounded-4">
+                <div class="d-flex justify-content-center align-items-center">
+                    <img class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" />
+                    <div class="card-img-overlay d-flex align-items-end">
+                        <div class="bg-body-tertiary p-3 rounded w-100">
+                            <div class="row">
+                                <div class="col-8">
+                                    <div class="hstack gap-3">
+                                        <div>
+                                            <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="width: 5rem;" />
+                                        </div>
 
+                                        <div>
+                                            <div class="vstack gap-1">
+                                                <div class="hstack gap-3">
+                                                    <div>
+                                                        <b><?= htmlentities($trophy["trophy_name"]); ?></b>
+                                                    </div>
+
+                                                    <?php
+                                                    if (isset($playerTrophy) && $playerTrophy && $playerTrophy["earned"] == 1) {
+                                                        ?>
+                                                        <div>
+                                                            <span class="badge rounded-pill text-bg-success" id="earnedTrophy"></span>
+                                                            <script>
+                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned ' + new Date('<?= $playerTrophy["earned_date"]; ?> UTC').toLocaleString('sv-SE');
+                                                            </script>
+                                                        </div>
+                                                        <?php
+                                                    }
+                                                    ?>
+                                                </div>
+
+                                                <div>
+                                                    <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
+                                                    <?php
+                                                    if ($trophy["progress_target_value"] != null) {
+                                                        echo "<br><b>";
+                                                        if (isset($playerTrophy["progress"])) {
+                                                            echo $playerTrophy["progress"];
+                                                        } else {
+                                                            echo "0";
+                                                        }
+                                                        echo "/". $trophy["progress_target_value"] ."</b>";
+                                                    }
+
+                                                    if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
+                                                        echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
+                                                    }
+                                                    ?>
+                                                </div>
+                                                
+                                                <div>
+                                                    <div class="hstack gap-1">
+                                                        <?php
+                                                        foreach (explode(",", $trophy["platform"]) as $platform) {
+                                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2\">". $platform ."</span> ";
+                                                        }
+                                                        ?>
+
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?><?= (isset($player) ? "/".$player : ""); ?>"><?= htmlentities($trophy["game_name"]); ?></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-2 text-center align-self-center">
+                                    <?php
+                                    if ($trophy["status"] == 1) {
+                                        echo "Unobtainable";
+                                    } elseif ($trophy["rarity_percent"] <= 0.02) {
+                                        echo "<span class='trophy-legendary'>". $trophy["rarity_percent"] ."%<br>Legendary</span>";
+                                    } elseif ($trophy["rarity_percent"] <= 0.2) {
+                                        echo "<span class='trophy-epic'>". $trophy["rarity_percent"] ."%<br>Epic</span>";
+                                    } elseif ($trophy["rarity_percent"] <= 2) {
+                                        echo "<span class='trophy-rare'>". $trophy["rarity_percent"] ."%<br>Rare</span>";
+                                    } elseif ($trophy["rarity_percent"] <= 20) {
+                                        echo "<span class='trophy-uncommon'>". $trophy["rarity_percent"] ."%<br>Uncommon</span>";
+                                    } else {
+                                        echo "<span class='trophy-common'>". $trophy["rarity_percent"] ."%<br>Common</span>";
+                                    }
+                                    ?>
+                                </div>
+                                
+                                <div class="col-2 text-center align-self-center">
+                                    <img src="/img/trophy-<?= $trophy["trophy_type"]; ?>.svg" alt="<?= ucfirst($trophy["trophy_type"]); ?>" title="<?= ucfirst($trophy["trophy_type"]); ?>" height="50" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-body-tertiary p-3 rounded mt-3">
         <div class="row">
             <div class="col-6">
                 <div class="row">
@@ -180,50 +197,63 @@ require_once("header.php");
 
                 <div class="row">
                     <div class="col-12">
-                        <table class="table table-responsive table-striped">
-                            <?php
-                            $query = $database->prepare("SELECT
-                                    p.avatar_url,
-                                    p.online_id,
-                                    te.earned_date
-                                FROM
-                                    trophy_earned te
-                                JOIN player p USING(account_id)
-                                WHERE
-                                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
-                                ORDER BY
-                                    - te.earned_date
-                                DESC
-                                LIMIT 50");
-                            $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-                            $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
-                            $query->execute();
-                            $results = $query->fetchAll();
+                        <div class="table-responsive-xxl">
+                            <table class="table">
+                                <thead>
+                                    <tr class="text-uppercase">
+                                        <th scope="col"></th>
+                                        <th scope="col">User</th>
+                                        <th scope="col" class="text-center">Date</th>
+                                    </tr>
+                                </thead>
 
-                            $count = 0;
+                                <tbody>
+                                    <?php
+                                    $query = $database->prepare("SELECT
+                                            p.avatar_url,
+                                            p.online_id,
+                                            te.earned_date
+                                        FROM
+                                            trophy_earned te
+                                        JOIN player p USING(account_id)
+                                        WHERE
+                                            p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                        ORDER BY
+                                            - te.earned_date
+                                        DESC
+                                        LIMIT 50");
+                                    $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+                                    $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
+                                    $query->execute();
+                                    $results = $query->fetchAll();
 
-                            foreach ($results as $result) {
-                                ?>
-                                <tr<?php if ($result["online_id"] == $player) {
-                                    echo " class=\"table-success\"";
-                                } ?>>
-                                    <th class="align-middle" scope="row">
-                                        <?= ++$count; ?>
-                                    </th>
-                                    <td>
-                                        <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
-                                    </td>
-                                    <td class="align-middle" width="100%">
-                                        <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
-                                    </td>
-                                    <td class="align-middle text-center" style="white-space: nowrap;">
-                                        <? if (isset($result["earned_date"])) echo str_replace(" ", "<br>", $result["earned_date"]); ?>
-                                    </td>
-                                </tr>
-                                <?php
-                            }
-                            ?>
-                        </table>
+                                    $count = 0;
+
+                                    foreach ($results as $result) {
+                                        ?>
+                                        <tr<?= ($result["online_id"] == $player) ? " class='table-primary'" : ""; ?>>
+                                            <th class="align-middle" scope="row">
+                                                <?= ++$count; ?>
+                                            </th>
+                                            <td class="w-100">
+                                                <div class="hstack gap-3">
+                                                    <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                </div>
+                                            </td>
+                                            <td id="faDate<?= $count; ?>" class="align-middle text-center" style="white-space: nowrap;">
+                                            </td>
+
+                                            <script>
+                                                document.getElementById("faDate<?= $count; ?>").innerHTML = new Date('<?= $result["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                            </script>
+                                        </tr>
+                                        <?php
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -237,56 +267,70 @@ require_once("header.php");
 
                 <div class="row">
                     <div class="col-12">
-                        <table class="table table-responsive table-striped">
-                            <?php
-                            $query = $database->prepare("SELECT
-                                    p.avatar_url,
-                                    p.online_id,
-                                    IFNULL(te.earned_date, 'No Timestamp') AS earned_date
-                                FROM
-                                    trophy_earned te
-                                JOIN player p USING(account_id)
-                                WHERE
-                                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
-                                ORDER BY
-                                    te.earned_date
-                                DESC
-                                LIMIT 50");
-                            $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-                            $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
-                            $query->execute();
-                            $results = $query->fetchAll();
+                        <div class="table-responsive-xxl">
+                            <table class="table">
+                                <thead>
+                                    <tr class="text-uppercase">
+                                        <th scope="col"></th>
+                                        <th scope="col">User</th>
+                                        <th scope="col" class="text-center">Date</th>
+                                    </tr>
+                                </thead>
 
-                            $count = 0;
+                                <tbody>
+                                    <?php
+                                    $query = $database->prepare("SELECT
+                                            p.avatar_url,
+                                            p.online_id,
+                                            IFNULL(te.earned_date, 'No Timestamp') AS earned_date
+                                        FROM
+                                            trophy_earned te
+                                        JOIN player p USING(account_id)
+                                        WHERE
+                                            p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                        ORDER BY
+                                            te.earned_date
+                                        DESC
+                                        LIMIT 50");
+                                    $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+                                    $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
+                                    $query->execute();
+                                    $results = $query->fetchAll();
 
-                            foreach ($results as $result) {
-                                ?>
-                                <tr<?php if ($result["online_id"] == $player) {
-                                    echo " class=\"table-success\"";
-                                } ?>>
-                                    <th class="align-middle" scope="row">
-                                        <?= ++$count; ?>
-                                    </th>
-                                    <td>
-                                        <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
-                                    </td>
-                                    <td class="align-middle" width="100%">
-                                        <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
-                                    </td>
-                                    <td class="align-middle text-center" style="white-space: nowrap;">
-                                        <?= str_replace(" ", "<br>", $result["earned_date"]); ?>
-                                    </td>
-                                </tr>
-                                <?php
-                            }
-                            ?>
-                        </table>
+                                    $count = 0;
+
+                                    foreach ($results as $result) {
+                                        ?>
+                                        <tr<?= ($result["online_id"] == $player) ? " class='table-primary'" : ""; ?>>
+                                            <th class="align-middle" scope="row">
+                                                <?= ++$count; ?>
+                                            </th>
+                                            <td class="w-100">
+                                                <div class="hstack gap-3">
+                                                    <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                </div>
+                                            </td>
+                                            <td id="laDate<?= $count; ?>" class="align-middle text-center" style="white-space: nowrap;">
+                                            </td>
+
+                                            <script>
+                                                document.getElementById("laDate<?= $count; ?>").innerHTML = new Date('<?= $result["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                            </script>
+                                        </tr>
+                                        <?php
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </main>
+
 <?php
 require_once("footer.php");
 ?>

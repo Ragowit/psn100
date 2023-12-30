@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="14"
+   height="14"
+   viewBox="0 0 14 14"
+   fill="none"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="trophy-silver.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="129.92857"
+     inkscape:cx="7"
+     inkscape:cy="7"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="3829"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <path
+     d="m 12.665996,1.3339592 h -2.4283 c 0,-0.44822007 -0.3620007,-0.80942907 -0.8094207,-0.80942907 H 4.5716752 c -0.44742,0 -0.8094399,0.361209 -0.8094399,0.80942907 h -2.4283 c -0.44741005,0 -0.80943105,0.36121 -0.80943105,0.80944 v 1.61887 c 0,1.78804 1.44970095,3.23773 3.23773105,3.23773 0.03805,0 0.07346,-0.01032 0.1107,-0.01194 0.2907799,1.13908 1.18015,2.03006 2.31761,2.3249 V 11.85657 H 4.5716752 c -0.44742,0 -0.8094399,0.3612 -0.8094399,0.8095 v 0.8094 h 6.4754607 v -0.809401 c 0,-0.4483 -0.3620007,-0.8095 -0.8094207,-0.8095 H 7.8094052 V 9.3129592 c 1.1374601,-0.29484 2.02679,-1.18562 2.3175908,-2.3247 0.0373,0.00142 0.0727,0.01174 0.1107,0.01174 1.7881,0 3.2378,-1.44969 3.2378,-3.2377299 v -1.61887 c 0,-0.4482301 -0.362101,-0.8094401 -0.8095,-0.8094401 z m -10.5226207,2.42831 v -0.80944 h 1.6188599 v 2.4283 c -0.8940099,0 -1.6188599,-0.72565 -1.6188599,-1.61886 z m 9.7132207,0 c 0,0.89321 -0.724901,1.61886 -1.6189,1.61886 v -2.4283 h 1.6189 z"
+     fill="#777777"
+     id="path1" />
+</svg>

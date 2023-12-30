@@ -11,6 +11,8 @@ $query->bindParam(":id", $gameId, PDO::PARAM_INT);
 $query->execute();
 $game = $query->fetch();
 
+$sort = $_GET["sort"] ?? "default";
+
 if (isset($player)) {
     $query = $database->prepare("SELECT account_id 
         FROM   player 
@@ -23,6 +25,14 @@ if (isset($player)) {
         header("Location: /game/". $game["id"] ."-". slugify($game["name"]), true, 303);
         die();
     }
+
+    $query = $database->prepare("SELECT *
+        FROM trophy_title_player
+        WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
+    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->execute();
+    $gamePlayer = $query->fetch();
 }
 
 $metaData = new stdClass();
@@ -34,355 +44,41 @@ $metaData->url = "https://psn100.net/game/". $game["id"] ."-". slugify($game["na
 $title = $game["name"] ." Trophies ~ PSN 100%";
 require_once("header.php");
 ?>
-<main role="main">
-    <div class="container">
+
+<main class="container">
+    <?php
+    require_once("game_header.php");
+    ?>
+
+    <div class="p-3 mb-3">
         <div class="row">
-            <div class="col-12">
-                <h1><?= htmlentities($game["name"]) ?><?= ((is_null($game["region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $game["region"] ."</span>") ?></h1>
-                <?php
-                if (isset($player)) {
-                    ?>
-                    <small>Viewing as <a href="/player/<?= $player; ?>"><?= $player; ?></a></small>
-                    <?php
-                }
-                ?>
+            <div class="col-3">
             </div>
 
-            <?php
-            if ($game["status"] == 2) {
-                $query = $database->prepare("SELECT id, `name` 
-                    FROM   trophy_title 
-                    WHERE  np_communication_id = :parent_np_communication_id");
-                $query->bindParam(":parent_np_communication_id", $game["parent_np_communication_id"], PDO::PARAM_STR);
-                $query->execute();
-                $parentGame = $query->fetch();
-
-                $parentLink = $parentGame["id"] ."-". slugify($parentGame["name"]);
-                if (isset($player)) {
-                    $parentLink .= "/". $player;
-                }
-                ?>
-                <div class="col-12">
-                    <div class="alert alert-warning" role="alert">
-                        This game have been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGame["name"]) ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
-                    </div>
-                </div>
-                <?php
-            }
-            
-            $query = $database->prepare("SELECT COUNT(*) FROM trophy WHERE `status` = 1 AND np_communication_id = :np_communication_id");
-            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-            $query->execute();
-            $unobtainableTrophies = $query->fetchColumn();
-            if ($unobtainableTrophies > 0) {
-                ?>
-                <div class="col-12">
-                    <div class="alert alert-warning" role="alert">
-                        This game have <?= $unobtainableTrophies; ?> unobtainable <?= (($unobtainableTrophies == 1) ? "trophy" : "trophies"); ?>.
-                    </div>
-                </div>
-                <?php
-            }
-
-            if (!empty($game["message"])) {
-                ?>
-                <div class="col-12">
-                    <div class="alert alert-warning" role="alert">
-                        <?= $game["message"]; ?>
-                    </div>
-                </div>
-                <?php
-            }
-            ?>
-        </div>
-
-        <div class="row">
             <div class="col-6 text-center">
-                <h5>Trophies</h5>
+                <div class="btn-group">
+                    <a class="btn btn-primary active" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
+                </div>
             </div>
-            <div class="col-6 text-center">
-                <?php
-                if (isset($player)) {
-                    ?>
-                    <h5><a href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $player; ?>">Leaderboard</a></h5>
-                    <?php
-                } else {
-                    ?>
-                    <h5><a href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?>">Leaderboard</a></h5>
-                    <?php
-                }
-                ?>
+
+            <div class="col-3">
+                <form>
+                    <div class="input-group d-flex justify-content-end">
+                        <select class="form-select" name="sort" onChange="this.form.submit()">
+                            <option disabled>Sort by...</option>
+                            <option value="default"<?= ($sort == "default" ? " selected" : ""); ?>>Default</option>
+                            <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
+                            <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity</option>
+                        </select>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- Game Info -->
-        <div class="row">
-            <div class="col-lg-3 col-sm-12">
-                <div class="row" style="height: 300px">
-                    <div class="col-12 text-center align-self-center">
-                        <img src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= $game["name"]; ?>" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="250" />
-                        <br>
-                        <?php
-                        foreach (explode(",", $game["platform"]) as $platform) {
-                            echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
-                        }
-                        ?>
-                        <br>
-                        Version: <?= $game["set_version"]; ?>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-9 col-sm-12 align-self-center">
-                <div class="row">
-                    <div class="col-12 text-center">
-                        <div class="progress">
-                            <div id="totalBronzeCount" class="progress-bar" role="progressbar" style="width: 25%; background-color: #c46438;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><?= $game["bronze"]; ?></div>
-                            <div id="totalSilverCount" class="progress-bar" role="progressbar" style="width: 25%; background-color: #777777;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><?= $game["silver"]; ?></div>
-                            <div id="totalGoldCount" class="progress-bar" role="progressbar" style="width: 25%; background-color: #c2903e;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><?= $game["gold"]; ?></div>
-                            <div id="totalPlatinumCount" class="progress-bar" role="progressbar" style="width: 25%; background-color: #667fb2;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><?= $game["platinum"]; ?></div>
-                        </div>
-                    </div>
-
-                    <?php
-                    if (isset($accountId)) {
-                        $query = $database->prepare("SELECT progress 
-                            FROM   trophy_title_player 
-                            WHERE  np_communication_id = :np_communication_id 
-                                AND account_id = :account_id ");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                        $query->execute();
-                        $progress = $query->fetchColumn();
-                        if ($progress != false) {
-                            ?>
-                            <div class="col-12 text-center">
-                                <div class="progress">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
-                                </div>
-                            </div>
-                            <?php
-                        }
-                    }
-                    ?>
-
-                    <div class="col-12 text-center">
-                        <?php
-                        $query = $database->prepare("SELECT Ifnull(Sum(rarity_point), 0) 
-                            FROM   trophy 
-                            WHERE  np_communication_id = :np_communication_id 
-                                AND status = 0 ");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->execute();
-                        $rarityPoints = $query->fetchColumn();
-                        ?>
-                        <span><?= number_format($game["owners_completed"]); ?> of <?= number_format($game["owners"]); ?> players (<?= $game["difficulty"]; ?>%) have 100% this game.</span><br>
-                        <?php
-                        switch($game["status"]) {
-                            case 1:
-                                echo "<span class=\"badge badge-pill badge-warning\">Delisted</span>";
-                                break;
-                            case 2:
-                                echo "<span class=\"badge badge-pill badge-warning\">Merged</span>";
-                                break;
-                            case 3:
-                                echo "<span class=\"badge badge-pill badge-warning\">Obsolete</span>";
-                                break;
-                            case 4:
-                                echo "<span class=\"badge badge-pill badge-warning\">Delisted &amp; Obsolete</span>";
-                                break;
-                            default:
-                                echo number_format($rarityPoints) ." Rarity Points";
-                        }
-                        ?>
-                        <br>
-                    </div>
-
-                    <div class="col-12 text-center">
-                        <b>Order By</b><br>
-                        <a href="?">Default</a> ~ <a href="?order=rarity">Rarity</a>
-                        <?php
-                        if (isset($accountId)) {
-                            echo " ~ <a href=\"?order=date\">Date</a>";
-                        } ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Players -->
-        <div class="row">
-            <div class="col-12">
-                <div class="accordion" id="accordionRecentPlayers">
-                    <div class="card">
-                        <div class="card-header" id="headingRecentPlayers">
-                            <h2 class="mb-0">
-                                <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseRecentPlayers" aria-expanded="true" aria-controls="collapseRecentPlayers">
-                                    Recent Players
-                                </button>
-                            </h2>
-                        </div>
-                        <div id="collapseRecentPlayers" class="collapse" aria-labelledby="headingRecentPlayers" data-parent="#accordionRecentPlayers">
-                            <div class="card-body">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <th class="table-primary" colspan="2">Recent Players</th>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $query = $database->prepare("SELECT
-                                                p.online_id,
-                                                p.avatar_url,
-                                                ttp.bronze,
-                                                ttp.silver,
-                                                ttp.gold,
-                                                ttp.platinum,
-                                                ttp.progress,
-                                                ttp.last_updated_date
-                                            FROM
-                                                trophy_title_player ttp
-                                            JOIN player p USING(account_id)
-                                            WHERE
-                                                p.status = 0 AND p.rank <= 50000 AND ttp.np_communication_id = :np_communication_id
-                                            ORDER BY
-                                                last_updated_date
-                                            DESC
-                                            LIMIT 10");
-                                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                        $query->execute();
-                                        $recentPlayers = $query->fetchAll();
-
-                                        foreach ($recentPlayers as $recentPlayer) {
-                                            ?>
-                                            <tr class="text-center">
-                                                <td width="125px">
-                                                    <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $recentPlayer["online_id"]; ?>">
-                                                        <img src="/img/avatar/<?= $recentPlayer["avatar_url"]; ?>" alt="" height="75" />
-                                                        <br>
-                                                        <?= $recentPlayer["online_id"]; ?>
-                                                    </a>
-                                                </td>
-                                                <td >
-                                                    <?= $recentPlayer["last_updated_date"]; ?>
-                                                    <br>
-                                                    <table width="100%">
-                                                        <tr>
-                                                            <td class="width: 25%;">
-                                                                <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["bronze"] == 0) ? 100 : ($recentPlayer["bronze"] / $game["bronze"] * 100); ?>%; background-color: #c46438;" aria-valuenow="<?= $recentPlayer["bronze"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["bronze"]; ?>"><?= $recentPlayer["bronze"]; ?></div>
-                                                                </div>
-                                                            </td>
-                                                            <td class="width: 25%;">
-                                                                <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["silver"] == 0) ? 100 : ($recentPlayer["silver"] / $game["silver"] * 100); ?>%; background-color: #777777;" aria-valuenow="<?= $recentPlayer["silver"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["silver"]; ?>"><?= $recentPlayer["silver"]; ?></div>
-                                                                </div>
-                                                            </td>
-                                                            <td class="width: 25%;">
-                                                                <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["gold"] == 0) ? 100 : ($recentPlayer["gold"] / $game["gold"] * 100); ?>%; background-color: #c2903e;" aria-valuenow="<?= $recentPlayer["gold"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["gold"]; ?>"><?= $recentPlayer["gold"]; ?></div>
-                                                                </div>
-                                                            </td>
-                                                            <td class="width: 25%;">
-                                                                <div class="progress">
-                                                                    <div class="progress-bar" role="progressbar" style="width: <?= ($game["platinum"] == 0) ? 100 : ($recentPlayer["platinum"] / $game["platinum"] * 100); ?>%; background-color: #667fb2;" aria-valuenow="<?= $recentPlayer["platinum"]; ?>" aria-valuemin="0" aria-valuemax="<?= $game["platinum"]; ?>"><?= $recentPlayer["platinum"]; ?></div>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                    <div class="progress">
-                                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $recentPlayer["progress"]; ?>%;" aria-valuenow="<?= $recentPlayer["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"><?= $recentPlayer["progress"]; ?>%</div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <?php
-                                        }
-                                        ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <?php
-        if (str_starts_with($game["np_communication_id"], "MERGE")) {
-            ?>
-            <!-- Stacks -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="accordion" id="accordionStacks">
-                        <div class="card">
-                            <div class="card-header" id="headingStacks">
-                                <h2 class="mb-0">
-                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseStacks" aria-expanded="true" aria-controls="collapseStacks">
-                                        Stacks
-                                    </button>
-                                </h2>
-                            </div>
-                            <div id="collapseStacks" class="collapse" aria-labelledby="headingStacks" data-parent="#accordionStacks">
-                                <div class="card-body">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <th class="table-primary" colspan="2">Stacks</th>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                            $query = $database->prepare("SELECT
-                                                    id, `name`, platform, icon_url, region
-                                                FROM
-                                                    trophy_title
-                                                WHERE
-                                                    parent_np_communication_id = :parent_np_communication_id
-                                                ORDER BY
-                                                    `name`, platform, region");
-                                            $query->bindParam(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                            $query->execute();
-                                            $stacks = $query->fetchAll();
-
-                                            foreach ($stacks as $stack) {
-                                                ?>
-                                                <tr>
-                                                    <?php
-                                                    $stackLink = $stack["id"] ."-". slugify($stack["name"]);
-                                                    if (isset($player)) {
-                                                        $stackLink .= "/". $player;
-                                                    } ?>
-                                                    <td scope="row" class="text-center" width="125px">
-                                                        <a href="/game/<?= $stackLink; ?>">
-                                                            <img src="/img/title/<?= ($stack["icon_url"] == ".png") ? ((str_contains($stack["platform"], "PS5") || str_contains($stack["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $stack["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
-                                                        </a>
-                                                        <br>
-                                                        <?php
-                                                        foreach (explode(",", $stack["platform"]) as $platform) {
-                                                            echo "<span class=\"badge badge-pill badge-primary\">" . $platform . "</span> ";
-                                                        } ?>
-                                                    </td>
-                                                    <td class="align-middle">
-                                                        <a href="/game/<?= $stackLink; ?>">
-                                                            <?= htmlentities($stack["name"]); ?>
-                                                        </a>
-                                                        <?= ((is_null($stack["region"])) ? "" : " <span class=\"badge badge-pill badge-primary\">". $stack["region"] ."</span>") ?>
-                                                    </td>
-                                                </tr>
-                                                <?php
-                                            }
-                                            ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <?php
-        }
-        ?>
-
-        <br>
-
-        <!-- Trophies -->
+    <div class="bg-body-tertiary p-3 rounded">
         <div class="row">
             <div class="col-12">
                 <?php
@@ -399,249 +95,259 @@ require_once("header.php");
                 $trophyGroups->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                 $trophyGroups->execute();
                 while ($trophyGroup = $trophyGroups->fetch()) {
-                    ?>
-                    <div id="<?= $trophyGroup["group_id"]; ?>" class="row" style="background: #b8daff;">
-                        <div class="col-auto">
-                            <img src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= $trophyGroup["name"]; ?>" height="100" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%); margin: 10px 0px;" />
-                        </div>
-                        <div class="col align-self-center">
-                            <b><?= htmlentities($trophyGroup["name"]); ?></b><br>
-                            <?= nl2br(htmlentities($trophyGroup["detail"], ENT_QUOTES, "UTF-8")); ?>
-                        </div>
-                        <div class="col-2 align-self-center">
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: 33%; background-color: #c46438;" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"><?= $trophyGroup["bronze"]; ?></div>
-                                <div class="progress-bar" role="progressbar" style="width: 34%; background-color: #777777;" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100"><?= $trophyGroup["silver"]; ?></div>
-                                <div class="progress-bar" role="progressbar" style="width: 33%; background-color: #c2903e;" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"><?= $trophyGroup["gold"]; ?></div>
-                            </div>
+                    if (isset($player)) {
+                        $query = $database->prepare("SELECT * 
+                            FROM   trophy_group_player 
+                            WHERE  np_communication_id = :np_communication_id 
+                                AND group_id = :group_id 
+                                AND account_id = :account_id ");
+                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                        $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
+                        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                        $query->execute();
+                        $trophyGroupPlayer = $query->fetch();
+                    }
 
-                            <?php
-                            if (isset($accountId)) {
-                                $query = $database->prepare("SELECT progress 
-                                    FROM   trophy_group_player 
-                                    WHERE  np_communication_id = :np_communication_id 
-                                        AND group_id = :group_id 
-                                        AND account_id = :account_id ");
+                    unset($previousTimeStamp);
+                    ?>
+                    <div class="table-responsive-xxl">
+                        <table class="table" id="<?= $trophyGroup["group_id"]; ?>">
+                            <thead>
+                                <tr>
+                                    <th scope="col" colspan="5" class="bg-dark-subtle">
+                                        <div class="hstack gap-3">
+                                            <div>
+                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= htmlentities($trophyGroup["name"]); ?>">
+                                            </div>
+                                            
+                                            <div>
+                                                <b><?= htmlentities($trophyGroup["name"]); ?></b><br>
+                                                <?= nl2br(htmlentities($trophyGroup["detail"], ENT_QUOTES, "UTF-8")); ?>
+                                            </div>
+
+                                            <div class="ms-auto">
+                                                <?php
+                                                if (isset($trophyGroupPlayer)) {
+                                                    if ($trophyGroup["group_id"] == "default") {
+                                                        ?>
+                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"]; ?>/<?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"]; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"]; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"]; ?>/<?= $trophyGroup["bronze"]; ?></span>
+                                                        <?php
+                                                    } else {
+                                                        ?>
+                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"]; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"]; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"]; ?>/<?= $trophyGroup["bronze"]; ?></span>
+                                                        <?php
+                                                    }
+                                                    ?>
+                                                    <div>
+                                                        <div class="progress mt-1" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $trophyGroupPlayer["progress"]; ?>" aria-valuemin="0" aria-valuemax="100">
+                                                            <div class="progress-bar" style="width: <?= $trophyGroupPlayer["progress"]; ?>%"><?= $trophyGroupPlayer["progress"]; ?>%</div>
+                                                        </div>
+                                                    </div>
+                                                    <?php
+                                                } else {
+                                                    if ($trophyGroup["group_id"] == "default") {
+                                                        ?>
+                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroup["bronze"]; ?></span>
+                                                        <?php
+                                                    } else {
+                                                        ?>
+                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroup["bronze"]; ?></span>
+                                                        <?php
+                                                    }
+                                                }
+                                                ?>
+                                            </div>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <?php
+                                if (isset($accountId)) {
+                                    $queryText = "SELECT * 
+                                        FROM   (SELECT t.id, 
+                                                    t.order_id, 
+                                                    t.type, 
+                                                    t.name, 
+                                                    t.detail, 
+                                                    t.icon_url, 
+                                                    t.rarity_percent, 
+                                                    t.status,
+                                                    t.progress_target_value,
+                                                    t.reward_name,
+                                                    t.reward_image_url,
+                                                    te.earned_date,
+                                                    te.progress,
+                                                    te.earned
+                                            FROM   trophy t 
+                                                    LEFT JOIN (SELECT np_communication_id, 
+                                                                    group_id, 
+                                                                    order_id, 
+                                                                    Ifnull(earned_date, 'No Timestamp') AS 
+                                                                    earned_date,
+                                                                    progress,
+                                                                    earned
+                                                                FROM   trophy_earned 
+                                                                WHERE  account_id = :account_id) AS te USING ( 
+                                                    np_communication_id, group_id, order_id) 
+                                            WHERE  t.np_communication_id = :np_communication_id 
+                                                    AND t.group_id = :group_id) AS x ";
+
+                                    if ($sort == "date") {
+                                        $queryText = $queryText ." ORDER  BY x.earned_date IS NULL, 
+                                            x.earned_date, 
+                                            Field(x.type, 'bronze', 'silver', 'gold', 'platinum'),
+                                            x.order_id ";
+                                    } elseif ($sort == "rarity") {
+                                        $queryText = $queryText ." ORDER  BY x.rarity_percent DESC, 
+                                            Field(x.type, 'bronze', 'silver', 'gold', 'platinum'), 
+                                            x.order_id ";
+                                    } else {
+                                        $queryText = $queryText ." ORDER  BY x.order_id ";
+                                    }
+
+                                    $query = $database->prepare($queryText);
+                                    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                                } else {
+                                    $queryText = "SELECT t.id, 
+                                            t.order_id, 
+                                            t.type, 
+                                            t.name, 
+                                            t.detail, 
+                                            t.icon_url, 
+                                            t.rarity_percent, 
+                                            t.status,
+                                            t.progress_target_value,
+                                            t.reward_name,
+                                            t.reward_image_url
+                                        FROM   trophy t 
+                                        WHERE  t.np_communication_id = :np_communication_id 
+                                            AND t.group_id = :group_id ";
+
+                                    if ($sort == "rarity") {
+                                        $queryText = $queryText ." ORDER BY  rarity_percent DESC,
+                                            Field(type, 'bronze', 'silver', 'gold', 'platinum'),
+                                            order_id ";
+                                    } else {
+                                        $queryText = $queryText ." ORDER BY order_id";
+                                    }
+
+                                    $query = $database->prepare($queryText);
+                                }
                                 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                                 $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                                 $query->execute();
-                                $progress = $query->fetchColumn();
-                                if ($progress != false) {
+                                $trophies = $query->fetchAll();
+
+                                foreach ($trophies as $trophy) {
+                                    // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
+                                    if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress_target_value"] != null) {
+                                        $trophy["progress"] = $trophy["progress_target_value"];
+                                    }
+
+                                    $trClass = "";
+                                    if ($trophy["status"] == 1) {
+                                        $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
+                                    } elseif (isset($accountId) && $trophy["earned"] == 1) {
+                                        $trClass = " class=\"table-success\"";
+                                    }
                                     ?>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"><?= $progress ?>%</div>
-                                    </div>
+                                    <tr scope="row"<?= $trClass; ?>>
+                                        <td style="width: 5rem;">
+                                            <div>
+                                                <img class="card-img object-fit-scale" style="height: 5rem;" src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="<?= htmlentities($trophy["name"]); ?>">
+                                            </div>
+                                        </td>
+
+                                        <td class="w-auto">
+                                            <div class="vstack">
+                                                <span>
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?><?= (isset($player) ? "/".$player : ""); ?>">
+                                                        <b><?= htmlentities($trophy["name"]); ?></b>
+                                                    </a>
+                                                </span>
+                                                <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
+                                            </div>
+                                        </td>
+
+                                        <td style="width: 13rem;" class="text-end align-middle">
+                                            <?php
+                                            if (isset($accountId) && $trophy["earned"] == 1) {
+                                                ?>
+                                                <span id="earned<?= $trophy["order_id"]; ?>"></span>
+                                                <script>
+                                                    document.getElementById("earned<?= $trophy["order_id"]; ?>").innerHTML = new Date('<?= $trophy["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                </script>
+                                                <?php
+                                                if ($sort == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
+                                                    echo "<br>";
+                                                    $datetime1 = date_create($previousTimeStamp);
+                                                    $datetime2 = date_create($trophy["earned_date"]);
+                                                    $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
+                                                    $first = -1;
+                                                    $second = -1;
+                                                    for ($i = 0; $i < count($completionTimes); $i++) {
+                                                        if ($completionTimes[$i][0] == "0") {
+                                                            continue;
+                                                        }
+    
+                                                        if ($first == -1) {
+                                                            $first = $i;
+                                                        } elseif ($second == -1) {
+                                                            $second = $i;
+                                                        }
+                                                    }
+    
+                                                    if ($first >= 0 && $second >= 0) {
+                                                        echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
+                                                    } elseif ($first >= 0 && $second == -1) {
+                                                        echo "(+". $completionTimes[$first] .")";
+                                                    }
+                                                }
+                                                if ($sort == "date") {
+                                                    $previousTimeStamp = $trophy["earned_date"];
+                                                }
+                                            }
+                                            ?>
+                                        </td>
+
+                                        <td style="width: 5rem;" class="text-center align-middle">
+                                            <?php
+                                            if ($trophy["status"] == 1) {
+                                                echo "<span>". $trophy["rarity_percent"] ."%<br>Unobtainable</span>";
+                                            } elseif ($trophy["rarity_percent"] <= 0.02) {
+                                                echo "<span class='trophy-legendary'>". $trophy["rarity_percent"] ."%<br>Legendary</span>";
+                                            } elseif ($trophy["rarity_percent"] <= 0.2) {
+                                                echo "<span class='trophy-epic'>". $trophy["rarity_percent"] ."%<br>Epic</span>";
+                                            } elseif ($trophy["rarity_percent"] <= 2) {
+                                                echo "<span class='trophy-rare'>". $trophy["rarity_percent"] ."%<br>Rare</span>";
+                                            } elseif ($trophy["rarity_percent"] <= 20) {
+                                                echo "<span class='trophy-uncommon'>". $trophy["rarity_percent"] ."%<br>Uncommon</span>";
+                                            } else {
+                                                echo "<span class='trophy-common'>". $trophy["rarity_percent"] ."%<br>Common</span>";
+                                            }
+                                            ?>
+                                        </td>
+
+                                        <td style="width: 5rem;" class="text-center align-middle">
+                                            <img src="/img/trophy-<?= $trophy["type"]; ?>.svg" alt="<?= ucfirst($trophy["type"]); ?>" title="<?= ucfirst($trophy["type"]); ?>" height="50" />
+                                        </td>
+                                    </tr>
                                     <?php
                                 }
-                            } ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    if (isset($accountId)) {
-                        $queryText = "SELECT * 
-                            FROM   (SELECT t.id, 
-                                         t.order_id, 
-                                         t.type, 
-                                         t.name, 
-                                         t.detail, 
-                                         t.icon_url, 
-                                         t.rarity_percent, 
-                                         t.status,
-                                         t.progress_target_value,
-                                         t.reward_name,
-                                         t.reward_image_url,
-                                         te.earned_date,
-                                         te.progress,
-                                         te.earned
-                                  FROM   trophy t 
-                                         LEFT JOIN (SELECT np_communication_id, 
-                                                           group_id, 
-                                                           order_id, 
-                                                           Ifnull(earned_date, 'No Timestamp') AS 
-                                                           earned_date,
-                                                           progress,
-                                                           earned
-                                                    FROM   trophy_earned 
-                                                    WHERE  account_id = :account_id) AS te USING ( 
-                                         np_communication_id, group_id, order_id) 
-                                  WHERE  t.np_communication_id = :np_communication_id 
-                                         AND t.group_id = :group_id) AS x ";
-
-                        if (isset($_GET["order"]) && $_GET["order"] == "date") {
-                            $queryText = $queryText ." ORDER  BY x.earned_date IS NULL, 
-                                x.earned_date, 
-                                Field(x.type, 'bronze', 'silver', 'gold', 'platinum'),
-                                x.order_id ";
-                        } elseif (isset($_GET["order"]) && $_GET["order"] == "rarity") {
-                            $queryText = $queryText ." ORDER  BY x.rarity_percent DESC, 
-                                Field(x.type, 'bronze', 'silver', 'gold', 'platinum'), 
-                                x.order_id ";
-                        } else {
-                            $queryText = $queryText ." ORDER  BY x.order_id ";
-                        }
-
-                        $query = $database->prepare($queryText);
-                        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                    } else {
-                        $queryText = "SELECT t.id, 
-                                   t.order_id, 
-                                   t.type, 
-                                   t.name, 
-                                   t.detail, 
-                                   t.icon_url, 
-                                   t.rarity_percent, 
-                                   t.status,
-                                   t.progress_target_value,
-                                   t.reward_name,
-                                   t.reward_image_url
-                            FROM   trophy t 
-                            WHERE  t.np_communication_id = :np_communication_id 
-                                   AND t.group_id = :group_id ";
-
-                        if (isset($_GET["order"]) && $_GET["order"] == "rarity") {
-                            $queryText = $queryText ." ORDER BY  rarity_percent DESC,
-                                Field(type, 'bronze', 'silver', 'gold', 'platinum'),
-                                order_id ";
-                        } else {
-                            $queryText = $queryText ." ORDER BY order_id";
-                        }
-
-                        $query = $database->prepare($queryText);
-                    }
-                    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                    $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                    $query->execute();
-                    $trophies = $query->fetchAll(); ?>
-                    <div class="row">
-                        <table class="table table-responsive table-striped">
-                            <?php
-                            foreach ($trophies as $trophy) {
-                                // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-                                if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress_target_value"] != null) {
-                                    $trophy["progress"] = $trophy["progress_target_value"];
-                                }
-
-                                $trClass = "";
-                                if ($trophy["status"] == 1) {
-                                    $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                } elseif (isset($accountId) && $trophy["earned"] == 1) {
-                                    $trClass = " class=\"table-success\"";
-                                }
-
-                                $trophyIconHeight = 0;
-                                if (str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) {
-                                    $trophyIconHeight = 64;
-                                } else {
-                                    $trophyIconHeight = 60;
-                                }
                                 ?>
-                                <tr<?= $trClass; ?>>
-                                    <td>
-                                        <div style="height: 64px; width: 64px;" class="d-flex align-items-center justify-content-center">
-                                            <img src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="Trophy" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" height="<?= $trophyIconHeight; ?>" />
-                                        </div>
-                                    </td>
-                                    <td style="width: 100%;">
-                                        <?php
-                                        if (isset($player)) {
-                                            ?>
-                                            <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>/<?= $player; ?>">
-                                                <b><?= htmlentities($trophy["name"]); ?></b>
-                                            </a>
-                                            <?php
-                                        } else {
-                                            ?>
-                                            <a href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?>">
-                                                <b><?= htmlentities($trophy["name"]); ?></b>
-                                            </a>
-                                            <?php
-                                        } ?>
-                                        <br>
-                                        <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
-                                    </td>
-                                    <td class="text-center" style="white-space: nowrap">
-                                        <?php
-                                        if ($trophy["progress_target_value"] != null) {
-                                            echo "<br><b>";
-                                            if (isset($trophy["progress"])) {
-                                                echo $trophy["progress"];
-                                            } else {
-                                                echo "0";
-                                            }
-                                            echo "/". $trophy["progress_target_value"] ."</b>";
-                                        }
-
-                                        if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
-                                            echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
-                                        }
-                                        ?>
-                                    </td>
-                                    <td class="text-center" style="white-space: nowrap">
-                                        <?php
-                                        if (isset($accountId) && $trophy["earned"] == 1) {
-                                            echo str_replace(" ", "<br>", $trophy["earned_date"]);
-                                            if (isset($_GET["order"]) && $_GET["order"] == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
-                                                echo "<br>";
-                                                $datetime1 = date_create($previousTimeStamp);
-                                                $datetime2 = date_create($trophy["earned_date"]);
-                                                $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
-                                                $first = -1;
-                                                $second = -1;
-                                                for ($i = 0; $i < count($completionTimes); $i++) {
-                                                    if ($completionTimes[$i][0] == "0") {
-                                                        continue;
-                                                    }
-
-                                                    if ($first == -1) {
-                                                        $first = $i;
-                                                    } elseif ($second == -1) {
-                                                        $second = $i;
-                                                    }
-                                                }
-
-                                                if ($first >= 0 && $second >= 0) {
-                                                    echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
-                                                } elseif ($first >= 0 && $second == -1) {
-                                                    echo "(+". $completionTimes[$first] .")";
-                                                }
-                                            }
-                                        } ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <h5><?= $trophy["rarity_percent"]; ?>%</h5>
-                                        <?php
-                                        if ($trophy["status"] == 1) {
-                                            echo "Unobtainable";
-                                        } elseif ($trophy["rarity_percent"] <= 0.02) {
-                                            echo "Legendary";
-                                        } elseif ($trophy["rarity_percent"] <= 0.2) {
-                                            echo "Epic";
-                                        } elseif ($trophy["rarity_percent"] <= 2) {
-                                            echo "Rare";
-                                        } elseif ($trophy["rarity_percent"] <= 20) {
-                                            echo "Uncommon";
-                                        } else {
-                                            echo "Common";
-                                        } ?>
-                                    </td>
-                                    <td><img src="/img/playstation/<?= $trophy["type"]; ?>.png" alt="<?= ucfirst($trophy["type"]); ?>" /></td>
-                                </tr>
-                                <?php
-                                if (isset($_GET["order"]) && $_GET["order"] == "date") {
-                                    $previousTimeStamp = $trophy["earned_date"];
-                                }
-                            } ?>
+                            </tbody>
                         </table>
                     </div>
-                    <?php
+                <?php
                 }
                 ?>
             </div>
         </div>
     </div>
 </main>
+
 <?php
 require_once("footer.php");
 ?>

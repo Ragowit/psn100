@@ -146,7 +146,7 @@ do {
     }
 } while ($deadlock || $game);
 
-// Recalculate trophy rarity point
+// Recalculate trophy rarity point (trophy)
 do {
     try {
         $query = $database->prepare(
@@ -166,6 +166,32 @@ do {
                     0
                 ),
                 t.rarity_name = IF(t.status = 0 AND tt.status = 0, t.rarity_name, 'NONE')");
+        $query->execute();
+
+        $deadlock = false;
+    } catch (Exception $e) {
+        sleep(3);
+        $deadlock = true;
+    }
+} while ($deadlock);
+
+// Recalculate trophy rarity point (trophy_title)
+do {
+    try {
+        $query = $database->prepare(
+            "WITH
+                rarity AS(
+                    SELECT np_communication_id, IFNULL(SUM(rarity_point), 0) AS points FROM trophy WHERE `status` = 0
+                GROUP BY np_communication_id
+                    ORDER BY NULL
+            )
+            UPDATE
+                trophy_title tt,
+                rarity
+            SET
+                tt.rarity_points = rarity.points
+            WHERE
+                tt.np_communication_id = rarity.np_communication_id");
         $query->execute();
 
         $deadlock = false;

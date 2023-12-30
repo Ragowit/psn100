@@ -1,70 +1,65 @@
 <?php
 $url = $_SERVER["REQUEST_URI"];
-$leaderboardActiveLi = "";
-$leaderboardActiveSpan = "";
-$gameActiveLi = "";
-$gameActiveSpan = "";
-$trophyActiveLi = "";
-$trophyActiveSpan = "";
-$avatarActiveLi = "";
-$avatarActiveSpan = "";
-$aboutActiveLi = "";
-$aboutActiveSpan = "";
-$homeActiveLi = "";
-$homeActiveSpan = "";
+$leaderboardActive = "";
+$gameActive = "";
+$trophyActive = "";
+$avatarActive = "";
+$aboutActive = "";
+$homeActive = "";
 
 if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
-    $leaderboardActiveLi = " active";
-    $leaderboardActiveSpan = " <span class=\"sr-only\">(current)</span>";
+    $leaderboardActive = " active";
 } elseif (str_starts_with($url, "/game")) {
-    $gameActiveLi = " active";
-    $gameActiveSpan = " <span class=\"sr-only\">(current)</span>";
+    $gameActive = " active";
 } elseif (str_starts_with($url, "/trophy")) {
-    $trophyActiveLi = " active";
-    $trophyActiveSpan = " <span class=\"sr-only\">(current)</span>";
+    $trophyActive = " active";
 } elseif (str_starts_with($url, "/avatar")) {
-    $avatarActiveLi = " active";
-    $avatarActiveSpan = " <span class=\"sr-only\">(current)</span>";
+    $avatarActive = " active";
 } elseif (str_starts_with($url, "/about")) {
-    $aboutActiveLi = " active";
-    $aboutActiveSpan = " <span class=\"sr-only\">(current)</span>";
+    $aboutActive = " active";
 } else {
-    $homeActiveLi = " active";
-    $homeActiveSpan = " <span class=\"sr-only\">(current)</span>";
+    $homeActive = " active";
 }
 ?>
-        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-            <a class="navbar-brand" href="/">
-                <img src="/img/logo-via-logohub.png" alt="PSN 100%" height="24px">
-            </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbars" aria-controls="navbars" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
 
-            <div class="collapse navbar-collapse" id="navbars">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item<?= $homeActiveLi; ?>">
-                        <a class="nav-link" href="/">Home<?= $homeActiveSpan; ?></a>
-                    </li>
-                    <li class="nav-item<?= $leaderboardActiveLi; ?>">
-                        <a class="nav-link" href="/leaderboard/main">Leaderboards<?= $leaderboardActiveSpan; ?></a>
-                    </li>
-                    <li class="nav-item<?= $gameActiveLi; ?>">
-                        <a class="nav-link" href="/game">Games<?= $gameActiveSpan; ?></a>
-                    </li>
-                    <li class="nav-item<?= $trophyActiveLi; ?>">
-                        <a class="nav-link" href="/trophy">Trophies<?= $trophyActiveSpan; ?></a>
-                    </li>
-                    <li class="nav-item<?= $avatarActiveLi; ?>">
-                        <a class="nav-link" href="/avatar">Avatars<?= $avatarActiveSpan; ?></a>
-                    </li>
-                    <li class="nav-item<?= $aboutActiveLi; ?>">
-                        <a class="nav-link" href="/about">About<?= $aboutActiveSpan; ?></a>
-                    </li>
-                </ul>
-                <form action="/game" class="form-inline my-2 my-lg-0">
-                    <input class="form-control mr-sm-2" name="search" type="text" placeholder="Search game..." aria-label="Search">
-                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-                </form>
-            </div>
-        </nav>
+<nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img src="/img/logo-via-logohub.png" alt="PSN 100%" height="24">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <form action="/game" class="d-flex" role="search">
+                <input type="hidden" name="sort" value="<?= $_GET["sort"]; ?>">
+                <input type="hidden" name="player" value="<?= $_GET["player"]; ?>">
+                <input type="hidden" name="filter" value="<?= $_GET["filter"]; ?>">
+                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= htmlentities($_GET["search"]); ?>">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
+
+            <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+                <li class="nav-item">
+                    <a class="nav-link<?= $homeActive; ?>" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<?= $leaderboardActive; ?>" href="/leaderboard/main">Leaderboards</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<?= $gameActive; ?>" href="/game">Games</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<?= $trophyActive; ?>" href="/trophy">Trophies</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<?= $avatarActive; ?>" href="/avatar">Avatars</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<?= $aboutActive; ?>" href="/about">About</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

@@ -25,7 +25,7 @@ if (isset($player)) {
     }
 }
 
-$title = $game["name"] ." Leaderboard ~ PSN 100%";
+$title = $game["name"] ." Recent Players ~ PSN 100%";
 require_once("header.php");
 
 $url = $_SERVER["REQUEST_URI"];
@@ -36,35 +36,6 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 } else {
     $params = array();
 }
-
-$sql = "SELECT COUNT(*) FROM trophy_title_player ttp
-    JOIN player p USING (account_id)
-    WHERE ttp.np_communication_id = :np_communication_id AND p.status = 0 AND p.rank <= 50000";
-if (isset($_GET["country"])) {
-    $sql .= " AND p.country = :country";
-}
-if (isset($_GET["avatar"])) {
-    $sql .= " AND p.avatar_url = :avatar";
-}
-$query = $database->prepare($sql);
-$query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-if (isset($_GET["country"])) {
-    $country = $_GET["country"];
-    $query->bindParam(":country", $country, PDO::PARAM_STR);
-}
-if (isset($_GET["avatar"])) {
-    $avatar = $_GET["avatar"];
-    $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
-}
-$query->execute();
-$total_pages = $query->fetchColumn();
-
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-$limit = 50;
-$offset = ($page - 1) * $limit;
-
-$paramsWithoutPage = $params;
-unset($paramsWithoutPage["page"]);
 ?>
 
 <main class="container">
@@ -80,8 +51,8 @@ unset($paramsWithoutPage["page"]);
             <div class="col-6 text-center">
                 <div class="btn-group">
                     <a class="btn btn-outline-primary" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
-                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
+                    <a class="btn btn-primary active" href="/game-recent-players/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
                 </div>
             </div>
 
@@ -97,7 +68,7 @@ unset($paramsWithoutPage["page"]);
                     <table class="table">
                         <thead>
                             <tr class="text-uppercase">
-                                <th scope="col">Rank</th>
+                                <th scope="col"></th>
                                 <th scope="col">User</th>
                                 <th scope="col" class="text-center">Date</th>
                                 <th scope="col" class="text-center">Progress</th>
@@ -131,14 +102,9 @@ unset($paramsWithoutPage["page"]);
                             $sql .= " WHERE
                                     ttp.np_communication_id = :np_communication_id
                                 ORDER BY
-                                    progress DESC,
-                                    platinum DESC,
-                                    gold DESC,
-                                    silver DESC,
-                                    bronze DESC,
-                                    last_known_date
+                                    last_known_date DESC
                                 LIMIT
-                                    :offset, :limit";
+                                    10";
                             $query = $database->prepare($sql);
                             if (isset($_GET["country"])) {
                                 $country = $_GET["country"];
@@ -149,17 +115,15 @@ unset($paramsWithoutPage["page"]);
                                 $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
                             }
                             $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                            $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-                            $query->bindParam(":limit", $limit, PDO::PARAM_INT);
                             $query->execute();
                             $rows = $query->fetchAll();
 
-                            $rank = $offset;
+                            $rank = 0;
                             foreach ($rows as $row) {
                                 $countryName = Locale::getDisplayRegion("-" . $row["country"], 'en');
-                                $paramsAvatar = $paramsWithoutPage;
+                                $paramsAvatar = $params;
                                 $paramsAvatar["avatar"] = $row["avatar_url"];
-                                $paramsCountry = $paramsWithoutPage;
+                                $paramsCountry = $params;
                                 $paramsCountry["country"] = $row["country"];
                                 ?>
                                 <tr<?= ((isset($accountId) && $row["account_id"] === $accountId) ? " class='table-primary'" : ""); ?>>
@@ -213,86 +177,6 @@ unset($paramsWithoutPage["page"]);
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <p class="text-center">
-                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages) ?>
-            </p>
-        </div>
-        <div class="col-12">
-            <nav aria-label="Game Leaderboard page navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    if ($page > 1) {
-                        $params["page"] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Previous">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($page > 3) {
-                        $params["page"] = 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($page-2 > 0) {
-                        $params["page"] = $page - 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page-1 > 0) {
-                        $params["page"] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <?php
-                    $params["page"] = $page;
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
-
-                    <?php
-                    if ($page+1 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page+2 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < ceil($total_pages / $limit)-2) {
-                        $params["page"] = ceil($total_pages / $limit);
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < ceil($total_pages / $limit)) {
-                        $params["page"] = $page + 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Next">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
         </div>
     </div>
 </main>
