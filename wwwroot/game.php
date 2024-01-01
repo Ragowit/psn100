@@ -136,17 +136,17 @@ require_once("header.php");
                                                 if (isset($trophyGroupPlayer)) {
                                                     if ($trophyGroup["group_id"] == "default") {
                                                         ?>
-                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"]; ?>/<?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"]; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"]; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"]; ?>/<?= $trophyGroup["bronze"]; ?></span>
+                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"] ?? "0"; ?>/<?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup["bronze"]; ?></span>
                                                         <?php
                                                     } else {
                                                         ?>
-                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"]; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"]; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"]; ?>/<?= $trophyGroup["bronze"]; ?></span>
+                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup["bronze"]; ?></span>
                                                         <?php
                                                     }
                                                     ?>
                                                     <div>
-                                                        <div class="progress mt-1" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $trophyGroupPlayer["progress"]; ?>" aria-valuemin="0" aria-valuemax="100">
-                                                            <div class="progress-bar" style="width: <?= $trophyGroupPlayer["progress"]; ?>%"><?= $trophyGroupPlayer["progress"]; ?>%</div>
+                                                        <div class="progress mt-1" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $trophyGroupPlayer["progress"] ?? "0"; ?>" aria-valuemin="0" aria-valuemax="100">
+                                                            <div class="progress-bar" style="width: <?= $trophyGroupPlayer["progress"] ?? "0"; ?>%"><?= $trophyGroupPlayer["progress"] ?? "0"; ?>%</div>
                                                         </div>
                                                     </div>
                                                     <?php
