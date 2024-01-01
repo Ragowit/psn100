@@ -116,13 +116,13 @@ require_once("header.php");
                                         }
                                         $rank .= "<br>";
                                         if ($player["status"] == 1) {
-                                            $rank .= "(Cheater)";
+                                            $rank .= "<span style='color: #9d9d9d;'>(Cheater)</span>";
                                         } elseif ($player["status"] == 2) {
-                                            $rank .= "(Hiding)";
+                                            $rank .= "<span style='color: #9d9d9d;'>(Hiding)</span>";
                                         } elseif ($player["status"] == 3) {
-                                            $rank .= "(Private)";
+                                            $rank .= "<span style='color: #9d9d9d;'>(Private)</span>";
                                         } elseif ($player["status"] == 4) {
-                                            $rank .= "(Inactive)";
+                                            $rank .= "<span style='color: #9d9d9d;'>(Inactive)</span>";
                                         } elseif ($player["rank_last_week"] == 0) {
                                             $rank .= "(New!)";
                                         } else {
