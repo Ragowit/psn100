@@ -69,7 +69,13 @@ require_once("header.php");
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
                             <option value="default"<?= ($sort == "default" ? " selected" : ""); ?>>Default</option>
-                            <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
+                            <?php
+                            if (isset($player)) {
+                                ?>
+                                <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
+                                <?php
+                            }
+                            ?>
                             <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity</option>
                         </select>
                     </div>
