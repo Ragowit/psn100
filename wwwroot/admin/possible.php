@@ -364,7 +364,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4390-fuel/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/4390-fuel/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
         
@@ -381,7 +381,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4233-socom-us-navy-seals-confrontation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/4233-socom-us-navy-seals-confrontation/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -398,7 +398,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/2704-resonance-of-fate/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/2704-resonance-of-fate/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -415,7 +415,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/5703-end-of-eternity/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/5703-end-of-eternity/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -500,7 +500,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4663-resident-evil-revelations/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/4663-resident-evil-revelations/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -517,7 +517,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4663-resident-evil-revelations/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/4663-resident-evil-revelations/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -534,7 +534,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/3804-resident-evil-revelations/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/3804-resident-evil-revelations/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -551,7 +551,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/3804-resident-evil-revelations/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/3804-resident-evil-revelations/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -568,7 +568,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/3810-angry-birds-trilogy/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/3810-angry-birds-trilogy/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -607,7 +607,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/294-terminator-salvation/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/294-terminator-salvation/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
@@ -624,7 +624,7 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4866-f1-race-stars/". $possibleCheater["online_id"] ."?order=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/4866-f1-race-stars/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
     </body>
