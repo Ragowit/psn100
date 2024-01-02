@@ -1439,7 +1439,8 @@ while (true) {
             // Delete user from the queue
             $query = $database->prepare("DELETE FROM player_queue
                 WHERE  online_id = :online_id ");
-            $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
+            // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
+            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
             $query->execute();
         }
     }
