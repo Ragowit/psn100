@@ -22,6 +22,14 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
+    } elseif ($player["status"] == 3) {
+        ?>
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile. Make sure this player is no longer private, and then issue a new scan of the profile on the front page.
+            </div>
+        </div>
+        <?php
     } elseif ($player["status"] == 4) {
         ?>
         <div class="col-12">
