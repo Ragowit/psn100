@@ -16,7 +16,11 @@ $numberOfGames = $query->fetchColumn();
 
 $metaData = new stdClass();
 $metaData->title = $player["online_id"] ."'s Trophy Progress";
-$metaData->description = "Level ". $player["level"] .".". $player["progress"] ." ~ ". $numberOfGames ." Unique Games ~ ". $player["platinum"] ." Unique Platinums";
+if ($player["status"] == 3) {
+    $metaData->description = "The player is private.";
+} else {
+    $metaData->description = "Level ". $player["level"] .".". $player["progress"] ." ~ ". $numberOfGames ." Unique Games ~ ". $player["platinum"] ." Unique Platinums";
+}
 $metaData->image = "https://psn100.net/img/avatar/". $player["avatar_url"];
 $metaData->url = "https://psn100.net/player/". $player["online_id"];
 
