@@ -23,6 +23,14 @@ if (isset($player)) {
         header("Location: /game/". $game["id"] ."-". slugify($game["name"]), true, 303);
         die();
     }
+
+    $query = $database->prepare("SELECT *
+        FROM trophy_title_player
+        WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
+    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->execute();
+    $gamePlayer = $query->fetch();
 }
 
 $title = $game["name"] ." Recent Players ~ PSN 100%";
