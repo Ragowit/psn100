@@ -483,7 +483,24 @@ require_once("../init.php");
         $query->execute();
         $possibleCheaters = $query->fetchAll();
         foreach ($possibleCheaters as $possibleCheater) {
-            echo "<a href=\"/game/4237-lost-planet-2/". $possibleCheater["online_id"] ."\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+            echo "<a href=\"/game/4237-lost-planet-2/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
+
+        <br>
+        Lost Planet 2 (Snow Pirate Leader <-> Snow Pirate Commander)<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, TIMESTAMPDIFF(SECOND, first_trophy, second_trophy) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00928_00' AND order_id = 19) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00928_00' AND order_id = 20) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 60
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/4237-lost-planet-2/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
 
