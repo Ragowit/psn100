@@ -50,12 +50,12 @@ require_once("header.php");
     require_once("game_header.php");
     ?>
 
-    <div class="p-3 mb-3">
+    <div class="p-3">
         <div class="row">
-            <div class="col-3">
+            <div class="col-12 col-lg-3">
             </div>
 
-            <div class="col-6 text-center">
+            <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
                     <a class="btn btn-primary active" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
                     <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
@@ -63,7 +63,7 @@ require_once("header.php");
                 </div>
             </div>
 
-            <div class="col-3">
+            <div class="col-12 col-lg-3 mb-3">
                 <form>
                     <div class="input-group d-flex justify-content-end">
                         <select class="form-select" name="sort" onChange="this.form.submit()">

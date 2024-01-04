@@ -49,11 +49,11 @@
 
 <div class="bg-body-tertiary p-3 rounded mb-3">
     <div class="row">
-        <div class="col-2">
+        <div class="col-12 col-lg-2">
             <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["name"]); ?>">
         </div>
 
-        <div class="col-6">
+        <div class="col-12 col-lg-6">
             <div class="vstack gap-3">
                 <div class="hstack">
                     <div>
@@ -129,7 +129,7 @@
             </div>
         </div>
 
-        <div class="col-4">
+        <div class="col-12 col-lg-4">
             <div class="vstack gap-3 bg-dark-subtle rounded p-3 h-100">
                 <div class="text-center">
                     <?php
