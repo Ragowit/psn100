@@ -135,7 +135,7 @@
                     <?php
                     if (isset($gamePlayer)) {
                         ?>
-                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $gamePlayer["platinum"]; ?>/<?= $game["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $gamePlayer["gold"]; ?>/<?= $game["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $gamePlayer["silver"]; ?>/<?= $game["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $gamePlayer["bronze"]; ?>/<?= $game["bronze"]; ?></span>
+                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $gamePlayer["platinum"] ?? "0"; ?>/<?= $game["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $gamePlayer["gold"] ?? "0"; ?>/<?= $game["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $gamePlayer["silver"] ?? "0"; ?>/<?= $game["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $gamePlayer["bronze"] ?? "0"; ?>/<?= $game["bronze"]; ?></span>
                         <?php
                     } else {
                         ?>
@@ -149,8 +149,8 @@
                 if (isset($gamePlayer)) {
                     ?>
                     <div>
-                        <div class="progress" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $gamePlayer["progress"]; ?>" aria-valuemin="0" aria-valuemax="100">
-                            <div class="progress-bar" style="width: <?= $gamePlayer["progress"]; ?>%"><?= $gamePlayer["progress"]; ?>%</div>
+                        <div class="progress" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $gamePlayer["progress"] ?? "0"; ?>" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: <?= $gamePlayer["progress"] ?? "0"; ?>%"><?= $gamePlayer["progress"] ?? "0"; ?>%</div>
                         </div>
                     </div>
                     <?php
