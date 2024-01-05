@@ -78,11 +78,11 @@ $offset = ($page - 1) * $limit;
 
 <main class="container">
     <div class="row">
-        <div class="col-8">
+        <div class="col-4 col-lg-8">
             <h1>Games</h1>
         </div>
 
-        <div class="col-4">
+        <div class="col-8 col-lg-4">
             <form>
                 <div class="input-group d-flex justify-content-end">
                     <input type="hidden" name="page" value="<?= $_GET["page"]; ?>">
