@@ -14,6 +14,18 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 $sort = (!empty($_GET["sort"]) ? $_GET["sort"] : (!empty($_GET["search"]) ? "search" : "added"));
 $player = $_GET["player"] ?? "";
 
+if (!empty($player)) {
+    $sql = "SELECT `status` FROM player WHERE online_id = :online_id";
+    $query = $database->prepare($sql);
+    $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+    $query->execute();
+    $playerStatus = $query->fetchColumn();
+
+    if ($playerStatus == 3) { // Private player
+        $player = "";
+    }
+}
+
 $sql = "";
 switch ($sort) {
     case "completion":

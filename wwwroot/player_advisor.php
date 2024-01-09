@@ -20,46 +20,50 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
 $sort = (!empty($_GET["sort"]) ? $_GET["sort"] : "date");
 
-$sql = "SELECT
-        COUNT(*)
-    FROM
-        trophy t
-    JOIN trophy_title tt USING(np_communication_id)
-    LEFT JOIN trophy_earned te ON
-        t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND te.account_id = :account_id
-    JOIN trophy_title_player ttp ON
-        t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
-    WHERE
-        (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0";
-if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-    $sql .= " AND (";
-    if (!empty($_GET["ps3"])) {
-        $sql .= " tt.platform LIKE '%PS3%' OR";
-    }
-    if (!empty($_GET["ps4"])) {
-        $sql .= " tt.platform LIKE '%PS4%' OR";
-    }
-    if (!empty($_GET["ps5"])) {
-        $sql .= " tt.platform LIKE '%PS5%' OR";
-    }
-    if (!empty($_GET["psvita"])) {
-        $sql .= " tt.platform LIKE '%PSVITA%' OR";
-    }
-    if (!empty($_GET["psvr"])) {
-        $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-    }
-    if (!empty($_GET["psvr2"])) {
-        $sql .= " tt.platform LIKE '%PSVR2%' OR";
-    }
+if ($player["status"] == 3) {
+    $total_pages = 0;
+} else {
+    $sql = "SELECT
+            COUNT(*)
+        FROM
+            trophy t
+        JOIN trophy_title tt USING(np_communication_id)
+        LEFT JOIN trophy_earned te ON
+            t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND te.account_id = :account_id
+        JOIN trophy_title_player ttp ON
+            t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
+        WHERE
+            (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0";
+    if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
+        $sql .= " AND (";
+        if (!empty($_GET["ps3"])) {
+            $sql .= " tt.platform LIKE '%PS3%' OR";
+        }
+        if (!empty($_GET["ps4"])) {
+            $sql .= " tt.platform LIKE '%PS4%' OR";
+        }
+        if (!empty($_GET["ps5"])) {
+            $sql .= " tt.platform LIKE '%PS5%' OR";
+        }
+        if (!empty($_GET["psvita"])) {
+            $sql .= " tt.platform LIKE '%PSVITA%' OR";
+        }
+        if (!empty($_GET["psvr"])) {
+            $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
+        }
+        if (!empty($_GET["psvr2"])) {
+            $sql .= " tt.platform LIKE '%PSVR2%' OR";
+        }
 
-    // Remove " OR"
-    $sql = substr($sql, 0, -3);
-    $sql .= ")";
+        // Remove " OR"
+        $sql = substr($sql, 0, -3);
+        $sql .= ")";
+    }
+    $query = $database->prepare($sql);
+    $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+    $query->execute();
+    $total_pages = $query->fetchColumn();
 }
-$query = $database->prepare($sql);
-$query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
-$query->execute();
-$total_pages = $query->fetchColumn();
 
 $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
 $limit = 50;
