@@ -149,7 +149,7 @@ require_once("header.php");
                                                     </div>
 
                                                     <div>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player["online_id"]; ?>"><?= $player["online_id"]; ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" style="white-space: nowrap;" href="/player/<?= $player["online_id"]; ?>"><?= $player["online_id"]; ?></a>
                                                     </div>
 
                                                     <div class="ms-auto">
