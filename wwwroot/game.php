@@ -66,6 +66,23 @@ require_once("header.php");
             <div class="col-12 col-lg-3 mb-3">
                 <form>
                     <div class="input-group d-flex justify-content-end">
+                        <?php
+                        if (isset($player)) {
+                            ?>
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
+                            <ul class="dropdown-menu p-2">
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"<?= (!empty($_GET["unearned"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUnearnedTrophies" name="unearned">
+                                        <label class="form-check-label" for="filterUnearnedTrophies">
+                                            Unearned Trophies
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                            <?php
+                        }
+                        ?>
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
                             <option value="default"<?= ($sort == "default" ? " selected" : ""); ?>>Default</option>
@@ -115,6 +132,10 @@ require_once("header.php");
                     }
 
                     unset($previousTimeStamp);
+
+                    if (isset($accountId) && $trophyGroupPlayer["progress"] == 100 && !empty($_GET["unearned"])) {
+                        continue;
+                    }
                     ?>
                     <div class="table-responsive-xxl">
                         <table class="table" id="<?= $trophyGroup["group_id"]; ?>">
@@ -247,6 +268,10 @@ require_once("header.php");
                                 $trophies = $query->fetchAll();
 
                                 foreach ($trophies as $trophy) {
+                                    if (isset($accountId) && $trophy["earned"] == 1 && !empty($_GET["unearned"])) {
+                                        continue;
+                                    }
+
                                     // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
                                     if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress_target_value"] != null) {
                                         $trophy["progress"] = $trophy["progress_target_value"];
