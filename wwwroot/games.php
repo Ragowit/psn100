@@ -171,7 +171,13 @@ $offset = ($page - 1) * $limit;
                     <select class="form-select" name="sort" onChange="this.form.submit()">
                         <option disabled>Sort by...</option>
                         <option value="added"<?= ($sort == "added" ? " selected" : ""); ?>>Added to Site</option>
-                        <option value="search"<?= ($sort == "search" ? " selected" : ""); ?>>Best Match</option>
+                        <?php
+                        if (isset($search)) {
+                            ?>
+                            <option value="search"<?= ($sort == "search" ? " selected" : ""); ?>>Best Match</option>
+                            <?php
+                        }
+                        ?>
                         <option value="completion"<?= ($sort == "completion" ? " selected" : ""); ?>>Completion Rate</option>
                         <option value="owners"<?= ($sort == "owners" ? " selected" : ""); ?>>Owners</option>
                         <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity Points</option>
