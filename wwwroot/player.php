@@ -309,7 +309,7 @@ require_once("header.php");
                                     <tr<?= $trClass; ?>>
                                         <td scope="row">
                                             <div class="hstack gap-3">
-                                                <img src="/img/title/<?= ($playerGame["icon_url"] == ".png") ? ((str_contains($playerGame["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $playerGame["icon_url"]; ?>" alt="" style="background: linear-gradient(to bottom,#145EBB 0,#142788 100%);" width="100" />
+                                                <img src="/img/title/<?= ($playerGame["icon_url"] == ".png") ? ((str_contains($playerGame["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $playerGame["icon_url"]; ?>" alt="<?= htmlentities($playerGame["name"]); ?>" width="100" />
 
                                                 <div class="vstack">
                                                     <span>
