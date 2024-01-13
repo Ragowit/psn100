@@ -7,7 +7,7 @@
                 </div>
                 <div class="col-6 text-center">
                     PSN100 is not affiliated with Sony or PlayStation in any way.<br>
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues">Issues</a>
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues">Report a cheater</a>
                 </div>
                 <div class="col-3 text-end">
                     Created and maintained by <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/Ragowit">Ragowit</a>.<br>
