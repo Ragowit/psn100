@@ -101,7 +101,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             <form method="post" autocomplete="off">
                 <input type="hidden" name="game" value="<?= $gameId; ?>"><br>
                 Name:<br>
-                <input type="text" name="name" style="width: 859px;" value="<?= $trophyTitle["name"]; ?>" ><br>
+                <input type="text" name="name" style="width: 859px;" value="<?= htmlentities($trophyTitle["name"]); ?>" ><br>
                 Icon URL:<br>
                 <input type="text" name="icon_url" style="width: 859px;" value="<?= $trophyTitle["icon_url"]; ?>"><br>
                 Platform:<br>
