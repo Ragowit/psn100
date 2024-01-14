@@ -14,7 +14,7 @@ $offset = ($page - 1) * $limit;
 <main class="container">
     <div class="row">
         <div class="col-12">
-            <h1>Avatars</h1>
+            <h1>Changelog</h1>
         </div>
     </div>
 
