@@ -145,6 +145,9 @@ if (empty($elements[0])) { // No path elements means home
                     case "random":
                         require_once("player_random.php");
                         break;
+                    case "report":
+                        require_once("player_report.php");
+                        break;
                     default:
                         header("Location: /player/". $onlineId, true, 303);
                         die();
