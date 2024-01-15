@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 30, 2023 at 09:43 PM
+-- Generation Time: Jan 15, 2024 at 11:45 AM
 -- Server version: 8.0.35
--- PHP Version: 8.3.0
+-- PHP Version: 8.3.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -95,6 +95,19 @@ CREATE TABLE `player_queue` (
   `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `offset` smallint UNSIGNED NOT NULL DEFAULT '0',
   `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `player_report`
+--
+
+CREATE TABLE `player_report` (
+  `report_id` int UNSIGNED NOT NULL,
+  `account_id` bigint UNSIGNED NOT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `explanation` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -381,6 +394,13 @@ ALTER TABLE `player_queue`
   ADD KEY `idx_time_oid` (`request_time`,`online_id`);
 
 --
+-- Indexes for table `player_report`
+--
+ALTER TABLE `player_report`
+  ADD PRIMARY KEY (`report_id`),
+  ADD UNIQUE KEY `account_id` (`account_id`,`ip_address`);
+
+--
 -- Indexes for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
@@ -468,6 +488,12 @@ ALTER TABLE `trophy_title_player`
 --
 ALTER TABLE `log`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `player_report`
+--
+ALTER TABLE `player_report`
+  MODIFY `report_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `psn100_avatars`
