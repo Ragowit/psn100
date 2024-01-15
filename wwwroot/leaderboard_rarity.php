@@ -12,19 +12,19 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 }
 
 $sql = "SELECT COUNT(*) FROM player WHERE `status` = 0";
-if (isset($_GET["country"])) {
+if (!empty($_GET["country"])) {
     $sql .= " AND country = :country";
 }
-if (isset($_GET["avatar"])) {
+if (!empty($_GET["avatar"])) {
     $sql .= " AND avatar_url = :avatar";
 }
 
 $query = $database->prepare($sql);
-if (isset($_GET["country"])) {
+if (!empty($_GET["country"])) {
     $country = $_GET["country"];
     $query->bindParam(":country", $country, PDO::PARAM_STR);
 }
-if (isset($_GET["avatar"])) {
+if (!empty($_GET["avatar"])) {
     $avatar = $_GET["avatar"];
     $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
 }
@@ -85,22 +85,22 @@ unset($paramsWithoutPage["page"]);
 
                         <tbody>
                             <?php
-                            if (isset($_GET["country"]) || isset($_GET["avatar"])) {
+                            if (!empty($_GET["country"]) || !empty($_GET["avatar"])) {
                                 $sql = "SELECT * FROM player WHERE `status` = 0";
-                                if (isset($_GET["country"])) {
+                                if (!empty($_GET["country"])) {
                                     $sql .= " AND country = :country";
                                 }
-                                if (isset($_GET["avatar"])) {
+                                if (!empty($_GET["avatar"])) {
                                     $sql .= " AND avatar_url = :avatar";
                                 }
                                 $sql .= " ORDER BY `rarity_rank` LIMIT :offset, :limit";
 
                                 $query = $database->prepare($sql);
-                                if (isset($_GET["country"])) {
+                                if (!empty($_GET["country"])) {
                                     $country = $_GET["country"];
                                     $query->bindParam(":country", $country, PDO::PARAM_STR);
                                 }
-                                if (isset($_GET["avatar"])) {
+                                if (!empty($_GET["avatar"])) {
                                     $avatar = $_GET["avatar"];
                                     $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
                                 }
