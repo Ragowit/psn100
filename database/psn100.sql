@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 15, 2024 at 11:45 AM
--- Server version: 8.0.35
+-- Generation Time: Jan 16, 2024 at 07:17 AM
+-- Server version: 8.0.36
 -- PHP Version: 8.3.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -49,9 +49,9 @@ CREATE TABLE `player` (
   `progress` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `points` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
-  `rank` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `rank` mediumint UNSIGNED NOT NULL DEFAULT '16777215',
   `rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_rank` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `rarity_rank` mediumint UNSIGNED NOT NULL DEFAULT '16777215',
   `rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rank_country` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
