@@ -38,6 +38,14 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
+    } elseif ($player["rank"] == 16777215) {
+        ?>
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                This is a new player currently being scanned for the first time. Rank and stats will be done once the scan is complete.
+            </div>
+        </div>
+        <?php
     } elseif ($player["rank"] > 50000) {
         ?>
         <div class="col-12">
