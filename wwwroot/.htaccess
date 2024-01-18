@@ -3,7 +3,15 @@ RewriteEngine on
 RewriteCond %{HTTP_HOST} ^www.psn100.net [NC]
 RewriteRule ^(.*)$ https://psn100.net/$1 [L,R=301]
 FallbackResource /index.php
+#gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+</IfModule>
 #Cache
 <FilesMatch "\.(ico|pdf|jpg|jpeg|png|webp|gif|html|htm|xml|txt|xsl|css|svg|avif|js)$">
-Header set Cache-Control "max-age=31536050"
+    Header set Cache-Control "max-age=31536050"
 </FilesMatch>
