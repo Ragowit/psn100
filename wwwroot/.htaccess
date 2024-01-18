@@ -3,3 +3,7 @@ RewriteEngine on
 RewriteCond %{HTTP_HOST} ^www.psn100.net [NC]
 RewriteRule ^(.*)$ https://psn100.net/$1 [L,R=301]
 FallbackResource /index.php
+#Cache
+<FilesMatch "\.(ico|pdf|jpg|jpeg|png|webp|gif|html|htm|xml|txt|xsl|css|svg|avif|js)$">
+Header set Cache-Control "max-age=31536050"
+</FilesMatch>
