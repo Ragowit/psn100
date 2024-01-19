@@ -92,7 +92,7 @@
                                         }
                                         ?>
                                         <a class="dropdown-item" href="/game/<?= $stackLink; ?>">
-                                            <?= htmlentities($stack["name"]); ?> | <?= $stack["platform"]; ?> <?= (is_null($stack["region"]) ? "" : "(".$stack["region"].")"); ?>
+                                            <?= htmlentities($stack["name"]); ?> <span class="badge rounded-pill text-bg-primary"><?= $stack["platform"]; ?></span> <?= (is_null($stack["region"]) ? "" : "<span class='badge rounded-pill text-bg-primary'>".$stack["region"]."</span>"); ?>
                                         </a>
                                     </li>
                                     <?php
