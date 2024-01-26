@@ -308,7 +308,17 @@ require_once("header.php");
                                                 ?>
                                                 <span id="earned<?= $trophy["order_id"]; ?>"></span>
                                                 <script>
-                                                    document.getElementById("earned<?= $trophy["order_id"]; ?>").innerHTML = new Date('<?= $trophy["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                    <?php
+                                                    if ($trophy["earned_date"] == "No Timestamp") {
+                                                        ?>
+                                                        document.getElementById("earned<?= $trophy["order_id"]; ?>").innerHTML = "No Timestamp";
+                                                        <?php
+                                                    } else {
+                                                        ?>
+                                                        document.getElementById("earned<?= $trophy["order_id"]; ?>").innerHTML = new Date('<?= $trophy["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                        <?php
+                                                    }
+                                                    ?>
                                                 </script>
                                                 <?php
                                                 if ($sort == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
