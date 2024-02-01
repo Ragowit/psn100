@@ -133,7 +133,7 @@ require_once("header.php");
 
                     unset($previousTimeStamp);
 
-                    if (isset($accountId) && $trophyGroupPlayer["progress"] == 100 && !empty($_GET["unearned"])) {
+                    if (isset($accountId) && $trophyGroupPlayer != false && $trophyGroupPlayer["progress"] == 100 && !empty($_GET["unearned"])) {
                         continue;
                     }
                     ?>

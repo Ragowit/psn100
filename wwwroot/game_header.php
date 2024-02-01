@@ -7,15 +7,16 @@
         $query->bindParam(":parent_np_communication_id", $game["parent_np_communication_id"], PDO::PARAM_STR);
         $query->execute();
         $parentGame = $query->fetch();
+        $parentGameName = $parentGame["name"] ?? "";
 
-        $parentLink = $parentGame["id"] ."-". slugify($parentGame["name"]);
+        $parentLink = $parentGame["id"] ."-". slugify($parentGameName);
         if (isset($player)) {
             $parentLink .= "/". $player;
         }
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This game have been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGame["name"]) ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
+                This game have been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGameName) ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
             </div>
         </div>
         <?php
@@ -173,8 +174,10 @@
                         echo "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
                     }
 
-                    if ($gamePlayer["progress"] == 100) {
-                        echo " <span class='badge rounded-pill text-bg-success' title='Player have completed this game to 100%!'>Completed!</span>";
+                    if (isset($gamePlayer) && $gamePlayer != false) {
+                        if ($gamePlayer["progress"] == 100) {
+                            echo " <span class='badge rounded-pill text-bg-success' title='Player have completed this game to 100%!'>Completed!</span>";
+                        }
                     }
                     ?>
                 </div>

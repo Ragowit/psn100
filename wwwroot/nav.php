@@ -6,6 +6,10 @@ $trophyActive = "";
 $avatarActive = "";
 $aboutActive = "";
 $homeActive = "";
+$navSort = $_GET["sort"] ?? "";
+$navPlayer = $_GET["player"] ?? "";
+$navFilter = $_GET["filter"] ?? "";
+$navSearch = $_GET["search"] ?? "";
 
 if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
     $leaderboardActive = " active";
@@ -33,10 +37,10 @@ if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
 
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <form action="/game" class="d-flex" role="search">
-                <input type="hidden" name="sort" value="<?= $_GET["sort"]; ?>">
-                <input type="hidden" name="player" value="<?= $_GET["player"]; ?>">
-                <input type="hidden" name="filter" value="<?= $_GET["filter"]; ?>">
-                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= htmlentities($_GET["search"]); ?>">
+                <input type="hidden" name="sort" value="<?= $navSort; ?>">
+                <input type="hidden" name="player" value="<?= $navPlayer; ?>">
+                <input type="hidden" name="filter" value="<?= $navFilter; ?>">
+                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= htmlentities($navSearch); ?>">
                 <button class="btn btn-outline-primary" type="submit">Search</button>
             </form>
 

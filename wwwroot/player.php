@@ -33,6 +33,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
+$playerSearch = $_GET["search"] ?? "";
 $sort = (!empty($_GET["sort"]) ? $_GET["sort"] : (!empty($_GET["search"]) ? "search" : "date"));
 
 if ($player["status"] == 3) {
@@ -116,7 +117,7 @@ require_once("header.php");
             <div class="col-12 col-lg-3 mb-3">
                 <form>
                     <div class="input-group d-flex justify-content-end">
-                        <input type="text" name="search" class="form-control rounded-start" placeholder="Game..." value="<?= $_GET["search"]; ?>" aria-label="Text input to search for a game within the player">
+                        <input type="text" name="search" class="form-control rounded-start" placeholder="Game..." value="<?= $playerSearch; ?>" aria-label="Text input to search for a game within the player">
 
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                         <ul class="dropdown-menu p-2">
@@ -236,7 +237,7 @@ require_once("header.php");
                                             JOIN trophy_title tt USING (np_communication_id)
                                         WHERE  ttp.account_id = :account_id
                                             AND tt.status != 2 ";
-                                if (!empty($_GET["search"] || $sort == "search")) {
+                                if (!empty($_GET["search"]) || $sort == "search") {
                                     $sql .= " AND (MATCH(tt.name) AGAINST (:search))";
                                 }
                                 if (!empty($_GET["uncompleted"])) {

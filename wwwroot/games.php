@@ -13,6 +13,8 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
 $sort = (!empty($_GET["sort"]) ? $_GET["sort"] : (!empty($_GET["search"]) ? "search" : "added"));
 $player = $_GET["player"] ?? "";
+$gamesSearch = $_GET["search"] ?? "";
+$gamesPage = $_GET["page"] ?? "";
 
 if (!empty($player)) {
     $sql = "SELECT `status` FROM player WHERE online_id = :online_id";
@@ -97,8 +99,8 @@ $offset = ($page - 1) * $limit;
         <div class="col-8 col-lg-4">
             <form>
                 <div class="input-group d-flex justify-content-end">
-                    <input type="hidden" name="page" value="<?= $_GET["page"]; ?>">
-                    <input type="hidden" name="search" value="<?= $_GET["search"]; ?>">
+                    <input type="hidden" name="page" value="<?= $gamesPage; ?>">
+                    <input type="hidden" name="search" value="<?= $gamesSearch; ?>">
                     <input type="text" name="player" class="form-control rounded-start" maxlength="16" placeholder="View as player..." value="<?= $player; ?>" aria-label="Text input to show completed games for specified player">
                     
 
@@ -207,7 +209,7 @@ $offset = ($page - 1) * $limit;
                 $sql .= " tt.status != 2";
                 break;
         }
-        if (!empty($_GET["search"] || $sort == "search")) {
+        if (!empty($gamesSearch) || $sort == "search") {
             $sql .= " AND (MATCH(tt.name) AGAINST (:search))";
         }
         if (!empty($_GET["filter"])) {

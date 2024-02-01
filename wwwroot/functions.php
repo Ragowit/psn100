@@ -1,6 +1,8 @@
 <?php
 function slugify($text)
 {
+    $text = $text ?? "";
+
     $text = str_replace("&", "and", $text);
     $text = str_replace(" - ", " ", $text);
 
