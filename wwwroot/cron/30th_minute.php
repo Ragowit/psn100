@@ -352,8 +352,8 @@ while (true) {
         }
 
         if (!$loggedIn) {
-            // Wait 5 minutes to not hammer login
-            sleep(60 * 5);
+            // Wait 30 minutes to not hammer login
+            sleep(60 * 30);
         }
     }
 
