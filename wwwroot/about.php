@@ -157,13 +157,33 @@ require_once("header.php");
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="text-center">
-                                                <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= $player["level"]; ?>
-                                                <div class="progress" title="<?= $player["progress"]; ?>%">
-                                                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
+                                            <td class="align-middle text-center">
+                                                <?php
+                                                if ($player["status"] == 3) {
+                                                    ?>
+                                                    N/A
+                                                    <?php
+                                                } else {
+                                                    ?>
+                                                    <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= $player["level"]; ?>
+                                                    <div class="progress" title="<?= $player["progress"]; ?>%">
+                                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <?php
+                                                }
+                                                ?>
                                             </td>
-                                            <td class="align-middle text-center"><?= number_format($player["points"]); ?></td>
+                                            <td class="align-middle text-center">
+                                                <?php
+                                                if ($player["status"] == 3) {
+                                                    ?>
+                                                    N/A
+                                                    <?php
+                                                } else {
+                                                    echo number_format($player["points"]);
+                                                }
+                                                ?>
+                                            </td>
                                         </tr>
                                         <?php
                                     }
