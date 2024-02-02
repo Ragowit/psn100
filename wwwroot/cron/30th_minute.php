@@ -555,8 +555,20 @@ while (true) {
             }
         }
 
-        // To test for exception.
+        // To test for exception (and apparently collects/updates to new onlineId if changed).
         $user->aboutMe();
+
+        if (strtolower($player["online_id"]) != strtolower($user->onlineId())) {
+            $query = $database->prepare("UPDATE player_queue SET online_id = :online_id_new WHERE online_id = :online_id_old");
+            $query->bindParam(":online_id_new", $user->onlineId(), PDO::PARAM_STR);
+            $query->bindParam(":online_id_old", $player["online_id"], PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $database->prepare("UPDATE setting SET scanning = :scanning WHERE id = :worker_id");
+            $query->bindParam(":scanning", $user->onlineId(), PDO::PARAM_STR);
+            $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
+            $query->execute();
+        }
     } catch (Exception $e) {
         // $e->getMessage() == "User not found", and another "Resource not found" error
         $query = $database->prepare("DELETE FROM player_queue
@@ -727,7 +739,7 @@ while (true) {
         // Delete user from the queue
         $query = $database->prepare("DELETE FROM player_queue
             WHERE  online_id = :online_id ");
-        $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+        $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
         $query->execute();
 
         $privateUser = true;
@@ -1440,7 +1452,7 @@ while (true) {
             $query = $database->prepare("DELETE FROM player_queue
                 WHERE  online_id = :online_id ");
             // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
-            $query->bindParam(":online_id", $player["online_id"], PDO::PARAM_STR);
+            $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
             $query->execute();
         }
     }
