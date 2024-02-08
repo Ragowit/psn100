@@ -206,10 +206,10 @@ require_once("header.php");
                     The main leaderboard uses the official point system:
                 </p>
                 <ul>
-                    <li><img src="/img/trophy-platinum.svg" alt="Platinum" height="18" /> ~ <span class="trophy-platinum">300 points</span></li>
-                    <li><img src="/img/trophy-gold.svg" alt="Gold" height="18" /> ~ <span class="trophy-gold">90 points</span></li>
-                    <li><img src="/img/trophy-silver.svg" alt="Silver" height="18" /> ~ <span class="trophy-silver">30 points</span></li>
-                    <li><img src="/img/trophy-bronze.svg" alt="Bronze" height="18" /> ~ <span class="trophy-bronze">15 points</span></li>
+                    <li><img src="/img/trophy-platinum.svg" alt="Platinum" height="18" /><span class="trophy-platinum"> ~ 300 points</span></li>
+                    <li><img src="/img/trophy-gold.svg" alt="Gold" height="18" /><span class="trophy-gold"> ~ 90 points</span></li>
+                    <li><img src="/img/trophy-silver.svg" alt="Silver" height="18" /><span class="trophy-silver"> ~ 30 points</span></li>
+                    <li><img src="/img/trophy-bronze.svg" alt="Bronze" height="18" /><span class="trophy-bronze"> ~ 15 points</span></li>
                 </ul>
                 <p>
                     These are the requirements for each level:
@@ -249,10 +249,10 @@ require_once("header.php");
                     Our rarity naming uses the following numbers:
                 </p>
                 <ul>
-                    <li>0-0.02% ~ <span class="trophy-legendary">Legendary</span></li>
-                    <li>0.03-0.2% ~ <span class="trophy-epic">Epic</span></li>
-                    <li>0.21-2% ~ <span class="trophy-rare">Rare</span></li>
-                    <li>2.01-20% ~ <span class="trophy-uncommon">Uncommon</span></li>
+                    <li><span class="trophy-legendary">0-0.02% ~ Legendary</span></li>
+                    <li><span class="trophy-epic">0.03-0.2% ~ Epic</span></li>
+                    <li><span class="trophy-rare">0.21-2% ~ Rare</span></li>
+                    <li><span class="trophy-uncommon">2.01-20% ~ Uncommon</span></li>
                     <li>20.01-100% ~ Common</li>
                 </ul>
             </div>
