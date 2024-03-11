@@ -61,32 +61,6 @@ if (!isset($player) || $player === "") {
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
     $query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
     $query->execute();
-
-    // Check position
-    $query = $database->prepare("WITH temp AS(
-            SELECT
-                request_time,
-                online_id,
-                ROW_NUMBER() OVER(
-                    ORDER BY
-                        request_time
-                ) AS 'rownum'
-            FROM
-                player_queue
-        )
-        SELECT
-            rownum
-        FROM
-            temp
-        WHERE
-            online_id = :online_id
-        ");
-    $query->bindParam(":online_id", $player, PDO::PARAM_STR);
-    $query->execute();
-    $position = $query->fetchColumn();
-
-    $player = htmlentities($player, ENT_QUOTES, "UTF-8");
-    echo "<a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href=\"/player/". $player ."\">". $player ."</a> is in the update queue, currently in position ". $position;
 } else {
     echo "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
 }

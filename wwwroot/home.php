@@ -236,6 +236,25 @@ function addToQueue()
     };
     xmlhttp.open("GET", "add_to_queue.php?q=" + player, true);
     xmlhttp.send();
+
+    checkQueuePosition();
+    setInterval(checkQueuePosition, 3000);
+}
+
+function checkQueuePosition()
+{
+    var player = document.getElementById("player").value;
+
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function()
+    {
+        if (this.readyState == 4 && this.status == 200)
+        {
+            document.getElementById("add-to-queue-result").innerHTML = this.responseText;
+        }
+    };
+    xmlhttp.open("GET", "check_queue_position.php?q=" + player, true);
+    xmlhttp.send();
 }
 </script>
 
