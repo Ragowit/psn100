@@ -123,7 +123,7 @@ require_once("header.php");
                                             $rank .= "<span style='color: #9d9d9d;'>(Private)</span>";
                                         } elseif ($player["status"] == 4) {
                                             $rank .= "<span style='color: #9d9d9d;'>(Inactive)</span>";
-                                        } elseif ($player["rank_last_week"] == 0) {
+                                        } elseif ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                             $rank .= "(New!)";
                                         } else {
                                             $delta = $player["rank_last_week"] - $player["rank"];
