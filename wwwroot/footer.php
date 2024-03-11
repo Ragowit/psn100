@@ -3,7 +3,7 @@
             <div class="row">
                 <div class="col-3">
                     &copy; 2019-<?= date("Y"); ?><br>
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/releases">v7.12</a> - <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/changelog">Changelog</a>
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/releases">v7.13</a> - <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/changelog">Changelog</a>
                 </div>
                 <div class="col-6 text-center">
                     PSN100 is not affiliated with Sony or PlayStation in any way.<br>
