@@ -30,6 +30,7 @@ $accountId = $query->fetchColumn();
 if (!isset($player) || $player === "") {
     echo "PSN name can't be empty.";
 } elseif ($accountId !== false) {
+    $player = htmlentities($player, ENT_QUOTES, "UTF-8");
     ?>
     Player '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player; ?>"><?= $player; ?></a>' is tagged as a cheater and won't be scanned. <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player; ?>+OR+<?= $accountId; ?>">Dispute</a>?
     <?php
@@ -61,6 +62,14 @@ if (!isset($player) || $player === "") {
     $query->bindParam(":online_id", $player, PDO::PARAM_STR);
     $query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
     $query->execute();
+
+    $player = htmlentities($player, ENT_QUOTES, "UTF-8");
+    ?>
+    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player; ?>"><?= $player; ?></a> is being added to the queue.
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <?php
 } else {
     echo "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
 }

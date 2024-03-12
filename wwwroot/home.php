@@ -237,7 +237,6 @@ function addToQueue()
     xmlhttp.open("GET", "add_to_queue.php?q=" + player, true);
     xmlhttp.send();
 
-    checkQueuePosition();
     setInterval(checkQueuePosition, 3000);
 }
 

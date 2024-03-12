@@ -2,6 +2,19 @@
 require_once("init.php");
 
 $player = trim($_REQUEST["q"]);
+
+// Check if scanning
+$query = $database->prepare("SELECT
+        scanning
+    FROM
+        setting
+    WHERE
+        scanning = :online_id
+");
+$query->bindParam(":online_id", $player, PDO::PARAM_STR);
+$query->execute();
+$scanning = $query->fetchColumn();
+
 // Check position
 $query = $database->prepare("WITH temp AS(
         SELECT
@@ -27,9 +40,16 @@ $position = $query->fetchColumn();
 
 $player = htmlentities($player, ENT_QUOTES, "UTF-8");
 
-if ($position) {
+if ($scanning) {
     ?>
-    <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href="/player/<?= $player; ?>"><?= $player; ?></a> is in the update queue, currently in position <?= $position; ?>
+    <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href="/player/<?= $player; ?>"><?= $player; ?></a> is currently being scanned.
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <?php
+} elseif ($position) {
+    ?>
+    <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href="/player/<?= $player; ?>"><?= $player; ?></a> is in the update queue, currently in position <?= $position; ?>.
     <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
     </div>
