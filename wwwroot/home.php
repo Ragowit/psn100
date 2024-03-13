@@ -207,6 +207,7 @@ require_once("header.php");
 <script>
 // Get the input field
 var input = document.getElementById("player");
+var myTimer = null;
 
 // Execute a function when the user releases a key on the keyboard
 input.addEventListener("keyup", function(event)
@@ -237,13 +238,12 @@ function addToQueue()
     xmlhttp.open("GET", "add_to_queue.php?q=" + player, true);
     xmlhttp.send();
 
-    setInterval(checkQueuePosition, 3000);
+    clearInterval(myTimer);
+    myTimer = setInterval(checkQueuePosition, 3000, player);
 }
 
-function checkQueuePosition()
+function checkQueuePosition(player)
 {
-    var player = document.getElementById("player").value;
-
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function()
     {
