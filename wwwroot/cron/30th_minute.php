@@ -1191,20 +1191,31 @@ while (true) {
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
             $query->execute();
 
+            $totalTrophiesEnd = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
+            if ($totalTrophiesStart != $totalTrophiesEnd) { // New trophies during the scan, restart and get them as well.
+                $recheck = "";
+                continue;
+            }
+
             // Set player status if not a cheater
             $playerStatus = 0;
 
             // Check for hidden trophies
-            $query = $database->prepare("SELECT
-                    trophy_count_npwr
-                FROM
-                    player
-                WHERE
-                    account_id = :account_id
-                ");
+            $query = $database->prepare("SELECT trophy_count_npwr FROM player WHERE account_id = :account_id");
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
             $query->execute();
             $ourTotalTrophies = $query->fetchColumn();
+
+            if ($ourTotalTrophies > $totalTrophiesStart) { // This should never happen, but just in case... Something has gone terrible wrong...
+                $query = $database->prepare("UPDATE `player` SET trophy_count_npwr = (SELECT COUNT(*) FROM `trophy_earned` WHERE account_id = :account_id AND earned = 1 AND np_communication_id LIKE 'N%') WHERE account_id = :account_id");
+                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                $query->execute();
+
+                $query = $database->prepare("SELECT trophy_count_npwr FROM player WHERE account_id = :account_id");
+                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                $query->execute();
+                $ourTotalTrophies = $query->fetchColumn();
+            }
 
             if ($ourTotalTrophies < $totalTrophiesStart) {
                 if (!empty($recheck)) { // If the user is about to be hidden, do one more scan from the beginning just to be sure.
@@ -1256,204 +1267,201 @@ while (true) {
         $query->execute();
         $playerStatus = $query->fetchColumn();
 
-        $totalTrophiesEnd = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
-        if ($totalTrophiesStart == $totalTrophiesEnd) { // The scan of the player is only done if the trophy count is the same at the start and at the end.
-            if ($playerStatus == 0) {
-                // Update ranks
-                $query = $database->prepare("WITH
-                        ranking AS(
-                        SELECT
-                            p.account_id,
-                            RANK() OVER(
-                            ORDER BY
-                                p.points
-                            DESC
-                                ,
-                                p.platinum
-                            DESC
-                                ,
-                                p.gold
-                            DESC
-                                ,
-                                p.silver
-                            DESC
-                        ) ranking
-                    FROM
-                        player p
-                    WHERE
-                        p.status = 0)
-                        UPDATE
-                            player p,
-                            ranking r
-                        SET
-                            p.rank = r.ranking
-                        WHERE
-                            p.account_id = r.account_id");
-                $query->execute();
-
-                // Update country ranks
-                $query = $database->prepare("WITH
-                        ranking AS(
-                        SELECT
-                            p.account_id,
-                            RANK() OVER(
-                            ORDER BY
-                                p.points
-                            DESC
-                                ,
-                                p.platinum
-                            DESC
-                                ,
-                                p.gold
-                            DESC
-                                ,
-                                p.silver
-                            DESC
-                        ) ranking
-                        FROM
-                            player p
-                        WHERE
-                            p.status = 0 AND p.country = :country)
+        if ($playerStatus == 0) {
+            // Update ranks
+            $query = $database->prepare("WITH
+                    ranking AS(
+                    SELECT
+                        p.account_id,
+                        RANK() OVER(
+                        ORDER BY
+                            p.points
+                        DESC
+                            ,
+                            p.platinum
+                        DESC
+                            ,
+                            p.gold
+                        DESC
+                            ,
+                            p.silver
+                        DESC
+                    ) ranking
+                FROM
+                    player p
+                WHERE
+                    p.status = 0)
                     UPDATE
                         player p,
                         ranking r
                     SET
-                        p.rank_country = r.ranking
+                        p.rank = r.ranking
                     WHERE
                         p.account_id = r.account_id");
-                $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
-                $query->execute();
+            $query->execute();
 
-                // Update user rarity points for each game
-                $query = $database->prepare("WITH
-                        rarity AS(
-                        SELECT
-                            trophy_earned.np_communication_id,
-                            SUM(trophy.rarity_point) AS points,
-                            SUM(trophy.rarity_name = 'COMMON') common,
-                            SUM(trophy.rarity_name = 'UNCOMMON') uncommon,
-                            SUM(trophy.rarity_name = 'RARE') rare,
-                            SUM(trophy.rarity_name = 'EPIC') epic,
-                            SUM(trophy.rarity_name = 'LEGENDARY') legendary
-                        FROM
-                            trophy_earned
-                        JOIN trophy USING(
-                                np_communication_id,
-                                order_id
-                            )
-                        WHERE
-                            trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
-                        GROUP BY
-                            trophy_earned.np_communication_id
-                        ORDER BY NULL
-                    )
-                    UPDATE
-                        trophy_title_player ttp,
-                        rarity
-                    SET
-                        ttp.rarity_points = rarity.points,
-                        ttp.common = rarity.common,
-                        ttp.uncommon = rarity.uncommon,
-                        ttp.rare = rarity.rare,
-                        ttp.epic = rarity.epic,
-                        ttp.legendary = rarity.legendary
-                    WHERE
-                        ttp.account_id = :account_id AND ttp.np_communication_id = rarity.np_communication_id");
-                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-                $query->execute();
-
-                // Update user total rarity points
-                $query = $database->prepare("WITH
-                        rarity AS(
-                        SELECT
-                            IFNULL(SUM(rarity_points), 0) AS rarity_points,
-                            IFNULL(SUM(common), 0) AS common,
-                            IFNULL(SUM(uncommon), 0) AS uncommon,
-                            IFNULL(SUM(rare), 0) AS rare,
-                            IFNULL(SUM(epic), 0) AS epic,
-                            IFNULL(SUM(legendary), 0) AS legendary
-                        FROM
-                            trophy_title_player
-                        WHERE
-                            account_id = :account_id
-                        ORDER BY NULL
-                    )
-                    UPDATE
-                        player p,
-                        rarity
-                    SET
-                        p.rarity_points = rarity.rarity_points,
-                        p.common = rarity.common,
-                        p.uncommon = rarity.uncommon,
-                        p.rare = rarity.rare,
-                        p.epic = rarity.epic,
-                        p.legendary = rarity.legendary
-                    WHERE
-                        p.account_id = :account_id AND p.status = 0");
-                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-                $query->execute();
-
-                // Update rarity ranks
-                $query = $database->prepare("WITH
-                        ranking AS(
-                        SELECT
-                            p.account_id,
-                            RANK() OVER(
+            // Update country ranks
+            $query = $database->prepare("WITH
+                    ranking AS(
+                    SELECT
+                        p.account_id,
+                        RANK() OVER(
                         ORDER BY
-                            p.rarity_points
+                            p.points
                         DESC
-                        ) ranking
-                    FROM
-                        player p
-                    WHERE
-                        p.status = 0)
-                        UPDATE
-                            player p,
-                            ranking r
-                        SET
-                            p.rarity_rank = r.ranking
-                        WHERE
-                            p.account_id = r.account_id");
-                $query->execute();
-
-                // Update country rarity ranks
-                $query = $database->prepare("WITH
-                        ranking AS(
-                        SELECT
-                            p.account_id,
-                            RANK() OVER(
-                        ORDER BY
-                            p.rarity_points
+                            ,
+                            p.platinum
                         DESC
-                        ) ranking
+                            ,
+                            p.gold
+                        DESC
+                            ,
+                            p.silver
+                        DESC
+                    ) ranking
                     FROM
                         player p
                     WHERE
                         p.status = 0 AND p.country = :country)
-                        UPDATE
-                            player p,
-                            ranking r
-                        SET
-                            p.rarity_rank_country = r.ranking
-                        WHERE
-                            p.account_id = r.account_id");
-                $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
-                $query->execute();
-            }
+                UPDATE
+                    player p,
+                    ranking r
+                SET
+                    p.rank_country = r.ranking
+                WHERE
+                    p.account_id = r.account_id");
+            $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
+            $query->execute();
 
-            // Done with the user, update the date
-            $query = $database->prepare("UPDATE player
-                SET    last_updated_date = Now()
-                WHERE  account_id = :account_id ");
+            // Update user rarity points for each game
+            $query = $database->prepare("WITH
+                    rarity AS(
+                    SELECT
+                        trophy_earned.np_communication_id,
+                        SUM(trophy.rarity_point) AS points,
+                        SUM(trophy.rarity_name = 'COMMON') common,
+                        SUM(trophy.rarity_name = 'UNCOMMON') uncommon,
+                        SUM(trophy.rarity_name = 'RARE') rare,
+                        SUM(trophy.rarity_name = 'EPIC') epic,
+                        SUM(trophy.rarity_name = 'LEGENDARY') legendary
+                    FROM
+                        trophy_earned
+                    JOIN trophy USING(
+                            np_communication_id,
+                            order_id
+                        )
+                    WHERE
+                        trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
+                    GROUP BY
+                        trophy_earned.np_communication_id
+                    ORDER BY NULL
+                )
+                UPDATE
+                    trophy_title_player ttp,
+                    rarity
+                SET
+                    ttp.rarity_points = rarity.points,
+                    ttp.common = rarity.common,
+                    ttp.uncommon = rarity.uncommon,
+                    ttp.rare = rarity.rare,
+                    ttp.epic = rarity.epic,
+                    ttp.legendary = rarity.legendary
+                WHERE
+                    ttp.account_id = :account_id AND ttp.np_communication_id = rarity.np_communication_id");
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
             $query->execute();
 
-            // Delete user from the queue
-            $query = $database->prepare("DELETE FROM player_queue
-                WHERE  online_id = :online_id ");
-            // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
-            $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
+            // Update user total rarity points
+            $query = $database->prepare("WITH
+                    rarity AS(
+                    SELECT
+                        IFNULL(SUM(rarity_points), 0) AS rarity_points,
+                        IFNULL(SUM(common), 0) AS common,
+                        IFNULL(SUM(uncommon), 0) AS uncommon,
+                        IFNULL(SUM(rare), 0) AS rare,
+                        IFNULL(SUM(epic), 0) AS epic,
+                        IFNULL(SUM(legendary), 0) AS legendary
+                    FROM
+                        trophy_title_player
+                    WHERE
+                        account_id = :account_id
+                    ORDER BY NULL
+                )
+                UPDATE
+                    player p,
+                    rarity
+                SET
+                    p.rarity_points = rarity.rarity_points,
+                    p.common = rarity.common,
+                    p.uncommon = rarity.uncommon,
+                    p.rare = rarity.rare,
+                    p.epic = rarity.epic,
+                    p.legendary = rarity.legendary
+                WHERE
+                    p.account_id = :account_id AND p.status = 0");
+            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+            $query->execute();
+
+            // Update rarity ranks
+            $query = $database->prepare("WITH
+                    ranking AS(
+                    SELECT
+                        p.account_id,
+                        RANK() OVER(
+                    ORDER BY
+                        p.rarity_points
+                    DESC
+                    ) ranking
+                FROM
+                    player p
+                WHERE
+                    p.status = 0)
+                    UPDATE
+                        player p,
+                        ranking r
+                    SET
+                        p.rarity_rank = r.ranking
+                    WHERE
+                        p.account_id = r.account_id");
+            $query->execute();
+
+            // Update country rarity ranks
+            $query = $database->prepare("WITH
+                    ranking AS(
+                    SELECT
+                        p.account_id,
+                        RANK() OVER(
+                    ORDER BY
+                        p.rarity_points
+                    DESC
+                    ) ranking
+                FROM
+                    player p
+                WHERE
+                    p.status = 0 AND p.country = :country)
+                    UPDATE
+                        player p,
+                        ranking r
+                    SET
+                        p.rarity_rank_country = r.ranking
+                    WHERE
+                        p.account_id = r.account_id");
+            $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
             $query->execute();
         }
+
+        // Done with the user, update the date
+        $query = $database->prepare("UPDATE player
+            SET    last_updated_date = Now()
+            WHERE  account_id = :account_id ");
+        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+        $query->execute();
+
+        // Delete user from the queue
+        $query = $database->prepare("DELETE FROM player_queue
+            WHERE  online_id = :online_id ");
+        // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
+        $query->bindParam(":online_id", $user->onlineId(), PDO::PARAM_STR);
+        $query->execute();
     }
 }
