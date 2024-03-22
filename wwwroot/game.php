@@ -299,6 +299,21 @@ require_once("header.php");
                                                     </a>
                                                 </span>
                                                 <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
+                                                <?php
+                                                if ($trophy["progress_target_value"] != null) {
+                                                    echo "<span>";
+                                                    if (isset($trophy["progress"])) {
+                                                        echo $trophy["progress"];
+                                                    } else {
+                                                        echo "0";
+                                                    }
+                                                    echo "/". $trophy["progress_target_value"] ."</span>";
+                                                }
+
+                                                if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
+                                                    echo "<span>Reward: <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a></span>";
+                                                }
+                                                ?>
                                             </div>
                                         </td>
 
