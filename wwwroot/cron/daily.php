@@ -110,14 +110,14 @@ do {
         $query = $database->prepare("WITH
                 rarity AS(
                 SELECT
-                    COUNT(*) AS trophy_owners,
+                    COUNT(p.account_id) AS trophy_owners,
                     order_id
                 FROM
                     trophy_earned te
-                JOIN player p USING(account_id)
+                LEFT JOIN player p ON p.account_id = te.account_id AND p.status = 0 AND p.rank <= 50000
                 JOIN trophy t USING(np_communication_id, order_id)
                 WHERE
-                    p.status = 0 AND p.rank <= 50000 AND te.np_communication_id = :np_communication_id AND te.earned = 1
+                    te.np_communication_id = :np_communication_id AND te.earned = 1
                 GROUP BY te.order_id
                     ORDER BY NULL
             )
