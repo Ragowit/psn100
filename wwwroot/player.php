@@ -16,7 +16,9 @@ $numberOfGames = $query->fetchColumn();
 
 $metaData = new stdClass();
 $metaData->title = $player["online_id"] ."'s Trophy Progress";
-if ($player["status"] == 3) {
+if ($player["status"] == 1) {
+    $metaData->description = "The player is flagged as a cheater.";
+} elseif ($player["status"] == 3) {
     $metaData->description = "The player is private.";
 } else {
     $metaData->description = "Level ". $player["level"] .".". $player["progress"] ." ~ ". $numberOfGames ." Unique Games ~ ". $player["platinum"] ." Unique Platinums";
@@ -36,7 +38,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 $playerSearch = $_GET["search"] ?? "";
 $sort = (!empty($_GET["sort"]) ? $_GET["sort"] : (!empty($_GET["search"]) ? "search" : "date"));
 
-if ($player["status"] == 3) {
+if ($player["status"] == 1 || $player["status"] == 3) {
     $total_pages = 0;
 } else {
     $sql = "SELECT Count(*)
@@ -209,7 +211,13 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if ($player["status"] == 3) {
+                            if ($player["status"] == 1) {
+                                ?>
+                                <tr>
+                                    <td colspan="4" class="text-center"><h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3></td>
+                                </tr>
+                                <?php
+                            } elseif ($player["status"] == 3) {
                                 ?>
                                 <tr>
                                     <td colspan="4" class="text-center"><h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>

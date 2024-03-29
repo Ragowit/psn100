@@ -96,7 +96,13 @@ require_once("header.php");
 
     <div class="row">
         <?php
-        if ($player["status"] == 3) {
+        if ($player["status"] == 1) {
+            ?>
+            <div class="col-12 text-center">
+                <h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3>
+            </div>
+            <?php
+        } elseif ($player["status"] == 3) {
             ?>
             <div class="col-12 text-center">
                 <h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3>

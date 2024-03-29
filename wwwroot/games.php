@@ -23,7 +23,7 @@ if (!empty($player)) {
     $query->execute();
     $playerStatus = $query->fetchColumn();
 
-    if ($playerStatus == 3) { // Private player
+    if ($playerStatus == 1 || $playerStatus == 3) { // Cheater or Private player
         $player = "";
     }
 }

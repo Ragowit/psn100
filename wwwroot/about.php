@@ -159,7 +159,7 @@ require_once("header.php");
                                             </td>
                                             <td class="align-middle text-center">
                                                 <?php
-                                                if ($player["status"] == 3) {
+                                                if ($player["status"] == 1 || $player["status"] == 3) {
                                                     ?>
                                                     N/A
                                                     <?php
@@ -175,7 +175,7 @@ require_once("header.php");
                                             </td>
                                             <td class="align-middle text-center">
                                                 <?php
-                                                if ($player["status"] == 3) {
+                                                if ($player["status"] == 1 || $player["status"] == 3) {
                                                     ?>
                                                     N/A
                                                     <?php

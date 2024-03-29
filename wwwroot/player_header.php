@@ -74,7 +74,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     <div class="hstack">
                         <div class="vstack">
                             <?php
-                            if ($player["status"] == 3) {
+                            if ($player["status"] == 1 || $player["status"] == 3) {
                                 echo "N/A";
                             } else {
                                 ?>
@@ -116,7 +116,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
 
             <div class="text-center bg-dark-subtle p-3 rounded">
                 <?php
-                if ($player["status"] == 3) {
+                if ($player["status"] == 1 || $player["status"] == 3) {
                     echo "N/A";
                 } else {
                     ?>
@@ -148,7 +148,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     Games
                     <hr class="m-2">
                     <?php
-                    if ($player["status"] == 3) {
+                    if ($player["status"] == 1 || $player["status"] == 3) {
                         echo "N/A";
                     } else {
                         ?>
@@ -162,7 +162,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     100% Completion
                     <hr class="m-2">
                     <?php
-                    if ($player["status"] == 3) {
+                    if ($player["status"] == 1 || $player["status"] == 3) {
                         echo "N/A";
                     } else {
                         ?>
@@ -286,7 +286,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     Average Progress
                     <hr class="m-2">
                     <?php
-                    if ($player["status"] == 3) {
+                    if ($player["status"] == 1 || $player["status"] == 3) {
                         echo "N/A";
                     } else {
                         ?>
@@ -300,7 +300,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                     Unearned Trophies
                     <hr class="m-2">
                     <?php
-                    if ($player["status"] == 3) {
+                    if ($player["status"] == 1 || $player["status"] == 3) {
                         echo "N/A";
                     } else {
                         ?>

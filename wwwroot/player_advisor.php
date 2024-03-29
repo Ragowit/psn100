@@ -20,7 +20,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
 $sort = (!empty($_GET["sort"]) ? $_GET["sort"] : "date");
 
-if ($player["status"] == 3) {
+if ($player["status"] == 1 || $player["status"] == 3) {
     $total_pages = 0;
 } else {
     $sql = "SELECT
@@ -171,7 +171,13 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if ($player["status"] == 3) {
+                            if ($player["status"] == 1) {
+                                ?>
+                                <tr>
+                                    <td colspan="5" class="text-center"><h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3></td>
+                                </tr>
+                                <?php
+                            } elseif ($player["status"] == 3) {
                                 ?>
                                 <tr>
                                     <td colspan="5" class="text-center"><h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>
