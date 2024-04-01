@@ -712,5 +712,22 @@ require_once("../init.php");
             echo "<a href=\"/game/3200-dead-space/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
+        <br>
+        Dying Light (Things That Go Ka-Boom < Get the Bozak):<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, first_trophy, second_trophy
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR05659_00' AND order_id = 54) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR05659_00' AND order_id = 57) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING first_trophy >= second_trophy
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/3613-dying-light/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
     </body>
 </html>
