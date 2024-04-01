@@ -729,5 +729,39 @@ require_once("../init.php");
             echo "<a href=\"/game/3613-dying-light/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
+        <br>
+        Street Fighter X Tekken [PSVITA] (Transcend All You Know <-> Your Legend Will Never Die):<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR03139_00' AND order_id = 36) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR03139_00' AND order_id = 37) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 600
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/3474-street-fighter-x-tekken/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
+
+        <br>
+        Street Fighter X Tekken [PS3] (Transcend All You Know <-> Your Legend Will Never Die):<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR01781_00' AND order_id = 38) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR01781_00' AND order_id = 39) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 600
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/4253-street-fighter-x-tekken/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
     </body>
 </html>
