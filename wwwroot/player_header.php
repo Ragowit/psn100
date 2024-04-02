@@ -105,7 +105,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                         if (!is_null($player["last_updated_date"])) {
                             ?>
                             <script>
-                                document.getElementById("lastUpdate").innerHTML = new Date('<?= $player["last_updated_date"]; ?> UTC+1').toLocaleString('sv-SE');
+                                document.getElementById("lastUpdate").innerHTML = new Date('<?= $player["last_updated_date"]; ?> UTC').toLocaleString('sv-SE');
                             </script>
                             <?php
                         }

@@ -139,7 +139,16 @@ require_once("header.php");
                                         ?>
                                         <tr>
                                             <th scope="row" class="align-middle text-center"><?= $rank; ?></th>
-                                            <td class="align-middle text-center"><?= substr($player["last_updated_date"], 11); ?></td>
+                                            <td class="align-middle text-center" id="lastUpdate<?= $player["online_id"]; ?>"></td>
+                                            <?php
+                                            if (!is_null($player["last_updated_date"])) {
+                                                ?>
+                                                <script>
+                                                    document.getElementById("lastUpdate<?= $player["online_id"]; ?>").innerHTML = new Date('<?= $player["last_updated_date"]; ?> UTC').toLocaleString('sv-SE', {timeStyle: 'medium'});
+                                                </script>
+                                                <?php
+                                            }
+                                            ?>
                                             <td class="align-middle">
                                                 <div class="hstack gap-3">
                                                     <div>
