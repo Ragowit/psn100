@@ -10,10 +10,6 @@ if (isset($_POST["player"])) {
     $query->execute();
     $database->commit();
 
-    $query = $database->prepare("DELETE FROM player_queue WHERE online_id = :online_id");
-    $query->bindParam(":online_id", $onlineId, PDO::PARAM_STR);
-    $query->execute();
-
     $success = "<p>Player ". $onlineId ." is now tagged as a cheater.</p>";
 }
 
