@@ -780,5 +780,22 @@ require_once("../init.php");
             echo "<a href=\"/game/2151-call-of-duty-black-ops-ii/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
         }
         ?>
+
+        <br>
+        Fat Princess:<br>
+        <?php
+        $query = $database->prepare("SELECT account_id, online_id, ABS(TIMESTAMPDIFF(SECOND, first_trophy, second_trophy)) time_difference
+            FROM player p
+            JOIN (SELECT earned_date AS first_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00737_00' AND order_id = 0) trophy_start USING (account_id)
+            JOIN (SELECT earned_date AS second_trophy, account_id FROM trophy_earned WHERE np_communication_id = 'NPWR00737_00' AND order_id = 26) trophy_end USING (account_id)
+            WHERE p.status != 1
+            HAVING time_difference <= 300
+            ORDER BY online_id");
+        $query->execute();
+        $possibleCheaters = $query->fetchAll();
+        foreach ($possibleCheaters as $possibleCheater) {
+            echo "<a href=\"/game/279-fat-princess/". $possibleCheater["online_id"] ."?sort=date\">". $possibleCheater["online_id"] ." (". $possibleCheater["account_id"] .")</a><br>";
+        }
+        ?>
     </body>
 </html>
