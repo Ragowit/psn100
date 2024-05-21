@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 16, 2024 at 07:17 AM
--- Server version: 8.0.36
--- PHP Version: 8.3.1
+-- Generation Time: May 21, 2024 at 07:48 AM
+-- Server version: 8.0.37
+-- PHP Version: 8.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -106,8 +106,8 @@ CREATE TABLE `player_queue` (
 CREATE TABLE `player_report` (
   `report_id` int UNSIGNED NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
-  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `explanation` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `explanation` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -136,7 +136,7 @@ CREATE TABLE `psn100_change` (
   `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE','GAME_DELISTED','GAME_OBSOLETE','GAME_DELISTED_AND_OBSOLETE','GAME_NORMAL','GAME_COPY','GAME_RESET','GAME_DELETE','GAME_RESCAN','GAME_UNOBTAINABLE','GAME_OBTAINABLE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `param_1` int NOT NULL,
   `param_2` int DEFAULT NULL,
-  `extra` text COLLATE utf8mb4_unicode_ci
+  `extra` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -290,8 +290,8 @@ CREATE TABLE `trophy_title` (
   `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `owners_completed` int UNSIGNED NOT NULL DEFAULT '0',
   `psnprofiles_id` int UNSIGNED DEFAULT NULL,
-  `parent_np_communication_id` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `region` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -473,11 +473,9 @@ ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 --
 ALTER TABLE `trophy_title_player`
   ADD PRIMARY KEY (`np_communication_id`,`account_id`) USING BTREE,
-  ADD KEY `idx_progress` (`progress`),
   ADD KEY `idx_npcid_progress` (`np_communication_id`,`progress`),
   ADD KEY `idx_account_id` (`account_id`),
-  ADD KEY `idx_npcid_lupdate` (`np_communication_id`,`last_updated_date`),
-  ADD KEY `idx_last_updated_date` (`last_updated_date`);
+  ADD KEY `idx_npcid_lupdate` (`np_communication_id`,`last_updated_date`);
 
 --
 -- AUTO_INCREMENT for dumped tables
