@@ -80,7 +80,6 @@ require_once("header.php");
                                         <th scope="col" class="text-center">Updated</th>
                                         <th scope="col">User</th>
                                         <th scope="col" class="text-center" style="width: 75px;">Level</th>
-                                        <th scope="col" class="text-center">Points</th>
                                     </tr>
                                 </thead>
 
@@ -93,7 +92,6 @@ require_once("header.php");
                                             last_updated_date,
                                             `level`,
                                             progress,
-                                            points,
                                             `rank`,
                                             rank_last_week,
                                             `status`
@@ -179,17 +177,6 @@ require_once("header.php");
                                                         <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
                                                     <?php
-                                                }
-                                                ?>
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <?php
-                                                if ($player["status"] == 1 || $player["status"] == 3) {
-                                                    ?>
-                                                    N/A
-                                                    <?php
-                                                } else {
-                                                    echo number_format($player["points"]);
                                                 }
                                                 ?>
                                             </td>
