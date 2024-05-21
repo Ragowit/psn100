@@ -49,7 +49,7 @@ if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
                     <a class="nav-link<?= $homeActive; ?>" href="/">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $leaderboardActive; ?>" href="/leaderboard/main">Leaderboards</a>
+                    <a class="nav-link<?= $leaderboardActive; ?>" href="/leaderboard/trophy">Leaderboards</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link<?= $gameActive; ?>" href="/game">Games</a>

@@ -99,25 +99,26 @@ if (empty($elements[0])) { // No path elements means home
             break;
         case "leaderboard":
             if (empty($elements[0])) {
-                header("Location: /leaderboard/main", true, 303);
+                header("Location: /leaderboard/trophy", true, 303);
                 die();
             } else {
                 switch (array_shift($elements)) {
                     case "main":
+                    case "trophy":
                         require_once("leaderboard_main.php");
                         break;
                     case "rarity":
                         require_once("leaderboard_rarity.php");
                         break;
                     default:
-                        header("Location: /leaderboard/main", true, 303);
+                        header("Location: /leaderboard/trophy", true, 303);
                         die();
                 }
             }
             break;
         case "player":
             if (empty($elements[0])) {
-                header("Location: /leaderboard/main", true, 303);
+                header("Location: /leaderboard/trophy", true, 303);
                 die();
             } else {
                 $onlineId = array_shift($elements);

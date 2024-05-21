@@ -1,5 +1,5 @@
 <?php
-$title = "Rarity Leaderboard ~ PSN 100%";
+$title = "PSN Rarity Leaderboard ~ PSN 100%";
 require_once("header.php");
 
 $url = $_SERVER["REQUEST_URI"];
@@ -43,10 +43,10 @@ unset($paramsWithoutPage["page"]);
     <div class="row">
         <div class="col-12">
             <div class="hstack gap-3">
-                <h1>PSN Trophy Leaderboard</h1>
+                <h1>PSN Rarity Leaderboard</h1>
                 <div class="bg-body-tertiary p-3 rounded">
                     <div class="btn-group">
-                        <a class="btn btn-outline-primary" href="/leaderboard/main?<?= http_build_query($paramsWithoutPage); ?>">Main</a>
+                        <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($paramsWithoutPage); ?>">Trophy</a>
                         <a class="btn btn-primary active" href="/leaderboard/rarity">Rarity</a>
                     </div>
                 </div>

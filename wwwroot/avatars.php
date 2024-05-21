@@ -38,7 +38,7 @@ $offset = ($page - 1) * $limit;
             ?>
             <div class="col">
                 <div class="bg-body-tertiary p-3 rounded mb-3 text-center vstack gap-1">
-                    <a href="/leaderboard/main?avatar=<?= $avatar["avatar_url"] ?>">
+                    <a href="/leaderboard/trophy?avatar=<?= $avatar["avatar_url"] ?>">
                         <img src="/img/avatar/<?= $avatar["avatar_url"] ?>" class="mx-auto" alt="" width="100" />
                     </a>
                     <?= $avatar["count"]; ?> <?= ($avatar["count"] > 1 ? "players" : "player"); ?>

@@ -192,7 +192,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                             if ($player["status"] == 0) {
                                 ?>
                                 <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/main?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank"]; ?></a>
+                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank"]; ?></a>
                                     <?php
                                     if ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                         echo "<span class='fs-6'>(New!)</span>";
@@ -228,7 +228,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                             if ($player["status"] == 0) {
                                 ?>
                                 <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/main?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?></a>
+                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?></a>
                                     <?php
                                     if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
                                         echo "<span class='fs-6'>(New!)</span>";
