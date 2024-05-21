@@ -177,7 +177,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             <div class="bg-body-tertiary p-3 rounded w-100 mt-auto">
                 <div class="vstack">
                     <div>
-                        Main Leaderboard
+                        Trophy Leaderboard
                     </div>
 
                     <div>

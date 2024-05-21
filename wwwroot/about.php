@@ -197,9 +197,9 @@ require_once("header.php");
         <div class="col-12 col-lg-6 mb-3">
             <!-- Main Leaderboard -->
             <div class="bg-body-tertiary p-3 rounded">
-                <h2>Main Leaderboard</h2>
+                <h2>Trophy Leaderboard</h2>
                 <p>
-                    The main leaderboard uses the official point system:
+                    The trophy leaderboard uses the official point system:
                 </p>
                 <ul>
                     <li><img src="/img/trophy-platinum.svg" alt="Platinum" height="18" /><span class="trophy-platinum"> ~ 300 points</span></li>
