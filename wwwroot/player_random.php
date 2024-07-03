@@ -41,6 +41,14 @@ require_once("header.php");
                         <ul class="dropdown-menu p-2">
                             <li>
                                 <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                    <label class="form-check-label" for="filterPC">
+                                        PC
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
                                     <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
                                     <label class="form-check-label" for="filterPS3">
                                         PS3
@@ -113,8 +121,11 @@ require_once("header.php");
                 FROM trophy_title tt
                 LEFT JOIN trophy_title_player ttp ON ttp.np_communication_id = tt.np_communication_id AND ttp.account_id = :account_id
                 WHERE tt.status = 0 AND (ttp.progress != 100 OR ttp.progress IS NULL)";
-            if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
+            if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
                 $sql .= " AND (";
+                if (!empty($_GET["pc"])) {
+                    $sql .= " tt.platform LIKE '%PC%' OR";
+                }
                 if (!empty($_GET["ps3"])) {
                     $sql .= " tt.platform LIKE '%PS3%' OR";
                 }

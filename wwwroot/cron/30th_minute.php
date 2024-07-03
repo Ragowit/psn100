@@ -818,7 +818,8 @@ while (true) {
                         ) AS new
                         ON DUPLICATE KEY
                         UPDATE
-                            icon_url = new.icon_url");
+                            icon_url = new.icon_url,
+                            platform = new.platform");
                     $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
                     $query->bindParam(":name", $trophyTitle->name(), PDO::PARAM_STR);
                     $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);

@@ -51,8 +51,11 @@ if (!empty($_GET["search"]) || $sort == "search") {
 if (!empty($_GET["filter"])) {
     $sql .= " AND ttp.progress IS NULL";
 }
-if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
+if (!empty($_GET["pc"]) ||!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
     $sql .= " AND (";
+    if (!empty($_GET["pc"])) {
+        $sql .= " tt.platform LIKE '%PC%' OR";
+    }
     if (!empty($_GET["ps3"])) {
         $sql .= " tt.platform LIKE '%PS3%' OR";
     }
@@ -120,6 +123,14 @@ $offset = ($page - 1) * $limit;
                             <?php
                         }
                         ?>
+                        <li>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                <label class="form-check-label" for="filterPC">
+                                    PC
+                                </label>
+                            </div>
+                        </li>
                         <li>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
@@ -215,8 +226,11 @@ $offset = ($page - 1) * $limit;
         if (!empty($_GET["filter"])) {
             $sql .= " AND ttp.progress IS NULL";
         }
-        if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
+        if (!empty($_GET["pc"]) ||!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
             $sql .= " AND (";
+            if (!empty($_GET["pc"])) {
+                $sql .= " tt.platform LIKE '%PC%' OR";
+            }
             if (!empty($_GET["ps3"])) {
                 $sql .= " tt.platform LIKE '%PS3%' OR";
             }

@@ -424,6 +424,11 @@ if (isset($_POST["game"])) {
             // Get the title icon url we want to save
             $trophyTitleIconUrl = $trophyTitle->iconUrl();
             $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
+            $platforms = "";
+            foreach ($trophyTitle->platform() as $platform) {
+                $platforms .= $platform->value .",";
+            }
+            $platforms = rtrim($platforms, ",");
             // Download the title icon if we don't have it
             if (!file_exists("/home/psn100/public_html/img/title/". $trophyTitleIconFilename)) {
                 file_put_contents("/home/psn100/public_html/img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
@@ -433,11 +438,13 @@ if (isset($_POST["game"])) {
                     trophy_title
                 SET
                     detail = :detail,
-                    icon_url = :icon_url
+                    icon_url = :icon_url,
+                    platform = :platform
                 WHERE
                     np_communication_id = :np_communication_id");
             $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
             $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
+            $query->bindParam(":platform", $platforms, PDO::PARAM_STR);
             $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
             // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
             $query->execute();

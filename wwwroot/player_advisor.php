@@ -34,8 +34,11 @@ if ($player["status"] == 1 || $player["status"] == 3) {
             t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
         WHERE
             (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0";
-    if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
+    if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
         $sql .= " AND (";
+        if (!empty($_GET["pc"])) {
+            $sql .= " tt.platform LIKE '%PC%' OR";
+        }
         if (!empty($_GET["ps3"])) {
             $sql .= " tt.platform LIKE '%PS3%' OR";
         }
@@ -99,6 +102,14 @@ require_once("header.php");
                     <div class="input-group d-flex justify-content-end">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                         <ul class="dropdown-menu p-2">
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                    <label class="form-check-label" for="filterPC">
+                                        PC
+                                    </label>
+                                </div>
+                            </li>
                             <li>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
@@ -208,8 +219,11 @@ require_once("header.php");
                                         t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
                                     WHERE
                                         (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0";
-                                if (!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
+                                if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
                                     $sql .= " AND (";
+                                    if (!empty($_GET["pc"])) {
+                                        $sql .= " tt.platform LIKE '%PC%' OR";
+                                    }
                                     if (!empty($_GET["ps3"])) {
                                         $sql .= " tt.platform LIKE '%PS3%' OR";
                                     }
