@@ -33,10 +33,12 @@ $query->execute();
 $position = $query->fetchColumn();
 
 // Check status
-$query = $database->prepare("SELECT `status` FROM player WHERE online_id = :online_id");
+$query = $database->prepare("SELECT account_id, `status` FROM player WHERE online_id = :online_id");
 $query->bindParam(":online_id", $player, PDO::PARAM_STR);
 $query->execute();
-$status = $query->fetchColumn();
+$playerData = $query->fetch();
+$accountId = $playerData["account_id"];
+$status = $playerData["status"];
 
 $player = htmlentities($player, ENT_QUOTES, "UTF-8");
 
