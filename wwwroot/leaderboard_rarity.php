@@ -128,7 +128,7 @@ unset($paramsWithoutPage["page"]);
                                 <th scope="row" class="text-center align-middle">
                                     <?php
                                     if (isset($_GET["country"])) {
-                                        if ($player["rarity_rank_country_last_week"] == 0) {
+                                        if ($player["rarity_rank_country_last_week"] == 0 || $player["rarity_rank_country_last_week"] == 16777215) {
                                             echo "New!";
                                         } else {
                                             $delta = $player["rarity_rank_country_last_week"] - $player["rarity_rank_country"];
@@ -146,7 +146,7 @@ unset($paramsWithoutPage["page"]);
                                             echo "</div>";
                                         }
                                     } else {
-                                        if ($player["rarity_rank_last_week"] == 0) {
+                                        if ($player["rarity_rank_last_week"] == 0 || $player["rarity_rank_last_week"] == 16777215) {
                                             echo "New!";
                                         } else {
                                             $delta = $player["rarity_rank_last_week"] - $player["rarity_rank"];

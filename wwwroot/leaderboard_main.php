@@ -129,7 +129,7 @@ unset($paramsWithoutPage["page"]);
                                 <th scope="row" class="text-center align-middle">
                                     <?php
                                     if (isset($_GET["country"])) {
-                                        if ($player["rank_country_last_week"] == 0) {
+                                        if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
                                             echo "New!";
                                         } else {
                                             $delta = $player["rank_country_last_week"] - $player["rank_country"];
@@ -147,7 +147,7 @@ unset($paramsWithoutPage["page"]);
                                             echo "</div>";
                                         }
                                     } else {
-                                        if ($player["rank_last_week"] == 0) {
+                                        if ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                             echo "New!";
                                         } else {
                                             $delta = $player["rank_last_week"] - $player["rank"];
