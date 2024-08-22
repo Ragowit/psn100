@@ -141,7 +141,7 @@ require_once("header.php");
                         <table class="table" id="<?= $trophyGroup["group_id"]; ?>">
                             <thead>
                                 <tr>
-                                    <th scope="col" colspan="5" class="bg-dark-subtle">
+                                    <th scope="col" colspan="4" class="bg-dark-subtle">
                                         <div class="hstack gap-3">
                                             <div>
                                                 <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= htmlentities($trophyGroup["name"]); ?>">
@@ -285,7 +285,23 @@ require_once("header.php");
                                     }
                                     ?>
                                     <tr scope="row"<?= $trClass; ?>>
-                                        <td style="width: 5rem;">
+                                        <?php
+                                        switch ($trophy["type"]) {
+                                            case "bronze":
+                                                $trophyColor = "#c46438";
+                                                break;
+                                            case "silver":
+                                                $trophyColor = "#777777";
+                                                break;
+                                            case "gold":
+                                                $trophyColor = "#c2903e";
+                                                break;
+                                            case "platinum":
+                                                $trophyColor = "#667fb2";
+                                                break;
+                                        }
+                                        ?>
+                                        <td style="width: 5rem; background: linear-gradient(to left, var(--bs-table-bg), <?= $trophyColor; ?>);">
                                             <div>
                                                 <img class="card-img object-fit-scale" style="height: 5rem;" src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="<?= htmlentities($trophy["name"]); ?>">
                                             </div>
@@ -317,11 +333,11 @@ require_once("header.php");
                                             </div>
                                         </td>
 
-                                        <td style="width: 13rem;" class="text-end align-middle">
+                                        <td class="w-auto text-end align-middle">
                                             <?php
                                             if (isset($accountId) && $trophy["earned"] == 1) {
                                                 ?>
-                                                <span id="earned<?= $trophy["order_id"]; ?>"></span>
+                                                <span id="earned<?= $trophy["order_id"]; ?>" style="text-wrap: nowrap;"></span>
                                                 <script>
                                                     <?php
                                                     if ($trophy["earned_date"] == "No Timestamp") {
@@ -384,10 +400,6 @@ require_once("header.php");
                                                 echo "<span class='trophy-common'>". $trophy["rarity_percent"] ."%<br>Common</span>";
                                             }
                                             ?>
-                                        </td>
-
-                                        <td style="width: 5rem;" class="text-center align-middle">
-                                            <img src="/img/trophy-<?= $trophy["type"]; ?>.svg" alt="<?= ucfirst($trophy["type"]); ?>" title="<?= ucfirst($trophy["type"]); ?>" height="50" />
                                         </td>
                                     </tr>
                                     <?php
