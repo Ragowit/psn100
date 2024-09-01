@@ -84,7 +84,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player["online_id"]; ?>/report">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="/player/<?= $player["online_id"]; ?>/report">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
