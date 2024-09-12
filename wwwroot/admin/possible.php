@@ -200,7 +200,6 @@ require_once("../init.php");
             OR (te.np_communication_id = 'NPWR10806_00' AND te.order_id = 23)";
         // Lock's Quest
         $sql .= " OR (te.np_communication_id = 'NPWR12464_00' AND te.order_id = 4)
-            OR (te.np_communication_id = 'NPWR12464_00' AND te.order_id = 9)
             OR (te.np_communication_id = 'NPWR12464_00' AND te.order_id = 11)";
         // NBA 2K17
         $sql .= " OR (te.np_communication_id = 'NPWR11010_00' AND te.order_id = 0)
