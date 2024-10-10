@@ -49,9 +49,6 @@ require_once("../init.php");
         $sql .= " OR (te.np_communication_id = 'NPWR08881_00' AND te.order_id = 0)
             OR (te.np_communication_id = 'NPWR08881_00' AND te.order_id = 25)
             OR (te.np_communication_id = 'NPWR08881_00' AND te.order_id = 26)";
-        // Madden NFL 17
-        $sql .= " OR (te.np_communication_id = 'NPWR10400_00' AND te.order_id = 0)
-            OR (te.np_communication_id = 'NPWR10400_00' AND te.order_id = 12)";
         // nail'd
         $sql .= " OR (te.np_communication_id = 'NPWR01064_00' AND te.order_id = 51)
             OR (te.np_communication_id = 'NPWR01064_00' AND te.order_id = 57)";
