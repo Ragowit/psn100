@@ -107,7 +107,7 @@ require_once("header.php");
         if ($player["status"] == 1) {
             ?>
             <div class="col-12 text-center">
-                <h3>This player has some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3>
+                <h3>This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3>
             </div>
             <?php
         } elseif ($player["status"] == 3) {
