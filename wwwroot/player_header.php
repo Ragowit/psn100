@@ -10,7 +10,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This player have some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?
+                This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?
             </div>
         </div>
         <?php
@@ -18,7 +18,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This player have <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden some of their games</a>. All data from this player will not be in any of the site statistics or leaderboards. Make sure this player have no longer any hidden trophies, and then issue a new scan of the profile on the front page.
+                This player has <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden some of their games</a>. All data from this player will be excluded from site statistics and leaderboards. Make sure this player has no hidden trophies, and then issue a new scan of the profile on the front page.
             </div>
         </div>
         <?php
@@ -34,7 +34,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This player have not played a game over a year and is considered inactive by this site. All data from this player will not be in any of the site statistics or leaderboards.
+                This player has not played a game in over a year and is considered inactive by this site. All data from this player will be excluded from site statistics and leaderboards.
             </div>
         </div>
         <?php
@@ -50,7 +50,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This player isn't ranked within the top 50000 and will not have its trophies contributed to the site statistics.
+                This player isn't ranked within the top 50000 and will not have their trophies contributed to the site statistics.
             </div>
         </div>
         <?php
