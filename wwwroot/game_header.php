@@ -16,7 +16,7 @@
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This game have been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGameName) ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
+                This game has been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGameName) ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
             </div>
         </div>
         <?php
@@ -30,7 +30,7 @@
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This game have <?= $unobtainableTrophies; ?> unobtainable <?= (($unobtainableTrophies == 1) ? "trophy" : "trophies"); ?>.
+                This game has <?= $unobtainableTrophies; ?> unobtainable <?= (($unobtainableTrophies == 1) ? "trophy" : "trophies"); ?>.
             </div>
         </div>
         <?php
@@ -176,7 +176,7 @@
 
                     if (isset($gamePlayer) && $gamePlayer != false) {
                         if ($gamePlayer["progress"] == 100) {
-                            echo " <span class='badge rounded-pill text-bg-success' title='Player have completed this game to 100%!'>Completed!</span>";
+                            echo " <span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>";
                         }
                     }
                     ?>
