@@ -393,7 +393,7 @@ while (true) {
                         `rank` <= 100
                         OR rarity_rank <= 100
                     )
-                    AND last_updated_date < NOW() - INTERVAL 1 DAY
+                    AND last_updated_date < NOW() - INTERVAL 1 HOUR
                     AND `status` = 0
                 UNION ALL
                 SELECT
@@ -416,7 +416,7 @@ while (true) {
                             AND `rarity_rank` <= 50250
                         )
                     )
-                    AND last_updated_date < NOW() - INTERVAL 7 DAY
+                    AND last_updated_date < NOW() - INTERVAL 1 DAY
                     AND `status` = 0
                 UNION ALL
                 SELECT
@@ -431,7 +431,7 @@ while (true) {
                         `rank` <= 10000
                         OR rarity_rank <= 10000
                     )
-                    AND last_updated_date < NOW() - INTERVAL 1 MONTH
+                    AND last_updated_date < NOW() - INTERVAL 1 WEEK
                     AND `status` = 0
                 UNION ALL
                 SELECT
@@ -446,7 +446,7 @@ while (true) {
                         `rank` <= 50000
                         OR rarity_rank <= 50000
                     )
-                    AND last_updated_date < NOW() - INTERVAL 6 MONTH
+                    AND last_updated_date < NOW() - INTERVAL 1 MONTH
                     AND `status` = 0
                 UNION ALL
                 SELECT
