@@ -63,26 +63,25 @@
 
                     <?php
                     if (str_starts_with($game["np_communication_id"], "MERGE")) {
+                        $query = $database->prepare("SELECT
+                                id, `name`, platform, region
+                            FROM
+                                trophy_title
+                            WHERE
+                                parent_np_communication_id = :parent_np_communication_id
+                            ORDER BY
+                                `name`, platform, region");
+                        $query->bindParam(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                        $query->execute();
+                        $stacks = $query->fetchAll();
                         ?>
                         <!-- Stacks -->
                         <div class="dropdown ms-auto align-self-start">
                             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Stacks
+                                Stacks (<?= count($stacks); ?>)
                             </button>
                             <ul class="dropdown-menu">
                                 <?php
-                                $query = $database->prepare("SELECT
-                                        id, `name`, platform, region
-                                    FROM
-                                        trophy_title
-                                    WHERE
-                                        parent_np_communication_id = :parent_np_communication_id
-                                    ORDER BY
-                                        `name`, platform, region");
-                                $query->bindParam(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                $query->execute();
-                                $stacks = $query->fetchAll();
-
                                 foreach ($stacks as $stack) {
                                     ?>
                                     <li class="dropdown-item">
