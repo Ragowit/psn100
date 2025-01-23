@@ -417,31 +417,34 @@ if (isset($_POST["trophy"])) {
 
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
     <head>
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
         <title>Admin ~ Unobtainable Trophy</title>
     </head>
     <body>
-        <a href="/admin/">Back</a><br><br>
-        <form method="post" autocomplete="off">
-            Trophy ID:<br>
-            <textarea name="trophy" rows="10" cols="30"><?= str_replace(",", PHP_EOL, $trophyInput); ?></textarea>
-            <br>
-            Status:<br>
-            <select name="status">
-                <option value="1" <?= ($statusInput == "1" ? "selected" : ""); ?>>Unobtainable</option>
-                <option value="0" <?= ($statusInput == "0" ? "selected" : ""); ?>>Obtainable</option>
-            </select><br><br>
-            <input type="submit" value="Submit">
-        </form>
+        <div class="p-4">
+            <a href="/admin/">Back</a><br><br>
+            <form method="post" autocomplete="off">
+                Trophy ID:<br>
+                <textarea name="trophy" rows="10" cols="30"><?= str_replace(",", PHP_EOL, $trophyInput); ?></textarea>
+                <br>
+                Status:<br>
+                <select name="status">
+                    <option value="1" <?= ($statusInput == "1" ? "selected" : ""); ?>>Unobtainable</option>
+                    <option value="0" <?= ($statusInput == "0" ? "selected" : ""); ?>>Obtainable</option>
+                </select><br><br>
+                <input type="submit" value="Submit">
+            </form>
 
-        <?php
-        if (isset($success)) {
-            echo $success;
-        }
-        ?>
+            <?php
+            if (isset($success)) {
+                echo $success;
+            }
+            ?>
+        </div>
     </body>
 </html>
