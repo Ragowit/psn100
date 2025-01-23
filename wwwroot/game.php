@@ -301,7 +301,7 @@ require_once("header.php");
                                                 break;
                                         }
                                         ?>
-                                        <td style="width: 5rem; background: linear-gradient(to left, var(--bs-table-bg), <?= $trophyColor; ?>);">
+                                        <td style="width: 5rem;">
                                             <div>
                                                 <img class="card-img object-fit-scale" style="height: 5rem;" src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="<?= htmlentities($trophy["name"]); ?>">
                                             </div>
@@ -384,7 +384,7 @@ require_once("header.php");
                                             ?>
                                         </td>
 
-                                        <td style="width: 5rem;" class="text-center align-middle">
+                                        <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
                                             <?php
                                             if ($trophy["status"] == 1) {
                                                 echo "<span>". $trophy["rarity_percent"] ."%<br>Unobtainable</span>";
