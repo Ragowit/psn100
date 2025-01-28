@@ -128,14 +128,6 @@ require_once("header.php");
                         <ul class="dropdown-menu p-2">
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["uncompleted"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUncompletedGames" name="uncompleted">
-                                    <label class="form-check-label" for="filterUncompletedGames">
-                                        Uncompleted Games
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
                                     <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
                                     <label class="form-check-label" for="filterPC">
                                         PC
@@ -187,6 +179,14 @@ require_once("header.php");
                                     <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr2"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
                                     <label class="form-check-label" for="filterPSVR2">
                                         PSVR2
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["uncompleted"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUncompletedGames" name="uncompleted">
+                                    <label class="form-check-label" for="filterUncompletedGames">
+                                        Uncompleted Games
                                     </label>
                                 </div>
                             </li>
