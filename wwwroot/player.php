@@ -44,13 +44,20 @@ if ($player["status"] == 1 || $player["status"] == 3) {
     $sql = "SELECT Count(*)
         FROM   trophy_title_player ttp
             JOIN trophy_title tt USING (np_communication_id)
+            JOIN trophy_group_player tgp USING (account_id, np_communication_id)
         WHERE  tt.status != 2
             AND ttp.account_id = :account_id";
     if (!empty($_GET["search"]) || $sort == "search") {
         $sql .= " AND (MATCH(tt.name) AGAINST (:search)) > 0";
     }
+    if (!empty($_GET["completed"])) {
+        $sql .= " AND ttp.progress = 100 ";
+    }
     if (!empty($_GET["uncompleted"])) {
         $sql .= " AND ttp.progress != 100 ";
+    }
+    if (!empty($_GET["base"])) {
+        $sql .= " AND tgp.progress = 100 AND tgp.group_id = 'default' ";
     }
     if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
         $sql .= " AND (";
@@ -126,6 +133,22 @@ require_once("header.php");
 
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                         <ul class="dropdown-menu p-2">
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["completed"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterCompletedGames" name="completed">
+                                    <label class="form-check-label" for="filterCompletedGames">
+                                        100% (All)
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["base"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterBase" name="base">
+                                    <label class="form-check-label" for="filterBase">
+                                        100% (Base)
+                                    </label>
+                                </div>
+                            </li>
                             <li>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
@@ -254,13 +277,20 @@ require_once("header.php");
                                 }
                                 $sql .= " FROM trophy_title_player ttp
                                             JOIN trophy_title tt USING (np_communication_id)
+                                            JOIN trophy_group_player tgp USING (account_id, np_communication_id)
                                         WHERE  ttp.account_id = :account_id
                                             AND tt.status != 2 ";
                                 if (!empty($_GET["search"]) || $sort == "search") {
                                     $sql .= " AND (MATCH(tt.name) AGAINST (:search))";
                                 }
+                                if (!empty($_GET["completed"])) {
+                                    $sql .= " AND ttp.progress = 100";
+                                }
                                 if (!empty($_GET["uncompleted"])) {
                                     $sql .= " AND ttp.progress != 100";
+                                }
+                                if (!empty($_GET["base"])) {
+                                    $sql .= " AND tgp.progress = 100 AND tgp.group_id = 'default'";
                                 }
                                 if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
                                     $sql .= " AND (";
