@@ -109,20 +109,6 @@ $offset = ($page - 1) * $limit;
 
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                     <ul class="dropdown-menu p-2">
-                        <?php
-                        if (!empty($player)) {
-                            ?>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["filter"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterCompletedGames" name="filter">
-                                    <label class="form-check-label" for="filterCompletedGames">
-                                        Hide Completed Games
-                                    </label>
-                                </div>
-                            </li>
-                            <?php
-                        }
-                        ?>
                         <li>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
@@ -179,6 +165,20 @@ $offset = ($page - 1) * $limit;
                                 </label>
                             </div>
                         </li>
+                        <?php
+                        if (!empty($player)) {
+                            ?>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["filter"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterCompletedGames" name="filter">
+                                    <label class="form-check-label" for="filterCompletedGames">
+                                        Uncompleted Games
+                                    </label>
+                                </div>
+                            </li>
+                            <?php
+                        }
+                        ?>
                     </ul>
 
                     <select class="form-select" name="sort" onChange="this.form.submit()">
