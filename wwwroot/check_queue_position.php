@@ -37,8 +37,8 @@ $query = $database->prepare("SELECT account_id, `status` FROM player WHERE onlin
 $query->bindParam(":online_id", $player, PDO::PARAM_STR);
 $query->execute();
 $playerData = $query->fetch();
-$accountId = $playerData["account_id"];
-$status = $playerData["status"];
+$accountId = $playerData["account_id"] ?? "";
+$status = $playerData["status"] ?? 0;
 
 $player = htmlentities($player, ENT_QUOTES, "UTF-8");
 
