@@ -46,11 +46,12 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 }
 
 $sql = "SELECT COUNT(*) FROM trophy_title_player ttp
-    JOIN player p USING (account_id)
-    WHERE ttp.np_communication_id = :np_communication_id AND p.status = 0 AND p.rank <= 50000";
+    JOIN (SELECT account_id, avatar_url, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0";
 if (isset($_GET["country"])) {
-    $sql .= " AND p.country = :country";
+    $sql .= " AND `country` = :country";
 }
+$sql .= ") p USING (account_id)
+    WHERE ttp.np_communication_id = :np_communication_id AND p.ranking <= 50000";
 if (isset($_GET["avatar"])) {
     $sql .= " AND p.avatar_url = :avatar";
 }
@@ -127,18 +128,17 @@ unset($paramsWithoutPage["page"]);
                                     ttp.last_updated_date AS last_known_date
                                 FROM
                                     trophy_title_player ttp
-                                    JOIN player p ON p.account_id = ttp.account_id
-                                        AND p.status = 0
-                                        AND p.rank <= 50000";
+                                    JOIN (SELECT account_id, avatar_url, country, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0";
                             if (isset($_GET["country"])) {
-                                $sql .= " AND p.country = :country";
+                                $sql .= " AND `country` = :country";
                             }
+                            $sql .= ") p USING (account_id)";
+                            $sql .= " WHERE
+                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 50000";
                             if (isset($_GET["avatar"])) {
                                 $sql .= " AND p.avatar_url = :avatar";
                             }
-                            $sql .= " WHERE
-                                    ttp.np_communication_id = :np_communication_id
-                                ORDER BY
+                            $sql .= " ORDER BY
                                     progress DESC,
                                     platinum DESC,
                                     gold DESC,

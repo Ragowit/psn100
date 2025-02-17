@@ -357,135 +357,141 @@ while (true) {
         }
     }
 
-    // Get our queue.
-    // #1 - Users added from the front page, ordered by time entered
-    // #2 - Top 100 players who haven't been updated within a day, ordered by the oldest one.
-    // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
-    // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
-    // #5 - Top 50000 players who haven't been updated within six months, ordered by the oldest one.
-    // #6 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
-    // #7 - Oldest scanned player who is not tagged as a cheater
-    $query = $database->prepare("SELECT
-            online_id,
-            account_id
-        FROM
-            (
-                SELECT
-                    1 AS tier,
-                    pq.online_id,
-                    pq.request_time,
-                    p.account_id
-                FROM
-                    player_queue pq
-                    LEFT JOIN player p ON p.online_id = pq.online_id
-                WHERE
-                    pq.request_time < '2030-12-25 00:00:00'
-                UNION ALL
-                SELECT
-                    2 AS tier,
-                    online_id,
-                    last_updated_date,
-                    account_id
-                FROM
-                    player
-                WHERE
-                    (
-                        `rank` <= 100
-                        OR rarity_rank <= 100
-                    )
-                    AND last_updated_date < NOW() - INTERVAL 1 HOUR
-                    AND `status` = 0
-                UNION ALL
-                SELECT
-                    3 AS tier,
-                    online_id,
-                    last_updated_date,
-                    account_id
-                FROM
-                    player
-                WHERE
-                    (
-                        `rank` <= 1000
-                        OR rarity_rank <= 1000
-                        OR (
-                            `rank` >= 49750
-                            AND `rank` <= 50250
+    try {
+        // Get our queue.
+        // #1 - Users added from the front page, ordered by time entered
+        // #2 - Top 100 players who haven't been updated within a day, ordered by the oldest one.
+        // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
+        // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
+        // #5 - Top 50000 players who haven't been updated within six months, ordered by the oldest one.
+        // #6 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
+        // #7 - Oldest scanned player who is not tagged as a cheater
+        $query = $database->prepare("SELECT
+                online_id,
+                account_id
+            FROM
+                (
+                    SELECT
+                        1 AS tier,
+                        pq.online_id,
+                        pq.request_time,
+                        p.account_id
+                    FROM
+                        player_queue pq
+                        LEFT JOIN player p ON p.online_id = pq.online_id
+                    WHERE
+                        pq.request_time < '2030-12-25 00:00:00'
+                    UNION ALL
+                    SELECT
+                        2 AS tier,
+                        online_id,
+                        last_updated_date,
+                        account_id
+                    FROM
+                        player
+                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                    WHERE
+                        (
+                            r.ranking <= 100
+                            OR r.rarity_ranking <= 100
                         )
-                        OR (
-                            `rarity_rank` >= 49750
-                            AND `rarity_rank` <= 50250
+                        AND last_updated_date < NOW() - INTERVAL 1 HOUR
+                    UNION ALL
+                    SELECT
+                        3 AS tier,
+                        online_id,
+                        last_updated_date,
+                        account_id
+                    FROM
+                        player
+                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                    WHERE
+                        (
+                            r.ranking <= 1000
+                            OR r.rarity_ranking <= 1000
+                            OR (
+                                r.ranking >= 49750
+                                AND r.ranking <= 50250
+                            )
+                            OR (
+                                r.rarity_ranking >= 49750
+                                AND r.rarity_ranking <= 50250
+                            )
                         )
-                    )
-                    AND last_updated_date < NOW() - INTERVAL 1 DAY
-                    AND `status` = 0
-                UNION ALL
-                SELECT
-                    4 AS tier,
-                    online_id,
-                    last_updated_date,
-                    account_id
-                FROM
-                    player
-                WHERE
-                    (
-                        `rank` <= 10000
-                        OR rarity_rank <= 10000
-                    )
-                    AND last_updated_date < NOW() - INTERVAL 1 WEEK
-                    AND `status` = 0
-                UNION ALL
-                SELECT
-                    5 AS tier,
-                    online_id,
-                    last_updated_date,
-                    account_id
-                FROM
-                    player
-                WHERE
-                    (
-                        `rank` <= 50000
-                        OR rarity_rank <= 50000
-                    )
-                    AND last_updated_date < NOW() - INTERVAL 1 MONTH
-                    AND `status` = 0
-                UNION ALL
-                SELECT
-                    6 AS tier,
-                    pq.online_id,
-                    pq.request_time,
-                    p.account_id
-                FROM
-                    player_queue pq
-                    LEFT JOIN player p ON p.online_id = pq.online_id
-                WHERE
-                    pq.request_time >= '2030-12-25 00:00:00'
-                UNION ALL
-                SELECT
-                    7 AS tier,
-                    online_id,
-                    last_updated_date,
-                    account_id
-                FROM
-                    player
-                WHERE
-                    `status` != 1
-            ) a
-        WHERE NOT EXISTS (SELECT * FROM setting WHERE scanning = a.online_id AND id != :worker_id)
-        ORDER BY
-            tier,
-            request_time,
-            online_id
-        LIMIT
-            1
-    ");
-    $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
-    $query->execute();
-    $player = $query->fetch();
+                        AND last_updated_date < NOW() - INTERVAL 1 DAY
+                    UNION ALL
+                    SELECT
+                        4 AS tier,
+                        online_id,
+                        last_updated_date,
+                        account_id
+                    FROM
+                        player
+                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                    WHERE
+                        (
+                            r.ranking <= 10000
+                            OR r.rarity_ranking <= 10000
+                        )
+                        AND last_updated_date < NOW() - INTERVAL 1 WEEK
+                    UNION ALL
+                    SELECT
+                        5 AS tier,
+                        online_id,
+                        last_updated_date,
+                        account_id
+                    FROM
+                        player
+                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                    WHERE
+                        (
+                            r.ranking <= 50000
+                            OR r.rarity_ranking <= 50000
+                        )
+                        AND last_updated_date < NOW() - INTERVAL 1 MONTH
+                    UNION ALL
+                    SELECT
+                        6 AS tier,
+                        pq.online_id,
+                        pq.request_time,
+                        p.account_id
+                    FROM
+                        player_queue pq
+                        LEFT JOIN player p ON p.online_id = pq.online_id
+                    WHERE
+                        pq.request_time >= '2030-12-25 00:00:00'
+                    UNION ALL
+                    SELECT
+                        7 AS tier,
+                        online_id,
+                        last_updated_date,
+                        account_id
+                    FROM
+                        player
+                    WHERE
+                        `status` != 1
+                ) a
+            WHERE NOT EXISTS (SELECT * FROM setting WHERE scanning = a.online_id AND id != :worker_id)
+            ORDER BY
+                tier,
+                request_time,
+                online_id
+            LIMIT
+                1
+        ");
+        $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
+        $query->execute();
+        $player = $query->fetch();
 
-    $query = $database->prepare("UPDATE setting SET scanning = :scanning WHERE id = :worker_id");
-    $query->bindParam(":scanning", $player["online_id"], PDO::PARAM_STR);
-    $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
-    $query->execute();
+        $query = $database->prepare("UPDATE setting SET scanning = :scanning WHERE id = :worker_id");
+        $query->bindParam(":scanning", $player["online_id"], PDO::PARAM_STR);
+        $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
+        $query->execute();
+    } catch (Exception $e) {
+        // Probably just an exception for "Integrity constraint violation: 1062 Duplicate entry 'online_id' for key 'setting.scanning'" because another thread was faster then this one
+        // Continue and try again!
+        continue;
+    }
 
     if ($recheck == $player["online_id"]) {
         $recheck = "";
@@ -722,6 +728,10 @@ while (true) {
     try {
         $level = 0;
         $level = $user->trophySummary()->level();
+    } catch (TypeError $e) {
+        // Rare error, wait 1 minute to not hammer Sony and try again.
+        sleep(60 * 1);
+        break;
     } catch (Exception $e) {
         // Profile seem to be private, set status to 3 to hide all trophies.
         $query = $database->prepare("UPDATE
@@ -1269,71 +1279,6 @@ while (true) {
         $playerStatus = $query->fetchColumn();
 
         if ($playerStatus == 0) {
-            // Update ranks
-            $query = $database->prepare("WITH
-                    ranking AS(
-                    SELECT
-                        p.account_id,
-                        RANK() OVER(
-                        ORDER BY
-                            p.points
-                        DESC
-                            ,
-                            p.platinum
-                        DESC
-                            ,
-                            p.gold
-                        DESC
-                            ,
-                            p.silver
-                        DESC
-                    ) ranking
-                FROM
-                    player p
-                WHERE
-                    p.status = 0)
-                    UPDATE
-                        player p,
-                        ranking r
-                    SET
-                        p.rank = r.ranking
-                    WHERE
-                        p.account_id = r.account_id");
-            $query->execute();
-
-            // Update country ranks
-            $query = $database->prepare("WITH
-                    ranking AS(
-                    SELECT
-                        p.account_id,
-                        RANK() OVER(
-                        ORDER BY
-                            p.points
-                        DESC
-                            ,
-                            p.platinum
-                        DESC
-                            ,
-                            p.gold
-                        DESC
-                            ,
-                            p.silver
-                        DESC
-                    ) ranking
-                    FROM
-                        player p
-                    WHERE
-                        p.status = 0 AND p.country = :country)
-                UPDATE
-                    player p,
-                    ranking r
-                SET
-                    p.rank_country = r.ranking
-                WHERE
-                    p.account_id = r.account_id");
-            $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
-            $query->execute();
-
             // Update user rarity points for each game
             $query = $database->prepare("WITH
                     rarity AS(
@@ -1401,53 +1346,6 @@ while (true) {
                 WHERE
                     p.account_id = :account_id AND p.status = 0");
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-            $query->execute();
-
-            // Update rarity ranks
-            $query = $database->prepare("WITH
-                    ranking AS(
-                    SELECT
-                        p.account_id,
-                        RANK() OVER(
-                    ORDER BY
-                        p.rarity_points
-                    DESC
-                    ) ranking
-                FROM
-                    player p
-                WHERE
-                    p.status = 0)
-                    UPDATE
-                        player p,
-                        ranking r
-                    SET
-                        p.rarity_rank = r.ranking
-                    WHERE
-                        p.account_id = r.account_id");
-            $query->execute();
-
-            // Update country rarity ranks
-            $query = $database->prepare("WITH
-                    ranking AS(
-                    SELECT
-                        p.account_id,
-                        RANK() OVER(
-                    ORDER BY
-                        p.rarity_points
-                    DESC
-                    ) ranking
-                FROM
-                    player p
-                WHERE
-                    p.status = 0 AND p.country = :country)
-                    UPDATE
-                        player p,
-                        ranking r
-                    SET
-                        p.rarity_rank_country = r.ranking
-                    WHERE
-                        p.account_id = r.account_id");
-            $query->bindParam(":country", strtolower($country), PDO::PARAM_STR);
             $query->execute();
         }
 

@@ -86,19 +86,20 @@ require_once("header.php");
                                 <tbody>
                                     <?php
                                     $query = $database->prepare("SELECT
-                                            online_id,
-                                            country,
-                                            avatar_url,
-                                            last_updated_date,
-                                            `level`,
-                                            progress,
-                                            `rank`,
-                                            rank_last_week,
-                                            `status`
+                                            p.online_id,
+                                            p.country,
+                                            p.avatar_url,
+                                            p.last_updated_date,
+                                            p.level,
+                                            p.progress,
+                                            p.rank_last_week,
+                                            p.status,
+                                            r.ranking
                                         FROM
-                                            `player`
+                                            `player` p
+                                        LEFT JOIN (SELECT `online_id`, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM `player` WHERE `status` = 0) r ON r.online_id = p.online_id
                                         ORDER BY
-                                            last_updated_date
+                                            p.last_updated_date
                                         DESC
                                         LIMIT 10");
                                     $query->execute();
@@ -110,7 +111,7 @@ require_once("header.php");
                                         if ($player["status"] != 0) {
                                             $rank = "N/A";
                                         } else {
-                                            $rank = $player["rank"];
+                                            $rank = $player["ranking"];
                                         }
                                         $rank .= "<br>";
                                         if ($player["status"] == 1) {
@@ -124,7 +125,7 @@ require_once("header.php");
                                         } elseif ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                             $rank .= "(New!)";
                                         } else {
-                                            $delta = $player["rank_last_week"] - $player["rank"];
+                                            $delta = $player["rank_last_week"] - $player["ranking"];
 
                                             if ($delta < 0) {
                                                 $rank .= "<span style='color: #d40b0b;'>(". $delta .")</span>";

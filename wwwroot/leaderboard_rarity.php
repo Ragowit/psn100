@@ -85,27 +85,24 @@ unset($paramsWithoutPage["page"]);
 
                         <tbody>
                             <?php
-                            if (!empty($_GET["country"]) || !empty($_GET["avatar"])) {
-                                $sql = "SELECT * FROM player WHERE `status` = 0";
-                                if (!empty($_GET["country"])) {
-                                    $sql .= " AND country = :country";
-                                }
-                                if (!empty($_GET["avatar"])) {
-                                    $sql .= " AND avatar_url = :avatar";
-                                }
-                                $sql .= " ORDER BY `rarity_rank` LIMIT :offset, :limit";
+                            $sql = "SELECT * FROM (SELECT *, RANK() OVER (ORDER BY `rarity_points` DESC) `ranking` FROM `player` WHERE `status` = 0";
+                            if (!empty($_GET["country"])) {
+                                $sql .= " AND `country` = :country";
+                            }
+                            $sql .= ") p";
+                            if (!empty($_GET["avatar"])) {
+                                $sql .= " WHERE p.avatar_url = :avatar";
+                            }
+                            $sql .= " ORDER BY `ranking` LIMIT :offset, :limit";
 
-                                $query = $database->prepare($sql);
-                                if (!empty($_GET["country"])) {
-                                    $country = $_GET["country"];
-                                    $query->bindParam(":country", $country, PDO::PARAM_STR);
-                                }
-                                if (!empty($_GET["avatar"])) {
-                                    $avatar = $_GET["avatar"];
-                                    $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
-                                }
-                            } else {
-                                $query = $database->prepare("SELECT * FROM player WHERE `status` = 0 ORDER BY rarity_rank LIMIT :offset, :limit");
+                            $query = $database->prepare($sql);
+                            if (!empty($_GET["country"])) {
+                                $country = $_GET["country"];
+                                $query->bindParam(":country", $country, PDO::PARAM_STR);
+                            }
+                            if (!empty($_GET["avatar"])) {
+                                $avatar = $_GET["avatar"];
+                                $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
                             }
                             $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                             $query->bindParam(":limit", $limit, PDO::PARAM_INT);
@@ -131,14 +128,14 @@ unset($paramsWithoutPage["page"]);
                                         if ($player["rarity_rank_country_last_week"] == 0 || $player["rarity_rank_country_last_week"] == 16777215) {
                                             echo "New!";
                                         } else {
-                                            $delta = $player["rarity_rank_country_last_week"] - $player["rarity_rank_country"];
+                                            $delta = $player["rarity_rank_country_last_week"] - $player["ranking"];
 
                                             echo "<div class='vstack'>";
                                             if ($delta > 0) {
                                                 echo "<span style='color: #0bd413; cursor: default;' title='+". $delta ."'>&#9650;</span>";
                                             }
                                             
-                                            echo $player["rarity_rank_country"];
+                                            echo $player["ranking"];
 
                                             if ($delta < 0) {
                                                 echo "<span style='color: #d40b0b; cursor: default;' title='". $delta ."'>&#9660;</span>";
@@ -149,14 +146,14 @@ unset($paramsWithoutPage["page"]);
                                         if ($player["rarity_rank_last_week"] == 0 || $player["rarity_rank_last_week"] == 16777215) {
                                             echo "New!";
                                         } else {
-                                            $delta = $player["rarity_rank_last_week"] - $player["rarity_rank"];
+                                            $delta = $player["rarity_rank_last_week"] - $player["ranking"];
             
                                             echo "<div class='vstack'>";
                                             if ($delta > 0) {
                                                 echo "<span style='color: #0bd413; cursor: default;' title='+". $delta ."'>&#9650;</span>";
                                             }
                                             
-                                            echo $player["rarity_rank"];
+                                            echo $player["ranking"];
 
                                             if ($delta < 0) {
                                                 echo "<span style='color: #d40b0b; cursor: default;' title='". $delta ."'>&#9660;</span>";

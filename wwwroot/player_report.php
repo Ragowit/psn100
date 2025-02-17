@@ -4,11 +4,6 @@ if (!isset($accountId)) {
     die();
 }
 
-$query = $database->prepare("SELECT * FROM player WHERE account_id = :account_id");
-$query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-$query->execute();
-$player = $query->fetch();
-
 if (!empty($_GET["explanation"])) {
     $ipAddress = $_SERVER["REMOTE_ADDR"];
 

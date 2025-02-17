@@ -4,96 +4,6 @@ ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
 require_once("/home/psn100/public_html/init.php");
 
-// Update ranks
-do {
-    try {
-        $query = $database->prepare("WITH
-                ranking AS(
-                SELECT
-                    p.account_id,
-                    RANK() OVER(
-                    ORDER BY
-                        p.points
-                    DESC
-                        ,
-                        p.platinum
-                    DESC
-                        ,
-                        p.gold
-                    DESC
-                        ,
-                        p.silver
-                    DESC
-                ) ranking
-            FROM
-                player p
-            WHERE
-                p.status = 0)
-                UPDATE
-                    player p,
-                    ranking r
-                SET
-                    p.rank = r.ranking
-                WHERE
-                    p.account_id = r.account_id");
-        $query->execute();
-        
-        $deadlock = false;
-    } catch (Exception $e) {
-        sleep(3);
-        $deadlock = true;
-    }
-} while ($deadlock);
-
-$countryQuery = $database->prepare("SELECT DISTINCT
-        (country)
-    FROM
-        player
-    ORDER BY NULL");
-$countryQuery->execute();
-while ($country = $countryQuery->fetch()) {
-    do {
-        try {
-            $query = $database->prepare("WITH
-                    ranking AS(
-                    SELECT
-                        p.account_id,
-                        RANK() OVER(
-                        ORDER BY
-                            p.points
-                        DESC
-                            ,
-                            p.platinum
-                        DESC
-                            ,
-                            p.gold
-                        DESC
-                            ,
-                            p.silver
-                        DESC
-                    ) ranking
-                    FROM
-                        player p
-                    WHERE
-                        p.status = 0 AND p.country = :country)
-                UPDATE
-                    player p,
-                    ranking r
-                SET
-                    p.rank_country = r.ranking
-                WHERE
-                    p.account_id = r.account_id");
-            $query->bindParam(":country", $country["country"], PDO::PARAM_STR);
-            $query->execute();
-
-            $deadlock = false;
-        } catch (Exception $e) {
-            sleep(3);
-            $deadlock = true;
-        }
-    } while ($deadlock);
-}
-
 // Recalculate trophy rarity percent and rarity name.
 $gameQuery = $database->prepare("SELECT np_communication_id FROM trophy_title");
 $gameQuery->execute();
@@ -114,7 +24,7 @@ do {
                     order_id
                 FROM
                     trophy_earned te
-                LEFT JOIN player p ON p.account_id = te.account_id AND p.status = 0 AND p.rank <= 50000
+                LEFT JOIN player_extra p ON p.account_id = te.account_id AND p.rank <= 50000
                 JOIN trophy t USING(np_communication_id, order_id)
                 WHERE
                     te.np_communication_id = :np_communication_id AND te.earned = 1

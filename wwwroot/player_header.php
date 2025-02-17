@@ -38,7 +38,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
-    } elseif ($player["rank"] == 16777215) {
+    } elseif ($player["status"] == 99) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
@@ -46,7 +46,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
-    } elseif ($player["rank"] > 50000) {
+    } elseif ($player["ranking"] > 50000) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
@@ -192,12 +192,12 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                             if ($player["status"] == 0) {
                                 ?>
                                 <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?page=<?= ceil($player["rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank"]; ?></a>
+                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?page=<?= ceil($player["ranking"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["ranking"]; ?></a>
                                     <?php
                                     if ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                         echo "<span class='fs-6'>(New!)</span>";
                                     } else {
-                                        $delta = $player["rank_last_week"] - $player["rank"];
+                                        $delta = $player["rank_last_week"] - $player["ranking"];
 
                                         if ($delta < 0) {
                                             echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
@@ -228,12 +228,12 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                             if ($player["status"] == 0) {
                                 ?>
                                 <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?country=<?= $player["country"]; ?>&page=<?= ceil($player["rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rank_country"]; ?></a>
+                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?country=<?= $player["country"]; ?>&page=<?= ceil($player["ranking_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["ranking_country"]; ?></a>
                                     <?php
                                     if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
                                         echo "<span class='fs-6'>(New!)</span>";
                                     } else {
-                                        $delta = $player["rank_country_last_week"] - $player["rank_country"];
+                                        $delta = $player["rank_country_last_week"] - $player["ranking_country"];
 
                                         if ($delta < 0) {
                                             echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
@@ -330,12 +330,12 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                             if ($player["status"] == 0) {
                                 ?>
                                 <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/rarity?page=<?= ceil($player["rarity_rank"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank"]; ?></a>
+                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/rarity?page=<?= ceil($player["rarity_ranking"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_ranking"]; ?></a>
                                     <?php
                                     if ($player["rarity_rank_last_week"] == 0 || $player["rarity_rank_last_week"] == 16777215) {
                                         echo "<span class='fs-6'>(New!)</span>";
                                     } else {
-                                        $delta = $player["rarity_rank_last_week"] - $player["rarity_rank"];
+                                        $delta = $player["rarity_rank_last_week"] - $player["rarity_ranking"];
 
                                         if ($delta < 0) {
                                             echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
@@ -366,12 +366,12 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                             if ($player["status"] == 0) {
                                 ?>
                                 <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_rank_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_rank_country"]; ?></a>
+                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_ranking_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_ranking_country"]; ?></a>
                                     <?php
                                     if ($player["rarity_rank_country_last_week"] == 0 || $player["rarity_rank_country_last_week"] == 16777215) {
                                         echo "<span class='fs-6'>(New!)</span>";
                                     } else {
-                                        $delta = $player["rarity_rank_country_last_week"] - $player["rarity_rank_country"];
+                                        $delta = $player["rarity_rank_country_last_week"] - $player["rarity_ranking_country"];
 
                                         if ($delta < 0) {
                                             echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";

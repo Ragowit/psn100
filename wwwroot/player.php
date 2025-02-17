@@ -4,11 +4,6 @@ if (!isset($accountId)) {
     die();
 }
 
-$query = $database->prepare("SELECT * FROM player WHERE account_id = :account_id");
-$query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-$query->execute();
-$player = $query->fetch();
-
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();

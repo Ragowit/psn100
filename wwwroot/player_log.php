@@ -4,11 +4,6 @@ if (!isset($accountId)) {
     die();
 }
 
-$query = $database->prepare("SELECT * FROM player WHERE account_id = :account_id");
-$query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-$query->execute();
-$player = $query->fetch();
-
 $url = $_SERVER["REQUEST_URI"];
 $url_parts = parse_url($url);
 // If URL doesn't have a query string.

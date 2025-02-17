@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 6.0.0-dev+20250122.b28b32e424
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 21, 2024 at 07:48 AM
--- Server version: 8.0.37
--- PHP Version: 8.3.6
+-- Generation Time: Feb 17, 2025 at 04:17 PM
+-- Server version: 8.0.41
+-- PHP Version: 8.4.3
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -22,7 +22,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `log` (
-  `id` int NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -49,13 +49,9 @@ CREATE TABLE `player` (
   `progress` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `points` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
-  `rank` mediumint UNSIGNED NOT NULL DEFAULT '16777215',
   `rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_rank` mediumint UNSIGNED NOT NULL DEFAULT '16777215',
   `rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `rank_country` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_rank_country` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `common` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `uncommon` mediumint UNSIGNED NOT NULL DEFAULT '0',
@@ -66,23 +62,16 @@ CREATE TABLE `player` (
   `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
 --
--- Triggers `player`
+-- Table structure for table `player_extra`
 --
-DELIMITER $$
-CREATE TRIGGER `after_update_player` AFTER UPDATE ON `player` FOR EACH ROW BEGIN
-IF OLD.status = 0 AND NEW.status != 0 AND OLD.rank <= 50000 THEN
-UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` - 1, `owners_completed` = IF(progress = 100, `owners_completed` - 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
-ELSEIF OLD.status = 0 AND NEW.status = 0 AND OLD.rank <= 50000 AND NEW.rank > 50000 THEN
-UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` - 1, `owners_completed` = IF(progress = 100, `owners_completed` - 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
-ELSEIF OLD.status = 0 AND NEW.status = 0 AND OLD.rank > 50000 AND NEW.rank <= 50000 THEN
-UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` + 1, `owners_completed` = IF(progress = 100, `owners_completed` + 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
-ELSEIF OLD.status != 0 AND NEW.status = 0 AND NEW.rank <= 50000 THEN
-UPDATE `trophy_title` JOIN `trophy_title_player` USING (`np_communication_id`) SET `owners` = `owners` + 1, `owners_completed` = IF(progress = 100, `owners_completed` + 1, `owners_completed`) WHERE `account_id` = NEW.account_id;
-END IF;
-END
-$$
-DELIMITER ;
+
+CREATE TABLE `player_extra` (
+  `account_id` bigint UNSIGNED NOT NULL,
+  `rank` mediumint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -104,7 +93,7 @@ CREATE TABLE `player_queue` (
 --
 
 CREATE TABLE `player_report` (
-  `report_id` int UNSIGNED NOT NULL,
+  `report_id` bigint UNSIGNED NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
   `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `explanation` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
@@ -117,7 +106,7 @@ CREATE TABLE `player_report` (
 --
 
 CREATE TABLE `psn100_avatars` (
-  `avatar_id` int UNSIGNED NOT NULL,
+  `avatar_id` bigint UNSIGNED NOT NULL,
   `size` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `avatar_url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `md5_hash` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -131,7 +120,7 @@ CREATE TABLE `psn100_avatars` (
 --
 
 CREATE TABLE `psn100_change` (
-  `id` int NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE','GAME_DELISTED','GAME_OBSOLETE','GAME_DELISTED_AND_OBSOLETE','GAME_NORMAL','GAME_COPY','GAME_RESET','GAME_DELETE','GAME_RESCAN','GAME_UNOBTAINABLE','GAME_OBTAINABLE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `param_1` int NOT NULL,
@@ -146,10 +135,11 @@ CREATE TABLE `psn100_change` (
 --
 
 CREATE TABLE `setting` (
-  `id` int UNSIGNED NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `refresh_token` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+  `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `scan_start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -159,7 +149,7 @@ CREATE TABLE `setting` (
 --
 
 CREATE TABLE `trophy` (
-  `id` int UNSIGNED NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `order_id` smallint UNSIGNED NOT NULL,
@@ -221,7 +211,7 @@ DELIMITER ;
 --
 
 CREATE TABLE `trophy_group` (
-  `id` int NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -272,7 +262,7 @@ CREATE TABLE `trophy_merge` (
 --
 
 CREATE TABLE `trophy_title` (
-  `id` int UNSIGNED NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -294,18 +284,6 @@ CREATE TABLE `trophy_title` (
   `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Triggers `trophy_title`
---
-DELIMITER $$
-CREATE TRIGGER `before_update_trophy_title` BEFORE UPDATE ON `trophy_title` FOR EACH ROW BEGIN
-IF OLD.owners != NEW.owners OR OLD.owners_completed != NEW.owners_completed THEN
-SET NEW.difficulty = IF(NEW.owners = 0, 0, (NEW.owners_completed / NEW.owners) * 100);
-END IF;
-END
-$$
-DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -337,36 +315,6 @@ CREATE TABLE `trophy_title_player` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Triggers `trophy_title_player`
---
-DELIMITER $$
-CREATE TRIGGER `after_insert_trophy_title_player` AFTER INSERT ON `trophy_title_player` FOR EACH ROW BEGIN
-DECLARE player_ok INT;
-SET player_ok = (SELECT COUNT(1) FROM `player` WHERE `account_id` = NEW.account_id AND `status` = 0 AND `rank` <= 50000);
-IF player_ok = 1 THEN
-IF NEW.progress = 100 THEN
-UPDATE `trophy_title` SET `owners` = `owners` + 1, `owners_completed` = `owners_completed` + 1 WHERE `np_communication_id` = NEW.np_communication_id;
-ELSE
-UPDATE `trophy_title` SET `owners` = `owners` + 1 WHERE `np_communication_id` = NEW.np_communication_id;
-END IF;
-END IF;
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `after_update_trophy_title_player` AFTER UPDATE ON `trophy_title_player` FOR EACH ROW BEGIN
-DECLARE player_ok INT;
-SET player_ok = (SELECT COUNT(1) FROM `player` WHERE `account_id` = NEW.account_id AND `status` = 0 AND `rank` <= 50000);
-IF player_ok = 1 AND OLD.progress != 100 AND NEW.progress = 100 THEN
-UPDATE `trophy_title` SET `owners_completed` = `owners_completed` + 1 WHERE `np_communication_id` = NEW.np_communication_id;
-ELSEIF player_ok = 1 AND OLD.progress = 100 AND NEW.progress != 100 THEN
-UPDATE `trophy_title` SET `owners_completed` = `owners_completed` - 1 WHERE `np_communication_id` = NEW.np_communication_id;
-END IF;
-END
-$$
-DELIMITER ;
-
---
 -- Indexes for dumped tables
 --
 
@@ -382,16 +330,23 @@ ALTER TABLE `log`
 ALTER TABLE `player`
   ADD PRIMARY KEY (`account_id`),
   ADD UNIQUE KEY `u_online_id` (`online_id`),
-  ADD KEY `idx_rarity_rank` (`rarity_rank`),
   ADD KEY `idx_avatar_url` (`avatar_url`),
-  ADD KEY `idx_status_rank_aid` (`status`,`rank`,`account_id`);
+  ADD KEY `idx_last_updated_date` (`last_updated_date`),
+  ADD KEY `idx_status` (`status`) USING BTREE;
+
+--
+-- Indexes for table `player_extra`
+--
+ALTER TABLE `player_extra`
+  ADD UNIQUE KEY `idx_account_id` (`account_id`);
 
 --
 -- Indexes for table `player_queue`
 --
 ALTER TABLE `player_queue`
   ADD UNIQUE KEY `u_online_id` (`online_id`),
-  ADD KEY `idx_time_oid` (`request_time`,`online_id`);
+  ADD KEY `idx_time_oid` (`request_time`,`online_id`),
+  ADD KEY `idx_ip_address` (`ip_address`);
 
 --
 -- Indexes for table `player_report`
@@ -404,7 +359,8 @@ ALTER TABLE `player_report`
 -- Indexes for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  ADD PRIMARY KEY (`avatar_id`);
+  ADD PRIMARY KEY (`avatar_id`),
+  ADD KEY `idx_avatar_url` (`avatar_url`(760));
 
 --
 -- Indexes for table `psn100_change`
@@ -465,7 +421,9 @@ ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`),
   ADD KEY `idx_npcid_status` (`np_communication_id`,`status`),
-  ADD KEY `idx_status` (`status`);
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_parent_np_communication_id` (`parent_np_communication_id`),
+  ADD KEY `idx_psnprofiles_id` (`psnprofiles_id`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 
 --
@@ -485,47 +443,47 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1564469;
 
 --
 -- AUTO_INCREMENT for table `player_report`
 --
 ALTER TABLE `player_report`
-  MODIFY `report_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `report_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24036;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29811;
 
 --
 -- AUTO_INCREMENT for table `setting`
 --
 ALTER TABLE `setting`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1677525;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72485;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52403;
 COMMIT;
