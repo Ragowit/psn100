@@ -2,9 +2,7 @@
 $title = "Avatars ~ PSN 100%";
 require_once("header.php");
 
-$query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player p
-    LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM player WHERE `status` = 0) r ON p.account_id = r.account_id
-    WHERE p.status = 0 AND (r.ranking <= 50000 OR r.rarity_ranking <= 50000)");
+$query = $database->prepare("SELECT COUNT(DISTINCT avatar_url) FROM player p WHERE p.status = 0");
 $query->execute();
 $total_pages = $query->fetchColumn();
 
@@ -25,9 +23,7 @@ $offset = ($page - 1) * $limit;
         $query = $database->prepare("SELECT Count(*) AS count, 
                     avatar_url 
             FROM   player p
-            LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM player WHERE `status` = 0) r ON p.account_id = r.account_id
             WHERE  p.status = 0 
-            AND  (r.ranking <= 50000 OR r.rarity_ranking <= 50000)
             GROUP  BY avatar_url 
             ORDER  BY count DESC, 
                     avatar_url 
