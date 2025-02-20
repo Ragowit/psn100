@@ -38,7 +38,15 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
-    } elseif ($player["status"] == 99) {
+    } elseif ($player["status"] == 5) {
+        ?>
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                This player seems to no longer be available from Sony, maybe removed for some reason. We will recheck after 24h and if this player is still not available it will be removed from here as well.
+            </div>
+        </div>
+        <?php
+    }  elseif ($player["status"] == 99) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
