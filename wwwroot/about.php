@@ -249,8 +249,8 @@ require_once("header.php");
                     <li><span class="trophy-legendary">0-0.02% ~ Legendary</span></li>
                     <li><span class="trophy-epic">0.03-0.2% ~ Epic</span></li>
                     <li><span class="trophy-rare">0.21-2% ~ Rare</span></li>
-                    <li><span class="trophy-uncommon">2.01-20% ~ Uncommon</span></li>
-                    <li>20.01-100% ~ Common</li>
+                    <li><span class="trophy-uncommon">2.01-10% ~ Uncommon</span></li>
+                    <li>10.01-100% ~ Common</li>
                 </ul>
             </div>
         </div>

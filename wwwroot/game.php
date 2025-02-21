@@ -394,7 +394,7 @@ require_once("header.php");
                                                 echo "<span class='trophy-epic'>". $trophy["rarity_percent"] ."%<br>Epic</span>";
                                             } elseif ($trophy["rarity_percent"] <= 2) {
                                                 echo "<span class='trophy-rare'>". $trophy["rarity_percent"] ."%<br>Rare</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 20) {
+                                            } elseif ($trophy["rarity_percent"] <= 10) {
                                                 echo "<span class='trophy-uncommon'>". $trophy["rarity_percent"] ."%<br>Uncommon</span>";
                                             } else {
                                                 echo "<span class='trophy-common'>". $trophy["rarity_percent"] ."%<br>Common</span>";

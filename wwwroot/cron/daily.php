@@ -51,8 +51,8 @@ do {
                 ),
                 t.rarity_name = CASE
                     WHEN (t.status != 0 OR tt.status != 0) THEN 'NONE'
-                    WHEN (r.trophy_owners / 10000) * 100 > 20 THEN 'COMMON'
-                    WHEN (r.trophy_owners / 10000) * 100 <= 20 AND (r.trophy_owners / 10000) * 100 > 2 THEN 'UNCOMMON'
+                    WHEN (r.trophy_owners / 10000) * 100 > 10 THEN 'COMMON'
+                    WHEN (r.trophy_owners / 10000) * 100 <= 10 AND (r.trophy_owners / 10000) * 100 > 2 THEN 'UNCOMMON'
                     WHEN (r.trophy_owners / 10000) * 100 <= 2 AND (r.trophy_owners / 10000) * 100 > 0.2 THEN 'RARE'
                     WHEN (r.trophy_owners / 10000) * 100 <= 0.2 AND (r.trophy_owners / 10000) * 100 > 0.02 THEN 'EPIC'
                     WHEN (r.trophy_owners / 10000) * 100 <= 0.02 THEN 'LEGENDARY'
