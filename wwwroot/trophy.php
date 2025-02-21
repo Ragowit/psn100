@@ -217,7 +217,7 @@ require_once("header.php");
                                             trophy_earned te
                                         JOIN (SELECT account_id, avatar_url, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
                                         WHERE
-                                            p.ranking <= 50000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                            p.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
                                         ORDER BY
                                             - te.earned_date
                                         DESC
@@ -287,7 +287,7 @@ require_once("header.php");
                                             trophy_earned te
                                         JOIN (SELECT account_id, avatar_url, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
                                         WHERE
-                                            p.ranking <= 50000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                            p.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
                                         ORDER BY
                                             te.earned_date
                                         DESC

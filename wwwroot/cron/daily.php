@@ -24,7 +24,7 @@ do {
                     COUNT(p.account_id) AS trophy_owners
                 FROM trophy t
                     LEFT JOIN trophy_earned te ON te.np_communication_id = t.np_communication_id AND te.order_id = t.order_id AND te.earned = 1
-                    LEFT JOIN player_extra p ON p.account_id = te.account_id AND p.rank <= 50000
+                    LEFT JOIN player_extra p ON p.account_id = te.account_id AND p.rank <= 10000
                 WHERE
                     t.np_communication_id = :np_communication_id
                 GROUP BY order_id
@@ -35,25 +35,25 @@ do {
             JOIN rarity r USING(order_id)
             JOIN trophy_title tt USING(np_communication_id)
             SET
-                t.rarity_percent =(r.trophy_owners / 50000) * 100,
+                t.rarity_percent =(r.trophy_owners / 10000) * 100,
                 t.rarity_point = IF(
                     t.status = 0 AND tt.status = 0,
                     IF(
-                        (r.trophy_owners / 50000) * 100 = 0,
+                        (r.trophy_owners / 10000) * 100 = 0,
                         99999,
                         FLOOR(
-                            1 /(r.trophy_owners / 50000) - 1
+                            1 /(r.trophy_owners / 10000) - 1
                         )
                     ),
                     0
                 ),
                 t.rarity_name = CASE
                     WHEN (t.status != 0 OR tt.status != 0) THEN 'NONE'
-                    WHEN (r.trophy_owners / 50000) * 100 > 20 THEN 'COMMON'
-                    WHEN (r.trophy_owners / 50000) * 100 <= 20 AND (r.trophy_owners / 50000) * 100 > 2 THEN 'UNCOMMON'
-                    WHEN (r.trophy_owners / 50000) * 100 <= 2 AND (r.trophy_owners / 50000) * 100 > 0.2 THEN 'RARE'
-                    WHEN (r.trophy_owners / 50000) * 100 <= 0.2 AND (r.trophy_owners / 50000) * 100 > 0.02 THEN 'EPIC'
-                    WHEN (r.trophy_owners / 50000) * 100 <= 0.02 THEN 'LEGENDARY'
+                    WHEN (r.trophy_owners / 10000) * 100 > 20 THEN 'COMMON'
+                    WHEN (r.trophy_owners / 10000) * 100 <= 20 AND (r.trophy_owners / 10000) * 100 > 2 THEN 'UNCOMMON'
+                    WHEN (r.trophy_owners / 10000) * 100 <= 2 AND (r.trophy_owners / 10000) * 100 > 0.2 THEN 'RARE'
+                    WHEN (r.trophy_owners / 10000) * 100 <= 0.2 AND (r.trophy_owners / 10000) * 100 > 0.02 THEN 'EPIC'
+                    WHEN (r.trophy_owners / 10000) * 100 <= 0.02 THEN 'LEGENDARY'
                     ELSE 'NONE'
                 END
             WHERE

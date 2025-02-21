@@ -51,7 +51,7 @@ if (isset($_GET["country"])) {
     $sql .= " AND `country` = :country";
 }
 $sql .= ") p USING (account_id)
-    WHERE ttp.np_communication_id = :np_communication_id AND p.ranking <= 50000";
+    WHERE ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
 if (isset($_GET["avatar"])) {
     $sql .= " AND p.avatar_url = :avatar";
 }
@@ -134,7 +134,7 @@ unset($paramsWithoutPage["page"]);
                             }
                             $sql .= ") p USING (account_id)";
                             $sql .= " WHERE
-                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 50000";
+                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
                             if (isset($_GET["avatar"])) {
                                 $sql .= " AND p.avatar_url = :avatar";
                             }

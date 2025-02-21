@@ -361,11 +361,9 @@ while (true) {
         // Get our queue.
         // #1 - Users added from the front page, ordered by time entered
         // #2 - Top 100 players who haven't been updated within a day, ordered by the oldest one.
-        // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 50k who haven't been updated within a week, ordered by the oldest one.
+        // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a week, ordered by the oldest one.
         // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
-        // #5 - Top 50000 players who haven't been updated within six months, ordered by the oldest one.
-        // #6 - Users added by Ragowit when site was created to populate the site, ordered by name (will be removed once done)
-        // #7 - Oldest scanned player who is not tagged as a cheater
+        // #5 - Oldest scanned player who is not tagged as a cheater
         $query = $database->prepare("SELECT
                 online_id,
                 account_id
@@ -410,12 +408,12 @@ while (true) {
                             r.ranking <= 1000
                             OR r.rarity_ranking <= 1000
                             OR (
-                                r.ranking >= 49750
-                                AND r.ranking <= 50250
+                                r.ranking >= 9750
+                                AND r.ranking <= 10250
                             )
                             OR (
-                                r.rarity_ranking >= 49750
-                                AND r.rarity_ranking <= 50250
+                                r.rarity_ranking >= 9750
+                                AND r.rarity_ranking <= 10250
                             )
                         )
                         AND last_updated_date < NOW() - INTERVAL 1 DAY
@@ -437,32 +435,6 @@ while (true) {
                     UNION ALL
                     SELECT
                         5 AS tier,
-                        online_id,
-                        last_updated_date,
-                        account_id
-                    FROM
-                        player
-                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
-                    WHERE
-                        (
-                            r.ranking <= 50000
-                            OR r.rarity_ranking <= 50000
-                        )
-                        AND last_updated_date < NOW() - INTERVAL 1 MONTH
-                    UNION ALL
-                    SELECT
-                        6 AS tier,
-                        pq.online_id,
-                        pq.request_time,
-                        p.account_id
-                    FROM
-                        player_queue pq
-                        LEFT JOIN player p ON p.online_id = pq.online_id
-                    WHERE
-                        pq.request_time >= '2030-12-25 00:00:00'
-                    UNION ALL
-                    SELECT
-                        7 AS tier,
                         online_id,
                         last_updated_date,
                         account_id

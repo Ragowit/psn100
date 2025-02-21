@@ -104,7 +104,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                             }
                             $sql .= ") p USING (account_id)";
                             $sql .= " WHERE
-                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 50000";
+                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
                             if (isset($_GET["avatar"])) {
                                 $sql .= " AND p.avatar_url = :avatar";
                             }

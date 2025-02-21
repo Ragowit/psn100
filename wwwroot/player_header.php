@@ -54,11 +54,11 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
-    } elseif ($player["ranking"] > 50000) {
+    } elseif ($player["ranking"] > 10000) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This player isn't ranked within the top 50000 and will not have their trophies contributed to the site statistics.
+                This player isn't ranked within the top 10000 and will not have their trophies contributed to the site statistics.
             </div>
         </div>
         <?php

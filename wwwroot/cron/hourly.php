@@ -21,106 +21,33 @@ do {
     }
 } while ($deadlock);
 
-// Recalculate recent players
-do {
-    try {
-        $query = $database->prepare("WITH
-            recent AS(
-            SELECT
-                np_communication_id,
-                COUNT(*) AS recent_players
-            FROM
-                trophy_title_player ttp
-            JOIN (SELECT `account_id`, `rank` FROM player_extra) p USING (account_id)
-            WHERE
-                p.rank <= 50000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
-            GROUP BY
-                np_communication_id)
-            UPDATE
-                trophy_title tt,
-                recent r
-            SET
-                tt.recent_players = r.recent_players
-            WHERE
-                tt.np_communication_id = r.np_communication_id");
-        $query->execute();
-
-        $deadlock = false;
-    } catch (Exception $e) {
-        sleep(3);
-        $deadlock = true;
-    }
-} while ($deadlock);
-
-// Recalculate game owners
+// Recalculate recent players, owners, completed and difficulty
 do {
     try {
         $query = $database->prepare("WITH
             game AS(
             SELECT
                 np_communication_id,
-                COUNT(*) AS count
+                COUNT(p1.account_id) AS owners,
+                COUNT(p2.account_id) AS owners_completed,
+                COUNT(p3.account_id) AS recent_players
             FROM
                 trophy_title_player ttp
-            JOIN (SELECT `account_id`, `rank` FROM player_extra) p USING (account_id)
-            WHERE
-                p.rank <= 50000
+            LEFT JOIN player_extra p1 ON p1.account_id = ttp.account_id AND p1.rank <= 10000
+            LEFT JOIN player_extra p2 ON p2.account_id = ttp.account_id AND p2.rank <= 10000 AND ttp.progress = 100
+            LEFT JOIN player_extra p3 ON p3.account_id = ttp.account_id AND p3.rank <= 10000 AND ttp.last_updated_date >= DATE(NOW()) - INTERVAL 7 DAY
             GROUP BY
                 np_communication_id)
             UPDATE
                 trophy_title tt,
                 game g
             SET
-                tt.owners = g.count
+                tt.owners = g.owners,
+                tt.owners_completed = g.owners_completed,
+                tt.recent_players = g.recent_players,
+                tt.difficulty = IF(g.owners = 0, 0, (g.owners_completed / g.owners) * 100)
             WHERE
                 tt.np_communication_id = g.np_communication_id");
-        $query->execute();
-
-        $deadlock = false;
-    } catch (Exception $e) {
-        sleep(3);
-        $deadlock = true;
-    }
-} while ($deadlock);
-
-// Recalculate game owners completed
-do {
-    try {
-        $query = $database->prepare("WITH
-            game AS(
-            SELECT
-                np_communication_id,
-                COUNT(*) AS count
-            FROM
-                trophy_title_player ttp
-            JOIN (SELECT `account_id`, `rank` FROM player_extra) p USING (account_id)
-            WHERE
-                ttp.progress = 100 AND p.rank <= 50000
-            GROUP BY
-                np_communication_id)
-            UPDATE
-                trophy_title tt,
-                game g
-            SET
-                tt.owners_completed = g.count
-            WHERE
-                tt.np_communication_id = g.np_communication_id");
-        $query->execute();
-
-        $deadlock = false;
-    } catch (Exception $e) {
-        sleep(3);
-        $deadlock = true;
-    }
-} while ($deadlock);
-
-// Recalculate game difficulty
-do {
-    try {
-        $query = $database->prepare("UPDATE
-                trophy_title
-            SET
-                difficulty = IF(owners = 0, 0, (owners_completed / owners) * 100)");
         $query->execute();
 
         $deadlock = false;
