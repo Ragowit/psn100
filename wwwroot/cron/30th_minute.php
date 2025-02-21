@@ -1139,10 +1139,10 @@ while (true) {
             $points = $trophies["bronze"]*15 + $trophies["silver"]*30 + $trophies["gold"]*90 + $trophies["platinum"]*300;
             if ($points <= 5940) {
                 $level = floor($points / 60) + 1;
-                $progress = floor(($points / 60 * 100) % 100);
+                $progress = floor($points / 60 * 100) % 100;
             } elseif ($points <= 14940) {
                 $level = floor(($points - 5940) / 90) + 100;
-                $progress = floor((($points - 5940) / 90 * 100) % 100);
+                $progress = floor(($points - 5940) / 90 * 100) % 100;
             } else {
                 $stage = 1;
                 $leftovers = $points - 14940;
