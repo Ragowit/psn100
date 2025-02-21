@@ -13,7 +13,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
     $status = $_POST["status"];
     $trophies = explode(PHP_EOL, $trophyId);
 
-    if (isset($_POST["game"])) {
+    if (!empty($_POST["game"])) {
         $titleId = $_POST["game"];
         $query = $database->prepare("SELECT id FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :id)");
         $query->bindParam(":id", $titleId, PDO::PARAM_INT);
