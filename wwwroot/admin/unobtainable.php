@@ -8,10 +8,18 @@ require_once("../init.php");
 $trophyInput = "";
 $statusInput = "1";
 
-if (isset($_POST["trophy"])) {
+if (isset($_POST["trophy"]) || isset($_POST["game"])) {
     $trophyId = $_POST["trophy"];
     $status = $_POST["status"];
     $trophies = explode(PHP_EOL, $trophyId);
+
+    if (isset($_POST["game"])) {
+        $titleId = $_POST["game"];
+        $query = $database->prepare("SELECT id FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :id)");
+        $query->bindParam(":id", $titleId, PDO::PARAM_INT);
+        $query->execute();
+        $trophies = $query->fetchAll(PDO::FETCH_COLUMN);
+    }
 
     $trophyNames = array();
     $trophyGroups = array();
@@ -429,6 +437,8 @@ if (isset($_POST["trophy"])) {
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form method="post" autocomplete="off">
+                Game ID:<br>
+                <input type="text" name="game" /><br>
                 Trophy ID:<br>
                 <textarea name="trophy" rows="10" cols="30"><?= str_replace(",", PHP_EOL, $trophyInput); ?></textarea>
                 <br>
