@@ -4,6 +4,8 @@ ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
 require_once("/home/psn100/public_html/init.php");
 
+$deadlock = false;
+
 // Recalculate trophy rarity percent, point and name.
 $gameQuery = $database->prepare("SELECT np_communication_id FROM trophy_title");
 $gameQuery->execute();
