@@ -7,7 +7,7 @@ require_once("/home/psn100/public_html/init.php");
 $deadlock = false;
 
 // Recalculate trophy rarity percent, point and name.
-$gameQuery = $database->prepare("SELECT np_communication_id FROM trophy_title");
+$gameQuery = $database->prepare("SELECT np_communication_id FROM trophy_title ORDER BY id DESC");
 $gameQuery->execute();
 do {
     if (!$deadlock) {
