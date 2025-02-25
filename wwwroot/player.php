@@ -41,7 +41,7 @@ if ($player["status"] == 1 || $player["status"] == 3) {
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_group_player tgp USING (account_id, np_communication_id)
         WHERE  tt.status != 2
-            AND ttp.account_id = :account_id";
+            AND ttp.account_id = :account_id AND tgp.group_id = 'default' ";
     if (!empty($_GET["search"]) || $sort == "search") {
         $sql .= " AND (MATCH(tt.name) AGAINST (:search)) > 0";
     }
@@ -52,7 +52,7 @@ if ($player["status"] == 1 || $player["status"] == 3) {
         $sql .= " AND ttp.progress != 100 ";
     }
     if (!empty($_GET["base"])) {
-        $sql .= " AND tgp.progress = 100 AND tgp.group_id = 'default' ";
+        $sql .= " AND tgp.progress = 100 ";
     }
     if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
         $sql .= " AND (";
@@ -274,7 +274,7 @@ require_once("header.php");
                                             JOIN trophy_title tt USING (np_communication_id)
                                             JOIN trophy_group_player tgp USING (account_id, np_communication_id)
                                         WHERE  ttp.account_id = :account_id
-                                            AND tt.status != 2 ";
+                                            AND tt.status != 2 AND tgp.group_id = 'default' ";
                                 if (!empty($_GET["search"]) || $sort == "search") {
                                     $sql .= " AND (MATCH(tt.name) AGAINST (:search))";
                                 }
@@ -285,7 +285,7 @@ require_once("header.php");
                                     $sql .= " AND ttp.progress != 100";
                                 }
                                 if (!empty($_GET["base"])) {
-                                    $sql .= " AND tgp.progress = 100 AND tgp.group_id = 'default'";
+                                    $sql .= " AND tgp.progress = 100";
                                 }
                                 if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
                                     $sql .= " AND (";
