@@ -85,7 +85,15 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("SELECT
+                                    $query = $database->prepare("WITH
+                                            rarity AS(
+                                            SELECT
+                                                online_id,
+                                                RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
+                                            FROM `player`
+                                            WHERE `status` = 0
+                                        )
+                                        SELECT
                                             p.online_id,
                                             p.country,
                                             p.avatar_url,
@@ -97,7 +105,7 @@ require_once("header.php");
                                             r.ranking
                                         FROM
                                             `player` p
-                                        LEFT JOIN (SELECT `online_id`, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM `player` WHERE `status` = 0) r ON r.online_id = p.online_id
+                                        LEFT JOIN rarity r USING (online_id)
                                         ORDER BY
                                             p.last_updated_date
                                         DESC
