@@ -364,7 +364,16 @@ while (true) {
         // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a week, ordered by the oldest one.
         // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
         // #5 - Oldest scanned player who is not tagged as a cheater
-        $query = $database->prepare("SELECT
+        $query = $database->prepare("WITH
+                rarity AS(
+                SELECT
+                    account_id,
+                    RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`,
+                    RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking`
+                FROM `player`
+                WHERE `status` = 0
+            )
+            SELECT
                 online_id,
                 account_id
             FROM
@@ -387,7 +396,7 @@ while (true) {
                         account_id
                     FROM
                         player
-                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                        LEFT JOIN rarity r USING (account_id)
                     WHERE
                         (
                             r.ranking <= 100
@@ -402,7 +411,7 @@ while (true) {
                         account_id
                     FROM
                         player
-                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                        LEFT JOIN rarity r USING (account_id)
                     WHERE
                         (
                             r.ranking <= 1000
@@ -425,7 +434,7 @@ while (true) {
                         account_id
                     FROM
                         player
-                        LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r USING (account_id)
+                        LEFT JOIN rarity r USING (account_id)
                     WHERE
                         (
                             r.ranking <= 10000

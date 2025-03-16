@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 6.0.0-dev+20250122.b28b32e424
+-- version 6.0.0-dev+20250228.faf36db0fb
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 17, 2025 at 04:17 PM
--- Server version: 8.0.41
--- PHP Version: 8.4.3
+-- Generation Time: Mar 16, 2025 at 08:50 AM
+-- Server version: 8.4.4
+-- PHP Version: 8.4.4
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -60,17 +60,6 @@ CREATE TABLE `player` (
   `legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '99',
   `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `player_extra`
---
-
-CREATE TABLE `player_extra` (
-  `account_id` bigint UNSIGNED NOT NULL,
-  `rank` mediumint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -332,13 +321,10 @@ ALTER TABLE `player`
   ADD UNIQUE KEY `u_online_id` (`online_id`),
   ADD KEY `idx_avatar_url` (`avatar_url`),
   ADD KEY `idx_last_updated_date` (`last_updated_date`),
-  ADD KEY `idx_status` (`status`) USING BTREE;
-
---
--- Indexes for table `player_extra`
---
-ALTER TABLE `player_extra`
-  ADD UNIQUE KEY `idx_account_id` (`account_id`);
+  ADD KEY `player_idx_online_id_account_id` (`online_id`,`account_id`),
+  ADD KEY `player_idx_status_last_date_online_id` (`status`,`last_updated_date`,`online_id`),
+  ADD KEY `player_idx_status_online_last_da_account` (`status`,`online_id`,`last_updated_date`,`account_id`),
+  ADD KEY `player_idx_status_account_id` (`status`,`account_id`);
 
 --
 -- Indexes for table `player_queue`
@@ -373,7 +359,8 @@ ALTER TABLE `psn100_change`
 --
 ALTER TABLE `setting`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `scanning` (`scanning`);
+  ADD UNIQUE KEY `scanning` (`scanning`),
+  ADD KEY `setting_idx_scanning_id` (`scanning`,`id`);
 
 --
 -- Indexes for table `trophy`
@@ -443,7 +430,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1564469;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1571818;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -455,13 +442,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24036;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24463;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29811;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31637;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -473,17 +460,17 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1677525;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1700420;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72485;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73494;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52403;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53050;
 COMMIT;
