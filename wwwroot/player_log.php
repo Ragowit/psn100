@@ -79,7 +79,7 @@ require_once("header.php");
                     <a class="btn btn-outline-primary" href="/player/<?= $player["online_id"]; ?>">Games</a>
                     <a class="btn btn-primary active" href="/player/<?= $player["online_id"]; ?>/log">Log</a>
                     <a class="btn btn-outline-primary" href="/player/<?= $player["online_id"]; ?>/advisor">Trophy Advisor</a>
-                    <a class="btn btn-outline-primary" href="/game?sort=completion&player=<?= $player["online_id"]; ?>">Game Advisor</a>
+                    <a class="btn btn-outline-primary" href="/game?sort=completion&filter=true&player=<?= $player["online_id"]; ?>">Game Advisor</a>
                     <a class="btn btn-outline-primary" href="/player/<?= $player["online_id"]; ?>/random">Random Games</a>
                 </div>
             </div>
