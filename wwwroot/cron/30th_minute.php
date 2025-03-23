@@ -342,6 +342,9 @@ while (true) {
             $client->loginWithNpsso($npsso);
 
             $loggedIn = true;
+        } catch (TypeError $e) {
+            // Something odd, let's wait three minutes
+            sleep(60 * 3);
         } catch (Exception $e) {
             Psn100Log("Can't login with worker ". $worker["id"]);
 
@@ -349,9 +352,7 @@ while (true) {
             $query = $database->prepare("UPDATE setting SET scanning = :id WHERE id = :id");
             $query->bindParam(":id", $worker["id"], PDO::PARAM_INT);
             $query->execute();
-        }
 
-        if (!$loggedIn) {
             // Wait 30 minutes to not hammer login
             sleep(60 * 30);
         }

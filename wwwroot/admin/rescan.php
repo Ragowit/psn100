@@ -348,6 +348,8 @@ if (isset($_POST["game"])) {
                     $client->loginWithNpsso($npsso);
 
                     $loggedIn = true;
+                } catch (TypeError $e) {
+                    // Something odd, try next worker
                 } catch (Exception $e) {
                     $message = "Can't login with worker ". $worker["id"];
                     $query = $database->prepare("INSERT INTO log(message)
