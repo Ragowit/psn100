@@ -209,15 +209,25 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("SELECT
-                                            p.avatar_url,
-                                            p.online_id,
+                                    $query = $database->prepare("WITH
+                                            rarity AS(
+                                            SELECT
+                                                account_id,
+                                                avatar_url,
+                                                online_id,
+                                                RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
+                                            FROM `player`
+                                            WHERE `status` = 0
+                                        )
+                                        SELECT
+                                            r.avatar_url,
+                                            r.online_id,
                                             te.earned_date
                                         FROM
                                             trophy_earned te
-                                        JOIN (SELECT account_id, avatar_url, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
+                                        JOIN rarity r USING (account_id)
                                         WHERE
-                                            p.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                            r.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
                                         ORDER BY
                                             - te.earned_date
                                         DESC
@@ -279,15 +289,25 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("SELECT
-                                            p.avatar_url,
-                                            p.online_id,
+                                    $query = $database->prepare("WITH
+                                            rarity AS(
+                                            SELECT
+                                                account_id,
+                                                avatar_url,
+                                                online_id,
+                                                RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
+                                            FROM `player`
+                                            WHERE `status` = 0
+                                        )
+                                        SELECT
+                                            r.avatar_url,
+                                            r.online_id,
                                             IFNULL(te.earned_date, 'No Timestamp') AS earned_date
                                         FROM
                                             trophy_earned te
-                                        JOIN (SELECT account_id, avatar_url, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
+                                        JOIN rarity r USING (account_id)
                                         WHERE
-                                            p.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                            r.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
                                         ORDER BY
                                             te.earned_date
                                         DESC
