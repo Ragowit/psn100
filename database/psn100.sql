@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 16, 2025 at 08:50 AM
+-- Generation Time: Mar 23, 2025 at 11:02 AM
 -- Server version: 8.4.4
 -- PHP Version: 8.4.4
 
@@ -324,7 +324,7 @@ ALTER TABLE `player`
   ADD KEY `player_idx_online_id_account_id` (`online_id`,`account_id`),
   ADD KEY `player_idx_status_last_date_online_id` (`status`,`last_updated_date`,`online_id`),
   ADD KEY `player_idx_status_online_last_da_account` (`status`,`online_id`,`last_updated_date`,`account_id`),
-  ADD KEY `player_idx_status_account_id` (`status`,`account_id`);
+  ADD KEY `player_idx_status_account_avatar_online` (`status`,`account_id`,`avatar_url`,`online_id`) USING BTREE;
 
 --
 -- Indexes for table `player_queue`
@@ -372,14 +372,14 @@ ALTER TABLE `trophy`
   ADD KEY `idx_npcid_gid_oid_status_rarpercent` (`np_communication_id`,`group_id`,`order_id`,`status`,`rarity_percent`),
   ADD KEY `idx_status_npcid_rarname` (`status`,`np_communication_id`,`rarity_name`),
   ADD KEY `idx_npcid_gid_oid_rarpoint` (`np_communication_id`,`group_id`,`order_id`,`rarity_point`),
-  ADD KEY `idx_rarity_point` (`rarity_point`);
+  ADD KEY `trophy_idx_rarity_point_rarity_name` (`rarity_point`,`rarity_name`) USING BTREE;
 
 --
 -- Indexes for table `trophy_earned`
 --
 ALTER TABLE `trophy_earned`
   ADD PRIMARY KEY (`np_communication_id`,`order_id`,`account_id`) USING BTREE,
-  ADD KEY `idx_account_id` (`account_id`) USING BTREE;
+  ADD KEY `trophy_earned_idx_account_id_earned_np_id` (`account_id`,`earned`,`np_communication_id`) USING BTREE;
 
 --
 -- Indexes for table `trophy_group`
@@ -410,7 +410,8 @@ ALTER TABLE `trophy_title`
   ADD KEY `idx_npcid_status` (`np_communication_id`,`status`),
   ADD KEY `idx_status` (`status`),
   ADD KEY `idx_parent_np_communication_id` (`parent_np_communication_id`),
-  ADD KEY `idx_psnprofiles_id` (`psnprofiles_id`);
+  ADD KEY `idx_psnprofiles_id` (`psnprofiles_id`),
+  ADD KEY `trophy_title_idx_np_id_owners` (`np_communication_id`,`owners`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 
 --
@@ -420,7 +421,9 @@ ALTER TABLE `trophy_title_player`
   ADD PRIMARY KEY (`np_communication_id`,`account_id`) USING BTREE,
   ADD KEY `idx_npcid_progress` (`np_communication_id`,`progress`),
   ADD KEY `idx_account_id` (`account_id`),
-  ADD KEY `idx_npcid_lupdate` (`np_communication_id`,`last_updated_date`);
+  ADD KEY `idx_npcid_lupdate` (`np_communication_id`,`last_updated_date`),
+  ADD KEY `trophy_player_idx_progress_last_date` (`progress`,`last_updated_date`),
+  ADD KEY `trophy_player_idx_np_id_account_id_rarity_poi` (`np_communication_id`,`account_id`,`rarity_points`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -430,7 +433,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1571818;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1572017;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -442,13 +445,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24463;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24555;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31637;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32089;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -460,17 +463,17 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1700420;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1707470;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73494;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73842;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53050;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53240;
 COMMIT;
