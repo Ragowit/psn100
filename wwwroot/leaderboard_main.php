@@ -164,7 +164,7 @@ unset($paramsWithoutPage["page"]);
                                     }
                                     ?>
                                 </th>
-                                <td>
+                                <td class="align-middle">
                                     <div class="hstack gap-3">
                                         <div>
                                             <a href="?<?= http_build_query($paramsAvatar); ?>">
