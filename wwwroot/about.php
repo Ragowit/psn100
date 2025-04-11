@@ -33,7 +33,6 @@ require_once("header.php");
                         <li><a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://psntrophyleaders.com/">PSN Trophy Leaders</a></li>
                         <li><a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.truetrophies.com/">TrueTrophies</a></li>
                         <li><a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.exophase.com/">Exophase</a></li>
-                        <li><a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://hunterslodge.app/">Hunters Lodge</a></li>
                         <li><a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://pocketpsn.com/">Pocket PSN</a></li>
                     </ul>
                 </div>
