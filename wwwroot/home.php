@@ -233,6 +233,11 @@ function addToQueue()
         {
             document.getElementById("add-to-queue-result").innerHTML = this.responseText;
             $('#queue-result').show();
+
+            if (this.responseText.startsWith("You have already entered") || this.responseText.startsWith("PSN name"))
+            {
+                clearInterval(myTimer);
+            }
         }
     };
     xmlhttp.open("GET", "add_to_queue.php?q=" + player, true);
@@ -250,6 +255,11 @@ function checkQueuePosition(player)
         if (this.readyState == 4 && this.status == 200)
         {
             document.getElementById("add-to-queue-result").innerHTML = this.responseText;
+
+            if (this.responseText.includes("updated!"))
+            {
+                clearInterval(myTimer);
+            }
         }
     };
     xmlhttp.open("GET", "check_queue_position.php?q=" + player, true);
