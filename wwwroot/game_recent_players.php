@@ -98,13 +98,12 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                     ttp.last_updated_date AS last_known_date
                                 FROM
                                     trophy_title_player ttp
-                                    JOIN (SELECT account_id, avatar_url, country, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0";
-                            if (isset($_GET["country"])) {
-                                $sql .= " AND `country` = :country";
-                            }
-                            $sql .= ") p USING (account_id)";
-                            $sql .= " WHERE
+                                    JOIN (SELECT account_id, avatar_url, country, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
+                                WHERE
                                     ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
+                            if (isset($_GET["country"])) {
+                                $sql .= " AND p.country = :country";
+                            }
                             if (isset($_GET["avatar"])) {
                                 $sql .= " AND p.avatar_url = :avatar";
                             }
