@@ -283,7 +283,7 @@ require_once("header.php");
                                                         <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
                                                         <?php
                                                         if ($trophy["progress_target_value"] != null) {
-                                                            echo "<br><b>0/". $trophy["progress_target_value"] ."</b>";
+                                                            echo "<br><b>". $trophy["progress_target_value"] ."/". $trophy["progress_target_value"] ."</b>";
                                                         }
 
                                                         if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
