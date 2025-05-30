@@ -34,6 +34,7 @@ do {
     }
 } while ($deadlock);
 
+// Set country ranks last week
 $countryQuery = $database->prepare("SELECT DISTINCT
         (country)
     FROM
@@ -71,3 +72,15 @@ while ($country = $countryQuery->fetch()) {
         }
     } while ($deadlock);
 }
+
+// Reset last week ranks for those not on the leaderboard
+$query = $database->prepare("UPDATE
+        player p
+    SET
+        p.rank_last_week = 0,
+        p.rank_country_last_week = 0,
+        p.rarity_rank_last_week = 0,
+        p.rarity_rank_country_last_week = 0
+    WHERE
+        p.status != 0");
+$query->execute();
