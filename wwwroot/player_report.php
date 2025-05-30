@@ -88,8 +88,12 @@ require_once("header.php");
                 <form>
                     <div class="mb-3">
                         <label for="explanation" class="form-label">What's wrong?</label>
+                        <ul>
+                            <li>Only report issues with trophies. If the player have done something outside of PlayStation trophies, it's not going to be handled.</li>
+                            <li>Include the game and trophy name and why it's wrong.</li>
+                        </ul>
                         <textarea class="form-control" id="explanation" name="explanation" maxlength="256" rows="7" aria-describedby="explanationHelp"><?= htmlentities($_GET["explanation"] ?? ""); ?></textarea>
-                        <div id="explanationHelp" class="form-text">Or use <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues">issues</a> to include pictures and get a reply when it's done (requires GitHub login).</div>
+                        <div id="explanationHelp" class="form-text">Or use <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues">issues</a> to include images and get feedback on your report (requires GitHub login).</div>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
