@@ -1172,17 +1172,45 @@ while (true) {
                             WHERE  tt.np_communication_id = :np_communication_id");
                         $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
                         $query->execute();
-                        $mergedGame = $query->fetchColumn();
+                        $mergedGame = $query->fetchColumn(); // MERGE_...
                         if ($mergedGame) {
-                            $query = $database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
-                            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-                            $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
+                            $query = $database->prepare("SELECT tt.np_communication_id
+                                FROM   trophy_title tt
+                                WHERE  tt.parent_np_communication_id = :parent_np_communication_id AND tt.np_communication_id != :np_communication_id");
+                            $query->bindParam(":parent_np_communication_id", $mergedGame, PDO::PARAM_STR);
+                            $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
                             $query->execute();
+                            $stackedGames = $query->fetchAll();
 
-                            $query = $database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
-                            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
-                            $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
-                            $query->execute();
+                            $anotherStackExists = false;
+
+                            foreach ($stackedGames as $stackedGame) {
+                                $stackedGameId = $stackedGame["np_communication_id"];
+
+                                $query = $database->prepare("SELECT ttp.np_communication_id
+                                    FROM   trophy_title_player ttp
+                                    WHERE  ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
+                                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                                $query->bindParam(":np_communication_id", $stackedGameId, PDO::PARAM_STR);
+                                $query->execute();
+                                $stackedGameExists = $query->fetchColumn();
+                                
+                                if ($stackedGameExists) {
+                                    $anotherStackExists = true;
+                                }
+                            }
+
+                            if (!$anotherStackExists) {
+                                $query = $database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
+                                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                                $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
+                                $query->execute();
+
+                                $query = $database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
+                                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                                $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
+                                $query->execute();
+                            }
                         }
 
                         $query = $database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
