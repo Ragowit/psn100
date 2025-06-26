@@ -756,17 +756,31 @@ while (true) {
             $query->execute();
             $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
+            $psnGameCount = $user->trophyTitles()->getIterator()->count();
+            $scannedGames = array();
+
             // Look through each and every game
             foreach ($user->trophyTitles() as $trophyTitle) {
+                array_push($scannedGames, $trophyTitle->npCommunicationId());
+
                 $newTrophies = false;
                 $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
                 // Check if the current game last updated date is the same as in our database
                 if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
                     // Check if the current player is not new and doesn't have the hidden game status (these players will continue on with scanning, in order to find if they are unhidden)
                     if ($playerData["last_updated_date"] != null && $playerData["status"] != 2) {
-                        // Check if we have passed player's last update date, we can assume we are done if so and break out of the scan loop.
-                        if (date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s") < date_create($playerData["last_updated_date"])->format("Y-m-d H:i:s")) {
-                            break;
+                        // Check if our game count is the same as PSN game count, if not so has the player probably deleted some 0% games.
+                        $query = $database->prepare("SELECT COUNT(ttp.np_communication_id)
+                            FROM   trophy_title_player ttp
+                            WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
+                        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                        $query->execute();
+                        $ourGameCount = $query->fetchColumn();
+                        if ($ourGameCount == $psnGameCount) {
+                            // Check if we have passed player's last update date, we can assume we are done if so and break out of the scan loop.
+                            if (date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s") < date_create($playerData["last_updated_date"])->format("Y-m-d H:i:s")) {
+                                break;
+                            }
                         }
                     }
 
@@ -1131,6 +1145,56 @@ while (true) {
                 while ($row = $query->fetch()) {
                     RecalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], $user->accountId());
                     RecalculateTrophyTitle($row["parent_np_communication_id"], $trophyTitle->lastUpdatedDateTime(), false, $user->accountId(), true);
+                }
+            }
+
+            // Delete missing 0% games (and this will also delete hidden games, but not any trophies for those hidden games already in our database)
+            $query = $database->prepare("SELECT COUNT(ttp.np_communication_id)
+                FROM   trophy_title_player ttp
+                WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
+            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+            $query->execute();
+            $ourGameCount = $query->fetchColumn();
+            
+            if ($psnGameCount != $ourGameCount) {
+                $query = $database->prepare("SELECT ttp.np_communication_id
+                    FROM   trophy_title_player ttp
+                    WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
+                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                $query->execute();
+                $playerGames = $query->fetchAll();
+
+                foreach ($playerGames as $playerGame) {
+                    $game = $playerGame["np_communication_id"];
+                    if (!in_array($game, $scannedGames)) {
+                        $query = $database->prepare("SELECT tt.parent_np_communication_id
+                            FROM   trophy_title tt
+                            WHERE  tt.np_communication_id = :np_communication_id");
+                        $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
+                        $query->execute();
+                        $mergedGame = $query->fetchColumn();
+                        if ($mergedGame) {
+                            $query = $database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
+                            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                            $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
+                            $query->execute();
+
+                            $query = $database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
+                            $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                            $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
+                            $query->execute();
+                        }
+
+                        $query = $database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
+                        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                        $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
+                        $query->execute();
+
+                        $query = $database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
+                        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                        $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
+                        $query->execute();
+                    }
                 }
             }
 
