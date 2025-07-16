@@ -1210,6 +1210,11 @@ while (true) {
                                 $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                                 $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
                                 $query->execute();
+
+                                $query = $database->prepare("DELETE FROM trophy_earned te WHERE te.account_id = :account_id AND te.np_communication_id = :np_communication_id");
+                                $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                                $query->bindParam(":np_communication_id", $mergedGame, PDO::PARAM_STR);
+                                $query->execute();
                             }
                         }
 
@@ -1219,6 +1224,11 @@ while (true) {
                         $query->execute();
 
                         $query = $database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
+                        $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
+                        $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
+                        $query->execute();
+
+                        $query = $database->prepare("DELETE FROM trophy_earned te WHERE te.account_id = :account_id AND te.np_communication_id = :np_communication_id");
                         $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                         $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
                         $query->execute();
