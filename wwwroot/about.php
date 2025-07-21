@@ -122,7 +122,7 @@ require_once("header.php");
                                         } else {
                                             $rank = $player["ranking"];
 
-                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
                                                 $rank .= " <span style='color: #9d9d9d;'>(H)</span>";
                                             }
                                         }

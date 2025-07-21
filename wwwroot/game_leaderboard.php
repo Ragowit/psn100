@@ -185,7 +185,7 @@ unset($paramsWithoutPage["page"]);
                                             <div>
                                                 <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $row["name"]; ?>"><?= $row["name"]; ?></a>
                                                 <?php
-                                                if ($row["trophy_count_npwr"] != $row["trophy_count_sony"]) {
+                                                if ($row["trophy_count_npwr"] < $row["trophy_count_sony"]) {
                                                     echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
                                                 }
                                                 ?>

@@ -128,7 +128,7 @@ unset($paramsWithoutPage["page"]);
                                     if (isset($_GET["country"])) {
                                         if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
                                             echo "New!";
-                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
                                                 echo " <span style='color: #9d9d9d;'>(H)</span>";
                                             }
                                         } else {
@@ -140,7 +140,7 @@ unset($paramsWithoutPage["page"]);
                                             }
                                             
                                             echo $player["ranking"];
-                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
                                                 echo " <span style='color: #9d9d9d;'>(H)</span>";
                                             }
 
@@ -152,7 +152,7 @@ unset($paramsWithoutPage["page"]);
                                     } else {
                                         if ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                             echo "New!";
-                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
                                                 echo " <span style='color: #9d9d9d;'>(H)</span>";
                                             }
                                         } else {
@@ -164,7 +164,7 @@ unset($paramsWithoutPage["page"]);
                                             }
                                             
                                             echo $player["ranking"];
-                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
                                                 echo " <span style='color: #9d9d9d;'>(H)</span>";
                                             }
 

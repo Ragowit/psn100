@@ -254,7 +254,7 @@ require_once("header.php");
                                                     <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
                                                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                                     <?php
-                                                    if ($result["trophy_count_npwr"] != $result["trophy_count_sony"]) {
+                                                    if ($result["trophy_count_npwr"] < $result["trophy_count_sony"]) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
                                                     }
                                                     ?>
@@ -343,7 +343,7 @@ require_once("header.php");
                                                     <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
                                                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                                     <?php
-                                                    if ($result["trophy_count_npwr"] != $result["trophy_count_sony"]) {
+                                                    if ($result["trophy_count_npwr"] < $result["trophy_count_sony"]) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
                                                     }
                                                     ?>
