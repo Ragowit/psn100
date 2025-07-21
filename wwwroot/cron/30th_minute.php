@@ -741,7 +741,7 @@ while (true) {
         $totalTrophiesStart = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
 
         if ($level !== 0) {
-            $query = $database->prepare("SELECT p.last_updated_date, p.status
+            $query = $database->prepare("SELECT p.last_updated_date, p.trophy_count_npwr, p.trophy_count_sony
                 FROM   player p
                 WHERE  p.account_id = :account_id ");
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
@@ -767,8 +767,8 @@ while (true) {
                 $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
                 // Check if the current game last updated date is the same as in our database
                 if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
-                    // Check if the current player is not new and doesn't have the hidden game status (these players will continue on with scanning, in order to find if they are unhidden)
-                    if ($playerData["last_updated_date"] != null && $playerData["status"] != 2) {
+                    // Check if the current player is not new and doesn't have hidden trophies (these players will continue on with scanning, in order to find if the trophies are unhidden)
+                    if ($playerData["last_updated_date"] != null && ($playerData["trophy_count_npwr"] == $playerData["trophy_count_sony"])) {
                         // Check if our game count is the same as PSN game count, if not so has the player probably deleted some 0% games.
                         $query = $database->prepare("SELECT COUNT(ttp.np_communication_id)
                             FROM   trophy_title_player ttp
@@ -1148,7 +1148,7 @@ while (true) {
                 }
             }
 
-            // Delete missing 0% games (and this will also delete hidden games, but not any trophies for those hidden games already in our database)
+            // Delete missing 0% games (and this will also delete hidden games, and any trophies for those hidden games)
             $query = $database->prepare("SELECT COUNT(ttp.np_communication_id)
                 FROM   trophy_title_player ttp
                 WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
@@ -1310,14 +1310,16 @@ while (true) {
                 $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
                 $query->execute();
                 $ourTotalTrophies = $query->fetchColumn();
+
+                if (!empty($recheck)) { // Do one more scan from the beginning just to be sure.
+                    continue;
+                }
             }
 
             if ($ourTotalTrophies < $totalTrophiesStart) {
-                if (!empty($recheck)) { // If the user is about to be hidden, do one more scan from the beginning just to be sure.
+                if (!empty($recheck)) { // User seems to have hidden trophies, do one more scan from the beginning just to be sure.
                     continue;
                 }
-
-                $playerStatus = 2; // Hidden trophies
             }
 
             // Check for inactive
@@ -1342,12 +1344,14 @@ while (true) {
             $query = $database->prepare("UPDATE
                     player p
                 SET
-                    p.status = :status
+                    p.status = :status,
+                    p.trophy_count_sony = :trophy_count_sony
                 WHERE
                     p.account_id = :account_id
                     AND p.status != 1
                 ");
             $query->bindParam(":status", $playerStatus, PDO::PARAM_INT);
+            $query->bindParam(":trophy_count_sony", $totalTrophiesStart, PDO::PARAM_INT);
             $query->bindParam(":account_id", $user->accountId(), PDO::PARAM_INT);
             $query->execute();
         }

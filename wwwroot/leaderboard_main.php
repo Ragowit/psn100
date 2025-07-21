@@ -128,6 +128,9 @@ unset($paramsWithoutPage["page"]);
                                     if (isset($_GET["country"])) {
                                         if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
                                             echo "New!";
+                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
+                                            }
                                         } else {
                                             $delta = $player["rank_country_last_week"] - $player["ranking"];
 
@@ -137,6 +140,9 @@ unset($paramsWithoutPage["page"]);
                                             }
                                             
                                             echo $player["ranking"];
+                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
+                                            }
 
                                             if ($delta < 0) {
                                                 echo "<span style='color: #d40b0b; cursor: default;' title='". $delta ."'>&#9660;</span>";
@@ -146,6 +152,9 @@ unset($paramsWithoutPage["page"]);
                                     } else {
                                         if ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
                                             echo "New!";
+                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
+                                            }
                                         } else {
                                             $delta = $player["rank_last_week"] - $player["ranking"];
             
@@ -155,6 +164,9 @@ unset($paramsWithoutPage["page"]);
                                             }
                                             
                                             echo $player["ranking"];
+                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
+                                            }
 
                                             if ($delta < 0) {
                                                 echo "<span style='color: #d40b0b; cursor: default;' title='". $delta ."'>&#9660;</span>";

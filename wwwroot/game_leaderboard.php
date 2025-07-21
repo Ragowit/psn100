@@ -120,6 +120,8 @@ unset($paramsWithoutPage["page"]);
                                     p.avatar_url,
                                     p.country,
                                     p.online_id AS name,
+                                    p.trophy_count_npwr,
+                                    p.trophy_count_sony,
                                     ttp.bronze,
                                     ttp.silver,
                                     ttp.gold,
@@ -128,7 +130,7 @@ unset($paramsWithoutPage["page"]);
                                     ttp.last_updated_date AS last_known_date
                                 FROM
                                     trophy_title_player ttp
-                                    JOIN (SELECT account_id, avatar_url, country, online_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
+                                    JOIN (SELECT account_id, avatar_url, country, online_id, trophy_count_npwr, trophy_count_sony, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
                                 WHERE
                                     ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
                             if (isset($_GET["country"])) {
@@ -182,6 +184,11 @@ unset($paramsWithoutPage["page"]);
 
                                             <div>
                                                 <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $row["name"]; ?>"><?= $row["name"]; ?></a>
+                                                <?php
+                                                if ($row["trophy_count_npwr"] != $row["trophy_count_sony"]) {
+                                                    echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
+                                                }
+                                                ?>
                                             </div>
 
                                             <div class="ms-auto">

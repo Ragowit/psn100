@@ -215,6 +215,8 @@ require_once("header.php");
                                                 account_id,
                                                 avatar_url,
                                                 online_id,
+                                                trophy_count_npwr,
+                                                trophy_count_sony,
                                                 RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
                                             FROM `player`
                                             WHERE `status` = 0
@@ -222,6 +224,8 @@ require_once("header.php");
                                         SELECT
                                             r.avatar_url,
                                             r.online_id,
+                                            r.trophy_count_npwr,
+                                            r.trophy_count_sony,
                                             te.earned_date
                                         FROM
                                             trophy_earned te
@@ -249,6 +253,11 @@ require_once("header.php");
                                                 <div class="hstack gap-3">
                                                     <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
                                                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                    <?php
+                                                    if ($result["trophy_count_npwr"] != $result["trophy_count_sony"]) {
+                                                        echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
+                                                    }
+                                                    ?>
                                                 </div>
                                             </td>
                                             <td id="faDate<?= $count; ?>" class="align-middle text-center" style="white-space: nowrap;">
@@ -295,6 +304,8 @@ require_once("header.php");
                                                 account_id,
                                                 avatar_url,
                                                 online_id,
+                                                trophy_count_npwr,
+                                                trophy_count_sony,
                                                 RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
                                             FROM `player`
                                             WHERE `status` = 0
@@ -302,6 +313,8 @@ require_once("header.php");
                                         SELECT
                                             r.avatar_url,
                                             r.online_id,
+                                            r.trophy_count_npwr,
+                                            r.trophy_count_sony,
                                             IFNULL(te.earned_date, 'No Timestamp') AS earned_date
                                         FROM
                                             trophy_earned te
@@ -329,6 +342,11 @@ require_once("header.php");
                                                 <div class="hstack gap-3">
                                                     <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
                                                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                    <?php
+                                                    if ($result["trophy_count_npwr"] != $result["trophy_count_sony"]) {
+                                                        echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
+                                                    }
+                                                    ?>
                                                 </div>
                                             </td>
                                             <td id="laDate<?= $count; ?>" class="align-middle text-center" style="white-space: nowrap;">

@@ -14,11 +14,11 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
             </div>
         </div>
         <?php
-    } elseif ($player["status"] == 2) {
+    } elseif ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                This player has <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden some of their games</a>. All data from this player will be excluded from site statistics and leaderboards. Make sure this player has no hidden trophies, and then issue a new scan of the profile on the front page.
+                This player has <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden <?= ($player["trophy_count_sony"] - $player["trophy_count_npwr"]); ?> of their trophies</a>.
             </div>
         </div>
         <?php

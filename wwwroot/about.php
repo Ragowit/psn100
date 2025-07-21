@@ -101,6 +101,8 @@ require_once("header.php");
                                             p.progress,
                                             p.rank_last_week,
                                             p.status,
+                                            p.trophy_count_npwr,
+                                            p.trophy_count_sony,
                                             r.ranking
                                         FROM
                                             `player` p
@@ -119,12 +121,14 @@ require_once("header.php");
                                             $rank = "N/A";
                                         } else {
                                             $rank = $player["ranking"];
+
+                                            if ($player["trophy_count_npwr"] != $player["trophy_count_sony"]) {
+                                                $rank .= " <span style='color: #9d9d9d;'>(H)</span>";
+                                            }
                                         }
                                         $rank .= "<br>";
                                         if ($player["status"] == 1) {
                                             $rank .= "<span style='color: #9d9d9d;'>(Cheater)</span>";
-                                        } elseif ($player["status"] == 2) {
-                                            $rank .= "<span style='color: #9d9d9d;'>(Hiding)</span>";
                                         } elseif ($player["status"] == 3) {
                                             $rank .= "<span style='color: #9d9d9d;'>(Private)</span>";
                                         } elseif ($player["status"] == 4) {
