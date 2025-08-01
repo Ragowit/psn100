@@ -30,8 +30,8 @@ $offset = ($page - 1) * $limit;
                 LEFT JOIN trophy_title tt2 ON tt2.id = c.param_2
                 ORDER BY c.time DESC
                 LIMIT  :offset, :limit ");
-            $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-            $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $query->bindValue(":offset", $offset, PDO::PARAM_INT);
+            $query->bindValue(":limit", $limit, PDO::PARAM_INT);
             $query->execute();
             $changes = $query->fetchAll();
 

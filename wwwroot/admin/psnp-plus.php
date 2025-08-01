@@ -37,7 +37,7 @@ $obj = json_decode($json);
                         trophy_title
                     WHERE
                         psnprofiles_id = :psnprofiles_id");
-                $query->bindParam(":psnprofiles_id", $psnprofiles_id, PDO::PARAM_INT);
+                $query->bindValue(":psnprofiles_id", $psnprofiles_id, PDO::PARAM_INT);
                 $query->execute();
                 $game = $query->fetch();
 
@@ -53,7 +53,7 @@ $obj = json_decode($json);
                             trophy
                         WHERE
                             np_communication_id = :np_communication_id AND `status` = 1");
-                    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                    $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                     $query->execute();
                     $ourTrophies = $query->fetchAll(PDO::FETCH_COLUMN);
 
@@ -64,7 +64,7 @@ $obj = json_decode($json);
                             trophy
                         WHERE
                             np_communication_id = :np_communication_id");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                        $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
                         $trophies = $query->fetchAll(PDO::FETCH_COLUMN);
                     }
@@ -85,8 +85,8 @@ $obj = json_decode($json);
                                         trophy
                                     WHERE
                                         np_communication_id = :np_communication_id AND order_id = :order_id");
-                                $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                $query->bindParam(":order_id", $orderId, PDO::PARAM_INT);
+                                $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                                $query->bindValue(":order_id", $orderId, PDO::PARAM_INT);
                                 $query->execute();
                                 $trophyId = $query->fetchColumn();
 
@@ -108,8 +108,8 @@ $obj = json_decode($json);
                                         trophy
                                     WHERE
                                         np_communication_id = :np_communication_id AND order_id = :order_id");
-                                $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                $query->bindParam(":order_id", $orderId, PDO::PARAM_INT);
+                                $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                                $query->bindValue(":order_id", $orderId, PDO::PARAM_INT);
                                 $query->execute();
                                 $trophyId = $query->fetchColumn();
 
@@ -141,7 +141,7 @@ $obj = json_decode($json);
                         trophy_title
                     WHERE
                         np_communication_id = :np_communication_id");
-                $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
+                $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
                 $query->execute();
                 $trophyTitle = $query->fetch();
                 echo "<b><a href='../game/". $trophyTitle["id"] ."' target='_blank'>". $trophyTitle["name"] ."</a></b><br>";
@@ -152,7 +152,7 @@ $obj = json_decode($json);
                         trophy
                     WHERE
                         np_communication_id = :np_communication_id AND `status` = 1");
-                $query->bindParam(":np_communication_id", $game, PDO::PARAM_STR);
+                $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
                 $query->execute();
                 $obtainableData = $query->fetchAll(PDO::FETCH_COLUMN);
                 echo "<a href='unobtainable.php?status=0&trophy=". implode(",", $obtainableData) ."'>Obtainable</a>: ";

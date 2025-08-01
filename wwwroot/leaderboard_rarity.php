@@ -22,11 +22,11 @@ if (!empty($_GET["avatar"])) {
 $query = $database->prepare($sql);
 if (!empty($_GET["country"])) {
     $country = $_GET["country"];
-    $query->bindParam(":country", $country, PDO::PARAM_STR);
+    $query->bindValue(":country", $country, PDO::PARAM_STR);
 }
 if (!empty($_GET["avatar"])) {
     $avatar = $_GET["avatar"];
-    $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
+    $query->bindValue(":avatar", $avatar, PDO::PARAM_STR);
 }
 $query->execute();
 $total_pages = $query->fetchColumn();
@@ -110,13 +110,13 @@ unset($paramsWithoutPage["page"]);
                             $query = $database->prepare($sql);
 
                             if (!empty($_GET["country"])) {
-                                $query->bindParam(":country", $_GET["country"], PDO::PARAM_STR);
+                                $query->bindValue(":country", $_GET["country"], PDO::PARAM_STR);
                             }
                             if (!empty($_GET["avatar"])) {
-                                $query->bindParam(":avatar", $_GET["avatar"], PDO::PARAM_STR);
+                                $query->bindValue(":avatar", $_GET["avatar"], PDO::PARAM_STR);
                             }
-                            $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-                            $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+                            $query->bindValue(":offset", $offset, PDO::PARAM_INT);
+                            $query->bindValue(":limit", $limit, PDO::PARAM_INT);
 
                             $query->execute();
                             $players = $query->fetchAll();

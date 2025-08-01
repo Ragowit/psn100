@@ -5,7 +5,7 @@ if (!isset($accountId)) {
 }
 
 $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
-$query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+$query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
 $query->execute();
 $numberOfGames = $query->fetchColumn();
 
@@ -83,10 +83,10 @@ if ($player["status"] == 1 || $player["status"] == 3) {
         $sql .= ")";
     }
     $query = $database->prepare($sql);
-    $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+    $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
     if (!empty($_GET["search"]) || $sort == "search") {
         $search = $_GET["search"] ?? "";
-        $query->bindParam(":search", $search, PDO::PARAM_STR);
+        $query->bindValue(":search", $search, PDO::PARAM_STR);
     }
     $query->execute();
     $total_pages = $query->fetchColumn();
@@ -336,11 +336,11 @@ require_once("header.php");
                                 $query = $database->prepare($sql);
                                 if (!empty($_GET["search"]) || $sort == "search") {
                                     $search = $_GET["search"] ?? "";
-                                    $query->bindParam(":search", $search, PDO::PARAM_STR);
+                                    $query->bindValue(":search", $search, PDO::PARAM_STR);
                                 }
-                                $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
-                                $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-                                $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+                                $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
+                                $query->bindValue(":offset", $offset, PDO::PARAM_INT);
+                                $query->bindValue(":limit", $limit, PDO::PARAM_INT);
                                 $query->execute();
                                 $playerGames = $query->fetchAll();
 
@@ -379,8 +379,8 @@ require_once("header.php");
                                                             FROM   trophy_earned
                                                             WHERE  np_communication_id = :np_communication_id
                                                                 AND account_id = :account_id ");
-                                                        $query->bindParam(":np_communication_id", $playerGame["np_communication_id"], PDO::PARAM_STR);
-                                                        $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+                                                        $query->bindValue(":np_communication_id", $playerGame["np_communication_id"], PDO::PARAM_STR);
+                                                        $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
                                                         $query->execute();
                                                         $completionDates = $query->fetch();
                                                         if (isset($completionDates["first_trophy"]) && isset($completionDates["last_trophy"])) {

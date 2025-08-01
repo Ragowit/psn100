@@ -19,7 +19,7 @@ $gamesPage = $_GET["page"] ?? "";
 if (!empty($player)) {
     $sql = "SELECT `status` FROM player WHERE online_id = :online_id";
     $query = $database->prepare($sql);
-    $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
     $playerStatus = $query->fetchColumn();
 
@@ -80,10 +80,10 @@ if (!empty($_GET["pc"]) ||!empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty
     $sql .= ")";
 }
 $query = $database->prepare($sql);
-$query->bindParam(":online_id", $player, PDO::PARAM_STR);
+$query->bindValue(":online_id", $player, PDO::PARAM_STR);
 if (!empty($_GET["search"]) || $sort == "search") {
     $search = $_GET["search"] ?? "";
-    $query->bindParam(":search", $search, PDO::PARAM_STR);
+    $query->bindValue(":search", $search, PDO::PARAM_STR);
 }
 $query->execute();
 $total_pages = $query->fetchColumn();
@@ -274,11 +274,11 @@ $offset = ($page - 1) * $limit;
         $games = $database->prepare($sql);
         if (!empty($_GET["search"]) || $sort == "search") {
             $search = $_GET["search"] ?? "";
-            $games->bindParam(":search", $search, PDO::PARAM_STR);
+            $games->bindValue(":search", $search, PDO::PARAM_STR);
         }
-        $games->bindParam(":online_id", $player, PDO::PARAM_STR);
-        $games->bindParam(":offset", $offset, PDO::PARAM_INT);
-        $games->bindParam(":limit", $limit, PDO::PARAM_INT);
+        $games->bindValue(":online_id", $player, PDO::PARAM_STR);
+        $games->bindValue(":offset", $offset, PDO::PARAM_INT);
+        $games->bindValue(":limit", $limit, PDO::PARAM_INT);
         $games->execute();
         $games = $games->fetchAll();
 

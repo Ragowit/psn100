@@ -6,7 +6,7 @@ if (!empty($_GET["delete"])) {
 
     $sql = "DELETE FROM player_report WHERE report_id = :report_id";
     $query = $database->prepare($sql);
-    $query->bindParam(":report_id", $reportId, PDO::PARAM_INT);
+    $query->bindValue(":report_id", $reportId, PDO::PARAM_INT);
     $query->execute();
 }
 ?>

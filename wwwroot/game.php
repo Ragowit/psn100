@@ -7,7 +7,7 @@ if (!isset($gameId)) {
 $query = $database->prepare("SELECT * 
     FROM   trophy_title 
     WHERE  id = :id ");
-$query->bindParam(":id", $gameId, PDO::PARAM_INT);
+$query->bindValue(":id", $gameId, PDO::PARAM_INT);
 $query->execute();
 $game = $query->fetch();
 
@@ -17,7 +17,7 @@ if (isset($player)) {
     $query = $database->prepare("SELECT account_id 
         FROM   player 
         WHERE  online_id = :online_id ");
-    $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
     $accountId = $query->fetchColumn();
 
@@ -29,8 +29,8 @@ if (isset($player)) {
     $query = $database->prepare("SELECT *
         FROM trophy_title_player
         WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
-    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
     $query->execute();
     $gamePlayer = $query->fetch();
 }
@@ -115,7 +115,7 @@ require_once("header.php");
                     WHERE  np_communication_id = :np_communication_id 
                             AND group_id != 'default' 
                     ORDER  BY group_id) ");
-                $trophyGroups->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                $trophyGroups->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                 $trophyGroups->execute();
                 while ($trophyGroup = $trophyGroups->fetch()) {
                     if (isset($player)) {
@@ -124,9 +124,9 @@ require_once("header.php");
                             WHERE  np_communication_id = :np_communication_id 
                                 AND group_id = :group_id 
                                 AND account_id = :account_id ");
-                        $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                        $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                        $query->bindValue(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
+                        $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
                         $query->execute();
                         $trophyGroupPlayer = $query->fetch();
                     }
@@ -235,7 +235,7 @@ require_once("header.php");
                                     }
 
                                     $query = $database->prepare($queryText);
-                                    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                                    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
                                 } else {
                                     $queryText = "SELECT t.id, 
                                             t.order_id, 
@@ -262,8 +262,8 @@ require_once("header.php");
 
                                     $query = $database->prepare($queryText);
                                 }
-                                $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                $query->bindParam(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
+                                $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                                $query->bindValue(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
                                 $query->execute();
                                 $trophies = $query->fetchAll();
 

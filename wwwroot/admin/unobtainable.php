@@ -16,7 +16,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
     if (!empty($_POST["game"])) {
         $titleId = $_POST["game"];
         $query = $database->prepare("SELECT id FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :id)");
-        $query->bindParam(":id", $titleId, PDO::PARAM_INT);
+        $query->bindValue(":id", $titleId, PDO::PARAM_INT);
         $query->execute();
         $trophies = $query->fetchAll(PDO::FETCH_COLUMN);
     }
@@ -27,13 +27,13 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
     foreach ($trophies as $trophyId) {
         $database->beginTransaction();
         $query = $database->prepare("UPDATE trophy SET status = :status WHERE id = :trophy_id");
-        $query->bindParam(":status", $status, PDO::PARAM_INT);
-        $query->bindParam(":trophy_id", $trophyId, PDO::PARAM_INT);
+        $query->bindValue(":status", $status, PDO::PARAM_INT);
+        $query->bindValue(":trophy_id", $trophyId, PDO::PARAM_INT);
         $query->execute();
         $database->commit();
 
         $query = $database->prepare("SELECT np_communication_id, group_id, name FROM trophy WHERE id = :trophy_id");
-        $query->bindParam(":trophy_id", $trophyId, PDO::PARAM_INT);
+        $query->bindValue(":trophy_id", $trophyId, PDO::PARAM_INT);
         $query->execute();
         $trophy = $query->fetch();
         array_push($trophyNames, $trophyId ." (". $trophy["name"] .")");
@@ -108,8 +108,8 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
           WHERE
             tg.np_communication_id = :np_communication_id
             AND tg.group_id = :group_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
         $query->execute();
 
         // Recalculate stats for trophy group for all the affected players
@@ -140,8 +140,8 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 tgp.np_communication_id = :np_communication_id
                 AND tgp.group_id = :group_id
                 AND tgp.account_id = ptc.account_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
         $query->execute();
 
         // silver
@@ -171,8 +171,8 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 tgp.np_communication_id = :np_communication_id
                 AND tgp.group_id = :group_id
                 AND tgp.account_id = ptc.account_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
         $query->execute();
 
         // gold
@@ -202,8 +202,8 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 tgp.np_communication_id = :np_communication_id
                 AND tgp.group_id = :group_id
                 AND tgp.account_id = ptc.account_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
         $query->execute();
 
         // platinum
@@ -233,8 +233,8 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 tgp.np_communication_id = :np_communication_id
                 AND tgp.group_id = :group_id
                 AND tgp.account_id = ptc.account_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
         $query->execute();
 
         // progresss
@@ -278,8 +278,8 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 tgp.np_communication_id = :np_communication_id
                 AND tgp.group_id = :group_id
                 AND tgp.account_id = us.account_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $trophy["group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
         $query->execute();
     }
 
@@ -308,7 +308,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
             tt.platinum = tgc.platinum
           WHERE
             np_communication_id = :np_communication_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
 
         // Recalculate stats for trophy title for the affected players
@@ -338,7 +338,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 ttp.account_id = ptc.account_id
                 AND ttp.np_communication_id = :np_communication_id
             ");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
 
         // progress
@@ -348,7 +348,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 trophy_title
             WHERE
                 np_communication_id = :np_communication_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
         $maxScore = $query->fetchColumn();
 
@@ -380,20 +380,20 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
             WHERE
                 ttp.np_communication_id = :np_communication_id
                 AND ttp.account_id = us.account_id");
-        $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":max_score", $maxScore, PDO::PARAM_INT);
+        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":max_score", $maxScore, PDO::PARAM_INT);
         $query->execute();
     }
 
     if ($status == 1) {
         foreach ($trophyTitles as $trophyTitle) {
             $query = $database->prepare("SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id");
-            $query->bindParam(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
+            $query->bindValue(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
             $query->execute();
             $gameId = $query->fetchColumn();
 
             $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UNOBTAINABLE', :param_1)");
-            $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
             $query->execute();
         }
         
@@ -401,12 +401,12 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
     } else {
         foreach ($trophyTitles as $trophyTitle) {
             $query = $database->prepare("SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id");
-            $query->bindParam(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
+            $query->bindValue(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
             $query->execute();
             $gameId = $query->fetchColumn();
             
             $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_OBTAINABLE', :param_1)");
-            $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
             $query->execute();
         }
 

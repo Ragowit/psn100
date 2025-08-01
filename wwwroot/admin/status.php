@@ -7,32 +7,32 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
 
     $database->beginTransaction();
     $query = $database->prepare("UPDATE trophy_title SET status = :status WHERE id = :game_id");
-    $query->bindParam(":status", $status, PDO::PARAM_INT);
-    $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":status", $status, PDO::PARAM_INT);
+    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
 
     if ($status == 1) {
         $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_DELISTED', :param_1)");
-        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
         $query->execute();
 
         $statusText = "delisted";
     } elseif ($status == 3) {
         $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_OBSOLETE', :param_1)");
-        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
         $query->execute();
 
         $statusText = "obsolete";
     } elseif ($status == 4) {
         $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_DELISTED_AND_OBSOLETE', :param_1)");
-        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
         $query->execute();
 
         $statusText = "delisted &amp; obsolete";
     } else {
         $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_NORMAL', :param_1)");
-        $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
         $query->execute();
 
         $statusText = "normal";

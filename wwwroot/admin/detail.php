@@ -24,19 +24,19 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             psnprofiles_id = :psnprofiles_id
         WHERE
             id = :game_id");
-    $query->bindParam(":name", $name, PDO::PARAM_STR);
-    $query->bindParam(":icon_url", $iconUrl, PDO::PARAM_STR);
-    $query->bindParam(":platform", $platform, PDO::PARAM_STR);
-    $query->bindParam(":message", $message, PDO::PARAM_STR);
-    $query->bindParam(":set_version", $setVersion, PDO::PARAM_STR);
-    $query->bindParam(":region", $region, PDO::PARAM_STR);
-    $query->bindParam(":psnprofiles_id", $psnprofilesId, PDO::PARAM_STR);
-    $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":name", $name, PDO::PARAM_STR);
+    $query->bindValue(":icon_url", $iconUrl, PDO::PARAM_STR);
+    $query->bindValue(":platform", $platform, PDO::PARAM_STR);
+    $query->bindValue(":message", $message, PDO::PARAM_STR);
+    $query->bindValue(":set_version", $setVersion, PDO::PARAM_STR);
+    $query->bindValue(":region", $region, PDO::PARAM_STR);
+    $query->bindValue(":psnprofiles_id", $psnprofilesId, PDO::PARAM_STR);
+    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
 
     $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UPDATE', :param_1)");
-    $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
     $query->execute();
 
     $query = $database->prepare("SELECT 
@@ -52,7 +52,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             trophy_title
         WHERE
             id = :game_id");
-    $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $trophyTitle = $query->fetch();
 
@@ -73,7 +73,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             trophy_title
         WHERE
             id = :game_id");
-    $query->bindParam(":game_id", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $trophyTitle = $query->fetch();
 }

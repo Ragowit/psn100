@@ -6,7 +6,7 @@ if (isset($_POST["player"])) {
 
     $database->beginTransaction();
     $query = $database->prepare("UPDATE player SET `status` = 1, rank_last_week = 0, rarity_rank_last_week = 0, rank_country_last_week = 0, rarity_rank_country_last_week = 0 WHERE online_id = :online_id");
-    $query->bindParam(":online_id", $onlineId, PDO::PARAM_STR);
+    $query->bindValue(":online_id", $onlineId, PDO::PARAM_STR);
     $query->execute();
     $database->commit();
 

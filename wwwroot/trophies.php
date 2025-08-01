@@ -68,8 +68,8 @@ $offset = ($page - 1) * $limit;
                                 ORDER BY
                                     t.rarity_percent DESC
                                 LIMIT :offset, :limit");
-                            $trophies->bindParam(":offset", $offset, PDO::PARAM_INT);
-                            $trophies->bindParam(":limit", $limit, PDO::PARAM_INT);
+                            $trophies->bindValue(":offset", $offset, PDO::PARAM_INT);
+                            $trophies->bindValue(":limit", $limit, PDO::PARAM_INT);
                             $trophies->execute();
 
                             while ($trophy = $trophies->fetch()) {

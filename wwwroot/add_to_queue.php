@@ -11,7 +11,7 @@ $query = $database->prepare("SELECT
     WHERE
         ip_address = :ip_address
     ");
-$query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
+$query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
 $query->execute();
 $count = $query->fetchColumn();
 
@@ -23,7 +23,7 @@ $query = $database->prepare("SELECT
     WHERE
         online_id = :online_id AND status = 1
     ");
-$query->bindParam(":online_id", $player, PDO::PARAM_STR);
+$query->bindValue(":online_id", $player, PDO::PARAM_STR);
 $query->execute();
 $accountId = $query->fetchColumn();
 
@@ -59,8 +59,8 @@ if (!isset($player) || $player === "") {
                 request_time
             )
         ");
-    $query->bindParam(":online_id", $player, PDO::PARAM_STR);
-    $query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
+    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
+    $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
     $query->execute();
 
     $player = htmlentities($player, ENT_QUOTES, "UTF-8");

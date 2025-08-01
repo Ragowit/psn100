@@ -15,8 +15,8 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
                AND group_id = :group_id
                AND status = 0
         GROUP  BY type ");
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":group_id", $groupId, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":group_id", $groupId, PDO::PARAM_STR);
     $query->execute();
     $trophyTypes = $query->fetchAll(PDO::FETCH_KEY_PAIR);
     if (!isset($trophyTypes["bronze"])) {
@@ -40,12 +40,12 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
                platinum = :platinum
         WHERE  np_communication_id = :np_communication_id
                AND group_id = :group_id ");
-    $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
-    $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
-    $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
-    $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":group_id", $groupId, PDO::PARAM_STR);
+    $query->bindValue(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
+    $query->bindValue(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
+    $query->bindValue(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
+    $query->bindValue(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":group_id", $groupId, PDO::PARAM_STR);
     $query->execute();
 
     // Recalculate trophies for trophy group for the player
@@ -59,9 +59,9 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
         WHERE
             account_id = :account_id AND te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
         GROUP BY type ");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":group_id", $groupId, PDO::PARAM_STR);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":group_id", $groupId, PDO::PARAM_STR);
     $query->execute();
     $trophyTypes = $query->fetchAll(PDO::FETCH_KEY_PAIR);
     if (!isset($trophyTypes["bronze"])) {
@@ -135,14 +135,14 @@ function RecalculateTrophyGroup($npCommunicationId, $groupId, $accountId) {
                (
                       progress
                )");
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":group_id", $groupId, PDO::PARAM_STR);
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-    $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
-    $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
-    $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
-    $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
-    $query->bindParam(":progress", $progress, PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":group_id", $groupId, PDO::PARAM_STR);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
+    $query->bindValue(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
+    $query->bindValue(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
+    $query->bindValue(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
+    $query->bindValue(":progress", $progress, PDO::PARAM_INT);
     $query->execute();
 }
 
@@ -156,7 +156,7 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                Sum(platinum) AS platinum
         FROM   trophy_group
         WHERE  np_communication_id = :np_communication_id ");
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->execute();
     $trophies = $query->fetch();
     $query = $database->prepare("UPDATE trophy_title
@@ -165,11 +165,11 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                gold = :gold,
                platinum = :platinum
         WHERE  np_communication_id = :np_communication_id ");
-    $query->bindParam(":bronze", $trophies["bronze"], PDO::PARAM_INT);
-    $query->bindParam(":silver", $trophies["silver"], PDO::PARAM_INT);
-    $query->bindParam(":gold", $trophies["gold"], PDO::PARAM_INT);
-    $query->bindParam(":platinum", $trophies["platinum"], PDO::PARAM_INT);
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":bronze", $trophies["bronze"], PDO::PARAM_INT);
+    $query->bindValue(":silver", $trophies["silver"], PDO::PARAM_INT);
+    $query->bindValue(":gold", $trophies["gold"], PDO::PARAM_INT);
+    $query->bindValue(":platinum", $trophies["platinum"], PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
     if ($trophies["platinum"] == 1) {
@@ -182,7 +182,7 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
         $select = $database->prepare("SELECT account_id
             FROM   trophy_title_player
             WHERE  np_communication_id = :np_communication_id ");
-        $select->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+        $select->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
         $select->execute();
         while ($row = $select->fetch()) {
             if ($row["account_id"] == $accountId) {
@@ -196,8 +196,8 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                 FROM   trophy_group_player
                 WHERE  account_id = :account_id
                        AND np_communication_id = :np_communication_id ");
-            $query->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
-            $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+            $query->bindValue(":account_id", $row["account_id"], PDO::PARAM_INT);
+            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
             $query->execute();
             $trophyTypes = $query->fetch();
             $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
@@ -216,9 +216,9 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                 SET    progress = :progress
                 WHERE  np_communication_id = :np_communication_id
                        AND account_id = :account_id ");
-            $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-            $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->bindParam(":account_id", $row["account_id"], PDO::PARAM_INT);
+            $query->bindValue(":progress", $progress, PDO::PARAM_INT);
+            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+            $query->bindValue(":account_id", $row["account_id"], PDO::PARAM_INT);
             $query->execute();
         }
     }
@@ -230,8 +230,8 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
         FROM   trophy_group_player
         WHERE  account_id = :account_id
                AND np_communication_id = :np_communication_id ");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
     $query->execute();
     $trophyTypes = $query->fetch();
     $userScore = $trophyTypes["bronze"]*15 + $trophyTypes["silver"]*30 + $trophyTypes["gold"]*90; // Platinum isn't counted for
@@ -308,14 +308,14 @@ function RecalculateTrophyTitle($npCommunicationId, $lastUpdateDate, $newTrophie
                 progress = new.progress,
                 last_updated_date = new.last_updated_date");
     }
-    $query->bindParam(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-    $query->bindParam(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
-    $query->bindParam(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
-    $query->bindParam(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
-    $query->bindParam(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
-    $query->bindParam(":progress", $progress, PDO::PARAM_INT);
-    $query->bindParam(":last_updated_date", $dtAsTextForInsert, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":bronze", $trophyTypes["bronze"], PDO::PARAM_INT);
+    $query->bindValue(":silver", $trophyTypes["silver"], PDO::PARAM_INT);
+    $query->bindValue(":gold", $trophyTypes["gold"], PDO::PARAM_INT);
+    $query->bindValue(":platinum", $trophyTypes["platinum"], PDO::PARAM_INT);
+    $query->bindValue(":progress", $progress, PDO::PARAM_INT);
+    $query->bindValue(":last_updated_date", $dtAsTextForInsert, PDO::PARAM_STR);
     $query->execute();
 }
 
@@ -323,7 +323,7 @@ if (isset($_POST["game"])) {
     // Grab the np_communication_id
     $gameId = $_POST["game"];
     $query = $database->prepare("SELECT np_communication_id FROM trophy_title WHERE id = :id");
-    $query->bindParam(":id", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":id", $gameId, PDO::PARAM_INT);
     $query->execute();
     $gameNpCommunicationId = $query->fetchColumn();
 
@@ -354,7 +354,7 @@ if (isset($_POST["game"])) {
                     $message = "Can't login with worker ". $worker["id"];
                     $query = $database->prepare("INSERT INTO log(message)
                         VALUES(:message)");
-                    $query->bindParam(":message", $message, PDO::PARAM_STR);
+                    $query->bindValue(":message", $message, PDO::PARAM_STR);
                     $query->execute();
                 }
 
@@ -380,7 +380,7 @@ if (isset($_POST["game"])) {
             ORDER BY
                 ttp.last_updated_date
             DESC");
-        $query->bindParam(":np_communication_id", $gameNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $gameNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
         while ($accountId = $query->fetchColumn()) {
             $user = $client->users()->find($accountId);
@@ -422,10 +422,10 @@ if (isset($_POST["game"])) {
                     platform = :platform
                 WHERE
                     np_communication_id = :np_communication_id");
-            $query->bindParam(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
-            $query->bindParam(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
-            $query->bindParam(":platform", $platforms, PDO::PARAM_STR);
-            $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+            $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
+            $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
+            $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
+            $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
             // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
             $query->execute();
 
@@ -456,11 +456,11 @@ if (isset($_POST["game"])) {
                     UPDATE
                         detail = new.detail,
                         icon_url = new.icon_url");
-                $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
-                $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                $query->bindParam(":name", $trophyGroup->name(), PDO::PARAM_STR);
-                $query->bindParam(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
-                $query->bindParam(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
+                $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
+                $query->bindValue(":name", $trophyGroup->name(), PDO::PARAM_STR);
+                $query->bindValue(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
+                $query->bindValue(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                 $query->execute();
 
@@ -520,28 +520,28 @@ if (isset($_POST["game"])) {
                             progress_target_value = new.progress_target_value,
                             reward_name = new.reward_name,
                             reward_image_url = new.reward_image_url");
-                    $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
-                    $query->bindParam(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                    $query->bindParam(":order_id", $trophy->id(), PDO::PARAM_INT);
-                    $query->bindParam(":hidden", $trophy->hidden(), PDO::PARAM_INT);
+                    $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
+                    $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
+                    $query->bindValue(":hidden", $trophy->hidden(), PDO::PARAM_INT);
                     $trophyTypeEnumValue = $trophy->type()->value;
-                    $query->bindParam(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
-                    $query->bindParam(":name", $trophy->name(), PDO::PARAM_STR);
-                    $query->bindParam(":detail", $trophy->detail(), PDO::PARAM_STR);
-                    $query->bindParam(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
+                    $query->bindValue(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
+                    $query->bindValue(":name", $trophy->name(), PDO::PARAM_STR);
+                    $query->bindValue(":detail", $trophy->detail(), PDO::PARAM_STR);
+                    $query->bindValue(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
                     if ($trophy->progressTargetValue() === '') {
                         $progressTargetValue = null;
                     } else {
                         $progressTargetValue = $trophy->progressTargetValue();
                     }
-                    $query->bindParam(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
+                    $query->bindValue(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
                     if ($trophy->rewardName() === '') {
                         $rewardName = null;
                     } else {
                         $rewardName = $trophy->rewardName();
                     }
-                    $query->bindParam(":reward_name", $rewardName, PDO::PARAM_STR);
-                    $query->bindParam(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
+                    $query->bindValue(":reward_name", $rewardName, PDO::PARAM_STR);
+                    $query->bindValue(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                     $query->execute();
                 }
@@ -558,7 +558,7 @@ if (isset($_POST["game"])) {
                     parent_group_id 
                 FROM   trophy_merge 
                 WHERE  child_np_communication_id = :child_np_communication_id ");
-            $query->bindParam(":child_np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+            $query->bindValue(":child_np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
             $query->execute();
             while ($row = $query->fetch()) {
                 RecalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], $user->accountId());
@@ -572,12 +572,12 @@ if (isset($_POST["game"])) {
                     set_version = :set_version
                 WHERE
                     np_communication_id = :np_communication_id");
-            $query->bindParam(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
-            $query->bindParam(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+            $query->bindValue(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
+            $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
             $query->execute();
 
             $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_RESCAN', :param_1)");
-            $query->bindParam(":param_1", $gameId, PDO::PARAM_INT);
+            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
             $query->execute();
 
             $success = "<p>Game ". $gameId ." have been rescanned.</p>";

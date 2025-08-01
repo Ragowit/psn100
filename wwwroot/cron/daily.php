@@ -48,7 +48,7 @@ foreach ($games as $game) {
                     END
                 WHERE t.np_communication_id = :np_communication_id
             ");
-            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+            $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
             $query->execute();
 
             $deadlock = false;

@@ -141,12 +141,12 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
 
     <?php
     $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
     $query->execute();
     $numberOfGames = $query->fetchColumn();
 
     $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.progress = 100 AND ttp.account_id = :account_id");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
     $query->execute();
     $numberOfCompletedGames = $query->fetchColumn();
     ?>
@@ -271,7 +271,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
 
     <?php
     $query = $database->prepare("SELECT ROUND(AVG(ttp.progress), 2) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
     $query->execute();
     $averageProgress = $query->fetchColumn();
 
@@ -284,7 +284,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         JOIN trophy_title tt USING(np_communication_id)
         WHERE
             tt.status = 0 AND ttp.account_id = :account_id");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
     $query->execute();
     $unearnedTrophies = $query->fetchColumn();
     ?>

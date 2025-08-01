@@ -27,13 +27,13 @@ $query = $database->prepare("SELECT
     JOIN trophy_title tt USING(np_communication_id)
     WHERE
         t.id = :id");
-$query->bindParam(":id", $trophyId, PDO::PARAM_INT);
+$query->bindValue(":id", $trophyId, PDO::PARAM_INT);
 $query->execute();
 $trophy = $query->fetch();
 
 if (isset($player)) {
     $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
-    $query->bindParam(":online_id", $player, PDO::PARAM_STR);
+    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
     $query->execute();
     $accountId = $query->fetchColumn();
 
@@ -50,9 +50,9 @@ if (isset($player)) {
             trophy_earned
         WHERE
             np_communication_id = :np_communication_id AND order_id = :order_id AND account_id = :account_id");
-    $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-    $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_INT);
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+    $query->bindValue(":order_id", $trophy["order_id"], PDO::PARAM_INT);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
     $query->execute();
     $playerTrophy = $query->fetch();
 
@@ -236,8 +236,8 @@ require_once("header.php");
                                         ORDER BY
                                             te.earned_date IS NULL, te.earned_date
                                         LIMIT 50");
-                                    $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-                                    $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
+                                    $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+                                    $query->bindValue(":order_id", $trophy["order_id"], PDO::PARAM_STR);
                                     $query->execute();
                                     $results = $query->fetchAll();
 
@@ -325,8 +325,8 @@ require_once("header.php");
                                         ORDER BY
                                             te.earned_date DESC
                                         LIMIT 50");
-                                    $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-                                    $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
+                                    $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
+                                    $query->bindValue(":order_id", $trophy["order_id"], PDO::PARAM_STR);
                                     $query->execute();
                                     $results = $query->fetchAll();
 

@@ -11,13 +11,13 @@ $query = $database->prepare("SELECT
     WHERE
         ip_address = :ip_address
     ");
-$query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
+$query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
 $query->execute();
 $count = $query->fetchColumn();
 
 // Check if scanning
 $query = $database->prepare("SELECT scanning FROM setting WHERE scanning = :online_id");
-$query->bindParam(":online_id", $player, PDO::PARAM_STR);
+$query->bindValue(":online_id", $player, PDO::PARAM_STR);
 $query->execute();
 $scanning = $query->fetchColumn();
 
@@ -40,13 +40,13 @@ $query = $database->prepare("WITH temp AS(
     WHERE
         online_id = :online_id
     ");
-$query->bindParam(":online_id", $player, PDO::PARAM_STR);
+$query->bindValue(":online_id", $player, PDO::PARAM_STR);
 $query->execute();
 $position = $query->fetchColumn();
 
 // Check status
 $query = $database->prepare("SELECT account_id, `status` FROM player WHERE online_id = :online_id");
-$query->bindParam(":online_id", $player, PDO::PARAM_STR);
+$query->bindValue(":online_id", $player, PDO::PARAM_STR);
 $query->execute();
 $playerData = $query->fetch();
 $accountId = $playerData["account_id"] ?? "";

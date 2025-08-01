@@ -8,13 +8,13 @@ if (!empty($_GET["explanation"])) {
     $ipAddress = $_SERVER["REMOTE_ADDR"];
 
     $query = $database->prepare("SELECT * FROM player_report WHERE account_id = :account_id AND ip_address = :ip_address");
-    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-    $query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
+    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+    $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
     $query->execute();
     $reported = $query->fetch();
 
     $query = $database->prepare("SELECT COUNT(*) FROM player_report WHERE ip_address = :ip_address");
-    $query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
+    $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
     $query->execute();
     $count = $query->fetchColumn();
 
@@ -26,9 +26,9 @@ if (!empty($_GET["explanation"])) {
         $explanation = $_GET["explanation"];
 
         $query = $database->prepare("INSERT INTO player_report (account_id, ip_address, explanation) VALUES (:account_id, :ip_address, :explanation)");
-        $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-        $query->bindParam(":ip_address", $ipAddress, PDO::PARAM_STR);
-        $query->bindParam(":explanation", $explanation, PDO::PARAM_STR);
+        $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+        $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
+        $query->bindValue(":explanation", $explanation, PDO::PARAM_STR);
         $query->execute();
 
         $result = "Player reported successfully.";

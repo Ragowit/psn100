@@ -50,7 +50,7 @@ if ($player["status"] == 1 || $player["status"] == 3) {
         $sql .= ")";
     }
     $query = $database->prepare($sql);
-    $query->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
+    $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
     $query->execute();
     $total_pages = $query->fetchColumn();
 }
@@ -252,9 +252,9 @@ require_once("header.php");
                                 $sql .= " LIMIT :offset, :limit";
 
                                 $trophies = $database->prepare($sql);
-                                $trophies->bindParam(":account_id", $player["account_id"], PDO::PARAM_INT);
-                                $trophies->bindParam(":offset", $offset, PDO::PARAM_INT);
-                                $trophies->bindParam(":limit", $limit, PDO::PARAM_INT);
+                                $trophies->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
+                                $trophies->bindValue(":offset", $offset, PDO::PARAM_INT);
+                                $trophies->bindValue(":limit", $limit, PDO::PARAM_INT);
                                 $trophies->execute();
 
                                 while ($trophy = $trophies->fetch()) {

@@ -4,7 +4,7 @@
         $query = $database->prepare("SELECT id, `name` 
             FROM   trophy_title 
             WHERE  np_communication_id = :parent_np_communication_id");
-        $query->bindParam(":parent_np_communication_id", $game["parent_np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":parent_np_communication_id", $game["parent_np_communication_id"], PDO::PARAM_STR);
         $query->execute();
         $parentGame = $query->fetch();
         $parentGameName = $parentGame["name"] ?? "";
@@ -23,7 +23,7 @@
     }
     
     $query = $database->prepare("SELECT COUNT(*) FROM trophy WHERE `status` = 1 AND np_communication_id = :np_communication_id");
-    $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
     $query->execute();
     $unobtainableTrophies = $query->fetchColumn();
     if ($unobtainableTrophies > 0) {
@@ -71,7 +71,7 @@
                                 parent_np_communication_id = :parent_np_communication_id
                             ORDER BY
                                 `name`, platform, region");
-                        $query->bindParam(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+                        $query->bindValue(":parent_np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                         $query->execute();
                         $stacks = $query->fetchAll();
                         ?>

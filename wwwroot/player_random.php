@@ -146,7 +146,7 @@ require_once("header.php");
             }
             $sql .= " ORDER BY RAND() LIMIT 8";
             $games = $database->prepare($sql);
-            $games->bindParam(":account_id", $player["account_id"], PDO::PARAM_STR);
+            $games->bindValue(":account_id", $player["account_id"], PDO::PARAM_STR);
             $games->execute();
             $games = $games->fetchAll();
 

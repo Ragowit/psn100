@@ -71,11 +71,11 @@ function TrophyEarned($childNpCommunicationId, $childGroupId, $childOrderId, $pa
                 child.earned,
                 trophy_earned.earned
             )");
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":child_order_id", $childOrderId, PDO::PARAM_INT);
-    $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":parent_group_id", $parentGroupId, PDO::PARAM_STR);
-    $query->bindParam(":parent_order_id", $parentOrderId, PDO::PARAM_INT);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":child_order_id", $childOrderId, PDO::PARAM_INT);
+    $query->bindValue(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":parent_group_id", $parentGroupId, PDO::PARAM_STR);
+    $query->bindValue(":parent_order_id", $parentOrderId, PDO::PARAM_INT);
     $query->execute();
 }
 
@@ -96,7 +96,7 @@ function TrophyGroupPlayer($childGameId) {
             WHERE
                 id = :game_id
         )");
-    $groups->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
+    $groups->bindValue(":game_id", $childGameId, PDO::PARAM_INT);
     $groups->execute();
 
     while ($group = $groups->fetch()) {
@@ -175,8 +175,8 @@ function TrophyGroupPlayer($childGameId) {
                 gold = NEW.gold,
                 platinum = NEW.platinum,
                 progress = NEW.progress");
-        $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
+        $query->bindValue(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
         $query->execute();
 
         // Don't forget the players who own the game but haven't earned a single trophy.
@@ -216,9 +216,9 @@ function TrophyGroupPlayer($childGameId) {
                 0
             FROM
                 player");
-        $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
-        $query->bindParam(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
-        $query->bindParam(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
+        $query->bindValue(":game_id", $childGameId, PDO::PARAM_INT);
+        $query->bindValue(":np_communication_id", $group["parent_np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":group_id", $group["parent_group_id"], PDO::PARAM_STR);
         $query->execute();
     }
 }
@@ -232,7 +232,7 @@ function TrophyTitlePlayer($childGameId) {
             trophy_title
         WHERE
             id = :game_id");
-    $query->bindParam(":game_id", $childGameId, PDO::PARAM_INT);
+    $query->bindValue(":game_id", $childGameId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
 
@@ -242,7 +242,7 @@ function TrophyTitlePlayer($childGameId) {
             trophy_merge
         WHERE
             child_np_communication_id = :child_np_communication_id");
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
     $title = $query->fetch();
 
@@ -253,7 +253,7 @@ function TrophyTitlePlayer($childGameId) {
             trophy_title
         WHERE
             np_communication_id = :np_communication_id");
-    $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
     $query->execute();
     $trophyTitle = $query->fetch();
 
@@ -328,10 +328,10 @@ function TrophyTitlePlayer($childGameId) {
                 NEW.last_updated_date,
                 trophy_title_player.last_updated_date
             )");
-    $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":max_score", $trophyTitle["max_score"], PDO::PARAM_INT);
-    $query->bindParam(":platinum", $trophyTitle["platinum"], PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":max_score", $trophyTitle["max_score"], PDO::PARAM_INT);
+    $query->bindValue(":platinum", $trophyTitle["platinum"], PDO::PARAM_INT);
     $query->execute();
 
     // Don't forget the players who own the game but haven't earned a single trophy.
@@ -366,8 +366,8 @@ function TrophyTitlePlayer($childGameId) {
             player.last_updated_date
         FROM
             player");
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $title["parent_np_communication_id"], PDO::PARAM_STR);
     $query->execute();
 }
 
@@ -381,7 +381,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
         $query = $database->prepare("SELECT np_communication_id
             FROM   trophy
             WHERE  id = :id ");
-        $query->bindParam(":id", $childId, PDO::PARAM_INT);
+        $query->bindValue(":id", $childId, PDO::PARAM_INT);
         $query->execute();
         $childNpCommunicationId = $query->fetchColumn();
         if (str_starts_with($childNpCommunicationId, "MERGE")) {
@@ -392,7 +392,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy
         WHERE  id = :id ");
-    $query->bindParam(":id", $trophyParentId, PDO::PARAM_INT);
+    $query->bindValue(":id", $trophyParentId, PDO::PARAM_INT);
     $query->execute();
     $parentNpCommunicationId = $query->fetchColumn();
     if (!str_starts_with($parentNpCommunicationId, "MERGE")) {
@@ -401,7 +401,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     }
 
     $query = $database->prepare("SELECT np_communication_id, group_id, order_id FROM trophy WHERE id = :parent_trophy_id ");
-    $query->bindParam(":parent_trophy_id", $trophyParentId, PDO::PARAM_INT);
+    $query->bindValue(":parent_trophy_id", $trophyParentId, PDO::PARAM_INT);
     $query->execute();
     $parentTrophyData = $query->fetch();
 
@@ -428,13 +428,13 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                    trophy parent
             WHERE  child.id = :child_trophy_id
             AND    parent.id = :parent_trophy_id");
-        $query->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
-        $query->bindParam(":parent_trophy_id", $trophyParentId, PDO::PARAM_INT);
+        $query->bindValue(":child_trophy_id", $childId, PDO::PARAM_INT);
+        $query->bindValue(":parent_trophy_id", $trophyParentId, PDO::PARAM_INT);
         $query->execute();
         $database->commit();
 
         $query = $database->prepare("SELECT np_communication_id, group_id, order_id FROM trophy WHERE id = :child_trophy_id ");
-        $query->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
+        $query->bindValue(":child_trophy_id", $childId, PDO::PARAM_INT);
         $query->execute();
         $childTrophyData = $query->fetch();
         
@@ -443,7 +443,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
         $query = $database->prepare("UPDATE trophy_title
             SET    status = 2
             WHERE  np_communication_id = :child_np_communication_id ");
-        $query->bindParam(":child_np_communication_id", $childTrophyData["np_communication_id"], PDO::PARAM_STR);
+        $query->bindValue(":child_np_communication_id", $childTrophyData["np_communication_id"], PDO::PARAM_STR);
         $query->execute();
         $database->commit();
 
@@ -452,7 +452,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             WHERE  np_communication_id = (SELECT np_communication_id
                                                 FROM   trophy
                                                 WHERE  id = :child_trophy_id) ");
-        $query->bindParam(":child_trophy_id", $childId, PDO::PARAM_INT);
+        $query->bindValue(":child_trophy_id", $childId, PDO::PARAM_INT);
         $query->execute();
         $childGameId = $query->fetchColumn();
 
@@ -476,7 +476,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":id", $childId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
     if (str_starts_with($childNpCommunicationId, "MERGE")) {
@@ -486,7 +486,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":id", $parentId, PDO::PARAM_INT);
+    $query->bindValue(":id", $parentId, PDO::PARAM_INT);
     $query->execute();
     $parentNpCommunicationId = $query->fetchColumn();
     if (!str_starts_with($parentNpCommunicationId, "MERGE")) {
@@ -505,7 +505,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             WHERE  np_communication_id = (SELECT np_communication_id
                                           FROM   trophy_title
                                           WHERE  id = :child_game_id) ");
-        $childTrophies->bindParam(":child_game_id", $childId, PDO::PARAM_INT);
+        $childTrophies->bindValue(":child_game_id", $childId, PDO::PARAM_INT);
         $childTrophies->execute();
         while ($childTrophy = $childTrophies->fetch()) {
             $parentTrophies = $database->prepare("SELECT np_communication_id,
@@ -516,8 +516,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                                               FROM   trophy_title
                                               WHERE  id = :parent_game_id)
                        AND `name` = :name ");
-            $parentTrophies->bindParam(":parent_game_id", $parentId, PDO::PARAM_INT);
-            $parentTrophies->bindParam(":name", $childTrophy["name"], PDO::PARAM_STR);
+            $parentTrophies->bindValue(":parent_game_id", $parentId, PDO::PARAM_INT);
+            $parentTrophies->bindValue(":name", $childTrophy["name"], PDO::PARAM_STR);
             $parentTrophies->execute();
 
             $parentTrophy = $parentTrophies->fetchAll();
@@ -542,12 +542,12 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                                   :parent_group_id,
                                   :parent_order_id
                            )");
-                $query->bindParam(":child_np_communication_id", $childTrophy["np_communication_id"], PDO::PARAM_STR);
-                $query->bindParam(":child_group_id", $childTrophy["group_id"], PDO::PARAM_STR);
-                $query->bindParam(":child_order_id", $childTrophy["order_id"], PDO::PARAM_INT);
-                $query->bindParam(":parent_np_communication_id", $parentTrophy[0]["np_communication_id"], PDO::PARAM_STR);
-                $query->bindParam(":parent_group_id", $parentTrophy[0]["group_id"], PDO::PARAM_STR);
-                $query->bindParam(":parent_order_id", $parentTrophy[0]["order_id"], PDO::PARAM_INT);
+                $query->bindValue(":child_np_communication_id", $childTrophy["np_communication_id"], PDO::PARAM_STR);
+                $query->bindValue(":child_group_id", $childTrophy["group_id"], PDO::PARAM_STR);
+                $query->bindValue(":child_order_id", $childTrophy["order_id"], PDO::PARAM_INT);
+                $query->bindValue(":parent_np_communication_id", $parentTrophy[0]["np_communication_id"], PDO::PARAM_STR);
+                $query->bindValue(":parent_group_id", $parentTrophy[0]["group_id"], PDO::PARAM_STR);
+                $query->bindValue(":parent_order_id", $parentTrophy[0]["order_id"], PDO::PARAM_INT);
                 $query->execute();
             } else {
                 $message .= $childTrophy["name"] ." couldn't be merged.<br>";
@@ -590,7 +590,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                 WHERE
                     id = :child_game_id
             );");
-        $childTrophies->bindParam(":child_game_id", $childId, PDO::PARAM_INT);
+        $childTrophies->bindValue(":child_game_id", $childId, PDO::PARAM_INT);
         $childTrophies->execute();
         while ($childTrophy = $childTrophies->fetch()) {
             $parentTrophies = $database->prepare("SELECT np_communication_id,
@@ -601,8 +601,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                                               FROM   trophy_title
                                               WHERE  id = :parent_game_id)
                        AND icon_url = :icon_url ");
-            $parentTrophies->bindParam(":parent_game_id", $parentId, PDO::PARAM_INT);
-            $parentTrophies->bindParam(":icon_url", $childTrophy["icon_url"], PDO::PARAM_STR);
+            $parentTrophies->bindValue(":parent_game_id", $parentId, PDO::PARAM_INT);
+            $parentTrophies->bindValue(":icon_url", $childTrophy["icon_url"], PDO::PARAM_STR);
             $parentTrophies->execute();
 
             $parentTrophy = $parentTrophies->fetchAll();
@@ -627,12 +627,12 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                                   :parent_group_id,
                                   :parent_order_id
                            )");
-                $query->bindParam(":child_np_communication_id", $childTrophy["np_communication_id"], PDO::PARAM_STR);
-                $query->bindParam(":child_group_id", $childTrophy["group_id"], PDO::PARAM_STR);
-                $query->bindParam(":child_order_id", $childTrophy["order_id"], PDO::PARAM_INT);
-                $query->bindParam(":parent_np_communication_id", $parentTrophy[0]["np_communication_id"], PDO::PARAM_STR);
-                $query->bindParam(":parent_group_id", $parentTrophy[0]["group_id"], PDO::PARAM_STR);
-                $query->bindParam(":parent_order_id", $parentTrophy[0]["order_id"], PDO::PARAM_INT);
+                $query->bindValue(":child_np_communication_id", $childTrophy["np_communication_id"], PDO::PARAM_STR);
+                $query->bindValue(":child_group_id", $childTrophy["group_id"], PDO::PARAM_STR);
+                $query->bindValue(":child_order_id", $childTrophy["order_id"], PDO::PARAM_INT);
+                $query->bindValue(":parent_np_communication_id", $parentTrophy[0]["np_communication_id"], PDO::PARAM_STR);
+                $query->bindValue(":parent_group_id", $parentTrophy[0]["group_id"], PDO::PARAM_STR);
+                $query->bindValue(":parent_order_id", $parentTrophy[0]["order_id"], PDO::PARAM_INT);
                 $query->execute();
             } else {
                 $message .= $childTrophy["name"] ." couldn't be merged.<br>";
@@ -668,8 +668,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                               SELECT np_communication_id
                               FROM   trophy_title
                               WHERE  id = :parent_game_id)");
-        $query->bindParam(":child_game_id", $childId, PDO::PARAM_INT);
-        $query->bindParam(":parent_game_id", $parentId, PDO::PARAM_INT);
+        $query->bindValue(":child_game_id", $childId, PDO::PARAM_INT);
+        $query->bindValue(":parent_game_id", $parentId, PDO::PARAM_INT);
         $query->execute();
     } else {
         echo "Wrong input";
@@ -682,7 +682,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query = $database->prepare("UPDATE trophy_title
         SET    status = 2
         WHERE  id = :game_id ");
-    $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":game_id", $childId, PDO::PARAM_INT);
     $query->execute();
     $database->commit();
 
@@ -705,7 +705,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
             WHERE
                 id = :game_id
         )");
-    $query->bindParam(":game_id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":game_id", $childId, PDO::PARAM_INT);
     $query->execute();
     while ($trophyMerge = $query->fetch()) {
         TrophyEarned($trophyMerge["child_np_communication_id"], $trophyMerge["child_group_id"], $trophyMerge["child_order_id"], $trophyMerge["parent_np_communication_id"], $trophyMerge["parent_group_id"], $trophyMerge["parent_order_id"]);
@@ -718,13 +718,13 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     TrophyTitlePlayer($childId);
 
     $query = $database->prepare("UPDATE trophy_title SET parent_np_communication_id = :parent_np_communication_id WHERE np_communication_id = :np_communication_id");
-    $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
     $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_MERGE', :param_1, :param_2)");
-    $query->bindParam(":param_1", $childId, PDO::PARAM_INT);
-    $query->bindParam(":param_2", $parentId, PDO::PARAM_INT);
+    $query->bindValue(":param_1", $childId, PDO::PARAM_INT);
+    $query->bindValue(":param_2", $parentId, PDO::PARAM_INT);
     $query->execute();
 
     $message .= "The games have been merged.";
@@ -736,7 +736,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":id", $childId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
     if (str_starts_with($childNpCommunicationId, "MERGE")) {
@@ -747,7 +747,7 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":id", $childId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
 
@@ -785,8 +785,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                set_version
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":id", $childId, PDO::PARAM_INT);
     $query->execute();
 
     $query = $database->prepare("INSERT INTO trophy_group
@@ -810,8 +810,8 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                platinum
         FROM   trophy_group
         WHERE  np_communication_id = :child_np_communication_id ");
-    $query->bindParam(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
     $query = $database->prepare("INSERT INTO trophy
@@ -837,13 +837,13 @@ if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"]))
                progress_target_value
         FROM   trophy
         WHERE  np_communication_id = :child_np_communication_id ");
-    $query->bindParam(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":np_communication_id", $cloneNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
     $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_CLONE', :param_1, :param_2)");
-    $query->bindParam(":param_1", $childId, PDO::PARAM_INT);
-    $query->bindParam(":param_2", $gameId, PDO::PARAM_INT);
+    $query->bindValue(":param_1", $childId, PDO::PARAM_INT);
+    $query->bindValue(":param_2", $gameId, PDO::PARAM_INT);
     $query->execute();
 
     $message = "The game have been cloned.";

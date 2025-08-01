@@ -10,7 +10,7 @@ if (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":id", $childId, PDO::PARAM_INT);
+    $query->bindValue(":id", $childId, PDO::PARAM_INT);
     $query->execute();
     $childNpCommunicationId = $query->fetchColumn();
     if (str_starts_with($childNpCommunicationId, "MERGE")) {
@@ -20,7 +20,7 @@ if (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_
     $query = $database->prepare("SELECT np_communication_id
         FROM   trophy_title
         WHERE  id = :id ");
-    $query->bindParam(":id", $parentId, PDO::PARAM_INT);
+    $query->bindValue(":id", $parentId, PDO::PARAM_INT);
     $query->execute();
     $parentNpCommunicationId = $query->fetchColumn();
     if (!str_starts_with($parentNpCommunicationId, "MERGE")) {
@@ -50,8 +50,8 @@ if (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_
             tg.icon_url = tg_org.icon_url
         WHERE
             tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id");
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
     // Trophy
@@ -85,13 +85,13 @@ if (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_
             tg.reward_image_url = tg_org.reward_image_url
         WHERE
             tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id AND tg.order_id = tg_org.order_id");
-    $query->bindParam(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
-    $query->bindParam(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":child_np_communication_id", $childNpCommunicationId, PDO::PARAM_STR);
+    $query->bindValue(":parent_np_communication_id", $parentNpCommunicationId, PDO::PARAM_STR);
     $query->execute();
 
     $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_COPY', :param_1, :param_2)");
-    $query->bindParam(":param_1", $childId, PDO::PARAM_INT);
-    $query->bindParam(":param_2", $parentId, PDO::PARAM_INT);
+    $query->bindValue(":param_1", $childId, PDO::PARAM_INT);
+    $query->bindValue(":param_2", $parentId, PDO::PARAM_INT);
     $query->execute();
 
     $message .= "The group and trophy data have been copied.";

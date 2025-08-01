@@ -28,8 +28,8 @@ $offset = ($page - 1) * $limit;
             ORDER  BY count DESC, 
                     avatar_url 
             LIMIT  :offset, :limit ");
-        $query->bindParam(":offset", $offset, PDO::PARAM_INT);
-        $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+        $query->bindValue(":offset", $offset, PDO::PARAM_INT);
+        $query->bindValue(":limit", $limit, PDO::PARAM_INT);
         $query->execute();
         $avatars = $query->fetchAll();
 

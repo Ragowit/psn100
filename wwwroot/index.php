@@ -44,7 +44,7 @@ if (empty($elements[0])) { // No path elements means home
             } else {
                 $gameId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy_title WHERE id = :id");
-                $query->bindParam(":id", $gameId, PDO::PARAM_INT);
+                $query->bindValue(":id", $gameId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
                 $player = array_key_exists(0, $elements) ? $elements[0] : null;
@@ -64,7 +64,7 @@ if (empty($elements[0])) { // No path elements means home
             } else {
                 $gameId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy_title WHERE id = :id");
-                $query->bindParam(":id", $gameId, PDO::PARAM_INT);
+                $query->bindValue(":id", $gameId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
                 $player = array_key_exists(0, $elements) ? $elements[0] : null;
@@ -84,7 +84,7 @@ if (empty($elements[0])) { // No path elements means home
             } else {
                 $gameId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy_title WHERE id = :id");
-                $query->bindParam(":id", $gameId, PDO::PARAM_INT);
+                $query->bindValue(":id", $gameId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
                 $player = array_key_exists(0, $elements) ? $elements[0] : null;
@@ -123,7 +123,7 @@ if (empty($elements[0])) { // No path elements means home
             } else {
                 $onlineId = array_shift($elements);
                 $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
-                $query->bindParam(":online_id", $onlineId, PDO::PARAM_STR);
+                $query->bindValue(":online_id", $onlineId, PDO::PARAM_STR);
                 $query->execute();
                 $accountId = $query->fetchColumn();
 
@@ -147,7 +147,7 @@ if (empty($elements[0])) { // No path elements means home
                         p.account_id = :account_id
                         AND p.status = 0
                 ");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
+                $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
                 $player = $query->fetch();
 
@@ -179,7 +179,7 @@ if (empty($elements[0])) { // No path elements means home
             } else {
                 $trophyId = explode("-", array_shift($elements))[0];
                 $query = $database->prepare("SELECT id FROM trophy WHERE id = :id");
-                $query->bindParam(":id", $trophyId, PDO::PARAM_INT);
+                $query->bindValue(":id", $trophyId, PDO::PARAM_INT);
                 $query->execute();
                 $result = $query->fetchColumn();
                 $player = array_key_exists(0, $elements) ? $elements[0] : null;
