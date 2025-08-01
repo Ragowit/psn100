@@ -85,27 +85,39 @@ unset($paramsWithoutPage["page"]);
 
                         <tbody>
                             <?php
-                            $sql = "SELECT * FROM (SELECT *, RANK() OVER (ORDER BY `rarity_points` DESC) `ranking` FROM `player` WHERE `status` = 0";
+                            $sql = "
+                                SELECT
+                                    p.*,
+                                    r.rarity_ranking AS ranking,
+                                    r.rarity_ranking_country AS ranking_country
+                                FROM
+                                    player p
+                                JOIN player_ranking r ON p.account_id = r.account_id
+                                WHERE
+                                    p.status = 0
+                            ";
                             if (!empty($_GET["country"])) {
-                                $sql .= " AND `country` = :country";
+                                $sql .= " AND p.country = :country";
                             }
-                            $sql .= ") p";
                             if (!empty($_GET["avatar"])) {
-                                $sql .= " WHERE p.avatar_url = :avatar";
+                                $sql .= " AND p.avatar_url = :avatar";
                             }
-                            $sql .= " ORDER BY `ranking` LIMIT :offset, :limit";
+                            $sql .= "
+                                ORDER BY r.rarity_ranking
+                                LIMIT :offset, :limit
+                            ";
 
                             $query = $database->prepare($sql);
+
                             if (!empty($_GET["country"])) {
-                                $country = $_GET["country"];
-                                $query->bindParam(":country", $country, PDO::PARAM_STR);
+                                $query->bindParam(":country", $_GET["country"], PDO::PARAM_STR);
                             }
                             if (!empty($_GET["avatar"])) {
-                                $avatar = $_GET["avatar"];
-                                $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
+                                $query->bindParam(":avatar", $_GET["avatar"], PDO::PARAM_STR);
                             }
                             $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                             $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+
                             $query->execute();
                             $players = $query->fetchAll();
 
@@ -131,14 +143,14 @@ unset($paramsWithoutPage["page"]);
                                                 echo " <span style='color: #9d9d9d;'>(H)</span>";
                                             }
                                         } else {
-                                            $delta = $player["rarity_rank_country_last_week"] - $player["ranking"];
+                                            $delta = $player["rarity_rank_country_last_week"] - $player["ranking_country"];
 
                                             echo "<div class='vstack'>";
                                             if ($delta > 0) {
                                                 echo "<span style='color: #0bd413; cursor: default;' title='+". $delta ."'>&#9650;</span>";
                                             }
                                             
-                                            echo $player["ranking"];
+                                            echo $player["ranking_country"];
                                             if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
                                                 echo " <span style='color: #9d9d9d;'>(H)</span>";
                                             }

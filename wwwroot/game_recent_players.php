@@ -85,7 +85,8 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
                         <tbody>
                             <?php
-                            $sql = "SELECT
+                            $sql = "
+                                SELECT
                                     p.account_id,
                                     p.avatar_url,
                                     p.country,
@@ -100,29 +101,35 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                     ttp.last_updated_date AS last_known_date
                                 FROM
                                     trophy_title_player ttp
-                                    JOIN (SELECT account_id, avatar_url, country, online_id, trophy_count_npwr, trophy_count_sony, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
+                                JOIN player p ON ttp.account_id = p.account_id
+                                JOIN player_ranking r ON p.account_id = r.account_id
                                 WHERE
-                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
+                                    p.status = 0
+                                    AND r.ranking <= 10000
+                                    AND ttp.np_communication_id = :np_communication_id
+                            ";
                             if (isset($_GET["country"])) {
                                 $sql .= " AND p.country = :country";
                             }
                             if (isset($_GET["avatar"])) {
                                 $sql .= " AND p.avatar_url = :avatar";
                             }
-                            $sql .= " ORDER BY
-                                    last_known_date DESC
-                                LIMIT
-                                    10";
+                            $sql .= "
+                                ORDER BY
+                                    ttp.last_updated_date DESC
+                                LIMIT 10
+                            ";
+
                             $query = $database->prepare($sql);
+
+                            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                             if (isset($_GET["country"])) {
-                                $country = $_GET["country"];
-                                $query->bindParam(":country", $country, PDO::PARAM_STR);
+                                $query->bindParam(":country", $_GET["country"], PDO::PARAM_STR);
                             }
                             if (isset($_GET["avatar"])) {
-                                $avatar = $_GET["avatar"];
-                                $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
+                                $query->bindParam(":avatar", $_GET["avatar"], PDO::PARAM_STR);
                             }
-                            $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
+
                             $query->execute();
                             $rows = $query->fetchAll();
 

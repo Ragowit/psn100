@@ -45,26 +45,32 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$sql = "SELECT COUNT(*) FROM trophy_title_player ttp
-    JOIN (SELECT account_id, avatar_url, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0";
+$sql = "
+    SELECT COUNT(*)
+    FROM trophy_title_player ttp
+    JOIN player p ON p.account_id = ttp.account_id
+    JOIN player_ranking r ON r.account_id = p.account_id
+    WHERE ttp.np_communication_id = :np_communication_id
+      AND p.status = 0
+      AND r.ranking <= 10000
+";
 if (isset($_GET["country"])) {
-    $sql .= " AND `country` = :country";
+    $sql .= " AND p.country = :country";
 }
-$sql .= ") p USING (account_id)
-    WHERE ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
 if (isset($_GET["avatar"])) {
     $sql .= " AND p.avatar_url = :avatar";
 }
+
 $query = $database->prepare($sql);
+
 $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
 if (isset($_GET["country"])) {
-    $country = $_GET["country"];
-    $query->bindParam(":country", $country, PDO::PARAM_STR);
+    $query->bindParam(":country", $_GET["country"], PDO::PARAM_STR);
 }
 if (isset($_GET["avatar"])) {
-    $avatar = $_GET["avatar"];
-    $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
+    $query->bindParam(":avatar", $_GET["avatar"], PDO::PARAM_STR);
 }
+
 $query->execute();
 $total_pages = $query->fetchColumn();
 
@@ -115,7 +121,8 @@ unset($paramsWithoutPage["page"]);
 
                         <tbody>
                             <?php
-                            $sql = "SELECT
+                            $sql = "
+                                SELECT
                                     p.account_id,
                                     p.avatar_url,
                                     p.country,
@@ -130,36 +137,42 @@ unset($paramsWithoutPage["page"]);
                                     ttp.last_updated_date AS last_known_date
                                 FROM
                                     trophy_title_player ttp
-                                    JOIN (SELECT account_id, avatar_url, country, online_id, trophy_count_npwr, trophy_count_sony, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking` FROM player WHERE `status` = 0) p USING (account_id)
+                                JOIN player p ON ttp.account_id = p.account_id
+                                JOIN player_ranking r ON p.account_id = r.account_id
                                 WHERE
-                                    ttp.np_communication_id = :np_communication_id AND p.ranking <= 10000";
+                                    p.status = 0
+                                    AND r.ranking <= 10000
+                                    AND ttp.np_communication_id = :np_communication_id
+                            ";
                             if (isset($_GET["country"])) {
                                 $sql .= " AND p.country = :country";
                             }
                             if (isset($_GET["avatar"])) {
                                 $sql .= " AND p.avatar_url = :avatar";
                             }
-                            $sql .= " ORDER BY
-                                    progress DESC,
-                                    platinum DESC,
-                                    gold DESC,
-                                    silver DESC,
-                                    bronze DESC,
-                                    last_known_date
-                                LIMIT
-                                    :offset, :limit";
+                            $sql .= "
+                                ORDER BY
+                                    ttp.progress DESC,
+                                    ttp.platinum DESC,
+                                    ttp.gold DESC,
+                                    ttp.silver DESC,
+                                    ttp.bronze DESC,
+                                    ttp.last_updated_date
+                                LIMIT :offset, :limit
+                            ";
+
                             $query = $database->prepare($sql);
-                            if (isset($_GET["country"])) {
-                                $country = $_GET["country"];
-                                $query->bindParam(":country", $country, PDO::PARAM_STR);
-                            }
-                            if (isset($_GET["avatar"])) {
-                                $avatar = $_GET["avatar"];
-                                $query->bindParam(":avatar", $avatar, PDO::PARAM_STR);
-                            }
+
                             $query->bindParam(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
                             $query->bindParam(":offset", $offset, PDO::PARAM_INT);
                             $query->bindParam(":limit", $limit, PDO::PARAM_INT);
+                            if (isset($_GET["country"])) {
+                                $query->bindParam(":country", $_GET["country"], PDO::PARAM_STR);
+                            }
+                            if (isset($_GET["avatar"])) {
+                                $query->bindParam(":avatar", $_GET["avatar"], PDO::PARAM_STR);
+                            }
+                            
                             $query->execute();
                             $rows = $query->fetchAll();
 

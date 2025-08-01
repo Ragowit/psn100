@@ -133,18 +133,20 @@ if (empty($elements[0])) { // No path elements means home
                     die();
                 }
 
-                $query = $database->prepare("SELECT country FROM player WHERE account_id = :account_id");
-                $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                $query->execute();
-                $playerCountry = $query->fetchColumn();
-
-                $query = $database->prepare("SELECT
-                        p.*, r1.ranking, r1.rarity_ranking, r2.ranking_country, r2.rarity_ranking_country
-                    FROM player p
-                    LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking` FROM `player` WHERE `status` = 0) r1 ON p.account_id = r1.account_id
-                    LEFT JOIN (SELECT account_id, RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking_country`, RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking_country` FROM `player` WHERE `status` = 0 AND `country` = :country) r2 ON p.account_id = r2.account_id
-                    WHERE p.account_id = :account_id");
-                $query->bindParam(":country", $playerCountry, PDO::PARAM_STR);
+                $query = $database->prepare("
+                    SELECT
+                        p.*,
+                        r.ranking,
+                        r.rarity_ranking,
+                        r.ranking_country,
+                        r.rarity_ranking_country
+                    FROM
+                        player p
+                    JOIN player_ranking r ON p.account_id = r.account_id
+                    WHERE
+                        p.account_id = :account_id
+                        AND p.status = 0
+                ");
                 $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
                 $player = $query->fetch();

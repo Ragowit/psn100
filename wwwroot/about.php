@@ -84,14 +84,7 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("WITH
-                                            rarity AS(
-                                            SELECT
-                                                online_id,
-                                                RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
-                                            FROM `player`
-                                            WHERE `status` = 0
-                                        )
+                                    $query = $database->prepare("
                                         SELECT
                                             p.online_id,
                                             p.country,
@@ -105,12 +98,15 @@ require_once("header.php");
                                             p.trophy_count_sony,
                                             r.ranking
                                         FROM
-                                            `player` p
-                                        LEFT JOIN rarity r USING (online_id)
+                                            player p
+                                        LEFT JOIN
+                                            player_ranking r ON p.account_id = r.account_id
+                                        WHERE
+                                            p.status = 0
                                         ORDER BY
-                                            p.last_updated_date
-                                        DESC
-                                        LIMIT 10");
+                                            p.last_updated_date DESC
+                                        LIMIT 10
+                                    ");
                                     $query->execute();
                                     $players = $query->fetchAll();
 

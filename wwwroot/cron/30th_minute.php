@@ -365,101 +365,99 @@ while (true) {
         // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a week, ordered by the oldest one.
         // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
         // #5 - Oldest scanned player who is not tagged as a cheater
-        $query = $database->prepare("WITH
-                rarity AS(
-                SELECT
-                    account_id,
-                    RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`,
-                    RANK() OVER (ORDER BY `rarity_points` DESC) `rarity_ranking`
-                FROM `player`
-                WHERE `status` = 0
-            )
+        $query = $database->prepare("
+            WITH
+                now_values AS (
+                    SELECT
+                        NOW() AS now,
+                        NOW() - INTERVAL 1 HOUR AS cutoff_1h,
+                        NOW() - INTERVAL 1 DAY AS cutoff_1d,
+                        NOW() - INTERVAL 1 WEEK AS cutoff_1w
+                )
             SELECT
                 online_id,
                 account_id
-            FROM
-                (
-                    SELECT
-                        1 AS tier,
-                        pq.online_id,
-                        pq.request_time,
-                        p.account_id
-                    FROM
-                        player_queue pq
-                        LEFT JOIN player p ON p.online_id = pq.online_id
-                    WHERE
-                        pq.request_time < '2030-12-25 00:00:00'
-                    UNION ALL
-                    SELECT
-                        2 AS tier,
-                        online_id,
-                        last_updated_date,
-                        account_id
-                    FROM
-                        player
-                        LEFT JOIN rarity r USING (account_id)
-                    WHERE
-                        (
-                            r.ranking <= 100
-                            OR r.rarity_ranking <= 100
-                        )
-                        AND last_updated_date < NOW() - INTERVAL 1 HOUR
-                    UNION ALL
-                    SELECT
-                        3 AS tier,
-                        online_id,
-                        last_updated_date,
-                        account_id
-                    FROM
-                        player
-                        LEFT JOIN rarity r USING (account_id)
-                    WHERE
-                        (
-                            r.ranking <= 1000
-                            OR r.rarity_ranking <= 1000
-                            OR (
-                                r.ranking >= 9750
-                                AND r.ranking <= 10250
-                            )
-                            OR (
-                                r.rarity_ranking >= 9750
-                                AND r.rarity_ranking <= 10250
-                            )
-                        )
-                        AND last_updated_date < NOW() - INTERVAL 1 DAY
-                    UNION ALL
-                    SELECT
-                        4 AS tier,
-                        online_id,
-                        last_updated_date,
-                        account_id
-                    FROM
-                        player
-                        LEFT JOIN rarity r USING (account_id)
-                    WHERE
-                        (
-                            r.ranking <= 10000
-                            OR r.rarity_ranking <= 10000
-                        )
-                        AND last_updated_date < NOW() - INTERVAL 1 WEEK
-                    UNION ALL
-                    SELECT
-                        5 AS tier,
-                        online_id,
-                        last_updated_date,
-                        account_id
-                    FROM
-                        player
-                    WHERE
-                        `status` != 1
-                ) a
-            WHERE NOT EXISTS (SELECT * FROM setting WHERE scanning = a.online_id AND id != :worker_id)
+            FROM (
+                SELECT
+                    1 AS tier,
+                    pq.online_id,
+                    pq.request_time AS priority_timestamp,
+                    p.account_id
+                FROM
+                    player_queue pq
+                    LEFT JOIN player p ON p.online_id = pq.online_id
+
+                UNION ALL
+
+                SELECT
+                    2 AS tier,
+                    p.online_id,
+                    p.last_updated_date AS priority_timestamp,
+                    p.account_id
+                FROM
+                    player p
+                    JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
+                WHERE
+                    (pr.ranking <= 100 OR pr.rarity_ranking <= 100)
+                    AND p.last_updated_date < nv.cutoff_1h
+
+                UNION ALL
+
+                SELECT
+                    3 AS tier,
+                    p.online_id,
+                    p.last_updated_date AS priority_timestamp,
+                    p.account_id
+                FROM
+                    player p
+                    JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
+                WHERE
+                    (
+                        pr.ranking <= 1000 OR
+                        pr.rarity_ranking <= 1000 OR
+                        (pr.ranking BETWEEN 9750 AND 10250) OR
+                        (pr.rarity_ranking BETWEEN 9750 AND 10250)
+                    )
+                    AND p.last_updated_date < nv.cutoff_1d
+
+                UNION ALL
+
+                SELECT
+                    4 AS tier,
+                    p.online_id,
+                    p.last_updated_date AS priority_timestamp,
+                    p.account_id
+                FROM
+                    player p
+                    JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
+                WHERE
+                    (pr.ranking <= 10000 OR pr.rarity_ranking <= 10000)
+                    AND p.last_updated_date < nv.cutoff_1w
+
+                UNION ALL
+
+                SELECT
+                    5 AS tier,
+                    p.online_id,
+                    p.last_updated_date AS priority_timestamp,
+                    p.account_id
+                FROM
+                    player p
+                WHERE
+                    p.status != 1
+            ) a
+            WHERE NOT EXISTS (
+                SELECT 1 FROM setting s
+                WHERE s.scanning = a.online_id AND s.id != :worker_id
+            )
             ORDER BY
                 tier,
-                request_time,
+                priority_timestamp,
                 online_id
-            LIMIT
-                1
+            LIMIT 1
         ");
         $query->bindParam(":worker_id", $worker["id"], PDO::PARAM_INT);
         $query->execute();

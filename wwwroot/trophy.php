@@ -209,32 +209,32 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("WITH
-                                            rarity AS(
+                                    $query = $database->prepare("
+                                        WITH filtered_trophy_earned AS (
                                             SELECT
                                                 account_id,
-                                                avatar_url,
-                                                online_id,
-                                                trophy_count_npwr,
-                                                trophy_count_sony,
-                                                RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
-                                            FROM `player`
-                                            WHERE `status` = 0
+                                                earned_date
+                                            FROM
+                                                trophy_earned
+                                            WHERE
+                                                np_communication_id = :np_communication_id
+                                                AND order_id = :order_id
+                                                AND earned = 1
                                         )
                                         SELECT
-                                            r.avatar_url,
-                                            r.online_id,
-                                            r.trophy_count_npwr,
-                                            r.trophy_count_sony,
-                                            te.earned_date
+                                            p.avatar_url,
+                                            p.online_id,
+                                            p.trophy_count_npwr,
+                                            p.trophy_count_sony,
+                                            IFNULL(te.earned_date, 'No Timestamp') AS earned_date
                                         FROM
-                                            trophy_earned te
-                                        JOIN rarity r USING (account_id)
+                                            filtered_trophy_earned te
+                                            JOIN player_ranking r ON te.account_id = r.account_id
+                                            JOIN player p ON r.account_id = p.account_id
                                         WHERE
-                                            r.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                            r.ranking <= 10000
                                         ORDER BY
-                                            - te.earned_date
-                                        DESC
+                                            te.earned_date IS NULL, te.earned_date
                                         LIMIT 50");
                                     $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
                                     $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);
@@ -298,32 +298,32 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("WITH
-                                            rarity AS(
+                                    $query = $database->prepare("
+                                        WITH filtered_trophy_earned AS (
                                             SELECT
                                                 account_id,
-                                                avatar_url,
-                                                online_id,
-                                                trophy_count_npwr,
-                                                trophy_count_sony,
-                                                RANK() OVER (ORDER BY `points` DESC, `platinum` DESC, `gold` DESC, `silver` DESC) `ranking`
-                                            FROM `player`
-                                            WHERE `status` = 0
+                                                earned_date
+                                            FROM
+                                                trophy_earned
+                                            WHERE
+                                                np_communication_id = :np_communication_id
+                                                AND order_id = :order_id
+                                                AND earned = 1
                                         )
                                         SELECT
-                                            r.avatar_url,
-                                            r.online_id,
-                                            r.trophy_count_npwr,
-                                            r.trophy_count_sony,
+                                            p.avatar_url,
+                                            p.online_id,
+                                            p.trophy_count_npwr,
+                                            p.trophy_count_sony,
                                             IFNULL(te.earned_date, 'No Timestamp') AS earned_date
                                         FROM
-                                            trophy_earned te
-                                        JOIN rarity r USING (account_id)
+                                            filtered_trophy_earned te
+                                            JOIN player_ranking r ON te.account_id = r.account_id
+                                            JOIN player p ON r.account_id = p.account_id
                                         WHERE
-                                            r.ranking <= 10000 AND te.np_communication_id = :np_communication_id AND te.order_id = :order_id AND te.earned = 1
+                                            r.ranking <= 10000
                                         ORDER BY
-                                            te.earned_date
-                                        DESC
+                                            te.earned_date DESC
                                         LIMIT 50");
                                     $query->bindParam(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
                                     $query->bindParam(":order_id", $trophy["order_id"], PDO::PARAM_STR);

@@ -7,24 +7,16 @@ require_once("/home/psn100/public_html/init.php");
 // Set ranks last week
 do {
     try {
-        $query = $database->prepare("WITH
-            ranking AS(
-                SELECT
-                    p.account_id,
-                    RANK() OVER(ORDER BY p.points DESC, p.platinum DESC, p.gold DESC, p.silver DESC) ranking,
-                    RANK() OVER(ORDER BY p.rarity_points DESC) rarity_ranking
-                FROM
-                    player p
-                WHERE
-                    p.status = 0)
-            UPDATE
-                player p,
-                ranking r
+        $query = $database->prepare("
+            UPDATE player p
+            JOIN player_ranking r ON p.account_id = r.account_id
             SET
                 p.rank_last_week = r.ranking,
-                p.rarity_rank_last_week = r.rarity_ranking
-            WHERE
-                p.account_id = r.account_id");
+                p.rarity_rank_last_week = r.rarity_ranking,
+                p.rank_country_last_week = r.ranking_country,
+                p.rarity_rank_country_last_week = r.rarity_ranking_country
+            WHERE p.status = 0
+        ");
         $query->execute();
         
         $deadlock = false;
@@ -34,47 +26,9 @@ do {
     }
 } while ($deadlock);
 
-// Set country ranks last week
-$countryQuery = $database->prepare("SELECT DISTINCT
-        (country)
-    FROM
-        player
-    ORDER BY NULL");
-$countryQuery->execute();
-while ($country = $countryQuery->fetch()) {
-    do {
-        try {
-            $query = $database->prepare("WITH
-            ranking AS(
-                SELECT
-                    p.account_id,
-                    RANK() OVER(ORDER BY p.points DESC, p.platinum DESC, p.gold DESC, p.silver DESC) ranking,
-                    RANK() OVER(ORDER BY p.rarity_points DESC) rarity_ranking
-                FROM
-                    player p
-                WHERE
-                    p.status = 0 AND p.country = :country)
-            UPDATE
-                player p,
-                ranking r
-            SET
-                p.rank_country_last_week = r.ranking,
-                p.rarity_rank_country_last_week = r.rarity_ranking
-            WHERE
-                p.account_id = r.account_id");
-            $query->bindParam(":country", $country["country"], PDO::PARAM_STR);
-            $query->execute();
-
-            $deadlock = false;
-        } catch (Exception $e) {
-            sleep(3);
-            $deadlock = true;
-        }
-    } while ($deadlock);
-}
-
 // Reset last week ranks for those not on the leaderboard
-$query = $database->prepare("UPDATE
+$query = $database->prepare("
+    UPDATE
         player p
     SET
         p.rank_last_week = 0,
@@ -82,5 +36,6 @@ $query = $database->prepare("UPDATE
         p.rarity_rank_last_week = 0,
         p.rarity_rank_country_last_week = 0
     WHERE
-        p.status != 0");
+        p.status != 0
+");
 $query->execute();
