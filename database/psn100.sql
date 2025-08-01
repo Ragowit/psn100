@@ -1,10 +1,10 @@
 -- phpMyAdmin SQL Dump
--- version 6.0.0-dev+20250701.aa083f168f
+-- version 6.0.0-dev+20250718.d42db65a1e
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 21, 2025 at 08:56 AM
--- Server version: 8.4.5
+-- Generation Time: Aug 01, 2025 at 09:40 AM
+-- Server version: 8.4.6
 -- PHP Version: 8.4.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -74,6 +74,20 @@ CREATE TABLE `player_queue` (
   `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `offset` smallint UNSIGNED NOT NULL DEFAULT '0',
   `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `player_ranking`
+--
+
+CREATE TABLE `player_ranking` (
+  `account_id` bigint UNSIGNED NOT NULL,
+  `ranking` mediumint UNSIGNED NOT NULL,
+  `ranking_country` mediumint UNSIGNED NOT NULL,
+  `rarity_ranking` mediumint UNSIGNED NOT NULL,
+  `rarity_ranking_country` mediumint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -344,6 +358,17 @@ ALTER TABLE `player_queue`
   ADD KEY `idx_ip_address` (`ip_address`);
 
 --
+-- Indexes for table `player_ranking`
+--
+ALTER TABLE `player_ranking`
+  ADD PRIMARY KEY (`account_id`),
+  ADD KEY `ranking` (`ranking`),
+  ADD KEY `ranking_country` (`ranking_country`),
+  ADD KEY `rarity_ranking` (`rarity_ranking`),
+  ADD KEY `rarity_ranking_country` (`rarity_ranking_country`),
+  ADD KEY `idx_pr_account_id_ranking` (`account_id`,`ranking`);
+
+--
 -- Indexes for table `player_report`
 --
 ALTER TABLE `player_report`
@@ -429,10 +454,10 @@ ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 ALTER TABLE `trophy_title_player`
   ADD PRIMARY KEY (`np_communication_id`,`account_id`) USING BTREE,
   ADD KEY `idx_npcid_progress` (`np_communication_id`,`progress`),
-  ADD KEY `idx_account_id` (`account_id`),
   ADD KEY `idx_npcid_lupdate` (`np_communication_id`,`last_updated_date`),
   ADD KEY `trophy_player_idx_progress_last_date` (`progress`,`last_updated_date`),
-  ADD KEY `trophy_player_idx_np_id_account_id_rarity_poi` (`np_communication_id`,`account_id`,`rarity_points`);
+  ADD KEY `trophy_player_idx_np_id_account_id_rarity_poi` (`np_communication_id`,`account_id`,`rarity_points`),
+  ADD KEY `idx_ttp_account_id_progress_updated` (`account_id`,`progress`,`last_updated_date`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -442,7 +467,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1576618;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1577118;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -454,13 +479,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25578;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25621;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40314;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41182;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -472,17 +497,17 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1817537;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1827787;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79077;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79672;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56560;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56887;
 COMMIT;
