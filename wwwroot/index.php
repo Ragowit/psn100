@@ -142,10 +142,9 @@ if (empty($elements[0])) { // No path elements means home
                         r.rarity_ranking_country
                     FROM
                         player p
-                    JOIN player_ranking r ON p.account_id = r.account_id
+                    LEFT JOIN player_ranking r ON p.account_id = r.account_id
                     WHERE
                         p.account_id = :account_id
-                        AND p.status = 0
                 ");
                 $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
                 $query->execute();
