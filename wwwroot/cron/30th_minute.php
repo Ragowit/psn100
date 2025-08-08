@@ -1161,6 +1161,12 @@ while (true) {
                 }
             }
 
+            $totalTrophiesEnd = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
+            if ($totalTrophiesStart != $totalTrophiesEnd) { // New trophies during the scan, restart and get them as well.
+                $recheck = "";
+                continue;
+            }
+
             // Delete missing 0% games (and this will also delete hidden games, and any trophies for those hidden games)
             $query = $database->prepare("SELECT COUNT(ttp.np_communication_id)
                 FROM   trophy_title_player ttp
@@ -1298,12 +1304,6 @@ while (true) {
             $query->bindValue(":points", $points, PDO::PARAM_INT);
             $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
             $query->execute();
-
-            $totalTrophiesEnd = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
-            if ($totalTrophiesStart != $totalTrophiesEnd) { // New trophies during the scan, restart and get them as well.
-                $recheck = "";
-                continue;
-            }
 
             // Set player status if not a cheater
             $playerStatus = 0;
