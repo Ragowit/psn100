@@ -759,38 +759,53 @@ while (true) {
 
             // Look through each and every game
             foreach ($user->trophyTitles() as $trophyTitle) {
-                array_push($scannedGames, $trophyTitle->npCommunicationId());
-
+                $npid = $trophyTitle->npCommunicationId();
+                array_push($scannedGames, $npid);
                 $newTrophies = false;
+
                 $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
-                // Check if the current game last updated date is the same as in our database
-                if (array_key_exists($trophyTitle->npCommunicationId(), $gameLastUpdatedDate) && $sonyLastUpdatedDate->format("Y-m-d H:i:s") === date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s")) {
-                    // Check if the current player is not new and doesn't have hidden trophies (these players will continue on with scanning, in order to find if the trophies are unhidden)
-                    if ($playerData["last_updated_date"] != null && ($playerData["trophy_count_npwr"] == $playerData["trophy_count_sony"])) {
-                        // Check if our game count is the same as PSN game count, if not so has the player probably deleted some 0% games.
-                        $query = $database->prepare("SELECT COUNT(ttp.np_communication_id)
-                            FROM   trophy_title_player ttp
-                            WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
-                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                        $query->execute();
-                        $ourGameCount = $query->fetchColumn();
-                        if ($ourGameCount == $psnGameCount) {
-                            // Check if we have passed player's last update date, we can assume we are done if so and break out of the scan loop.
-                            if (date_create($gameLastUpdatedDate[$trophyTitle->npCommunicationId()])->format("Y-m-d H:i:s") < date_create($playerData["last_updated_date"])->format("Y-m-d H:i:s")) {
-                                break;
+                // Does this user already have the game?
+                if (isset($gameLastUpdatedDate[$npid])) {
+                    $dbLastUpdatedDate = date_create($gameLastUpdatedDate[$npid]);
+
+                    // Is the timestamp for this game the same as before?
+                    if ($sonyLastUpdatedDate == $dbLastUpdatedDate) {
+                        $isReturningPlayer = $playerData["last_updated_date"] !== null;
+                        $noHiddenTrophies = $playerData["trophy_count_npwr"] == $playerData["trophy_count_sony"];
+
+                        if ($isReturningPlayer && $noHiddenTrophies) {
+                            // Check if game count is the same
+                            $stmt = $database->prepare("
+                                SELECT COUNT(ttp.np_communication_id)
+                                FROM trophy_title_player ttp
+                                WHERE ttp.account_id = :account_id
+                                AND ttp.np_communication_id LIKE 'N%'
+                            ");
+                            $stmt->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                            $stmt->execute();
+                            $ourGameCount = (int)$stmt->fetchColumn();
+
+                            if ($ourGameCount === $psnGameCount) {
+                                $playerLastUpdated = date_create($playerData["last_updated_date"]);
+
+                                // Check if we have passed player's last update date
+                                if ($dbLastUpdatedDate < $playerLastUpdated) {
+                                    // Assume we are done, and break out of the scan loop
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    // Game seems scanned already, skip to next.
-                    continue;
+                        // Game seems scanned already, skip to next.
+                        continue;
+                    }
                 }
 
                 // Add trophy title (game) information into database
                 $query = $database->prepare("SELECT set_version
                     FROM   trophy_title
                     WHERE  np_communication_id = :np_communication_id ");
-                $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                 $query->execute();
                 $setVersion = $query->fetchColumn();
                 if (!$setVersion || $setVersion != $trophyTitle->trophySetVersion()) {
@@ -824,7 +839,7 @@ while (true) {
                         UPDATE
                             icon_url = new.icon_url,
                             platform = new.platform");
-                    $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                     $query->bindValue(":name", $trophyTitle->name(), PDO::PARAM_STR);
                     $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                     $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
@@ -839,13 +854,13 @@ while (true) {
                 }
 
                 // Get "groups" (game and DLCs)
-                foreach ($client->trophies($trophyTitle->npCommunicationId(), $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
+                foreach ($client->trophies($npid, $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
                     // Add trophy group (game + dlcs) into database
                     $query = $database->prepare("SELECT Count(*)
                         FROM   trophy_group
                         WHERE  np_communication_id = :np_communication_id
                             AND group_id = :group_id ");
-                    $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                     $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                     $query->execute();
                     $check = $query->fetchColumn();
@@ -875,7 +890,7 @@ while (true) {
                             UPDATE
                                 detail = new.detail,
                                 icon_url = new.icon_url");
-                        $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                        $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                         $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                         $query->bindValue(":name", $trophyGroup->name(), PDO::PARAM_STR);
                         $query->bindValue(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
@@ -890,7 +905,7 @@ while (true) {
                                 WHERE  np_communication_id = :np_communication_id
                                     AND group_id = :group_id
                                     AND order_id = :order_id ");
-                            $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                            $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                             $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                             $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
                             $query->execute();
@@ -950,7 +965,7 @@ while (true) {
                                         progress_target_value = new.progress_target_value,
                                         reward_name = new.reward_name,
                                         reward_image_url = new.reward_image_url");
-                                $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                                $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                                 $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                                 $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
                                 $query->bindValue(":hidden", $trophy->hidden(), PDO::PARAM_INT);
@@ -983,13 +998,13 @@ while (true) {
                             $query = $database->prepare("SELECT status
                                 FROM   trophy_title
                                 WHERE  np_communication_id = :np_communication_id ");
-                            $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                            $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                             $query->execute();
                             $status = $query->fetchColumn();
                             if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
-                                Psn100Log("New trophies added for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
+                                Psn100Log("New trophies added for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
                             } else {
-                                Psn100Log("SET VERSION for ". $trophyTitle->name() .". ". $trophyTitle->npCommunicationId() . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
+                                Psn100Log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
                             }
 
                             
@@ -1001,7 +1016,7 @@ while (true) {
                     $query = $database->prepare("SELECT id
                         FROM   trophy_title
                         WHERE  np_communication_id = :np_communication_id ");
-                    $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                     $query->execute();
                     $id = $query->fetchColumn();
 
@@ -1019,7 +1034,7 @@ while (true) {
                         WHERE
                             np_communication_id = :np_communication_id");
                     $query->bindValue(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
-                    $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                     $query->execute();
                 }
 
@@ -1059,7 +1074,7 @@ while (true) {
                                     earned_date = IF(trophy_earned.earned = 0, new.earned_date, trophy_earned.earned_date),
                                     progress = new.progress,
                                     earned = new.earned");
-                            $query->bindValue(":np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                            $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                             $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                             $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
                             $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
@@ -1081,7 +1096,7 @@ while (true) {
                                 WHERE  child_np_communication_id = :child_np_communication_id
                                         AND child_group_id = :child_group_id
                                         AND child_order_id = :child_order_id ");
-                            $query->bindValue(":child_np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                            $query->bindValue(":child_np_communication_id", $npid, PDO::PARAM_STR);
                             $query->bindValue(":child_group_id", $trophyGroup->id(), PDO::PARAM_STR);
                             $query->bindValue(":child_order_id", $trophy->id(), PDO::PARAM_INT);
                             $query->execute();
@@ -1127,18 +1142,18 @@ while (true) {
                     }
 
                     // Recalculate trophies for trophy group and player
-                    RecalculateTrophyGroup($trophyTitle->npCommunicationId(), $trophyGroup->id(), $user->accountId());
+                    RecalculateTrophyGroup($npid, $trophyGroup->id(), $user->accountId());
                 }
 
                 // Recalculate trophies for trophy title and player
-                RecalculateTrophyTitle($trophyTitle->npCommunicationId(), $trophyTitle->lastUpdatedDateTime(), $newTrophies, $user->accountId(), false);
+                RecalculateTrophyTitle($npid, $trophyTitle->lastUpdatedDateTime(), $newTrophies, $user->accountId(), false);
 
                 // Game Merge stuff
                 $query = $database->prepare("SELECT DISTINCT parent_np_communication_id, 
                                     parent_group_id 
                     FROM   trophy_merge 
                     WHERE  child_np_communication_id = :child_np_communication_id ");
-                $query->bindValue(":child_np_communication_id", $trophyTitle->npCommunicationId(), PDO::PARAM_STR);
+                $query->bindValue(":child_np_communication_id", $npid, PDO::PARAM_STR);
                 $query->execute();
                 while ($row = $query->fetch()) {
                     RecalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], $user->accountId());
