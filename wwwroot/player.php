@@ -374,11 +374,17 @@ require_once("header.php");
 
                                                     <?php
                                                     if ($playerGame["progress"] == 100) {
-                                                        $query = $database->prepare("SELECT Min(earned_date) AS first_trophy,
-                                                                Max(earned_date) AS last_trophy
-                                                            FROM   trophy_earned
-                                                            WHERE  np_communication_id = :np_communication_id
-                                                                AND account_id = :account_id ");
+                                                        $query = $database->prepare("
+                                                            SELECT
+                                                                MIN(earned_date) AS first_trophy,
+                                                                MAX(earned_date) AS last_trophy
+                                                            FROM
+                                                                trophy_earned
+                                                            WHERE
+                                                                np_communication_id = :np_communication_id
+                                                                AND account_id = :account_id
+                                                                AND earned = 1
+                                                        ");
                                                         $query->bindValue(":np_communication_id", $playerGame["np_communication_id"], PDO::PARAM_STR);
                                                         $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
                                                         $query->execute();
