@@ -55,7 +55,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         </div>
         <?php
     }
-    if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
+    if ($player["trophy_count_npwr"] < $player["trophy_count_sony"] && $player["status"] !== 3) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
