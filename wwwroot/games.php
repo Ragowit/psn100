@@ -300,7 +300,7 @@ $offset = ($page - 1) * $limit;
             }
 
             $gameLink = $game["id"] ."-". slugify($game["name"]);
-            if (isset($player)) {
+            if (!empty($player)) {
                 $gameLink .= "/". $player;
             }
             ?>
