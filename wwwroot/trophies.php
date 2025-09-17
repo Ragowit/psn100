@@ -77,14 +77,14 @@ $offset = ($page - 1) * $limit;
                                 <tr>
                                     <td scope="row" class="text-center align-middle">
                                         <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>">
-                                            <img src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" style="width: 10rem;" />
+                                            <img src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= htmlentities($trophy["game_name"], ENT_QUOTES, "UTF-8"); ?>" title="<?= htmlentities($trophy["game_name"], ENT_QUOTES, "UTF-8"); ?>" style="width: 10rem;" />
                                         </a>
                                     </td>
                                     <td class="align-middle">
                                         <div class="hstack gap-3">
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>">
-                                                    <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="width: 5rem;" />
+                                                    <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= htmlentities($trophy["trophy_name"], ENT_QUOTES, "UTF-8"); ?>" title="<?= htmlentities($trophy["trophy_name"], ENT_QUOTES, "UTF-8"); ?>" style="width: 5rem;" />
                                                 </a>
                                             </div>
 
