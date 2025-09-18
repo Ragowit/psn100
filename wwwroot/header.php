@@ -11,15 +11,20 @@
 
         <?php
         if (isset($metaData)) {
-            echo "<link rel=\"canonical\" href=\"". $metaData->url ."\" />";
-            echo "<meta property=\"og:description\" content=\"". $metaData->description ."\">";
-            echo "<meta property=\"og:image\" content=\"". $metaData->image ."\">";
+            $canonicalUrl = htmlspecialchars($metaData->url ?? '', ENT_QUOTES, 'UTF-8');
+            $description = htmlspecialchars($metaData->description ?? '', ENT_QUOTES, 'UTF-8');
+            $image = htmlspecialchars($metaData->image ?? '', ENT_QUOTES, 'UTF-8');
+            $titleMeta = htmlspecialchars($metaData->title ?? '', ENT_QUOTES, 'UTF-8');
+
+            echo "<link rel=\"canonical\" href=\"". $canonicalUrl ."\" />";
+            echo "<meta property=\"og:description\" content=\"". $description ."\">";
+            echo "<meta property=\"og:image\" content=\"". $image ."\">";
             echo "<meta property=\"og:site_name\" content=\"PSN 100%\">";
-            echo "<meta property=\"og:title\" content=\"". $metaData->title ."\">";
+            echo "<meta property=\"og:title\" content=\"". $titleMeta ."\">";
             echo "<meta property=\"og:type\" content=\"article\">";
-            echo "<meta property=\"og:url\" content=\"". $metaData->url ."\">";
+            echo "<meta property=\"og:url\" content=\"". $canonicalUrl ."\">";
             echo "<meta name=\"twitter:card\" content=\"summary_large_image\">";
-            echo "<meta name=\"twitter:image:alt\" content=\"". $metaData->title ."\">";
+            echo "<meta name=\"twitter:image:alt\" content=\"". $titleMeta ."\">";
         }
         ?>
 
