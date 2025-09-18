@@ -7,7 +7,11 @@ if ($maintenance) {
 
 require_once("init.php");
 
-$path = ltrim($_SERVER["SCRIPT_URL"], "/"); // Trim leading slash(es)
+// SCRIPT_URL isn't available in all web server configurations (for example,
+// the PHP built-in development server). Fall back to REQUEST_URI and strip any
+// query string so routing works everywhere without PHP notices.
+$requestUri = $_SERVER["SCRIPT_URL"] ?? ($_SERVER["REQUEST_URI"] ?? "/");
+$path = ltrim(parse_url($requestUri, PHP_URL_PATH) ?: "", "/"); // Trim leading slash(es)
 $elements = explode("/", $path); // Split path on slashes
 
 if (empty($elements[0])) { // No path elements means home
