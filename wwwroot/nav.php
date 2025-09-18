@@ -11,6 +11,11 @@ $navPlayer = $_GET["player"] ?? "";
 $navFilter = $_GET["filter"] ?? "";
 $navSearch = $_GET["search"] ?? "";
 
+$navSortHtml = htmlspecialchars($navSort, ENT_QUOTES, 'UTF-8');
+$navPlayerHtml = htmlspecialchars($navPlayer, ENT_QUOTES, 'UTF-8');
+$navFilterHtml = htmlspecialchars($navFilter, ENT_QUOTES, 'UTF-8');
+$navSearchHtml = htmlspecialchars($navSearch, ENT_QUOTES, 'UTF-8');
+
 if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
     $leaderboardActive = " active";
 } elseif (str_starts_with($url, "/game")) {
@@ -37,10 +42,10 @@ if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
 
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <form action="/game" class="d-flex" role="search">
-                <input type="hidden" name="sort" value="<?= $navSort; ?>">
-                <input type="hidden" name="player" value="<?= $navPlayer; ?>">
-                <input type="hidden" name="filter" value="<?= $navFilter; ?>">
-                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= htmlentities($navSearch); ?>">
+                <input type="hidden" name="sort" value="<?= $navSortHtml; ?>">
+                <input type="hidden" name="player" value="<?= $navPlayerHtml; ?>">
+                <input type="hidden" name="filter" value="<?= $navFilterHtml; ?>">
+                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= $navSearchHtml; ?>">
                 <button class="btn btn-outline-primary" type="submit">Search</button>
             </form>
 
