@@ -1,6 +1,6 @@
 <?php
 $aboutMe = nl2br(htmlentities($player["about_me"], ENT_QUOTES, 'UTF-8'));
-$countryName = Locale::getDisplayRegion("-" . $player["country"], 'en');
+$countryName = getCountryName($player["country"]);
 $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["platinum"];
 ?>
 

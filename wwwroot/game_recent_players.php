@@ -135,7 +135,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
                             $rank = 0;
                             foreach ($rows as $row) {
-                                $countryName = Locale::getDisplayRegion("-" . $row["country"], 'en');
+                                $countryName = getCountryName($row["country"]);
                                 $paramsAvatar = $params;
                                 $paramsAvatar["avatar"] = $row["avatar_url"];
                                 $paramsCountry = $params;

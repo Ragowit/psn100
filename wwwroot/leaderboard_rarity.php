@@ -122,7 +122,7 @@ unset($paramsWithoutPage["page"]);
                             $players = $query->fetchAll();
 
                             foreach ($players as $player) {
-                                $countryName = Locale::getDisplayRegion("-" . $player["country"], "en");
+                                $countryName = getCountryName($player["country"]);
                                 if (isset($_GET["player"]) && $_GET["player"] == $player["online_id"]) {
                                     echo "<tr id=\"". $player["online_id"] ."\" class=\"table-primary\">";
                                 } else {

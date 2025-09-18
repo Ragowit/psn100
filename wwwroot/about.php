@@ -111,7 +111,7 @@ require_once("header.php");
                                     $players = $query->fetchAll();
 
                                     foreach ($players as $player) {
-                                        $countryName = Locale::getDisplayRegion("-" . $player["country"], "en");
+                                        $countryName = getCountryName($player["country"]);
                                         
                                         if ($player["status"] != 0) {
                                             $rank = "N/A";
