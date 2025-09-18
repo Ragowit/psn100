@@ -178,7 +178,7 @@ unset($paramsWithoutPage["page"]);
 
                             $rank = $offset;
                             foreach ($rows as $row) {
-                                $countryName = Locale::getDisplayRegion("-" . $row["country"], 'en');
+                                $countryName = getCountryName($row["country"]);
                                 $paramsAvatar = $paramsWithoutPage;
                                 $paramsAvatar["avatar"] = $row["avatar_url"];
                                 $paramsCountry = $paramsWithoutPage;

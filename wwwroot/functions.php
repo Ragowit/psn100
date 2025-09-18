@@ -31,3 +31,25 @@ function slugify($text)
     $text = preg_replace('/[^a-z0-9]+/', '-', $text);
     return trim($text, '-');
 }
+
+function getCountryName($countryCode)
+{
+    $countryCode = strtoupper(trim((string) ($countryCode ?? '')));
+
+    if ($countryCode === '') {
+        return 'Unknown';
+    }
+
+    if (class_exists('Locale')) {
+        try {
+            $name = \Locale::getDisplayRegion('-' . $countryCode, 'en');
+            if (is_string($name) && $name !== '') {
+                return $name;
+            }
+        } catch (\Throwable $exception) {
+            // Ignore and fall back to returning the country code.
+        }
+    }
+
+    return $countryCode;
+}
