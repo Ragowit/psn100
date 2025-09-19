@@ -1,0 +1,1051 @@
+<?php
+
+class TrophyMergeService
+{
+    private PDO $database;
+
+    public function __construct(PDO $database)
+    {
+        $this->database = $database;
+    }
+
+    public function mergeSpecificTrophies(int $parentTrophyId, array $childTrophyIds): string
+    {
+        if (empty($childTrophyIds)) {
+            throw new InvalidArgumentException('At least one child trophy is required.');
+        }
+
+        $parentTrophy = $this->getTrophyById($parentTrophyId);
+
+        if (!str_starts_with($parentTrophy['np_communication_id'], 'MERGE')) {
+            throw new InvalidArgumentException('Parent must be a merge title.');
+        }
+
+        foreach ($childTrophyIds as $childTrophyId) {
+            $childTrophyId = (int) $childTrophyId;
+            $childTrophy = $this->getTrophyById($childTrophyId);
+
+            if (str_starts_with($childTrophy['np_communication_id'], 'MERGE')) {
+                throw new InvalidArgumentException("Child can't be a merge title.");
+            }
+
+            $this->insertTrophyMergeMappingFromIds($childTrophyId, $parentTrophyId);
+            $this->markGameAsMergedByNpId($childTrophy['np_communication_id']);
+
+            $childGameId = $this->getGameIdByTrophyId($childTrophyId);
+
+            $this->copyTrophyEarned(
+                $childTrophy['np_communication_id'],
+                $childTrophy['group_id'],
+                (int) $childTrophy['order_id'],
+                $parentTrophy['np_communication_id'],
+                $parentTrophy['group_id'],
+                (int) $parentTrophy['order_id']
+            );
+
+            $this->updateTrophyGroupPlayer($childGameId);
+            $this->updateTrophyTitlePlayer($childGameId);
+        }
+
+        return 'The trophies have been merged.';
+    }
+
+    public function mergeGames(int $childGameId, int $parentGameId, string $method): string
+    {
+        $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
+
+        if (str_starts_with($childNpCommunicationId, 'MERGE')) {
+            throw new InvalidArgumentException("Child can't be a merge title.");
+        }
+
+        $parentNpCommunicationId = $this->getGameNpCommunicationId($parentGameId);
+
+        if (!str_starts_with($parentNpCommunicationId, 'MERGE')) {
+            throw new InvalidArgumentException('Parent must be a merge title.');
+        }
+
+        $message = '';
+
+        $this->beginTransaction();
+
+        try {
+            switch ($method) {
+                case 'name':
+                    $message .= $this->insertMappingsByName($childGameId, $parentGameId);
+                    break;
+                case 'icon':
+                    $message .= $this->insertMappingsByIcon($childGameId, $parentGameId);
+                    break;
+                case 'order':
+                    $this->insertMappingsByOrder($childGameId, $parentGameId);
+                    break;
+                default:
+                    throw new InvalidArgumentException('Wrong input');
+            }
+
+            $this->commitTransaction();
+        } catch (Throwable $exception) {
+            $this->rollBackTransaction();
+            throw $exception;
+        }
+
+        $this->markGameAsMergedById($childGameId);
+        $this->copyMergedTrophies($childGameId);
+        $this->updateTrophyGroupPlayer($childGameId);
+        $this->updateTrophyTitlePlayer($childGameId);
+        $this->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
+        $this->logChange('GAME_MERGE', $childGameId, $parentGameId);
+
+        return $message . 'The games have been merged.';
+    }
+
+    public function cloneGame(int $childGameId): string
+    {
+        $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
+
+        if (str_starts_with($childNpCommunicationId, 'MERGE')) {
+            throw new InvalidArgumentException("Can't clone an already cloned game.");
+        }
+
+        $analyze = $this->database->prepare('ANALYZE TABLE `trophy_title`');
+        $analyze->execute();
+
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT auto_increment
+            FROM   information_schema.tables
+            WHERE  table_name = 'trophy_title'
+SQL
+        );
+        $query->execute();
+
+        $gameId = $query->fetchColumn();
+
+        if ($gameId === false) {
+            throw new RuntimeException('Unable to determine next trophy title identifier.');
+        }
+
+        $cloneNpCommunicationId = 'MERGE_' . str_pad((string) $gameId, 6, '0', STR_PAD_LEFT);
+
+        $this->executeTransaction(function () use ($cloneNpCommunicationId, $childGameId, $childNpCommunicationId): void {
+            $query = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy_title
+                            (np_communication_id,
+                             name,
+                             detail,
+                             icon_url,
+                             platform,
+                             bronze,
+                             silver,
+                             gold,
+                             platinum,
+                             message,
+                             set_version)
+                SELECT :np_communication_id,
+                       name,
+                       detail,
+                       icon_url,
+                       platform,
+                       bronze,
+                       silver,
+                       gold,
+                       platinum,
+                       message,
+                       set_version
+                FROM   trophy_title
+                WHERE  id = :id
+SQL
+            );
+            $query->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
+            $query->bindValue(':id', $childGameId, PDO::PARAM_INT);
+            $query->execute();
+
+            $query = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy_group
+                            (np_communication_id,
+                             group_id,
+                             name,
+                             detail,
+                             icon_url,
+                             bronze,
+                             silver,
+                             gold,
+                             platinum)
+                SELECT :np_communication_id,
+                       group_id,
+                       name,
+                       detail,
+                       icon_url,
+                       bronze,
+                       silver,
+                       gold,
+                       platinum
+                FROM   trophy_group
+                WHERE  np_communication_id = :child_np_communication_id
+SQL
+            );
+            $query->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
+            $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy
+                            (np_communication_id,
+                             group_id,
+                             order_id,
+                             hidden,
+                             type,
+                             name,
+                             detail,
+                             icon_url,
+                             status,
+                             progress_target_value)
+                SELECT :np_communication_id,
+                       group_id,
+                       order_id,
+                       hidden,
+                       type,
+                       name,
+                       detail,
+                       icon_url,
+                       status,
+                       progress_target_value
+                FROM   trophy
+                WHERE  np_communication_id = :child_np_communication_id
+SQL
+            );
+            $query->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
+            $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $query->execute();
+        });
+
+        $this->logChange('GAME_CLONE', $childGameId, (int) $gameId);
+
+        return 'The game have been cloned.';
+    }
+
+    private function getTrophyById(int $trophyId): array
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT np_communication_id, group_id, order_id
+            FROM   trophy
+            WHERE  id = :trophy_id
+SQL
+        );
+        $query->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
+        $query->execute();
+
+        $trophy = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($trophy === false) {
+            throw new InvalidArgumentException('Trophy not found.');
+        }
+
+        $trophy['order_id'] = (int) $trophy['order_id'];
+
+        return $trophy;
+    }
+
+    private function getGameIdByTrophyId(int $trophyId): int
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT id
+            FROM   trophy_title
+            WHERE  np_communication_id = (SELECT np_communication_id
+                                            FROM   trophy
+                                            WHERE  id = :child_trophy_id)
+SQL
+        );
+        $query->bindValue(':child_trophy_id', $trophyId, PDO::PARAM_INT);
+        $query->execute();
+
+        $childGameId = $query->fetchColumn();
+
+        if ($childGameId === false) {
+            throw new RuntimeException('Unable to locate child game identifier.');
+        }
+
+        return (int) $childGameId;
+    }
+
+    private function copyTrophyEarned(
+        string $childNpCommunicationId,
+        string $childGroupId,
+        int $childOrderId,
+        string $parentNpCommunicationId,
+        string $parentGroupId,
+        int $parentOrderId
+    ): void {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            INSERT INTO trophy_earned(
+                np_communication_id,
+                group_id,
+                order_id,
+                account_id,
+                earned_date,
+                progress,
+                earned
+            ) WITH child AS(
+                SELECT
+                    account_id,
+                    earned_date,
+                    progress,
+                    earned
+                FROM
+                    trophy_earned
+                WHERE
+                    np_communication_id = :child_np_communication_id AND order_id = :child_order_id
+            )
+            SELECT
+                :parent_np_communication_id,
+                :parent_group_id,
+                :parent_order_id,
+                child.account_id,
+                child.earned_date,
+                child.progress,
+                child.earned
+            FROM
+                child
+            ON DUPLICATE KEY
+            UPDATE
+                earned_date = IF(
+                    child.earned_date IS NULL,
+                    trophy_earned.earned_date,
+                    IF(
+                        trophy_earned.earned_date IS NULL,
+                        child.earned_date,
+                        IF(
+                            child.earned_date < trophy_earned.earned_date,
+                            child.earned_date,
+                            trophy_earned.earned_date
+                        )
+                    )
+                ),
+                progress = IF(
+                    child.progress IS NULL,
+                    trophy_earned.progress,
+                    IF(
+                        trophy_earned.progress IS NULL,
+                        child.progress,
+                        IF(
+                            child.progress > trophy_earned.progress,
+                            child.progress,
+                            trophy_earned.progress
+                        )
+                    )
+                ),
+                earned = IF(
+                    child.earned = 1,
+                    child.earned,
+                    trophy_earned.earned
+                )
+SQL
+        );
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':child_order_id', $childOrderId, PDO::PARAM_INT);
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent_group_id', $parentGroupId, PDO::PARAM_STR);
+        $query->bindValue(':parent_order_id', $parentOrderId, PDO::PARAM_INT);
+        $query->execute();
+    }
+
+    private function updateTrophyGroupPlayer(int $childGameId): void
+    {
+        $groups = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT
+                parent_np_communication_id,
+                parent_group_id
+            FROM
+                trophy_merge
+            WHERE
+                child_np_communication_id =(
+                SELECT
+                    np_communication_id
+                FROM
+                    trophy_title
+                WHERE
+                    id = :game_id
+            )
+SQL
+        );
+        $groups->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
+        $groups->execute();
+
+        while ($group = $groups->fetch(PDO::FETCH_ASSOC)) {
+            $query = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy_group_player(
+                    np_communication_id,
+                    group_id,
+                    account_id,
+                    bronze,
+                    silver,
+                    gold,
+                    platinum,
+                    progress
+                ) WITH tg AS(
+                    SELECT
+                        platinum,
+                        bronze * 15 + silver * 30 + gold * 90 AS max_score
+                    FROM
+                        trophy_group
+                    WHERE
+                        np_communication_id = :np_communication_id AND group_id = :group_id
+                ),
+                player AS(
+                    SELECT
+                        account_id,
+                        SUM(TYPE = 'bronze') AS bronze,
+                        SUM(TYPE = 'silver') AS silver,
+                        SUM(TYPE = 'gold') AS gold,
+                        SUM(TYPE = 'platinum') AS platinum,
+                        SUM(TYPE = 'bronze') * 15 + SUM(TYPE = 'silver') * 30 + SUM(TYPE = 'gold') * 90 AS score
+                    FROM
+                        trophy_earned te
+                    JOIN trophy t ON
+                        t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND t.status = 0
+                    WHERE
+                        te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
+                    GROUP BY
+                        account_id
+                )
+                SELECT
+                    *
+                FROM
+                    (
+                    SELECT
+                        :np_communication_id,
+                        :group_id,
+                        player.account_id,
+                        player.bronze,
+                        player.silver,
+                        player.gold,
+                        player.platinum,
+                        IF(
+                            player.score = 0,
+                            0,
+                            IFNULL(
+                                GREATEST(
+                                    FLOOR(
+                                        IF(
+                                            (player.score / tg.max_score) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
+                                            99,
+                                            (player.score / tg.max_score) * 100
+                                        )
+                                    ),
+                                    1
+                                ),
+                                0
+                            )
+                        ) AS progress
+                    FROM
+                        tg,
+                        player
+                ) AS NEW
+                ON DUPLICATE KEY
+                UPDATE
+                    bronze = NEW.bronze,
+                    silver = NEW.silver,
+                    gold = NEW.gold,
+                    platinum = NEW.platinum,
+                    progress = NEW.progress
+SQL
+            );
+            $query->bindValue(':np_communication_id', $group['parent_np_communication_id'], PDO::PARAM_STR);
+            $query->bindValue(':group_id', $group['parent_group_id'], PDO::PARAM_STR);
+            $query->execute();
+
+            $query = $this->database->prepare(
+                <<<'SQL'
+                INSERT IGNORE
+                INTO trophy_group_player(
+                    np_communication_id,
+                    group_id,
+                    account_id,
+                    bronze,
+                    silver,
+                    gold,
+                    platinum,
+                    progress
+                ) WITH player AS(
+                    SELECT
+                        account_id
+                    FROM
+                        trophy_group_player tgp
+                    WHERE
+                        tgp.bronze = 0 AND tgp.silver = 0 AND tgp.gold = 0 AND tgp.platinum = 0 AND tgp.progress = 0 AND tgp.np_communication_id =(
+                        SELECT
+                            np_communication_id
+                        FROM
+                            trophy_title
+                        WHERE
+                            id = :game_id
+                    ) AND tgp.group_id = :group_id
+                )
+                SELECT
+                    :np_communication_id,
+                    :group_id,
+                    player.account_id,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                FROM
+                    player
+SQL
+            );
+            $query->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
+            $query->bindValue(':np_communication_id', $group['parent_np_communication_id'], PDO::PARAM_STR);
+            $query->bindValue(':group_id', $group['parent_group_id'], PDO::PARAM_STR);
+            $query->execute();
+        }
+    }
+
+    private function updateTrophyTitlePlayer(int $childGameId): void
+    {
+        $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
+
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT
+                parent_np_communication_id
+            FROM
+                trophy_merge
+            WHERE
+                child_np_communication_id = :child_np_communication_id
+SQL
+        );
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $title = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($title === false) {
+            throw new RuntimeException('Unable to locate parent trophy title.');
+        }
+
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                platinum,
+                bronze * 15 + silver * 30 + gold * 90 AS max_score
+            FROM
+                trophy_title
+            WHERE
+                np_communication_id = :np_communication_id
+SQL
+        );
+        $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $query->execute();
+
+        $trophyTitle = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($trophyTitle === false) {
+            throw new RuntimeException('Unable to load trophy title data.');
+        }
+
+        $query = $this->database->prepare(
+            <<<'SQL'
+            INSERT INTO trophy_title_player(
+                np_communication_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress,
+                last_updated_date
+            ) WITH player AS(
+                SELECT
+                    account_id,
+                    SUM(tgp.bronze) AS bronze,
+                    SUM(tgp.silver) AS silver,
+                    SUM(tgp.gold) AS gold,
+                    SUM(tgp.platinum) AS platinum,
+                    SUM(tgp.bronze) * 15 + SUM(tgp.silver) * 30 + SUM(tgp.gold) * 90 AS score,
+                    ttp.last_updated_date
+                FROM
+                    trophy_group_player tgp
+                JOIN trophy_title_player ttp USING(account_id)
+                WHERE
+                    tgp.np_communication_id = :np_communication_id AND ttp.np_communication_id = :child_np_communication_id
+            GROUP BY
+                account_id,
+                last_updated_date
+            )
+            SELECT
+                *
+            FROM
+                (
+                SELECT
+                    :np_communication_id,
+                    player.account_id,
+                    player.bronze,
+                    player.silver,
+                    player.gold,
+                    player.platinum,
+                    IF(
+                        player.score = 0,
+                        0,
+                        IFNULL(
+                            GREATEST(
+                                FLOOR(
+                                    IF(
+                                        (player.score / :max_score) * 100 = 100 AND :platinum = 1 AND player.platinum = 0,
+                                        99,
+                                        (player.score / :max_score) * 100
+                                    )
+                                ),
+                                1
+                            ),
+                            0
+                        )
+                    ) AS progress,
+                    player.last_updated_date
+                FROM
+                    player
+            ) AS NEW
+            ON DUPLICATE KEY
+            UPDATE
+                bronze = NEW.bronze,
+                silver = NEW.silver,
+                gold = NEW.gold,
+                platinum = NEW.platinum,
+                progress = NEW.progress,
+                last_updated_date = IF(
+                    NEW.last_updated_date > trophy_title_player.last_updated_date,
+                    NEW.last_updated_date,
+                    trophy_title_player.last_updated_date
+                )
+SQL
+        );
+        $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':max_score', $trophyTitle['max_score'], PDO::PARAM_INT);
+        $query->bindValue(':platinum', $trophyTitle['platinum'], PDO::PARAM_INT);
+        $query->execute();
+
+        $query = $this->database->prepare(
+            <<<'SQL'
+            INSERT IGNORE
+            INTO trophy_title_player(
+                np_communication_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress,
+                last_updated_date
+            ) WITH player AS(
+                SELECT
+                    account_id,
+                    progress,
+                    last_updated_date
+                FROM
+                    trophy_title_player ttp
+                WHERE
+                    ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 AND ttp.np_communication_id = :child_np_communication_id
+            )
+            SELECT
+                :np_communication_id,
+                player.account_id,
+                0,
+                0,
+                0,
+                0,
+                player.progress,
+                player.last_updated_date
+            FROM
+                player
+SQL
+        );
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function insertTrophyMergeMappingFromIds(int $childTrophyId, int $parentTrophyId): void
+    {
+        $this->executeTransaction(function () use ($childTrophyId, $parentTrophyId): void {
+            $query = $this->database->prepare(
+                <<<'SQL'
+                INSERT IGNORE
+                into   trophy_merge
+                       (
+                              child_np_communication_id,
+                              child_group_id,
+                              child_order_id,
+                              parent_np_communication_id,
+                              parent_group_id,
+                              parent_order_id
+                       )
+                SELECT child.np_communication_id,
+                       child.group_id,
+                       child.order_id,
+                       parent.np_communication_id,
+                       parent.group_id,
+                       parent.order_id
+                FROM   trophy child,
+                       trophy parent
+                WHERE  child.id = :child_trophy_id
+                AND    parent.id = :parent_trophy_id
+SQL
+            );
+            $query->bindValue(':child_trophy_id', $childTrophyId, PDO::PARAM_INT);
+            $query->bindValue(':parent_trophy_id', $parentTrophyId, PDO::PARAM_INT);
+            $query->execute();
+        });
+    }
+
+    private function markGameAsMergedByNpId(string $npCommunicationId): void
+    {
+        $this->executeTransaction(function () use ($npCommunicationId): void {
+            $query = $this->database->prepare(
+                <<<'SQL'
+                UPDATE trophy_title
+                SET    status = 2
+                WHERE  np_communication_id = :child_np_communication_id
+SQL
+            );
+            $query->bindValue(':child_np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+            $query->execute();
+        });
+    }
+
+    private function markGameAsMergedById(int $gameId): void
+    {
+        $this->executeTransaction(function () use ($gameId): void {
+            $query = $this->database->prepare(
+                <<<'SQL'
+                UPDATE trophy_title
+                SET    status = 2
+                WHERE  id = :game_id
+SQL
+            );
+            $query->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+            $query->execute();
+        });
+    }
+
+    private function copyMergedTrophies(int $childGameId): void
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                child_np_communication_id,
+                child_group_id,
+                child_order_id,
+                parent_np_communication_id,
+                parent_group_id,
+                parent_order_id
+            FROM
+                trophy_merge
+            WHERE
+                child_np_communication_id =(
+                SELECT
+                    np_communication_id
+                FROM
+                    trophy_title
+                WHERE
+                    id = :game_id
+            )
+SQL
+        );
+        $query->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
+        $query->execute();
+
+        while ($trophyMerge = $query->fetch(PDO::FETCH_ASSOC)) {
+            $this->copyTrophyEarned(
+                $trophyMerge['child_np_communication_id'],
+                $trophyMerge['child_group_id'],
+                (int) $trophyMerge['child_order_id'],
+                $trophyMerge['parent_np_communication_id'],
+                $trophyMerge['parent_group_id'],
+                (int) $trophyMerge['parent_order_id']
+            );
+        }
+    }
+
+    private function updateParentRelationship(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $query = $this->database->prepare(
+            "UPDATE trophy_title SET parent_np_communication_id = :parent_np_communication_id WHERE np_communication_id = :np_communication_id"
+        );
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function logChange(string $changeType, int $param1, int $param2): void
+    {
+        $query = $this->database->prepare(
+            "INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES (:change_type, :param_1, :param_2)"
+        );
+        $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
+        $query->bindValue(':param_1', $param1, PDO::PARAM_INT);
+        $query->bindValue(':param_2', $param2, PDO::PARAM_INT);
+        $query->execute();
+    }
+
+    private function insertMappingsByName(int $childGameId, int $parentGameId): string
+    {
+        $message = '';
+
+        $childTrophies = $this->database->prepare(
+            <<<'SQL'
+            SELECT np_communication_id,
+                   group_id,
+                   order_id,
+                   `name`
+            FROM   trophy
+            WHERE  np_communication_id = (SELECT np_communication_id
+                                          FROM   trophy_title
+                                          WHERE  id = :child_game_id)
+SQL
+        );
+        $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
+        $childTrophies->execute();
+
+        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
+            $parentTrophies = $this->database->prepare(
+                <<<'SQL'
+                SELECT np_communication_id,
+                       group_id,
+                       order_id
+                FROM   trophy
+                WHERE  np_communication_id = (SELECT np_communication_id
+                                              FROM   trophy_title
+                                              WHERE  id = :parent_game_id)
+                       AND `name` = :name
+SQL
+            );
+            $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
+            $parentTrophies->bindValue(':name', $childTrophy['name'], PDO::PARAM_STR);
+            $parentTrophies->execute();
+
+            $parentTrophy = $parentTrophies->fetchAll(PDO::FETCH_ASSOC);
+
+            if (count($parentTrophy) === 1) {
+                $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
+            } else {
+                $message .= $childTrophy['name'] . " couldn't be merged.<br>";
+            }
+        }
+
+        return $message;
+    }
+
+    private function insertMappingsByIcon(int $childGameId, int $parentGameId): string
+    {
+        $message = '';
+
+        $childTrophies = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                t.np_communication_id,
+                t.group_id,
+                t.order_id,
+                t.name,
+                t.icon_url,
+                tc.counter
+            FROM
+                trophy t,
+                (
+                SELECT
+                    icon_url,
+                    COUNT(icon_url) AS counter
+                FROM
+                    trophy
+                WHERE
+                    np_communication_id =(
+                    SELECT
+                        np_communication_id
+                    FROM
+                        trophy_title
+                    WHERE
+                        id = :child_game_id
+                )
+            GROUP BY
+                icon_url
+            ) AS tc
+            WHERE
+                t.icon_url = tc.icon_url AND t.np_communication_id =(
+                SELECT
+                    np_communication_id
+                FROM
+                    trophy_title
+                WHERE
+                    id = :child_game_id
+            );
+SQL
+        );
+        $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
+        $childTrophies->execute();
+
+        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
+            $parentTrophies = $this->database->prepare(
+                <<<'SQL'
+                SELECT np_communication_id,
+                       group_id,
+                       order_id
+                FROM   trophy
+                WHERE  np_communication_id = (SELECT np_communication_id
+                                              FROM   trophy_title
+                                              WHERE  id = :parent_game_id)
+                       AND icon_url = :icon_url
+SQL
+            );
+            $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
+            $parentTrophies->bindValue(':icon_url', $childTrophy['icon_url'], PDO::PARAM_STR);
+            $parentTrophies->execute();
+
+            $parentTrophy = $parentTrophies->fetchAll(PDO::FETCH_ASSOC);
+
+            if ((int) $childTrophy['counter'] === 1 && count($parentTrophy) === 1) {
+                $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
+            } else {
+                $message .= $childTrophy['name'] . " couldn't be merged.<br>";
+            }
+        }
+
+        return $message;
+    }
+
+    private function insertMappingsByOrder(int $childGameId, int $parentGameId): void
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            INSERT IGNORE
+            into   trophy_merge
+                   (
+                          child_np_communication_id,
+                          child_group_id,
+                          child_order_id,
+                          parent_np_communication_id,
+                          parent_group_id,
+                          parent_order_id
+                   )
+            SELECT     child.np_communication_id,
+                       child.group_id,
+                       child.order_id,
+                       parent.np_communication_id,
+                       parent.group_id,
+                       parent.order_id
+            FROM       trophy child
+            INNER JOIN trophy parent
+            USING      (group_id, order_id)
+            WHERE      child.np_communication_id =
+                       (
+                              SELECT np_communication_id
+                              FROM   trophy_title
+                              WHERE  id = :child_game_id)
+            AND        parent.np_communication_id =
+                       (
+                              SELECT np_communication_id
+                              FROM   trophy_title
+                              WHERE  id = :parent_game_id)
+SQL
+        );
+        $query->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
+        $query->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
+        $query->execute();
+    }
+
+    private function insertDirectMapping(array $childTrophy, array $parentTrophy): void
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            INSERT IGNORE
+            into   trophy_merge
+                   (
+                          child_np_communication_id,
+                          child_group_id,
+                          child_order_id,
+                          parent_np_communication_id,
+                          parent_group_id,
+                          parent_order_id
+                   )
+                   VALUES
+                   (
+                          :child_np_communication_id,
+                          :child_group_id,
+                          :child_order_id,
+                          :parent_np_communication_id,
+                          :parent_group_id,
+                          :parent_order_id
+                   )
+SQL
+        );
+        $query->bindValue(':child_np_communication_id', $childTrophy['np_communication_id'], PDO::PARAM_STR);
+        $query->bindValue(':child_group_id', $childTrophy['group_id'], PDO::PARAM_STR);
+        $query->bindValue(':child_order_id', (int) $childTrophy['order_id'], PDO::PARAM_INT);
+        $query->bindValue(':parent_np_communication_id', $parentTrophy['np_communication_id'], PDO::PARAM_STR);
+        $query->bindValue(':parent_group_id', $parentTrophy['group_id'], PDO::PARAM_STR);
+        $query->bindValue(':parent_order_id', (int) $parentTrophy['order_id'], PDO::PARAM_INT);
+        $query->execute();
+    }
+
+    private function getGameNpCommunicationId(int $gameId): string
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT np_communication_id
+            FROM   trophy_title
+            WHERE  id = :id
+SQL
+        );
+        $query->bindValue(':id', $gameId, PDO::PARAM_INT);
+        $query->execute();
+
+        $npCommunicationId = $query->fetchColumn();
+
+        if ($npCommunicationId === false) {
+            throw new InvalidArgumentException('Game not found.');
+        }
+
+        return (string) $npCommunicationId;
+    }
+
+    private function executeTransaction(callable $operation): void
+    {
+        $this->beginTransaction();
+
+        try {
+            $operation();
+            $this->commitTransaction();
+        } catch (Throwable $exception) {
+            $this->rollBackTransaction();
+            throw $exception;
+        }
+    }
+
+    private function beginTransaction(): void
+    {
+        if (!$this->database->inTransaction()) {
+            $this->database->beginTransaction();
+        }
+    }
+
+    private function commitTransaction(): void
+    {
+        if ($this->database->inTransaction()) {
+            $this->database->commit();
+        }
+    }
+
+    private function rollBackTransaction(): void
+    {
+        if ($this->database->inTransaction()) {
+            $this->database->rollBack();
+        }
+    }
+}
