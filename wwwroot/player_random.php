@@ -4,6 +4,16 @@ if (!isset($accountId)) {
     die();
 }
 
+require_once 'classes/PlayerRandomGame.php';
+require_once 'classes/PlayerRandomGamesService.php';
+
+$playerRandomGamesService = new PlayerRandomGamesService($database, $utility);
+$randomGames = [];
+
+if ($player["status"] != 1 && $player["status"] != 3) {
+    $randomGames = $playerRandomGamesService->getRandomGames((int) $player["account_id"], $_GET);
+}
+
 $title = $player["online_id"] . "'s Random Games ~ PSN 100%";
 require_once("header.php");
 ?>
@@ -112,46 +122,8 @@ require_once("header.php");
             </div>
             <?php
         } else {
-            $sql = "SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.owners, tt.difficulty, tt.platinum, tt.gold, tt.silver, tt.bronze, tt.rarity_points, ttp.progress
-                FROM trophy_title tt
-                LEFT JOIN trophy_title_player ttp ON ttp.np_communication_id = tt.np_communication_id AND ttp.account_id = :account_id
-                WHERE tt.status = 0 AND (ttp.progress != 100 OR ttp.progress IS NULL)";
-            if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-                $sql .= " AND (";
-                if (!empty($_GET["pc"])) {
-                    $sql .= " tt.platform LIKE '%PC%' OR";
-                }
-                if (!empty($_GET["ps3"])) {
-                    $sql .= " tt.platform LIKE '%PS3%' OR";
-                }
-                if (!empty($_GET["ps4"])) {
-                    $sql .= " tt.platform LIKE '%PS4%' OR";
-                }
-                if (!empty($_GET["ps5"])) {
-                    $sql .= " tt.platform LIKE '%PS5%' OR";
-                }
-                if (!empty($_GET["psvita"])) {
-                    $sql .= " tt.platform LIKE '%PSVITA%' OR";
-                }
-                if (!empty($_GET["psvr"])) {
-                    $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-                }
-                if (!empty($_GET["psvr2"])) {
-                    $sql .= " tt.platform LIKE '%PSVR2%' OR";
-                }
-            
-                // Remove " OR"
-                $sql = substr($sql, 0, -3);
-                $sql .= ")";
-            }
-            $sql .= " ORDER BY RAND() LIMIT 8";
-            $games = $database->prepare($sql);
-            $games->bindValue(":account_id", $player["account_id"], PDO::PARAM_STR);
-            $games->execute();
-            $games = $games->fetchAll();
-
-            foreach ($games as $game) {
-                $gameLink = $game["id"] ."-". $utility->slugify($game["name"]) ."/". $player["online_id"];
+            foreach ($randomGames as $game) {
+                $gameLink = $game->getGameLink($player["online_id"]);
                 ?>
                 <div class="col-md-6 col-xl-3">
                     <div class="bg-body-tertiary p-3 rounded mb-3 text-center vstack gap-1">
@@ -161,11 +133,11 @@ require_once("header.php");
                                 <div class="card">
                                     <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
                                         <a href="/game/<?= $gameLink; ?>">
-                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["name"]); ?>">
+                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= $game->getIconUrl(); ?>" alt="<?= htmlentities($game->getName()); ?>">
                                             <div class="card-img-overlay d-flex align-items-end p-2">
                                                 <?php
-                                                foreach (explode(",", $game["platform"]) as $platform) {
-                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">". $platform ."</span> ";
+                                                foreach ($game->getPlatforms() as $platform) {
+                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
                                                 }
                                                 ?>
                                             </div>
@@ -176,13 +148,13 @@ require_once("header.php");
 
                             <!-- owners & cr -->
                             <div>
-                                <?= number_format($game["owners"]); ?> <?= ($game["owners"] > 1 ? 'owners' : 'owner'); ?> (<?= $game["difficulty"]; ?>%)
+                                <?= number_format($game->getOwners()); ?> <?= ($game->getOwners() > 1 ? 'owners' : 'owner'); ?> (<?= $game->getDifficulty(); ?>%)
                             </div>
 
                             <!-- name -->
                             <div class="text-center">
                                 <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $gameLink; ?>">
-                                    <?= htmlentities($game["name"]); ?>
+                                    <?= htmlentities($game->getName()); ?>
                                 </a>
                             </div>
 
@@ -192,13 +164,13 @@ require_once("header.php");
 
                             <!-- trophies -->
                             <div>
-                                <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game["bronze"]; ?></span>
+                                <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game->getBronze(); ?></span>
                             </div>
 
                             <!-- rarity points -->
                             <div>
                                 <?php
-                                echo number_format($game["rarity_points"]) ." Rarity Points";
+                                echo number_format($game->getRarityPoints()) . " Rarity Points";
                                 ?>
                             </div>
                         </div>
