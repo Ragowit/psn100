@@ -151,7 +151,7 @@ require_once("header.php");
             $games = $games->fetchAll();
 
             foreach ($games as $game) {
-                $gameLink = $game["id"] ."-". slugify($game["name"]) ."/". $player["online_id"];
+                $gameLink = $game["id"] ."-". $utility->slugify($game["name"]) ."/". $player["online_id"];
                 ?>
                 <div class="col-md-6 col-xl-3">
                     <div class="bg-body-tertiary p-3 rounded mb-3 text-center vstack gap-1">

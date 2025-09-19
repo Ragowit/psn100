@@ -20,7 +20,7 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /game/". $game["id"] ."-". slugify($game["name"]), true, 303);
+        header("Location: /game/". $game["id"] ."-". $utility->slugify($game["name"]), true, 303);
         die();
     }
 
@@ -94,9 +94,9 @@ unset($paramsWithoutPage["page"]);
 
             <div class="col-6 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
-                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
+                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
                 </div>
             </div>
 
@@ -178,7 +178,7 @@ unset($paramsWithoutPage["page"]);
 
                             $rank = $offset;
                             foreach ($rows as $row) {
-                                $countryName = getCountryName($row["country"]);
+                                $countryName = $utility->getCountryName($row["country"]);
                                 $paramsAvatar = $paramsWithoutPage;
                                 $paramsAvatar["avatar"] = $row["avatar_url"];
                                 $paramsCountry = $paramsWithoutPage;
@@ -196,7 +196,7 @@ unset($paramsWithoutPage["page"]);
                                             </div>
 
                                             <div>
-                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>/<?= $row["name"]; ?>"><?= $row["name"]; ?></a>
+                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>/<?= $row["name"]; ?>"><?= $row["name"]; ?></a>
                                                 <?php
                                                 if ($row["trophy_count_npwr"] < $row["trophy_count_sony"]) {
                                                     echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";

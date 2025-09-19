@@ -261,14 +261,14 @@ require_once("header.php");
                                     ?>
                                     <tr<?= (($trophy["game_status"] != 0 || $trophy["trophy_status"] != 0) ? " class='table-warning'" : ""); ?>>
                                         <td scope="row" class="text-center align-middle">
-                                            <a href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $player["online_id"]; ?>">
+                                            <a href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?>/<?= $player["online_id"]; ?>">
                                                 <img src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" style="width: 10rem;" />
                                             </a>
                                         </td>
                                         <td class="align-middle">
                                             <div class="hstack gap-3">
                                                 <div class="d-flex align-items-center justify-content-center">
-                                                    <a href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
+                                                    <a href="/trophy/<?= $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
                                                         <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="width: 5rem;" />
                                                     </a>
                                                 </div>
@@ -276,7 +276,7 @@ require_once("header.php");
                                                 <div>
                                                     <div class="vstack">
                                                         <span>
-                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
+                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
                                                                 <b><?= htmlentities($trophy["trophy_name"]); ?></b>
                                                             </a>
                                                         </span>

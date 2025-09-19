@@ -45,7 +45,7 @@ require_once("header.php");
                                         <div>
                                             <div class="card">
                                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
-                                                    <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
+                                                    <a href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
                                                         <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["name"]); ?>">
                                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                                             <?php
@@ -66,7 +66,7 @@ require_once("header.php");
 
                                         <!-- name -->
                                         <div class="text-center">
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
                                                 <?= htmlentities($game["name"]); ?>
                                             </a>
                                         </div>
@@ -103,7 +103,7 @@ require_once("header.php");
                                         <div>
                                             <div class="card">
                                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
-                                                    <a href="/game/<?= $game["id"] ."-". slugify($game["game_name"]); ?>#<?= $game["group_id"]; ?>">
+                                                    <a href="/game/<?= $game["id"] ."-". $utility->slugify($game["game_name"]); ?>#<?= $game["group_id"]; ?>">
                                                         <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/group/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["group_name"]); ?>">
                                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                                             <?php
@@ -124,7 +124,7 @@ require_once("header.php");
 
                                         <!-- name -->
                                         <div class="text-center">
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". slugify($game["game_name"]); ?>#<?= $game["group_id"]; ?>">
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["game_name"]); ?>#<?= $game["group_id"]; ?>">
                                                 <small><?= htmlentities($game["game_name"]); ?></small><br><?= htmlentities($game["group_name"]); ?>
                                             </a>
                                         </div>
@@ -158,7 +158,7 @@ require_once("header.php");
                         <div class="col-4">
                             <div class="card">
                                 <div class="d-flex justify-content-center align-items-center" style="height: 7rem;">
-                                    <a href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
+                                    <a href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
                                         <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["name"]); ?>">
                                     </a>
                                 </div>
@@ -170,7 +170,7 @@ require_once("header.php");
                             <div>
                                 <div class="row">
                                     <div class="col">
-                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?>">
+                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
                                             <?= htmlentities($game["name"]); ?>
                                         </a>
                                     </div>

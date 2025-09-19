@@ -111,7 +111,7 @@ require_once("header.php");
                                     $players = $query->fetchAll();
 
                                     foreach ($players as $player) {
-                                        $countryName = getCountryName($player["country"]);
+                                        $countryName = $utility->getCountryName($player["country"]);
                                         
                                         if ($player["status"] != 0) {
                                             $rank = "N/A";

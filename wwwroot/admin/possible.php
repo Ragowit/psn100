@@ -344,7 +344,7 @@ require_once("../init.php");
             $possibleCheaters = $query->fetchAll();
 
             foreach ($possibleCheaters as $possibleCheater) {
-                echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ." (". $possibleCheater["account_id"] .")</a><br>";
+                echo "<a href=\"/game/". $possibleCheater["game_id"] ."-". $utility->slugify($possibleCheater["game_name"]) ."/". $possibleCheater["player_name"] ."\">". $possibleCheater["player_name"] ." (". $possibleCheater["account_id"] .")</a><br>";
             }
             ?>
 

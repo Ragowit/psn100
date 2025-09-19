@@ -122,7 +122,7 @@ unset($paramsWithoutPage["page"]);
 
                             foreach ($players as $player) {
                                 $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["platinum"];
-                                $countryName = getCountryName($player["country"]);
+                                $countryName = $utility->getCountryName($player["country"]);
                                 if (isset($_GET["player"]) && $_GET["player"] == $player["online_id"]) {
                                     echo "<tr id=\"". $player["online_id"] ."\" class=\"table-primary\">";
                                 } else {

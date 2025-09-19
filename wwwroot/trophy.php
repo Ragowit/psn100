@@ -38,7 +38,7 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /trophy/". $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]), true, 303);
+        header("Location: /trophy/". $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]), true, 303);
         die();
     }
 
@@ -66,7 +66,7 @@ $metaData = new stdClass();
 $metaData->title = $trophy["trophy_name"] ." Trophy";
 $metaData->description = htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8");
 $metaData->image = "https://psn100.net/img/trophy/". $trophy["trophy_icon"];
-$metaData->url = "https://psn100.net/trophy/". $trophy["trophy_id"] ."-". slugify($trophy["trophy_name"]);
+$metaData->url = "https://psn100.net/trophy/". $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]);
 
 $title = $trophy["trophy_name"] . " Trophy ~ PSN 100%";
 require_once("header.php");
@@ -149,7 +149,7 @@ require_once("header.php");
                                                         }
                                                         ?>
 
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?><?= (isset($player) ? "/".$player : ""); ?>"><?= htmlentities($trophy["game_name"]); ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?><?= (isset($player) ? "/".$player : ""); ?>"><?= htmlentities($trophy["game_name"]); ?></a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -252,7 +252,7 @@ require_once("header.php");
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
                                                     <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                                     <?php
                                                     if ($result["trophy_count_npwr"] < $result["trophy_count_sony"]) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
@@ -341,7 +341,7 @@ require_once("header.php");
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
                                                     <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
                                                     <?php
                                                     if ($result["trophy_count_npwr"] < $result["trophy_count_sony"]) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";

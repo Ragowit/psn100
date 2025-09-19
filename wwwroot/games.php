@@ -299,7 +299,7 @@ $offset = ($page - 1) * $limit;
                 $playerCompleted = true;
             }
 
-            $gameLink = $game["id"] ."-". slugify($game["name"]);
+            $gameLink = $game["id"] ."-". $utility->slugify($game["name"]);
             if (!empty($player)) {
                 $gameLink .= "/". $player;
             }

@@ -9,7 +9,7 @@
         $parentGame = $query->fetch();
         $parentGameName = $parentGame["name"] ?? "";
 
-        $parentLink = $parentGame["id"] ."-". slugify($parentGameName);
+        $parentLink = $parentGame["id"] ."-". $utility->slugify($parentGameName);
         if (isset($player)) {
             $parentLink .= "/". $player;
         }
@@ -86,7 +86,7 @@
                                     ?>
                                     <li class="dropdown-item">
                                         <?php
-                                        $stackLink = $stack["id"] ."-". slugify($stack["name"]);
+                                        $stackLink = $stack["id"] ."-". $utility->slugify($stack["name"]);
                                         if (isset($player)) {
                                             $stackLink .= "/". $player;
                                         }
