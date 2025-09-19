@@ -1,65 +1,41 @@
 <?php
+
+require_once 'classes/TrophyService.php';
+
 if (!isset($trophyId)) {
     header("Location: /trophy/", true, 303);
     die();
 }
 
-$query = $database->prepare("SELECT
-        t.id AS trophy_id,
-        t.np_communication_id,
-        t.group_id,
-        t.order_id,
-        t.type AS trophy_type,
-        t.name AS trophy_name,
-        t.detail AS trophy_detail,
-        t.icon_url AS trophy_icon,
-        t.rarity_percent,
-        t.status,
-        t.progress_target_value,
-        t.reward_name,
-        t.reward_image_url,
-        tt.id AS game_id,
-        tt.name AS game_name,
-        tt.icon_url AS game_icon,
-        tt.platform
-    FROM
-        trophy t
-    JOIN trophy_title tt USING(np_communication_id)
-    WHERE
-        t.id = :id");
-$query->bindValue(":id", $trophyId, PDO::PARAM_INT);
-$query->execute();
-$trophy = $query->fetch();
+$trophyService = new TrophyService($database);
+$trophy = $trophyService->getTrophyById((int) $trophyId);
+
+if ($trophy === null) {
+    header("Location: /trophy/", true, 303);
+    die();
+}
+
+$playerTrophy = null;
 
 if (isset($player)) {
-    $query = $database->prepare("SELECT account_id FROM player WHERE online_id = :online_id");
-    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
-    $query->execute();
-    $accountId = $query->fetchColumn();
+    $accountId = $trophyService->getPlayerAccountId($player);
 
-    if ($accountId === false) {
+    if ($accountId === null) {
         header("Location: /trophy/". $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]), true, 303);
         die();
     }
 
-    $query = $database->prepare("SELECT
-            earned_date,
-            progress,
-            earned
-        FROM
-            trophy_earned
-        WHERE
-            np_communication_id = :np_communication_id AND order_id = :order_id AND account_id = :account_id");
-    $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-    $query->bindValue(":order_id", $trophy["order_id"], PDO::PARAM_INT);
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $playerTrophy = $query->fetch();
-
-    // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-    if ($playerTrophy && $playerTrophy["earned"] == 1 && !is_null($trophy["progress_target_value"])) {
-        $playerTrophy["progress"] = $trophy["progress_target_value"];
+    $progressTargetValue = $trophy["progress_target_value"] ?? null;
+    if ($progressTargetValue !== null) {
+        $progressTargetValue = (string) $progressTargetValue;
     }
+
+    $playerTrophy = $trophyService->getPlayerTrophy(
+        $accountId,
+        (string) $trophy["np_communication_id"],
+        (int) $trophy["order_id"],
+        $progressTargetValue
+    );
 }
 
 $metaData = new stdClass();
@@ -127,7 +103,7 @@ require_once("header.php");
                                                     <?php
                                                     if ($trophy["progress_target_value"] != null) {
                                                         echo "<br><b>";
-                                                        if (isset($playerTrophy["progress"])) {
+                                                        if (isset($playerTrophy) && isset($playerTrophy["progress"])) {
                                                             echo $playerTrophy["progress"];
                                                         } else {
                                                             echo "0";
