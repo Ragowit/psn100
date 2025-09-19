@@ -79,21 +79,10 @@ class PlayerQueueService
     {
         $query = $this->database->prepare(
             <<<'SQL'
-            INSERT INTO
+            INSERT IGNORE INTO
                 player_queue (online_id, ip_address)
             VALUES
                 (:online_id, :ip_address)
-            ON DUPLICATE KEY UPDATE
-                ip_address = IF(
-                    request_time >= '2030-01-01 00:00:00',
-                    :ip_address,
-                    ip_address
-                ),
-                request_time = IF(
-                    request_time >= '2030-01-01 00:00:00',
-                    NOW(),
-                    request_time
-                )
             SQL
         );
         $query->bindValue(":online_id", $playerName, PDO::PARAM_STR);
