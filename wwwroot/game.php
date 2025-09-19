@@ -22,7 +22,7 @@ if (isset($player)) {
     $accountId = $query->fetchColumn();
 
     if ($accountId === false) {
-        header("Location: /game/". $game["id"] ."-". slugify($game["name"]), true, 303);
+        header("Location: /game/". $game["id"] ."-". $utility->slugify($game["name"]), true, 303);
         die();
     }
 
@@ -39,7 +39,7 @@ $metaData = new stdClass();
 $metaData->title = $game["name"] ." Trophies";
 $metaData->description = $game["bronze"] ." Bronze ~ ". $game["silver"] ." Silver ~ ". $game["gold"] ." Gold ~ ". $game["platinum"] ." Platinum";
 $metaData->image = "https://psn100.net/img/title/". $game["icon_url"];
-$metaData->url = "https://psn100.net/game/". $game["id"] ."-". slugify($game["name"]);
+$metaData->url = "https://psn100.net/game/". $game["id"] ."-". $utility->slugify($game["name"]);
 
 $title = $game["name"] ." Trophies ~ PSN 100%";
 require_once("header.php");
@@ -57,9 +57,9 @@ require_once("header.php");
 
             <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-primary active" href="/game/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
+                    <a class="btn btn-primary active" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
                 </div>
             </div>
 
@@ -310,7 +310,7 @@ require_once("header.php");
                                         <td class="w-auto">
                                             <div class="vstack">
                                                 <span>
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["id"] ."-". slugify($trophy["name"]); ?><?= (isset($player) ? "/".$player : ""); ?>">
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["id"] ."-". $utility->slugify($trophy["name"]); ?><?= (isset($player) ? "/".$player : ""); ?>">
                                                         <b><?= htmlentities($trophy["name"]); ?></b>
                                                     </a>
                                                 </span>

@@ -362,7 +362,7 @@ require_once("header.php");
 
                                                 <div class="vstack">
                                                     <span>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $playerGame["id"] ."-". slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $playerGame["id"] ."-". $utility->slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
                                                             <?= htmlentities($playerGame["name"]); ?>
                                                         </a>
                                                     </span>
