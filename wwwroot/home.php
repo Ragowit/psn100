@@ -1,5 +1,11 @@
 <?php
+require_once 'classes/HomepageContentService.php';
+
 $title = "PSN 100% ~ PlayStation Leaderboards & Trophies";
+$homepageContentService = new HomepageContentService($database);
+$newGames = $homepageContentService->getNewGames();
+$newDlcs = $homepageContentService->getNewDlcs();
+$popularGames = $homepageContentService->getPopularGames();
 require_once("header.php");
 ?>
 
@@ -30,14 +36,7 @@ require_once("header.php");
                         <h1>New Games</h1>
                         <div class="row">
                             <?php
-                            $query = $database->prepare("SELECT * FROM trophy_title
-                                WHERE `status` != 2
-                                ORDER BY id DESC
-                                LIMIT 8");
-                            $query->execute();
-                            $games = $query->fetchAll();
-
-                            foreach ($games as $game) {
+                            foreach ($newGames as $game) {
                                 ?>
                                 <div class="col-12 col-md-6 col-lg-4 col-xl-3 text-center mb-2">
                                     <div class="vstack gap-1">
@@ -87,15 +86,7 @@ require_once("header.php");
                         <h1>New DLCs</h1>
                         <div class="row">
                             <?php
-                            $query = $database->prepare("SELECT tt.id, tt.name AS game_name, tt.platform, tg.icon_url, tg.name AS group_name, tg.group_id, tg.bronze, tg.silver, tg.gold FROM trophy_group tg
-                                JOIN trophy_title tt USING (np_communication_id)
-                                WHERE tt.status != 2 AND tg.group_id != 'default'
-                                ORDER BY tg.id DESC
-                                LIMIT 8");
-                            $query->execute();
-                            $games = $query->fetchAll();
-
-                            foreach ($games as $game) {
+                            foreach ($newDlcs as $game) {
                                 ?>
                                 <div class="col-12 col-md-6 col-lg-4 col-xl-3 text-center mb-2">
                                     <!-- image, platforms and status -->
@@ -144,14 +135,7 @@ require_once("header.php");
             <div class="bg-body-tertiary p-3 rounded">
                 <h1>Popular Games</h1>
                 <?php
-                $query = $database->prepare("SELECT id, icon_url, platform, `name`, recent_players FROM trophy_title
-                    WHERE `status` != 2
-                    ORDER BY recent_players DESC
-                    LIMIT 10");
-                $query->execute();
-                $games = $query->fetchAll();
-
-                foreach ($games as $game) {
+                foreach ($popularGames as $game) {
                     ?>
                     <div class="row mb-3">
                         <!-- image -->
