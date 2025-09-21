@@ -1,8 +1,16 @@
 <?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/classes/PlayerLogFilter.php';
+require_once __DIR__ . '/classes/PlayerLogService.php';
+
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
     die();
 }
+
+$playerLogFilter = PlayerLogFilter::fromArray($_GET ?? []);
+$playerLogService = new PlayerLogService($database);
 
 $url = $_SERVER["REQUEST_URI"];
 $url_parts = parse_url($url);
@@ -13,51 +21,16 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$sort = (!empty($_GET["sort"]) ? $_GET["sort"] : "date");
-
-if ($player["status"] == 1 || $player["status"] == 3) {
-    $total_pages = 0;
-} else {
-    $sql = "SELECT COUNT(*) FROM trophy_earned te
-        JOIN trophy_title tt USING (np_communication_id)
-        WHERE tt.status != 2 AND te.account_id = :account_id";
-    if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-        $sql .= " AND (";
-        if (!empty($_GET["pc"])) {
-            $sql .= " tt.platform LIKE '%PC%' OR";
-        }
-        if (!empty($_GET["ps3"])) {
-            $sql .= " tt.platform LIKE '%PS3%' OR";
-        }
-        if (!empty($_GET["ps4"])) {
-            $sql .= " tt.platform LIKE '%PS4%' OR";
-        }
-        if (!empty($_GET["ps5"])) {
-            $sql .= " tt.platform LIKE '%PS5%' OR";
-        }
-        if (!empty($_GET["psvita"])) {
-            $sql .= " tt.platform LIKE '%PSVITA%' OR";
-        }
-        if (!empty($_GET["psvr"])) {
-            $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-        }
-        if (!empty($_GET["psvr2"])) {
-            $sql .= " tt.platform LIKE '%PSVR2%' OR";
-        }
-
-        // Remove " OR"
-        $sql = substr($sql, 0, -3);
-        $sql .= ")";
-    }
-    $query = $database->prepare($sql);
-    $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-    $query->execute();
-    $total_pages = $query->fetchColumn();
-}
-
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-$limit = 50;
+$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? (int) $_GET["page"] : 1, 1);
+$limit = PlayerLogService::PAGE_SIZE;
 $offset = ($page - 1) * $limit;
+$total_pages = 0;
+$trophies = [];
+
+if ($player["status"] != 1 && $player["status"] != 3) {
+    $total_pages = $playerLogService->countTrophies((int) $player["account_id"], $playerLogFilter);
+    $trophies = $playerLogService->getTrophies((int) $player["account_id"], $playerLogFilter, $offset, $limit);
+}
 
 $title = $player["online_id"] . "'s Trophy Log ~ PSN 100%";
 require_once("header.php");
@@ -91,7 +64,7 @@ require_once("header.php");
                         <ul class="dropdown-menu p-2">
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('pc') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
                                     <label class="form-check-label" for="filterPC">
                                         PC
                                     </label>
@@ -99,7 +72,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('ps3') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
                                     <label class="form-check-label" for="filterPS3">
                                         PS3
                                     </label>
@@ -107,7 +80,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps4"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('ps4') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
                                     <label class="form-check-label" for="filterPS4">
                                         PS4
                                     </label>
@@ -115,7 +88,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps5"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('ps5') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
                                     <label class="form-check-label" for="filterPS5">
                                         PS5
                                     </label>
@@ -123,7 +96,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvita"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('psvita') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
                                     <label class="form-check-label" for="filterPSVITA">
                                         PSVITA
                                     </label>
@@ -131,7 +104,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('psvr') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
                                     <label class="form-check-label" for="filterPSVR">
                                         PSVR
                                     </label>
@@ -139,7 +112,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr2"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
+                                    <input class="form-check-input" type="checkbox"<?= $playerLogFilter->isPlatformSelected('psvr2') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
                                     <label class="form-check-label" for="filterPSVR2">
                                         PSVR2
                                     </label>
@@ -149,8 +122,8 @@ require_once("header.php");
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
-                            <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
-                            <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity</option>
+                            <option value="date"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_DATE) ? ' selected' : ''; ?>>Date</option>
+                            <option value="rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_RARITY) ? ' selected' : ''; ?>>Rarity</option>
                         </select>
                     </div>
                 </form>
@@ -188,76 +161,7 @@ require_once("header.php");
                                 </tr>
                                 <?php
                             } else {
-                                $sql = "SELECT
-                                        te.*,
-                                        t.id AS trophy_id,
-                                        t.type AS trophy_type,
-                                        t.name AS trophy_name,
-                                        t.detail AS trophy_detail,
-                                        t.icon_url AS trophy_icon,
-                                        t.rarity_percent,
-                                        t.status AS trophy_status,
-                                        t.progress_target_value,
-                                        t.reward_name,
-                                        t.reward_image_url,
-                                        tt.id AS game_id,
-                                        tt.name AS game_name,
-                                        tt.status AS game_status,
-                                        tt.icon_url AS game_icon,
-                                        tt.platform
-                                    FROM
-                                        trophy_earned te
-                                    LEFT JOIN trophy t USING(
-                                            np_communication_id,
-                                            order_id
-                                        )
-                                    LEFT JOIN trophy_title tt USING(np_communication_id)
-                                    WHERE
-                                        tt.status != 2 AND te.account_id = :account_id AND te.earned = 1";
-                                if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-                                    $sql .= " AND (";
-                                    if (!empty($_GET["pc"])) {
-                                        $sql .= " tt.platform LIKE '%PC%' OR";
-                                    }
-                                    if (!empty($_GET["ps3"])) {
-                                        $sql .= " tt.platform LIKE '%PS3%' OR";
-                                    }
-                                    if (!empty($_GET["ps4"])) {
-                                        $sql .= " tt.platform LIKE '%PS4%' OR";
-                                    }
-                                    if (!empty($_GET["ps5"])) {
-                                        $sql .= " tt.platform LIKE '%PS5%' OR";
-                                    }
-                                    if (!empty($_GET["psvita"])) {
-                                        $sql .= " tt.platform LIKE '%PSVITA%' OR";
-                                    }
-                                    if (!empty($_GET["psvr"])) {
-                                        $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-                                    }
-                                    if (!empty($_GET["psvr2"])) {
-                                        $sql .= " tt.platform LIKE '%PSVR2%' OR";
-                                    }
-                                
-                                    // Remove " OR"
-                                    $sql = substr($sql, 0, -3);
-                                    $sql .= ")";
-                                }
-                                switch ($sort) {
-                                    case "rarity":
-                                        $sql .= " ORDER BY t.rarity_percent, te.earned_date";
-                                        break;
-                                    default: // date
-                                        $sql .= " ORDER BY te.earned_date DESC";
-                                }
-                                $sql .= " LIMIT :offset, :limit";
-
-                                $trophies = $database->prepare($sql);
-                                $trophies->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-                                $trophies->bindValue(":offset", $offset, PDO::PARAM_INT);
-                                $trophies->bindValue(":limit", $limit, PDO::PARAM_INT);
-                                $trophies->execute();
-
-                                while ($trophy = $trophies->fetch()) {
+                                foreach ($trophies as $trophy) {
                                     ?>
                                     <tr<?= (($trophy["game_status"] != 0 || $trophy["trophy_status"] != 0) ? " class='table-warning'" : ""); ?>>
                                         <td scope="row" class="text-center align-middle">
