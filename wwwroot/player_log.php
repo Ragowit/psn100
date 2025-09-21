@@ -25,11 +25,11 @@ $page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? (int) $_GET["pag
 $limit = PlayerLogService::PAGE_SIZE;
 $offset = ($page - 1) * $limit;
 $total_pages = 0;
-$trophies = [];
+$trophiesLog = [];
 
 if ($player["status"] != 1 && $player["status"] != 3) {
     $total_pages = $playerLogService->countTrophies((int) $player["account_id"], $playerLogFilter);
-    $trophies = $playerLogService->getTrophies((int) $player["account_id"], $playerLogFilter, $offset, $limit);
+    $trophiesLog = $playerLogService->getTrophies((int) $player["account_id"], $playerLogFilter, $offset, $limit);
 }
 
 $title = $player["online_id"] . "'s Trophy Log ~ PSN 100%";
@@ -161,7 +161,7 @@ require_once("header.php");
                                 </tr>
                                 <?php
                             } else {
-                                foreach ($trophies as $trophy) {
+                                foreach ($trophiesLog as $trophy) {
                                     ?>
                                     <tr<?= (($trophy["game_status"] != 0 || $trophy["trophy_status"] != 0) ? " class='table-warning'" : ""); ?>>
                                         <td scope="row" class="text-center align-middle">
