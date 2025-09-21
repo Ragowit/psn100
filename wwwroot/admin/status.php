@@ -1,44 +1,36 @@
 <?php
 require_once("../init.php");
+require_once '../classes/GameStatusService.php';
 
-if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
-    $gameId = $_POST["game"];
-    $status = $_POST["status"];
+$gameStatusService = new GameStatusService($database);
+$success = null;
+$error = null;
 
-    $database->beginTransaction();
-    $query = $database->prepare("UPDATE trophy_title SET status = :status WHERE id = :game_id");
-    $query->bindValue(":status", $status, PDO::PARAM_INT);
-    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
-    $query->execute();
-    $database->commit();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $gameId = filter_input(INPUT_POST, 'game', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+    $status = filter_input(INPUT_POST, 'status', FILTER_VALIDATE_INT);
 
-    if ($status == 1) {
-        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_DELISTED', :param_1)");
-        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-        $query->execute();
-
-        $statusText = "delisted";
-    } elseif ($status == 3) {
-        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_OBSOLETE', :param_1)");
-        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-        $query->execute();
-
-        $statusText = "obsolete";
-    } elseif ($status == 4) {
-        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_DELISTED_AND_OBSOLETE', :param_1)");
-        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-        $query->execute();
-
-        $statusText = "delisted &amp; obsolete";
+    if ($gameId === null || $gameId === false) {
+        $error = '<p>Invalid game ID provided.</p>';
+    } elseif ($status === null || $status === false) {
+        $error = '<p>Invalid status provided.</p>';
     } else {
-        $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_NORMAL', :param_1)");
-        $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-        $query->execute();
+        try {
+            $statusText = $gameStatusService->updateGameStatus((int) $gameId, (int) $status);
+            $gameIdText = htmlentities((string) $gameId, ENT_QUOTES, 'UTF-8');
+            $statusText = htmlentities($statusText, ENT_QUOTES, 'UTF-8');
 
-        $statusText = "normal";
+            $success = sprintf(
+                '<p>Game %s is now set as %s. All affected players will be updated soon, and ranks updated the next whole hour.</p>',
+                $gameIdText,
+                $statusText
+            );
+        } catch (InvalidArgumentException $exception) {
+            $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+        } catch (Throwable $exception) {
+            $error = '<p>Failed to update game status. Please try again.</p>';
+        }
     }
-
-    $success = "<p>Game ". $gameId ." is now set as ". $statusText .". All affected players will be updated soon, and ranks updated the next whole hour.</p>";
 }
 
 ?>
@@ -68,7 +60,11 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             </form>
 
             <?php
-            if (isset($success)) {
+            if ($error !== null) {
+                echo $error;
+            }
+
+            if ($success !== null) {
                 echo $success;
             }
             ?>
