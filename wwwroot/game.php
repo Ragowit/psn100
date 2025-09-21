@@ -1,38 +1,36 @@
 <?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/classes/GameService.php';
+
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
     die();
 }
 
-$query = $database->prepare("SELECT * 
-    FROM   trophy_title 
-    WHERE  id = :id ");
-$query->bindValue(":id", $gameId, PDO::PARAM_INT);
-$query->execute();
-$game = $query->fetch();
+$gameService = new GameService($database);
 
-$sort = $_GET["sort"] ?? "default";
+$game = $gameService->getGame((int) $gameId);
+
+if ($game === null) {
+    header("Location: /game/", true, 303);
+    die();
+}
+
+$sort = $gameService->resolveSort($_GET);
+
+$accountId = null;
+$gamePlayer = null;
 
 if (isset($player)) {
-    $query = $database->prepare("SELECT account_id 
-        FROM   player 
-        WHERE  online_id = :online_id ");
-    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
-    $query->execute();
-    $accountId = $query->fetchColumn();
+    $accountId = $gameService->getPlayerAccountId((string) $player);
 
-    if ($accountId === false) {
-        header("Location: /game/". $game["id"] ."-". $utility->slugify($game["name"]), true, 303);
+    if ($accountId === null) {
+        header("Location: /game/" . $game["id"] . "-" . $utility->slugify($game["name"]), true, 303);
         die();
     }
 
-    $query = $database->prepare("SELECT *
-        FROM trophy_title_player
-        WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
-    $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $gamePlayer = $query->fetch();
+    $gamePlayer = $gameService->getGamePlayer($game["np_communication_id"], $accountId);
 }
 
 $metaData = new stdClass();
@@ -105,35 +103,24 @@ require_once("header.php");
         <div class="row">
             <div class="col-12">
                 <?php
-                $trophyGroups = $database->prepare("SELECT * 
-                    FROM   trophy_group 
-                    WHERE  np_communication_id = :np_communication_id 
-                        AND group_id = 'default' 
-                    UNION 
-                    (SELECT * 
-                    FROM   trophy_group 
-                    WHERE  np_communication_id = :np_communication_id 
-                            AND group_id != 'default' 
-                    ORDER  BY group_id) ");
-                $trophyGroups->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                $trophyGroups->execute();
-                while ($trophyGroup = $trophyGroups->fetch()) {
-                    if (isset($player)) {
-                        $query = $database->prepare("SELECT * 
-                            FROM   trophy_group_player 
-                            WHERE  np_communication_id = :np_communication_id 
-                                AND group_id = :group_id 
-                                AND account_id = :account_id ");
-                        $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                        $query->bindValue(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                        $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-                        $query->execute();
-                        $trophyGroupPlayer = $query->fetch();
+                $trophyGroups = $gameService->getTrophyGroups($game["np_communication_id"]);
+                foreach ($trophyGroups as $trophyGroup) {
+                    $trophyGroupPlayer = null;
+
+                    if ($accountId !== null) {
+                        $trophyGroupPlayer = $gameService->getTrophyGroupPlayer(
+                            $game["np_communication_id"],
+                            (string) $trophyGroup["group_id"],
+                            $accountId
+                        );
                     }
 
-                    unset($previousTimeStamp);
+                    $previousTimeStamp = null;
 
-                    if (isset($accountId) && $trophyGroupPlayer != false && $trophyGroupPlayer["progress"] == 100 && !empty($_GET["unearned"])) {
+                    if ($accountId !== null
+                        && $trophyGroupPlayer !== null
+                        && ($trophyGroupPlayer["progress"] ?? null) == 100
+                        && !empty($_GET["unearned"])) {
                         continue;
                     }
                     ?>
@@ -154,7 +141,7 @@ require_once("header.php");
 
                                             <div class="ms-auto">
                                                 <?php
-                                                if (isset($trophyGroupPlayer)) {
+                                                if ($trophyGroupPlayer !== null) {
                                                     if ($trophyGroup["group_id"] == "default") {
                                                         ?>
                                                         <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"] ?? "0"; ?>/<?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup["bronze"]; ?></span>
@@ -191,96 +178,27 @@ require_once("header.php");
 
                             <tbody>
                                 <?php
-                                if (isset($accountId)) {
-                                    $queryText = "SELECT * 
-                                        FROM   (SELECT t.id, 
-                                                    t.order_id, 
-                                                    t.type, 
-                                                    t.name, 
-                                                    t.detail, 
-                                                    t.icon_url, 
-                                                    t.rarity_percent, 
-                                                    t.status,
-                                                    t.progress_target_value,
-                                                    t.reward_name,
-                                                    t.reward_image_url,
-                                                    te.earned_date,
-                                                    te.progress,
-                                                    te.earned
-                                            FROM   trophy t 
-                                                    LEFT JOIN (SELECT np_communication_id, 
-                                                                    group_id, 
-                                                                    order_id, 
-                                                                    Ifnull(earned_date, 'No Timestamp') AS 
-                                                                    earned_date,
-                                                                    progress,
-                                                                    earned
-                                                                FROM   trophy_earned 
-                                                                WHERE  account_id = :account_id) AS te USING ( 
-                                                    np_communication_id, group_id, order_id) 
-                                            WHERE  t.np_communication_id = :np_communication_id 
-                                                    AND t.group_id = :group_id) AS x ";
-
-                                    if ($sort == "date") {
-                                        $queryText = $queryText ." ORDER  BY x.earned_date IS NULL, 
-                                            x.earned_date, 
-                                            Field(x.type, 'bronze', 'silver', 'gold', 'platinum'),
-                                            x.order_id ";
-                                    } elseif ($sort == "rarity") {
-                                        $queryText = $queryText ." ORDER  BY x.rarity_percent DESC, 
-                                            Field(x.type, 'bronze', 'silver', 'gold', 'platinum'), 
-                                            x.order_id ";
-                                    } else {
-                                        $queryText = $queryText ." ORDER  BY x.order_id ";
-                                    }
-
-                                    $query = $database->prepare($queryText);
-                                    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-                                } else {
-                                    $queryText = "SELECT t.id, 
-                                            t.order_id, 
-                                            t.type, 
-                                            t.name, 
-                                            t.detail, 
-                                            t.icon_url, 
-                                            t.rarity_percent, 
-                                            t.status,
-                                            t.progress_target_value,
-                                            t.reward_name,
-                                            t.reward_image_url
-                                        FROM   trophy t 
-                                        WHERE  t.np_communication_id = :np_communication_id 
-                                            AND t.group_id = :group_id ";
-
-                                    if ($sort == "rarity") {
-                                        $queryText = $queryText ." ORDER BY  rarity_percent DESC,
-                                            Field(type, 'bronze', 'silver', 'gold', 'platinum'),
-                                            order_id ";
-                                    } else {
-                                        $queryText = $queryText ." ORDER BY order_id";
-                                    }
-
-                                    $query = $database->prepare($queryText);
-                                }
-                                $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                                $query->bindValue(":group_id", $trophyGroup["group_id"], PDO::PARAM_STR);
-                                $query->execute();
-                                $trophies = $query->fetchAll();
+                                $trophies = $gameService->getTrophies(
+                                    $game["np_communication_id"],
+                                    (string) $trophyGroup["group_id"],
+                                    $accountId,
+                                    $sort
+                                );
 
                                 foreach ($trophies as $trophy) {
-                                    if (isset($accountId) && $trophy["earned"] == 1 && !empty($_GET["unearned"])) {
+                                    if ($accountId !== null && ($trophy["earned"] ?? null) == 1 && !empty($_GET["unearned"])) {
                                         continue;
                                     }
 
                                     // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-                                    if (isset($accountId) && $trophy["earned"] == 1 && $trophy["progress_target_value"] != null) {
+                                    if ($accountId !== null && ($trophy["earned"] ?? null) == 1 && $trophy["progress_target_value"] != null) {
                                         $trophy["progress"] = $trophy["progress_target_value"];
                                     }
 
                                     $trClass = "";
                                     if ($trophy["status"] == 1) {
                                         $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                    } elseif (isset($accountId) && $trophy["earned"] == 1) {
+                                    } elseif ($accountId !== null && ($trophy["earned"] ?? null) == 1) {
                                         $trClass = " class=\"table-success\"";
                                     }
                                     ?>
@@ -335,7 +253,7 @@ require_once("header.php");
 
                                         <td class="w-auto text-end align-middle">
                                             <?php
-                                            if (isset($accountId) && $trophy["earned"] == 1) {
+                                            if ($accountId !== null && ($trophy["earned"] ?? null) == 1) {
                                                 ?>
                                                 <span id="earned<?= $trophy["order_id"]; ?>" style="text-wrap: nowrap;"></span>
                                                 <script>
@@ -352,7 +270,7 @@ require_once("header.php");
                                                     ?>
                                                 </script>
                                                 <?php
-                                                if ($sort == "date" && isset($previousTimeStamp) && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
+                                                if ($sort == "date" && $previousTimeStamp !== null && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
                                                     echo "<br>";
                                                     $datetime1 = date_create($previousTimeStamp);
                                                     $datetime2 = date_create($trophy["earned_date"]);
