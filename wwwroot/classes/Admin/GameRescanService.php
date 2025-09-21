@@ -43,7 +43,8 @@ class GameRescanService
             }
 
             $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId);
-            $this->recalculateTrophies($trophyTitle, $npCommunicationId, $user->accountId(), $trophyGroups);
+            $this->recalculateTrophies($trophyTitle, $npCommunicationId, (int) $user->accountId(), $trophyGroups);
+
             $this->updateTrophySetVersion($npCommunicationId, $trophyTitle->trophySetVersion());
             $this->recordRescan($gameId);
 
@@ -120,7 +121,7 @@ class GameRescanService
         $query->execute();
 
         while (($accountId = $query->fetchColumn()) !== false) {
-            $user = $client->users()->find($accountId);
+            $user = $client->users()->find((string) $accountId);
 
             try {
                 $user->trophySummary()->level();
