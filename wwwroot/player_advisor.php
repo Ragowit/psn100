@@ -1,71 +1,32 @@
 <?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/classes/PlayerAdvisorFilter.php';
+require_once __DIR__ . '/classes/PlayerAdvisorService.php';
+
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
     die();
 }
 
-$url = $_SERVER["REQUEST_URI"];
-$url_parts = parse_url($url);
-// If URL doesn't have a query string.
-if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
-    parse_str($url_parts["query"], $params);
-} else {
-    $params = array();
+$playerAdvisorFilter = PlayerAdvisorFilter::fromArray($_GET ?? []);
+$playerAdvisorService = new PlayerAdvisorService($database);
+
+$page = $playerAdvisorFilter->getPage();
+$limit = PlayerAdvisorService::PAGE_SIZE;
+$offset = $playerAdvisorFilter->getOffset($limit);
+
+$totalTrophies = 0;
+$advisableTrophies = [];
+
+if ($player["status"] != 1 && $player["status"] != 3) {
+    $playerAccountId = (int) $player["account_id"];
+    $totalTrophies = $playerAdvisorService->countAdvisableTrophies($playerAccountId, $playerAdvisorFilter);
+    $advisableTrophies = $playerAdvisorService->getAdvisableTrophies($playerAccountId, $playerAdvisorFilter, $offset, $limit);
 }
 
-$sort = (!empty($_GET["sort"]) ? $_GET["sort"] : "date");
-
-if ($player["status"] == 1 || $player["status"] == 3) {
-    $total_pages = 0;
-} else {
-    $sql = "SELECT
-            COUNT(*)
-        FROM
-            trophy t
-        JOIN trophy_title tt USING(np_communication_id)
-        LEFT JOIN trophy_earned te ON
-            t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND te.account_id = :account_id
-        JOIN trophy_title_player ttp ON
-            t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
-        WHERE
-            (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0";
-    if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-        $sql .= " AND (";
-        if (!empty($_GET["pc"])) {
-            $sql .= " tt.platform LIKE '%PC%' OR";
-        }
-        if (!empty($_GET["ps3"])) {
-            $sql .= " tt.platform LIKE '%PS3%' OR";
-        }
-        if (!empty($_GET["ps4"])) {
-            $sql .= " tt.platform LIKE '%PS4%' OR";
-        }
-        if (!empty($_GET["ps5"])) {
-            $sql .= " tt.platform LIKE '%PS5%' OR";
-        }
-        if (!empty($_GET["psvita"])) {
-            $sql .= " tt.platform LIKE '%PSVITA%' OR";
-        }
-        if (!empty($_GET["psvr"])) {
-            $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-        }
-        if (!empty($_GET["psvr2"])) {
-            $sql .= " tt.platform LIKE '%PSVR2%' OR";
-        }
-
-        // Remove " OR"
-        $sql = substr($sql, 0, -3);
-        $sql .= ")";
-    }
-    $query = $database->prepare($sql);
-    $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-    $query->execute();
-    $total_pages = $query->fetchColumn();
-}
-
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-$limit = 50;
-$offset = ($page - 1) * $limit;
+$totalPages = (int) ceil($totalTrophies / $limit);
+$filterParameters = $playerAdvisorFilter->getFilterParameters();
 
 $title = $player["online_id"] . "'s Trophy Advisor ~ PSN 100%";
 require_once("header.php");
@@ -99,7 +60,7 @@ require_once("header.php");
                         <ul class="dropdown-menu p-2">
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('pc') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
                                     <label class="form-check-label" for="filterPC">
                                         PC
                                     </label>
@@ -107,7 +68,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('ps3') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
                                     <label class="form-check-label" for="filterPS3">
                                         PS3
                                     </label>
@@ -115,7 +76,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps4"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('ps4') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
                                     <label class="form-check-label" for="filterPS4">
                                         PS4
                                     </label>
@@ -123,7 +84,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps5"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('ps5') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
                                     <label class="form-check-label" for="filterPS5">
                                         PS5
                                     </label>
@@ -131,7 +92,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvita"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('psvita') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
                                     <label class="form-check-label" for="filterPSVITA">
                                         PSVITA
                                     </label>
@@ -139,7 +100,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('psvr') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
                                     <label class="form-check-label" for="filterPSVR">
                                         PSVR
                                     </label>
@@ -147,7 +108,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr2"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
+                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('psvr2') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
                                     <label class="form-check-label" for="filterPSVR2">
                                         PSVR2
                                     </label>
@@ -190,68 +151,7 @@ require_once("header.php");
                                 </tr>
                                 <?php
                             } else {
-                                $sql = "SELECT
-                                        t.id AS trophy_id,
-                                        t.type AS trophy_type,
-                                        t.name AS trophy_name,
-                                        t.detail AS trophy_detail,
-                                        t.icon_url AS trophy_icon,
-                                        t.rarity_percent,
-                                        t.progress_target_value,
-                                        t.reward_name,
-                                        t.reward_image_url,
-                                        tt.id AS game_id,
-                                        tt.name AS game_name,
-                                        tt.icon_url AS game_icon,
-                                        tt.platform,
-                                        te.progress
-                                    FROM
-                                        trophy t
-                                    JOIN trophy_title tt USING(np_communication_id)
-                                    LEFT JOIN trophy_earned te ON
-                                        t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND te.account_id = :account_id
-                                    JOIN trophy_title_player ttp ON
-                                        t.np_communication_id = ttp.np_communication_id AND ttp.account_id = :account_id
-                                    WHERE
-                                        (te.earned IS NULL OR te.earned = 0) AND tt.status = 0 AND t.status = 0";
-                                if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-                                    $sql .= " AND (";
-                                    if (!empty($_GET["pc"])) {
-                                        $sql .= " tt.platform LIKE '%PC%' OR";
-                                    }
-                                    if (!empty($_GET["ps3"])) {
-                                        $sql .= " tt.platform LIKE '%PS3%' OR";
-                                    }
-                                    if (!empty($_GET["ps4"])) {
-                                        $sql .= " tt.platform LIKE '%PS4%' OR";
-                                    }
-                                    if (!empty($_GET["ps5"])) {
-                                        $sql .= " tt.platform LIKE '%PS5%' OR";
-                                    }
-                                    if (!empty($_GET["psvita"])) {
-                                        $sql .= " tt.platform LIKE '%PSVITA%' OR";
-                                    }
-                                    if (!empty($_GET["psvr"])) {
-                                        $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-                                    }
-                                    if (!empty($_GET["psvr2"])) {
-                                        $sql .= " tt.platform LIKE '%PSVR2%' OR";
-                                    }
-                                
-                                    // Remove " OR"
-                                    $sql = substr($sql, 0, -3);
-                                    $sql .= ")";
-                                }
-                                $sql .= " ORDER BY t.rarity_percent DESC";
-                                $sql .= " LIMIT :offset, :limit";
-
-                                $trophies = $database->prepare($sql);
-                                $trophies->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-                                $trophies->bindValue(":offset", $offset, PDO::PARAM_INT);
-                                $trophies->bindValue(":limit", $limit, PDO::PARAM_INT);
-                                $trophies->execute();
-
-                                while ($trophy = $trophies->fetch()) {
+                                foreach ($advisableTrophies as $trophy) {
                                     ?>
                                     <tr>
                                         <td scope="row" class="text-center align-middle">
@@ -330,75 +230,86 @@ require_once("header.php");
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages); ?>
+                <?= ($totalTrophies === 0 ? '0' : $offset + 1); ?>-<?= min($offset + $limit, $totalTrophies); ?> of <?= number_format($totalTrophies); ?>
             </p>
         </div>
         <div class="col-12">
             <nav aria-label="Player log navigation">
                 <ul class="pagination justify-content-center">
                     <?php
+                    $baseParameters = $filterParameters;
+
                     if ($page > 1) {
-                        $params["page"] = $page - 1;
+                        $previousParameters = $baseParameters;
+                        $previousParameters['page'] = $page - 1;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Previous">&lt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($previousParameters); ?>" aria-label="Previous">&lt;</a></li>
                         <?php
                     }
 
                     if ($page > 3) {
-                        $params["page"] = 1;
+                        $firstPageParameters = $baseParameters;
+                        $firstPageParameters['page'] = 1;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($firstPageParameters); ?>">1</a></li>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
                         <?php
                     }
 
                     if ($page-2 > 0) {
-                        $params["page"] = $page - 2;
+                        $twoBeforeParameters = $baseParameters;
+                        $twoBeforeParameters['page'] = $page - 2;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoBeforeParameters); ?>"><?= $page-2; ?></a></li>
                         <?php
                     }
 
                     if ($page-1 > 0) {
-                        $params["page"] = $page - 1;
+                        $oneBeforeParameters = $baseParameters;
+                        $oneBeforeParameters['page'] = $page - 1;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneBeforeParameters); ?>"><?= $page-1; ?></a></li>
                         <?php
                     }
                     ?>
 
                     <?php
-                    $params["page"] = $page;
+                    $currentParameters = $baseParameters;
+                    $currentParameters['page'] = $page;
                     ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($currentParameters); ?>"><?= $page; ?></a></li>
 
                     <?php
-                    if ($page+1 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 1;
+                    if ($page + 1 <= $totalPages) {
+                        $oneAfterParameters = $baseParameters;
+                        $oneAfterParameters['page'] = $page + 1;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneAfterParameters); ?>"><?= $page+1; ?></a></li>
                         <?php
                     }
 
-                    if ($page+2 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 2;
+                    if ($page + 2 <= $totalPages) {
+                        $twoAfterParameters = $baseParameters;
+                        $twoAfterParameters['page'] = $page + 2;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoAfterParameters); ?>"><?= $page+2; ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)-2) {
-                        $params["page"] = ceil($total_pages / $limit);
+                    if ($page < $totalPages - 2) {
+                        $lastPageParameters = $baseParameters;
+                        $lastPageParameters['page'] = $totalPages;
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($lastPageParameters); ?>"><?= $totalPages; ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)) {
-                        $params["page"] = $page + 1;
+                    if ($page < $totalPages) {
+                        $nextParameters = $baseParameters;
+                        $nextParameters['page'] = $page + 1;
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Next">&gt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($nextParameters); ?>" aria-label="Next">&gt;</a></li>
                         <?php
                     }
                     ?>
