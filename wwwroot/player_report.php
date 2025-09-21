@@ -4,35 +4,14 @@ if (!isset($accountId)) {
     die();
 }
 
+require_once 'classes/PlayerReportService.php';
+
+$playerReportService = new PlayerReportService($database);
+
 if (!empty($_GET["explanation"])) {
-    $ipAddress = $_SERVER["REMOTE_ADDR"];
-
-    $query = $database->prepare("SELECT * FROM player_report WHERE account_id = :account_id AND ip_address = :ip_address");
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
-    $query->execute();
-    $reported = $query->fetch();
-
-    $query = $database->prepare("SELECT COUNT(*) FROM player_report WHERE ip_address = :ip_address");
-    $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
-    $query->execute();
-    $count = $query->fetchColumn();
-
-    if ($reported) {
-        $result = "You've already reported this player.";
-    } elseif ($count >= 10) {
-        $result = "You've already 10 players reported waiting to be processed. Please try again later.";
-    } else {
-        $explanation = $_GET["explanation"];
-
-        $query = $database->prepare("INSERT INTO player_report (account_id, ip_address, explanation) VALUES (:account_id, :ip_address, :explanation)");
-        $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-        $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
-        $query->bindValue(":explanation", $explanation, PDO::PARAM_STR);
-        $query->execute();
-
-        $result = "Player reported successfully.";
-    }
+    $ipAddress = $_SERVER["REMOTE_ADDR"] ?? '';
+    $explanation = (string) $_GET["explanation"];
+    $result = $playerReportService->submitReport((int) $accountId, $ipAddress, $explanation);
 }
 
 $title = $player["online_id"] . "'s Report ~ PSN 100%";
