@@ -75,7 +75,7 @@ class PlayerLogService
 
         $sql .= $this->buildPlatformClause($filter);
         $sql .= $this->buildOrderByClause($filter);
-        $sql .= '\n            LIMIT :offset, :limit';
+        $sql .= PHP_EOL . '            LIMIT :offset, :limit';
 
         $query = $this->database->prepare($sql);
         $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
@@ -110,15 +110,15 @@ class PlayerLogService
             return '';
         }
 
-        return '\n                AND (' . implode(' OR ', $clauses) . ')';
+        return PHP_EOL . '                AND (' . implode(' OR ', $clauses) . ')';
     }
 
     private function buildOrderByClause(PlayerLogFilter $filter): string
     {
         if ($filter->isSort(PlayerLogFilter::SORT_RARITY)) {
-            return '\n            ORDER BY t.rarity_percent, te.earned_date';
+            return PHP_EOL . '            ORDER BY t.rarity_percent, te.earned_date';
         }
 
-        return '\n            ORDER BY te.earned_date DESC';
+        return PHP_EOL . '            ORDER BY te.earned_date DESC';
     }
 }
