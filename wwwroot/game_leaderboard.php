@@ -1,40 +1,38 @@
 <?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/classes/GameLeaderboardService.php';
+
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
     die();
 }
 
-$query = $database->prepare("SELECT * 
-    FROM   trophy_title 
-    WHERE  id = :id ");
-$query->bindValue(":id", $gameId, PDO::PARAM_INT);
-$query->execute();
-$game = $query->fetch();
+$gameLeaderboardService = new GameLeaderboardService($database);
 
+$game = $gameLeaderboardService->getGame((int) $gameId);
+
+if ($game === null) {
+    header("Location: /game/", true, 303);
+    die();
+}
+
+$accountId = null;
 if (isset($player)) {
-    $query = $database->prepare("SELECT account_id 
-        FROM   player 
-        WHERE  online_id = :online_id ");
-    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
-    $query->execute();
-    $accountId = $query->fetchColumn();
+    $accountId = $gameLeaderboardService->getPlayerAccountId($player);
 
-    if ($accountId === false) {
-        header("Location: /game/". $game["id"] ."-". $utility->slugify($game["name"]), true, 303);
+    if ($accountId === null) {
+        header("Location: /game/" . $game["id"] . "-" . $utility->slugify($game["name"]), true, 303);
         die();
     }
 
-    $query = $database->prepare("SELECT *
-        FROM trophy_title_player
-        WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
-    $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $gamePlayer = $query->fetch();
 }
 
-$title = $game["name"] ." Leaderboard ~ PSN 100%";
-require_once("header.php");
+$filters = $gameLeaderboardService->buildFilters($_GET);
+$totalPlayers = $gameLeaderboardService->getLeaderboardPlayerCount($game["np_communication_id"], $filters);
+$page = $gameLeaderboardService->getPage($_GET);
+$limit = GameLeaderboardService::PAGE_SIZE;
+$offset = $gameLeaderboardService->calculateOffset($page, $limit);
 
 $url = $_SERVER["REQUEST_URI"];
 $url_parts = parse_url($url);
@@ -45,41 +43,13 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$sql = "
-    SELECT COUNT(*)
-    FROM trophy_title_player ttp
-    JOIN player p ON p.account_id = ttp.account_id
-    JOIN player_ranking r ON r.account_id = p.account_id
-    WHERE ttp.np_communication_id = :np_communication_id
-      AND p.status = 0
-      AND r.ranking <= 10000
-";
-if (isset($_GET["country"])) {
-    $sql .= " AND p.country = :country";
-}
-if (isset($_GET["avatar"])) {
-    $sql .= " AND p.avatar_url = :avatar";
-}
-
-$query = $database->prepare($sql);
-
-$query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-if (isset($_GET["country"])) {
-    $query->bindValue(":country", $_GET["country"], PDO::PARAM_STR);
-}
-if (isset($_GET["avatar"])) {
-    $query->bindValue(":avatar", $_GET["avatar"], PDO::PARAM_STR);
-}
-
-$query->execute();
-$total_pages = $query->fetchColumn();
-
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-$limit = 50;
-$offset = ($page - 1) * $limit;
-
 $paramsWithoutPage = $params;
 unset($paramsWithoutPage["page"]);
+
+$rows = $gameLeaderboardService->getLeaderboardRows($game["np_communication_id"], $filters, $offset, $limit);
+
+$title = $game["name"] ." Leaderboard ~ PSN 100%";
+require_once("header.php");
 ?>
 
 <main class="container">
@@ -121,61 +91,6 @@ unset($paramsWithoutPage["page"]);
 
                         <tbody>
                             <?php
-                            $sql = "
-                                SELECT
-                                    p.account_id,
-                                    p.avatar_url,
-                                    p.country,
-                                    p.online_id AS name,
-                                    p.trophy_count_npwr,
-                                    p.trophy_count_sony,
-                                    ttp.bronze,
-                                    ttp.silver,
-                                    ttp.gold,
-                                    ttp.platinum,
-                                    ttp.progress,
-                                    ttp.last_updated_date AS last_known_date
-                                FROM
-                                    trophy_title_player ttp
-                                JOIN player p ON ttp.account_id = p.account_id
-                                JOIN player_ranking r ON p.account_id = r.account_id
-                                WHERE
-                                    p.status = 0
-                                    AND r.ranking <= 10000
-                                    AND ttp.np_communication_id = :np_communication_id
-                            ";
-                            if (isset($_GET["country"])) {
-                                $sql .= " AND p.country = :country";
-                            }
-                            if (isset($_GET["avatar"])) {
-                                $sql .= " AND p.avatar_url = :avatar";
-                            }
-                            $sql .= "
-                                ORDER BY
-                                    ttp.progress DESC,
-                                    ttp.platinum DESC,
-                                    ttp.gold DESC,
-                                    ttp.silver DESC,
-                                    ttp.bronze DESC,
-                                    ttp.last_updated_date
-                                LIMIT :offset, :limit
-                            ";
-
-                            $query = $database->prepare($sql);
-
-                            $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                            $query->bindValue(":offset", $offset, PDO::PARAM_INT);
-                            $query->bindValue(":limit", $limit, PDO::PARAM_INT);
-                            if (isset($_GET["country"])) {
-                                $query->bindValue(":country", $_GET["country"], PDO::PARAM_STR);
-                            }
-                            if (isset($_GET["avatar"])) {
-                                $query->bindValue(":avatar", $_GET["avatar"], PDO::PARAM_STR);
-                            }
-                            
-                            $query->execute();
-                            $rows = $query->fetchAll();
-
                             $rank = $offset;
                             foreach ($rows as $row) {
                                 $countryName = $utility->getCountryName($row["country"]);
@@ -246,7 +161,7 @@ unset($paramsWithoutPage["page"]);
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages) ?>
+                <?= ($totalPlayers == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $totalPlayers); ?> of <?= number_format($totalPlayers) ?>
             </p>
         </div>
         <div class="col-12">
@@ -289,29 +204,30 @@ unset($paramsWithoutPage["page"]);
                     <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
 
                     <?php
-                    if ($page+1 < ceil($total_pages / $limit)+1) {
+                    $totalPagesCount = (int) ceil($totalPlayers / $limit);
+                    if ($page + 1 <= $totalPagesCount) {
                         $params["page"] = $page + 1;
                         ?>
                         <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
                         <?php
                     }
 
-                    if ($page+2 < ceil($total_pages / $limit)+1) {
+                    if ($page + 2 <= $totalPagesCount) {
                         $params["page"] = $page + 2;
                         ?>
                         <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)-2) {
-                        $params["page"] = ceil($total_pages / $limit);
+                    if ($page < $totalPagesCount - 2) {
+                        $params["page"] = $totalPagesCount;
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $totalPagesCount; ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)) {
+                    if ($page < $totalPagesCount) {
                         $params["page"] = $page + 1;
                         ?>
                         <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Next">&gt;</a></li>
