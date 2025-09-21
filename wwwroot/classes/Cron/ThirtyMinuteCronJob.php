@@ -185,7 +185,7 @@ class ThirtyMinuteCronJob
             // Initialize the current player
             try {
                 if (is_numeric($player["account_id"])) {
-                    $user = $client->users()->find($player["account_id"]);
+                    $user = $client->users()->find((string) $player["account_id"]);
                     // ->find() doesn't have country information, but we should have it in our database from the ->search() when user was new to us.
                     $query = $this->database->prepare("SELECT
                             country
@@ -845,11 +845,11 @@ class ThirtyMinuteCronJob
                             }
 
                             // Recalculate trophies for trophy group and player
-                            $this->trophyCalculator->recalculateTrophyGroup($npid, $trophyGroup->id(), $user->accountId());
+                            $this->trophyCalculator->recalculateTrophyGroup($npid, $trophyGroup->id(), (int) $user->accountId());
                         }
 
                         // Recalculate trophies for trophy title and player
-                        $this->trophyCalculator->recalculateTrophyTitle($npid, $trophyTitle->lastUpdatedDateTime(), $newTrophies, $user->accountId(), false);
+                        $this->trophyCalculator->recalculateTrophyTitle($npid, $trophyTitle->lastUpdatedDateTime(), $newTrophies, (int) $user->accountId(), false);
 
                         // Game Merge stuff
                         $query = $this->database->prepare("SELECT DISTINCT parent_np_communication_id, 
@@ -859,8 +859,8 @@ class ThirtyMinuteCronJob
                         $query->bindValue(":child_np_communication_id", $npid, PDO::PARAM_STR);
                         $query->execute();
                         while ($row = $query->fetch()) {
-                            $this->trophyCalculator->recalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], $user->accountId());
-                            $this->trophyCalculator->recalculateTrophyTitle($row["parent_np_communication_id"], $trophyTitle->lastUpdatedDateTime(), false, $user->accountId(), true);
+                            $this->trophyCalculator->recalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], (int) $user->accountId());
+                            $this->trophyCalculator->recalculateTrophyTitle($row["parent_np_communication_id"], $trophyTitle->lastUpdatedDateTime(), false, (int) $user->accountId(), true);
                         }
                     }
 
