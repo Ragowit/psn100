@@ -78,11 +78,11 @@ class PlayerLeaderboardService
         $clauses = '';
 
         if ($filter->hasCountry()) {
-            $clauses .= "\n                AND p.country = :country";
+            $clauses .= " AND p.country = :country";
         }
 
         if ($filter->hasAvatar()) {
-            $clauses .= "\n                AND p.avatar_url = :avatar";
+            $clauses .= " AND p.avatar_url = :avatar";
         }
 
         return $clauses;

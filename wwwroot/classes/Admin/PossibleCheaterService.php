@@ -1083,11 +1083,7 @@ class PossibleCheaterService
             return '()';
         }
 
-        $indent = '                ';
-
-        return "(\n" .
-            $indent . implode("\n" . $indent . 'OR ', $conditions) . "\n" .
-            '        )';
+        return '(' . implode(' OR ', $conditions) . ')';
     }
 
     /**

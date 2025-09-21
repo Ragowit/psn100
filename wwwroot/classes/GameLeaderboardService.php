@@ -207,11 +207,11 @@ class GameLeaderboardService
         $clauses = '';
 
         if (isset($filters['country'])) {
-            $clauses .= "\n                AND p.country = :country";
+            $clauses .= " AND p.country = :country";
         }
 
         if (isset($filters['avatar'])) {
-            $clauses .= "\n                AND p.avatar_url = :avatar";
+            $clauses .= " AND p.avatar_url = :avatar";
         }
 
         return $clauses;
