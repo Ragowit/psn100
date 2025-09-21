@@ -127,10 +127,6 @@ class PlayerAdvisorService
 
     private function buildOrderByClause(PlayerAdvisorFilter $filter): string
     {
-        if ($filter->isSort(PlayerAdvisorFilter::SORT_RARITY)) {
-            return ' ORDER BY t.rarity_percent DESC, ttp.last_updated_date DESC';
-        }
-
-        return ' ORDER BY ttp.last_updated_date DESC, t.rarity_percent DESC';
+        return ' ORDER BY t.rarity_percent DESC, ttp.last_updated_date DESC';
     }
 }

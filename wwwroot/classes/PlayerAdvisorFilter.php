@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 class PlayerAdvisorFilter
 {
-    public const SORT_DATE = 'date';
     public const SORT_RARITY = 'rarity';
 
     private const SUPPORTED_PLATFORMS = [
@@ -43,10 +42,7 @@ class PlayerAdvisorFilter
             $page = max((int) $parameters['page'], 1);
         }
 
-        $sort = strtolower((string) ($parameters['sort'] ?? self::SORT_DATE));
-        if (!in_array($sort, [self::SORT_DATE, self::SORT_RARITY], true)) {
-            $sort = self::SORT_DATE;
-        }
+        $sort = self::SORT_RARITY;
 
         $platforms = [];
         foreach (self::SUPPORTED_PLATFORMS as $platform) {
@@ -84,11 +80,6 @@ class PlayerAdvisorFilter
     public function isPlatformSelected(string $platform): bool
     {
         return in_array($platform, $this->platforms, true);
-    }
-
-    public function isSort(string $sort): bool
-    {
-        return $this->sort === $sort;
     }
 
     public function getSort(): string
