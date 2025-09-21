@@ -38,6 +38,12 @@ if (isset($player)) {
     );
 }
 
+$npCommunicationId = (string) $trophy["np_communication_id"];
+$orderId = (int) $trophy["order_id"];
+
+$firstAchievers = $trophyService->getFirstAchievers($npCommunicationId, $orderId);
+$latestAchievers = $trophyService->getLatestAchievers($npCommunicationId, $orderId);
+
 $metaData = new stdClass();
 $metaData->title = $trophy["trophy_name"] ." Trophy";
 $metaData->description = htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8");
@@ -185,41 +191,9 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("
-                                        WITH filtered_trophy_earned AS (
-                                            SELECT
-                                                account_id,
-                                                earned_date
-                                            FROM
-                                                trophy_earned
-                                            WHERE
-                                                np_communication_id = :np_communication_id
-                                                AND order_id = :order_id
-                                                AND earned = 1
-                                        )
-                                        SELECT
-                                            p.avatar_url,
-                                            p.online_id,
-                                            p.trophy_count_npwr,
-                                            p.trophy_count_sony,
-                                            IFNULL(te.earned_date, 'No Timestamp') AS earned_date
-                                        FROM
-                                            filtered_trophy_earned te
-                                            JOIN player_ranking r ON te.account_id = r.account_id
-                                            JOIN player p ON r.account_id = p.account_id
-                                        WHERE
-                                            r.ranking <= 10000
-                                        ORDER BY
-                                            te.earned_date IS NULL, te.earned_date
-                                        LIMIT 50");
-                                    $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-                                    $query->bindValue(":order_id", $trophy["order_id"], PDO::PARAM_STR);
-                                    $query->execute();
-                                    $results = $query->fetchAll();
-
                                     $count = 0;
 
-                                    foreach ($results as $result) {
+                                    foreach ($firstAchievers as $result) {
                                         ?>
                                         <tr<?= ($result["online_id"] == $player) ? " class='table-primary'" : ""; ?>>
                                             <th class="align-middle" scope="row">
@@ -274,41 +248,9 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("
-                                        WITH filtered_trophy_earned AS (
-                                            SELECT
-                                                account_id,
-                                                earned_date
-                                            FROM
-                                                trophy_earned
-                                            WHERE
-                                                np_communication_id = :np_communication_id
-                                                AND order_id = :order_id
-                                                AND earned = 1
-                                        )
-                                        SELECT
-                                            p.avatar_url,
-                                            p.online_id,
-                                            p.trophy_count_npwr,
-                                            p.trophy_count_sony,
-                                            IFNULL(te.earned_date, 'No Timestamp') AS earned_date
-                                        FROM
-                                            filtered_trophy_earned te
-                                            JOIN player_ranking r ON te.account_id = r.account_id
-                                            JOIN player p ON r.account_id = p.account_id
-                                        WHERE
-                                            r.ranking <= 10000
-                                        ORDER BY
-                                            te.earned_date DESC
-                                        LIMIT 50");
-                                    $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-                                    $query->bindValue(":order_id", $trophy["order_id"], PDO::PARAM_STR);
-                                    $query->execute();
-                                    $results = $query->fetchAll();
-
                                     $count = 0;
 
-                                    foreach ($results as $result) {
+                                    foreach ($latestAchievers as $result) {
                                         ?>
                                         <tr<?= ($result["online_id"] == $player) ? " class='table-primary'" : ""; ?>>
                                             <th class="align-middle" scope="row">
