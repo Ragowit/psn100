@@ -1,4 +1,10 @@
 <?php
+require_once __DIR__ . '/classes/AboutPageService.php';
+
+$aboutPageService = new AboutPageService($database, $utility);
+$scanSummary = $aboutPageService->getScanSummary();
+$scanLogPlayers = $aboutPageService->getScanLogPlayers();
+
 $title = "About ~ PSN 100%";
 require_once("header.php");
 ?>
@@ -60,16 +66,7 @@ require_once("header.php");
                 <div class="bg-body-tertiary p-3 rounded">
                     <h2>Scan Log</h2>
                     <p>
-                        <?php
-                        $query = $database->prepare("SELECT COUNT(*) FROM player WHERE last_updated_date >= now() - INTERVAL 1 DAY");
-                        $query->execute();
-                        $scannedPlayers = $query->fetchColumn();
-
-                        $query = $database->prepare("SELECT COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0");
-                        $query->execute();
-                        $scannedNewPlayers = $query->fetchColumn();
-                        ?>
-                        <?= $scannedPlayers; ?> players were scanned in the last 24 hours, and <?= $scannedNewPlayers; ?> new players added to the leaderboards this week!
+                        <?= $scanSummary->getScannedPlayers(); ?> players were scanned in the last 24 hours, and <?= $scanSummary->getNewPlayers(); ?> new players added to the leaderboards this week!
 
                         <div class="table-responsive-xxl">
                             <table class="table">
@@ -84,73 +81,47 @@ require_once("header.php");
 
                                 <tbody>
                                     <?php
-                                    $query = $database->prepare("
-                                        SELECT
-                                            p.online_id,
-                                            p.country,
-                                            p.avatar_url,
-                                            p.last_updated_date,
-                                            p.level,
-                                            p.progress,
-                                            p.rank_last_week,
-                                            p.status,
-                                            p.trophy_count_npwr,
-                                            p.trophy_count_sony,
-                                            r.ranking
-                                        FROM
-                                            player p
-                                        LEFT JOIN
-                                            player_ranking r ON p.account_id = r.account_id
-                                        WHERE
-                                            p.status = 0
-                                        ORDER BY
-                                            p.last_updated_date DESC
-                                        LIMIT 10
-                                    ");
-                                    $query->execute();
-                                    $players = $query->fetchAll();
-
-                                    foreach ($players as $player) {
-                                        $countryName = $utility->getCountryName($player["country"]);
-                                        
-                                        if ($player["status"] != 0) {
-                                            $rank = "N/A";
-                                        } else {
-                                            $rank = $player["ranking"];
-
-                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
-                                                $rank .= " <span style='color: #9d9d9d;'>(H)</span>";
-                                            }
-                                        }
-                                        $rank .= "<br>";
-                                        if ($player["status"] == 1) {
-                                            $rank .= "<span style='color: #9d9d9d;'>(Cheater)</span>";
-                                        } elseif ($player["status"] == 3) {
-                                            $rank .= "<span style='color: #9d9d9d;'>(Private)</span>";
-                                        } elseif ($player["status"] == 4) {
-                                            $rank .= "<span style='color: #9d9d9d;'>(Inactive)</span>";
-                                        } elseif ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
-                                            $rank .= "(New!)";
-                                        } else {
-                                            $delta = $player["rank_last_week"] - $player["ranking"];
-
-                                            if ($delta < 0) {
-                                                $rank .= "<span style='color: #d40b0b;'>(". $delta .")</span>";
-                                            } elseif ($delta > 0) {
-                                                $rank .= "<span style='color: #0bd413;'>(+". $delta .")</span>";
-                                            } else {
-                                                $rank .= "<span style='color: #0070d1;'>(=)</span>";
-                                            }
-                                        }
+                                    foreach ($scanLogPlayers as $player) {
+                                        $countryCode = $player->getCountryCode();
+                                        $countryName = $player->getCountryName();
+                                        $onlineId = $player->getOnlineId();
+                                        $lastUpdatedDate = $player->getLastUpdatedDate();
+                                        $statusLabel = $player->getStatusLabel();
+                                        $rankDeltaLabel = $player->getRankDeltaLabel();
+                                        $rankDeltaColor = $player->getRankDeltaColor();
+                                        $progress = $player->getProgress();
+                                        $level = $player->getLevel();
                                         ?>
                                         <tr>
-                                            <th scope="row" class="align-middle text-center"><?= $rank; ?></th>
-                                            <td class="align-middle text-center" id="lastUpdate<?= $player["online_id"]; ?>"></td>
+                                            <th scope="row" class="align-middle text-center">
+                                                <?php
+                                                if ($player->isRanked()) {
+                                                    echo $player->getRanking();
+
+                                                    if ($player->hasHiddenTrophies()) {
+                                                        echo " <span style='color: #9d9d9d;'>(H)</span>";
+                                                    }
+                                                } else {
+                                                    echo 'N/A';
+                                                }
+                                                ?>
+                                                <br>
+                                                <?php
+                                                if ($statusLabel !== null) {
+                                                    echo "<span style='color: #9d9d9d;'>(' . $statusLabel . ')</span>";
+                                                } elseif ($player->isNew()) {
+                                                    echo '(New!)';
+                                                } elseif ($rankDeltaLabel !== null && $rankDeltaColor !== null) {
+                                                    echo "<span style=\"color: " . $rankDeltaColor . ";\">" . $rankDeltaLabel . '</span>';
+                                                }
+                                                ?>
+                                            </th>
+                                            <td class="align-middle text-center" id="lastUpdate<?= $onlineId; ?>"></td>
                                             <?php
-                                            if (!is_null($player["last_updated_date"])) {
+                                            if ($lastUpdatedDate !== null) {
                                                 ?>
                                                 <script>
-                                                    document.getElementById("lastUpdate<?= $player["online_id"]; ?>").innerHTML = new Date('<?= $player["last_updated_date"]; ?> UTC').toLocaleString('sv-SE', {timeStyle: 'medium'});
+                                                    document.getElementById("lastUpdate<?= $onlineId; ?>").innerHTML = new Date('<?= $lastUpdatedDate; ?> UTC').toLocaleString('sv-SE', {timeStyle: 'medium'});
                                                 </script>
                                                 <?php
                                             }
@@ -158,33 +129,32 @@ require_once("header.php");
                                             <td class="align-middle">
                                                 <div class="hstack gap-3">
                                                     <div>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player["online_id"]; ?>">
-                                                            <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="50" width="50" />
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $onlineId; ?>">
+                                                            <img src="/img/avatar/<?= $player->getAvatarUrl(); ?>" alt="" height="50" width="50" />
                                                         </a>
                                                     </div>
 
                                                     <div>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" style="white-space: nowrap;" href="/player/<?= $player["online_id"]; ?>"><?= $player["online_id"]; ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" style="white-space: nowrap;" href="/player/<?= $onlineId; ?>"><?= $onlineId; ?></a>
                                                     </div>
 
                                                     <div class="ms-auto">
-                                                        <img src="/img/country/<?= $player["country"]; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                                        <img src="/img/country/<?= $countryCode; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
                                                     </div>
                                                 </div>
                                             </td>
                                             <td class="align-middle text-center">
                                                 <?php
-                                                if ($player["status"] == 1 || $player["status"] == 3) {
-                                                    ?>
-                                                    N/A
-                                                    <?php
+                                                if ($player->getStatus() == 1 || $player->getStatus() == 3) {
+                                                    echo 'N/A';
                                                 } else {
-                                                    ?>
-                                                    <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= $player["level"]; ?>
-                                                    <div class="progress" title="<?= $player["progress"]; ?>%">
-                                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                                                    </div>
-                                                    <?php
+                                                    echo '<img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18"/> ' . $level;
+
+                                                    if ($progress !== null) {
+                                                        echo '<div class="progress" title="' . $progress . '%">';
+                                                        echo '<div class="progress-bar bg-primary" role="progressbar" style="width: ' . $progress . '%" aria-valuenow="' . $progress . '" aria-valuemin="0" aria-valuemax="100"></div>';
+                                                        echo '</div>';
+                                                    }
                                                 }
                                                 ?>
                                             </td>
