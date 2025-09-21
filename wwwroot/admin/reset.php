@@ -1,100 +1,19 @@
 <?php
 require_once("../init.php");
+require_once("../classes/GameResetService.php");
 
-if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
-    $gameId = $_POST["game"];
-    $status = $_POST["status"];
+$gameResetService = new GameResetService($database);
+$success = null;
 
-    // Safety check
-    $query = $database->prepare("SELECT np_communication_id FROM trophy_title WHERE id = :game_id");
-    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
-    $query->execute();
-    $npCommunicationId = $query->fetchColumn();
-    
-    if (str_starts_with($npCommunicationId, "MERGE")) {
-        if ($status == 0) { // Reset
-            $database->beginTransaction();
-            $query = $database->prepare("DELETE FROM trophy_merge WHERE parent_np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-            
-            $query = $database->prepare("DELETE FROM trophy_earned WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
+if (isset($_POST["game"]) && ctype_digit((string) $_POST["game"])) {
+    $gameId = (int) $_POST["game"];
+    $status = isset($_POST["status"]) ? (int) $_POST["status"] : 0;
 
-            $query = $database->prepare("DELETE FROM trophy_group_player WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_title_player WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("UPDATE trophy_title SET owners = 0, owners_completed = 0 WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("UPDATE trophy_title SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();            
-            $database->commit();
-
-            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_RESET', :param_1)");
-            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-            $query->execute();
-
-            $success = "<p>Game ". $gameId ." was reset.</p>";
-        } elseif ($status == 1) { // Delete
-            $query = $database->prepare("SELECT `name` FROM trophy_title WHERE id = :game_id");
-            $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
-            $query->execute();
-            $gameName = $query->fetchColumn();
-
-            $database->beginTransaction();
-            $query = $database->prepare("DELETE FROM trophy_merge WHERE parent_np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-            
-            $query = $database->prepare("DELETE FROM trophy WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_earned WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_group_player WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_title_player WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_group WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("DELETE FROM trophy_title WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-
-            $query = $database->prepare("UPDATE trophy_title SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-            $database->commit();
-
-            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `extra`) VALUES ('GAME_DELETE', :param_1, :extra)");
-            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-            $query->bindValue(":extra", $gameName, PDO::PARAM_STR);
-            $query->execute();
-
-            $success = "<p>Game ". $gameId ." was deleted.</p>";
-        } else {
-            $success = "Unknown method.";
-        }
-    } else {
-        $success = "Can only reset/delete merged game entries.";
+    try {
+        $message = $gameResetService->process($gameId, $status);
+        $success = "<p>{$message}</p>";
+    } catch (InvalidArgumentException $exception) {
+        $success = $exception->getMessage();
     }
 }
 
@@ -123,7 +42,7 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
             </form>
 
             <?php
-            if (isset($success)) {
+            if ($success !== null) {
                 echo $success;
             }
             ?>
