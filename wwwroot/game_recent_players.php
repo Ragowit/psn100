@@ -1,37 +1,36 @@
 <?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/classes/GameRecentPlayersService.php';
+
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
     die();
 }
 
-$query = $database->prepare("SELECT * 
-    FROM   trophy_title 
-    WHERE  id = :id ");
-$query->bindValue(":id", $gameId, PDO::PARAM_INT);
-$query->execute();
-$game = $query->fetch();
+$gameRecentPlayersService = new GameRecentPlayersService($database);
 
+$game = $gameRecentPlayersService->getGame((int) $gameId);
+
+if ($game === null) {
+    header("Location: /game/", true, 303);
+    die();
+}
+
+$accountId = null;
 if (isset($player)) {
-    $query = $database->prepare("SELECT account_id 
-        FROM   player 
-        WHERE  online_id = :online_id ");
-    $query->bindValue(":online_id", $player, PDO::PARAM_STR);
-    $query->execute();
-    $accountId = $query->fetchColumn();
+    $accountId = $gameRecentPlayersService->getPlayerAccountId($player);
 
-    if ($accountId === false) {
-        header("Location: /game/". $game["id"] ."-". $utility->slugify($game["name"]), true, 303);
+    if ($accountId === null) {
+        header("Location: /game/" . $game["id"] . "-" . $utility->slugify($game["name"]), true, 303);
         die();
     }
 
-    $query = $database->prepare("SELECT *
-        FROM trophy_title_player
-        WHERE np_communication_id = :np_communication_id AND account_id = :account_id");
-    $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $gamePlayer = $query->fetch();
+    $gamePlayer = $gameRecentPlayersService->getGamePlayer($game["np_communication_id"], $accountId);
 }
+
+$filters = $gameRecentPlayersService->buildFilters($_GET);
+$rows = $gameRecentPlayersService->getRecentPlayers($game["np_communication_id"], $filters);
 
 $title = $game["name"] ." Recent Players ~ PSN 100%";
 require_once("header.php");
@@ -43,6 +42,14 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     parse_str($url_parts["query"], $params);
 } else {
     $params = array();
+}
+
+foreach (["country", "avatar"] as $filterKey) {
+    if (isset($filters[$filterKey])) {
+        $params[$filterKey] = $filters[$filterKey];
+    } else {
+        unset($params[$filterKey]);
+    }
 }
 ?>
 
@@ -85,54 +92,6 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
 
                         <tbody>
                             <?php
-                            $sql = "
-                                SELECT
-                                    p.account_id,
-                                    p.avatar_url,
-                                    p.country,
-                                    p.online_id AS name,
-                                    p.trophy_count_npwr,
-                                    p.trophy_count_sony,
-                                    ttp.bronze,
-                                    ttp.silver,
-                                    ttp.gold,
-                                    ttp.platinum,
-                                    ttp.progress,
-                                    ttp.last_updated_date AS last_known_date
-                                FROM
-                                    trophy_title_player ttp
-                                JOIN player p ON ttp.account_id = p.account_id
-                                JOIN player_ranking r ON p.account_id = r.account_id
-                                WHERE
-                                    p.status = 0
-                                    AND r.ranking <= 10000
-                                    AND ttp.np_communication_id = :np_communication_id
-                            ";
-                            if (isset($_GET["country"])) {
-                                $sql .= " AND p.country = :country";
-                            }
-                            if (isset($_GET["avatar"])) {
-                                $sql .= " AND p.avatar_url = :avatar";
-                            }
-                            $sql .= "
-                                ORDER BY
-                                    ttp.last_updated_date DESC
-                                LIMIT 10
-                            ";
-
-                            $query = $database->prepare($sql);
-
-                            $query->bindValue(":np_communication_id", $game["np_communication_id"], PDO::PARAM_STR);
-                            if (isset($_GET["country"])) {
-                                $query->bindValue(":country", $_GET["country"], PDO::PARAM_STR);
-                            }
-                            if (isset($_GET["avatar"])) {
-                                $query->bindValue(":avatar", $_GET["avatar"], PDO::PARAM_STR);
-                            }
-
-                            $query->execute();
-                            $rows = $query->fetchAll();
-
                             $rank = 0;
                             foreach ($rows as $row) {
                                 $countryName = $utility->getCountryName($row["country"]);
@@ -141,7 +100,7 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
                                 $paramsCountry = $params;
                                 $paramsCountry["country"] = $row["country"];
                                 ?>
-                                <tr<?= ((isset($accountId) && $row["account_id"] === $accountId) ? " class='table-primary'" : ""); ?>>
+                                <tr<?= ($accountId !== null && $row["account_id"] === $accountId) ? " class='table-primary'" : ""; ?>>
                                     <th class="align-middle" style="width: 2rem;" scope="row"><?= ++$rank; ?></th>
 
                                     <td>
