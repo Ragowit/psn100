@@ -1,42 +1,23 @@
 <?php
+require_once 'classes/PlayerLeaderboardFilter.php';
+require_once 'classes/PlayerLeaderboardService.php';
+
 $title = "PSN Trophy Leaderboard ~ PSN 100%";
 require_once("header.php");
 
-$url = $_SERVER["REQUEST_URI"];
-$url_parts = parse_url($url);
-// If URL doesn't have a query string.
-if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
-    parse_str($url_parts["query"], $params);
-} else {
-    $params = array();
-}
+$playerLeaderboardFilter = PlayerLeaderboardFilter::fromArray($_GET);
+$playerLeaderboardService = new PlayerLeaderboardService($database);
 
-$sql = "SELECT COUNT(*) FROM player WHERE `status` = 0";
-if (!empty($_GET["country"])) {
-    $sql .= " AND country = :country";
-}
-if (!empty($_GET["avatar"])) {
-    $sql .= " AND avatar_url = :avatar";
-}
+$limit = PlayerLeaderboardService::PAGE_SIZE;
+$page = $playerLeaderboardFilter->getPage();
+$offset = $playerLeaderboardFilter->getOffset($limit);
 
-$query = $database->prepare($sql);
-if (!empty($_GET["country"])) {
-    $country = $_GET["country"];
-    $query->bindValue(":country", $country, PDO::PARAM_STR);
-}
-if (!empty($_GET["avatar"])) {
-    $avatar = $_GET["avatar"];
-    $query->bindValue(":avatar", $avatar, PDO::PARAM_STR);
-}
-$query->execute();
-$total_pages = $query->fetchColumn();
+$totalPlayers = $playerLeaderboardService->countPlayers($playerLeaderboardFilter);
+$totalPages = (int) ceil($totalPlayers / $limit);
+$players = $playerLeaderboardService->getPlayers($playerLeaderboardFilter, $limit);
 
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-$limit = 50;
-$offset = ($page - 1) * $limit;
-
-$paramsWithoutPage = $params;
-unset($paramsWithoutPage["page"]);
+$filterParameters = $playerLeaderboardFilter->getFilterParameters();
+$pageParameters = $playerLeaderboardFilter->toQueryParameters();
 ?>
 
 <main class="container">
@@ -47,7 +28,7 @@ unset($paramsWithoutPage["page"]);
                 <div class="bg-body-tertiary p-3 rounded">
                     <div class="btn-group">
                         <a class="btn btn-primary active" href="/leaderboard/trophy">Trophy</a>
-                        <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($paramsWithoutPage); ?>">Rarity</a>
+                        <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity</a>
                     </div>
                 </div>
             </div>
@@ -62,7 +43,7 @@ unset($paramsWithoutPage["page"]);
                         <thead>
                             <tr class="text-uppercase">
                                 <?php
-                                if (isset($_GET["country"])) {
+                                if ($playerLeaderboardFilter->hasCountry()) {
                                     ?>
                                     <th scope="col" class="text-center">Country<br>Rank</th>
                                     <?php
@@ -85,41 +66,6 @@ unset($paramsWithoutPage["page"]);
 
                         <tbody>
                             <?php
-                            $sql = "
-                                SELECT
-                                    p.*,
-                                    r.ranking,
-                                    r.ranking_country
-                                FROM
-                                    player p
-                                JOIN player_ranking r ON p.account_id = r.account_id
-                                WHERE
-                                    p.status = 0
-                            ";
-                            if (!empty($_GET["country"])) {
-                                $sql .= " AND p.country = :country";
-                            }
-                            if (!empty($_GET["avatar"])) {
-                                $sql .= " AND p.avatar_url = :avatar";
-                            }
-                            $sql .= "
-                                ORDER BY r.ranking
-                                LIMIT :offset, :limit
-                            ";
-
-                            $query = $database->prepare($sql);
-                            if (!empty($_GET["country"])) {
-                                $query->bindValue(":country", $_GET["country"], PDO::PARAM_STR);
-                            }
-                            if (!empty($_GET["avatar"])) {
-                                $query->bindValue(":avatar", $_GET["avatar"], PDO::PARAM_STR);
-                            }
-                            $query->bindValue(":offset", $offset, PDO::PARAM_INT);
-                            $query->bindValue(":limit", $limit, PDO::PARAM_INT);
-
-                            $query->execute();
-                            $players = $query->fetchAll();
-
                             foreach ($players as $player) {
                                 $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["platinum"];
                                 $countryName = $utility->getCountryName($player["country"]);
@@ -129,14 +75,14 @@ unset($paramsWithoutPage["page"]);
                                     echo "<tr id=\"". $player["online_id"] ."\">";
                                 }
 
-                                $paramsAvatar = $paramsWithoutPage;
+                                $paramsAvatar = $filterParameters;
                                 $paramsAvatar["avatar"] = $player["avatar_url"];
-                                $paramsCountry = $paramsWithoutPage;
+                                $paramsCountry = $filterParameters;
                                 $paramsCountry["country"] = $player["country"];
                                 ?>
                                 <th scope="row" class="text-center align-middle">
                                     <?php
-                                    if (isset($_GET["country"])) {
+                                    if ($playerLeaderboardFilter->hasCountry()) {
                                         if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
                                             echo "New!";
                                             if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
@@ -232,7 +178,7 @@ unset($paramsWithoutPage["page"]);
     <div class="row mt-3">
         <div class="col-12">
             <p class="text-center">
-                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages); ?>
+                <?= ($totalPlayers == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $totalPlayers); ?> of <?= number_format($totalPlayers); ?>
             </p>
         </div>
         <div class="col-12">
@@ -240,59 +186,56 @@ unset($paramsWithoutPage["page"]);
                 <ul class="pagination justify-content-center">
                     <?php
                     if ($page > 1) {
-                        $params["page"] = $page - 1; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">&lt;</a></li>
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page - 1)); ?>">&lt;</a></li>
                         <?php
                     }
 
                     if ($page > 3) {
-                        $params["page"] = 1; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage(1)); ?>">1</a></li>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
                         <?php
                     }
 
                     if ($page-2 > 0) {
-                        $params["page"] = $page - 2; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page - 2)); ?>"><?= $page-2; ?></a></li>
                         <?php
                     }
 
                     if ($page-1 > 0) {
-                        $params["page"] = $page - 1; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page - 1)); ?>"><?= $page-1; ?></a></li>
                         <?php
                     }
                     ?>
 
-                    <?php
-                    $params["page"] = $page;
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($pageParameters); ?>"><?= $page; ?></a></li>
 
                     <?php
-                    if ($page+1 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 1; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
+                    if ($page < $totalPages) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page + 1)); ?>"><?= $page+1; ?></a></li>
                         <?php
                     }
 
-                    if ($page+2 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 2; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
+                    if ($page + 1 < $totalPages) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page + 2)); ?>"><?= $page+2; ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)-2) {
-                        $params["page"] = ceil($total_pages / $limit); ?>
+                    if ($page < $totalPages - 2) {
+                        ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($totalPages)); ?>"><?= $totalPages; ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)) {
-                        $params["page"] = $page + 1; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">&gt;</a></li>
+                    if ($page < $totalPages) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page + 1)); ?>">&gt;</a></li>
                         <?php
                     }
                     ?>
