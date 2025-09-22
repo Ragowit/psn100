@@ -1,37 +1,18 @@
 <?php
-require_once("../init.php");
-require_once '../classes/GameStatusService.php';
+declare(strict_types=1);
+
+require_once '../init.php';
+require_once '../classes/Admin/GameStatusRequestHandler.php';
 
 $gameStatusService = new GameStatusService($database);
-$success = null;
-$error = null;
+$requestHandler = new GameStatusRequestHandler($gameStatusService);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $gameId = filter_input(INPUT_POST, 'game', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-    $status = filter_input(INPUT_POST, 'status', FILTER_VALIDATE_INT);
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$postData = $_POST ?? [];
 
-    if ($gameId === null || $gameId === false) {
-        $error = '<p>Invalid game ID provided.</p>';
-    } elseif ($status === null || $status === false) {
-        $error = '<p>Invalid status provided.</p>';
-    } else {
-        try {
-            $statusText = $gameStatusService->updateGameStatus((int) $gameId, (int) $status);
-            $gameIdText = htmlentities((string) $gameId, ENT_QUOTES, 'UTF-8');
-            $statusText = htmlentities($statusText, ENT_QUOTES, 'UTF-8');
-
-            $success = sprintf(
-                '<p>Game %s is now set as %s. All affected players will be updated soon, and ranks updated the next whole hour.</p>',
-                $gameIdText,
-                $statusText
-            );
-        } catch (InvalidArgumentException $exception) {
-            $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
-        } catch (Throwable $exception) {
-            $error = '<p>Failed to update game status. Please try again.</p>';
-        }
-    }
-}
+$result = $requestHandler->handleRequest($requestMethod, $postData);
+$success = $result->getSuccessMessage();
+$error = $result->getErrorMessage();
 
 ?>
 <!doctype html>
