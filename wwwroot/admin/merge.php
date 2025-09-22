@@ -1,46 +1,18 @@
 <?php
+declare(strict_types=1);
+
 ini_set("max_execution_time", "0");
 ini_set("max_input_time", "0");
 ini_set("mysql.connect_timeout", "0");
 set_time_limit(0);
+
 require_once("../init.php");
 require_once("../classes/TrophyMergeService.php");
+require_once("../classes/Admin/TrophyMergeRequestHandler.php");
 
-$message = "";
 $mergeService = new TrophyMergeService($database);
-
-try {
-    if (isset($_POST["trophyparent"]) && ctype_digit(strval($_POST["trophyparent"])) && isset($_POST["trophychild"])) {
-        $childTrophiesRaw = array_map('trim', explode(',', (string) $_POST["trophychild"]));
-        $childTrophyIds = [];
-
-        foreach ($childTrophiesRaw as $childId) {
-            if ($childId === '') {
-                continue;
-            }
-
-            if (!ctype_digit($childId)) {
-                throw new InvalidArgumentException('Child trophy ids must be numeric.');
-            }
-
-            $childTrophyIds[] = (int) $childId;
-        }
-
-        $message = $mergeService->mergeSpecificTrophies((int) $_POST["trophyparent"], $childTrophyIds);
-    } elseif (isset($_POST["parent"]) && ctype_digit(strval($_POST["parent"])) && isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
-        $childId = (int) $_POST["child"];
-        $parentId = (int) $_POST["parent"];
-        $method = strtolower((string) ($_POST["method"] ?? 'order'));
-
-        $message = $mergeService->mergeGames($childId, $parentId, $method);
-    } elseif (isset($_POST["child"]) && ctype_digit(strval($_POST["child"]))) {
-        $message = $mergeService->cloneGame((int) $_POST["child"]);
-    }
-} catch (InvalidArgumentException | RuntimeException $exception) {
-    $message = $exception->getMessage();
-} catch (Throwable $exception) {
-    $message = 'An unexpected error occurred: ' . $exception->getMessage();
-}
+$requestHandler = new TrophyMergeRequestHandler($mergeService);
+$message = $requestHandler->handle($_POST ?? []);
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
