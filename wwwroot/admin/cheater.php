@@ -1,16 +1,26 @@
 <?php
-require_once("../init.php");
 
-if (isset($_POST["player"])) {
-    $onlineId = $_POST["player"];
+declare(strict_types=1);
 
-    $database->beginTransaction();
-    $query = $database->prepare("UPDATE player SET `status` = 1, rank_last_week = 0, rarity_rank_last_week = 0, rank_country_last_week = 0, rarity_rank_country_last_week = 0 WHERE online_id = :online_id");
-    $query->bindValue(":online_id", $onlineId, PDO::PARAM_STR);
-    $query->execute();
-    $database->commit();
+require_once '../init.php';
+require_once '../classes/Admin/CheaterService.php';
 
-    $success = "<p>Player ". $onlineId ." is now tagged as a cheater.</p>";
+$cheaterService = new CheaterService($database);
+
+$successMessage = null;
+$errorMessage = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $onlineId = isset($_POST['player']) ? trim((string) $_POST['player']) : '';
+
+    try {
+        $cheaterService->markPlayerAsCheater($onlineId);
+        $successMessage = sprintf('<p>Player %s is now tagged as a cheater.</p>', htmlentities($onlineId));
+    } catch (InvalidArgumentException $exception) {
+        $errorMessage = sprintf('<p class="text-danger">%s</p>', htmlentities($exception->getMessage()));
+    } catch (Throwable $exception) {
+        $errorMessage = '<p class="text-danger">An unexpected error occurred while updating the player.</p>';
+    }
 }
 
 ?>
@@ -33,8 +43,12 @@ if (isset($_POST["player"])) {
             </form>
 
             <?php
-            if (isset($success)) {
-                echo $success;
+            if ($successMessage !== null) {
+                echo $successMessage;
+            }
+
+            if ($errorMessage !== null) {
+                echo $errorMessage;
             }
             ?>
         </div>
