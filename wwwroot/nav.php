@@ -1,34 +1,7 @@
 <?php
-$url = $_SERVER["REQUEST_URI"];
-$leaderboardActive = "";
-$gameActive = "";
-$trophyActive = "";
-$avatarActive = "";
-$aboutActive = "";
-$homeActive = "";
-$navSort = $_GET["sort"] ?? "";
-$navPlayer = $_GET["player"] ?? "";
-$navFilter = $_GET["filter"] ?? "";
-$navSearch = $_GET["search"] ?? "";
+require_once __DIR__ . '/classes/NavigationState.php';
 
-$navSortHtml = htmlspecialchars($navSort, ENT_QUOTES, 'UTF-8');
-$navPlayerHtml = htmlspecialchars($navPlayer, ENT_QUOTES, 'UTF-8');
-$navFilterHtml = htmlspecialchars($navFilter, ENT_QUOTES, 'UTF-8');
-$navSearchHtml = htmlspecialchars($navSearch, ENT_QUOTES, 'UTF-8');
-
-if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
-    $leaderboardActive = " active";
-} elseif (str_starts_with($url, "/game")) {
-    $gameActive = " active";
-} elseif (str_starts_with($url, "/trophy")) {
-    $trophyActive = " active";
-} elseif (str_starts_with($url, "/avatar")) {
-    $avatarActive = " active";
-} elseif (str_starts_with($url, "/about")) {
-    $aboutActive = " active";
-} else {
-    $homeActive = " active";
-}
+$navigationState = NavigationState::fromGlobals($_SERVER, $_GET);
 ?>
 
 <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2">
@@ -42,31 +15,31 @@ if (str_starts_with($url, "/leaderboard") || str_starts_with($url, "/player")) {
 
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <form action="/game" class="d-flex" role="search">
-                <input type="hidden" name="sort" value="<?= $navSortHtml; ?>">
-                <input type="hidden" name="player" value="<?= $navPlayerHtml; ?>">
-                <input type="hidden" name="filter" value="<?= $navFilterHtml; ?>">
-                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= $navSearchHtml; ?>">
+                <input type="hidden" name="sort" value="<?= $navigationState->getSort(); ?>">
+                <input type="hidden" name="player" value="<?= $navigationState->getPlayer(); ?>">
+                <input type="hidden" name="filter" value="<?= $navigationState->getFilter(); ?>">
+                <input class="form-control me-2" name="search" type="search" placeholder="Search game..." aria-label="Search" value="<?= $navigationState->getSearch(); ?>">
                 <button class="btn btn-outline-primary" type="submit">Search</button>
             </form>
 
             <ul class="navbar-nav ms-auto mb-2 mb-md-0">
                 <li class="nav-item">
-                    <a class="nav-link<?= $homeActive; ?>" href="/">Home</a>
+                    <a class="nav-link<?= $navigationState->getHomeClass(); ?>" href="/">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $leaderboardActive; ?>" href="/leaderboard/trophy">Leaderboards</a>
+                    <a class="nav-link<?= $navigationState->getLeaderboardClass(); ?>" href="/leaderboard/trophy">Leaderboards</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $gameActive; ?>" href="/game">Games</a>
+                    <a class="nav-link<?= $navigationState->getGameClass(); ?>" href="/game">Games</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $trophyActive; ?>" href="/trophy">Trophies</a>
+                    <a class="nav-link<?= $navigationState->getTrophyClass(); ?>" href="/trophy">Trophies</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $avatarActive; ?>" href="/avatar">Avatars</a>
+                    <a class="nav-link<?= $navigationState->getAvatarClass(); ?>" href="/avatar">Avatars</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $aboutActive; ?>" href="/about">About</a>
+                    <a class="nav-link<?= $navigationState->getAboutClass(); ?>" href="/about">About</a>
                 </li>
             </ul>
         </div>
