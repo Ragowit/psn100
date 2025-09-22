@@ -15,7 +15,7 @@ require_once("header.php");
             <div class="col">
                 <div class="input-group mb-1">
                     <input type="text" class="form-control" placeholder="PSN name..." id="player" maxlength="16" aria-label="PSN name..." aria-describedby="player-button">
-                    <button class="btn btn-primary" type="button" id="player-button" onclick="addToQueue()">Update</button>
+                    <button class="btn btn-primary" type="button" id="player-button">Update</button>
                 </div>
             </div>
         </div>
@@ -192,66 +192,129 @@ require_once("header.php");
 
 
 <script>
-// Get the input field
-var input = document.getElementById("player");
-var myTimer = null;
-
-// Execute a function when the user releases a key on the keyboard
-input.addEventListener("keyup", function(event)
-{
-    // Number 13 is the "Enter" key on the keyboard
-    if (event.keyCode === 13)
-    {
-        // Cancel the default action, if needed
-        event.preventDefault();
-        // Trigger the button element with a click
-        document.getElementById("player-button").click();
+class PlayerQueueManager {
+    constructor({
+        playerInputId,
+        buttonId,
+        queueResultContainerId,
+        messageElementId,
+        pollInterval = 3000,
+    }) {
+        this.playerInput = document.getElementById(playerInputId);
+        this.button = document.getElementById(buttonId);
+        this.queueResultContainer = document.getElementById(queueResultContainerId);
+        this.messageElement = document.getElementById(messageElementId);
+        this.pollInterval = pollInterval;
+        this.timerId = null;
     }
+
+    initialize() {
+        if (!this.playerInput || !this.button || !this.queueResultContainer || !this.messageElement) {
+            return;
+        }
+
+        this.button.addEventListener('click', () => this.addToQueue());
+        this.playerInput.addEventListener('keyup', (event) => this.handleKeyUp(event));
+    }
+
+    handleKeyUp(event) {
+        const key = event.key || event.keyCode;
+        if (key === 'Enter' || key === 13) {
+            event.preventDefault();
+            this.addToQueue();
+        }
+    }
+
+    addToQueue() {
+        const player = this.playerInput.value;
+        const url = `add_to_queue.php?q=${encodeURIComponent(player)}`;
+
+        this.sendRequest(url, (responseText) => {
+            this.updateQueueResult(responseText);
+
+            if (responseText.startsWith('You have already entered') || responseText.startsWith('PSN name')) {
+                this.stopPolling();
+            } else {
+                this.startPolling(player);
+            }
+        });
+    }
+
+    startPolling(player) {
+        this.stopPolling();
+        this.timerId = window.setInterval(() => this.checkQueuePosition(player), this.pollInterval);
+    }
+
+    checkQueuePosition(player) {
+        const url = `check_queue_position.php?q=${encodeURIComponent(player)}`;
+
+        this.sendRequest(url, (responseText) => {
+            this.updateQueueResult(responseText);
+
+            if (responseText.includes('updated!')) {
+                this.stopPolling();
+            }
+        });
+    }
+
+    stopPolling() {
+        if (this.timerId !== null) {
+            window.clearInterval(this.timerId);
+            this.timerId = null;
+        }
+    }
+
+    sendRequest(url, onSuccess) {
+        const request = new XMLHttpRequest();
+
+        request.onreadystatechange = () => {
+            if (request.readyState === XMLHttpRequest.DONE) {
+                if (request.status === 200) {
+                    onSuccess(request.responseText);
+                } else {
+                    this.handleError();
+                }
+            }
+        };
+
+        request.onerror = () => this.handleError();
+
+        request.open('GET', url, true);
+        request.send();
+    }
+
+    updateQueueResult(message) {
+        if (this.messageElement) {
+            this.messageElement.innerHTML = message;
+        }
+
+        this.showQueueResult();
+    }
+
+    showQueueResult() {
+        if (this.queueResultContainer) {
+            this.queueResultContainer.style.display = '';
+        }
+    }
+
+    handleError() {
+        this.updateQueueResult('An error occurred while contacting the server. Please try again later.');
+        this.stopPolling();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const queueManager = new PlayerQueueManager({
+        playerInputId: 'player',
+        buttonId: 'player-button',
+        queueResultContainerId: 'queue-result',
+        messageElementId: 'add-to-queue-result',
+        pollInterval: 3000,
+    });
+
+    queueManager.initialize();
+    window.playerQueueManager = queueManager;
 });
-
-function addToQueue()
-{
-    var player = document.getElementById("player").value;
-
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function()
-    {
-        if (this.readyState == 4 && this.status == 200)
-        {
-            document.getElementById("add-to-queue-result").innerHTML = this.responseText;
-            $('#queue-result').show();
-
-            if (this.responseText.startsWith("You have already entered") || this.responseText.startsWith("PSN name"))
-            {
-                clearInterval(myTimer);
-            }
-        }
-    };
-    xmlhttp.open("GET", "add_to_queue.php?q=" + player, true);
-    xmlhttp.send();
-
-    clearInterval(myTimer);
-    myTimer = setInterval(checkQueuePosition, 3000, player);
-}
-
-function checkQueuePosition(player)
-{
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function()
-    {
-        if (this.readyState == 4 && this.status == 200)
-        {
-            document.getElementById("add-to-queue-result").innerHTML = this.responseText;
-
-            if (this.responseText.includes("updated!"))
-            {
-                clearInterval(myTimer);
-            }
-        }
-    };
-    xmlhttp.open("GET", "check_queue_position.php?q=" + player, true);
-    xmlhttp.send();
-}
 </script>
 
 
