@@ -1,426 +1,48 @@
 <?php
+declare(strict_types=1);
+
 ini_set("max_execution_time", "0");
 ini_set("mysql.connect_timeout", "0");
 ini_set("default_socket_timeout", "6000");
 set_time_limit(0);
+
 require_once("../init.php");
+require_once("../classes/Admin/TrophyStatusService.php");
+
+$trophyStatusService = new TrophyStatusService($database);
 
 $trophyInput = "";
 $statusInput = "1";
+$success = null;
 
-if (isset($_POST["trophy"]) || isset($_POST["game"])) {
-    $trophyId = $_POST["trophy"];
-    $status = $_POST["status"];
-    $trophies = explode(PHP_EOL, $trophyId);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST["trophy"]) || isset($_POST["game"]))) {
+    $status = isset($_POST["status"]) ? (int) $_POST["status"] : 1;
+    $statusInput = (string) $status;
 
-    if (!empty($_POST["game"])) {
-        $titleId = $_POST["game"];
-        $query = $database->prepare("SELECT id FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :id)");
-        $query->bindValue(":id", $titleId, PDO::PARAM_INT);
-        $query->execute();
-        $trophies = $query->fetchAll(PDO::FETCH_COLUMN);
-    }
+    try {
+        if (!empty($_POST["game"])) {
+            if (!ctype_digit((string) $_POST["game"])) {
+                throw new InvalidArgumentException('Game ID must be numeric.');
+            }
 
-    $trophyNames = array();
-    $trophyGroups = array();
-    $trophyTitles = array();
-    foreach ($trophies as $trophyId) {
-        $database->beginTransaction();
-        $query = $database->prepare("UPDATE trophy SET status = :status WHERE id = :trophy_id");
-        $query->bindValue(":status", $status, PDO::PARAM_INT);
-        $query->bindValue(":trophy_id", $trophyId, PDO::PARAM_INT);
-        $query->execute();
-        $database->commit();
-
-        $query = $database->prepare("SELECT np_communication_id, group_id, name FROM trophy WHERE id = :trophy_id");
-        $query->bindValue(":trophy_id", $trophyId, PDO::PARAM_INT);
-        $query->execute();
-        $trophy = $query->fetch();
-        array_push($trophyNames, $trophyId ." (". $trophy["name"] .")");
-        array_push($trophyGroups, $trophy["np_communication_id"].",".$trophy["group_id"]);
-        array_push($trophyTitles, $trophy["np_communication_id"]);
-    }
-    $trophyGroups = array_unique($trophyGroups);
-    $trophyTitles = array_unique($trophyTitles);
-
-    // Recalculate trophies for trophy group
-    foreach ($trophyGroups as $trophyGroup) {
-        $explode = explode(",", $trophyGroup);
-        $trophy["np_communication_id"] = $explode[0];
-        $trophy["group_id"] = $explode[1];
-        
-        // The new trophy count in trophy group
-        $query = $database->prepare("WITH bronze AS (
-            SELECT
-              COUNT(*) AS count
-            FROM
-              trophy
-            WHERE
-              np_communication_id = :np_communication_id
-              AND group_id = :group_id
-              AND status = 0
-              AND type = 'bronze'
-          ),
-          silver AS (
-            SELECT
-              COUNT(*) AS count
-            FROM
-              trophy
-            WHERE
-              np_communication_id = :np_communication_id
-              AND group_id = :group_id
-              AND status = 0
-              AND type = 'silver'
-          ),
-          gold AS (
-            SELECT
-              COUNT(*) AS count
-            FROM
-              trophy
-            WHERE
-              np_communication_id = :np_communication_id
-              AND group_id = :group_id
-              AND status = 0
-              AND type = 'gold'
-          ),
-          platinum AS (
-            SELECT
-              COUNT(*) AS count
-            FROM
-              trophy
-            WHERE
-              np_communication_id = :np_communication_id
-              AND group_id = :group_id
-              AND status = 0
-              AND type = 'platinum'
-          )
-          UPDATE
-            trophy_group tg,
-            bronze b,
-            silver s,
-            gold g,
-            platinum p
-          SET
-            tg.bronze = b.count,
-            tg.silver = s.count,
-            tg.gold = g.count,
-            tg.platinum = p.count
-          WHERE
-            tg.np_communication_id = :np_communication_id
-            AND tg.group_id = :group_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // Recalculate stats for trophy group for all the affected players
-        // bronze
-        $query = $database->prepare("WITH player_trophy_count AS(
-            SELECT
-                account_id,
-                COUNT(type) AS count
-            FROM
-                trophy_earned te
-                LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
-                AND t.group_id = te.group_id
-                AND t.order_id = te.order_id
-                AND t.status = 0
-                AND t.type = 'bronze'
-            WHERE
-                te.np_communication_id = :np_communication_id
-                AND te.group_id = :group_id
-            GROUP BY
-                account_id
-            )
-            UPDATE
-                trophy_group_player tgp,
-                player_trophy_count ptc
-            SET
-                tgp.bronze = ptc.count
-            WHERE
-                tgp.np_communication_id = :np_communication_id
-                AND tgp.group_id = :group_id
-                AND tgp.account_id = ptc.account_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // silver
-        $query = $database->prepare("WITH player_trophy_count AS(
-            SELECT
-                account_id,
-                COUNT(type) AS count
-            FROM
-                trophy_earned te
-                LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
-                AND t.group_id = te.group_id
-                AND t.order_id = te.order_id
-                AND t.status = 0
-                AND t.type = 'silver'
-            WHERE
-                te.np_communication_id = :np_communication_id
-                AND te.group_id = :group_id
-            GROUP BY
-                account_id
-            )
-            UPDATE
-                trophy_group_player tgp,
-                player_trophy_count ptc
-            SET
-                tgp.silver = ptc.count
-            WHERE
-                tgp.np_communication_id = :np_communication_id
-                AND tgp.group_id = :group_id
-                AND tgp.account_id = ptc.account_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // gold
-        $query = $database->prepare("WITH player_trophy_count AS(
-            SELECT
-                account_id,
-                COUNT(type) AS count
-            FROM
-                trophy_earned te
-                LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
-                AND t.group_id = te.group_id
-                AND t.order_id = te.order_id
-                AND t.status = 0
-                AND t.type = 'gold'
-            WHERE
-                te.np_communication_id = :np_communication_id
-                AND te.group_id = :group_id
-            GROUP BY
-                account_id
-            )
-            UPDATE
-                trophy_group_player tgp,
-                player_trophy_count ptc
-            SET
-                tgp.gold = ptc.count
-            WHERE
-                tgp.np_communication_id = :np_communication_id
-                AND tgp.group_id = :group_id
-                AND tgp.account_id = ptc.account_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // platinum
-        $query = $database->prepare("WITH player_trophy_count AS(
-            SELECT
-                account_id,
-                COUNT(type) AS count
-            FROM
-                trophy_earned te
-                LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
-                AND t.group_id = te.group_id
-                AND t.order_id = te.order_id
-                AND t.status = 0
-                AND t.type = 'platinum'
-            WHERE
-                te.np_communication_id = :np_communication_id
-                AND te.group_id = :group_id
-            GROUP BY
-                account_id
-            )
-            UPDATE
-                trophy_group_player tgp,
-                player_trophy_count ptc
-            SET
-                tgp.platinum = ptc.count
-            WHERE
-                tgp.np_communication_id = :np_communication_id
-                AND tgp.group_id = :group_id
-                AND tgp.account_id = ptc.account_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // progresss
-        $query = $database->prepare("WITH max_score AS (
-            SELECT
-                bronze * 15 + silver * 30 + gold * 90 AS points
-            FROM
-                trophy_group
-            WHERE
-                np_communication_id = :np_communication_id
-                AND group_id = :group_id
-            ),
-            user_score AS (
-                SELECT
-                    account_id,
-                    bronze * 15 + silver * 30 + gold * 90 AS points
-                FROM
-                    trophy_group_player
-                WHERE
-                    np_communication_id = :np_communication_id
-                    AND group_id = :group_id
-                GROUP BY
-                    account_id
-            )
-            UPDATE
-                trophy_group_player tgp,
-                max_score ms,
-                user_score us
-            SET
-                tgp.progress = IF(
-                    ms.points = 0,
-                    100,
-                    IF(
-                        us.points != 0
-                        AND FLOOR(us.points / ms.points * 100) = 0,
-                        1,
-                        FLOOR(us.points / ms.points * 100)
-                    )
-                )
-            WHERE
-                tgp.np_communication_id = :np_communication_id
-                AND tgp.group_id = :group_id
-                AND tgp.account_id = us.account_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":group_id", $trophy["group_id"], PDO::PARAM_STR);
-        $query->execute();
-    }
-
-    // Recalculate trophies for trophy title
-    foreach ($trophyTitles as $trophyTitle) {
-        $trophy["np_communication_id"] = $trophyTitle;
-        
-        $query = $database->prepare("WITH trophy_group_count AS (
-            SELECT
-              SUM(bronze) AS bronze,
-              SUM(silver) AS silver,
-              SUM(gold) AS gold,
-              SUM(platinum) AS platinum
-            FROM
-              trophy_group
-            WHERE
-              np_communication_id = :np_communication_id
-          )
-          UPDATE
-            trophy_title tt,
-            trophy_group_count tgc
-          SET
-            tt.bronze = tgc.bronze,
-            tt.silver = tgc.silver,
-            tt.gold = tgc.gold,
-            tt.platinum = tgc.platinum
-          WHERE
-            np_communication_id = :np_communication_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // Recalculate stats for trophy title for the affected players
-        $query = $database->prepare("WITH player_trophy_count AS (
-            SELECT
-                account_id,
-                IFNULL(SUM(bronze), 0) AS bronze,
-                IFNULL(SUM(silver), 0) AS silver,
-                IFNULL(SUM(gold), 0) AS gold,
-                IFNULL(SUM(platinum), 0) AS platinum
-            FROM
-                trophy_group_player
-            WHERE
-                np_communication_id = :np_communication_id
-            GROUP BY
-                account_id
-            )
-            UPDATE
-                trophy_title_player ttp,
-                player_trophy_count ptc
-            SET
-                ttp.bronze = ptc.bronze,
-                ttp.silver = ptc.silver,
-                ttp.gold = ptc.gold,
-                ttp.platinum = ptc.platinum
-            WHERE
-                ttp.account_id = ptc.account_id
-                AND ttp.np_communication_id = :np_communication_id
-            ");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->execute();
-
-        // progress
-        $query = $database->prepare("SELECT
-                bronze * 15 + silver * 30 + gold * 90 AS max_score
-            FROM
-                trophy_title
-            WHERE
-                np_communication_id = :np_communication_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->execute();
-        $maxScore = $query->fetchColumn();
-
-        $query = $database->prepare("WITH user_score AS (
-            SELECT
-                account_id,
-                bronze * 15 + silver * 30 + gold * 90 AS points
-            FROM
-                trophy_title_player
-            WHERE
-                np_communication_id = :np_communication_id
-            GROUP BY
-                account_id
-            )
-            UPDATE
-                trophy_title_player ttp,
-                user_score us
-            SET
-                ttp.progress = IF(
-                    :max_score = 0,
-                    100,
-                    IF(
-                        us.points != 0
-                        AND FLOOR(us.points / :max_score * 100) = 0,
-                        1,
-                        FLOOR(us.points / :max_score * 100)
-                    )
-                )
-            WHERE
-                ttp.np_communication_id = :np_communication_id
-                AND ttp.account_id = us.account_id");
-        $query->bindValue(":np_communication_id", $trophy["np_communication_id"], PDO::PARAM_STR);
-        $query->bindValue(":max_score", $maxScore, PDO::PARAM_INT);
-        $query->execute();
-    }
-
-    if ($status == 1) {
-        foreach ($trophyTitles as $trophyTitle) {
-            $query = $database->prepare("SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
-            $query->execute();
-            $gameId = $query->fetchColumn();
-
-            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UNOBTAINABLE', :param_1)");
-            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-            $query->execute();
-        }
-        
-        $statusText = "unobtainable";
-    } else {
-        foreach ($trophyTitles as $trophyTitle) {
-            $query = $database->prepare("SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id");
-            $query->bindValue(":np_communication_id", $trophyTitle, PDO::PARAM_STR);
-            $query->execute();
-            $gameId = $query->fetchColumn();
-            
-            $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_OBTAINABLE', :param_1)");
-            $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-            $query->execute();
+            $gameId = (int) $_POST["game"];
+            $trophyIds = $trophyStatusService->getTrophyIdsForGame($gameId);
+            $trophyInput = implode(',', array_map('strval', $trophyIds));
+        } else {
+            $trophyInput = (string) ($_POST["trophy"] ?? '');
+            $trophyIds = $trophyStatusService->parseTrophyIds($trophyInput);
         }
 
-        $statusText = "obtainable";
+        $result = $trophyStatusService->updateTrophies($trophyIds, $status);
+        $success = $result->toHtml();
+    } catch (Throwable $exception) {
+        $success = '<p>' . htmlspecialchars($exception->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
     }
-
-    $success = "<p>";
-    foreach ($trophyNames as $trophyName) {
-        $success .= "Trophy ID ". $trophyName ."<br>";
-    }
-    $success .= "is now set as ". $statusText ."</p>";
 } elseif (isset($_GET["trophy"])) {
-    $trophyInput = $_GET["trophy"];
-    $statusInput = $_GET["status"];
+    $trophyInput = (string) $_GET["trophy"];
+    if (isset($_GET["status"])) {
+        $statusInput = (string) $_GET["status"];
+    }
 }
 
 ?>
@@ -440,7 +62,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
                 Game ID:<br>
                 <input type="text" name="game" /><br>
                 Trophy ID:<br>
-                <textarea name="trophy" rows="10" cols="30"><?= str_replace(",", PHP_EOL, $trophyInput); ?></textarea>
+                <textarea name="trophy" rows="10" cols="30"><?= htmlspecialchars(str_replace(",", PHP_EOL, $trophyInput), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></textarea>
                 <br>
                 Status:<br>
                 <select name="status">
@@ -451,7 +73,7 @@ if (isset($_POST["trophy"]) || isset($_POST["game"])) {
             </form>
 
             <?php
-            if (isset($success)) {
+            if ($success !== null) {
                 echo $success;
             }
             ?>
