@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerLogFilter.php';
 require_once __DIR__ . '/classes/PlayerLogService.php';
+require_once __DIR__ . '/classes/PlayerSummary.php';
+require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
@@ -11,6 +13,8 @@ if (!isset($accountId)) {
 
 $playerLogFilter = PlayerLogFilter::fromArray($_GET ?? []);
 $playerLogService = new PlayerLogService($database);
+$playerSummaryService = new PlayerSummaryService($database);
+$playerSummary = $playerSummaryService->getSummary((int) $accountId);
 
 $url = $_SERVER["REQUEST_URI"];
 $url_parts = parse_url($url);

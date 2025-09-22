@@ -4,10 +4,14 @@ if (!isset($accountId)) {
     die();
 }
 
-require_once 'classes/PlayerRandomGame.php';
-require_once 'classes/PlayerRandomGamesService.php';
+require_once __DIR__ . '/classes/PlayerRandomGame.php';
+require_once __DIR__ . '/classes/PlayerRandomGamesService.php';
+require_once __DIR__ . '/classes/PlayerSummary.php';
+require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
 $playerRandomGamesService = new PlayerRandomGamesService($database, $utility);
+$playerSummaryService = new PlayerSummaryService($database);
+$playerSummary = $playerSummaryService->getSummary((int) $accountId);
 $randomGames = [];
 
 if ($player["status"] != 1 && $player["status"] != 3) {

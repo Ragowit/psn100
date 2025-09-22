@@ -2,6 +2,10 @@
 $aboutMe = nl2br(htmlentities($player["about_me"], ENT_QUOTES, 'UTF-8'));
 $countryName = $utility->getCountryName($player["country"]);
 $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["platinum"];
+$numberOfGames = $playerSummary->getNumberOfGames();
+$numberOfCompletedGames = $playerSummary->getNumberOfCompletedGames();
+$averageProgress = $playerSummary->getAverageProgress();
+$unearnedTrophies = $playerSummary->getUnearnedTrophies();
 ?>
 
 <div class="row">
@@ -139,18 +143,6 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         </div>
     </div>
 
-    <?php
-    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $numberOfGames = $query->fetchColumn();
-
-    $query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.progress = 100 AND ttp.account_id = :account_id");
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $numberOfCompletedGames = $query->fetchColumn();
-    ?>
-
     <div class="col-12 col-lg-4 mb-3">
         <div class="vstack gap-3 h-100 text-center">
             <div class="hstack gap-3">
@@ -269,26 +261,6 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
         </div>
     </div>
 
-    <?php
-    $query = $database->prepare("SELECT ROUND(AVG(ttp.progress), 2) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $averageProgress = $query->fetchColumn();
-
-    $query = $database->prepare("SELECT
-            SUM(
-                tt.bronze - ttp.bronze + tt.silver - ttp.silver + tt.gold - ttp.gold + tt.platinum - ttp.platinum
-            )
-        FROM
-            trophy_title_player ttp
-        JOIN trophy_title tt USING(np_communication_id)
-        WHERE
-            tt.status = 0 AND ttp.account_id = :account_id");
-    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-    $query->execute();
-    $unearnedTrophies = $query->fetchColumn();
-    ?>
-
     <div class="col-12 col-lg-4 mb-3">
         <div class="vstack gap-3 text-center h-100">
             <div class="hstack gap-3">
@@ -300,7 +272,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                         echo "N/A";
                     } else {
                         ?>
-                        <h2><?= $averageProgress; ?>%</h2>
+                        <h2><?= number_format($averageProgress ?? 0.0, 2); ?>%</h2>
                         <?php
                     }
                     ?>
@@ -314,7 +286,7 @@ $trophies = $player["bronze"] + $player["silver"] + $player["gold"] + $player["p
                         echo "N/A";
                     } else {
                         ?>
-                        <h2><?= number_format($unearnedTrophies ?? 0); ?></h2>
+                        <h2><?= number_format($unearnedTrophies); ?></h2>
                         <?php
                     }
                     ?>
