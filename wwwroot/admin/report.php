@@ -1,14 +1,16 @@
 <?php
-require_once("../init.php");
+declare(strict_types=1);
 
-if (!empty($_GET["delete"])) {
-    $reportId = $_GET["delete"];
+require_once '../init.php';
+require_once '../classes/Admin/PlayerReportAdminService.php';
 
-    $sql = "DELETE FROM player_report WHERE report_id = :report_id";
-    $query = $database->prepare($sql);
-    $query->bindValue(":report_id", $reportId, PDO::PARAM_INT);
-    $query->execute();
+$playerReportAdminService = new PlayerReportAdminService($database);
+
+if (isset($_GET['delete']) && ctype_digit((string) $_GET['delete'])) {
+    $playerReportAdminService->deleteReportById((int) $_GET['delete']);
 }
+
+$reportedPlayers = $playerReportAdminService->getReportedPlayers();
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -22,16 +24,20 @@ if (!empty($_GET["delete"])) {
     <body>
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
-            <?php
-            $sql = "SELECT pr.report_id, p.online_id, pr.explanation FROM player_report pr JOIN player p USING (account_id)";
-            $query = $database->prepare($sql);
-            $query->execute();
-            $reportedPlayers = $query->fetchAll();
-
-            foreach ($reportedPlayers as $reportedPlayer) {
-                echo "<a href='/player/". $reportedPlayer["online_id"] ."'>". $reportedPlayer["online_id"] ."</a><br>". nl2br(htmlentities($reportedPlayer["explanation"], ENT_QUOTES, 'UTF-8')) ."<br><a href='?delete=". $reportedPlayer["report_id"] ."'>Delete</a><hr>";
-            }
-            ?>
+            <?php foreach ($reportedPlayers as $reportedPlayer) { ?>
+                <div class="mb-3">
+                    <a href="/player/<?= htmlentities($reportedPlayer->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <?= htmlentities($reportedPlayer->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>
+                    </a>
+                    <div class="mt-2">
+                        <?= nl2br(htmlentities($reportedPlayer->getExplanation(), ENT_QUOTES, 'UTF-8')); ?>
+                    </div>
+                    <div class="mt-2">
+                        <a href="?delete=<?= $reportedPlayer->getReportId(); ?>">Delete</a>
+                    </div>
+                </div>
+                <hr>
+            <?php } ?>
         </div>
     </body>
 </html>
