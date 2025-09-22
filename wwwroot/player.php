@@ -1,13 +1,15 @@
 <?php
+require_once __DIR__ . '/classes/PlayerSummary.php';
+require_once __DIR__ . '/classes/PlayerSummaryService.php';
+
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
     die();
 }
 
-$query = $database->prepare("SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id");
-$query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-$query->execute();
-$numberOfGames = $query->fetchColumn();
+$playerSummaryService = new PlayerSummaryService($database);
+$playerSummary = $playerSummaryService->getSummary((int) $accountId);
+$numberOfGames = $playerSummary->getNumberOfGames();
 
 $metaData = new stdClass();
 $metaData->title = $player["online_id"] ."'s Trophy Progress";

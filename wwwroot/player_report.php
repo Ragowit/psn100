@@ -4,9 +4,13 @@ if (!isset($accountId)) {
     die();
 }
 
-require_once 'classes/PlayerReportService.php';
+require_once __DIR__ . '/classes/PlayerReportService.php';
+require_once __DIR__ . '/classes/PlayerSummary.php';
+require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
 $playerReportService = new PlayerReportService($database);
+$playerSummaryService = new PlayerSummaryService($database);
+$playerSummary = $playerSummaryService->getSummary((int) $accountId);
 
 if (!empty($_GET["explanation"])) {
     $ipAddress = $_SERVER["REMOTE_ADDR"] ?? '';

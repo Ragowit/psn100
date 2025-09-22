@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerAdvisorFilter.php';
 require_once __DIR__ . '/classes/PlayerAdvisorService.php';
+require_once __DIR__ . '/classes/PlayerSummary.php';
+require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
@@ -11,6 +13,8 @@ if (!isset($accountId)) {
 
 $playerAdvisorFilter = PlayerAdvisorFilter::fromArray($_GET ?? []);
 $playerAdvisorService = new PlayerAdvisorService($database);
+$playerSummaryService = new PlayerSummaryService($database);
+$playerSummary = $playerSummaryService->getSummary((int) $accountId);
 
 $page = $playerAdvisorFilter->getPage();
 $limit = PlayerAdvisorService::PAGE_SIZE;
