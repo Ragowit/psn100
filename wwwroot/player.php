@@ -1,6 +1,10 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
+require_once __DIR__ . '/classes/PlayerGamesFilter.php';
+require_once __DIR__ . '/classes/PlayerGamesService.php';
 
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
@@ -10,6 +14,9 @@ if (!isset($accountId)) {
 $playerSummaryService = new PlayerSummaryService($database);
 $playerSummary = $playerSummaryService->getSummary((int) $accountId);
 $numberOfGames = $playerSummary->getNumberOfGames();
+
+$playerGamesFilter = PlayerGamesFilter::fromArray($_GET ?? []);
+$playerGamesService = new PlayerGamesService($database);
 
 $metaData = new stdClass();
 $metaData->title = $player["online_id"] ."'s Trophy Progress";
@@ -32,71 +39,20 @@ if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
     $params = array();
 }
 
-$playerSearch = $_GET["search"] ?? "";
-$sort = (!empty($_GET["sort"]) ? $_GET["sort"] : (!empty($_GET["search"]) ? "search" : "date"));
+$playerSearch = $playerGamesFilter->getSearch();
+$sort = $playerGamesFilter->getSort();
 
 if ($player["status"] == 1 || $player["status"] == 3) {
     $total_pages = 0;
+    $playerGames = [];
 } else {
-    $sql = "SELECT Count(*)
-        FROM   trophy_title_player ttp
-            JOIN trophy_title tt USING (np_communication_id)
-            JOIN trophy_group_player tgp USING (account_id, np_communication_id)
-        WHERE  tt.status != 2
-            AND ttp.account_id = :account_id AND tgp.group_id = 'default' ";
-    if (!empty($_GET["search"]) || $sort == "search") {
-        $sql .= " AND (MATCH(tt.name) AGAINST (:search)) > 0";
-    }
-    if (!empty($_GET["completed"])) {
-        $sql .= " AND ttp.progress = 100 ";
-    }
-    if (!empty($_GET["uncompleted"])) {
-        $sql .= " AND ttp.progress != 100 ";
-    }
-    if (!empty($_GET["base"])) {
-        $sql .= " AND tgp.progress = 100 ";
-    }
-    if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-        $sql .= " AND (";
-        if (!empty($_GET["pc"])) {
-            $sql .= " tt.platform LIKE '%PC%' OR";
-        }
-        if (!empty($_GET["ps3"])) {
-            $sql .= " tt.platform LIKE '%PS3%' OR";
-        }
-        if (!empty($_GET["ps4"])) {
-            $sql .= " tt.platform LIKE '%PS4%' OR";
-        }
-        if (!empty($_GET["ps5"])) {
-            $sql .= " tt.platform LIKE '%PS5%' OR";
-        }
-        if (!empty($_GET["psvita"])) {
-            $sql .= " tt.platform LIKE '%PSVITA%' OR";
-        }
-        if (!empty($_GET["psvr"])) {
-            $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-        }
-        if (!empty($_GET["psvr2"])) {
-            $sql .= " tt.platform LIKE '%PSVR2%' OR";
-        }
-
-        // Remove " OR"
-        $sql = substr($sql, 0, -3);
-        $sql .= ")";
-    }
-    $query = $database->prepare($sql);
-    $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-    if (!empty($_GET["search"]) || $sort == "search") {
-        $search = $_GET["search"] ?? "";
-        $query->bindValue(":search", $search, PDO::PARAM_STR);
-    }
-    $query->execute();
-    $total_pages = $query->fetchColumn();
+    $total_pages = $playerGamesService->countPlayerGames((int) $player["account_id"], $playerGamesFilter);
+    $playerGames = $playerGamesService->getPlayerGames((int) $player["account_id"], $playerGamesFilter);
 }
 
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? $_GET["page"] : 1, 1);
-$limit = 50;
-$offset = ($page - 1) * $limit;
+$page = $playerGamesFilter->getPage();
+$limit = $playerGamesFilter->getLimit();
+$offset = $playerGamesFilter->getOffset();
 
 $title = $player["online_id"] . "'s Trophy Progress ~ PSN 100%";
 require_once("header.php");
@@ -126,13 +82,13 @@ require_once("header.php");
             <div class="col-12 col-lg-3 mb-3">
                 <form>
                     <div class="input-group d-flex justify-content-end">
-                        <input type="text" name="search" class="form-control rounded-start" placeholder="Game..." value="<?= $playerSearch; ?>" aria-label="Text input to search for a game within the player">
+                        <input type="text" name="search" class="form-control rounded-start" placeholder="Game..." value="<?= htmlentities($playerSearch, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Text input to search for a game within the player">
 
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                         <ul class="dropdown-menu p-2">
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["completed"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterCompletedGames" name="completed">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isCompletedSelected() ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterCompletedGames" name="completed">
                                     <label class="form-check-label" for="filterCompletedGames">
                                         100% (All)
                                     </label>
@@ -140,7 +96,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["base"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterBase" name="base">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isBaseSelected() ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterBase" name="base">
                                     <label class="form-check-label" for="filterBase">
                                         100% (Base)
                                     </label>
@@ -148,7 +104,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PC) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
                                     <label class="form-check-label" for="filterPC">
                                         PC
                                     </label>
@@ -156,7 +112,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PS3) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
                                     <label class="form-check-label" for="filterPS3">
                                         PS3
                                     </label>
@@ -164,7 +120,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps4"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PS4) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
                                     <label class="form-check-label" for="filterPS4">
                                         PS4
                                     </label>
@@ -172,7 +128,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps5"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PS5) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
                                     <label class="form-check-label" for="filterPS5">
                                         PS5
                                     </label>
@@ -180,7 +136,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvita"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PSVITA) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
                                     <label class="form-check-label" for="filterPSVITA">
                                         PSVITA
                                     </label>
@@ -188,7 +144,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PSVR) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
                                     <label class="form-check-label" for="filterPSVR">
                                         PSVR
                                     </label>
@@ -196,7 +152,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr2"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isPlatformSelected(PlayerGamesFilter::PLATFORM_PSVR2) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
                                     <label class="form-check-label" for="filterPSVR2">
                                         PSVR2
                                     </label>
@@ -204,7 +160,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["uncompleted"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUncompletedGames" name="uncompleted">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isUncompletedSelected() ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUncompletedGames" name="uncompleted">
                                     <label class="form-check-label" for="filterUncompletedGames">
                                         Uncompleted Games
                                     </label>
@@ -255,169 +211,38 @@ require_once("header.php");
                                 </tr>
                                 <?php
                             } else {
-                                $sql = "SELECT tt.id,
-                                            tt.np_communication_id,
-                                            tt.name,
-                                            tt.icon_url,
-                                            tt.platform,
-                                            tt.status,
-                                            tt.rarity_points AS max_rarity_points,
-                                            ttp.bronze,
-                                            ttp.silver,
-                                            ttp.gold,
-                                            ttp.platinum,
-                                            ttp.progress,
-                                            ttp.last_updated_date,
-                                            ttp.rarity_points";
-                                if (!empty($_GET["search"]) || $sort == "search") {
-                                    $sql .= ", MATCH(tt.name) AGAINST (:search) AS score";
-                                }
-                                $sql .= " FROM trophy_title_player ttp
-                                            JOIN trophy_title tt USING (np_communication_id)
-                                            JOIN trophy_group_player tgp USING (account_id, np_communication_id)
-                                        WHERE  ttp.account_id = :account_id
-                                            AND tt.status != 2 AND tgp.group_id = 'default' ";
-                                if (!empty($_GET["search"]) || $sort == "search") {
-                                    $sql .= " AND (MATCH(tt.name) AGAINST (:search))";
-                                }
-                                if (!empty($_GET["completed"])) {
-                                    $sql .= " AND ttp.progress = 100";
-                                }
-                                if (!empty($_GET["uncompleted"])) {
-                                    $sql .= " AND ttp.progress != 100";
-                                }
-                                if (!empty($_GET["base"])) {
-                                    $sql .= " AND tgp.progress = 100";
-                                }
-                                if (!empty($_GET["pc"]) || !empty($_GET["ps3"]) || !empty($_GET["ps4"]) || !empty($_GET["ps5"]) || !empty($_GET["psvita"]) || !empty($_GET["psvr"]) || !empty($_GET["psvr2"])) {
-                                    $sql .= " AND (";
-                                    if (!empty($_GET["pc"])) {
-                                        $sql .= " tt.platform LIKE '%PC%' OR";
-                                    }
-                                    if (!empty($_GET["ps3"])) {
-                                        $sql .= " tt.platform LIKE '%PS3%' OR";
-                                    }
-                                    if (!empty($_GET["ps4"])) {
-                                        $sql .= " tt.platform LIKE '%PS4%' OR";
-                                    }
-                                    if (!empty($_GET["ps5"])) {
-                                        $sql .= " tt.platform LIKE '%PS5%' OR";
-                                    }
-                                    if (!empty($_GET["psvita"])) {
-                                        $sql .= " tt.platform LIKE '%PSVITA%' OR";
-                                    }
-                                    if (!empty($_GET["psvr"])) {
-                                        $sql .= " tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%' OR";
-                                    }
-                                    if (!empty($_GET["psvr2"])) {
-                                        $sql .= " tt.platform LIKE '%PSVR2%' OR";
-                                    }
-                                
-                                    // Remove " OR"
-                                    $sql = substr($sql, 0, -3);
-                                    $sql .= ")";
-                                }
-                                $sql .= " GROUP BY np_communication_id";
-                                switch ($sort) {
-                                    case "max-rarity":
-                                        $sql .= " ORDER BY max_rarity_points DESC, `name`";
-                                        break;
-                                    case "name":
-                                        $sql .= " ORDER BY `name`";
-                                        break;
-                                    case "rarity":
-                                        $sql .= " ORDER BY rarity_points DESC, `name`";
-                                        break;
-                                    case "search":
-                                        $sql .= " ORDER BY score DESC";
-                                        break;
-                                    default: // date
-                                        $sql .= " ORDER BY last_updated_date DESC";
-                                }
-                                $sql .= " LIMIT :offset, :limit ";
-                                $query = $database->prepare($sql);
-                                if (!empty($_GET["search"]) || $sort == "search") {
-                                    $search = $_GET["search"] ?? "";
-                                    $query->bindValue(":search", $search, PDO::PARAM_STR);
-                                }
-                                $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-                                $query->bindValue(":offset", $offset, PDO::PARAM_INT);
-                                $query->bindValue(":limit", $limit, PDO::PARAM_INT);
-                                $query->execute();
-                                $playerGames = $query->fetchAll();
-
                                 foreach ($playerGames as $playerGame) {
-                                    $trClass = "";
-                                    if ($playerGame["status"] == 1) {
-                                        $trClass = " class=\"table-warning\" title=\"This game is delisted, no trophies will be accounted for on any leaderboard.\"";
-                                    } elseif ($playerGame["status"] == 3) {
-                                        $trClass = " class=\"table-warning\" title=\"This game is obsolete, no trophies will be accounted for on any leaderboard.\"";
-                                    } elseif ($playerGame["status"] == 4) {
-                                        $trClass = " class=\"table-warning\" title=\"This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.\"";
-                                    } elseif ($playerGame["progress"] == 100) {
-                                        $trClass = " class=\"table-success\"";
-                                    } ?>
-                                    <tr<?= $trClass; ?>>
+                                    $rowClass = $playerGame->getRowClass();
+                                    $rowTitle = $playerGame->getRowTitle();
+                                    $rowAttributes = '';
+                                    if ($rowClass !== null) {
+                                        $rowAttributes .= ' class="' . $rowClass . '"';
+                                    }
+                                    if ($rowTitle !== null) {
+                                        $rowAttributes .= ' title="' . $rowTitle . '"';
+                                    }
+                                    ?>
+                                    <tr<?= $rowAttributes; ?>>
                                         <td scope="row">
                                             <div class="hstack gap-3">
-                                                <img src="/img/title/<?= ($playerGame["icon_url"] == ".png") ? ((str_contains($playerGame["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $playerGame["icon_url"]; ?>" alt="<?= htmlentities($playerGame["name"]); ?>" width="100" />
+                                                <img src="/img/title/<?= $playerGame->getIconFileName(); ?>" alt="<?= htmlentities($playerGame->getName()); ?>" width="100" />
 
                                                 <div class="vstack">
                                                     <span>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $playerGame["id"] ."-". $utility->slugify($playerGame["name"]); ?>/<?= $player["online_id"]; ?>">
-                                                            <?= htmlentities($playerGame["name"]); ?>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $playerGame->getId() ."-". $utility->slugify($playerGame->getName()); ?>/<?= $player["online_id"]; ?>">
+                                                            <?= htmlentities($playerGame->getName()); ?>
                                                         </a>
                                                     </span>
 
-                                                    <span id="<?= $playerGame["id"]; ?>"></span>
+                                                    <span id="<?= $playerGame->getId(); ?>"></span>
                                                     <script>
-                                                        document.getElementById("<?= $playerGame["id"]; ?>").innerHTML = new Date('<?= $playerGame["last_updated_date"]; ?> UTC').toLocaleString('sv-SE');
+                                                        document.getElementById("<?= $playerGame->getId(); ?>").innerHTML = new Date('<?= $playerGame->getLastUpdatedDate(); ?> UTC').toLocaleString('sv-SE');
                                                     </script>
 
                                                     <?php
-                                                    if ($playerGame["progress"] == 100) {
-                                                        $query = $database->prepare("
-                                                            SELECT
-                                                                MIN(earned_date) AS first_trophy,
-                                                                MAX(earned_date) AS last_trophy
-                                                            FROM
-                                                                trophy_earned
-                                                            WHERE
-                                                                np_communication_id = :np_communication_id
-                                                                AND account_id = :account_id
-                                                                AND earned = 1
-                                                        ");
-                                                        $query->bindValue(":np_communication_id", $playerGame["np_communication_id"], PDO::PARAM_STR);
-                                                        $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-                                                        $query->execute();
-                                                        $completionDates = $query->fetch();
-                                                        if (isset($completionDates["first_trophy"]) && isset($completionDates["last_trophy"])) {
-                                                            $datetime1 = date_create($completionDates["first_trophy"]);
-                                                            $datetime2 = date_create($completionDates["last_trophy"]);
-                                                            $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
-                                                        }
-                                                        $completionTimes = $completionTimes ?? [];
-
-                                                        $first = -1;
-                                                        $second = -1;
-                                                        for ($i = 0; $i < count($completionTimes); $i++) {
-                                                            if ($completionTimes[$i][0] == "0") {
-                                                                continue;
-                                                            }
-
-                                                            if ($first == -1) {
-                                                                $first = $i;
-                                                            } elseif ($second == -1) {
-                                                                $second = $i;
-                                                            }
-                                                        }
-
-                                                        echo "<br>";
-                                                        if ($first >= 0 && $second >= 0) {
-                                                            echo "Completed in ". $completionTimes[$first] .", ". $completionTimes[$second];
-                                                        } elseif ($first >= 0 && $second == -1) {
-                                                            echo "Completed in ". $completionTimes[$first];
-                                                        }
+                                                    $completionLabel = $playerGame->getCompletionDurationLabel();
+                                                    if ($completionLabel !== null) {
+                                                        echo '<br>' . $completionLabel;
                                                     }
                                                     ?>
                                                 </div>
@@ -425,36 +250,46 @@ require_once("header.php");
                                         </td>
                                         <td class="align-middle text-center">
                                             <?php
-                                            foreach (explode(",", $playerGame["platform"]) as $platform) {
-                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1 mb-1\">". $platform ."</span> ";
+                                            foreach ($playerGame->getPlatforms() as $platform) {
+                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1 mb-1\">" . htmlentities($platform) . "</span> ";
                                             }
                                             ?>
                                         </td>
                                         <td class="align-middle text-center" style="white-space: nowrap; width: 10rem;">
                                             <div class="vstack gap-1">
                                                 <div>
-                                                    <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $playerGame["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $playerGame["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $playerGame["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $playerGame["bronze"]; ?></span>
+                                                    <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $playerGame->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $playerGame->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $playerGame->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $playerGame->getBronze(); ?></span>
                                                 </div>
 
                                                 <div>
-                                                    <div class="progress" role="progressbar" aria-label="Player game progress" aria-valuenow="<?= $playerGame["progress"]; ?>" aria-valuemin="0" aria-valuemax="100">
-                                                        <div class="progress-bar<?= ($playerGame["status"] != 0 ? " bg-warning" : ($playerGame["progress"] == 100 ? " bg-success" : "")) ?>" style="width: <?= $playerGame["progress"]; ?>%"><?= $playerGame["progress"]; ?>%</div>
+                                                    <?php
+                                                    $progressBarClasses = 'progress-bar';
+                                                    if (!$playerGame->isActive()) {
+                                                        $progressBarClasses .= ' bg-warning';
+                                                    } elseif ($playerGame->isCompleted()) {
+                                                        $progressBarClasses .= ' bg-success';
+                                                    }
+                                                    ?>
+                                                    <div class="progress" role="progressbar" aria-label="Player game progress" aria-valuenow="<?= $playerGame->getProgress(); ?>" aria-valuemin="0" aria-valuemax="100">
+                                                        <div class="<?= $progressBarClasses; ?>" style="width: <?= $playerGame->getProgress(); ?>%">
+                                                            <?= $playerGame->getProgress(); ?>%
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="align-middle text-center">
                                             <?php
-                                            if ($player["status"] == 0 && $playerGame["status"] == 0) {
-                                                echo number_format($playerGame["rarity_points"]);
-                                                if ($playerGame["progress"] != 100) {
-                                                    echo "/". number_format($playerGame["max_rarity_points"]);
+                                            if ($player["status"] == 0 && $playerGame->getStatus() == 0) {
+                                                echo number_format($playerGame->getRarityPoints());
+                                                if (!$playerGame->isCompleted()) {
+                                                    echo '/'. number_format($playerGame->getMaxRarityPoints());
                                                 }
-                                            } elseif ($playerGame["status"] == 1) {
+                                            } elseif ($playerGame->getStatus() == 1) {
                                                 echo "<span class=\"badge rounded-pill text-bg-warning\">Delisted</span>";
-                                            } elseif ($playerGame["status"] == 3) {
+                                            } elseif ($playerGame->getStatus() == 3) {
                                                 echo "<span class=\"badge rounded-pill text-bg-warning\">Obsolete</span>";
-                                            } elseif ($playerGame["status"] == 4) {
+                                            } elseif ($playerGame->getStatus() == 4) {
                                                 echo "<span class=\"badge rounded-pill text-bg-warning\">Delisted &amp; Obsolete</span>";
                                             }
                                             ?>
