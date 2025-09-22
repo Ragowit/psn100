@@ -1,81 +1,54 @@
 <?php
-require_once("../init.php");
+declare(strict_types=1);
 
-if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
-    $gameId = $_POST["game"];
-    $name = $_POST["name"];
-    $iconUrl = $_POST["icon_url"];
-    $platform = $_POST["platform"];
-    $message = $_POST["message"];
-    $setVersion = $_POST["set_version"];
-    $region = (empty($_POST["region"]) ? null : $_POST["region"]);
-    $psnprofilesId = (empty($_POST["psnprofiles_id"]) ? null : $_POST["psnprofiles_id"]);
+require_once '../init.php';
+require_once '../classes/Admin/GameDetail.php';
+require_once '../classes/Admin/GameDetailService.php';
 
-    $database->beginTransaction();
-    $query = $database->prepare("UPDATE
-            trophy_title
-        SET
-            name = :name,
-            icon_url = :icon_url,
-            platform = :platform,
-            message = :message,
-            set_version = :set_version,
-            region = :region,
-            psnprofiles_id = :psnprofiles_id
-        WHERE
-            id = :game_id");
-    $query->bindValue(":name", $name, PDO::PARAM_STR);
-    $query->bindValue(":icon_url", $iconUrl, PDO::PARAM_STR);
-    $query->bindValue(":platform", $platform, PDO::PARAM_STR);
-    $query->bindValue(":message", $message, PDO::PARAM_STR);
-    $query->bindValue(":set_version", $setVersion, PDO::PARAM_STR);
-    $query->bindValue(":region", $region, PDO::PARAM_STR);
-    $query->bindValue(":psnprofiles_id", $psnprofilesId, PDO::PARAM_STR);
-    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
-    $query->execute();
-    $database->commit();
+$gameDetailService = new GameDetailService($database);
+$gameDetail = null;
+$success = null;
+$error = null;
 
-    $query = $database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UPDATE', :param_1)");
-    $query->bindValue(":param_1", $gameId, PDO::PARAM_INT);
-    $query->execute();
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $gameId = filter_input(INPUT_POST, 'game', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
 
-    $query = $database->prepare("SELECT 
-            np_communication_id,
-            name,
-            icon_url,
-            platform,
-            message,
-            set_version,
-            region,
-            psnprofiles_id
-        FROM
-            trophy_title
-        WHERE
-            id = :game_id");
-    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
-    $query->execute();
-    $trophyTitle = $query->fetch();
+        if ($gameId === null || $gameId === false) {
+            $error = '<p>Invalid game ID provided.</p>';
+        } else {
+            $regionInput = trim((string) ($_POST['region'] ?? ''));
+            $psnprofilesInput = trim((string) ($_POST['psnprofiles_id'] ?? ''));
 
-    $success = "<p>Game ID ". $gameId ." is updated.</p>";
-} elseif (isset($_GET["game"]) && ctype_digit(strval($_GET["game"]))) {
-    $gameId = $_GET["game"];
+            $gameDetail = $gameDetailService->updateGameDetail(
+                new GameDetail(
+                    (int) $gameId,
+                    null,
+                    (string) ($_POST['name'] ?? ''),
+                    (string) ($_POST['icon_url'] ?? ''),
+                    (string) ($_POST['platform'] ?? ''),
+                    (string) ($_POST['message'] ?? ''),
+                    (string) ($_POST['set_version'] ?? ''),
+                    $regionInput === '' ? null : $regionInput,
+                    $psnprofilesInput === '' ? null : $psnprofilesInput
+                )
+            );
 
-    $query = $database->prepare("SELECT 
-            np_communication_id,
-            name,
-            icon_url,
-            platform,
-            message,
-            set_version,
-            region,
-            psnprofiles_id
-        FROM
-            trophy_title
-        WHERE
-            id = :game_id");
-    $query->bindValue(":game_id", $gameId, PDO::PARAM_INT);
-    $query->execute();
-    $trophyTitle = $query->fetch();
+            $success = sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId());
+        }
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $gameId = filter_input(INPUT_GET, 'game', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+
+        if ($gameId !== null && $gameId !== false) {
+            $gameDetail = $gameDetailService->getGameDetail((int) $gameId);
+
+            if ($gameDetail === null) {
+                $error = '<p>Unable to find the requested game.</p>';
+            }
+        }
+    }
+} catch (Throwable $exception) {
+    $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
 }
 
 ?>
@@ -97,27 +70,25 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                 <input type="submit" value="Fetch">
             </form>
 
-            <?php
-            if (isset($trophyTitle)) {
-                ?>
+            <?php if ($gameDetail !== null) { ?>
                 <form method="post" autocomplete="off">
-                    <input type="hidden" name="game" value="<?= $gameId; ?>"><br>
+                    <input type="hidden" name="game" value="<?= $gameDetail->getId(); ?>"><br>
                     Name:<br>
-                    <input type="text" name="name" style="width: 859px;" value="<?= htmlentities($trophyTitle["name"]); ?>" ><br>
+                    <input type="text" name="name" style="width: 859px;" value="<?= htmlentities($gameDetail->getName(), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Icon URL:<br>
-                    <input type="text" name="icon_url" style="width: 859px;" value="<?= $trophyTitle["icon_url"]; ?>"><br>
+                    <input type="text" name="icon_url" style="width: 859px;" value="<?= htmlentities($gameDetail->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Platform:<br>
-                    <input type="text" name="platform" style="width: 859px;" value="<?= $trophyTitle["platform"]; ?>"><br>
+                    <input type="text" name="platform" style="width: 859px;" value="<?= htmlentities($gameDetail->getPlatform(), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Set Version:<br>
-                    <input type="text" name="set_version" style="width: 859px;" value="<?= $trophyTitle["set_version"]; ?>"><br>
+                    <input type="text" name="set_version" style="width: 859px;" value="<?= htmlentities($gameDetail->getSetVersion(), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Region:<br>
-                    <input type="text" name="region" style="width: 859px;" value="<?= $trophyTitle["region"]; ?>"><br>
+                    <input type="text" name="region" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getRegion() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     NP Communication ID:<br>
-                    <input type="text" name="np_communication_id" style="width: 859px;" value="<?= $trophyTitle["np_communication_id"]; ?>" readonly><br>
+                    <input type="text" name="np_communication_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getNpCommunicationId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>" readonly><br>
                     PSNProfiles ID:<br>
-                    <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= $trophyTitle["psnprofiles_id"]; ?>"><br>
+                    <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getPsnprofilesId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Message:<br>
-                    <textarea name="message" rows="6" cols="120"><?= $trophyTitle["message"]; ?></textarea><br><br>
+                    <textarea name="message" rows="6" cols="120"><?= $gameDetail->getMessage(); ?></textarea><br><br>
                     <input type="submit" value="Submit">
                 </form>
 
@@ -126,12 +97,14 @@ if (isset($_POST["game"]) && ctype_digit(strval($_POST["game"]))) {
                     <?= htmlentities("This game is delisted (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>). No trophies will be accounted for on any leaderboard."); ?><br>
                     <?= htmlentities("This game is obsolete, no trophies will be accounted for on any leaderboard. Please play <a href=\"/game/\"></a> instead."); ?><br>
                 </p>
-                <?php
-            }
-            ?>
+            <?php } ?>
 
             <?php
-            if (isset($success)) {
+            if ($error !== null) {
+                echo $error;
+            }
+
+            if ($success !== null) {
                 echo $success;
             }
             ?>
