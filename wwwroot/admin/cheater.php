@@ -3,25 +3,17 @@
 declare(strict_types=1);
 
 require_once '../init.php';
-require_once '../classes/Admin/CheaterService.php';
+require_once '../classes/Admin/CheaterRequestHandler.php';
 
 $cheaterService = new CheaterService($database);
+$requestHandler = new CheaterRequestHandler($cheaterService);
 
-$successMessage = null;
-$errorMessage = null;
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$postData = $_POST ?? [];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $onlineId = isset($_POST['player']) ? trim((string) $_POST['player']) : '';
-
-    try {
-        $cheaterService->markPlayerAsCheater($onlineId);
-        $successMessage = sprintf('<p>Player %s is now tagged as a cheater.</p>', htmlentities($onlineId));
-    } catch (InvalidArgumentException $exception) {
-        $errorMessage = sprintf('<p class="text-danger">%s</p>', htmlentities($exception->getMessage()));
-    } catch (Throwable $exception) {
-        $errorMessage = '<p class="text-danger">An unexpected error occurred while updating the player.</p>';
-    }
-}
+$result = $requestHandler->handle($requestMethod, $postData);
+$successMessage = $result->getSuccessMessage();
+$errorMessage = $result->getErrorMessage();
 
 ?>
 <!doctype html>
