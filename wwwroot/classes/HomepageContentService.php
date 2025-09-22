@@ -1,5 +1,11 @@
 <?php
 
+require_once __DIR__ . '/Homepage/HomepageItem.php';
+require_once __DIR__ . '/Homepage/HomepageTitle.php';
+require_once __DIR__ . '/Homepage/HomepageNewGame.php';
+require_once __DIR__ . '/Homepage/HomepageDlc.php';
+require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
+
 class HomepageContentService
 {
     private const DEFAULT_NEW_GAME_LIMIT = 8;
@@ -13,6 +19,9 @@ class HomepageContentService
         $this->database = $database;
     }
 
+    /**
+     * @return HomepageNewGame[]
+     */
     public function getNewGames(int $limit = self::DEFAULT_NEW_GAME_LIMIT): array
     {
         $query = $this->database->prepare(
@@ -32,9 +41,17 @@ class HomepageContentService
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->execute();
 
-        return $query->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(
+            static fn(array $row): HomepageNewGame => HomepageNewGame::fromArray($row),
+            $rows
+        );
     }
 
+    /**
+     * @return HomepageDlc[]
+     */
     public function getNewDlcs(int $limit = self::DEFAULT_NEW_DLCS_LIMIT): array
     {
         $query = $this->database->prepare(
@@ -64,9 +81,17 @@ class HomepageContentService
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->execute();
 
-        return $query->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(
+            static fn(array $row): HomepageDlc => HomepageDlc::fromArray($row),
+            $rows
+        );
     }
 
+    /**
+     * @return HomepagePopularGame[]
+     */
     public function getPopularGames(int $limit = self::DEFAULT_POPULAR_GAME_LIMIT): array
     {
         $query = $this->database->prepare(
@@ -90,6 +115,11 @@ class HomepageContentService
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->execute();
 
-        return $query->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(
+            static fn(array $row): HomepagePopularGame => HomepagePopularGame::fromArray($row),
+            $rows
+        );
     }
 }

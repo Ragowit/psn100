@@ -37,6 +37,7 @@ require_once("header.php");
                         <div class="row">
                             <?php
                             foreach ($newGames as $game) {
+                                $gameUrl = $game->getRelativeUrl($utility);
                                 ?>
                                 <div class="col-12 col-md-6 col-lg-4 col-xl-3 text-center mb-2">
                                     <div class="vstack gap-1">
@@ -44,12 +45,12 @@ require_once("header.php");
                                         <div>
                                             <div class="card">
                                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
-                                                    <a href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
-                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["name"]); ?>">
+                                                    <a href="<?= $gameUrl; ?>">
+                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="<?= $game->getIconPath(); ?>" alt="<?= htmlentities($game->getName()); ?>">
                                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                                             <?php
-                                                            foreach (explode(",", $game["platform"]) as $platform) {
-                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">". $platform ."</span> ";
+                                                            foreach ($game->getPlatforms() as $platform) {
+                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
                                                             }
                                                             ?>
                                                         </div>
@@ -60,13 +61,13 @@ require_once("header.php");
 
                                         <!-- trophies -->
                                         <div>
-                                            <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game["bronze"]; ?></span>
+                                            <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game->getBronze(); ?></span>
                                         </div>
 
                                         <!-- name -->
                                         <div class="text-center">
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
-                                                <?= htmlentities($game["name"]); ?>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $gameUrl; ?>">
+                                                <?= htmlentities($game->getName()); ?>
                                             </a>
                                         </div>
                                     </div>
@@ -86,7 +87,8 @@ require_once("header.php");
                         <h1>New DLCs</h1>
                         <div class="row">
                             <?php
-                            foreach ($newDlcs as $game) {
+                            foreach ($newDlcs as $dlc) {
+                                $dlcUrl = $dlc->getRelativeUrl($utility);
                                 ?>
                                 <div class="col-12 col-md-6 col-lg-4 col-xl-3 text-center mb-2">
                                     <!-- image, platforms and status -->
@@ -94,12 +96,12 @@ require_once("header.php");
                                         <div>
                                             <div class="card">
                                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
-                                                    <a href="/game/<?= $game["id"] ."-". $utility->slugify($game["game_name"]); ?>#<?= $game["group_id"]; ?>">
-                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/group/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["group_name"]); ?>">
+                                                    <a href="<?= $dlcUrl; ?>">
+                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="<?= $dlc->getIconPath(); ?>" alt="<?= htmlentities($dlc->getGroupName()); ?>">
                                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                                             <?php
-                                                            foreach (explode(",", $game["platform"]) as $platform) {
-                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">". $platform ."</span> ";
+                                                            foreach ($dlc->getPlatforms() as $platform) {
+                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
                                                             }
                                                             ?>
                                                         </div>
@@ -110,13 +112,13 @@ require_once("header.php");
 
                                         <!-- trophies -->
                                         <div>
-                                            <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game["bronze"]; ?></span>
+                                            <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $dlc->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $dlc->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $dlc->getBronze(); ?></span>
                                         </div>
 
                                         <!-- name -->
                                         <div class="text-center">
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["game_name"]); ?>#<?= $game["group_id"]; ?>">
-                                                <small><?= htmlentities($game["game_name"]); ?></small><br><?= htmlentities($game["group_name"]); ?>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $dlcUrl; ?>">
+                                                <small><?= htmlentities($dlc->getName()); ?></small><br><?= htmlentities($dlc->getGroupName()); ?>
                                             </a>
                                         </div>
                                     </div>
@@ -136,14 +138,15 @@ require_once("header.php");
                 <h1>Popular Games</h1>
                 <?php
                 foreach ($popularGames as $game) {
+                    $gameUrl = $game->getRelativeUrl($utility);
                     ?>
                     <div class="row mb-3">
                         <!-- image -->
                         <div class="col-4">
                             <div class="card">
                                 <div class="d-flex justify-content-center align-items-center" style="height: 7rem;">
-                                    <a href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
-                                        <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/title/<?= ($game["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game["icon_url"]; ?>" alt="<?= htmlentities($game["name"]); ?>">
+                                    <a href="<?= $gameUrl; ?>">
+                                        <img class="card-img object-fit-cover" style="height: 7rem;" src="<?= $game->getIconPath(); ?>" alt="<?= htmlentities($game->getName()); ?>">
                                     </a>
                                 </div>
                             </div>
@@ -154,16 +157,16 @@ require_once("header.php");
                             <div>
                                 <div class="row">
                                     <div class="col">
-                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?>">
-                                            <?= htmlentities($game["name"]); ?>
+                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $gameUrl; ?>">
+                                            <?= htmlentities($game->getName()); ?>
                                         </a>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col">
                                         <?php
-                                        foreach (explode(",", $game["platform"]) as $platform) {
-                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2 mt-2\">". $platform ."</span> ";
+                                        foreach ($game->getPlatforms() as $platform) {
+                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2 mt-2\">" . htmlentities($platform) . "</span> ";
                                         }
                                         ?>
                                     </div>
@@ -174,7 +177,7 @@ require_once("header.php");
                         <!-- Recent Players -->
                         <div class="col-3 text-end d-flex align-items-center">
                             <div class="ms-auto">
-                                <span class="fw-bold"><?= number_format($game["recent_players"]); ?></span><br>Players
+                                <span class="fw-bold"><?= number_format($game->getRecentPlayers()); ?></span><br>Players
                             </div>
                         </div>
                     </div>
