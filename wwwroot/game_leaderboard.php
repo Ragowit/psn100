@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/GamePlayerFilter.php';
+require_once __DIR__ . '/classes/GameLeaderboardFilter.php';
 require_once __DIR__ . '/classes/GameLeaderboardService.php';
 
 if (!isset($gameId)) {
@@ -28,25 +30,13 @@ if (isset($player)) {
 
 }
 
-$filters = $gameLeaderboardService->buildFilters($_GET);
-$totalPlayers = $gameLeaderboardService->getLeaderboardPlayerCount($game["np_communication_id"], $filters);
-$page = $gameLeaderboardService->getPage($_GET);
+$filter = GameLeaderboardFilter::fromArray($_GET ?? []);
+$totalPlayers = $gameLeaderboardService->getLeaderboardPlayerCount($game["np_communication_id"], $filter);
+$page = $filter->getPage();
 $limit = GameLeaderboardService::PAGE_SIZE;
-$offset = $gameLeaderboardService->calculateOffset($page, $limit);
-
-$url = $_SERVER["REQUEST_URI"];
-$url_parts = parse_url($url);
-// If URL doesn't have a query string.
-if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
-    parse_str($url_parts["query"], $params);
-} else {
-    $params = array();
-}
-
-$paramsWithoutPage = $params;
-unset($paramsWithoutPage["page"]);
-
-$rows = $gameLeaderboardService->getLeaderboardRows($game["np_communication_id"], $filters, $offset, $limit);
+$offset = $filter->getOffset($limit);
+$totalPagesCount = (int) ceil($totalPlayers / $limit);
+$rows = $gameLeaderboardService->getLeaderboardRows($game["np_communication_id"], $filter, $limit);
 
 $title = $game["name"] ." Leaderboard ~ PSN 100%";
 require_once("header.php");
@@ -94,12 +84,10 @@ require_once("header.php");
                             $rank = $offset;
                             foreach ($rows as $row) {
                                 $countryName = $utility->getCountryName($row["country"]);
-                                $paramsAvatar = $paramsWithoutPage;
-                                $paramsAvatar["avatar"] = $row["avatar_url"];
-                                $paramsCountry = $paramsWithoutPage;
-                                $paramsCountry["country"] = $row["country"];
+                                $paramsAvatar = $filter->withAvatar($row["avatar_url"]);
+                                $paramsCountry = $filter->withCountry($row["country"]);
                                 ?>
-                                <tr<?= ((isset($accountId) && $row["account_id"] === $accountId) ? " class='table-primary'" : ""); ?>>
+                                <tr<?= ($accountId !== null && $row["account_id"] === $accountId) ? " class='table-primary'" : ""; ?>>
                                     <th class="align-middle" style="width: 2rem;" scope="row"><?= ++$rank; ?></th>
 
                                     <td>
@@ -169,68 +157,67 @@ require_once("header.php");
                 <ul class="pagination justify-content-center">
                     <?php
                     if ($page > 1) {
-                        $params["page"] = $page - 1;
+                        $previousParams = $filter->withPage($page - 1);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Previous">&lt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($previousParams); ?>" aria-label="Previous">&lt;</a></li>
                         <?php
                     }
 
                     if ($page > 3) {
-                        $params["page"] = 1;
+                        $firstPageParams = $filter->withPage(1);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($firstPageParams); ?>">1</a></li>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
                         <?php
                     }
 
                     if ($page-2 > 0) {
-                        $params["page"] = $page - 2;
+                        $twoBackParams = $filter->withPage($page - 2);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoBackParams); ?>"><?= $page-2; ?></a></li>
                         <?php
                     }
 
                     if ($page-1 > 0) {
-                        $params["page"] = $page - 1;
+                        $oneBackParams = $filter->withPage($page - 1);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneBackParams); ?>"><?= $page-1; ?></a></li>
                         <?php
                     }
                     ?>
 
                     <?php
-                    $params["page"] = $page;
+                    $currentPageParams = $filter->withPage($page);
                     ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($currentPageParams); ?>"><?= $page; ?></a></li>
 
                     <?php
-                    $totalPagesCount = (int) ceil($totalPlayers / $limit);
                     if ($page + 1 <= $totalPagesCount) {
-                        $params["page"] = $page + 1;
+                        $oneAheadParams = $filter->withPage($page + 1);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneAheadParams); ?>"><?= $page+1; ?></a></li>
                         <?php
                     }
 
                     if ($page + 2 <= $totalPagesCount) {
-                        $params["page"] = $page + 2;
+                        $twoAheadParams = $filter->withPage($page + 2);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoAheadParams); ?>"><?= $page+2; ?></a></li>
                         <?php
                     }
 
                     if ($page < $totalPagesCount - 2) {
-                        $params["page"] = $totalPagesCount;
+                        $lastPageParams = $filter->withPage($totalPagesCount);
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $totalPagesCount; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($lastPageParams); ?>"><?= $totalPagesCount; ?></a></li>
                         <?php
                     }
 
                     if ($page < $totalPagesCount) {
-                        $params["page"] = $page + 1;
+                        $nextParams = $filter->withPage($page + 1);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Next">&gt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($nextParams); ?>" aria-label="Next">&gt;</a></li>
                         <?php
                     }
                     ?>

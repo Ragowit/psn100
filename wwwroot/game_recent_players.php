@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/GamePlayerFilter.php';
 require_once __DIR__ . '/classes/GameRecentPlayersService.php';
 
 if (!isset($gameId)) {
@@ -29,28 +30,12 @@ if (isset($player)) {
     $gamePlayer = $gameRecentPlayersService->getGamePlayer($game["np_communication_id"], $accountId);
 }
 
-$filters = $gameRecentPlayersService->buildFilters($_GET);
-$rows = $gameRecentPlayersService->getRecentPlayers($game["np_communication_id"], $filters);
+$filter = GamePlayerFilter::fromArray($_GET ?? []);
+$rows = $gameRecentPlayersService->getRecentPlayers($game["np_communication_id"], $filter);
 
 $title = $game["name"] ." Recent Players ~ PSN 100%";
 require_once("header.php");
 
-$url = $_SERVER["REQUEST_URI"];
-$url_parts = parse_url($url);
-// If URL doesn't have a query string.
-if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
-    parse_str($url_parts["query"], $params);
-} else {
-    $params = array();
-}
-
-foreach (["country", "avatar"] as $filterKey) {
-    if (isset($filters[$filterKey])) {
-        $params[$filterKey] = $filters[$filterKey];
-    } else {
-        unset($params[$filterKey]);
-    }
-}
 ?>
 
 <main class="container">
@@ -95,10 +80,8 @@ foreach (["country", "avatar"] as $filterKey) {
                             $rank = 0;
                             foreach ($rows as $row) {
                                 $countryName = $utility->getCountryName($row["country"]);
-                                $paramsAvatar = $params;
-                                $paramsAvatar["avatar"] = $row["avatar_url"];
-                                $paramsCountry = $params;
-                                $paramsCountry["country"] = $row["country"];
+                                $paramsAvatar = $filter->withAvatar($row["avatar_url"]);
+                                $paramsCountry = $filter->withCountry($row["country"]);
                                 ?>
                                 <tr<?= ($accountId !== null && $row["account_id"] === $accountId) ? " class='table-primary'" : ""; ?>>
                                     <th class="align-middle" style="width: 2rem;" scope="row"><?= ++$rank; ?></th>
