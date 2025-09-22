@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/GameHeaderService.php';
 require_once __DIR__ . '/classes/GameService.php';
 
 if (!isset($gameId)) {
@@ -16,6 +17,9 @@ if ($game === null) {
     header("Location: /game/", true, 303);
     die();
 }
+
+$gameHeaderService = new GameHeaderService($database);
+$gameHeaderData = $gameHeaderService->buildHeaderData($game);
 
 $sort = $gameService->resolveSort($_GET);
 

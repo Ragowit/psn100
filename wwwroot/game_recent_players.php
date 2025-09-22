@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/GameHeaderService.php';
 require_once __DIR__ . '/classes/GamePlayerFilter.php';
 require_once __DIR__ . '/classes/GameRecentPlayersService.php';
 
@@ -17,6 +18,9 @@ if ($game === null) {
     header("Location: /game/", true, 303);
     die();
 }
+
+$gameHeaderService = new GameHeaderService($database);
+$gameHeaderData = $gameHeaderService->buildHeaderData($game);
 
 $accountId = null;
 if (isset($player)) {
