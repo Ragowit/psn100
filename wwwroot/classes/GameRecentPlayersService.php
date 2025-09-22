@@ -86,31 +86,9 @@ class GameRecentPlayersService
     }
 
     /**
-     * @param array<string, mixed> $queryParameters
-     * @return array{country?: string, avatar?: string}
-     */
-    public function buildFilters(array $queryParameters): array
-    {
-        $filters = [];
-
-        $country = trim((string) ($queryParameters['country'] ?? ''));
-        if ($country !== '') {
-            $filters['country'] = $country;
-        }
-
-        $avatar = trim((string) ($queryParameters['avatar'] ?? ''));
-        if ($avatar !== '') {
-            $filters['avatar'] = $avatar;
-        }
-
-        return $filters;
-    }
-
-    /**
-     * @param array{country?: string, avatar?: string} $filters
      * @return array<int, array<string, mixed>>
      */
-    public function getRecentPlayers(string $npCommunicationId, array $filters): array
+    public function getRecentPlayers(string $npCommunicationId, GamePlayerFilter $filter): array
     {
         $sql = <<<'SQL'
             SELECT
@@ -136,7 +114,7 @@ class GameRecentPlayersService
                 AND ttp.np_communication_id = :np_communication_id
         SQL;
 
-        $sql .= $this->buildFilterSql($filters);
+        $sql .= $this->buildFilterSql($filter);
 
         $sql .= <<<'SQL'
             ORDER BY
@@ -147,7 +125,7 @@ class GameRecentPlayersService
         $query = $this->database->prepare($sql);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':limit', self::RECENT_PLAYERS_LIMIT, PDO::PARAM_INT);
-        $this->bindFilterParameters($query, $filters);
+        $this->bindFilterParameters($query, $filter);
         $query->execute();
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -166,35 +144,29 @@ class GameRecentPlayersService
         return $rows;
     }
 
-    /**
-     * @param array{country?: string, avatar?: string} $filters
-     */
-    private function buildFilterSql(array $filters): string
+    private function buildFilterSql(GamePlayerFilter $filter): string
     {
         $sql = '';
 
-        if (isset($filters['country'])) {
+        if ($filter->hasCountry()) {
             $sql .= ' AND p.country = :country';
         }
 
-        if (isset($filters['avatar'])) {
+        if ($filter->hasAvatar()) {
             $sql .= ' AND p.avatar_url = :avatar';
         }
 
         return $sql;
     }
 
-    /**
-     * @param array{country?: string, avatar?: string} $filters
-     */
-    private function bindFilterParameters(PDOStatement $query, array $filters): void
+    private function bindFilterParameters(PDOStatement $query, GamePlayerFilter $filter): void
     {
-        if (isset($filters['country'])) {
-            $query->bindValue(':country', $filters['country'], PDO::PARAM_STR);
+        if ($filter->hasCountry()) {
+            $query->bindValue(':country', (string) $filter->getCountry(), PDO::PARAM_STR);
         }
 
-        if (isset($filters['avatar'])) {
-            $query->bindValue(':avatar', $filters['avatar'], PDO::PARAM_STR);
+        if ($filter->hasAvatar()) {
+            $query->bindValue(':avatar', (string) $filter->getAvatar(), PDO::PARAM_STR);
         }
     }
 }
