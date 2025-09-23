@@ -23,12 +23,24 @@ class PlayerReportHandler
     }
 
     /**
+     * @param int $accountId
+     * @param string $explanation
+     * @param bool $explanationSubmitted
      * @param array<string, mixed> $serverParameters
      */
-    public function handleReportRequest(int $accountId, string $explanation, array $serverParameters): PlayerReportResult
+    public function handleReportRequest(
+        int $accountId,
+        string $explanation,
+        bool $explanationSubmitted,
+        array $serverParameters
+    ): PlayerReportResult
     {
-        if ($explanation === '') {
+        if (!$explanationSubmitted) {
             return PlayerReportResult::empty();
+        }
+
+        if ($explanation === '') {
+            return PlayerReportResult::error('Please provide an explanation for your report.');
         }
 
         $ipAddress = $this->resolveIpAddress($serverParameters);

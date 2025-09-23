@@ -16,7 +16,13 @@ $playerSummary = $playerSummaryService->getSummary((int) $accountId);
 
 $queryParameters = $_GET ?? [];
 $explanation = $playerReportHandler->getExplanation($queryParameters);
-$reportResult = $playerReportHandler->handleReportRequest((int) $accountId, $explanation, $_SERVER ?? []);
+$explanationSubmitted = array_key_exists('explanation', $queryParameters);
+$reportResult = $playerReportHandler->handleReportRequest(
+    (int) $accountId,
+    $explanation,
+    $explanationSubmitted,
+    $_SERVER ?? []
+);
 
 $title = $player["online_id"] . "'s Report ~ PSN 100%";
 require_once("header.php");
