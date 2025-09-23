@@ -1,16 +1,10 @@
 <?php
 require_once 'classes/AvatarService.php';
+require_once 'classes/AvatarPage.php';
 
 $title = "Avatars ~ PSN 100%";
 $avatarService = new AvatarService($database);
-
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
-$page = max($page, 1);
-$limit = 48;
-
-$totalAvatarCount = $avatarService->getTotalUniqueAvatarCount();
-$totalPages = $totalAvatarCount > 0 ? (int) ceil($totalAvatarCount / $limit) : 0;
-$avatars = $avatarService->getAvatars($page, $limit);
+$avatarPage = AvatarPage::fromQueryParameters($avatarService, $_GET ?? []);
 
 require_once("header.php");
 ?>
@@ -24,7 +18,7 @@ require_once("header.php");
 
     <div class="row">
         <?php
-        foreach ($avatars as $avatar) {
+        foreach ($avatarPage->getAvatars() as $avatar) {
             ?>
             <div class="col">
                 <div class="bg-body-tertiary p-3 rounded mb-3 text-center vstack gap-1">
@@ -44,57 +38,55 @@ require_once("header.php");
             <nav aria-label="Avatars page navigation">
                 <ul class="pagination justify-content-center">
                     <?php
-                    if ($page > 1) {
+                    if ($avatarPage->hasPreviousPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $page - 1; ?>" aria-label="Previous">&lt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $avatarPage->getPreviousPage(); ?>" aria-label="Previous">&lt;</a></li>
                         <?php
                     }
 
-                    if ($page > 3) {
+                    if ($avatarPage->shouldShowFirstPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $avatarPage->getFirstPage(); ?>"><?= $avatarPage->getFirstPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($avatarPage->shouldShowLeadingEllipsis()) {
+                        ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
                         <?php
                     }
 
-                    if ($page - 2 > 0) {
+                    foreach ($avatarPage->getPreviousPages() as $previousPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $page - 2; ?>"><?= $page - 2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page - 1 > 0) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $page - 1; ?>"><?= $page - 1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $previousPage; ?>"><?= $previousPage; ?></a></li>
                         <?php
                     }
                     ?>
 
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $page; ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $avatarPage->getCurrentPage(); ?>"><?= $avatarPage->getCurrentPage(); ?></a></li>
 
                     <?php
-                    if ($page + 1 <= $totalPages) {
+                    foreach ($avatarPage->getNextPages() as $nextPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $page + 1; ?>"><?= $page + 1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $nextPage; ?>"><?= $nextPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page + 2 <= $totalPages) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $page + 2; ?>"><?= $page + 2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $totalPages - 2) {
+                    if ($avatarPage->shouldShowTrailingEllipsis()) {
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $totalPages; ?>"><?= $totalPages; ?></a></li>
                         <?php
                     }
 
-                    if ($page < $totalPages) {
+                    if ($avatarPage->shouldShowLastPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $page + 1; ?>" aria-label="Next">&gt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $avatarPage->getLastPage(); ?>"><?= $avatarPage->getLastPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($avatarPage->hasNextPage()) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $avatarPage->getNextPage(); ?>" aria-label="Next">&gt;</a></li>
                         <?php
                     }
                     ?>
