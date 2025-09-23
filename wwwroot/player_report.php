@@ -4,19 +4,19 @@ if (!isset($accountId)) {
     die();
 }
 
+require_once __DIR__ . '/classes/PlayerReportHandler.php';
 require_once __DIR__ . '/classes/PlayerReportService.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
 $playerReportService = new PlayerReportService($database);
+$playerReportHandler = new PlayerReportHandler($playerReportService);
 $playerSummaryService = new PlayerSummaryService($database);
 $playerSummary = $playerSummaryService->getSummary((int) $accountId);
 
-if (!empty($_GET["explanation"])) {
-    $ipAddress = $_SERVER["REMOTE_ADDR"] ?? '';
-    $explanation = (string) $_GET["explanation"];
-    $result = $playerReportService->submitReport((int) $accountId, $ipAddress, $explanation);
-}
+$queryParameters = $_GET ?? [];
+$explanation = $playerReportHandler->getExplanation($queryParameters);
+$reportResult = $playerReportHandler->handleReportRequest((int) $accountId, $explanation, $_SERVER ?? []);
 
 $title = $player["online_id"] . "'s Report ~ PSN 100%";
 require_once("header.php");
@@ -50,16 +50,12 @@ require_once("header.php");
 
     <div class="row">
         <?php
-        if (isset($result)) {
-            if (str_contains($result, "success")) {
-                $alertClass = "success";
-            } else {
-                $alertClass = "warning";
-            }
+        if ($reportResult->hasMessage()) {
+            $alertClass = $reportResult->isSuccess() ? 'success' : 'warning';
             ?>
             <div class="col-12 mb-3">
                 <div class="alert alert-<?= $alertClass; ?>" role="alert">
-                    <?= $result; ?>
+                    <?= $reportResult->getMessage(); ?>
                 </div>
             </div>
             <?php
@@ -76,7 +72,7 @@ require_once("header.php");
                             <li>Include the game and trophy name and why it's wrong.</li>
                             <li>"This player is banned on X and/or Y!" isn't going to help, we need specific details on what trophy and why it's wrong.</li>
                         </ul>
-                        <textarea class="form-control" id="explanation" name="explanation" maxlength="256" rows="7" aria-describedby="explanationHelp"><?= htmlentities($_GET["explanation"] ?? ""); ?></textarea>
+                        <textarea class="form-control" id="explanation" name="explanation" maxlength="256" rows="7" aria-describedby="explanationHelp"><?= htmlentities($explanation, ENT_QUOTES, 'UTF-8'); ?></textarea>
                         <div id="explanationHelp" class="form-text">Or use <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues">issues</a> to include images and get feedback on your report (requires GitHub login).</div>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit</button>
