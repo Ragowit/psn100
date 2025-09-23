@@ -5,6 +5,7 @@ if (!isset($accountId)) {
 }
 
 require_once __DIR__ . '/classes/PlayerRandomGame.php';
+require_once __DIR__ . '/classes/PlayerRandomGamesFilter.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesService.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
@@ -12,10 +13,11 @@ require_once __DIR__ . '/classes/PlayerSummaryService.php';
 $playerRandomGamesService = new PlayerRandomGamesService($database, $utility);
 $playerSummaryService = new PlayerSummaryService($database);
 $playerSummary = $playerSummaryService->getSummary((int) $accountId);
+$playerRandomGamesFilter = PlayerRandomGamesFilter::fromArray($_GET ?? []);
 $randomGames = [];
 
 if ($player["status"] != 1 && $player["status"] != 3) {
-    $randomGames = $playerRandomGamesService->getRandomGames((int) $player["account_id"], $_GET);
+    $randomGames = $playerRandomGamesService->getRandomGames((int) $player["account_id"], $playerRandomGamesFilter);
 }
 
 $title = $player["online_id"] . "'s Random Games ~ PSN 100%";
@@ -50,7 +52,7 @@ require_once("header.php");
                         <ul class="dropdown-menu p-2">
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["pc"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PC) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
                                     <label class="form-check-label" for="filterPC">
                                         PC
                                     </label>
@@ -58,7 +60,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps3"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PS3) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
                                     <label class="form-check-label" for="filterPS3">
                                         PS3
                                     </label>
@@ -66,7 +68,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps4"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PS4) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
                                     <label class="form-check-label" for="filterPS4">
                                         PS4
                                     </label>
@@ -74,7 +76,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["ps5"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PS5) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
                                     <label class="form-check-label" for="filterPS5">
                                         PS5
                                     </label>
@@ -82,7 +84,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvita"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PSVITA) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
                                     <label class="form-check-label" for="filterPSVITA">
                                         PSVITA
                                     </label>
@@ -90,7 +92,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PSVR) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
                                     <label class="form-check-label" for="filterPSVR">
                                         PSVR
                                     </label>
@@ -98,7 +100,7 @@ require_once("header.php");
                             </li>
                             <li>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= (!empty($_GET["psvr2"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
+                                    <input class="form-check-input" type="checkbox"<?= ($playerRandomGamesFilter->isPlatformSelected(PlayerRandomGamesFilter::PLATFORM_PSVR2) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
                                     <label class="form-check-label" for="filterPSVR2">
                                         PSVR2
                                     </label>
