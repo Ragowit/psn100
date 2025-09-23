@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerReportResult.php';
+
 class PlayerReportService
 {
     private const MAX_PENDING_REPORTS_PER_IP = 10;
@@ -13,19 +15,19 @@ class PlayerReportService
         $this->database = $database;
     }
 
-    public function submitReport(int $accountId, string $ipAddress, string $explanation): string
+    public function submitReport(int $accountId, string $ipAddress, string $explanation): PlayerReportResult
     {
         if ($this->hasExistingReport($accountId, $ipAddress)) {
-            return "You've already reported this player.";
+            return PlayerReportResult::error("You've already reported this player.");
         }
 
         if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
-            return "You've already 10 players reported waiting to be processed. Please try again later.";
+            return PlayerReportResult::error("You've already 10 players reported waiting to be processed. Please try again later.");
         }
 
         $this->insertReport($accountId, $ipAddress, $explanation);
 
-        return "Player reported successfully.";
+        return PlayerReportResult::success('Player reported successfully.');
     }
 
     private function hasExistingReport(int $accountId, string $ipAddress): bool
