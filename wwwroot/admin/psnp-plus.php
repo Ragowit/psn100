@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
-require_once '../classes/Admin/PsnpPlusService.php';
+require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/../classes/Admin/PsnpPlusService.php';
 
 $psnpPlusService = new PsnpPlusService($database);
 $psnpPlusReport = null;
