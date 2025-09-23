@@ -25,12 +25,11 @@ class PlayerRandomGamesService
     }
 
     /**
-     * @param array<string, mixed> $filters
      * @return PlayerRandomGame[]
      */
-    public function getRandomGames(int $accountId, array $filters, int $limit = 8): array
+    public function getRandomGames(int $accountId, PlayerRandomGamesFilter $filter, int $limit = 8): array
     {
-        $sql = $this->buildSqlQuery($filters, $limit);
+        $sql = $this->buildSqlQuery($filter, $limit);
 
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
@@ -48,17 +47,14 @@ class PlayerRandomGamesService
         return $games;
     }
 
-    /**
-     * @param array<string, mixed> $filters
-     */
-    private function buildSqlQuery(array $filters, int $limit): string
+    private function buildSqlQuery(PlayerRandomGamesFilter $filter, int $limit): string
     {
         $sql = "SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.owners, tt.difficulty, tt.platinum, tt.gold, tt.silver, tt.bronze, tt.rarity_points, ttp.progress" .
             " FROM trophy_title tt" .
             " LEFT JOIN trophy_title_player ttp ON ttp.np_communication_id = tt.np_communication_id AND ttp.account_id = :account_id" .
             " WHERE tt.status = 0 AND (ttp.progress != 100 OR ttp.progress IS NULL)";
 
-        $sql .= $this->buildPlatformFilter($filters);
+        $sql .= $this->buildPlatformFilter($filter);
 
         $limit = max(1, $limit);
         $sql .= ' ORDER BY RAND() LIMIT ' . $limit;
@@ -66,14 +62,11 @@ class PlayerRandomGamesService
         return $sql;
     }
 
-    /**
-     * @param array<string, mixed> $filters
-     */
-    private function buildPlatformFilter(array $filters): string
+    private function buildPlatformFilter(PlayerRandomGamesFilter $filter): string
     {
         $conditions = [];
         foreach (self::PLATFORM_FILTERS as $filterKey => $condition) {
-            if (!empty($filters[$filterKey])) {
+            if ($filter->isPlatformSelected($filterKey)) {
                 $conditions[] = $condition;
             }
         }
