@@ -140,6 +140,25 @@ require_once("../init.php");
                         }
                     }
 
+                    buffer += decoder.decode();
+                    const finalLines = buffer.split('\n');
+                    buffer = finalLines.pop() ?? '';
+
+                    for (const line of finalLines) {
+                        const trimmed = line.trim();
+
+                        if (trimmed === '') {
+                            continue;
+                        }
+
+                        try {
+                            const payload = JSON.parse(trimmed);
+                            processPayload(payload);
+                        } catch (error) {
+                            // Ignore malformed payloads.
+                        }
+                    }
+
                     const remaining = buffer.trim();
 
                     if (remaining !== '') {
