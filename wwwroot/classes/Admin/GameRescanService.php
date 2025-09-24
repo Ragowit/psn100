@@ -15,6 +15,7 @@ class GameRescanService
 
     private PDO $database;
     private TrophyCalculator $trophyCalculator;
+    private int $lastProgress = 0;
 
     public function __construct(PDO $database, TrophyCalculator $trophyCalculator)
     {
@@ -22,36 +23,50 @@ class GameRescanService
         $this->trophyCalculator = $trophyCalculator;
     }
 
-    public function rescan(int $gameId): string
+    public function rescan(int $gameId, ?callable $progressCallback = null): string
     {
+        $this->lastProgress = 0;
+        $this->emitProgress($progressCallback, 5, 'Validating game id…');
         $npCommunicationId = $this->getGameNpCommunicationId($gameId);
+
+        $this->emitProgress($progressCallback, 10, 'Checking game entry…');
 
         if (!$this->isOriginalGame($npCommunicationId)) {
             return 'Can only rescan original game entries.';
         }
 
+        $this->emitProgress($progressCallback, 20, 'Signing in to worker account…');
         $client = $this->loginToWorker();
+        $this->emitProgress($progressCallback, 35, 'Locating accessible player…');
         $user = $this->findAccessibleUserWithGame($client, $npCommunicationId);
 
         if ($user === null) {
             throw new RuntimeException('Unable to find accessible player for the specified game.');
         }
 
-        foreach ($user->trophyTitles() as $trophyTitle) {
-            if ($trophyTitle->npCommunicationId() !== $npCommunicationId) {
-                continue;
-            }
+        $trophyTitle = $this->findTrophyTitleForUser($user, $npCommunicationId);
 
-            $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId);
-            $this->recalculateTrophies($trophyTitle, $npCommunicationId, (int) $user->accountId(), $trophyGroups);
-
-            $this->updateTrophySetVersion($npCommunicationId, $trophyTitle->trophySetVersion());
-            $this->recordRescan($gameId);
-
-            return "Game {$gameId} have been rescanned.";
+        if ($trophyTitle === null) {
+            throw new RuntimeException('Unable to find trophy title for the specified game.');
         }
 
-        throw new RuntimeException('Unable to find trophy title for the specified game.');
+        $this->emitProgress($progressCallback, 55, 'Refreshing trophy details…');
+        $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId, $progressCallback);
+        $this->emitProgress($progressCallback, 70, 'Recalculating player statistics…');
+        $this->recalculateTrophies(
+            $trophyTitle,
+            $npCommunicationId,
+            (int) $user->accountId(),
+            $trophyGroups,
+            $progressCallback
+        );
+
+        $this->emitProgress($progressCallback, 85, 'Updating trophy set version…');
+        $this->updateTrophySetVersion($npCommunicationId, $trophyTitle->trophySetVersion());
+        $this->emitProgress($progressCallback, 90, 'Recording rescan details…');
+        $this->recordRescan($gameId);
+
+        return "Game {$gameId} have been rescanned.";
     }
 
     private function getGameNpCommunicationId(int $gameId): string
@@ -137,8 +152,121 @@ class GameRescanService
         return null;
     }
 
-    private function updateTrophyTitle(Client $client, object $trophyTitle, string $npCommunicationId): array
+    private function emitProgress(?callable $progressCallback, int $percent, string $message): void
     {
+        if ($progressCallback === null) {
+            return;
+        }
+
+        $clampedPercent = max(0, min(100, $percent));
+        if ($clampedPercent < $this->lastProgress) {
+            $clampedPercent = $this->lastProgress;
+        } else {
+            $this->lastProgress = $clampedPercent;
+        }
+
+        $progressCallback($clampedPercent, $message);
+    }
+
+    private function emitProgressRange(
+        ?callable $progressCallback,
+        int $startPercent,
+        int $endPercent,
+        int $step,
+        int $totalSteps,
+        string $message
+    ): void {
+        if ($progressCallback === null || $totalSteps <= 0) {
+            return;
+        }
+
+        $boundedStep = max(0, min($totalSteps, $step));
+        $progressSpan = $endPercent - $startPercent;
+
+        if ($progressSpan === 0) {
+            $targetPercent = $startPercent;
+        } else {
+            $progressRatio = $boundedStep / $totalSteps;
+            $interpolated = $startPercent + ($progressSpan * $progressRatio);
+
+            if ($boundedStep === $totalSteps) {
+                $interpolated = $endPercent;
+            }
+
+            $targetPercent = (int) floor($interpolated);
+
+            if ($progressSpan > 0) {
+                $targetPercent = min($targetPercent, $endPercent);
+            } else {
+                $targetPercent = max($targetPercent, $endPercent);
+            }
+        }
+
+        $this->emitProgress($progressCallback, $targetPercent, $message);
+    }
+
+    private function describeTrophyGroup(object $trophyGroup): string
+    {
+        $name = $this->normalizeProgressLabel((string) $trophyGroup->name());
+        if ($name !== '') {
+            return $name;
+        }
+
+        $detail = $this->normalizeProgressLabel((string) $trophyGroup->detail());
+        if ($detail !== '') {
+            return $detail;
+        }
+
+        return sprintf('Group %s', $this->normalizeProgressLabel((string) $trophyGroup->id()) ?: (string) $trophyGroup->id());
+    }
+
+    private function describeTrophy(object $trophy): string
+    {
+        $name = $this->normalizeProgressLabel((string) $trophy->name());
+        if ($name !== '') {
+            return $name;
+        }
+
+        $detail = $this->normalizeProgressLabel((string) $trophy->detail());
+        if ($detail !== '') {
+            return $detail;
+        }
+
+        return sprintf('Trophy %s', $this->normalizeProgressLabel((string) $trophy->id()) ?: (string) $trophy->id());
+    }
+
+    private function normalizeProgressLabel(string $label): string
+    {
+        $normalized = trim($label);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        if (!is_string($normalized)) {
+            return '';
+        }
+
+        return $normalized;
+    }
+
+    private function findTrophyTitleForUser(object $user, string $npCommunicationId): ?object
+    {
+        foreach ($user->trophyTitles() as $trophyTitle) {
+            if ($trophyTitle->npCommunicationId() === $npCommunicationId) {
+                return $trophyTitle;
+            }
+        }
+
+        return null;
+    }
+
+    private function updateTrophyTitle(
+        Client $client,
+        object $trophyTitle,
+        string $npCommunicationId,
+        ?callable $progressCallback
+    ): array {
         $titleIconFilename = $this->downloadImage($trophyTitle->iconUrl(), self::TITLE_ICON_DIRECTORY);
         $platforms = $this->buildPlatformList($trophyTitle);
 
@@ -156,26 +284,113 @@ class GameRescanService
         $query->execute();
 
         $trophies = $client->trophies($npCommunicationId, $trophyTitle->serviceName());
-        $trophyGroups = [];
+        $groupData = [];
+        $totalSteps = 0;
+
         foreach ($trophies->trophyGroups() as $trophyGroup) {
+            $trophiesInGroup = [];
+            foreach ($trophyGroup->trophies() as $trophy) {
+                $trophiesInGroup[] = $trophy;
+            }
+
+            $groupData[] = [
+                'group' => $trophyGroup,
+                'trophies' => $trophiesInGroup,
+            ];
+
+            $totalSteps += 1 + count($trophiesInGroup);
+        }
+
+        if ($groupData === []) {
+            $this->emitProgress($progressCallback, 70, 'Refreshing trophy details…');
+
+            return [];
+        }
+
+        $currentStep = 0;
+        $totalGroups = count($groupData);
+        $processedGroups = 0;
+
+        foreach ($groupData as $data) {
+            $trophyGroup = $data['group'];
             $groupIconFilename = $this->downloadImage($trophyGroup->iconUrl(), self::GROUP_ICON_DIRECTORY);
             $this->upsertTrophyGroup($npCommunicationId, $trophyGroup, $groupIconFilename);
-            $trophyGroups[] = $trophyGroup;
 
-            foreach ($trophyGroup->trophies() as $trophy) {
+            $processedGroups++;
+            $groupLabel = $this->describeTrophyGroup($trophyGroup);
+            $currentStep++;
+            $this->emitProgressRange(
+                $progressCallback,
+                55,
+                70,
+                $currentStep,
+                $totalSteps,
+                sprintf(
+                    'Refreshing trophy group "%s" (%d/%d groups)',
+                    $groupLabel,
+                    $processedGroups,
+                    $totalGroups
+                )
+            );
+
+            $groupTrophyCount = count($data['trophies']);
+            $processedTrophiesInGroup = 0;
+
+            foreach ($data['trophies'] as $trophy) {
                 $trophyIconFilename = $this->downloadImage($trophy->iconUrl(), self::TROPHY_ICON_DIRECTORY);
                 $rewardImageFilename = $this->downloadOptionalImage($trophy->rewardImageUrl(), self::REWARD_ICON_DIRECTORY);
                 $this->upsertTrophy($npCommunicationId, $trophyGroup->id(), $trophy, $trophyIconFilename, $rewardImageFilename);
+
+                $processedTrophiesInGroup++;
+                $currentStep++;
+                $this->emitProgressRange(
+                    $progressCallback,
+                    55,
+                    70,
+                    $currentStep,
+                    $totalSteps,
+                    sprintf(
+                        'Refreshing trophy "%s" in group "%s" (%d/%d trophies, group %d/%d)',
+                        $this->describeTrophy($trophy),
+                        $groupLabel,
+                        $processedTrophiesInGroup,
+                        max(1, $groupTrophyCount),
+                        $processedGroups,
+                        $totalGroups
+                    )
+                );
             }
         }
 
-        return $trophyGroups;
+        return array_map(
+            static fn (array $data) => $data['group'],
+            $groupData
+        );
     }
 
-    private function recalculateTrophies(object $trophyTitle, string $npCommunicationId, int $accountId, array $trophyGroups): void
-    {
+    private function recalculateTrophies(
+        object $trophyTitle,
+        string $npCommunicationId,
+        int $accountId,
+        array $trophyGroups,
+        ?callable $progressCallback
+    ): void {
+        $baseMessage = 'Recalculating player statistics…';
+        $totalGroups = count($trophyGroups);
+        $currentGroup = 0;
+
         foreach ($trophyGroups as $trophyGroup) {
             $this->trophyCalculator->recalculateTrophyGroup($npCommunicationId, $trophyGroup->id(), $accountId);
+
+            $currentGroup++;
+            $this->emitProgressRange(
+                $progressCallback,
+                70,
+                82,
+                $currentGroup,
+                $totalGroups,
+                sprintf('%s (%d/%d)', $baseMessage, $currentGroup, $totalGroups)
+            );
         }
 
         $this->trophyCalculator->recalculateTrophyTitle(
@@ -186,7 +401,16 @@ class GameRescanService
             false
         );
 
-        $this->recalculateParentTitles($npCommunicationId, $trophyTitle->lastUpdatedDateTime(), $accountId);
+        $this->emitProgress($progressCallback, 83, $baseMessage);
+
+        $this->recalculateParentTitles(
+            $npCommunicationId,
+            $trophyTitle->lastUpdatedDateTime(),
+            $accountId,
+            $progressCallback
+        );
+
+        $this->emitProgress($progressCallback, 84, $baseMessage);
     }
 
     private function upsertTrophyGroup(string $npCommunicationId, object $trophyGroup, string $iconFilename): void
@@ -301,8 +525,12 @@ class GameRescanService
         $query->bindValue($parameter, $value, PDO::PARAM_STR);
     }
 
-    private function recalculateParentTitles(string $childNpCommunicationId, string $lastUpdatedDateTime, int $accountId): void
-    {
+    private function recalculateParentTitles(
+        string $childNpCommunicationId,
+        string $lastUpdatedDateTime,
+        int $accountId,
+        ?callable $progressCallback = null
+    ): void {
         $query = $this->database->prepare(
             'SELECT DISTINCT parent_np_communication_id, parent_group_id
             FROM trophy_merge
@@ -311,7 +539,11 @@ class GameRescanService
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
-        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+        $totalParents = count($rows);
+        $currentParent = 0;
+
+        foreach ($rows as $row) {
             $parentNpCommunicationId = (string) $row['parent_np_communication_id'];
             $parentGroupId = (string) $row['parent_group_id'];
 
@@ -322,6 +554,16 @@ class GameRescanService
                 false,
                 $accountId,
                 true
+            );
+
+            $currentParent++;
+            $this->emitProgressRange(
+                $progressCallback,
+                83,
+                84,
+                $currentParent,
+                $totalParents,
+                sprintf('Recalculating merged trophy titles… (%d/%d)', $currentParent, $totalParents)
             );
         }
     }
