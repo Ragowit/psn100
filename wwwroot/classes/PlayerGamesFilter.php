@@ -49,6 +49,7 @@ class PlayerGamesFilter
     private array $platforms;
     private int $page;
     private int $limit;
+    private bool $sortProvided;
 
     private function __construct()
     {
@@ -60,6 +61,7 @@ class PlayerGamesFilter
         $this->platforms = [];
         $this->page = 1;
         $this->limit = self::DEFAULT_LIMIT;
+        $this->sortProvided = false;
     }
 
     /**
@@ -74,6 +76,7 @@ class PlayerGamesFilter
         $sort = isset($parameters['sort']) ? (string) $parameters['sort'] : '';
         if ($sort !== '' && in_array($sort, self::ALLOWED_SORTS, true)) {
             $filter->sort = $sort;
+            $filter->sortProvided = true;
         } elseif (!empty($filter->search)) {
             $filter->sort = self::SORT_SEARCH;
         }
@@ -167,5 +170,66 @@ class PlayerGamesFilter
     public function getOffset(): int
     {
         return ($this->page - 1) * $this->limit;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getFilterParameters(): array
+    {
+        $parameters = [];
+
+        if ($this->search !== '') {
+            $parameters['search'] = $this->search;
+        }
+
+        if ($this->sortProvided || $this->sort !== self::SORT_DATE) {
+            $parameters['sort'] = $this->sort;
+        }
+
+        if ($this->completed) {
+            $parameters['completed'] = 'true';
+        }
+
+        if ($this->uncompleted) {
+            $parameters['uncompleted'] = 'true';
+        }
+
+        if ($this->base) {
+            $parameters['base'] = 'true';
+        }
+
+        foreach ($this->platforms as $platform) {
+            $parameters[$platform] = 'true';
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    public function toQueryParameters(): array
+    {
+        return $this->withPage($this->page);
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    public function withPage(int $page): array
+    {
+        $parameters = $this->getFilterParameters();
+        $parameters['page'] = max($page, 1);
+
+        return $parameters;
+    }
+
+    public function withPageNumber(int $page): self
+    {
+        $clone = clone $this;
+        $clone->page = max($page, 1);
+
+        return $clone;
     }
 }

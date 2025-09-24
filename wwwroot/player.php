@@ -6,6 +6,7 @@ require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 require_once __DIR__ . '/classes/PlayerGamesFilter.php';
 require_once __DIR__ . '/classes/PlayerGamesService.php';
+require_once __DIR__ . '/classes/PlayerGamesPage.php';
 
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
@@ -18,6 +19,13 @@ $numberOfGames = $playerSummary->getNumberOfGames();
 
 $playerGamesFilter = PlayerGamesFilter::fromArray($_GET ?? []);
 $playerGamesService = new PlayerGamesService($database);
+$playerGamesPage = new PlayerGamesPage(
+    $playerGamesService,
+    $playerGamesFilter,
+    (int) $player["account_id"],
+    (int) $player["status"]
+);
+$playerGames = $playerGamesPage->getGames();
 
 $metaData = (new PageMetaData())
     ->setTitle($player["online_id"] . "'s Trophy Progress");
@@ -38,29 +46,8 @@ $metaData
     ->setImage('https://psn100.net/img/avatar/' . $player["avatar_url"])
     ->setUrl('https://psn100.net/player/' . $player["online_id"]);
 
-$url = $_SERVER["REQUEST_URI"];
-$url_parts = parse_url($url);
-// If URL doesn't have a query string.
-if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
-    parse_str($url_parts["query"], $params);
-} else {
-    $params = array();
-}
-
 $playerSearch = $playerGamesFilter->getSearch();
 $sort = $playerGamesFilter->getSort();
-
-if ($player["status"] == 1 || $player["status"] == 3) {
-    $total_pages = 0;
-    $playerGames = [];
-} else {
-    $total_pages = $playerGamesService->countPlayerGames((int) $player["account_id"], $playerGamesFilter);
-    $playerGames = $playerGamesService->getPlayerGames((int) $player["account_id"], $playerGamesFilter);
-}
-
-$page = $playerGamesFilter->getPage();
-$limit = $playerGamesFilter->getLimit();
-$offset = $playerGamesFilter->getOffset();
 
 $title = $player["online_id"] . "'s Trophy Progress ~ PSN 100%";
 require_once("header.php");
@@ -317,75 +304,61 @@ require_once("header.php");
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages); ?>
+                <?= $playerGamesPage->getRangeStart(); ?>-<?= $playerGamesPage->getRangeEnd(); ?> of <?= number_format($playerGamesPage->getTotalGames()); ?>
             </p>
         </div>
         <div class="col-12">
             <nav aria-label="Player games navigation">
                 <ul class="pagination justify-content-center">
                     <?php
-                    if ($page > 1) {
-                        $params["page"] = $page - 1;
+                    if ($playerGamesPage->hasPreviousPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Previous">&lt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getPreviousPage())); ?>" aria-label="Previous">&lt;</a></li>
                         <?php
                     }
 
-                    if ($page > 3) {
-                        $params["page"] = 1;
+                    if ($playerGamesPage->shouldShowFirstPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getFirstPage())); ?>">1</a></li>
                         <?php
+                        if ($playerGamesPage->shouldShowLeadingEllipsis()) {
+                            ?>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
+                            <?php
+                        }
                     }
 
-                    if ($page-2 > 0) {
-                        $params["page"] = $page - 2;
+                    foreach ($playerGamesPage->getPreviousPages() as $previousPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page-1 > 0) {
-                        $params["page"] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
                         <?php
                     }
                     ?>
 
-                    <?php
-                    $params["page"] = $page;
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getCurrentPage())); ?>"><?= $playerGamesPage->getCurrentPage(); ?></a></li>
 
                     <?php
-                    if ($page+1 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 1;
+                    foreach ($playerGamesPage->getNextPages() as $nextPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page+2 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < ceil($total_pages / $limit)-2) {
-                        $params["page"] = ceil($total_pages / $limit);
+                    if ($playerGamesPage->shouldShowTrailingEllipsis()) {
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)) {
-                        $params["page"] = $page + 1;
+                    if ($playerGamesPage->shouldShowLastPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Next">&gt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getLastPage())); ?>"><?= $playerGamesPage->getLastPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($playerGamesPage->hasNextPage()) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getNextPage())); ?>" aria-label="Next">&gt;</a></li>
                         <?php
                     }
                     ?>
