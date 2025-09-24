@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/GameHeaderService.php';
 require_once __DIR__ . '/classes/GameService.php';
+require_once __DIR__ . '/classes/PageMetaData.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -37,11 +38,11 @@ if (isset($player)) {
     $gamePlayer = $gameService->getGamePlayer($game["np_communication_id"], $accountId);
 }
 
-$metaData = new stdClass();
-$metaData->title = $game["name"] ." Trophies";
-$metaData->description = $game["bronze"] ." Bronze ~ ". $game["silver"] ." Silver ~ ". $game["gold"] ." Gold ~ ". $game["platinum"] ." Platinum";
-$metaData->image = "https://psn100.net/img/title/". $game["icon_url"];
-$metaData->url = "https://psn100.net/game/". $game["id"] ."-". $utility->slugify($game["name"]);
+$metaData = (new PageMetaData())
+    ->setTitle($game["name"] . " Trophies")
+    ->setDescription($game["bronze"] . " Bronze ~ " . $game["silver"] . " Silver ~ " . $game["gold"] . " Gold ~ " . $game["platinum"] . " Platinum")
+    ->setImage("https://psn100.net/img/title/" . $game["icon_url"])
+    ->setUrl("https://psn100.net/game/" . $game["id"] . "-" . $utility->slugify($game["name"]));
 
 $title = $game["name"] ." Trophies ~ PSN 100%";
 require_once("header.php");

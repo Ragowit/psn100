@@ -1,5 +1,6 @@
 <?php
 
+require_once 'classes/PageMetaData.php';
 require_once 'classes/TrophyService.php';
 
 if (!isset($trophyId)) {
@@ -44,11 +45,11 @@ $orderId = (int) $trophy["order_id"];
 $firstAchievers = $trophyService->getFirstAchievers($npCommunicationId, $orderId);
 $latestAchievers = $trophyService->getLatestAchievers($npCommunicationId, $orderId);
 
-$metaData = new stdClass();
-$metaData->title = $trophy["trophy_name"] ." Trophy";
-$metaData->description = htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8");
-$metaData->image = "https://psn100.net/img/trophy/". $trophy["trophy_icon"];
-$metaData->url = "https://psn100.net/trophy/". $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]);
+$metaData = (new PageMetaData())
+    ->setTitle($trophy["trophy_name"] . ' Trophy')
+    ->setDescription(htmlentities($trophy["trophy_detail"], ENT_QUOTES, 'UTF-8'))
+    ->setImage('https://psn100.net/img/trophy/' . $trophy["trophy_icon"])
+    ->setUrl('https://psn100.net/trophy/' . $trophy["trophy_id"] . '-' . $utility->slugify($trophy["trophy_name"]));
 
 $title = $trophy["trophy_name"] . " Trophy ~ PSN 100%";
 require_once("header.php");
