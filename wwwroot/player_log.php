@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerLogFilter.php';
 require_once __DIR__ . '/classes/PlayerLogService.php';
+require_once __DIR__ . '/classes/PlayerLogPage.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
@@ -15,26 +16,13 @@ $playerLogFilter = PlayerLogFilter::fromArray($_GET ?? []);
 $playerLogService = new PlayerLogService($database);
 $playerSummaryService = new PlayerSummaryService($database);
 $playerSummary = $playerSummaryService->getSummary((int) $accountId);
-
-$url = $_SERVER["REQUEST_URI"];
-$url_parts = parse_url($url);
-// If URL doesn't have a query string.
-if (isset($url_parts["query"])) { // Avoid 'Undefined index: query'
-    parse_str($url_parts["query"], $params);
-} else {
-    $params = array();
-}
-
-$page = max(isset($_GET["page"]) && is_numeric($_GET["page"]) ? (int) $_GET["page"] : 1, 1);
-$limit = PlayerLogService::PAGE_SIZE;
-$offset = ($page - 1) * $limit;
-$total_pages = 0;
-$trophiesLog = [];
-
-if ($player["status"] != 1 && $player["status"] != 3) {
-    $total_pages = $playerLogService->countTrophies((int) $player["account_id"], $playerLogFilter);
-    $trophiesLog = $playerLogService->getTrophies((int) $player["account_id"], $playerLogFilter, $offset, $limit);
-}
+$playerLogPage = new PlayerLogPage(
+    $playerLogService,
+    $playerLogFilter,
+    (int) $player['account_id'],
+    (int) $player['status']
+);
+$trophiesLog = $playerLogPage->getTrophies();
 
 $title = $player["online_id"] . "'s Trophy Log ~ PSN 100%";
 require_once("header.php");
@@ -252,75 +240,61 @@ require_once("header.php");
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= ($total_pages == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $total_pages); ?> of <?= number_format($total_pages); ?>
+                <?= number_format($playerLogPage->getRangeStart()); ?>-<?= number_format($playerLogPage->getRangeEnd()); ?> of <?= number_format($playerLogPage->getTotalTrophies()); ?>
             </p>
         </div>
         <div class="col-12">
             <nav aria-label="Player log navigation">
                 <ul class="pagination justify-content-center">
                     <?php
-                    if ($page > 1) {
-                        $params["page"] = $page - 1;
+                    if ($playerLogPage->hasPreviousPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Previous">&lt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getPreviousPage())); ?>" aria-label="Previous">&lt;</a></li>
                         <?php
                     }
 
-                    if ($page > 3) {
-                        $params["page"] = 1;
+                    if ($playerLogPage->shouldShowFirstPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getFirstPage())); ?>">1</a></li>
                         <?php
+                        if ($playerLogPage->shouldShowLeadingEllipsis()) {
+                            ?>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
+                            <?php
+                        }
                     }
 
-                    if ($page-2 > 0) {
-                        $params["page"] = $page - 2;
+                    foreach ($playerLogPage->getPreviousPages() as $previousPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page-1 > 0) {
-                        $params["page"] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page-1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
                         <?php
                     }
                     ?>
 
-                    <?php
-                    $params["page"] = $page;
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getCurrentPage())); ?>"><?= $playerLogPage->getCurrentPage(); ?></a></li>
 
                     <?php
-                    if ($page+1 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 1;
+                    foreach ($playerLogPage->getNextPages() as $nextPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page+2 < ceil($total_pages / $limit)+1) {
-                        $params["page"] = $page + 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page+2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < ceil($total_pages / $limit)-2) {
-                        $params["page"] = ceil($total_pages / $limit);
+                    if ($playerLogPage->shouldShowTrailingEllipsis()) {
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= ceil($total_pages / $limit); ?></a></li>
                         <?php
                     }
 
-                    if ($page < ceil($total_pages / $limit)) {
-                        $params["page"] = $page + 1;
+                    if ($playerLogPage->shouldShowLastPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>" aria-label="Next">&gt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getLastPage())); ?>"><?= $playerLogPage->getLastPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($playerLogPage->hasNextPage()) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getNextPage())); ?>" aria-label="Next">&gt;</a></li>
                         <?php
                     }
                     ?>
