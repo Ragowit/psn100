@@ -1,23 +1,18 @@
 <?php
 require_once 'classes/PlayerLeaderboardFilter.php';
 require_once 'classes/PlayerLeaderboardService.php';
+require_once 'classes/PlayerLeaderboardPage.php';
 
 $title = "PSN Trophy Leaderboard ~ PSN 100%";
 require_once("header.php");
 
-$playerLeaderboardFilter = PlayerLeaderboardFilter::fromArray($_GET);
+$playerLeaderboardFilter = PlayerLeaderboardFilter::fromArray($_GET ?? []);
 $playerLeaderboardService = new PlayerLeaderboardService($database);
+$playerLeaderboardPage = new PlayerLeaderboardPage($playerLeaderboardService, $playerLeaderboardFilter);
 
-$limit = PlayerLeaderboardService::PAGE_SIZE;
-$page = $playerLeaderboardFilter->getPage();
-$offset = $playerLeaderboardFilter->getOffset($limit);
-
-$totalPlayers = $playerLeaderboardService->countPlayers($playerLeaderboardFilter);
-$totalPages = (int) ceil($totalPlayers / $limit);
-$players = $playerLeaderboardService->getPlayers($playerLeaderboardFilter, $limit);
-
-$filterParameters = $playerLeaderboardFilter->getFilterParameters();
-$pageParameters = $playerLeaderboardFilter->toQueryParameters();
+$players = $playerLeaderboardPage->getPlayers();
+$filterParameters = $playerLeaderboardPage->getFilterParameters();
+$pageParameters = $playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getCurrentPage());
 ?>
 
 <main class="container">
@@ -178,64 +173,62 @@ $pageParameters = $playerLeaderboardFilter->toQueryParameters();
     <div class="row mt-3">
         <div class="col-12">
             <p class="text-center">
-                <?= ($totalPlayers == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $totalPlayers); ?> of <?= number_format($totalPlayers); ?>
+                <?= ($playerLeaderboardPage->getTotalPlayers() === 0 ? '0' : $playerLeaderboardPage->getRangeStart()); ?>-<?= $playerLeaderboardPage->getRangeEnd(); ?> of <?= number_format($playerLeaderboardPage->getTotalPlayers()); ?>
             </p>
         </div>
         <div class="col-12">
             <nav aria-label="Leaderboard page navigation">
                 <ul class="pagination justify-content-center">
                     <?php
-                    if ($page > 1) {
+                    if ($playerLeaderboardPage->hasPreviousPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page - 1)); ?>">&lt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getPreviousPage())); ?>">&lt;</a></li>
                         <?php
                     }
 
-                    if ($page > 3) {
+                    if ($playerLeaderboardPage->shouldShowFirstPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage(1)); ?>">1</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getFirstPage())); ?>"><?= $playerLeaderboardPage->getFirstPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($playerLeaderboardPage->shouldShowLeadingEllipsis()) {
+                        ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
                         <?php
                     }
 
-                    if ($page-2 > 0) {
+                    foreach ($playerLeaderboardPage->getPreviousPages() as $previousPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page - 2)); ?>"><?= $page-2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page-1 > 0) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page - 1)); ?>"><?= $page-1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
                         <?php
                     }
                     ?>
 
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($pageParameters); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($pageParameters); ?>"><?= $playerLeaderboardPage->getCurrentPage(); ?></a></li>
 
                     <?php
-                    if ($page < $totalPages) {
+                    foreach ($playerLeaderboardPage->getNextPages() as $nextPage) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page + 1)); ?>"><?= $page+1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page + 1 < $totalPages) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page + 2)); ?>"><?= $page+2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $totalPages - 2) {
+                    if ($playerLeaderboardPage->shouldShowTrailingEllipsis()) {
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($totalPages)); ?>"><?= $totalPages; ?></a></li>
                         <?php
                     }
 
-                    if ($page < $totalPages) {
+                    if ($playerLeaderboardPage->shouldShowLastPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardFilter->withPage($page + 1)); ?>">&gt;</a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getLastPage())); ?>"><?= $playerLeaderboardPage->getLastPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($playerLeaderboardPage->hasNextPage()) {
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getNextPage())); ?>">&gt;</a></li>
                         <?php
                     }
                     ?>
