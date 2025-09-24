@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-class PlayerLeaderboardService
+require_once __DIR__ . '/PlayerLeaderboardDataProvider.php';
+
+class PlayerLeaderboardService implements PlayerLeaderboardDataProvider
 {
     public const PAGE_SIZE = 50;
 
@@ -71,6 +73,11 @@ class PlayerLeaderboardService
         }
 
         return $players;
+    }
+
+    public function getPageSize(): int
+    {
+        return self::PAGE_SIZE;
     }
 
     private function buildFilterSql(PlayerLeaderboardFilter $filter): string
