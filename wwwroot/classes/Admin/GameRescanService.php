@@ -35,9 +35,9 @@ class GameRescanService
             return 'Can only rescan original game entries.';
         }
 
-        $this->emitProgress($progressCallback, 20, 'Signing in to worker account…');
+        $this->emitProgress($progressCallback, 15, 'Signing in to worker account…');
         $client = $this->loginToWorker();
-        $this->emitProgress($progressCallback, 35, 'Locating accessible player…');
+        $this->emitProgress($progressCallback, 20, 'Locating accessible player…');
         $user = $this->findAccessibleUserWithGame($client, $npCommunicationId);
 
         if ($user === null) {
@@ -50,7 +50,7 @@ class GameRescanService
             throw new RuntimeException('Unable to find trophy title for the specified game.');
         }
 
-        $this->emitProgress($progressCallback, 55, 'Refreshing trophy details…');
+        $this->emitProgress($progressCallback, 25, 'Refreshing trophy details…');
         $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId, $progressCallback);
         $this->emitProgress($progressCallback, 70, 'Recalculating player statistics…');
         $this->recalculateTrophies(
@@ -321,7 +321,7 @@ class GameRescanService
             $currentStep++;
             $this->emitProgressRange(
                 $progressCallback,
-                55,
+                25,
                 70,
                 $currentStep,
                 $totalSteps,
@@ -345,7 +345,7 @@ class GameRescanService
                 $currentStep++;
                 $this->emitProgressRange(
                     $progressCallback,
-                    55,
+                    25,
                     70,
                     $currentStep,
                     $totalSteps,
