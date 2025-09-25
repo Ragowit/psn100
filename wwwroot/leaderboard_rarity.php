@@ -2,6 +2,7 @@
 require_once 'classes/PlayerLeaderboardFilter.php';
 require_once 'classes/PlayerRarityLeaderboardService.php';
 require_once 'classes/PlayerLeaderboardPage.php';
+require_once 'classes/Leaderboard/RarityLeaderboardRow.php';
 
 $title = "PSN Rarity Leaderboard ~ PSN 100%";
 require_once("header.php");
@@ -13,6 +14,18 @@ $playerLeaderboardPage = new PlayerLeaderboardPage($playerLeaderboardService, $p
 $players = $playerLeaderboardPage->getPlayers();
 $filterParameters = $playerLeaderboardPage->getFilterParameters();
 $pageParameters = $playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getCurrentPage());
+$highlightedPlayerId = isset($_GET['player']) ? (string) $_GET['player'] : null;
+
+$rows = array_map(
+    static fn(array $player) => new RarityLeaderboardRow(
+        $player,
+        $playerLeaderboardFilter,
+        $utility,
+        $highlightedPlayerId,
+        $filterParameters
+    ),
+    $players
+);
 ?>
 
 <main class="container">
@@ -60,108 +73,45 @@ $pageParameters = $playerLeaderboardPage->getPageQueryParameters($playerLeaderbo
                         </thead>
 
                         <tbody>
-                            <?php
-                            foreach ($players as $player) {
-                                $countryName = $utility->getCountryName($player["country"]);
-                                if (isset($_GET["player"]) && $_GET["player"] == $player["online_id"]) {
-                                    echo "<tr id=\"" . $player["online_id"] . "\" class=\"table-primary\">";
-                                } else {
-                                    echo "<tr id=\"" . $player["online_id"] . "\">";
-                                }
+                            <?php foreach ($rows as $row) { ?>
+                                <tr id="<?= htmlspecialchars($row->getRowId(), ENT_QUOTES, 'UTF-8'); ?>"<?= $row->getRowCssClass() !== '' ? ' class="' . $row->getRowCssClass() . '"' : ''; ?>>
+                                    <th scope="row" class="text-center align-middle">
+                                        <?= $row->getRankCellHtml(); ?>
+                                    </th>
+                                    <td class="align-middle">
+                                        <div class="hstack gap-3">
+                                            <div>
+                                                <a href="?<?= http_build_query($row->getAvatarQueryParameters()); ?>">
+                                                    <img src="/img/avatar/<?= htmlspecialchars($row->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="" height="50" width="50" />
+                                                </a>
+                                            </div>
 
-                                $paramsAvatar = $filterParameters;
-                                $paramsAvatar["avatar"] = $player["avatar_url"];
-                                $paramsCountry = $filterParameters;
-                                $paramsCountry["country"] = $player["country"];
-                                ?>
-                                <th scope="row" class="text-center align-middle">
-                                    <?php
-                                    if ($playerLeaderboardFilter->hasCountry()) {
-                                        if ($player["rarity_rank_country_last_week"] == 0 || $player["rarity_rank_country_last_week"] == 16777215) {
-                                            echo "New!";
-                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
-                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
-                                            }
-                                        } else {
-                                            $delta = $player["rarity_rank_country_last_week"] - $player["ranking_country"];
+                                            <div>
+                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= htmlspecialchars($row->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($row->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
+                                            </div>
 
-                                            echo "<div class='vstack'>";
-                                            if ($delta > 0) {
-                                                echo "<span style='color: #0bd413; cursor: default;' title='+" . $delta . "'>&#9650;</span>";
-                                            }
-
-                                            echo $player["ranking_country"];
-                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
-                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
-                                            }
-
-                                            if ($delta < 0) {
-                                                echo "<span style='color: #d40b0b; cursor: default;' title='" . $delta . "'>&#9660;</span>";
-                                            }
-                                            echo "</div>";
-                                        }
-                                    } else {
-                                        if ($player["rarity_rank_last_week"] == 0 || $player["rarity_rank_last_week"] == 16777215) {
-                                            echo "New!";
-                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
-                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
-                                            }
-                                        } else {
-                                            $delta = $player["rarity_rank_last_week"] - $player["ranking"];
-
-                                            echo "<div class='vstack'>";
-                                            if ($delta > 0) {
-                                                echo "<span style='color: #0bd413; cursor: default;' title='+" . $delta . "'>&#9650;</span>";
-                                            }
-
-                                            echo $player["ranking"];
-                                            if ($player["trophy_count_npwr"] < $player["trophy_count_sony"]) {
-                                                echo " <span style='color: #9d9d9d;'>(H)</span>";
-                                            }
-
-                                            if ($delta < 0) {
-                                                echo "<span style='color: #d40b0b; cursor: default;' title='" . $delta . "'>&#9660;</span>";
-                                            }
-                                            echo "</div>";
-                                        }
-                                    }
-                                    ?>
-                                </th>
-                                <td class="align-middle">
-                                    <div class="hstack gap-3">
-                                        <div>
-                                            <a href="?<?= http_build_query($paramsAvatar); ?>">
-                                                <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="50" width="50" />
-                                            </a>
+                                            <div class="ms-auto">
+                                                <a href="?<?= http_build_query($row->getCountryQueryParameters()); ?>">
+                                                    <?php $countryName = htmlspecialchars($row->getCountryName(), ENT_QUOTES, 'UTF-8'); ?>
+                                                    <img src="/img/country/<?= htmlspecialchars($row->getCountryCode(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                                </a>
+                                            </div>
                                         </div>
-
-                                        <div>
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player["online_id"]; ?>"><?= $player["online_id"]; ?></a>
+                                    </td>
+                                    <td class="text-center">
+                                        <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= number_format($row->getLevel()); ?>
+                                        <div class="progress" title="<?= $row->getProgress(); ?>%">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $row->getProgress(); ?>%" aria-valuenow="<?= $row->getProgress(); ?>" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
-
-                                        <div class="ms-auto">
-                                            <a href="?<?= http_build_query($paramsCountry); ?>">
-                                                <img src="/img/country/<?= $player["country"]; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
-                                            </a>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= number_format($player["level"]); ?>
-                                    <div class="progress" title="<?= $player["progress"]; ?>%">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </td>
-                                <td class="text-center align-middle"><span class="trophy-legendary"><?= number_format($player["legendary"]); ?></span></td>
-                                <td class="text-center align-middle"><span class="trophy-epic"><?= number_format($player["epic"]); ?></span></td>
-                                <td class="text-center align-middle"><span class="trophy-rare"><?= number_format($player["rare"]); ?></span></td>
-                                <td class="text-center align-middle"><span class="trophy-uncommon"><?= number_format($player["uncommon"]); ?></span></td>
-                                <td class="text-center align-middle"><span class="trophy-common"><?= number_format($player["common"]); ?></span></td>
-                                <td class="text-center align-middle"><?= number_format($player["rarity_points"]); ?></td>
-                                <?php
-                                echo "</tr>";
-                            }
-                            ?>
+                                    </td>
+                                    <td class="text-center align-middle"><span class="trophy-legendary"><?= number_format($row->getLegendaryCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-epic"><?= number_format($row->getEpicCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-rare"><?= number_format($row->getRareCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-uncommon"><?= number_format($row->getUncommonCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-common"><?= number_format($row->getCommonCount()); ?></span></td>
+                                    <td class="text-center align-middle"><?= number_format($row->getRarityPoints()); ?></td>
+                                </tr>
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>
