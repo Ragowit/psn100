@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/classes/GameHeaderService.php';
-require_once __DIR__ . '/classes/GameService.php';
-require_once __DIR__ . '/classes/PageMetaData.php';
+require_once __DIR__ . '/classes/GamePage.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -11,40 +9,33 @@ if (!isset($gameId)) {
 }
 
 $gameService = new GameService($database);
+$gameHeaderService = new GameHeaderService($database);
 
-$game = $gameService->getGame((int) $gameId);
-
-if ($game === null) {
+try {
+    $gamePage = new GamePage(
+        $gameService,
+        $gameHeaderService,
+        $utility,
+        (int) $gameId,
+        $_GET ?? [],
+        isset($player) ? (string) $player : null
+    );
+} catch (GameNotFoundException $exception) {
     header("Location: /game/", true, 303);
+    die();
+} catch (GameLeaderboardPlayerNotFoundException $exception) {
+    $slug = $utility->slugify($exception->getGameName());
+    header("Location: /game/" . $exception->getGameId() . "-" . $slug, true, 303);
     die();
 }
 
-$gameHeaderService = new GameHeaderService($database);
-$gameHeaderData = $gameHeaderService->buildHeaderData($game);
-
-$sort = $gameService->resolveSort($_GET);
-
-$accountId = null;
-$gamePlayer = null;
-
-if (isset($player)) {
-    $accountId = $gameService->getPlayerAccountId((string) $player);
-
-    if ($accountId === null) {
-        header("Location: /game/" . $game["id"] . "-" . $utility->slugify($game["name"]), true, 303);
-        die();
-    }
-
-    $gamePlayer = $gameService->getGamePlayer($game["np_communication_id"], $accountId);
-}
-
-$metaData = (new PageMetaData())
-    ->setTitle($game["name"] . " Trophies")
-    ->setDescription($game["bronze"] . " Bronze ~ " . $game["silver"] . " Silver ~ " . $game["gold"] . " Gold ~ " . $game["platinum"] . " Platinum")
-    ->setImage("https://psn100.net/img/title/" . $game["icon_url"])
-    ->setUrl("https://psn100.net/game/" . $game["id"] . "-" . $utility->slugify($game["name"]));
-
-$title = $game["name"] ." Trophies ~ PSN 100%";
+$game = $gamePage->getGame();
+$gameHeaderData = $gamePage->getGameHeaderData();
+$sort = $gamePage->getSort();
+$accountId = $gamePage->getPlayerAccountId();
+$gamePlayer = $gamePage->getGamePlayer();
+$metaData = $gamePage->createMetaData();
+$title = $gamePage->getPageTitle();
 require_once("header.php");
 ?>
 
@@ -108,17 +99,10 @@ require_once("header.php");
         <div class="row">
             <div class="col-12">
                 <?php
-                $trophyGroups = $gameService->getTrophyGroups($game["np_communication_id"]);
+                $trophyGroups = $gamePage->getTrophyGroups();
                 foreach ($trophyGroups as $trophyGroup) {
-                    $trophyGroupPlayer = null;
-
-                    if ($accountId !== null) {
-                        $trophyGroupPlayer = $gameService->getTrophyGroupPlayer(
-                            $game["np_communication_id"],
-                            (string) $trophyGroup["group_id"],
-                            $accountId
-                        );
-                    }
+                    $trophyGroupId = (string) $trophyGroup["group_id"];
+                    $trophyGroupPlayer = $gamePage->getTrophyGroupPlayer($trophyGroupId);
 
                     $previousTimeStamp = null;
 
@@ -183,12 +167,7 @@ require_once("header.php");
 
                             <tbody>
                                 <?php
-                                $trophies = $gameService->getTrophies(
-                                    $game["np_communication_id"],
-                                    (string) $trophyGroup["group_id"],
-                                    $accountId,
-                                    $sort
-                                );
+                                $trophies = $gamePage->getTrophies($trophyGroupId);
 
                                 foreach ($trophies as $trophy) {
                                     if ($accountId !== null && ($trophy["earned"] ?? null) == 1 && !empty($_GET["unearned"])) {
