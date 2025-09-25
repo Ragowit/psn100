@@ -1,21 +1,20 @@
 <?php
-require_once("../init.php");
-require_once("../classes/GameResetService.php");
+
+declare(strict_types=1);
+
+require_once '../init.php';
+require_once '../classes/GameResetService.php';
+require_once '../classes/Admin/GameResetRequestHandler.php';
 
 $gameResetService = new GameResetService($database);
-$success = null;
+$requestHandler = new GameResetRequestHandler($gameResetService);
 
-if (isset($_POST["game"]) && ctype_digit((string) $_POST["game"])) {
-    $gameId = (int) $_POST["game"];
-    $status = isset($_POST["status"]) ? (int) $_POST["status"] : 0;
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$postData = $_POST ?? [];
 
-    try {
-        $message = $gameResetService->process($gameId, $status);
-        $success = "<p>{$message}</p>";
-    } catch (InvalidArgumentException $exception) {
-        $success = $exception->getMessage();
-    }
-}
+$result = $requestHandler->handleRequest($requestMethod, $postData);
+$success = $result->getSuccessMessage();
+$error = $result->getErrorMessage();
 
 ?>
 <!doctype html>
@@ -42,6 +41,10 @@ if (isset($_POST["game"]) && ctype_digit((string) $_POST["game"])) {
             </form>
 
             <?php
+            if ($error !== null) {
+                echo $error;
+            }
+
             if ($success !== null) {
                 echo $success;
             }
