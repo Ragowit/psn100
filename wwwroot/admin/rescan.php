@@ -38,50 +38,138 @@ require_once("../init.php");
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const form = document.getElementById('rescan-form');
-                const gameInput = document.getElementById('game');
-                const submitButton = document.getElementById('rescan-submit');
-                const progressWrapper = document.getElementById('progress-wrapper');
-                const progressBar = document.getElementById('progress-bar');
-                const progressMessage = document.getElementById('progress-message');
-                const result = document.getElementById('result');
+            class RescanFormController {
+                constructor({
+                    formId,
+                    gameInputId,
+                    submitButtonId,
+                    progressWrapperId,
+                    progressBarId,
+                    progressMessageId,
+                    resultId,
+                }) {
+                    this.form = document.getElementById(formId);
+                    this.gameInput = document.getElementById(gameInputId);
+                    this.submitButton = document.getElementById(submitButtonId);
+                    this.progressWrapper = document.getElementById(progressWrapperId);
+                    this.progressBar = document.getElementById(progressBarId);
+                    this.progressMessage = document.getElementById(progressMessageId);
+                    this.result = document.getElementById(resultId);
+                }
 
-                const resetProgress = () => {
-                    progressBar.style.width = '0%';
-                    progressBar.setAttribute('aria-valuenow', '0');
-                    progressBar.textContent = '0%';
-                    progressBar.classList.remove('bg-success', 'bg-danger');
-                    progressBar.classList.add('progress-bar-animated');
-                    progressMessage.textContent = 'Preparing rescan…';
-                };
-
-                const updateProgress = (value, message = null) => {
-                    const clampedValue = Math.min(100, Math.max(0, Math.round(value)));
-                    progressBar.style.width = clampedValue + '%';
-                    progressBar.setAttribute('aria-valuenow', String(clampedValue));
-                    progressBar.textContent = clampedValue + '%';
-
-                    if (message !== null) {
-                        progressMessage.textContent = message;
+                initialize() {
+                    if (!this.hasRequiredElements()) {
+                        return;
                     }
-                };
 
-                const setFormDisabled = (disabled) => {
-                    submitButton.disabled = disabled;
-                    gameInput.disabled = disabled;
-                };
+                    this.form.addEventListener('submit', (event) => this.handleSubmit(event));
+                }
 
-                const showAlert = (type, message) => {
-                    const alert = document.createElement('div');
-                    alert.className = `alert alert-${type}`;
-                    alert.setAttribute('role', 'alert');
-                    alert.textContent = message;
+                hasRequiredElements() {
+                    return [
+                        this.form,
+                        this.gameInput,
+                        this.submitButton,
+                        this.progressWrapper,
+                        this.progressBar,
+                        this.progressMessage,
+                        this.result,
+                    ].every((element) => element instanceof HTMLElement);
+                }
 
-                    result.replaceChildren(alert);
-                };
+                handleSubmit(event) {
+                    event.preventDefault();
+                    this.clearResult();
 
-                const consumeProgressStream = async (response) => {
+                    const trimmedValue = (this.gameInput.value || '').trim();
+                    if (!/^\d+$/.test(trimmedValue)) {
+                        this.showAlert('danger', 'Please provide a valid game id.');
+                        return;
+                    }
+
+                    this.resetProgress();
+                    this.showProgress();
+                    this.setFormDisabled(true);
+
+                    this.processRescan(trimmedValue)
+                        .catch(() => {
+                            // Errors are handled in processRescan; this catch prevents
+                            // unhandled promise rejections in older browsers.
+                        })
+                        .finally(() => {
+                            this.setFormDisabled(false);
+                        });
+                }
+
+                async processRescan(gameId) {
+                    try {
+                        const response = await fetch('rescan_process.php', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/x-ndjson, application/json',
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: new URLSearchParams({ game: gameId }),
+                        });
+
+                        const contentType = response.headers.get('Content-Type') ?? '';
+                        let finalPayload = null;
+
+                        if (contentType.includes('application/x-ndjson')) {
+                            finalPayload = await this.consumeProgressStream(response);
+                        } else {
+                            let data = null;
+
+                            try {
+                                data = await response.json();
+                            } catch (error) {
+                                data = null;
+                            }
+
+                            if (!response.ok || !data || !data.success) {
+                                const errorMessage = data && (data.error || data.message)
+                                    ? (data.error || data.message)
+                                    : 'Unable to rescan the specified game.';
+
+                                this.markProgressAsError('Rescan failed.');
+                                this.showAlert('danger', errorMessage);
+
+                                return;
+                            }
+
+                            finalPayload = {
+                                type: 'complete',
+                                success: true,
+                                progress: 100,
+                                message: data.message ?? 'Rescan completed successfully.',
+                            };
+
+                            this.updateProgress(100, finalPayload.message);
+                        }
+
+                        this.setProgressAnimated(false);
+
+                        if (finalPayload && finalPayload.success) {
+                            const successMessage = finalPayload.message ?? 'Rescan completed successfully.';
+                            this.markProgressAsSuccess(successMessage);
+                            this.showAlert('success', successMessage);
+
+                            return;
+                        }
+
+                        const errorMessage = (finalPayload && (finalPayload.error || finalPayload.message))
+                            ? (finalPayload.error || finalPayload.message)
+                            : 'Unable to rescan the specified game.';
+
+                        this.markProgressAsError(finalPayload?.message ?? finalPayload?.error ?? 'Rescan failed.');
+                        this.showAlert('danger', errorMessage);
+                    } catch (error) {
+                        this.markProgressAsError('Rescan failed.');
+                        this.showAlert('danger', 'An unexpected error occurred while processing the rescan request.');
+                    }
+                }
+
+                async consumeProgressStream(response) {
                     const reader = response.body?.getReader();
 
                     if (!reader) {
@@ -99,7 +187,7 @@ require_once("../init.php");
 
                         if (payload.type === 'progress') {
                             const progressValue = typeof payload.progress === 'number' ? payload.progress : 0;
-                            updateProgress(progressValue, payload.message ?? null);
+                            this.updateProgress(progressValue, payload.message ?? null);
 
                             return;
                         }
@@ -108,7 +196,7 @@ require_once("../init.php");
                             finalPayload = payload;
                             if (typeof payload.progress === 'number') {
                                 const finalMessage = payload.message ?? payload.error ?? null;
-                                updateProgress(payload.progress, finalMessage);
+                                this.updateProgress(payload.progress, finalMessage);
                             }
                         }
                     };
@@ -175,96 +263,121 @@ require_once("../init.php");
                     }
 
                     return finalPayload;
-                };
+                }
 
-                form.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-                    result.replaceChildren();
-
-                    const trimmedValue = gameInput.value.trim();
-                    if (!/^\d+$/.test(trimmedValue)) {
-                        showAlert('danger', 'Please provide a valid game id.');
+                resetProgress() {
+                    if (!this.progressBar || !this.progressMessage) {
                         return;
                     }
 
-                    resetProgress();
-                    progressWrapper.classList.remove('d-none');
-                    setFormDisabled(true);
+                    this.progressBar.style.width = '0%';
+                    this.progressBar.setAttribute('aria-valuenow', '0');
+                    this.progressBar.textContent = '0%';
+                    this.clearProgressStatus();
+                    this.setProgressAnimated(true);
+                    this.progressMessage.textContent = 'Preparing rescan…';
+                }
 
-                    try {
-                        const response = await fetch('rescan_process.php', {
-                            method: 'POST',
-                            headers: {
-                                'Accept': 'application/x-ndjson, application/json',
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: new URLSearchParams({ game: trimmedValue })
-                        });
-
-                        const contentType = response.headers.get('Content-Type') ?? '';
-                        let finalPayload = null;
-
-                        if (contentType.includes('application/x-ndjson')) {
-                            finalPayload = await consumeProgressStream(response);
-                        } else {
-                            let data = null;
-
-                            try {
-                                data = await response.json();
-                            } catch (error) {
-                                data = null;
-                            }
-
-                            if (!response.ok || !data || !data.success) {
-                                const errorMessage = data && (data.error || data.message)
-                                    ? (data.error || data.message)
-                                    : 'Unable to rescan the specified game.';
-
-                                progressBar.classList.remove('progress-bar-animated');
-                                progressBar.classList.add('bg-danger');
-                                updateProgress(100, 'Rescan failed.');
-                                showAlert('danger', errorMessage);
-
-                                return;
-                            }
-
-                            finalPayload = {
-                                type: 'complete',
-                                success: true,
-                                progress: 100,
-                                message: data.message ?? 'Rescan completed successfully.',
-                            };
-
-                            updateProgress(100, finalPayload.message);
-                        }
-
-                        progressBar.classList.remove('progress-bar-animated');
-
-                        if (finalPayload && finalPayload.success) {
-                            progressBar.classList.add('bg-success');
-                            const successMessage = finalPayload.message ?? 'Rescan completed successfully.';
-                            updateProgress(100, successMessage);
-                            showAlert('success', successMessage);
-
-                            return;
-                        }
-
-                        progressBar.classList.add('bg-danger');
-                        const errorMessage = (finalPayload && (finalPayload.error || finalPayload.message))
-                            ? (finalPayload.error || finalPayload.message)
-                            : 'Unable to rescan the specified game.';
-
-                        updateProgress(100, finalPayload?.message ?? finalPayload?.error ?? 'Rescan failed.');
-                        showAlert('danger', errorMessage);
-                    } catch (error) {
-                        progressBar.classList.remove('progress-bar-animated');
-                        progressBar.classList.add('bg-danger');
-                        updateProgress(100, 'Rescan failed.');
-                        showAlert('danger', 'An unexpected error occurred while processing the rescan request.');
-                    } finally {
-                        setFormDisabled(false);
+                updateProgress(value, message = null) {
+                    if (!this.progressBar) {
+                        return;
                     }
+
+                    const clampedValue = Math.min(100, Math.max(0, Math.round(value)));
+                    this.progressBar.style.width = `${clampedValue}%`;
+                    this.progressBar.setAttribute('aria-valuenow', String(clampedValue));
+                    this.progressBar.textContent = `${clampedValue}%`;
+
+                    if (message !== null && this.progressMessage) {
+                        this.progressMessage.textContent = message;
+                    }
+                }
+
+                setFormDisabled(disabled) {
+                    if (this.submitButton) {
+                        this.submitButton.disabled = disabled;
+                    }
+
+                    if (this.gameInput) {
+                        this.gameInput.disabled = disabled;
+                    }
+                }
+
+                showAlert(type, message) {
+                    if (!this.result) {
+                        return;
+                    }
+
+                    const alert = document.createElement('div');
+                    alert.className = `alert alert-${type}`;
+                    alert.setAttribute('role', 'alert');
+                    alert.textContent = message;
+
+                    this.result.replaceChildren(alert);
+                }
+
+                clearResult() {
+                    if (this.result) {
+                        this.result.replaceChildren();
+                    }
+                }
+
+                showProgress() {
+                    if (this.progressWrapper) {
+                        this.progressWrapper.classList.remove('d-none');
+                    }
+                }
+
+                clearProgressStatus() {
+                    if (this.progressBar) {
+                        this.progressBar.classList.remove('bg-success', 'bg-danger');
+                    }
+                }
+
+                setProgressAnimated(animated) {
+                    if (!this.progressBar) {
+                        return;
+                    }
+
+                    if (animated) {
+                        this.progressBar.classList.add('progress-bar-animated');
+                    } else {
+                        this.progressBar.classList.remove('progress-bar-animated');
+                    }
+                }
+
+                markProgressAsSuccess(message) {
+                    this.setProgressAnimated(false);
+                    this.clearProgressStatus();
+                    if (this.progressBar) {
+                        this.progressBar.classList.add('bg-success');
+                    }
+                    this.updateProgress(100, message);
+                }
+
+                markProgressAsError(message) {
+                    this.setProgressAnimated(false);
+                    this.clearProgressStatus();
+                    if (this.progressBar) {
+                        this.progressBar.classList.add('bg-danger');
+                    }
+                    this.updateProgress(100, message);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const controller = new RescanFormController({
+                    formId: 'rescan-form',
+                    gameInputId: 'game',
+                    submitButtonId: 'rescan-submit',
+                    progressWrapperId: 'progress-wrapper',
+                    progressBarId: 'progress-bar',
+                    progressMessageId: 'progress-message',
+                    resultId: 'result',
                 });
+
+                controller.initialize();
+                window.rescanFormController = controller;
             });
         </script>
     </body>
