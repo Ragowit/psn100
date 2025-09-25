@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerAdvisorFilter.php';
 require_once __DIR__ . '/classes/PlayerAdvisorService.php';
+require_once __DIR__ . '/classes/PlayerAdvisorPage.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
@@ -14,23 +15,23 @@ if (!isset($accountId)) {
 $playerAdvisorFilter = PlayerAdvisorFilter::fromArray($_GET ?? []);
 $playerAdvisorService = new PlayerAdvisorService($database);
 $playerSummaryService = new PlayerSummaryService($database);
-$playerSummary = $playerSummaryService->getSummary((int) $accountId);
+$playerAdvisorPage = new PlayerAdvisorPage(
+    $playerAdvisorService,
+    $playerSummaryService,
+    $playerAdvisorFilter,
+    (int) $accountId,
+    (int) $player['status']
+);
 
-$page = $playerAdvisorFilter->getPage();
-$limit = PlayerAdvisorService::PAGE_SIZE;
-$offset = $playerAdvisorFilter->getOffset($limit);
-
-$totalTrophies = 0;
-$advisableTrophies = [];
-
-if ($player["status"] != 1 && $player["status"] != 3) {
-    $playerAccountId = (int) $player["account_id"];
-    $totalTrophies = $playerAdvisorService->countAdvisableTrophies($playerAccountId, $playerAdvisorFilter);
-    $advisableTrophies = $playerAdvisorService->getAdvisableTrophies($playerAccountId, $playerAdvisorFilter, $offset, $limit);
-}
-
-$totalPages = (int) ceil($totalTrophies / $limit);
-$filterParameters = $playerAdvisorFilter->getFilterParameters();
+$playerSummary = $playerAdvisorPage->getPlayerSummary();
+$page = $playerAdvisorPage->getCurrentPage();
+$limit = $playerAdvisorPage->getPageSize();
+$offset = $playerAdvisorPage->getOffset();
+$totalTrophies = $playerAdvisorPage->getTotalTrophies();
+$advisableTrophies = $playerAdvisorPage->getAdvisableTrophies();
+$totalPages = $playerAdvisorPage->getTotalPages();
+$filterParameters = $playerAdvisorPage->getFilterParameters();
+$shouldDisplayAdvisor = $playerAdvisorPage->shouldDisplayAdvisor();
 
 $title = $player["online_id"] . "'s Trophy Advisor ~ PSN 100%";
 require_once("header.php");
@@ -142,18 +143,20 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if ($player["status"] == 1) {
+                            if (!$shouldDisplayAdvisor) {
+                                if ($player["status"] == 1) {
                                 ?>
                                 <tr>
                                     <td colspan="5" class="text-center"><h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3></td>
                                 </tr>
                                 <?php
-                            } elseif ($player["status"] == 3) {
+                                } elseif ($player["status"] == 3) {
                                 ?>
                                 <tr>
                                     <td colspan="5" class="text-center"><h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>
                                 </tr>
                                 <?php
+                                }
                             } else {
                                 foreach ($advisableTrophies as $trophy) {
                                     ?>
