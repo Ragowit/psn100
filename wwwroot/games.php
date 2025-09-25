@@ -3,24 +3,20 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/GameListFilter.php';
 require_once __DIR__ . '/classes/GameListService.php';
+require_once __DIR__ . '/classes/GameListPage.php';
 
 $title = "Games ~ PSN 100%";
 
 $filter = GameListFilter::fromArray($_GET ?? []);
 $gameListService = new GameListService($database);
-$filter = $filter->withPlayer($gameListService->resolvePlayer($filter->getPlayer()));
+$gameListPage = new GameListPage($gameListService, $filter);
 
-$limit = $gameListService->getLimit();
-$offset = $gameListService->getOffset($filter);
-$totalGames = $gameListService->countGames($filter);
-$games = $gameListService->getGames($filter);
-$page = $filter->getPage();
-$actualLastPage = (int) ceil($totalGames / $limit);
-$lastPage = $actualLastPage > 0 ? $actualLastPage : 1;
-$playerName = $filter->getPlayer();
-$startIndex = $totalGames === 0 ? 0 : $offset + 1;
-$endIndex = min($offset + $limit, $totalGames);
-$paginationParameters = $filter->getQueryParametersForPagination();
+$filter = $gameListPage->getFilter();
+$games = $gameListPage->getGames();
+$playerName = $gameListPage->getPlayerName();
+$totalGames = $gameListPage->getTotalGames();
+$startIndex = $gameListPage->getRangeStart();
+$endIndex = $gameListPage->getRangeEnd();
 
 require_once("header.php");
 ?>
@@ -34,7 +30,7 @@ require_once("header.php");
         <div class="col-8 col-lg-4">
             <form>
                 <div class="input-group d-flex justify-content-end">
-                    <input type="hidden" name="page" value="<?= $page; ?>">
+                    <input type="hidden" name="page" value="<?= $gameListPage->getCurrentPage(); ?>">
                     <input type="hidden" name="search" value="<?= htmlentities($filter->getSearch(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="text" name="player" class="form-control rounded-start" maxlength="16" placeholder="View as player..." value="<?= htmlentities($filter->getPlayer() ?? '', ENT_QUOTES, 'UTF-8'); ?>" aria-label="Text input to show completed games for specified player">
 
@@ -235,75 +231,60 @@ require_once("header.php");
             <nav aria-label="Games page navigation">
                 <ul class="pagination justify-content-center">
                     <?php
-                    $baseParameters = $paginationParameters;
-
-                    if ($page > 1) {
-                        $previousParameters = $baseParameters;
-                        $previousParameters['page'] = $page - 1;
+                    if ($gameListPage->hasPreviousPage()) {
+                        $previousParameters = $gameListPage->getPageQueryParameters($gameListPage->getPreviousPage());
                         ?>
                         <li class="page-item"><a class="page-link" href="?<?= http_build_query($previousParameters); ?>" aria-label="Previous">&lt;</a></li>
                         <?php
                     }
 
-                    if ($page > 3) {
-                        $firstParameters = $baseParameters;
-                        $firstParameters['page'] = 1;
+                    if ($gameListPage->shouldShowFirstPage()) {
+                        $firstParameters = $gameListPage->getPageQueryParameters($gameListPage->getFirstPage());
                         ?>
                         <li class="page-item"><a class="page-link" href="?<?= http_build_query($firstParameters); ?>">1</a></li>
+                        <?php
+                    }
+
+                    if ($gameListPage->shouldShowLeadingEllipsis()) {
+                        ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
                         <?php
                     }
 
-                    if ($page - 2 > 0) {
-                        $params = $baseParameters;
-                        $params['page'] = $page - 2;
+                    foreach ($gameListPage->getPreviousPages() as $previousPage) {
+                        $params = $gameListPage->getPageQueryParameters($previousPage);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page - 2; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $previousPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page - 1 > 0) {
-                        $params = $baseParameters;
-                        $params['page'] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page - 1; ?></a></li>
-                        <?php
-                    }
-
-                    $currentParameters = $baseParameters;
-                    $currentParameters['page'] = $page;
+                    $currentParameters = $gameListPage->getCurrentPageParameters();
                     ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($currentParameters); ?>"><?= $page; ?></a></li>
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($currentParameters); ?>"><?= $gameListPage->getCurrentPage(); ?></a></li>
 
                     <?php
-                    if ($page + 1 <= $lastPage) {
-                        $params = $baseParameters;
-                        $params['page'] = $page + 1;
+                    foreach ($gameListPage->getNextPages() as $nextPage) {
+                        $params = $gameListPage->getPageQueryParameters($nextPage);
                         ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page + 1; ?></a></li>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $nextPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page + 2 <= $lastPage) {
-                        $params = $baseParameters;
-                        $params['page'] = $page + 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $page + 2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $lastPage - 2) {
-                        $params = $baseParameters;
-                        $params['page'] = $lastPage;
+                    if ($gameListPage->shouldShowTrailingEllipsis()) {
                         ?>
                         <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($params); ?>"><?= $lastPage; ?></a></li>
                         <?php
                     }
 
-                    if ($page < $lastPage) {
-                        $nextParameters = $baseParameters;
-                        $nextParameters['page'] = $page + 1;
+                    if ($gameListPage->shouldShowLastPage()) {
+                        $lastParameters = $gameListPage->getLastPageParameters();
+                        ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($lastParameters); ?>"><?= $gameListPage->getLastPage(); ?></a></li>
+                        <?php
+                    }
+
+                    if ($gameListPage->hasNextPage()) {
+                        $nextParameters = $gameListPage->getPageQueryParameters($gameListPage->getNextPage());
                         ?>
                         <li class="page-item"><a class="page-link" href="?<?= http_build_query($nextParameters); ?>" aria-label="Next">&gt;</a></li>
                         <?php
