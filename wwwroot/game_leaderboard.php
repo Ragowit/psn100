@@ -1,10 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/classes/GameHeaderService.php';
-require_once __DIR__ . '/classes/GamePlayerFilter.php';
-require_once __DIR__ . '/classes/GameLeaderboardFilter.php';
-require_once __DIR__ . '/classes/GameLeaderboardService.php';
+require_once __DIR__ . '/classes/GameLeaderboardPage.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -12,35 +9,35 @@ if (!isset($gameId)) {
 }
 
 $gameLeaderboardService = new GameLeaderboardService($database);
+$gameHeaderService = new GameHeaderService($database);
 
-$game = $gameLeaderboardService->getGame((int) $gameId);
-
-if ($game === null) {
+try {
+    $gameLeaderboardPage = GameLeaderboardPage::create(
+        $gameLeaderboardService,
+        $gameHeaderService,
+        (int) $gameId,
+        isset($player) ? (string) $player : null,
+        $_GET ?? []
+    );
+} catch (GameNotFoundException $exception) {
     header("Location: /game/", true, 303);
+    die();
+} catch (GameLeaderboardPlayerNotFoundException $exception) {
+    $slug = $utility->slugify($exception->getGameName());
+    header("Location: /game/" . $exception->getGameId() . "-" . $slug, true, 303);
     die();
 }
 
-$gameHeaderService = new GameHeaderService($database);
-$gameHeaderData = $gameHeaderService->buildHeaderData($game);
-
-$accountId = null;
-if (isset($player)) {
-    $accountId = $gameLeaderboardService->getPlayerAccountId($player);
-
-    if ($accountId === null) {
-        header("Location: /game/" . $game["id"] . "-" . $utility->slugify($game["name"]), true, 303);
-        die();
-    }
-
-}
-
-$filter = GameLeaderboardFilter::fromArray($_GET ?? []);
-$totalPlayers = $gameLeaderboardService->getLeaderboardPlayerCount($game["np_communication_id"], $filter);
-$page = $filter->getPage();
-$limit = GameLeaderboardService::PAGE_SIZE;
-$offset = $filter->getOffset($limit);
-$totalPagesCount = (int) ceil($totalPlayers / $limit);
-$rows = $gameLeaderboardService->getLeaderboardRows($game["np_communication_id"], $filter, $limit);
+$game = $gameLeaderboardPage->getGame();
+$gameHeaderData = $gameLeaderboardPage->getGameHeaderData();
+$filter = $gameLeaderboardPage->getFilter();
+$totalPlayers = $gameLeaderboardPage->getTotalPlayers();
+$page = $gameLeaderboardPage->getPage();
+$limit = $gameLeaderboardPage->getLimit();
+$offset = $gameLeaderboardPage->getOffset();
+$totalPagesCount = $gameLeaderboardPage->getTotalPagesCount();
+$rows = $gameLeaderboardPage->getRows();
+$accountId = $gameLeaderboardPage->getPlayerAccountId();
 
 $title = $game["name"] ." Leaderboard ~ PSN 100%";
 require_once("header.php");
