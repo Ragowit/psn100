@@ -7,18 +7,24 @@ if (!isset($accountId)) {
 require_once __DIR__ . '/classes/PlayerRandomGame.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesFilter.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesService.php';
+require_once __DIR__ . '/classes/PlayerRandomGamesPage.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 
+$playerRandomGamesFilter = PlayerRandomGamesFilter::fromArray($_GET ?? []);
 $playerRandomGamesService = new PlayerRandomGamesService($database, $utility);
 $playerSummaryService = new PlayerSummaryService($database);
-$playerSummary = $playerSummaryService->getSummary((int) $accountId);
-$playerRandomGamesFilter = PlayerRandomGamesFilter::fromArray($_GET ?? []);
-$randomGames = [];
+$playerRandomGamesPage = new PlayerRandomGamesPage(
+    $playerRandomGamesService,
+    $playerSummaryService,
+    $playerRandomGamesFilter,
+    (int) $accountId,
+    (int) $player["status"]
+);
 
-if ($player["status"] != 1 && $player["status"] != 3) {
-    $randomGames = $playerRandomGamesService->getRandomGames((int) $player["account_id"], $playerRandomGamesFilter);
-}
+$playerRandomGamesFilter = $playerRandomGamesPage->getFilter();
+$playerSummary = $playerRandomGamesPage->getPlayerSummary();
+$randomGames = $playerRandomGamesPage->getRandomGames();
 
 $title = $player["online_id"] . "'s Random Games ~ PSN 100%";
 require_once("header.php");
@@ -115,19 +121,19 @@ require_once("header.php");
 
     <div class="row">
         <?php
-        if ($player["status"] == 1) {
+        if ($playerRandomGamesPage->shouldShowFlaggedMessage()) {
             ?>
             <div class="col-12 text-center">
                 <h3>This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3>
             </div>
             <?php
-        } elseif ($player["status"] == 3) {
+        } elseif ($playerRandomGamesPage->shouldShowPrivateMessage()) {
             ?>
             <div class="col-12 text-center">
                 <h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3>
             </div>
             <?php
-        } else {
+        } elseif ($playerRandomGamesPage->shouldShowRandomGames()) {
             foreach ($randomGames as $game) {
                 $gameLink = $game->getGameLink($player["online_id"]);
                 ?>
