@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/ChangelogPaginator.php';
 require_once __DIR__ . '/PlayerLogFilter.php';
 require_once __DIR__ . '/PlayerLogService.php';
 
@@ -13,12 +12,12 @@ class PlayerLogPage
 
     private PlayerLogFilter $requestedFilter;
 
-    private ChangelogPaginator $paginator;
-
     /**
      * @var array<int, array<string, mixed>>
      */
-    private array $trophies;
+    private array $trophies = [];
+
+    private int $totalTrophies = 0;
 
     public function __construct(
         PlayerLogService $service,
@@ -26,28 +25,24 @@ class PlayerLogPage
         int $accountId,
         int $playerStatus
     ) {
-        $this->requestedFilter = $filter;
+        $this->requestedFilter = $filter->withPageNumber(1);
 
-        $limit = PlayerLogService::PAGE_SIZE;
-        $shouldLoadLog = $this->shouldLoadPlayerLog($playerStatus);
-        $totalTrophies = 0;
-
-        if ($shouldLoadLog) {
-            $totalTrophies = $service->countTrophies($accountId, $filter);
+        if (!$this->shouldLoadPlayerLog($playerStatus)) {
+            return;
         }
 
-        $this->paginator = new ChangelogPaginator($filter->getPage(), $totalTrophies, $limit);
+        $this->totalTrophies = $service->countTrophies($accountId, $this->requestedFilter);
 
-        if ($shouldLoadLog && $this->paginator->getTotalCount() > 0) {
-            $this->trophies = $service->getTrophies(
-                $accountId,
-                $filter,
-                $this->paginator->getOffset(),
-                $this->paginator->getLimit()
-            );
-        } else {
-            $this->trophies = [];
+        if ($this->totalTrophies === 0) {
+            return;
         }
+
+        $this->trophies = $service->getTrophies(
+            $accountId,
+            $this->requestedFilter,
+            0,
+            PlayerLogService::PAGE_SIZE
+        );
     }
 
     /**
@@ -60,67 +55,67 @@ class PlayerLogPage
 
     public function getTotalTrophies(): int
     {
-        return $this->paginator->getTotalCount();
+        return $this->totalTrophies;
     }
 
     public function getRangeStart(): int
     {
-        return $this->paginator->getRangeStart();
+        return $this->trophies === [] ? 0 : 1;
     }
 
     public function getRangeEnd(): int
     {
-        return $this->paginator->getRangeEnd();
+        return count($this->trophies);
     }
 
     public function getCurrentPage(): int
     {
-        return $this->paginator->getCurrentPage();
+        return 1;
     }
 
     public function getTotalPages(): int
     {
-        return $this->paginator->getTotalPages();
+        return $this->trophies === [] ? 0 : 1;
     }
 
     public function hasPreviousPage(): bool
     {
-        return $this->paginator->hasPreviousPage();
+        return false;
     }
 
     public function getPreviousPage(): int
     {
-        return $this->paginator->getPreviousPage();
+        return 1;
     }
 
     public function hasNextPage(): bool
     {
-        return $this->paginator->hasNextPage();
+        return false;
     }
 
     public function getNextPage(): int
     {
-        return $this->paginator->getNextPage();
+        return 1;
     }
 
     public function shouldShowFirstPage(): bool
     {
-        return $this->getTotalPages() > 0 && $this->getCurrentPage() > 3;
+        return false;
     }
 
     public function shouldShowLeadingEllipsis(): bool
     {
-        return $this->shouldShowFirstPage();
+        return false;
     }
 
     public function shouldShowLastPage(): bool
     {
-        return $this->getTotalPages() > 0 && $this->getCurrentPage() < $this->getLastPage() - 2;
+        return false;
     }
 
     public function shouldShowTrailingEllipsis(): bool
     {
-        return $this->shouldShowLastPage();
+        return false;
     }
 
     public function getFirstPage(): int
@@ -130,7 +125,7 @@ class PlayerLogPage
 
     public function getLastPage(): int
     {
-        return $this->paginator->getLastPageNumber();
+        return 1;
     }
 
     /**
@@ -138,17 +133,7 @@ class PlayerLogPage
      */
     public function getPreviousPages(): array
     {
-        $pages = [];
-
-        for ($i = 2; $i >= 1; $i--) {
-            $candidate = $this->getCurrentPage() - $i;
-
-            if ($candidate > 0) {
-                $pages[] = $candidate;
-            }
-        }
-
-        return $pages;
+        return [];
     }
 
     /**
@@ -156,18 +141,7 @@ class PlayerLogPage
      */
     public function getNextPages(): array
     {
-        $pages = [];
-        $lastPage = $this->getLastPage();
-
-        for ($i = 1; $i <= 2; $i++) {
-            $candidate = $this->getCurrentPage() + $i;
-
-            if ($candidate <= $lastPage) {
-                $pages[] = $candidate;
-            }
-        }
-
-        return $pages;
+        return [];
     }
 
     /**
@@ -175,7 +149,7 @@ class PlayerLogPage
      */
     public function getPageQueryParameters(int $page): array
     {
-        return $this->requestedFilter->withPage($page);
+        return $this->requestedFilter->withPage(1);
     }
 
     /**

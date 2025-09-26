@@ -236,66 +236,8 @@ require_once("header.php");
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= number_format($playerLogPage->getRangeStart()); ?>-<?= number_format($playerLogPage->getRangeEnd()); ?> of <?= number_format($playerLogPage->getTotalTrophies()); ?>
+                Showing <?= number_format(count($trophiesLog)); ?> of <?= number_format($playerLogPage->getTotalTrophies()); ?> trophies (up to <?= number_format(PlayerLogService::PAGE_SIZE); ?> based on your sort and filters).
             </p>
-        </div>
-        <div class="col-12">
-            <nav aria-label="Player log navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    if ($playerLogPage->hasPreviousPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getPreviousPage())); ?>" aria-label="Previous">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($playerLogPage->shouldShowFirstPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getFirstPage())); ?>">1</a></li>
-                        <?php
-                        if ($playerLogPage->shouldShowLeadingEllipsis()) {
-                            ?>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                            <?php
-                        }
-                    }
-
-                    foreach ($playerLogPage->getPreviousPages() as $previousPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getCurrentPage())); ?>"><?= $playerLogPage->getCurrentPage(); ?></a></li>
-
-                    <?php
-                    foreach ($playerLogPage->getNextPages() as $nextPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerLogPage->shouldShowTrailingEllipsis()) {
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($playerLogPage->shouldShowLastPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getLastPage())); ?>"><?= $playerLogPage->getLastPage(); ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerLogPage->hasNextPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLogPage->getPageQueryParameters($playerLogPage->getNextPage())); ?>" aria-label="Next">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
         </div>
     </div>
 </main>
