@@ -7,7 +7,9 @@ if ($maintenance) {
 
 require_once 'init.php';
 require_once 'classes/Application.php';
+require_once 'classes/HttpRequest.php';
 
 $router = new Router($database);
-$application = new Application($router, $_SERVER);
+$request = HttpRequest::fromGlobals();
+$application = new Application($router, $request);
 $application->run();

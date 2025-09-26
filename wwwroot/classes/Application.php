@@ -4,52 +4,29 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Router.php';
 require_once __DIR__ . '/RouteResult.php';
+require_once __DIR__ . '/HttpRequest.php';
 
 class Application
 {
     private Router $router;
 
-    /**
-     * @var array<string, mixed>
-     */
-    private array $server;
+    private HttpRequest $request;
 
     private string $notFoundTemplate;
 
-    /**
-     * @param array<string, mixed> $server
-     */
-    public function __construct(Router $router, array $server, string $notFoundTemplate = '404.php')
+    public function __construct(Router $router, HttpRequest $request, string $notFoundTemplate = '404.php')
     {
         $this->router = $router;
-        $this->server = $server;
+        $this->request = $request;
         $this->notFoundTemplate = $notFoundTemplate;
     }
 
     public function run(): void
     {
-        $requestUri = $this->resolveRequestUri();
+        $requestUri = $this->request->getResolvedUri();
         $routeResult = $this->router->dispatch($requestUri);
 
         $this->handleRouteResult($routeResult);
-    }
-
-    private function resolveRequestUri(): string
-    {
-        // SCRIPT_URL isn't available in all web server configurations (for example,
-        // the PHP built-in development server). Fall back to REQUEST_URI so routing
-        // works everywhere without PHP notices.
-        $scriptUrl = $this->server['SCRIPT_URL'] ?? null;
-        if (is_string($scriptUrl) && $scriptUrl !== '') {
-            return $scriptUrl;
-        }
-
-        $requestUri = $this->server['REQUEST_URI'] ?? '/';
-        if (!is_string($requestUri) || $requestUri === '') {
-            return '/';
-        }
-
-        return $requestUri;
     }
 
     private function handleRouteResult(RouteResult $routeResult): void
