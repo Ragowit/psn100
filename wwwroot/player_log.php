@@ -6,6 +6,7 @@ require_once __DIR__ . '/classes/PlayerLogService.php';
 require_once __DIR__ . '/classes/PlayerLogPage.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
+require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
@@ -23,6 +24,7 @@ $playerLogPage = new PlayerLogPage(
     (int) $player['status']
 );
 $trophiesLog = $playerLogPage->getTrophies();
+$trophyRarityFormatter = new TrophyRarityFormatter();
 
 $title = $player["online_id"] . "'s Trophy Log ~ PSN 100%";
 require_once("header.php");
@@ -206,21 +208,15 @@ require_once("header.php");
                                             </div>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <?php
-                                            if ($trophy["trophy_status"] == 1) {
-                                                echo "<span class='badge rounded-pill text-bg-warning p-2'>Unobtainable</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 0.02) {
-                                                echo "<span class='trophy-legendary'>". $trophy["rarity_percent"] ."%<br>Legendary</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 0.2) {
-                                                echo "<span class='trophy-epic'>". $trophy["rarity_percent"] ."%<br>Epic</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 2) {
-                                                echo "<span class='trophy-rare'>". $trophy["rarity_percent"] ."%<br>Rare</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 10) {
-                                                echo "<span class='trophy-uncommon'>". $trophy["rarity_percent"] ."%<br>Uncommon</span>";
-                                            } else {
-                                                echo "<span class='trophy-common'>". $trophy["rarity_percent"] ."%<br>Common</span>";
-                                            }
-                                            ?>
+                                        <?php
+                                        $trophyRarity = $trophyRarityFormatter->format($trophy["rarity_percent"], (int) $trophy["trophy_status"]);
+
+                                        if ($trophyRarity->isUnobtainable()) {
+                                            echo "<span class='badge rounded-pill text-bg-warning p-2'>" . $trophyRarity->getLabel() . '</span>';
+                                        } else {
+                                            echo $trophyRarity->renderSpan();
+                                        }
+                                        ?>
                                         </td>
                                         <td class="text-center align-middle">
                                             <img src="/img/trophy-<?= $trophy["trophy_type"]; ?>.svg" alt="<?= ucfirst($trophy["trophy_type"]); ?>" title="<?= ucfirst($trophy["trophy_type"]); ?>" height="50" />
