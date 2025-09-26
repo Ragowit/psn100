@@ -1,11 +1,14 @@
 <?php
-require_once 'classes/HomepageContentService.php';
+require_once 'classes/HomepagePage.php';
 
-$title = "PSN 100% ~ PlayStation Leaderboards & Trophies";
 $homepageContentService = new HomepageContentService($database);
-$newGames = $homepageContentService->getNewGames();
-$newDlcs = $homepageContentService->getNewDlcs();
-$popularGames = $homepageContentService->getPopularGames();
+$homepagePage = new HomepagePage($homepageContentService);
+$homepageViewModel = $homepagePage->buildViewModel();
+
+$title = $homepageViewModel->getTitle();
+$newGames = $homepageViewModel->getNewGames();
+$newDlcs = $homepageViewModel->getNewDlcs();
+$popularGames = $homepageViewModel->getPopularGames();
 require_once("header.php");
 ?>
 
