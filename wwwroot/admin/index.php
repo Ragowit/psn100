@@ -1,3 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+require_once '../classes/Admin/AdminNavigation.php';
+
+$navigation = new AdminNavigation();
+$navigationItems = $navigation->getItems();
+?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
     <head>
@@ -10,17 +19,13 @@
     <body>
         <div class="p-4">
             <ul>
-                <li><a href="/admin/cheater.php">Cheater</a></li>
-                <li><a href="/admin/copy.php">Copy group and trophy data</a></li>
-                <li><a href="/admin/detail.php">Game Details</a></li>
-                <li><a href="/admin/merge.php">Game Merge</a></li>
-                <li><a href="/admin/status.php">Game Status</a></li>
-                <li><a href="/admin/possible.php">Possible Cheaters</a></li>
-                <li><a href="/admin/psnp-plus.php">PSNP+</a></li>
-                <li><a href="/admin/report.php">Reported Players</a></li>
-                <li><a href="/admin/rescan.php">Rescan Game</a></li>
-                <li><a href="/admin/reset.php">Reset Trophy Data or Delete Merged Game</a></li>
-                <li><a href="/admin/unobtainable.php">Unobtainable trophy</a></li>
+                <?php foreach ($navigationItems as $item) { ?>
+                    <li>
+                        <a href="<?= htmlspecialchars($item->getHref(), ENT_QUOTES, 'UTF-8'); ?>">
+                            <?= htmlspecialchars($item->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
+                        </a>
+                    </li>
+                <?php } ?>
             </ul>
         </div>
     </body>
