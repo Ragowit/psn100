@@ -1,31 +1,14 @@
 <?php
-require_once 'classes/PlayerLeaderboardFilter.php';
-require_once 'classes/PlayerLeaderboardService.php';
-require_once 'classes/PlayerLeaderboardPage.php';
-require_once 'classes/Leaderboard/TrophyLeaderboardRow.php';
+require_once 'classes/Leaderboard/TrophyLeaderboardPageContext.php';
 
-$title = "PSN Trophy Leaderboard ~ PSN 100%";
+$trophyLeaderboardPageContext = TrophyLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
+$title = $trophyLeaderboardPageContext->getTitle();
 require_once("header.php");
 
-$playerLeaderboardFilter = PlayerLeaderboardFilter::fromArray($_GET ?? []);
-$playerLeaderboardService = new PlayerLeaderboardService($database);
-$playerLeaderboardPage = new PlayerLeaderboardPage($playerLeaderboardService, $playerLeaderboardFilter);
-
-$players = $playerLeaderboardPage->getPlayers();
-$filterParameters = $playerLeaderboardPage->getFilterParameters();
-$pageParameters = $playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getCurrentPage());
-$highlightedPlayerId = isset($_GET['player']) ? (string) $_GET['player'] : null;
-
-$rows = array_map(
-    static fn(array $player) => new TrophyLeaderboardRow(
-        $player,
-        $playerLeaderboardFilter,
-        $utility,
-        $highlightedPlayerId,
-        $filterParameters
-    ),
-    $players
-);
+$playerLeaderboardPage = $trophyLeaderboardPageContext->getLeaderboardPage();
+$rows = $trophyLeaderboardPageContext->getRows();
+$filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
+$pageParameters = $trophyLeaderboardPageContext->getCurrentPageQueryParameters();
 ?>
 
 <main class="container">
@@ -51,7 +34,7 @@ $rows = array_map(
                         <thead>
                             <tr class="text-uppercase">
                                 <?php
-                                if ($playerLeaderboardFilter->hasCountry()) {
+                                if ($trophyLeaderboardPageContext->shouldShowCountryRank()) {
                                     ?>
                                     <th scope="col" class="text-center">Country<br>Rank</th>
                                     <?php
