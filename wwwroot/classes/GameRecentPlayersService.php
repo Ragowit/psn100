@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameRecentPlayer.php';
+
 class GameRecentPlayersService
 {
     public const RECENT_PLAYERS_LIMIT = 10;
@@ -86,7 +88,7 @@ class GameRecentPlayersService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return GameRecentPlayer[]
      */
     public function getRecentPlayers(string $npCommunicationId, GamePlayerFilter $filter): array
     {
@@ -134,14 +136,10 @@ class GameRecentPlayersService
             return [];
         }
 
-        foreach ($rows as &$row) {
-            if (isset($row['account_id'])) {
-                $row['account_id'] = (string) $row['account_id'];
-            }
-        }
-        unset($row);
-
-        return $rows;
+        return array_map(
+            static fn(array $row): GameRecentPlayer => GameRecentPlayer::fromArray($row),
+            $rows
+        );
     }
 
     private function buildFilterSql(GamePlayerFilter $filter): string
