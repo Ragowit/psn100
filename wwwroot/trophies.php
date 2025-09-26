@@ -5,10 +5,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/TrophyListFilter.php';
 require_once __DIR__ . '/classes/TrophyListPage.php';
 require_once __DIR__ . '/classes/TrophyListService.php';
+require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 
 $trophyListFilter = TrophyListFilter::fromArray($_GET ?? []);
 $trophyListService = new TrophyListService($database);
 $trophyListPage = new TrophyListPage($trophyListService, $trophyListFilter);
+$trophyRarityFormatter = new TrophyRarityFormatter();
 
 $title = "Trophies ~ PSN 100%";
 require_once('header.php');
@@ -86,17 +88,8 @@ require_once('header.php');
                                     </td>
                                     <td class="text-center align-middle">
                                         <?php
-                                        if ($trophy['rarity_percent'] <= 0.02) {
-                                            echo "<span class='trophy-legendary'>" . $trophy['rarity_percent'] . "%<br>Legendary</span>";
-                                        } elseif ($trophy['rarity_percent'] <= 0.2) {
-                                            echo "<span class='trophy-epic'>" . $trophy['rarity_percent'] . "%<br>Epic</span>";
-                                        } elseif ($trophy['rarity_percent'] <= 2) {
-                                            echo "<span class='trophy-rare'>" . $trophy['rarity_percent'] . "%<br>Rare</span>";
-                                        } elseif ($trophy['rarity_percent'] <= 10) {
-                                            echo "<span class='trophy-uncommon'>" . $trophy['rarity_percent'] . "%<br>Uncommon</span>";
-                                        } else {
-                                            echo "<span class='trophy-common'>" . $trophy['rarity_percent'] . "%<br>Common</span>";
-                                        }
+                                        $trophyRarity = $trophyRarityFormatter->format($trophy['rarity_percent']);
+                                        echo $trophyRarity->renderSpan();
                                         ?>
                                     </td>
                                     <td class="text-center align-middle">

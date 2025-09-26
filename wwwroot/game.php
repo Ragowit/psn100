@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/GamePage.php';
+require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -36,6 +37,7 @@ $accountId = $gamePage->getPlayerAccountId();
 $gamePlayer = $gamePage->getGamePlayer();
 $metaData = $gamePage->createMetaData();
 $title = $gamePage->getPageTitle();
+$trophyRarityFormatter = new TrophyRarityFormatter();
 require_once("header.php");
 ?>
 
@@ -288,18 +290,12 @@ require_once("header.php");
 
                                         <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
                                             <?php
-                                            if ($trophy["status"] == 1) {
-                                                echo "<span>". $trophy["rarity_percent"] ."%<br>Unobtainable</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 0.02) {
-                                                echo "<span class='trophy-legendary'>". $trophy["rarity_percent"] ."%<br>Legendary</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 0.2) {
-                                                echo "<span class='trophy-epic'>". $trophy["rarity_percent"] ."%<br>Epic</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 2) {
-                                                echo "<span class='trophy-rare'>". $trophy["rarity_percent"] ."%<br>Rare</span>";
-                                            } elseif ($trophy["rarity_percent"] <= 10) {
-                                                echo "<span class='trophy-uncommon'>". $trophy["rarity_percent"] ."%<br>Uncommon</span>";
+                                            $trophyRarity = $trophyRarityFormatter->format($trophy["rarity_percent"], (int) $trophy["status"]);
+
+                                            if ($trophyRarity->isUnobtainable()) {
+                                                echo $trophyRarity->renderSpan('<br>', true);
                                             } else {
-                                                echo "<span class='trophy-common'>". $trophy["rarity_percent"] ."%<br>Common</span>";
+                                                echo $trophyRarity->renderSpan();
                                             }
                                             ?>
                                         </td>
