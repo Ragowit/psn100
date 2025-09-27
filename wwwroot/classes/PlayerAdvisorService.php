@@ -80,7 +80,7 @@ class PlayerAdvisorService
                 t.np_communication_id = te.np_communication_id
                 AND t.order_id = te.order_id
                 AND te.account_id = :account_id
-                AND te.earned = 0
+                AND (te.earned = 0 OR te.earned IS NULL)
             JOIN trophy_title_player ttp ON
                 t.np_communication_id = ttp.np_communication_id
                 AND ttp.account_id = :account_id
