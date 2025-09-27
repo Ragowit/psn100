@@ -1,10 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/classes/GameHeaderService.php';
-require_once __DIR__ . '/classes/GamePlayerFilter.php';
-require_once __DIR__ . '/classes/GameRecentPlayersService.php';
-require_once __DIR__ . '/classes/GameRecentPlayer.php';
+require_once __DIR__ . '/classes/GameRecentPlayersPage.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -12,35 +9,34 @@ if (!isset($gameId)) {
 }
 
 $gameRecentPlayersService = new GameRecentPlayersService($database);
+$gameHeaderService = new GameHeaderService($database);
 
-$game = $gameRecentPlayersService->getGame((int) $gameId);
-
-if ($game === null) {
+try {
+    $gameRecentPlayersPage = GameRecentPlayersPage::create(
+        $gameRecentPlayersService,
+        $gameHeaderService,
+        (int) $gameId,
+        isset($player) ? (string) $player : null,
+        $_GET ?? []
+    );
+} catch (GameNotFoundException $exception) {
     header("Location: /game/", true, 303);
+    die();
+} catch (GameLeaderboardPlayerNotFoundException $exception) {
+    $slug = $utility->slugify($exception->getGameName());
+    header("Location: /game/" . $exception->getGameId() . "-" . $slug, true, 303);
     die();
 }
 
-$gameHeaderService = new GameHeaderService($database);
-$gameHeaderData = $gameHeaderService->buildHeaderData($game);
+$game = $gameRecentPlayersPage->getGame();
+$gameHeaderData = $gameRecentPlayersPage->getGameHeaderData();
+$filter = $gameRecentPlayersPage->getFilter();
+$recentPlayers = $gameRecentPlayersPage->getRecentPlayers();
+$accountId = $gameRecentPlayersPage->getPlayerAccountId();
+$gamePlayer = $gameRecentPlayersPage->getGamePlayer();
+$gameSlug = $gameRecentPlayersPage->getGameSlug($utility);
 
-$accountId = null;
-if (isset($player)) {
-    $accountId = $gameRecentPlayersService->getPlayerAccountId($player);
-
-    if ($accountId === null) {
-        header("Location: /game/" . $game["id"] . "-" . $utility->slugify($game["name"]), true, 303);
-        die();
-    }
-
-    $gamePlayer = $gameRecentPlayersService->getGamePlayer($game["np_communication_id"], $accountId);
-}
-
-$filter = GamePlayerFilter::fromArray($_GET ?? []);
-$recentPlayers = $gameRecentPlayersService->getRecentPlayers($game["np_communication_id"], $filter);
-
-$gameSlug = $game["id"] . "-" . $utility->slugify($game["name"]);
-
-$title = $game["name"] ." Recent Players ~ PSN 100%";
+$title = $gameRecentPlayersPage->getPageTitle();
 require_once("header.php");
 
 ?>
