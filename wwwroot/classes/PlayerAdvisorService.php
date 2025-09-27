@@ -29,14 +29,17 @@ class PlayerAdvisorService
             SELECT COUNT(*)
             FROM trophy t
             JOIN trophy_title tt USING (np_communication_id)
-            LEFT JOIN trophy_earned te ON
-                t.np_communication_id = te.np_communication_id
-                AND t.order_id = te.order_id
-                AND te.account_id = :account_id
             JOIN trophy_title_player ttp ON
                 t.np_communication_id = ttp.np_communication_id
                 AND ttp.account_id = :account_id
-            WHERE (te.earned IS NULL OR te.earned = 0)
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM trophy_earned te
+                WHERE te.np_communication_id = t.np_communication_id
+                    AND te.order_id = t.order_id
+                    AND te.account_id = :account_id
+                    AND te.earned = 1
+            )
                 AND tt.status = 0
                 AND t.status = 0
         SQL;
@@ -77,10 +80,18 @@ class PlayerAdvisorService
                 t.np_communication_id = te.np_communication_id
                 AND t.order_id = te.order_id
                 AND te.account_id = :account_id
+                AND te.earned = 0
             JOIN trophy_title_player ttp ON
                 t.np_communication_id = ttp.np_communication_id
                 AND ttp.account_id = :account_id
-            WHERE (te.earned IS NULL OR te.earned = 0)
+            WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM trophy_earned te_earned
+                    WHERE te_earned.np_communication_id = t.np_communication_id
+                        AND te_earned.order_id = t.order_id
+                        AND te_earned.account_id = :account_id
+                        AND te_earned.earned = 1
+                )
                 AND tt.status = 0
                 AND t.status = 0
         SQL;
