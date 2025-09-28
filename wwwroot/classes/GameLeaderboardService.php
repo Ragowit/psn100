@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameLeaderboardRow.php';
+
 class GameLeaderboardService
 {
     public const PAGE_SIZE = 50;
@@ -89,7 +91,7 @@ class GameLeaderboardService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return GameLeaderboardRow[]
      */
     public function getLeaderboardRows(string $npCommunicationId, GameLeaderboardFilter $filter, int $limit): array
     {
@@ -143,14 +145,10 @@ class GameLeaderboardService
             return [];
         }
 
-        foreach ($rows as &$row) {
-            if (isset($row['account_id'])) {
-                $row['account_id'] = (string) $row['account_id'];
-            }
-        }
-        unset($row);
-
-        return $rows;
+        return array_map(
+            static fn(array $row): GameLeaderboardRow => GameLeaderboardRow::fromArray($row),
+            $rows
+        );
     }
 
     private function buildFilterSql(GamePlayerFilter $filter): string
