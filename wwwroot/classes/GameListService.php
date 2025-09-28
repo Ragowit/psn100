@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameListItem.php';
+
 class GameListService
 {
     private const PAGE_LIMIT = 40;
@@ -73,7 +75,7 @@ class GameListService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return GameListItem[]
      */
     public function getGames(GameListFilter $filter): array
     {
@@ -86,7 +88,14 @@ class GameListService
 
         $games = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        return is_array($games) ? $games : [];
+        if (!is_array($games)) {
+            return [];
+        }
+
+        return array_map(
+            static fn(array $row): GameListItem => GameListItem::fromArray($row),
+            $games
+        );
     }
 
     private function bindCommonParameters(PDOStatement $statement, GameListFilter $filter): void
