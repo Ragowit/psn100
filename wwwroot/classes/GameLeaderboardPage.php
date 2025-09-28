@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GamePlayerFilter.php';
 require_once __DIR__ . '/GameLeaderboardFilter.php';
+require_once __DIR__ . '/GameLeaderboardRow.php';
 require_once __DIR__ . '/GameLeaderboardService.php';
 require_once __DIR__ . '/GameHeaderService.php';
 require_once __DIR__ . '/GameNotFoundException.php';
@@ -29,7 +30,7 @@ class GameLeaderboardPage
     private int $totalPagesCount;
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var GameLeaderboardRow[]
      */
     private array $rows;
 
@@ -37,7 +38,7 @@ class GameLeaderboardPage
 
     /**
      * @param array<string, mixed> $game
-     * @param array<int, array<string, mixed>> $rows
+     * @param GameLeaderboardRow[] $rows
      */
     private function __construct(
         array $game,
@@ -159,7 +160,7 @@ class GameLeaderboardPage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return GameLeaderboardRow[]
      */
     public function getRows(): array
     {
