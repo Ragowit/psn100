@@ -1,22 +1,12 @@
 <?php
 declare(strict_types=1);
 
-require_once 'classes/ChangelogEntry.php';
-require_once 'classes/ChangelogEntryPresenter.php';
-require_once 'classes/ChangelogPaginator.php';
-require_once 'classes/ChangelogService.php';
+require_once 'classes/ChangelogPage.php';
 
-$title = "Changelog ~ PSN 100%";
+$changelogPage = ChangelogPage::create($database, $utility, $_GET ?? []);
+$dateGroups = $changelogPage->getDateGroups();
 
-$changelogService = new ChangelogService($database);
-$requestedPage = isset($_GET['page']) && is_numeric((string) $_GET['page']) ? (int) $_GET['page'] : 1;
-$totalChanges = $changelogService->getTotalChangeCount();
-$paginator = new ChangelogPaginator($requestedPage, $totalChanges, ChangelogService::PAGE_SIZE);
-$changes = $changelogService->getChanges($paginator);
-$presenters = array_map(
-    static fn(ChangelogEntry $change): ChangelogEntryPresenter => new ChangelogEntryPresenter($change, $utility),
-    $changes
-);
+$title = $changelogPage->getTitle();
 
 require_once("header.php");
 ?>
@@ -30,51 +20,40 @@ require_once("header.php");
 
     <div class="bg-body-tertiary p-3 rounded">
         <div class="row">
-            <?php
-            $currentDate = '';
-            /** @var ChangelogEntryPresenter $presenter */
-            foreach ($presenters as $presenter) {
-                $changeDate = $presenter->getDateLabel();
+            <?php foreach ($dateGroups as $dateGroup) { ?>
+                <div class="col-12">
+                    <h2><?= $dateGroup->getDateLabel(); ?></h2>
+                </div>
 
-                if ($currentDate !== $changeDate) {
-                    ?>
-                    <div class="col-12">
-                        <h2><?= $changeDate; ?></h2>
+                <?php foreach ($dateGroup->getEntries() as $presenter) { ?>
+                    <div class="col-1">
+                        <?= $presenter->getTimeLabel(); ?>
                     </div>
-                    <?php
-                    $currentDate = $changeDate;
-                }
-
-                ?>
-                <div class="col-1">
-                    <?= $presenter->getTimeLabel(); ?>
-                </div>
-                <div class="col-11">
-                    <?= $presenter->getMessage(); ?>
-                </div>
-                <?php
-            }
-            ?>
+                    <div class="col-11">
+                        <?= $presenter->getMessage(); ?>
+                    </div>
+                <?php } ?>
+            <?php } ?>
         </div>
     </div>
 
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= $paginator->getRangeStart(); ?>-<?= $paginator->getRangeEnd(); ?> of <?= number_format($paginator->getTotalCount()); ?>
+                <?= $changelogPage->getRangeStart(); ?>-<?= $changelogPage->getRangeEnd(); ?> of <?= number_format($changelogPage->getTotalCount()); ?>
             </p>
         </div>
         <div class="col-12">
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
                     <?php
-                    $currentPage = $paginator->getCurrentPage();
-                    $totalPages = $paginator->getTotalPages();
-                    $lastPageNumber = $paginator->getLastPageNumber();
+                    $currentPage = $changelogPage->getCurrentPage();
+                    $totalPages = $changelogPage->getTotalPages();
+                    $lastPageNumber = $changelogPage->getLastPageNumber();
 
-                    if ($paginator->hasPreviousPage()) {
+                    if ($changelogPage->hasPreviousPage()) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $paginator->getPreviousPage(); ?>">Prev</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $changelogPage->getPreviousPage(); ?>">Prev</a></li>
                         <?php
                     }
 
@@ -126,7 +105,7 @@ require_once("header.php");
 
                     if ($currentPage < $totalPages) {
                         ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $paginator->getNextPage(); ?>">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="?page=<?= $changelogPage->getNextPage(); ?>">Next</a></li>
                         <?php
                     }
                     ?>
