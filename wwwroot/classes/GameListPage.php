@@ -20,7 +20,7 @@ class GameListPage
     private int $totalPages;
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var GameListItem[]
      */
     private array $games;
 
@@ -49,7 +49,7 @@ class GameListPage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return GameListItem[]
      */
     public function getGames(): array
     {
