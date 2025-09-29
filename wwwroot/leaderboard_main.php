@@ -8,7 +8,6 @@ require_once("header.php");
 $playerLeaderboardPage = $trophyLeaderboardPageContext->getLeaderboardPage();
 $rows = $trophyLeaderboardPageContext->getRows();
 $filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
-$pageParameters = $trophyLeaderboardPageContext->getCurrentPageQueryParameters();
 ?>
 
 <main class="container">
@@ -109,63 +108,12 @@ $pageParameters = $trophyLeaderboardPageContext->getCurrentPageQueryParameters()
             </p>
         </div>
         <div class="col-12">
-            <nav aria-label="Leaderboard page navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    if ($playerLeaderboardPage->hasPreviousPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getPreviousPage())); ?>">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($playerLeaderboardPage->shouldShowFirstPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getFirstPage())); ?>"><?= $playerLeaderboardPage->getFirstPage(); ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerLeaderboardPage->shouldShowLeadingEllipsis()) {
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    foreach ($playerLeaderboardPage->getPreviousPages() as $previousPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($pageParameters); ?>"><?= $playerLeaderboardPage->getCurrentPage(); ?></a></li>
-
-                    <?php
-                    foreach ($playerLeaderboardPage->getNextPages() as $nextPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerLeaderboardPage->shouldShowTrailingEllipsis()) {
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($playerLeaderboardPage->shouldShowLastPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getLastPage())); ?>"><?= $playerLeaderboardPage->getLastPage(); ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerLeaderboardPage->hasNextPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerLeaderboardPage->getPageQueryParameters($playerLeaderboardPage->getNextPage())); ?>">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
+            <?php renderPagination(
+                $playerLeaderboardPage->getCurrentPage(),
+                $playerLeaderboardPage->getLastPage(),
+                static fn (int $pageNumber): array => $playerLeaderboardPage->getPageQueryParameters($pageNumber),
+                'Leaderboard page navigation'
+            ); ?>
         </div>
     </div>
 </main>

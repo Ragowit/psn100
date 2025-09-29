@@ -234,87 +234,15 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <nav aria-label="Player log navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    $baseParameters = $filterParameters;
-
-                    if ($page > 1) {
-                        $previousParameters = $baseParameters;
-                        $previousParameters['page'] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($previousParameters); ?>" aria-label="Previous">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($page > 3) {
-                        $firstPageParameters = $baseParameters;
-                        $firstPageParameters['page'] = 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($firstPageParameters); ?>">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($page-2 > 0) {
-                        $twoBeforeParameters = $baseParameters;
-                        $twoBeforeParameters['page'] = $page - 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoBeforeParameters); ?>"><?= $page-2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page-1 > 0) {
-                        $oneBeforeParameters = $baseParameters;
-                        $oneBeforeParameters['page'] = $page - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneBeforeParameters); ?>"><?= $page-1; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <?php
-                    $currentParameters = $baseParameters;
-                    $currentParameters['page'] = $page;
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($currentParameters); ?>"><?= $page; ?></a></li>
-
-                    <?php
-                    if ($page + 1 <= $totalPages) {
-                        $oneAfterParameters = $baseParameters;
-                        $oneAfterParameters['page'] = $page + 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneAfterParameters); ?>"><?= $page+1; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page + 2 <= $totalPages) {
-                        $twoAfterParameters = $baseParameters;
-                        $twoAfterParameters['page'] = $page + 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoAfterParameters); ?>"><?= $page+2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $totalPages - 2) {
-                        $lastPageParameters = $baseParameters;
-                        $lastPageParameters['page'] = $totalPages;
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($lastPageParameters); ?>"><?= $totalPages; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $totalPages) {
-                        $nextParameters = $baseParameters;
-                        $nextParameters['page'] = $page + 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($nextParameters); ?>" aria-label="Next">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
+            <?php renderPagination(
+                $page,
+                $totalPages,
+                static fn (int $pageNumber): array => array_merge(
+                    $filterParameters,
+                    ['page' => (string) $pageNumber]
+                ),
+                'Player log navigation'
+            ); ?>
         </div>
     </div>
 </main>
