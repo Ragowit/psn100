@@ -158,76 +158,12 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <nav aria-label="Game Leaderboard page navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    if ($page > 1) {
-                        $previousParams = $filter->withPage($page - 1);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($previousParams); ?>" aria-label="Previous">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($page > 3) {
-                        $firstPageParams = $filter->withPage(1);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($firstPageParams); ?>">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($page-2 > 0) {
-                        $twoBackParams = $filter->withPage($page - 2);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoBackParams); ?>"><?= $page-2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page-1 > 0) {
-                        $oneBackParams = $filter->withPage($page - 1);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneBackParams); ?>"><?= $page-1; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <?php
-                    $currentPageParams = $filter->withPage($page);
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($currentPageParams); ?>"><?= $page; ?></a></li>
-
-                    <?php
-                    if ($page + 1 <= $totalPagesCount) {
-                        $oneAheadParams = $filter->withPage($page + 1);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($oneAheadParams); ?>"><?= $page+1; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page + 2 <= $totalPagesCount) {
-                        $twoAheadParams = $filter->withPage($page + 2);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($twoAheadParams); ?>"><?= $page+2; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $totalPagesCount - 2) {
-                        $lastPageParams = $filter->withPage($totalPagesCount);
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($lastPageParams); ?>"><?= $totalPagesCount; ?></a></li>
-                        <?php
-                    }
-
-                    if ($page < $totalPagesCount) {
-                        $nextParams = $filter->withPage($page + 1);
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($nextParams); ?>" aria-label="Next">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
+            <?php renderPagination(
+                $page,
+                $totalPagesCount,
+                static fn (int $pageNumber): array => $filter->withPage($pageNumber),
+                'Game Leaderboard page navigation'
+            ); ?>
         </div>
     </div>
 </main>

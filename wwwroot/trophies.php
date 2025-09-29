@@ -113,63 +113,12 @@ require_once('header.php');
             </p>
         </div>
         <div class="col-12">
-            <nav aria-label="Trophies page navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    if ($trophyListPage->hasPreviousPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($trophyListPage->getPreviousPage())); ?>">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($trophyListPage->shouldShowFirstPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($trophyListPage->getFirstPage())); ?>"><?= $trophyListPage->getFirstPage(); ?></a></li>
-                        <?php
-
-                        if ($trophyListPage->shouldShowLeadingEllipsis()) {
-                            ?>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                            <?php
-                        }
-                    }
-
-                    foreach ($trophyListPage->getPreviousPages() as $previousPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($trophyListPage->getCurrentPage())); ?>"><?= $trophyListPage->getCurrentPage(); ?></a></li>
-
-                    <?php
-                    foreach ($trophyListPage->getNextPages() as $nextPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
-                        <?php
-                    }
-
-                    if ($trophyListPage->shouldShowTrailingEllipsis()) {
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($trophyListPage->shouldShowLastPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($trophyListPage->getLastPage())); ?>"><?= $trophyListPage->getLastPage(); ?></a></li>
-                        <?php
-                    }
-
-                    if ($trophyListPage->hasNextPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($trophyListPage->getPageQueryParameters($trophyListPage->getNextPage())); ?>">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
+            <?php renderPagination(
+                $trophyListPage->getCurrentPage(),
+                $trophyListPage->getLastPage(),
+                static fn (int $pageNumber): array => $trophyListPage->getPageQueryParameters($pageNumber),
+                'Trophies page navigation'
+            ); ?>
         </div>
     </div>
 </main>

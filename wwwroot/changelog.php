@@ -44,73 +44,12 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    $currentPage = $changelogPage->getCurrentPage();
-                    $totalPages = $changelogPage->getTotalPages();
-                    $lastPageNumber = $changelogPage->getLastPageNumber();
-
-                    if ($changelogPage->hasPreviousPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $changelogPage->getPreviousPage(); ?>">Prev</a></li>
-                        <?php
-                    }
-
-                    if ($currentPage > 3) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                        <?php
-                    }
-
-                    if ($currentPage - 2 > 0) {
-                        $pageNumber = $currentPage - 2;
-                        if ($pageNumber >= 1) {
-                            ?>
-                            <li class="page-item"><a class="page-link" href="?page=<?= $pageNumber; ?>"><?= $pageNumber; ?></a></li>
-                            <?php
-                        }
-                    }
-
-                    if ($currentPage - 1 > 0) {
-                        $pageNumber = $currentPage - 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $pageNumber; ?>"><?= $pageNumber; ?></a></li>
-                        <?php
-                    }
-                    ?>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?page=<?= $currentPage; ?>"><?= $currentPage; ?></a></li>
-                    <?php
-                    if ($currentPage + 1 <= $lastPageNumber) {
-                        $pageNumber = $currentPage + 1;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $pageNumber; ?>"><?= $pageNumber; ?></a></li>
-                        <?php
-                    }
-
-                    if ($currentPage + 2 <= $lastPageNumber) {
-                        $pageNumber = $currentPage + 2;
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $pageNumber; ?>"><?= $pageNumber; ?></a></li>
-                        <?php
-                    }
-
-                    if ($totalPages > 0 && $currentPage < $totalPages - 2) {
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">~</a></li>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $totalPages; ?>"><?= $totalPages; ?></a></li>
-                        <?php
-                    }
-
-                    if ($currentPage < $totalPages) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?page=<?= $changelogPage->getNextPage(); ?>">Next</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
+            <?php renderPagination(
+                $changelogPage->getCurrentPage(),
+                $changelogPage->getLastPageNumber(),
+                static fn (int $pageNumber): array => ['page' => (string) $pageNumber],
+                'Changelog page navigation'
+            ); ?>
         </div>
     </div>
 </main>

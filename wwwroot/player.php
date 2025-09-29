@@ -308,62 +308,12 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <nav aria-label="Player games navigation">
-                <ul class="pagination justify-content-center">
-                    <?php
-                    if ($playerGamesPage->hasPreviousPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getPreviousPage())); ?>" aria-label="Previous">&lt;</a></li>
-                        <?php
-                    }
-
-                    if ($playerGamesPage->shouldShowFirstPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getFirstPage())); ?>">1</a></li>
-                        <?php
-                        if ($playerGamesPage->shouldShowLeadingEllipsis()) {
-                            ?>
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                            <?php
-                        }
-                    }
-
-                    foreach ($playerGamesPage->getPreviousPages() as $previousPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($previousPage)); ?>"><?= $previousPage; ?></a></li>
-                        <?php
-                    }
-                    ?>
-
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getCurrentPage())); ?>"><?= $playerGamesPage->getCurrentPage(); ?></a></li>
-
-                    <?php
-                    foreach ($playerGamesPage->getNextPages() as $nextPage) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($nextPage)); ?>"><?= $nextPage; ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerGamesPage->shouldShowTrailingEllipsis()) {
-                        ?>
-                        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a></li>
-                        <?php
-                    }
-
-                    if ($playerGamesPage->shouldShowLastPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getLastPage())); ?>"><?= $playerGamesPage->getLastPage(); ?></a></li>
-                        <?php
-                    }
-
-                    if ($playerGamesPage->hasNextPage()) {
-                        ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query($playerGamesPage->getPageQueryParameters($playerGamesPage->getNextPage())); ?>" aria-label="Next">&gt;</a></li>
-                        <?php
-                    }
-                    ?>
-                </ul>
-            </nav>
+            <?php renderPagination(
+                $playerGamesPage->getCurrentPage(),
+                $playerGamesPage->getLastPage(),
+                static fn (int $pageNumber): array => $playerGamesPage->getPageQueryParameters($pageNumber),
+                'Player games navigation'
+            ); ?>
         </div>
     </div>
 </main>
