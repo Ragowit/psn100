@@ -1,4 +1,13 @@
-<?php require_once __DIR__ . '/classes/PageMetaData.php'; ?>
+<?php
+require_once __DIR__ . '/classes/PageMetaData.php';
+require_once __DIR__ . '/classes/PageMetaDataRenderer.php';
+
+$metaTagHtml = '';
+if (isset($metaData) && $metaData instanceof PageMetaData) {
+    $renderer = new PageMetaDataRenderer();
+    $metaTagHtml = $renderer->render($metaData);
+}
+?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
     <head>
@@ -10,24 +19,7 @@
         <meta name="description" content="Check your leaderboard position against other PlayStation trophy hunters!">
         <meta name="author" content="Markus 'Ragowit' Persson, and other contributors via GitHub project">
 
-        <?php
-        if (isset($metaData) && $metaData instanceof PageMetaData && !$metaData->isEmpty()) {
-            $canonicalUrl = htmlspecialchars($metaData->getUrl() ?? '', ENT_QUOTES, 'UTF-8');
-            $description = htmlspecialchars($metaData->getDescription() ?? '', ENT_QUOTES, 'UTF-8');
-            $image = htmlspecialchars($metaData->getImage() ?? '', ENT_QUOTES, 'UTF-8');
-            $titleMeta = htmlspecialchars($metaData->getTitle() ?? '', ENT_QUOTES, 'UTF-8');
-
-            echo "<link rel=\"canonical\" href=\"" . $canonicalUrl . "\" />";
-            echo "<meta property=\"og:description\" content=\"" . $description . "\">";
-            echo "<meta property=\"og:image\" content=\"" . $image . "\">";
-            echo "<meta property=\"og:site_name\" content=\"PSN 100%\">";
-            echo "<meta property=\"og:title\" content=\"" . $titleMeta . "\">";
-            echo "<meta property=\"og:type\" content=\"article\">";
-            echo "<meta property=\"og:url\" content=\"" . $canonicalUrl . "\">";
-            echo "<meta name=\"twitter:card\" content=\"summary_large_image\">";
-            echo "<meta name=\"twitter:image:alt\" content=\"" . $titleMeta . "\">";
-        }
-        ?>
+        <?= $metaTagHtml; ?>
 
         <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
