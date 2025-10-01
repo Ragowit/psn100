@@ -83,6 +83,12 @@ class PlayerGamesFilter
 
         $filter->completed = !empty($parameters['completed']);
         $filter->uncompleted = !empty($parameters['uncompleted']);
+
+        if ($filter->completed && $filter->uncompleted) {
+            // Selecting both checkboxes should behave like no completion filter at all.
+            $filter->completed = false;
+            $filter->uncompleted = false;
+        }
         $filter->base = !empty($parameters['base']);
 
         foreach (self::PLATFORM_KEYS as $platformKey) {
