@@ -113,7 +113,7 @@ require_once('header.php');
             </p>
         </div>
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $trophyListPage->getCurrentPage(),
                 $trophyListPage->getLastPage(),
                 static fn (int $pageNumber): array => $trophyListPage->getPageQueryParameters($pageNumber),

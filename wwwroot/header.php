@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/classes/PageMetaData.php';
 require_once __DIR__ . '/classes/PageMetaDataRenderer.php';
-require_once __DIR__ . '/pagination.php';
 
 $metaTagHtml = '';
 if (isset($metaData) && $metaData instanceof PageMetaData) {

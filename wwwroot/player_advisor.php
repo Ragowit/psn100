@@ -234,7 +234,7 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $page,
                 $totalPages,
                 static fn (int $pageNumber): array => array_merge(

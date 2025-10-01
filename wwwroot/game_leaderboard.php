@@ -158,7 +158,7 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $page,
                 $totalPagesCount,
                 static fn (int $pageNumber): array => $filter->withPage($pageNumber),
