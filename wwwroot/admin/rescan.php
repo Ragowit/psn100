@@ -186,7 +186,18 @@ require_once("../init.php");
                         }
 
                         if (payload.type === 'progress') {
-                            const progressValue = typeof payload.progress === 'number' ? payload.progress : 0;
+                            let progressValue = 0;
+
+                            if (typeof payload.progress === 'number' && Number.isFinite(payload.progress)) {
+                                progressValue = payload.progress;
+                            } else if (typeof payload.progress === 'string') {
+                                const parsedProgress = Number(payload.progress.trim());
+
+                                if (Number.isFinite(parsedProgress)) {
+                                    progressValue = parsedProgress;
+                                }
+                            }
+
                             this.updateProgress(progressValue, payload.message ?? null);
 
                             return;
@@ -283,10 +294,13 @@ require_once("../init.php");
                         return;
                     }
 
-                    const clampedValue = Math.min(100, Math.max(0, Math.round(value)));
+                    const numericValue = Number.isFinite(value) ? value : Number(value);
+                    const clampedValue = Math.min(100, Math.max(0, typeof numericValue === 'number' && Number.isFinite(numericValue) ? numericValue : 0));
+                    const displayValue = Math.round(clampedValue);
+
                     this.progressBar.style.width = `${clampedValue}%`;
-                    this.progressBar.setAttribute('aria-valuenow', String(clampedValue));
-                    this.progressBar.textContent = `${clampedValue}%`;
+                    this.progressBar.setAttribute('aria-valuenow', String(displayValue));
+                    this.progressBar.textContent = `${displayValue}%`;
 
                     if (message !== null && this.progressMessage) {
                         this.progressMessage.textContent = message;

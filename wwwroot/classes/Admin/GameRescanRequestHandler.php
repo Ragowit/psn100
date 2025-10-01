@@ -105,6 +105,11 @@ class GameRescanRequestHandler
     {
         echo json_encode($payload, JSON_UNESCAPED_UNICODE), "\n";
 
+        // Ensure enough data is flushed to the client for intermediaries that buffer
+        // small chunks (for example, when using FastCGI). The extra whitespace is
+        // ignored by the client, but it helps deliver each progress update promptly.
+        echo str_repeat(' ', 2048), "\n";
+
         if (function_exists('ob_flush')) {
             @ob_flush();
         }
