@@ -215,7 +215,7 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $gameListPage->getCurrentPage(),
                 $gameListPage->getLastPage(),
                 static fn (int $pageNumber): array => $gameListPage->getPageQueryParameters($pageNumber),

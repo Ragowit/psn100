@@ -44,7 +44,7 @@ require_once("header.php");
             </p>
         </div>
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $changelogPage->getCurrentPage(),
                 $changelogPage->getLastPageNumber(),
                 static fn (int $pageNumber): array => ['page' => (string) $pageNumber],

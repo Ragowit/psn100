@@ -125,7 +125,7 @@ $rows = array_map(
             </p>
         </div>
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $playerLeaderboardPage->getCurrentPage(),
                 $playerLeaderboardPage->getLastPage(),
                 static fn (int $pageNumber): array => $playerLeaderboardPage->getPageQueryParameters($pageNumber),

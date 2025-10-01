@@ -35,7 +35,7 @@ require_once("header.php");
 
     <div class="row">
         <div class="col-12">
-            <?php renderPagination(
+            <?= $paginationRenderer->render(
                 $avatarPage->getCurrentPage(),
                 $avatarPage->getLastPage(),
                 static fn (int $pageNumber): array => ['page' => (string) $pageNumber],

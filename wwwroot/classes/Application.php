@@ -58,7 +58,7 @@ class Application
                 // The included templates expect global variables like $database and $utility
                 // to be available, just as they were when index.php handled the routing in
                 // the global scope. Make them available here before including the template.
-                global $database, $utility;
+                global $database, $utility, $paginationRenderer;
                 require_once $include;
             }
         }
