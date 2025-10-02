@@ -1,14 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/RouteResult.php';
+require_once __DIR__ . '/GameRepository.php';
+require_once __DIR__ . '/TrophyRepository.php';
+require_once __DIR__ . '/PlayerRepository.php';
 
 class Router
 {
-    private \PDO $database;
+    private GameRepository $gameRepository;
 
-    public function __construct(\PDO $database)
-    {
-        $this->database = $database;
+    private TrophyRepository $trophyRepository;
+
+    private PlayerRepository $playerRepository;
+
+    public function __construct(
+        GameRepository $gameRepository,
+        TrophyRepository $trophyRepository,
+        PlayerRepository $playerRepository
+    ) {
+        $this->gameRepository = $gameRepository;
+        $this->trophyRepository = $trophyRepository;
+        $this->playerRepository = $playerRepository;
     }
 
     public function dispatch(string $requestUri): RouteResult
@@ -65,7 +79,7 @@ class Router
         }
 
         $gameSegment = array_shift($segments);
-        $gameId = $this->findGameId($gameSegment);
+        $gameId = $this->gameRepository->findIdFromSegment($gameSegment);
 
         if ($gameId === null) {
             return RouteResult::redirect('/game/');
@@ -86,7 +100,7 @@ class Router
         }
 
         $gameSegment = array_shift($segments);
-        $gameId = $this->findGameId($gameSegment);
+        $gameId = $this->gameRepository->findIdFromSegment($gameSegment);
 
         if ($gameId === null) {
             return RouteResult::redirect('/game/');
@@ -107,7 +121,7 @@ class Router
         }
 
         $gameSegment = array_shift($segments);
-        $gameId = $this->findGameId($gameSegment);
+        $gameId = $this->gameRepository->findIdFromSegment($gameSegment);
 
         if ($gameId === null) {
             return RouteResult::redirect('/game/');
@@ -147,13 +161,13 @@ class Router
         }
 
         $onlineId = array_shift($segments);
-        $accountId = $this->findAccountId($onlineId);
+        $accountId = $this->playerRepository->findAccountIdByOnlineId($onlineId);
 
         if ($accountId === null) {
             return RouteResult::redirect('/player/');
         }
 
-        $player = $this->fetchPlayer($accountId);
+        $player = $this->playerRepository->fetchPlayerByAccountId($accountId);
 
         if (!is_array($player) || $player === []) {
             return RouteResult::redirect('/player/');
@@ -190,7 +204,7 @@ class Router
         }
 
         $trophySegment = array_shift($segments);
-        $trophyId = $this->findTrophyId($trophySegment);
+        $trophyId = $this->trophyRepository->findIdFromSegment($trophySegment);
 
         if ($trophyId === null) {
             return RouteResult::redirect('/trophy/');
@@ -220,89 +234,4 @@ class Router
         return !isset($segments[0]) || $segments[0] === '';
     }
 
-    private function findGameId(?string $segment): ?int
-    {
-        if ($segment === null || $segment === '') {
-            return null;
-        }
-
-        $parts = explode('-', $segment);
-        $id = (int) $parts[0];
-
-        if ($id <= 0) {
-            return null;
-        }
-
-        $query = $this->database->prepare('SELECT id FROM trophy_title WHERE id = :id');
-        $query->bindValue(':id', $id, \PDO::PARAM_INT);
-        $query->execute();
-        $result = $query->fetchColumn();
-
-        if ($result === false) {
-            return null;
-        }
-
-        return (int) $result;
-    }
-
-    private function findTrophyId(?string $segment): ?int
-    {
-        if ($segment === null || $segment === '') {
-            return null;
-        }
-
-        $parts = explode('-', $segment);
-        $id = (int) $parts[0];
-
-        if ($id <= 0) {
-            return null;
-        }
-
-        $query = $this->database->prepare('SELECT id FROM trophy WHERE id = :id');
-        $query->bindValue(':id', $id, \PDO::PARAM_INT);
-        $query->execute();
-        $result = $query->fetchColumn();
-
-        if ($result === false) {
-            return null;
-        }
-
-        return (int) $result;
-    }
-
-    private function findAccountId(string $onlineId): ?int
-    {
-        $query = $this->database->prepare('SELECT account_id FROM player WHERE online_id = :online_id');
-        $query->bindValue(':online_id', $onlineId, \PDO::PARAM_STR);
-        $query->execute();
-        $accountId = $query->fetchColumn();
-
-        if ($accountId === false) {
-            return null;
-        }
-
-        return (int) $accountId;
-    }
-
-    private function fetchPlayer(int $accountId): ?array
-    {
-        $query = $this->database->prepare('
-            SELECT
-                p.*,
-                r.ranking,
-                r.rarity_ranking,
-                r.ranking_country,
-                r.rarity_ranking_country
-            FROM
-                player p
-            LEFT JOIN player_ranking r ON p.account_id = r.account_id
-            WHERE
-                p.account_id = :account_id
-        ');
-        $query->bindValue(':account_id', $accountId, \PDO::PARAM_INT);
-        $query->execute();
-        $player = $query->fetch();
-
-        return is_array($player) ? $player : null;
-    }
 }
