@@ -3,6 +3,8 @@ require_once __DIR__ . '/classes/PlayerHeaderViewModel.php';
 
 $playerHeaderViewModel = new PlayerHeaderViewModel($player, $playerSummary, $utility);
 $alerts = $playerHeaderViewModel->getAlerts();
+$trophyLeaderboardRanks = $playerHeaderViewModel->getTrophyLeaderboardRanks();
+$rarityLeaderboardRanks = $playerHeaderViewModel->getRarityLeaderboardRanks();
 ?>
 
 <div class="row">
@@ -133,74 +135,39 @@ $alerts = $playerHeaderViewModel->getAlerts();
                     </div>
 
                     <div class="hstack gap-3">
-                        <div class="w-50">
-                            World Rank<br>
-                            <?php
-                            // World Rank
-                            if ($player["status"] == 0) {
-                                ?>
-                                <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?page=<?= ceil($player["ranking"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["ranking"]; ?></a>
-                                    <?php
-                                    if ($player["rank_last_week"] == 0 || $player["rank_last_week"] == 16777215) {
-                                        echo "<span class='fs-6'>(New!)</span>";
-                                    } else {
-                                        $delta = $player["rank_last_week"] - $player["ranking"];
+                        <?php foreach ($trophyLeaderboardRanks as $index => $rank) { ?>
+                            <?php if ($index > 0) { ?>
+                                <div class="vr"></div>
+                            <?php } ?>
 
-                                        if ($delta < 0) {
-                                            echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
-                                        } elseif ($delta > 0) {
-                                            echo "<span class='fs-6' style='color: #0bd413;'>(+". $delta .")</span>";
-                                        } else {
-                                            echo "<span class='fs-6' style='color: #0070d1;'>(=)</span>";
-                                        }
-                                    }
-                                    ?>
-                                </h3>
-                                <?php
-                            } else {
-                                ?>
-                                <h3>N/A</h3>
-                                <?php
-                            }
-                            ?>
-                        </div>
-
-                        <div class="vr">
-                        </div>
-
-                        <div class="w-50">
-                            Country Rank<br>
-                            <?php
-                            // Country Rank
-                            if ($player["status"] == 0) {
-                                ?>
-                                <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/trophy?country=<?= $player["country"]; ?>&page=<?= ceil($player["ranking_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["ranking_country"]; ?></a>
-                                    <?php
-                                    if ($player["rank_country_last_week"] == 0 || $player["rank_country_last_week"] == 16777215) {
-                                        echo "<span class='fs-6'>(New!)</span>";
-                                    } else {
-                                        $delta = $player["rank_country_last_week"] - $player["ranking_country"];
-
-                                        if ($delta < 0) {
-                                            echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
-                                        } elseif ($delta > 0) {
-                                            echo "<span class='fs-6' style='color: #0bd413;'>(+". $delta .")</span>";
-                                        } else {
-                                            echo "<span class='fs-6' style='color: #0070d1;'>(=)</span>";
-                                        }
-                                    }
-                                    ?>
-                                </h3>
-                                <?php
-                            } else {
-                                ?>
-                                <h3>N/A</h3>
-                                <?php
-                            }
-                            ?>
-                        </div>
+                            <div class="w-50">
+                                <?= htmlspecialchars($rank->getLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                                <?php if ($rank->isAvailable()) { ?>
+                                    <h3>
+                                        <?php $rankUrl = $rank->getUrl(); ?>
+                                        <?php if ($rankUrl !== null) { ?>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($rankUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= $rank->getRank(); ?></a>
+                                        <?php } else { ?>
+                                            <?= $rank->getRank(); ?>
+                                        <?php } ?>
+                                        <?php $change = $rank->getChange(); ?>
+                                        <?php if ($change !== null && $change->shouldDisplay()) { ?>
+                                            <?php $displayText = $change->getDisplayText(); ?>
+                                            <?php if ($change->isNew()) { ?>
+                                                <span class="fs-6"><?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <?php } else { ?>
+                                                <?php $color = $change->getColor(); ?>
+                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;"<?php } ?>>
+                                                    <?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?>
+                                                </span>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </h3>
+                                <?php } else { ?>
+                                    <h3>N/A</h3>
+                                <?php } ?>
+                            </div>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -251,74 +218,39 @@ $alerts = $playerHeaderViewModel->getAlerts();
                     </div>
 
                     <div class="hstack gap-3">
-                        <div class="w-50">
-                            World Rank<br>
-                            <?php
-                            // World Rank
-                            if ($player["status"] == 0) {
-                                ?>
-                                <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/rarity?page=<?= ceil($player["rarity_ranking"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_ranking"]; ?></a>
-                                    <?php
-                                    if ($player["rarity_rank_last_week"] == 0 || $player["rarity_rank_last_week"] == 16777215) {
-                                        echo "<span class='fs-6'>(New!)</span>";
-                                    } else {
-                                        $delta = $player["rarity_rank_last_week"] - $player["rarity_ranking"];
+                        <?php foreach ($rarityLeaderboardRanks as $index => $rank) { ?>
+                            <?php if ($index > 0) { ?>
+                                <div class="vr"></div>
+                            <?php } ?>
 
-                                        if ($delta < 0) {
-                                            echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
-                                        } elseif ($delta > 0) {
-                                            echo "<span class='fs-6' style='color: #0bd413;'>(+". $delta .")</span>";
-                                        } else {
-                                            echo "<span class='fs-6' style='color: #0070d1;'>(=)</span>";
-                                        }    
-                                    }
-                                    ?>
-                                </h3>
-                                <?php
-                            } else {
-                                ?>
-                                <h3>N/A</h3>
-                                <?php
-                            }
-                            ?>
-                        </div>
-
-                        <div class="vr">
-                        </div>
-
-                        <div class="w-50">
-                            Country Rank<br>
-                            <?php
-                            // Country Rank
-                            if ($player["status"] == 0) {
-                                ?>
-                                <h3>
-                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/leaderboard/rarity?country=<?= $player["country"]; ?>&page=<?= ceil($player["rarity_ranking_country"] / 50); ?>&player=<?= $player["online_id"]; ?>#<?= $player["online_id"]; ?>"><?= $player["rarity_ranking_country"]; ?></a>
-                                    <?php
-                                    if ($player["rarity_rank_country_last_week"] == 0 || $player["rarity_rank_country_last_week"] == 16777215) {
-                                        echo "<span class='fs-6'>(New!)</span>";
-                                    } else {
-                                        $delta = $player["rarity_rank_country_last_week"] - $player["rarity_ranking_country"];
-
-                                        if ($delta < 0) {
-                                            echo "<span class='fs-6' style='color: #d40b0b;'>(". $delta .")</span>";
-                                        } elseif ($delta > 0) {
-                                            echo "<span class='fs-6' style='color: #0bd413;'>(+". $delta .")</span>";
-                                        } else {
-                                            echo "<span class='fs-6' style='color: #0070d1;'>(=)</span>";
-                                        }
-                                    }
-                                    ?>
-                                </h3>
-                                <?php
-                            } else {
-                                ?>
-                                <h3>N/A</h3>
-                                <?php
-                            }
-                            ?>
-                        </div>
+                            <div class="w-50">
+                                <?= htmlspecialchars($rank->getLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                                <?php if ($rank->isAvailable()) { ?>
+                                    <h3>
+                                        <?php $rankUrl = $rank->getUrl(); ?>
+                                        <?php if ($rankUrl !== null) { ?>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($rankUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= $rank->getRank(); ?></a>
+                                        <?php } else { ?>
+                                            <?= $rank->getRank(); ?>
+                                        <?php } ?>
+                                        <?php $change = $rank->getChange(); ?>
+                                        <?php if ($change !== null && $change->shouldDisplay()) { ?>
+                                            <?php $displayText = $change->getDisplayText(); ?>
+                                            <?php if ($change->isNew()) { ?>
+                                                <span class="fs-6"><?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <?php } else { ?>
+                                                <?php $color = $change->getColor(); ?>
+                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;"<?php } ?>>
+                                                    <?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?>
+                                                </span>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </h3>
+                                <?php } else { ?>
+                                    <h3>N/A</h3>
+                                <?php } ?>
+                            </div>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
