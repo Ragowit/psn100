@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/Utility.php';
+require_once __DIR__ . '/PlayerLeaderboardRank.php';
+require_once __DIR__ . '/PlayerLeaderboardRankChange.php';
 
 class PlayerHeaderViewModel
 {
@@ -123,6 +125,54 @@ class PlayerHeaderViewModel
         return $alerts;
     }
 
+    /**
+     * @return PlayerLeaderboardRank[]
+     */
+    public function getTrophyLeaderboardRanks(): array
+    {
+        return [
+            PlayerLeaderboardRank::createWorldRank(
+                '/leaderboard/trophy',
+                $this->getOnlineId(),
+                (int) ($this->player['ranking'] ?? 0),
+                (int) ($this->player['rank_last_week'] ?? 0),
+                $this->isLeaderboardRankAvailable()
+            ),
+            PlayerLeaderboardRank::createCountryRank(
+                '/leaderboard/trophy',
+                $this->getOnlineId(),
+                $this->getCountryCode(),
+                (int) ($this->player['ranking_country'] ?? 0),
+                (int) ($this->player['rank_country_last_week'] ?? 0),
+                $this->isLeaderboardRankAvailable()
+            ),
+        ];
+    }
+
+    /**
+     * @return PlayerLeaderboardRank[]
+     */
+    public function getRarityLeaderboardRanks(): array
+    {
+        return [
+            PlayerLeaderboardRank::createWorldRank(
+                '/leaderboard/rarity',
+                $this->getOnlineId(),
+                (int) ($this->player['rarity_ranking'] ?? 0),
+                (int) ($this->player['rarity_rank_last_week'] ?? 0),
+                $this->isLeaderboardRankAvailable()
+            ),
+            PlayerLeaderboardRank::createCountryRank(
+                '/leaderboard/rarity',
+                $this->getOnlineId(),
+                $this->getCountryCode(),
+                (int) ($this->player['rarity_ranking_country'] ?? 0),
+                (int) ($this->player['rarity_rank_country_last_week'] ?? 0),
+                $this->isLeaderboardRankAvailable()
+            ),
+        ];
+    }
+
     public function hasLastUpdatedDate(): bool
     {
         $lastUpdated = $this->player['last_updated_date'] ?? null;
@@ -179,6 +229,11 @@ class PlayerHeaderViewModel
     private function isUnranked(): bool
     {
         return (int) ($this->player['ranking'] ?? 0) > 10000;
+    }
+
+    private function isLeaderboardRankAvailable(): bool
+    {
+        return (int) ($this->player['status'] ?? 0) === 0;
     }
 }
 
