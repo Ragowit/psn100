@@ -30,7 +30,9 @@ class PlayerHeaderViewModel
     {
         $aboutMe = (string) ($this->player['about_me'] ?? '');
 
-        return nl2br(htmlentities($aboutMe, ENT_QUOTES, 'UTF-8'));
+        $escapedAboutMe = htmlentities($aboutMe, ENT_QUOTES, 'UTF-8');
+
+        return str_replace(["\r\n", "\r", "\n"], '&#10;', $escapedAboutMe);
     }
 
     public function getCountryName(): string
