@@ -1,8 +1,8 @@
 <?php
-require_once("database.php");
-require_once("classes/Utility.php");
-require_once("classes/PaginationRenderer.php");
+require_once __DIR__ . '/classes/ApplicationContainer.php';
 
-$database = new Database();
-$utility = new Utility();
-$paginationRenderer = new PaginationRenderer();
+$applicationContainer = ApplicationContainer::create();
+
+$database = $applicationContainer->getDatabase();
+$utility = $applicationContainer->getUtility();
+$paginationRenderer = $applicationContainer->getPaginationRenderer();
