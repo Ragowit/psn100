@@ -13,7 +13,7 @@ class TrophyListPage
     private ChangelogPaginator $paginator;
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var TrophyListItem[]
      */
     private array $trophies;
 
@@ -35,7 +35,7 @@ class TrophyListPage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return TrophyListItem[]
      */
     public function getTrophies(): array
     {
