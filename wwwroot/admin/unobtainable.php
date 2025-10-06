@@ -8,42 +8,18 @@ set_time_limit(0);
 
 require_once("../init.php");
 require_once("../classes/Admin/TrophyStatusService.php");
+require_once("../classes/Admin/TrophyStatusPage.php");
 
 $trophyStatusService = new TrophyStatusService($database);
+$trophyStatusPage = new TrophyStatusPage($trophyStatusService);
 
-$trophyInput = "";
-$statusInput = "1";
-$success = null;
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$postData = $_POST ?? [];
+$queryData = $_GET ?? [];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST["trophy"]) || isset($_POST["game"]))) {
-    $status = isset($_POST["status"]) ? (int) $_POST["status"] : 1;
-    $statusInput = (string) $status;
-
-    try {
-        if (!empty($_POST["game"])) {
-            if (!ctype_digit((string) $_POST["game"])) {
-                throw new InvalidArgumentException('Game ID must be numeric.');
-            }
-
-            $gameId = (int) $_POST["game"];
-            $trophyIds = $trophyStatusService->getTrophyIdsForGame($gameId);
-            $trophyInput = implode(',', array_map('strval', $trophyIds));
-        } else {
-            $trophyInput = (string) ($_POST["trophy"] ?? '');
-            $trophyIds = $trophyStatusService->parseTrophyIds($trophyInput);
-        }
-
-        $result = $trophyStatusService->updateTrophies($trophyIds, $status);
-        $success = $result->toHtml();
-    } catch (Throwable $exception) {
-        $success = '<p>' . htmlspecialchars($exception->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
-    }
-} elseif (isset($_GET["trophy"])) {
-    $trophyInput = (string) $_GET["trophy"];
-    if (isset($_GET["status"])) {
-        $statusInput = (string) $_GET["status"];
-    }
-}
+$pageResult = $trophyStatusPage->handleRequest($requestMethod, $postData, $queryData);
+$trophyInput = $pageResult->getTrophyInput();
+$statusInput = $pageResult->getStatusInput();
 
 ?>
 <!doctype html>
@@ -73,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST["trophy"]) || isset($
             </form>
 
             <?php
-            if ($success !== null) {
-                echo $success;
+            if ($pageResult->hasMessage()) {
+                echo $pageResult->getMessage();
             }
             ?>
         </div>
