@@ -5,16 +5,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/GamePlayerFilter.php';
 require_once __DIR__ . '/GameRecentPlayersService.php';
 require_once __DIR__ . '/GameHeaderService.php';
+require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 require_once __DIR__ . '/Utility.php';
 
 class GameRecentPlayersPage
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private array $game;
+    private GameDetails $game;
 
     private GameHeaderData $gameHeaderData;
 
@@ -33,12 +31,11 @@ class GameRecentPlayersPage
     private ?array $gamePlayer;
 
     /**
-     * @param array<string, mixed> $game
      * @param GameRecentPlayer[] $recentPlayers
      * @param array<string, mixed>|null $gamePlayer
      */
     private function __construct(
-        array $game,
+        GameDetails $game,
         GameHeaderData $gameHeaderData,
         GamePlayerFilter $filter,
         array $recentPlayers,
@@ -79,20 +76,20 @@ class GameRecentPlayersPage
             $playerAccountId = $recentPlayersService->getPlayerAccountId($player);
 
             if ($playerAccountId === null) {
-                $gameIdValue = (int) ($game['id'] ?? 0);
-                $gameName = (string) ($game['name'] ?? '');
+                $gameIdValue = $game->getId();
+                $gameName = $game->getName();
 
                 throw new GameLeaderboardPlayerNotFoundException($gameIdValue, $gameName);
             }
 
             $gamePlayer = $recentPlayersService->getGamePlayer(
-                (string) $game['np_communication_id'],
+                $game->getNpCommunicationId(),
                 $playerAccountId
             );
         }
 
         $recentPlayers = $recentPlayersService->getRecentPlayers(
-            (string) $game['np_communication_id'],
+            $game->getNpCommunicationId(),
             $filter
         );
 
@@ -108,10 +105,7 @@ class GameRecentPlayersPage
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function getGame(): array
+    public function getGame(): GameDetails
     {
         return $this->game;
     }
@@ -149,16 +143,11 @@ class GameRecentPlayersPage
 
     public function getGameSlug(Utility $utility): string
     {
-        $gameId = (int) ($this->game['id'] ?? 0);
-        $gameName = (string) ($this->game['name'] ?? '');
-
-        return $gameId . '-' . $utility->slugify($gameName);
+        return $this->game->getId() . '-' . $utility->slugify($this->game->getName());
     }
 
     public function getPageTitle(): string
     {
-        $gameName = (string) ($this->game['name'] ?? '');
-
-        return $gameName . ' Recent Players ~ PSN 100%';
+        return $this->game->getName() . ' Recent Players ~ PSN 100%';
     }
 }

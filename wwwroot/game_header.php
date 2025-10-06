@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+/** @var GameDetails $game */
 /** @var GameHeaderData $gameHeaderData */
 ?>
 <div class="row">
@@ -33,11 +34,11 @@ declare(strict_types=1);
         <?php
     }
 
-    if (!empty($game['message'])) {
+    if ($game->hasMessage()) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                <?= $game['message']; ?>
+                <?= $game->getMessage(); ?>
             </div>
         </div>
         <?php
@@ -48,14 +49,23 @@ declare(strict_types=1);
 <div class="bg-body-tertiary p-3 rounded mb-3">
     <div class="row">
         <div class="col-12 col-lg-2">
-            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= ($game['icon_url'] == '.png') ? ((str_contains($game['platform'], 'PS5') || str_contains($game['platform'], 'PSVR2')) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $game['icon_url']; ?>" alt="<?= htmlentities($game['name']); ?>">
+            <?php
+            $gameIconUrl = $game->getIconUrl();
+            $gamePlatform = $game->getPlatform();
+            $iconPath = ($gameIconUrl === '.png')
+                ? ((str_contains($gamePlatform, 'PS5') || str_contains($gamePlatform, 'PSVR2'))
+                    ? '../missing-ps5-game-and-trophy.png'
+                    : '../missing-ps4-game.png')
+                : $gameIconUrl;
+            ?>
+            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= $iconPath; ?>" alt="<?= htmlentities($game->getName()); ?>">
         </div>
 
         <div class="col-12 col-lg-6">
             <div class="vstack gap-3">
                 <div class="hstack">
                     <div>
-                        <h1><?= htmlentities($game['name']); ?></h1>
+                        <h1><?= htmlentities($game->getName()); ?></h1>
                     </div>
 
                     <?php
@@ -102,14 +112,15 @@ declare(strict_types=1);
 
                 <div>
                     <?php
-                    foreach (explode(',', $game['platform']) as $platform) {
+                    foreach (explode(',', $gamePlatform) as $platform) {
                         echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . $platform . "</span> ";
                     }
                     ?>
                 </div>
 
                 <div>
-                    Version: <?= $game['set_version']; ?><?= (is_null($game['region']) ? '' : " <span class=\"badge rounded-pill text-bg-primary\">" . $game['region'] . '</span>') ?>
+                    <?php $region = $game->getRegion(); ?>
+                    Version: <?= $game->getSetVersion(); ?><?= ($region === null ? '' : " <span class=\"badge rounded-pill text-bg-primary\">" . $region . '</span>') ?>
                 </div>
 
                 <div>
@@ -130,11 +141,11 @@ declare(strict_types=1);
                     <?php
                     if (isset($gamePlayer)) {
                         ?>
-                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $gamePlayer['platinum'] ?? '0'; ?>/<?= $game['platinum']; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $gamePlayer['gold'] ?? '0'; ?>/<?= $game['gold']; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $gamePlayer['silver'] ?? '0'; ?>/<?= $game['silver']; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $gamePlayer['bronze'] ?? '0'; ?>/<?= $game['bronze']; ?></span>
+                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $gamePlayer['platinum'] ?? '0'; ?>/<?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $gamePlayer['gold'] ?? '0'; ?>/<?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $gamePlayer['silver'] ?? '0'; ?>/<?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $gamePlayer['bronze'] ?? '0'; ?>/<?= $game->getBronze(); ?></span>
                         <?php
                     } else {
                         ?>
-                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game['platinum']; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game['gold']; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game['silver']; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game['bronze']; ?></span>
+                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game->getBronze(); ?></span>
                         <?php
                     }
                     ?>
@@ -153,18 +164,19 @@ declare(strict_types=1);
                 ?>
 
                 <div>
-                    <?= number_format($game['owners_completed']); ?> of <?= number_format($game['owners']); ?> players (<?= $game['difficulty']; ?>%) have 100% this game.
+                    <?= number_format($game->getOwnersCompleted()); ?> of <?= number_format($game->getOwners()); ?> players (<?= $game->getDifficulty(); ?>%) have 100% this game.
                 </div>
 
                 <div>
                     <?php
-                    if ($game['status'] == 0) {
-                        echo number_format($game['rarity_points']) . ' Rarity Points';
-                    } elseif ($game['status'] == 1) {
+                    $status = $game->getStatus();
+                    if ($status === 0) {
+                        echo number_format($game->getRarityPoints()) . ' Rarity Points';
+                    } elseif ($status === 1) {
                         echo "<span class='badge rounded-pill text-bg-warning' title='This game is delisted, no trophies will be accounted for on any leaderboard.'>Delisted</span>";
-                    } elseif ($game['status'] == 3) {
+                    } elseif ($status === 3) {
                         echo "<span class='badge rounded-pill text-bg-warning' title='This game is obsolete, no trophies will be accounted for on any leaderboard.'>Obsolete</span>";
-                    } elseif ($game['status'] == 4) {
+                    } elseif ($status === 4) {
                         echo "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
                     }
 

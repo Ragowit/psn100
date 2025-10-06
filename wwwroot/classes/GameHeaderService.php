@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
 require_once __DIR__ . '/Game/GameHeaderStack.php';
@@ -15,17 +16,14 @@ class GameHeaderService
         $this->database = $database;
     }
 
-    /**
-     * @param array<string, mixed> $game
-     */
-    public function buildHeaderData(array $game): GameHeaderData
+    public function buildHeaderData(GameDetails $game): GameHeaderData
     {
-        $status = (int) ($game['status'] ?? 0);
-        $npCommunicationId = (string) ($game['np_communication_id'] ?? '');
-        $parentNpCommunicationId = $game['parent_np_communication_id'] ?? null;
+        $status = $game->getStatus();
+        $npCommunicationId = $game->getNpCommunicationId();
+        $parentNpCommunicationId = $game->getParentNpCommunicationId();
 
         $parentGame = null;
-        if ($status === 2 && is_string($parentNpCommunicationId) && $parentNpCommunicationId !== '') {
+        if ($status === 2 && $parentNpCommunicationId !== null && $parentNpCommunicationId !== '') {
             $parentGame = $this->fetchParentGame($parentNpCommunicationId);
         }
 
