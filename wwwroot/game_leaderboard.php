@@ -39,7 +39,7 @@ $totalPagesCount = $gameLeaderboardPage->getTotalPagesCount();
 $rows = $gameLeaderboardPage->getRows();
 $accountId = $gameLeaderboardPage->getPlayerAccountId();
 
-$title = $game["name"] ." Leaderboard ~ PSN 100%";
+$title = $game->getName() . " Leaderboard ~ PSN 100%";
 require_once("header.php");
 ?>
 
@@ -55,9 +55,9 @@ require_once("header.php");
 
             <div class="col-6 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
-                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
+                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
                 </div>
             </div>
 
@@ -88,7 +88,7 @@ require_once("header.php");
                                 $paramsAvatar = $row->getAvatarQueryParameters($filter);
                                 $paramsCountry = $row->getCountryQueryParameters($filter);
                                 $playerName = $row->getOnlineId();
-                                $playerUrl = '/game/' . $game["id"] . '-' . $utility->slugify($game["name"]) . '/' . rawurlencode($playerName);
+                                $playerUrl = '/game/' . $game->getId() . '-' . $utility->slugify($game->getName()) . '/' . rawurlencode($playerName);
                                 ?>
                                 <tr<?= $row->matchesAccountId($accountId) ? " class='table-primary'" : ""; ?>>
                                     <th class="align-middle" style="width: 2rem;" scope="row"><?= ++$rank; ?></th>

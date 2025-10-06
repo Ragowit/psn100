@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Game/GameDetails.php';
+
 class GameService
 {
     private PDO $database;
@@ -11,7 +13,7 @@ class GameService
         $this->database = $database;
     }
 
-    public function getGame(int $gameId): ?array
+    public function getGame(int $gameId): ?GameDetails
     {
         $query = $this->database->prepare(
             <<<'SQL'
@@ -28,7 +30,11 @@ class GameService
 
         $game = $query->fetch(PDO::FETCH_ASSOC);
 
-        return is_array($game) ? $game : null;
+        if (!is_array($game)) {
+            return null;
+        }
+
+        return GameDetails::fromArray($game);
     }
 
     /**

@@ -53,9 +53,9 @@ require_once("header.php");
 
             <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-primary active" href="/game/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game["id"] ."-". $utility->slugify($game["name"]); ?><?= (isset($player) ? "/".$player : "") ?>">Recent Players</a>
+                    <a class="btn btn-primary active" href="/game/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
                 </div>
             </div>
 
@@ -122,7 +122,7 @@ require_once("header.php");
                                     <th scope="col" colspan="4" class="bg-dark-subtle">
                                         <div class="hstack gap-3">
                                             <div>
-                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= htmlentities($trophyGroup["name"]); ?>">
+                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game->getPlatform(), "PS5") || str_contains($game->getPlatform(), "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= htmlentities($trophyGroup["name"]); ?>">
                                             </div>
                                             
                                             <div>
@@ -207,7 +207,7 @@ require_once("header.php");
                                         ?>
                                         <td style="width: 5rem;">
                                             <div>
-                                                <img class="card-img object-fit-scale" style="height: 5rem;" src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game["platform"], "PS5") || str_contains($game["platform"], "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="<?= htmlentities($trophy["name"]); ?>">
+                                                <img class="card-img object-fit-scale" style="height: 5rem;" src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game->getPlatform(), "PS5") || str_contains($game->getPlatform(), "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="<?= htmlentities($trophy["name"]); ?>">
                                             </div>
                                         </td>
 

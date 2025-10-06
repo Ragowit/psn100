@@ -7,15 +7,13 @@ require_once __DIR__ . '/GameLeaderboardFilter.php';
 require_once __DIR__ . '/GameLeaderboardRow.php';
 require_once __DIR__ . '/GameLeaderboardService.php';
 require_once __DIR__ . '/GameHeaderService.php';
+require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 
 class GameLeaderboardPage
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private array $game;
+    private GameDetails $game;
 
     private GameHeaderData $gameHeaderData;
 
@@ -37,11 +35,10 @@ class GameLeaderboardPage
     private ?string $playerAccountId;
 
     /**
-     * @param array<string, mixed> $game
      * @param GameLeaderboardRow[] $rows
      */
     private function __construct(
-        array $game,
+        GameDetails $game,
         GameHeaderData $gameHeaderData,
         GameLeaderboardFilter $filter,
         int $totalPlayers,
@@ -85,8 +82,8 @@ class GameLeaderboardPage
             $playerAccountId = $leaderboardService->getPlayerAccountId($player);
 
             if ($playerAccountId === null) {
-                $gameIdValue = (int) ($game['id'] ?? 0);
-                $gameName = (string) ($game['name'] ?? '');
+                $gameIdValue = $game->getId();
+                $gameName = $game->getName();
 
                 throw new GameLeaderboardPlayerNotFoundException($gameIdValue, $gameName);
             }
@@ -95,12 +92,13 @@ class GameLeaderboardPage
         $filter = GameLeaderboardFilter::fromArray($queryParameters);
         $limit = GameLeaderboardService::PAGE_SIZE;
         $offset = $filter->getOffset($limit);
+        $npCommunicationId = $game->getNpCommunicationId();
         $totalPlayers = $leaderboardService->getLeaderboardPlayerCount(
-            (string) $game['np_communication_id'],
+            $npCommunicationId,
             $filter
         );
         $rows = $leaderboardService->getLeaderboardRows(
-            (string) $game['np_communication_id'],
+            $npCommunicationId,
             $filter,
             $limit
         );
@@ -121,10 +119,7 @@ class GameLeaderboardPage
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function getGame(): array
+    public function getGame(): GameDetails
     {
         return $this->game;
     }

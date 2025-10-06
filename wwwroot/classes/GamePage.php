@@ -6,6 +6,7 @@ require_once __DIR__ . '/GameService.php';
 require_once __DIR__ . '/GameHeaderService.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
+require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Utility.php';
@@ -18,10 +19,7 @@ class GamePage
 
     private Utility $utility;
 
-    /**
-     * @var array<string, mixed>
-     */
-    private array $game;
+    private GameDetails $game;
 
     private GameHeaderData $headerData;
 
@@ -72,14 +70,11 @@ class GamePage
         $this->sort = $this->gameService->resolveSort($queryParameters);
         $this->playerAccountId = $this->resolvePlayerAccountId();
         $this->gamePlayer = $this->playerAccountId !== null
-            ? $this->gameService->getGamePlayer($this->game['np_communication_id'], $this->playerAccountId)
+            ? $this->gameService->getGamePlayer($this->game->getNpCommunicationId(), $this->playerAccountId)
             : null;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function loadGame(int $gameId): array
+    private function loadGame(int $gameId): GameDetails
     {
         $game = $this->gameService->getGame($gameId);
 
@@ -100,18 +95,15 @@ class GamePage
 
         if ($accountId === null) {
             throw new GameLeaderboardPlayerNotFoundException(
-                (int) $this->game['id'],
-                (string) $this->game['name']
+                $this->game->getId(),
+                $this->game->getName()
             );
         }
 
         return $accountId;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function getGame(): array
+    public function getGame(): GameDetails
     {
         return $this->game;
     }
@@ -145,7 +137,7 @@ class GamePage
     public function getTrophyGroups(): array
     {
         if ($this->trophyGroups === []) {
-            $this->trophyGroups = $this->gameService->getTrophyGroups($this->game['np_communication_id']);
+            $this->trophyGroups = $this->gameService->getTrophyGroups($this->game->getNpCommunicationId());
         }
 
         return $this->trophyGroups;
@@ -162,7 +154,7 @@ class GamePage
 
         if (!array_key_exists($groupId, $this->trophyGroupPlayers)) {
             $this->trophyGroupPlayers[$groupId] = $this->gameService->getTrophyGroupPlayer(
-                $this->game['np_communication_id'],
+                $this->game->getNpCommunicationId(),
                 $groupId,
                 $this->playerAccountId
             );
@@ -178,7 +170,7 @@ class GamePage
     {
         if (!array_key_exists($groupId, $this->trophiesByGroup)) {
             $this->trophiesByGroup[$groupId] = $this->gameService->getTrophies(
-                $this->game['np_communication_id'],
+                $this->game->getNpCommunicationId(),
                 $groupId,
                 $this->playerAccountId,
                 $this->sort
@@ -191,24 +183,24 @@ class GamePage
     public function createMetaData(): PageMetaData
     {
         return (new PageMetaData())
-            ->setTitle($this->game['name'] . ' Trophies')
+            ->setTitle($this->game->getName() . ' Trophies')
             ->setDescription(
-                $this->game['bronze'] . ' Bronze ~ '
-                . $this->game['silver'] . ' Silver ~ '
-                . $this->game['gold'] . ' Gold ~ '
-                . $this->game['platinum'] . ' Platinum'
+                $this->game->getBronze() . ' Bronze ~ '
+                . $this->game->getSilver() . ' Silver ~ '
+                . $this->game->getGold() . ' Gold ~ '
+                . $this->game->getPlatinum() . ' Platinum'
             )
-            ->setImage('https://psn100.net/img/title/' . $this->game['icon_url'])
-            ->setUrl('https://psn100.net/game/' . $this->game['id'] . '-' . $this->getGameSlug());
+            ->setImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
+            ->setUrl('https://psn100.net/game/' . $this->game->getId() . '-' . $this->getGameSlug());
     }
 
     public function getPageTitle(): string
     {
-        return $this->game['name'] . ' Trophies ~ PSN 100%';
+        return $this->game->getName() . ' Trophies ~ PSN 100%';
     }
 
     public function getGameSlug(): string
     {
-        return $this->utility->slugify((string) $this->game['name']);
+        return $this->utility->slugify($this->game->getName());
     }
 }
