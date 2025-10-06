@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyListItem.php';
+
 class TrophyListService
 {
     public const PAGE_SIZE = 50;
@@ -29,7 +31,7 @@ class TrophyListService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return TrophyListItem[]
      */
     public function getTrophies(int $offset, int $limit = self::PAGE_SIZE): array
     {
@@ -65,7 +67,10 @@ class TrophyListService
         /** @var array<int, array<string, mixed>> $trophies */
         $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return $trophies;
+        return array_map(
+            static fn (array $trophy): TrophyListItem => TrophyListItem::fromArray($trophy),
+            $trophies
+        );
     }
 }
 
