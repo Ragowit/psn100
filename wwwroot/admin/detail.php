@@ -4,52 +4,16 @@ declare(strict_types=1);
 require_once '../init.php';
 require_once '../classes/Admin/GameDetail.php';
 require_once '../classes/Admin/GameDetailService.php';
+require_once '../classes/Admin/GameDetailPage.php';
+require_once '../classes/Admin/GameDetailPageResult.php';
 
 $gameDetailService = new GameDetailService($database);
-$gameDetail = null;
-$success = null;
-$error = null;
+$gameDetailPage = new GameDetailPage($gameDetailService);
+$pageResult = $gameDetailPage->handle($_SERVER ?? [], $_GET ?? [], $_POST ?? []);
 
-try {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $gameId = filter_input(INPUT_POST, 'game', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-
-        if ($gameId === null || $gameId === false) {
-            $error = '<p>Invalid game ID provided.</p>';
-        } else {
-            $regionInput = trim((string) ($_POST['region'] ?? ''));
-            $psnprofilesInput = trim((string) ($_POST['psnprofiles_id'] ?? ''));
-
-            $gameDetail = $gameDetailService->updateGameDetail(
-                new GameDetail(
-                    (int) $gameId,
-                    null,
-                    (string) ($_POST['name'] ?? ''),
-                    (string) ($_POST['icon_url'] ?? ''),
-                    (string) ($_POST['platform'] ?? ''),
-                    (string) ($_POST['message'] ?? ''),
-                    (string) ($_POST['set_version'] ?? ''),
-                    $regionInput === '' ? null : $regionInput,
-                    $psnprofilesInput === '' ? null : $psnprofilesInput
-                )
-            );
-
-            $success = sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId());
-        }
-    } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $gameId = filter_input(INPUT_GET, 'game', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-
-        if ($gameId !== null && $gameId !== false) {
-            $gameDetail = $gameDetailService->getGameDetail((int) $gameId);
-
-            if ($gameDetail === null) {
-                $error = '<p>Unable to find the requested game.</p>';
-            }
-        }
-    }
-} catch (Throwable $exception) {
-    $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
-}
+$gameDetail = $pageResult->getGameDetail();
+$success = $pageResult->getSuccessMessage();
+$error = $pageResult->getErrorMessage();
 
 ?>
 <!doctype html>
