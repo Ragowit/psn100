@@ -19,7 +19,7 @@ class PlayerAdvisorPage
     private ?int $totalTrophies = null;
 
     /**
-     * @var array<int, array<string, mixed>>|null
+     * @var PlayerAdvisableTrophy[]|null
      */
     private ?array $advisableTrophies = null;
 
@@ -88,7 +88,7 @@ class PlayerAdvisorPage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return PlayerAdvisableTrophy[]
      */
     public function getAdvisableTrophies(): array
     {
