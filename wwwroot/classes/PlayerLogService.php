@@ -31,6 +31,7 @@ class PlayerLogService
             JOIN trophy_title tt USING (np_communication_id)
             WHERE tt.status != 2
                 AND te.account_id = :account_id
+                AND te.earned = 1
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
