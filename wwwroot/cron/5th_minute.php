@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-ini_set("max_execution_time", "0");
-ini_set("mysql.connect_timeout", "0");
-set_time_limit(0);
+require_once dirname(__DIR__) . '/classes/Cron/CronJobRunner.php';
+
+$cronJobRunner = CronJobRunner::create();
+$cronJobRunner->configureEnvironment();
 
 require_once dirname(__DIR__) . '/init.php';
-require_once dirname(__DIR__) . '/classes/Cron/PlayerRankingUpdater.php';
+require_once dirname(__DIR__) . '/classes/Cron/PlayerRankingCronJob.php';
 
-$updater = new PlayerRankingUpdater($database);
-$updater->recalculate();
+$playerRankingUpdater = new PlayerRankingUpdater($database);
+$playerRankingCronJob = new PlayerRankingCronJob($playerRankingUpdater);
+$cronJobRunner->run($playerRankingCronJob);

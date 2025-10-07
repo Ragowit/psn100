@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-class DailyCronJob
+require_once __DIR__ . '/CronJobInterface.php';
+
+class DailyCronJob implements CronJobInterface
 {
     private PDO $database;
 

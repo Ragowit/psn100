@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-class WeeklyCronJob
+require_once __DIR__ . '/CronJobInterface.php';
+
+class WeeklyCronJob implements CronJobInterface
 {
     private const UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
         UPDATE player p
