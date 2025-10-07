@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/PlayerQueueRequest.php';
+
 class PlayerQueueHandler
 {
     private PlayerQueueService $service;
@@ -9,14 +11,14 @@ class PlayerQueueHandler
         $this->service = $service;
     }
 
-    public function handleAddToQueueRequest(array $requestData, array $serverData): string
+    public function handleAddToQueueRequest(PlayerQueueRequest $request): string
     {
-        $playerName = $this->service->sanitizePlayerName($requestData['q'] ?? '');
-        $ipAddress = $this->service->sanitizeIpAddress($serverData['REMOTE_ADDR'] ?? '');
-
-        if ($playerName === '') {
+        if ($request->isPlayerNameEmpty()) {
             return "PSN name can't be empty.";
         }
+
+        $playerName = $request->getPlayerName();
+        $ipAddress = $request->getIpAddress();
 
         $cheaterAccountId = $this->service->getCheaterAccountId($playerName);
         if ($cheaterAccountId !== null) {
@@ -38,14 +40,14 @@ class PlayerQueueHandler
         return $this->createSpinnerMessage("{$playerLink} is being added to the queue.");
     }
 
-    public function handleQueuePositionRequest(array $requestData, array $serverData): string
+    public function handleQueuePositionRequest(PlayerQueueRequest $request): string
     {
-        $playerName = $this->service->sanitizePlayerName($requestData['q'] ?? '');
-        $ipAddress = $this->service->sanitizeIpAddress($serverData['REMOTE_ADDR'] ?? '');
-
-        if ($playerName === '') {
+        if ($request->isPlayerNameEmpty()) {
             return "PSN name can't be empty.";
         }
+
+        $playerName = $request->getPlayerName();
+        $ipAddress = $request->getIpAddress();
 
         if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
             return $this->createQueueLimitMessage();

@@ -12,16 +12,6 @@ class PlayerQueueService
         $this->database = $database;
     }
 
-    public function sanitizePlayerName(?string $playerName): string
-    {
-        return trim((string) ($playerName ?? ''));
-    }
-
-    public function sanitizeIpAddress(?string $ipAddress): string
-    {
-        return trim((string) ($ipAddress ?? ''));
-    }
-
     public function getIpSubmissionCount(string $ipAddress): int
     {
         if ($ipAddress === '') {
