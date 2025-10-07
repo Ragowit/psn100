@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/PlayerQueueRequest.php';
+require_once __DIR__ . '/PlayerQueueResponse.php';
 
 class PlayerQueueHandler
 {
@@ -11,10 +12,10 @@ class PlayerQueueHandler
         $this->service = $service;
     }
 
-    public function handleAddToQueueRequest(PlayerQueueRequest $request): string
+    public function handleAddToQueueRequest(PlayerQueueRequest $request): PlayerQueueResponse
     {
         if ($request->isPlayerNameEmpty()) {
-            return "PSN name can't be empty.";
+            return PlayerQueueResponse::error("PSN name can't be empty.");
         }
 
         $playerName = $request->getPlayerName();
@@ -22,50 +23,54 @@ class PlayerQueueHandler
 
         $cheaterAccountId = $this->service->getCheaterAccountId($playerName);
         if ($cheaterAccountId !== null) {
-            return $this->createCheaterMessage($playerName, $cheaterAccountId);
+            return PlayerQueueResponse::error($this->createCheaterMessage($playerName, $cheaterAccountId));
         }
 
         if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
-            return $this->createQueueLimitMessage();
+            return PlayerQueueResponse::error($this->createQueueLimitMessage());
         }
 
         if (!$this->service->isValidPlayerName($playerName)) {
-            return "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
+            return PlayerQueueResponse::error(
+                "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_)."
+            );
         }
 
         $this->service->addPlayerToQueue($playerName, $ipAddress);
 
         $playerLink = $this->createPlayerLink($playerName);
 
-        return $this->createSpinnerMessage("{$playerLink} is being added to the queue.");
+        return PlayerQueueResponse::queued($this->createSpinnerMessage("{$playerLink} is being added to the queue."));
     }
 
-    public function handleQueuePositionRequest(PlayerQueueRequest $request): string
+    public function handleQueuePositionRequest(PlayerQueueRequest $request): PlayerQueueResponse
     {
         if ($request->isPlayerNameEmpty()) {
-            return "PSN name can't be empty.";
+            return PlayerQueueResponse::error("PSN name can't be empty.");
         }
 
         $playerName = $request->getPlayerName();
         $ipAddress = $request->getIpAddress();
 
         if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
-            return $this->createQueueLimitMessage();
+            return PlayerQueueResponse::error($this->createQueueLimitMessage());
         }
 
         if (!$this->service->isValidPlayerName($playerName)) {
-            return "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
+            return PlayerQueueResponse::error(
+                "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_)."
+            );
         }
 
         $playerData = $this->service->getPlayerStatusData($playerName);
         if ($this->service->isCheaterStatus($playerData['status'])) {
-            return $this->createCheaterMessage($playerName, $playerData['account_id']);
+            return PlayerQueueResponse::error($this->createCheaterMessage($playerName, $playerData['account_id']));
         }
 
         if ($this->service->isPlayerBeingScanned($playerName)) {
             $playerLink = $this->createPlayerLink($playerName);
 
-            return $this->createSpinnerMessage("{$playerLink} is currently being scanned.");
+            return PlayerQueueResponse::queued($this->createSpinnerMessage("{$playerLink} is currently being scanned."));
         }
 
         $position = $this->service->getQueuePosition($playerName);
@@ -73,12 +78,14 @@ class PlayerQueueHandler
             $playerLink = $this->createPlayerLink($playerName);
             $positionText = $this->service->escapeHtml((string) $position);
 
-            return $this->createSpinnerMessage("{$playerLink} is in the update queue, currently in position {$positionText}.");
+            return PlayerQueueResponse::queued(
+                $this->createSpinnerMessage("{$playerLink} is in the update queue, currently in position {$positionText}.")
+            );
         }
 
         $playerLink = $this->createPlayerLink($playerName);
 
-        return "{$playerLink} has been updated!";
+        return PlayerQueueResponse::complete("{$playerLink} has been updated!");
     }
 
     private function createPlayerLink(string $playerName): string
