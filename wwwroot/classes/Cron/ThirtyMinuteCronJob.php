@@ -543,7 +543,7 @@ class ThirtyMinuteCronJob
                                     icon_url = new.icon_url,
                                     platform = new.platform");
                             $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                            $query->bindValue(":name", $trophyTitle->name(), PDO::PARAM_STR);
+                            $query->bindValue(":name", $this->convertToApaTitleCase($trophyTitle->name()), PDO::PARAM_STR);
                             $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                             $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                             $platforms = "";
@@ -1168,5 +1168,185 @@ class ThirtyMinuteCronJob
                 $query->execute();
             }
         }
+    }
+
+    private function convertToApaTitleCase(string $title): string
+    {
+        $title = trim($title);
+
+        if ($title === '') {
+            return $title;
+        }
+
+        $lowercaseWords = [
+            'a',
+            'an',
+            'the',
+            'and',
+            'but',
+            'or',
+            'nor',
+            'for',
+            'so',
+            'yet',
+            'at',
+            'by',
+            'in',
+            'of',
+            'on',
+            'per',
+            'to',
+            'via',
+            'as',
+            'vs',
+            'vs.',
+            'from',
+            'into',
+            'onto',
+            'upon',
+            'with',
+            'without',
+            'within',
+            'over',
+            'under',
+            'above',
+            'below',
+            'about',
+            'across',
+            'after',
+            'along',
+            'amid',
+            'among',
+            'around',
+            'before',
+            'behind',
+            'beneath',
+            'beside',
+            'besides',
+            'between',
+            'beyond',
+            'despite',
+            'during',
+            'except',
+            'inside',
+            'near',
+            'outside',
+            'past',
+            'since',
+            'through',
+            'throughout',
+            'toward',
+            'towards',
+            'underneath',
+            'until',
+            'up',
+            'down',
+            'off',
+            'out',
+            'because',
+            'than',
+            'that',
+        ];
+
+        $words = preg_split('/\s+/u', $title);
+
+        if ($words === false) {
+            return $title;
+        }
+
+        $wordCount = count($words);
+        $convertedWords = [];
+        $capitalizeNext = false;
+
+        for ($index = 0; $index < $wordCount; $index++) {
+            $word = $words[$index];
+
+            if ($word === '') {
+                $convertedWords[] = '';
+                continue;
+            }
+
+            $leadingPunctuation = '';
+            $trailingPunctuation = '';
+            $coreWord = $word;
+
+            if (preg_match('/^([\\"\'"“‘\(\[{]*)(.*?)([\\"\'"”’\)\]}.,:;!?]*)$/u', $word, $matches) === 1) {
+                $leadingPunctuation = $matches[1];
+                $coreWord = $matches[2];
+                $trailingPunctuation = $matches[3];
+            }
+
+            if ($coreWord === '') {
+                $convertedWords[] = $word;
+                $capitalizeNext = str_contains($word, ':');
+                continue;
+            }
+
+            $isFirstWord = $index === 0;
+            $isLastWord = $index === $wordCount - 1;
+            $forceCapitalize = $capitalizeNext || $isFirstWord || $isLastWord;
+
+            $processedCore = $this->formatTitleWord($coreWord, $forceCapitalize, $lowercaseWords);
+
+            $convertedWords[] = $leadingPunctuation . $processedCore . $trailingPunctuation;
+
+            $capitalizeNext = str_contains($trailingPunctuation, ':');
+        }
+
+        return implode(' ', $convertedWords);
+    }
+
+    private function formatTitleWord(string $word, bool $forceCapitalize, array $lowercaseWords): string
+    {
+        if (str_contains($word, '-')) {
+            $segments = explode('-', $word);
+
+            foreach ($segments as $key => $segment) {
+                $segments[$key] = $this->formatTitleWord($segment, true, $lowercaseWords);
+            }
+
+            return implode('-', $segments);
+        }
+
+        if ($this->shouldPreserveTitleWord($word)) {
+            return $word;
+        }
+
+        $wordLower = mb_strtolower($word, 'UTF-8');
+
+        if (!$forceCapitalize && in_array($wordLower, $lowercaseWords, true)) {
+            return $wordLower;
+        }
+
+        return $this->uppercaseFirstCharacter($wordLower);
+    }
+
+    private function shouldPreserveTitleWord(string $word): bool
+    {
+        if ($word === '') {
+            return true;
+        }
+
+        if (preg_match('/\d/', $word) === 1) {
+            return true;
+        }
+
+        if (str_contains($word, '.')) {
+            return true;
+        }
+
+        if (str_contains($word, '&')) {
+            return true;
+        }
+
+        $lower = mb_strtolower($word, 'UTF-8');
+        $upper = mb_strtoupper($word, 'UTF-8');
+
+        return $word !== $lower && $word !== $upper;
+    }
+
+    private function uppercaseFirstCharacter(string $word): string
+    {
+        return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
     }
 }
