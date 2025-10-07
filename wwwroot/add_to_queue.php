@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 require_once 'init.php';
-require_once 'classes/PlayerQueueService.php';
-require_once 'classes/PlayerQueueHandler.php';
+require_once 'classes/PlayerQueueController.php';
 
-$playerQueueService = new PlayerQueueService($database);
-$playerQueueHandler = new PlayerQueueHandler($playerQueueService);
+$controller = PlayerQueueController::create($database);
 
-echo $playerQueueHandler->handleAddToQueueRequest($_REQUEST, $_SERVER);
+$requestData = $_REQUEST ?? [];
+$serverData = $_SERVER ?? [];
+
+echo $controller->handleAddToQueue($requestData, $serverData);
