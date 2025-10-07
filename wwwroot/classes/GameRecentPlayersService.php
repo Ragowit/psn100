@@ -84,7 +84,9 @@ class GameRecentPlayersService
             SQL
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':account_id', (int) $accountId, PDO::PARAM_INT);
+        // Account IDs are stored as BIGINT UNSIGNED. Bind as string to avoid
+        // truncating larger values when PHP integers overflow.
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
 
         $gamePlayer = $query->fetch(PDO::FETCH_ASSOC);
