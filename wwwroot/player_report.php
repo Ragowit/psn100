@@ -5,6 +5,7 @@ if (!isset($accountId)) {
 }
 
 require_once __DIR__ . '/classes/PlayerReportHandler.php';
+require_once __DIR__ . '/classes/PlayerReportPage.php';
 require_once __DIR__ . '/classes/PlayerReportService.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
@@ -12,17 +13,17 @@ require_once __DIR__ . '/classes/PlayerSummaryService.php';
 $playerReportService = new PlayerReportService($database);
 $playerReportHandler = new PlayerReportHandler($playerReportService);
 $playerSummaryService = new PlayerSummaryService($database);
-$playerSummary = $playerSummaryService->getSummary((int) $accountId);
-
-$queryParameters = $_GET ?? [];
-$explanation = $playerReportHandler->getExplanation($queryParameters);
-$explanationSubmitted = array_key_exists('explanation', $queryParameters);
-$reportResult = $playerReportHandler->handleReportRequest(
+$playerReportPage = new PlayerReportPage(
+    $playerReportHandler,
+    $playerSummaryService,
     (int) $accountId,
-    $explanation,
-    $explanationSubmitted,
+    $_GET ?? [],
     $_SERVER ?? []
 );
+
+$playerSummary = $playerReportPage->getPlayerSummary();
+$explanation = $playerReportPage->getExplanation();
+$reportResult = $playerReportPage->getReportResult();
 
 $title = $player["online_id"] . "'s Report ~ PSN 100%";
 require_once("header.php");
