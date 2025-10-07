@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerAdvisableTrophy.php';
+require_once __DIR__ . '/Utility.php';
+
 class PlayerAdvisorService
 {
     public const PAGE_SIZE = 50;
@@ -18,9 +21,12 @@ class PlayerAdvisorService
 
     private PDO $database;
 
-    public function __construct(PDO $database)
+    private Utility $utility;
+
+    public function __construct(PDO $database, Utility $utility)
     {
         $this->database = $database;
+        $this->utility = $utility;
     }
 
     public function countAdvisableTrophies(int $accountId, PlayerAdvisorFilter $filter): int
@@ -54,7 +60,7 @@ class PlayerAdvisorService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return PlayerAdvisableTrophy[]
      */
     public function getAdvisableTrophies(int $accountId, PlayerAdvisorFilter $filter, int $offset, int $limit = self::PAGE_SIZE): array
     {
@@ -106,10 +112,14 @@ class PlayerAdvisorService
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->execute();
 
-        $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
+        $trophies = [];
 
-        if (!is_array($trophies)) {
-            return [];
+        foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $trophyData) {
+            if (!is_array($trophyData)) {
+                continue;
+            }
+
+            $trophies[] = PlayerAdvisableTrophy::fromArray($trophyData, $this->utility);
         }
 
         return $trophies;
