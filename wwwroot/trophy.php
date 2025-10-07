@@ -1,7 +1,6 @@
 <?php
 
-require_once 'classes/PageMetaData.php';
-require_once 'classes/TrophyService.php';
+require_once 'classes/TrophyPage.php';
 require_once 'classes/TrophyRarityFormatter.php';
 
 if (!isset($trophyId)) {
@@ -11,49 +10,33 @@ if (!isset($trophyId)) {
 
 $trophyService = new TrophyService($database);
 $trophyRarityFormatter = new TrophyRarityFormatter();
-$trophy = $trophyService->getTrophyById((int) $trophyId);
 
-if ($trophy === null) {
+try {
+    $trophyPage = TrophyPage::create(
+        $trophyService,
+        $utility,
+        $trophyRarityFormatter,
+        (int) $trophyId,
+        isset($player) ? (string) $player : null
+    );
+} catch (TrophyNotFoundException) {
     header("Location: /trophy/", true, 303);
+    die();
+} catch (TrophyPlayerNotFoundException $exception) {
+    $slug = $utility->slugify($exception->getTrophyName());
+    header("Location: /trophy/" . $exception->getTrophyId() . '-' . $slug, true, 303);
     die();
 }
 
-$playerTrophy = null;
+$trophy = $trophyPage->getTrophy();
+$playerTrophy = $trophyPage->getPlayerTrophy();
+$firstAchievers = $trophyPage->getFirstAchievers();
+$latestAchievers = $trophyPage->getLatestAchievers();
+$metaData = $trophyPage->getMetaData();
+$title = $trophyPage->getPageTitle();
+$trophyRarity = $trophyPage->getTrophyRarity();
+$playerOnlineId = $trophyPage->getPlayerOnlineId();
 
-if (isset($player)) {
-    $accountId = $trophyService->getPlayerAccountId($player);
-
-    if ($accountId === null) {
-        header("Location: /trophy/". $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]), true, 303);
-        die();
-    }
-
-    $progressTargetValue = $trophy["progress_target_value"] ?? null;
-    if ($progressTargetValue !== null) {
-        $progressTargetValue = (string) $progressTargetValue;
-    }
-
-    $playerTrophy = $trophyService->getPlayerTrophy(
-        $accountId,
-        (string) $trophy["np_communication_id"],
-        (int) $trophy["order_id"],
-        $progressTargetValue
-    );
-}
-
-$npCommunicationId = (string) $trophy["np_communication_id"];
-$orderId = (int) $trophy["order_id"];
-
-$firstAchievers = $trophyService->getFirstAchievers($npCommunicationId, $orderId);
-$latestAchievers = $trophyService->getLatestAchievers($npCommunicationId, $orderId);
-
-$metaData = (new PageMetaData())
-    ->setTitle($trophy["trophy_name"] . ' Trophy')
-    ->setDescription(htmlentities($trophy["trophy_detail"], ENT_QUOTES, 'UTF-8'))
-    ->setImage('https://psn100.net/img/trophy/' . $trophy["trophy_icon"])
-    ->setUrl('https://psn100.net/trophy/' . $trophy["trophy_id"] . '-' . $utility->slugify($trophy["trophy_name"]));
-
-$title = $trophy["trophy_name"] . " Trophy ~ PSN 100%";
 require_once("header.php");
 ?>
 
@@ -134,24 +117,20 @@ require_once("header.php");
                                                         }
                                                         ?>
 
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?><?= (isset($player) ? "/".$player : ""); ?>"><?= htmlentities($trophy["game_name"]); ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?><?= ($playerOnlineId !== null ? '/' . $playerOnlineId : ''); ?>"><?= htmlentities($trophy["game_name"]); ?></a>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div class="col-2 text-center align-self-center">
-                                    <?php
-                                    $trophyRarity = $trophyRarityFormatter->format($trophy["rarity_percent"], (int) $trophy["status"]);
 
-                                    if ($trophyRarity->isUnobtainable()) {
-                                        echo $trophyRarity->getLabel();
-                                    } else {
-                                        echo $trophyRarity->renderSpan();
-                                    }
-                                    ?>
+                                <div class="col-2 text-center align-self-center">
+                                    <?php if ($trophyRarity->isUnobtainable()) { ?>
+                                        <?= $trophyRarity->getLabel(); ?>
+                                    <?php } else { ?>
+                                        <?= $trophyRarity->renderSpan(); ?>
+                                    <?php } ?>
                                 </div>
                                 
                                 <div class="col-2 text-center align-self-center">
@@ -192,7 +171,7 @@ require_once("header.php");
 
                                     foreach ($firstAchievers as $result) {
                                         ?>
-                                        <tr<?= ($result["online_id"] == $player) ? " class='table-primary'" : ""; ?>>
+                                        <tr<?= ($playerOnlineId !== null && $result["online_id"] === $playerOnlineId) ? " class='table-primary'" : ""; ?>>
                                             <th class="align-middle" scope="row">
                                                 <?= ++$count; ?>
                                             </th>
@@ -249,7 +228,7 @@ require_once("header.php");
 
                                     foreach ($latestAchievers as $result) {
                                         ?>
-                                        <tr<?= ($result["online_id"] == $player) ? " class='table-primary'" : ""; ?>>
+                                        <tr<?= ($playerOnlineId !== null && $result["online_id"] === $playerOnlineId) ? " class='table-primary'" : ""; ?>>
                                             <th class="align-middle" scope="row">
                                                 <?= ++$count; ?>
                                             </th>
