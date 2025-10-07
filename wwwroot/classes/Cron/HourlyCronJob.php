@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-class HourlyCronJob
+require_once __DIR__ . '/CronJobInterface.php';
+
+class HourlyCronJob implements CronJobInterface
 {
     private const STATISTICS_UPDATE_QUERY = <<<'SQL'
         WITH game AS (
