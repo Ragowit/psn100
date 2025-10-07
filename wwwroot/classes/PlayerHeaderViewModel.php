@@ -228,7 +228,9 @@ class PlayerHeaderViewModel
 
     private function isUnranked(): bool
     {
-        return (int) ($this->player['ranking'] ?? 0) > 10000;
+        $ranking = (int) ($this->player['ranking'] ?? 0);
+
+        return $ranking === 0 || $ranking > 10000;
     }
 
     private function isLeaderboardRankAvailable(): bool
