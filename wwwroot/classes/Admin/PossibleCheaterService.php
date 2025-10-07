@@ -2,9 +2,22 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PossibleCheaterRuleGroup.php';
+require_once __DIR__ . '/PossibleCheaterSectionDefinition.php';
+
 class PossibleCheaterService
 {
     private PDO $database;
+
+    /**
+     * @var PossibleCheaterRuleGroup[]|null
+     */
+    private ?array $generalRuleGroups = null;
+
+    /**
+     * @var PossibleCheaterSectionDefinition[]|null
+     */
+    private ?array $sectionDefinitions = null;
 
     private const GENERAL_RULE_GROUPS = [
         [
@@ -1045,8 +1058,8 @@ class PossibleCheaterService
     {
         $sections = [];
 
-        foreach (self::SECTION_DEFINITIONS as $definition) {
-            $rows = $this->fetchAll($definition['query']);
+        foreach ($this->getSectionDefinitions() as $definition) {
+            $rows = $this->fetchAll($definition->getQuery());
             $entries = array_map(
                 static function (array $row) use ($definition): array {
                     $onlineId = (string) $row['online_id'];
@@ -1054,14 +1067,14 @@ class PossibleCheaterService
                     return [
                         'account_id' => (int) $row['account_id'],
                         'online_id' => $onlineId,
-                        'url' => sprintf($definition['linkPattern'], rawurlencode($onlineId)),
+                        'url' => $definition->buildLink($onlineId),
                     ];
                 },
                 $rows
             );
 
             $sections[] = [
-                'title' => $definition['title'],
+                'title' => $definition->getTitle(),
                 'entries' => $entries,
             ];
         }
@@ -1073,9 +1086,9 @@ class PossibleCheaterService
     {
         $conditions = [];
 
-        foreach (self::GENERAL_RULE_GROUPS as $group) {
-            foreach ($group['conditions'] as $condition) {
-                $conditions[] = '(' . $condition . ')';
+        foreach ($this->getGeneralRuleGroups() as $group) {
+            foreach ($group->getRules() as $rule) {
+                $conditions[] = '(' . $rule->getCondition() . ')';
             }
         }
 
@@ -1084,6 +1097,36 @@ class PossibleCheaterService
         }
 
         return '(' . implode(' OR ', $conditions) . ')';
+    }
+
+    /**
+     * @return PossibleCheaterRuleGroup[]
+     */
+    private function getGeneralRuleGroups(): array
+    {
+        if ($this->generalRuleGroups === null) {
+            $this->generalRuleGroups = array_map(
+                static fn(array $group): PossibleCheaterRuleGroup => PossibleCheaterRuleGroup::fromArray($group),
+                self::GENERAL_RULE_GROUPS
+            );
+        }
+
+        return $this->generalRuleGroups;
+    }
+
+    /**
+     * @return PossibleCheaterSectionDefinition[]
+     */
+    private function getSectionDefinitions(): array
+    {
+        if ($this->sectionDefinitions === null) {
+            $this->sectionDefinitions = array_map(
+                static fn(array $definition): PossibleCheaterSectionDefinition => PossibleCheaterSectionDefinition::fromArray($definition),
+                self::SECTION_DEFINITIONS
+            );
+        }
+
+        return $this->sectionDefinitions;
     }
 
     /**
