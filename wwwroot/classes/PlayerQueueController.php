@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../database.php';
 require_once __DIR__ . '/PlayerQueueService.php';
+require_once __DIR__ . '/PlayerQueueRequest.php';
 require_once __DIR__ . '/PlayerQueueHandler.php';
 
 class PlayerQueueController
@@ -25,11 +26,15 @@ class PlayerQueueController
 
     public function handleAddToQueue(array $requestData, array $serverData): string
     {
-        return $this->handler->handleAddToQueueRequest($requestData, $serverData);
+        $request = PlayerQueueRequest::fromArrays($requestData, $serverData);
+
+        return $this->handler->handleAddToQueueRequest($request);
     }
 
     public function handleQueuePosition(array $requestData, array $serverData): string
     {
-        return $this->handler->handleQueuePositionRequest($requestData, $serverData);
+        $request = PlayerQueueRequest::fromArrays($requestData, $serverData);
+
+        return $this->handler->handleQueuePositionRequest($request);
     }
 }
