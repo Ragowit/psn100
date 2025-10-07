@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CronJobInterface.php';
+
 use Tustin\PlayStation\Client;
 
-class ThirtyMinuteCronJob
+class ThirtyMinuteCronJob implements CronJobInterface
 {
     private PDO $database;
 
@@ -12,14 +14,17 @@ class ThirtyMinuteCronJob
 
     private Psn100Logger $logger;
 
-    public function __construct(PDO $database, TrophyCalculator $trophyCalculator, Psn100Logger $logger)
+    private int $workerId;
+
+    public function __construct(PDO $database, TrophyCalculator $trophyCalculator, Psn100Logger $logger, int $workerId)
     {
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
         $this->logger = $logger;
+        $this->workerId = $workerId;
     }
 
-    public function run(int $workerId): void
+    public function run(): void
     {
         $recheck = "";
 
@@ -35,7 +40,7 @@ class ThirtyMinuteCronJob
                         setting
                     WHERE
                         id = :id");
-                $query->bindValue(":id", $workerId, PDO::PARAM_INT);
+                $query->bindValue(":id", $this->workerId, PDO::PARAM_INT);
                 $query->execute();
                 $worker = $query->fetch();
 
