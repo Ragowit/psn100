@@ -232,13 +232,13 @@ class PlayerQueueManager {
         const player = this.playerInput.value;
         const url = `add_to_queue.php?q=${encodeURIComponent(player)}`;
 
-        this.sendRequest(url, (responseText) => {
-            this.updateQueueResult(responseText);
+        this.sendRequest(url, (response) => {
+            this.updateQueueResult(response.message);
 
-            if (responseText.startsWith('You have already entered') || responseText.startsWith('PSN name')) {
-                this.stopPolling();
-            } else {
+            if (response.shouldPoll) {
                 this.startPolling(player);
+            } else {
+                this.stopPolling();
             }
         });
     }
@@ -251,10 +251,10 @@ class PlayerQueueManager {
     checkQueuePosition(player) {
         const url = `check_queue_position.php?q=${encodeURIComponent(player)}`;
 
-        this.sendRequest(url, (responseText) => {
-            this.updateQueueResult(responseText);
+        this.sendRequest(url, (response) => {
+            this.updateQueueResult(response.message);
 
-            if (responseText.includes('updated!')) {
+            if (!response.shouldPoll) {
                 this.stopPolling();
             }
         });
@@ -272,8 +272,14 @@ class PlayerQueueManager {
 
         request.onreadystatechange = () => {
             if (request.readyState === XMLHttpRequest.DONE) {
-                if (request.status === 200) {
-                    onSuccess(request.responseText);
+                if (request.status >= 200 && request.status < 300) {
+                    const response = this.parseResponse(request.responseText);
+
+                    if (response !== null) {
+                        onSuccess(response);
+                    } else {
+                        this.handleError();
+                    }
                 } else {
                     this.handleError();
                 }
@@ -283,7 +289,30 @@ class PlayerQueueManager {
         request.onerror = () => this.handleError();
 
         request.open('GET', url, true);
+        request.setRequestHeader('Accept', 'application/json');
         request.send();
+    }
+
+    parseResponse(responseText) {
+        if (!responseText) {
+            return null;
+        }
+
+        try {
+            const data = JSON.parse(responseText);
+
+            if (typeof data !== 'object' || data === null) {
+                return null;
+            }
+
+            const message = typeof data.message === 'string' ? data.message : '';
+            const shouldPoll = typeof data.shouldPoll === 'boolean' ? data.shouldPoll : false;
+            const status = typeof data.status === 'string' ? data.status : 'error';
+
+            return { message, shouldPoll, status };
+        } catch (error) {
+            return null;
+        }
     }
 
     updateQueueResult(message) {

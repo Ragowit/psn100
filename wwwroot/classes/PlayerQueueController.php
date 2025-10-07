@@ -24,14 +24,14 @@ class PlayerQueueController
         return new self($handler);
     }
 
-    public function handleAddToQueue(array $requestData, array $serverData): string
+    public function handleAddToQueue(array $requestData, array $serverData): PlayerQueueResponse
     {
         $request = PlayerQueueRequest::fromArrays($requestData, $serverData);
 
         return $this->handler->handleAddToQueueRequest($request);
     }
 
-    public function handleQueuePosition(array $requestData, array $serverData): string
+    public function handleQueuePosition(array $requestData, array $serverData): PlayerQueueResponse
     {
         $request = PlayerQueueRequest::fromArrays($requestData, $serverData);
 
