@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/RetryableOperationExecutor.php';
+
 class PlayerRankingUpdater
 {
     private const TEMPORARY_TABLE = 'player_ranking_new';
@@ -31,35 +33,28 @@ SQL;
 
     private PDO $database;
 
-    private int $retryDelaySeconds;
+    private RetryableOperationExecutor $operationExecutor;
 
-    public function __construct(PDO $database, int $retryDelaySeconds = 3)
-    {
+    public function __construct(
+        PDO $database,
+        int $retryDelaySeconds = 3,
+        ?RetryableOperationExecutor $operationExecutor = null
+    ) {
         $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
+        $this->operationExecutor = $operationExecutor ?? new RetryableOperationExecutor(
+            $retryDelaySeconds,
+            [Throwable::class]
+        );
     }
 
     public function recalculate(): void
     {
-        $this->executeWithRetry(function (): void {
+        $this->operationExecutor->execute(function (): void {
             $this->createTemporaryTable();
             $this->clearTemporaryTable();
             $this->populateTemporaryTable();
             $this->replaceRankingTable();
         });
-    }
-
-    private function executeWithRetry(callable $operation): void
-    {
-        while (true) {
-            try {
-                $operation();
-
-                return;
-            } catch (Throwable $exception) {
-                sleep($this->retryDelaySeconds);
-            }
-        }
     }
 
     private function createTemporaryTable(): void

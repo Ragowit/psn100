@@ -2,16 +2,24 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/RetryableOperationExecutor.php';
+
 class DailyCronJob
 {
     private PDO $database;
 
-    private int $retryDelaySeconds;
+    private RetryableOperationExecutor $operationExecutor;
 
-    public function __construct(PDO $database, int $retryDelaySeconds = 3)
-    {
+    public function __construct(
+        PDO $database,
+        int $retryDelaySeconds = 3,
+        ?RetryableOperationExecutor $operationExecutor = null
+    ) {
         $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
+        $this->operationExecutor = $operationExecutor ?? new RetryableOperationExecutor(
+            $retryDelaySeconds,
+            [Exception::class]
+        );
     }
 
     public function run(): void
@@ -33,7 +41,9 @@ class DailyCronJob
                 continue;
             }
 
-            $this->executeWithRetry([$this, 'updateTrophyRarityForGame'], $npCommunicationId);
+            $this->operationExecutor->execute(function () use ($npCommunicationId): void {
+                $this->updateTrophyRarityForGame($npCommunicationId);
+            });
         }
     }
 
@@ -84,7 +94,7 @@ class DailyCronJob
 
     private function recalculateTitleRarityPoints(): void
     {
-        $this->executeWithRetry([$this, 'updateTrophyTitleRarityPoints']);
+        $this->operationExecutor->execute([$this, 'updateTrophyTitleRarityPoints']);
     }
 
     private function updateTrophyTitleRarityPoints(): void
@@ -106,15 +116,4 @@ class DailyCronJob
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation, ...$arguments): void
-    {
-        while (true) {
-            try {
-                $operation(...$arguments);
-                return;
-            } catch (Exception $exception) {
-                sleep($this->retryDelaySeconds);
-            }
-        }
-    }
 }

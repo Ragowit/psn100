@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/RetryableOperationExecutor.php';
+
 class HourlyCronJob
 {
     private const STATISTICS_UPDATE_QUERY = <<<'SQL'
@@ -28,17 +30,23 @@ class HourlyCronJob
 
     private PDO $database;
 
-    private int $retryDelaySeconds;
+    private RetryableOperationExecutor $operationExecutor;
 
-    public function __construct(PDO $database, int $retryDelaySeconds = 3)
-    {
+    public function __construct(
+        PDO $database,
+        int $retryDelaySeconds = 3,
+        ?RetryableOperationExecutor $operationExecutor = null
+    ) {
         $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
+        $this->operationExecutor = $operationExecutor ?? new RetryableOperationExecutor(
+            $retryDelaySeconds,
+            [Exception::class]
+        );
     }
 
     public function run(): void
     {
-        $this->executeWithRetry([$this, 'updateTrophyTitleStatistics']);
+        $this->operationExecutor->execute([$this, 'updateTrophyTitleStatistics']);
     }
 
     private function updateTrophyTitleStatistics(): void
@@ -47,16 +55,4 @@ class HourlyCronJob
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation): void
-    {
-        while (true) {
-            try {
-                $operation();
-
-                return;
-            } catch (Exception $exception) {
-                sleep($this->retryDelaySeconds);
-            }
-        }
-    }
 }
