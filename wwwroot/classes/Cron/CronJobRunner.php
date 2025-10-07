@@ -19,7 +19,12 @@ final class CronJobRunner
         $job->run();
     }
 
-    private function configureEnvironment(): void
+    public function configureEnvironment(): void
+    {
+        $this->configureEnvironmentIfNeeded();
+    }
+
+    private function configureEnvironmentIfNeeded(): void
     {
         if ($this->environmentConfigured) {
             return;
