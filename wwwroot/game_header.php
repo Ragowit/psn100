@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 /** @var GameDetails $game */
 /** @var GameHeaderData $gameHeaderData */
+/** @var GamePlayerProgress|null $gamePlayer */
 ?>
 <div class="row">
     <?php
@@ -139,9 +140,9 @@ declare(strict_types=1);
             <div class="vstack gap-3 bg-dark-subtle rounded p-3 h-100">
                 <div class="text-center">
                     <?php
-                    if (isset($gamePlayer)) {
+                    if (isset($gamePlayer) && $gamePlayer instanceof GamePlayerProgress) {
                         ?>
-                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $gamePlayer['platinum'] ?? '0'; ?>/<?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $gamePlayer['gold'] ?? '0'; ?>/<?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $gamePlayer['silver'] ?? '0'; ?>/<?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $gamePlayer['bronze'] ?? '0'; ?>/<?= $game->getBronze(); ?></span>
+                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $gamePlayer->getPlatinumCount(); ?>/<?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $gamePlayer->getGoldCount(); ?>/<?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $gamePlayer->getSilverCount(); ?>/<?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $gamePlayer->getBronzeCount(); ?>/<?= $game->getBronze(); ?></span>
                         <?php
                     } else {
                         ?>
@@ -152,11 +153,11 @@ declare(strict_types=1);
                 </div>
 
                 <?php
-                if (isset($gamePlayer)) {
+                if (isset($gamePlayer) && $gamePlayer instanceof GamePlayerProgress) {
                     ?>
                     <div>
-                        <div class="progress" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $gamePlayer['progress'] ?? '0'; ?>" aria-valuemin="0" aria-valuemax="100">
-                            <div class="progress-bar" style="width: <?= $gamePlayer['progress'] ?? '0'; ?>%"><?= $gamePlayer['progress'] ?? '0'; ?>%</div>
+                        <div class="progress" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $gamePlayer->getProgress(); ?>" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: <?= $gamePlayer->getProgress(); ?>%"><?= $gamePlayer->getProgress(); ?>%</div>
                         </div>
                     </div>
                     <?php
@@ -180,10 +181,8 @@ declare(strict_types=1);
                         echo "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
                     }
 
-                    if (isset($gamePlayer) && $gamePlayer != false) {
-                        if ($gamePlayer['progress'] == 100) {
-                            echo " <span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>";
-                        }
+                    if (isset($gamePlayer) && $gamePlayer instanceof GamePlayerProgress && $gamePlayer->isCompleted()) {
+                        echo " <span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>";
                     }
                     ?>
                 </div>
