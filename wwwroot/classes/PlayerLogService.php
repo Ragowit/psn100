@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerLogEntry.php';
+
 class PlayerLogService
 {
     public const PAGE_SIZE = 50;
@@ -44,7 +46,7 @@ class PlayerLogService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return PlayerLogEntry[]
      */
     public function getTrophies(int $accountId, PlayerLogFilter $filter, int $offset, int $limit = self::PAGE_SIZE): array
     {
@@ -84,13 +86,16 @@ class PlayerLogService
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->execute();
 
-        $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        if (!is_array($trophies)) {
+        if (!is_array($rows) || $rows === []) {
             return [];
         }
 
-        return $trophies;
+        return array_map(
+            static fn(array $row): PlayerLogEntry => PlayerLogEntry::fromArray($row),
+            $rows
+        );
     }
 
     private function buildPlatformClause(PlayerLogFilter $filter): string
