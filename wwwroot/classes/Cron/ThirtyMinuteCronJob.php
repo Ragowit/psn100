@@ -548,7 +548,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     icon_url = new.icon_url,
                                     platform = new.platform");
                             $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                            $query->bindValue(":name", $this->convertToApaTitleCase($trophyTitle->name()), PDO::PARAM_STR);
+                            $query->bindValue(
+                                ":name",
+                                $this->convertToApaTitleCase($this->sanitizeTrophyTitleName($trophyTitle->name())),
+                                PDO::PARAM_STR
+                            );
                             $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                             $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                             $platforms = "";
@@ -1173,6 +1177,31 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
             }
         }
+    }
+
+    private function sanitizeTrophyTitleName(string $name): string
+    {
+        $name = trim($name);
+
+        if ($name === '') {
+            return $name;
+        }
+
+        $suffixPatterns = [
+            '/\s*Trophy Set\.$/i',
+            '/\s*Trophy Set$/i',
+            '/\s*Trophies$/i',
+            '/\s*Trophy$/i',
+        ];
+
+        foreach ($suffixPatterns as $pattern) {
+            if (preg_match($pattern, $name)) {
+                $name = preg_replace($pattern, '', $name);
+                break;
+            }
+        }
+
+        return trim($name);
     }
 
     private function convertToApaTitleCase(string $title): string
