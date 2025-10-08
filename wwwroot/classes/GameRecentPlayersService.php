@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameRecentPlayer.php';
+require_once __DIR__ . '/GameRecentPlayersQueryBuilder.php';
 
 class GameRecentPlayersService
 {
@@ -99,42 +100,8 @@ class GameRecentPlayersService
      */
     public function getRecentPlayers(string $npCommunicationId, GamePlayerFilter $filter): array
     {
-        $sql = <<<'SQL'
-            SELECT
-                p.account_id,
-                p.avatar_url,
-                p.country,
-                p.online_id AS name,
-                p.trophy_count_npwr,
-                p.trophy_count_sony,
-                ttp.bronze,
-                ttp.silver,
-                ttp.gold,
-                ttp.platinum,
-                ttp.progress,
-                ttp.last_updated_date AS last_known_date
-            FROM
-                trophy_title_player ttp
-            JOIN player p ON ttp.account_id = p.account_id
-            JOIN player_ranking r ON p.account_id = r.account_id
-            WHERE
-                p.status = 0
-                AND r.ranking <= 10000
-                AND ttp.np_communication_id = :np_communication_id
-        SQL;
-
-        $sql .= $this->buildFilterSql($filter);
-
-        $sql .= <<<'SQL'
-            ORDER BY
-                ttp.last_updated_date DESC
-            LIMIT :limit
-        SQL;
-
-        $query = $this->database->prepare($sql);
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':limit', self::RECENT_PLAYERS_LIMIT, PDO::PARAM_INT);
-        $this->bindFilterParameters($query, $filter);
+        $queryBuilder = new GameRecentPlayersQueryBuilder($filter, self::RECENT_PLAYERS_LIMIT);
+        $query = $queryBuilder->prepare($this->database, $npCommunicationId);
         $query->execute();
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -149,29 +116,4 @@ class GameRecentPlayersService
         );
     }
 
-    private function buildFilterSql(GamePlayerFilter $filter): string
-    {
-        $sql = '';
-
-        if ($filter->hasCountry()) {
-            $sql .= ' AND p.country = :country';
-        }
-
-        if ($filter->hasAvatar()) {
-            $sql .= ' AND p.avatar_url = :avatar';
-        }
-
-        return $sql;
-    }
-
-    private function bindFilterParameters(PDOStatement $query, GamePlayerFilter $filter): void
-    {
-        if ($filter->hasCountry()) {
-            $query->bindValue(':country', (string) $filter->getCountry(), PDO::PARAM_STR);
-        }
-
-        if ($filter->hasAvatar()) {
-            $query->bindValue(':avatar', (string) $filter->getAvatar(), PDO::PARAM_STR);
-        }
-    }
 }
