@@ -6,6 +6,7 @@ require_once __DIR__ . '/GamePlayerFilter.php';
 require_once __DIR__ . '/GameRecentPlayersService.php';
 require_once __DIR__ . '/GameHeaderService.php';
 require_once __DIR__ . '/Game/GameDetails.php';
+require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 require_once __DIR__ . '/Utility.php';
@@ -25,14 +26,11 @@ class GameRecentPlayersPage
 
     private ?string $playerAccountId;
 
-    /**
-     * @var array<string, mixed>|null
-     */
-    private ?array $gamePlayer;
+    private ?GamePlayerProgress $gamePlayer;
 
     /**
      * @param GameRecentPlayer[] $recentPlayers
-     * @param array<string, mixed>|null $gamePlayer
+     * @param GamePlayerProgress|null $gamePlayer
      */
     private function __construct(
         GameDetails $game,
@@ -40,7 +38,7 @@ class GameRecentPlayersPage
         GamePlayerFilter $filter,
         array $recentPlayers,
         ?string $playerAccountId,
-        ?array $gamePlayer
+        ?GamePlayerProgress $gamePlayer
     ) {
         $this->game = $game;
         $this->gameHeaderData = $gameHeaderData;
@@ -134,9 +132,9 @@ class GameRecentPlayersPage
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return GamePlayerProgress|null
      */
-    public function getGamePlayer(): ?array
+    public function getGamePlayer(): ?GamePlayerProgress
     {
         return $this->gamePlayer;
     }

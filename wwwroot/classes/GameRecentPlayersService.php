@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
+require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/GameRecentPlayer.php';
 require_once __DIR__ . '/GameRecentPlayersQueryBuilder.php';
 
@@ -71,7 +72,7 @@ class GameRecentPlayersService
         return (string) $accountId;
     }
 
-    public function getGamePlayer(string $npCommunicationId, string $accountId): ?array
+    public function getGamePlayer(string $npCommunicationId, string $accountId): ?GamePlayerProgress
     {
         $query = $this->database->prepare(
             <<<'SQL'
@@ -92,7 +93,11 @@ class GameRecentPlayersService
 
         $gamePlayer = $query->fetch(PDO::FETCH_ASSOC);
 
-        return is_array($gamePlayer) ? $gamePlayer : null;
+        if (!is_array($gamePlayer)) {
+            return null;
+        }
+
+        return GamePlayerProgress::fromArray($gamePlayer);
     }
 
     /**

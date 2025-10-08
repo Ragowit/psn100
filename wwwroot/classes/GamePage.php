@@ -7,6 +7,7 @@ require_once __DIR__ . '/GameHeaderService.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 require_once __DIR__ . '/Game/GameDetails.php';
+require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Utility.php';
@@ -27,10 +28,7 @@ class GamePage
 
     private ?int $playerAccountId;
 
-    /**
-     * @var array<string, mixed>|null
-     */
-    private ?array $gamePlayer;
+    private ?GamePlayerProgress $gamePlayer;
 
     /**
      * @var array<int, array<string, mixed>>
@@ -123,10 +121,7 @@ class GamePage
         return $this->playerAccountId;
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function getGamePlayer(): ?array
+    public function getGamePlayer(): ?GamePlayerProgress
     {
         return $this->gamePlayer;
     }
