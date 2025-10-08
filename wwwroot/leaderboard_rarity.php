@@ -1,30 +1,14 @@
 <?php
-require_once 'classes/PlayerLeaderboardFilter.php';
-require_once 'classes/PlayerRarityLeaderboardService.php';
-require_once 'classes/PlayerLeaderboardPage.php';
-require_once 'classes/Leaderboard/RarityLeaderboardRow.php';
+require_once 'classes/Leaderboard/RarityLeaderboardPageContext.php';
 
-$title = "PSN Rarity Leaderboard ~ PSN 100%";
+$rarityLeaderboardPageContext = RarityLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
+$title = $rarityLeaderboardPageContext->getTitle();
 require_once("header.php");
 
-$playerLeaderboardFilter = PlayerLeaderboardFilter::fromArray($_GET ?? []);
-$playerLeaderboardService = new PlayerRarityLeaderboardService($database);
-$playerLeaderboardPage = new PlayerLeaderboardPage($playerLeaderboardService, $playerLeaderboardFilter);
-
-$players = $playerLeaderboardPage->getPlayers();
-$filterParameters = $playerLeaderboardPage->getFilterParameters();
-$highlightedPlayerId = isset($_GET['player']) ? (string) $_GET['player'] : null;
-
-$rows = array_map(
-    static fn(array $player) => new RarityLeaderboardRow(
-        $player,
-        $playerLeaderboardFilter,
-        $utility,
-        $highlightedPlayerId,
-        $filterParameters
-    ),
-    $players
-);
+$playerLeaderboardPage = $rarityLeaderboardPageContext->getLeaderboardPage();
+$rows = $rarityLeaderboardPageContext->getRows();
+$filterParameters = $rarityLeaderboardPageContext->getFilterQueryParameters();
+$shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
 ?>
 
 <main class="container">
@@ -49,17 +33,11 @@ $rows = array_map(
                     <table class="table">
                         <thead>
                             <tr class="text-uppercase">
-                                <?php
-                                if ($playerLeaderboardFilter->hasCountry()) {
-                                    ?>
+                                <?php if ($shouldShowCountryRank) { ?>
                                     <th scope="col" class="text-center">Country<br>Rank</th>
-                                    <?php
-                                } else {
-                                    ?>
+                                <?php } else { ?>
                                     <th scope="col" class="text-center">Rank</th>
-                                    <?php
-                                }
-                                ?>
+                                <?php } ?>
                                 <th scope="col">User</th>
                                 <th scope="col" class="text-center">Level</th>
                                 <th scope="col" class="text-center">Legendary</th>
