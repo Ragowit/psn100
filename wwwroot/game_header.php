@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
+
 /** @var GameDetails $game */
 /** @var GameHeaderData $gameHeaderData */
 /** @var GamePlayerProgress|null $gamePlayer */
