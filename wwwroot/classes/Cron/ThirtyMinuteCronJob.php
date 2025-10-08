@@ -1361,6 +1361,14 @@ class ThirtyMinuteCronJob implements CronJobInterface
             return true;
         }
 
+        $acronyms = [
+            'VR',
+        ];
+
+        if (in_array($word, $acronyms, true)) {
+            return true;
+        }
+
         if (preg_match('/\d/', $word) === 1) {
             return true;
         }
