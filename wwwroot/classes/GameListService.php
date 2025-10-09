@@ -66,7 +66,7 @@ class GameListService
     {
         $sql = $this->buildCountQuery($filter);
         $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $filter);
+        $this->bindCommonParameters($statement, $filter, false);
         $statement->execute();
 
         $count = $statement->fetchColumn();
@@ -81,7 +81,7 @@ class GameListService
     {
         $sql = $this->buildListQuery($filter);
         $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $filter);
+        $this->bindCommonParameters($statement, $filter, true);
         $statement->bindValue(':offset', $this->getOffset($filter), PDO::PARAM_INT);
         $statement->bindValue(':limit', self::PAGE_LIMIT, PDO::PARAM_INT);
         $statement->execute();
@@ -98,7 +98,7 @@ class GameListService
         );
     }
 
-    private function bindCommonParameters(PDOStatement $statement, GameListFilter $filter): void
+    private function bindCommonParameters(PDOStatement $statement, GameListFilter $filter, bool $bindPrefix): void
     {
         $player = $filter->getPlayer() ?? '';
         $statement->bindValue(':online_id', $player, PDO::PARAM_STR);
@@ -109,7 +109,9 @@ class GameListService
 
             if ($search !== '') {
                 $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
-                $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
+                if ($bindPrefix) {
+                    $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
+                }
             }
         }
     }
