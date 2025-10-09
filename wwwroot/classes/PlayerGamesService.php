@@ -36,7 +36,7 @@ class PlayerGamesService
         );
 
         $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $accountId, $filter);
+        $this->bindCommonParameters($statement, $accountId, $filter, false);
         $statement->execute();
 
         $count = $statement->fetchColumn();
@@ -68,6 +68,11 @@ class PlayerGamesService
 
         if ($filter->shouldIncludeScoreColumn()) {
             $columns[] = 'tt.name = :search AS exact_match';
+            if ($filter->getSearch() !== '') {
+                $columns[] = 'tt.name LIKE :search_prefix AS prefix_match';
+            } else {
+                $columns[] = '0 AS prefix_match';
+            }
             $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
         }
 
@@ -85,7 +90,7 @@ class PlayerGamesService
         );
 
         $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $accountId, $filter);
+        $this->bindCommonParameters($statement, $accountId, $filter, true);
         $statement->bindValue(':offset', $filter->getOffset(), PDO::PARAM_INT);
         $statement->bindValue(':limit', $filter->getLimit(), PDO::PARAM_INT);
         $statement->execute();
@@ -160,12 +165,17 @@ class PlayerGamesService
             PlayerGamesFilter::SORT_MAX_RARITY => 'ORDER BY max_rarity_points DESC, `name`',
             PlayerGamesFilter::SORT_NAME => 'ORDER BY `name`',
             PlayerGamesFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, score DESC, `name`',
+            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`',
             default => 'ORDER BY last_updated_date DESC',
         };
     }
 
-    private function bindCommonParameters(PDOStatement $statement, int $accountId, PlayerGamesFilter $filter): void
+    private function bindCommonParameters(
+        PDOStatement $statement,
+        int $accountId,
+        PlayerGamesFilter $filter,
+        bool $bindPrefix
+    ): void
     {
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
 
@@ -175,6 +185,9 @@ class PlayerGamesService
 
             if ($search !== '') {
                 $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
+                if ($bindPrefix) {
+                    $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
+                }
             }
         }
     }
@@ -182,6 +195,11 @@ class PlayerGamesService
     private function buildSearchLikeParameter(string $search): string
     {
         return '%' . addcslashes($search, "\\%_") . '%';
+    }
+
+    private function buildSearchPrefixParameter(string $search): string
+    {
+        return addcslashes($search, "\\%_") . '%';
     }
 
     /**

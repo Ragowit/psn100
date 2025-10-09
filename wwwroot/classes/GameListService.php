@@ -66,7 +66,7 @@ class GameListService
     {
         $sql = $this->buildCountQuery($filter);
         $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $filter);
+        $this->bindCommonParameters($statement, $filter, false);
         $statement->execute();
 
         $count = $statement->fetchColumn();
@@ -81,7 +81,7 @@ class GameListService
     {
         $sql = $this->buildListQuery($filter);
         $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $filter);
+        $this->bindCommonParameters($statement, $filter, true);
         $statement->bindValue(':offset', $this->getOffset($filter), PDO::PARAM_INT);
         $statement->bindValue(':limit', self::PAGE_LIMIT, PDO::PARAM_INT);
         $statement->execute();
@@ -98,7 +98,7 @@ class GameListService
         );
     }
 
-    private function bindCommonParameters(PDOStatement $statement, GameListFilter $filter): void
+    private function bindCommonParameters(PDOStatement $statement, GameListFilter $filter, bool $bindPrefix): void
     {
         $player = $filter->getPlayer() ?? '';
         $statement->bindValue(':online_id', $player, PDO::PARAM_STR);
@@ -109,6 +109,9 @@ class GameListService
 
             if ($search !== '') {
                 $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
+                if ($bindPrefix) {
+                    $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
+                }
             }
         }
     }
@@ -162,6 +165,11 @@ class GameListService
 
         if ($filter->shouldApplySearch()) {
             $columns[] = 'tt.name = :search AS exact_match';
+            if ($filter->getSearch() !== '') {
+                $columns[] = 'tt.name LIKE :search_prefix AS prefix_match';
+            } else {
+                $columns[] = '0 AS prefix_match';
+            }
             $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
         }
 
@@ -241,7 +249,7 @@ class GameListService
             GameListFilter::SORT_COMPLETION => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListFilter::SORT_OWNERS => 'ORDER BY owners DESC, `name`',
             GameListFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, owners DESC, `name`',
-            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, score DESC, `name`',
+            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`',
             default => 'ORDER BY id DESC',
         };
     }
@@ -249,6 +257,11 @@ class GameListService
     private function buildSearchLikeParameter(string $search): string
     {
         return '%' . addcslashes($search, "\\%_") . '%';
+    }
+
+    private function buildSearchPrefixParameter(string $search): string
+    {
+        return addcslashes($search, "\\%_") . '%';
     }
 
     private function buildPlatformCondition(GameListFilter $filter): ?string
