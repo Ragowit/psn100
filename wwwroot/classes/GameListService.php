@@ -104,7 +104,12 @@ class GameListService
         $statement->bindValue(':online_id', $player, PDO::PARAM_STR);
 
         if ($filter->shouldApplySearch()) {
-            $statement->bindValue(':search', $filter->getSearch(), PDO::PARAM_STR);
+            $search = $filter->getSearch();
+            $statement->bindValue(':search', $search, PDO::PARAM_STR);
+
+            if ($search !== '') {
+                $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
+            }
         }
     }
 
@@ -208,10 +213,12 @@ class GameListService
         }
 
         if ($filter->shouldApplySearch()) {
-            if ($forCount) {
-                $conditions[] = '(MATCH(tt.name) AGAINST (:search)) > 0';
+            $matchCondition = '(MATCH(tt.name) AGAINST (:search)) > 0';
+
+            if ($filter->getSearch() !== '') {
+                $conditions[] = '(' . $matchCondition . ' OR tt.name LIKE :search_like)';
             } else {
-                $conditions[] = '(MATCH(tt.name) AGAINST (:search))';
+                $conditions[] = $matchCondition;
             }
         }
 
@@ -236,6 +243,11 @@ class GameListService
             GameListFilter::SORT_SEARCH => 'ORDER BY score DESC',
             default => 'ORDER BY id DESC',
         };
+    }
+
+    private function buildSearchLikeParameter(string $search): string
+    {
+        return '%' . addcslashes($search, "\\%_") . '%';
     }
 
     private function buildPlatformCondition(GameListFilter $filter): ?string
