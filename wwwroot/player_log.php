@@ -156,42 +156,53 @@ require_once("header.php");
                                 <?php
                             } else {
                                 foreach ($trophiesLog as $trophy) {
+                                    $rowClassAttribute = $trophy->requiresWarning() ? ' class="table-warning"' : '';
+                                    $gameSlug = $trophy->getGameSlug($utility);
+                                    $trophySlug = $trophy->getTrophySlug($utility);
+                                    $gameUrl = '/game/' . $gameSlug . '/' . $player['online_id'];
+                                    $trophyUrl = '/trophy/' . $trophySlug . '/' . $player['online_id'];
+                                    $badgeElementId = $trophy->getEarnedBadgeElementId();
+                                    $progressDisplay = $trophy->getProgressDisplay();
+                                    $rewardName = $trophy->getRewardName();
+                                    $rewardImageUrl = $trophy->getRewardImageUrl();
                                     ?>
-                                    <tr<?= (($trophy["game_status"] != 0 || $trophy["trophy_status"] != 0) ? " class='table-warning'" : ""); ?>>
+                                    <tr<?= $rowClassAttribute; ?>>
                                         <td scope="row" class="text-center align-middle">
-                                            <a href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?>/<?= $player["online_id"]; ?>">
-                                                <img src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" style="width: 10rem;" />
+                                            <a href="<?= htmlspecialchars($gameUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconRelativePath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 10rem;" />
                                             </a>
                                         </td>
                                         <td class="align-middle">
                                             <div class="hstack gap-3">
                                                 <div class="d-flex align-items-center justify-content-center">
-                                                    <a href="/trophy/<?= $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
-                                                        <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="width: 5rem;" />
+                                                    <a href="<?= htmlspecialchars($trophyUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconRelativePath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
                                                     </a>
                                                 </div>
 
                                                 <div>
                                                     <div class="vstack">
                                                         <span>
-                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["trophy_id"] ."-". $utility->slugify($trophy["trophy_name"]); ?>/<?= $player["online_id"]; ?>">
-                                                                <b><?= htmlentities($trophy["trophy_name"]); ?></b>
+                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($trophyUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                                <b><?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?></b>
                                                             </a>
                                                         </span>
-                                                        <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
+                                                        <?= nl2br(htmlentities($trophy->getTrophyDetail(), ENT_QUOTES, 'UTF-8')); ?>
                                                         <?php
-                                                        if ($trophy["progress_target_value"] != null) {
-                                                            echo "<br><b>". $trophy["progress_target_value"] ."/". $trophy["progress_target_value"] ."</b>";
+                                                        if ($progressDisplay !== null) {
+                                                            echo '<br><b>' . htmlentities($progressDisplay, ENT_QUOTES, 'UTF-8') . '</b>';
                                                         }
 
-                                                        if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
-                                                            echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
+                                                        if ($rewardName !== null && $rewardImageUrl !== null) {
+                                                            echo "<br>Reward: <a href='/img/reward/" . htmlspecialchars($rewardImageUrl, ENT_QUOTES, 'UTF-8') . "'>"
+                                                                . htmlspecialchars($rewardName, ENT_QUOTES, 'UTF-8')
+                                                                . '</a>';
                                                         }
                                                         ?>
                                                         <div>
-                                                            <span class="badge rounded-pill text-bg-success" id="<?= $trophy["trophy_id"]; ?>"></span>
+                                                            <span class="badge rounded-pill text-bg-success" id="<?= htmlspecialchars($badgeElementId, ENT_QUOTES, 'UTF-8'); ?>"></span>
                                                             <script>
-                                                                document.getElementById("<?= $trophy["trophy_id"]; ?>").innerHTML = 'Earned ' + new Date('<?= $trophy["earned_date"]; ?> UTC').toLocaleString('sv-SE');
+                                                                document.getElementById(<?= json_encode($badgeElementId); ?>).innerHTML = 'Earned ' + new Date(<?= json_encode($trophy->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE');
                                                             </script>
                                                         </div>
                                                     </div>
@@ -201,15 +212,15 @@ require_once("header.php");
                                         <td class="text-center align-middle">
                                             <div class="vstack gap-1">
                                                 <?php
-                                                foreach (explode(",", $trophy["platform"]) as $platform) {
-                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2\">". $platform ."</span> ";
+                                                foreach ($trophy->getPlatforms() as $platform) {
+                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . htmlspecialchars($platform, ENT_QUOTES, 'UTF-8') . '</span> ';
                                                 }
                                                 ?>
                                             </div>
                                         </td>
                                         <td class="text-center align-middle">
                                         <?php
-                                        $trophyRarity = $trophyRarityFormatter->format($trophy["rarity_percent"], (int) $trophy["trophy_status"]);
+                                        $trophyRarity = $trophyRarityFormatter->format($trophy->getRarityPercent(), $trophy->getTrophyStatus());
 
                                         if ($trophyRarity->isUnobtainable()) {
                                             echo "<span class='badge rounded-pill text-bg-warning p-2'>" . $trophyRarity->getLabel() . '</span>';
@@ -219,7 +230,7 @@ require_once("header.php");
                                         ?>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <img src="/img/trophy-<?= $trophy["trophy_type"]; ?>.svg" alt="<?= ucfirst($trophy["trophy_type"]); ?>" title="<?= ucfirst($trophy["trophy_type"]); ?>" height="50" />
+                                            <img src="/img/trophy-<?= htmlspecialchars($trophy->getTrophyType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= htmlentities(ucfirst($trophy->getTrophyType()), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities(ucfirst($trophy->getTrophyType()), ENT_QUOTES, 'UTF-8'); ?>" height="50" />
                                         </td>
                                     </tr>
                                     <?php

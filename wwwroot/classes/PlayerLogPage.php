@@ -13,7 +13,7 @@ class PlayerLogPage
     private PlayerLogFilter $requestedFilter;
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var PlayerLogEntry[]
      */
     private array $trophies = [];
 
@@ -46,7 +46,7 @@ class PlayerLogPage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return PlayerLogEntry[]
      */
     public function getTrophies(): array
     {
