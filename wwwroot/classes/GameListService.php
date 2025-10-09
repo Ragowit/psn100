@@ -109,6 +109,7 @@ class GameListService
 
             if ($search !== '') {
                 $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
+                $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
             }
         }
     }
@@ -162,6 +163,11 @@ class GameListService
 
         if ($filter->shouldApplySearch()) {
             $columns[] = 'tt.name = :search AS exact_match';
+            if ($filter->getSearch() !== '') {
+                $columns[] = 'tt.name LIKE :search_prefix AS prefix_match';
+            } else {
+                $columns[] = '0 AS prefix_match';
+            }
             $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
         }
 
@@ -241,7 +247,7 @@ class GameListService
             GameListFilter::SORT_COMPLETION => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListFilter::SORT_OWNERS => 'ORDER BY owners DESC, `name`',
             GameListFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, owners DESC, `name`',
-            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, score DESC, `name`',
+            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`',
             default => 'ORDER BY id DESC',
         };
     }
@@ -249,6 +255,11 @@ class GameListService
     private function buildSearchLikeParameter(string $search): string
     {
         return '%' . addcslashes($search, "\\%_") . '%';
+    }
+
+    private function buildSearchPrefixParameter(string $search): string
+    {
+        return addcslashes($search, "\\%_") . '%';
     }
 
     private function buildPlatformCondition(GameListFilter $filter): ?string
