@@ -67,6 +67,7 @@ class PlayerGamesService
         ];
 
         if ($filter->shouldIncludeScoreColumn()) {
+            $columns[] = 'tt.name = :search AS exact_match';
             $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
         }
 
@@ -159,7 +160,7 @@ class PlayerGamesService
             PlayerGamesFilter::SORT_MAX_RARITY => 'ORDER BY max_rarity_points DESC, `name`',
             PlayerGamesFilter::SORT_NAME => 'ORDER BY `name`',
             PlayerGamesFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY score DESC',
+            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, score DESC, `name`',
             default => 'ORDER BY last_updated_date DESC',
         };
     }

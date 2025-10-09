@@ -161,6 +161,7 @@ class GameListService
         ];
 
         if ($filter->shouldApplySearch()) {
+            $columns[] = 'tt.name = :search AS exact_match';
             $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
         }
 
@@ -240,7 +241,7 @@ class GameListService
             GameListFilter::SORT_COMPLETION => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListFilter::SORT_OWNERS => 'ORDER BY owners DESC, `name`',
             GameListFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, owners DESC, `name`',
-            GameListFilter::SORT_SEARCH => 'ORDER BY score DESC',
+            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, score DESC, `name`',
             default => 'ORDER BY id DESC',
         };
     }
