@@ -1238,7 +1238,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
             'into',
             'onto',
             'upon',
-            'with',
             'without',
             'within',
             'over',
