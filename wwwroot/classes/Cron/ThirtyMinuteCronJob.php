@@ -1380,6 +1380,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
             return true;
         }
 
+        $romanNumeral = mb_strtoupper($word, 'UTF-8');
+
+        if (preg_match('/^(?=[IVXLCDM]+$)M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/', $romanNumeral) === 1) {
+            return true;
+        }
+
         $lower = mb_strtolower($word, 'UTF-8');
         $upper = mb_strtoupper($word, 'UTF-8');
 
