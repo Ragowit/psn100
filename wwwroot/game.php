@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/GamePage.php';
+require_once __DIR__ . '/classes/GameTrophyFilter.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 
 if (!isset($gameId)) {
@@ -35,6 +36,7 @@ $gameHeaderData = $gamePage->getGameHeaderData();
 $sort = $gamePage->getSort();
 $accountId = $gamePage->getPlayerAccountId();
 $gamePlayer = $gamePage->getGamePlayer();
+$gameTrophyFilter = GameTrophyFilter::fromQueryParameters($_GET ?? [], $accountId !== null);
 $metaData = $gamePage->createMetaData();
 $title = $gamePage->getPageTitle();
 $trophyRarityFormatter = new TrophyRarityFormatter();
@@ -69,7 +71,7 @@ require_once("header.php");
                             <ul class="dropdown-menu p-2">
                                 <li>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox"<?= (!empty($_GET["unearned"]) ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUnearnedTrophies" name="unearned">
+                                        <input class="form-check-input" type="checkbox"<?= ($gameTrophyFilter->shouldShowUnearnedOnly() ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUnearnedTrophies" name="unearned">
                                         <label class="form-check-label" for="filterUnearnedTrophies">
                                             Unearned Trophies
                                         </label>
@@ -108,10 +110,7 @@ require_once("header.php");
 
                     $previousTimeStamp = null;
 
-                    if ($accountId !== null
-                        && $trophyGroupPlayer !== null
-                        && ($trophyGroupPlayer["progress"] ?? null) == 100
-                        && !empty($_GET["unearned"])) {
+                    if (!$gameTrophyFilter->shouldDisplayGroup($trophyGroupPlayer)) {
                         continue;
                     }
                     ?>
@@ -172,7 +171,7 @@ require_once("header.php");
                                 $trophies = $gamePage->getTrophies($trophyGroupId);
 
                                 foreach ($trophies as $trophy) {
-                                    if ($accountId !== null && ($trophy["earned"] ?? null) == 1 && !empty($_GET["unearned"])) {
+                                    if (!$gameTrophyFilter->shouldDisplayTrophy($trophy)) {
                                         continue;
                                     }
 
