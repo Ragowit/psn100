@@ -115,9 +115,13 @@ class PlayerGamesService
         ];
 
         if ($filter->shouldApplyFulltextCondition()) {
-            $conditions[] = $forCount
-                ? '(MATCH(tt.name) AGAINST (:search)) > 0'
-                : '(MATCH(tt.name) AGAINST (:search))';
+            $matchCondition = '(MATCH(tt.name) AGAINST (:search)) > 0';
+
+            if ($filter->getSearch() !== '') {
+                $conditions[] = '(' . $matchCondition . ' OR tt.name LIKE :search_like)';
+            } else {
+                $conditions[] = $matchCondition;
+            }
         }
 
         if ($filter->isCompletedSelected()) {
@@ -165,8 +169,18 @@ class PlayerGamesService
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
 
         if ($filter->shouldApplyFulltextCondition()) {
-            $statement->bindValue(':search', $filter->getSearch(), PDO::PARAM_STR);
+            $search = $filter->getSearch();
+            $statement->bindValue(':search', $search, PDO::PARAM_STR);
+
+            if ($search !== '') {
+                $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
+            }
         }
+    }
+
+    private function buildSearchLikeParameter(string $search): string
+    {
+        return '%' . addcslashes($search, "\\%_") . '%';
     }
 
     /**
