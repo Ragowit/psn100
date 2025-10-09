@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/GameListItem.php';
+require_once __DIR__ . '/SearchQueryHelper.php';
 
 class GameListService
 {
@@ -104,15 +105,11 @@ class GameListService
         $statement->bindValue(':online_id', $player, PDO::PARAM_STR);
 
         if ($filter->shouldApplySearch()) {
-            $search = $filter->getSearch();
-            $statement->bindValue(':search', $search, PDO::PARAM_STR);
-
-            if ($search !== '') {
-                $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
-                if ($bindPrefix) {
-                    $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
-                }
-            }
+            SearchQueryHelper::bindSearchParameters(
+                $statement,
+                $filter->getSearch(),
+                $bindPrefix
+            );
         }
     }
 
@@ -163,15 +160,12 @@ class GameListService
             'ttp.progress',
         ];
 
-        if ($filter->shouldApplySearch()) {
-            $columns[] = 'tt.name = :search AS exact_match';
-            if ($filter->getSearch() !== '') {
-                $columns[] = 'tt.name LIKE :search_prefix AS prefix_match';
-            } else {
-                $columns[] = '0 AS prefix_match';
-            }
-            $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
-        }
+        $columns = SearchQueryHelper::addFulltextSelectColumns(
+            $columns,
+            'tt.name',
+            $filter->shouldApplySearch(),
+            $filter->getSearch()
+        );
 
         $conditions = $this->buildConditions($filter, false);
         $orderBy = $this->buildOrderByClause($filter);
@@ -221,15 +215,12 @@ class GameListService
                 break;
         }
 
-        if ($filter->shouldApplySearch()) {
-            $matchCondition = '(MATCH(tt.name) AGAINST (:search)) > 0';
-
-            if ($filter->getSearch() !== '') {
-                $conditions[] = '(' . $matchCondition . ' OR tt.name LIKE :search_like)';
-            } else {
-                $conditions[] = $matchCondition;
-            }
-        }
+        $conditions = SearchQueryHelper::appendFulltextCondition(
+            $conditions,
+            $filter->shouldApplySearch(),
+            'tt.name',
+            $filter->getSearch()
+        );
 
         if ($filter->shouldFilterUncompleted()) {
             $conditions[] = 'ttp.progress IS NULL';
@@ -252,16 +243,6 @@ class GameListService
             GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`',
             default => 'ORDER BY id DESC',
         };
-    }
-
-    private function buildSearchLikeParameter(string $search): string
-    {
-        return '%' . addcslashes($search, "\\%_") . '%';
-    }
-
-    private function buildSearchPrefixParameter(string $search): string
-    {
-        return addcslashes($search, "\\%_") . '%';
     }
 
     private function buildPlatformCondition(GameListFilter $filter): ?string
