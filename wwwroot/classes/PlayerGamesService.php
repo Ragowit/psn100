@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerGame.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
+require_once __DIR__ . '/SearchQueryHelper.php';
 
 class PlayerGamesService
 {
@@ -66,15 +67,12 @@ class PlayerGamesService
             'ttp.rarity_points',
         ];
 
-        if ($filter->shouldIncludeScoreColumn()) {
-            $columns[] = 'tt.name = :search AS exact_match';
-            if ($filter->getSearch() !== '') {
-                $columns[] = 'tt.name LIKE :search_prefix AS prefix_match';
-            } else {
-                $columns[] = '0 AS prefix_match';
-            }
-            $columns[] = 'MATCH(tt.name) AGAINST (:search) AS score';
-        }
+        $columns = SearchQueryHelper::addFulltextSelectColumns(
+            $columns,
+            'tt.name',
+            $filter->shouldIncludeScoreColumn(),
+            $filter->getSearch()
+        );
 
         $sql = sprintf(
             'SELECT %s
@@ -120,15 +118,12 @@ class PlayerGamesService
             "tgp.group_id = 'default'",
         ];
 
-        if ($filter->shouldApplyFulltextCondition()) {
-            $matchCondition = '(MATCH(tt.name) AGAINST (:search)) > 0';
-
-            if ($filter->getSearch() !== '') {
-                $conditions[] = '(' . $matchCondition . ' OR tt.name LIKE :search_like)';
-            } else {
-                $conditions[] = $matchCondition;
-            }
-        }
+        $conditions = SearchQueryHelper::appendFulltextCondition(
+            $conditions,
+            $filter->shouldApplyFulltextCondition(),
+            'tt.name',
+            $filter->getSearch()
+        );
 
         if ($filter->isCompletedSelected()) {
             $conditions[] = 'ttp.progress = 100';
@@ -180,26 +175,12 @@ class PlayerGamesService
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
 
         if ($filter->shouldApplyFulltextCondition()) {
-            $search = $filter->getSearch();
-            $statement->bindValue(':search', $search, PDO::PARAM_STR);
-
-            if ($search !== '') {
-                $statement->bindValue(':search_like', $this->buildSearchLikeParameter($search), PDO::PARAM_STR);
-                if ($bindPrefix) {
-                    $statement->bindValue(':search_prefix', $this->buildSearchPrefixParameter($search), PDO::PARAM_STR);
-                }
-            }
+            SearchQueryHelper::bindSearchParameters(
+                $statement,
+                $filter->getSearch(),
+                $bindPrefix
+            );
         }
-    }
-
-    private function buildSearchLikeParameter(string $search): string
-    {
-        return '%' . addcslashes($search, "\\%_") . '%';
-    }
-
-    private function buildSearchPrefixParameter(string $search): string
-    {
-        return addcslashes($search, "\\%_") . '%';
     }
 
     /**
