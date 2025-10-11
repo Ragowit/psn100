@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
+
 class GameRescanRequestHandler
 {
     private GameRescanService $gameRescanService;
@@ -119,8 +121,10 @@ class GameRescanRequestHandler
 
     private function prepareStreamResponse(): void
     {
-        set_time_limit(0);
-        ignore_user_abort(true);
+        ExecutionEnvironmentConfigurator::create()
+            ->enableUnlimitedExecution()
+            ->enableIgnoreUserAbort()
+            ->configure();
 
         header('Content-Type: application/x-ndjson; charset=utf-8');
         header('Cache-Control: no-cache');

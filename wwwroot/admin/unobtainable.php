@@ -1,10 +1,14 @@
 <?php
 declare(strict_types=1);
 
-ini_set("max_execution_time", "0");
-ini_set("mysql.connect_timeout", "0");
-ini_set("default_socket_timeout", "6000");
-set_time_limit(0);
+require_once __DIR__ . '/../classes/ExecutionEnvironmentConfigurator.php';
+
+ExecutionEnvironmentConfigurator::create()
+    ->addIniSetting('max_execution_time', '0')
+    ->addIniSetting('mysql.connect_timeout', '0')
+    ->addIniSetting('default_socket_timeout', '6000')
+    ->enableUnlimitedExecution()
+    ->configure();
 
 require_once("../init.php");
 require_once("../classes/Admin/TrophyStatusService.php");
