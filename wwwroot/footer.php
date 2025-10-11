@@ -1,17 +1,30 @@
+        <?php
+        require_once __DIR__ . '/classes/FooterViewModel.php';
+
+        $footerViewModel = FooterViewModel::createDefault();
+        ?>
         <footer class="container">
             <hr>
             <div class="row">
                 <div class="col-3">
-                    &copy; 2019-<?= date("Y"); ?><br>
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/releases">v7.37</a> - <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/changelog">Changelog</a>
+                    &copy; <?= htmlspecialchars($footerViewModel->getYearRangeLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getReleaseUrl(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <?= htmlspecialchars($footerViewModel->getVersionLabel(), ENT_QUOTES, 'UTF-8'); ?>
+                    </a>
+                    -
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getChangelogUrl(), ENT_QUOTES, 'UTF-8'); ?>">Changelog</a>
                 </div>
                 <div class="col-6 text-center">
                     PSN100 is not affiliated with Sony or PlayStation in any way.<br>
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ragowit/psn100/issues">Issues</a>
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getIssuesUrl(), ENT_QUOTES, 'UTF-8'); ?>">Issues</a>
                 </div>
                 <div class="col-3 text-end">
-                    Created and maintained by <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/Ragowit">Ragowit</a>.<br>
-                    Development by <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/ragowit/psn100/graphs/contributors">PSN100 Contributors</a>.
+                    Created and maintained by
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getCreatorProfileUrl(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <?= htmlspecialchars($footerViewModel->getCreatorName(), ENT_QUOTES, 'UTF-8'); ?>
+                    </a>.<br>
+                    Development by
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getContributorsUrl(), ENT_QUOTES, 'UTF-8'); ?>">PSN100 Contributors</a>.
                 </div>
             </div>
         </footer>
