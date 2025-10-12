@@ -2,20 +2,24 @@
 
 require_once __DIR__ . '/PlayerQueueRequest.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
+require_once __DIR__ . '/PlayerQueueResponseFactory.php';
 
 class PlayerQueueHandler
 {
     private PlayerQueueService $service;
 
-    public function __construct(PlayerQueueService $service)
+    private PlayerQueueResponseFactory $responseFactory;
+
+    public function __construct(PlayerQueueService $service, ?PlayerQueueResponseFactory $responseFactory = null)
     {
         $this->service = $service;
+        $this->responseFactory = $responseFactory ?? new PlayerQueueResponseFactory($service);
     }
 
     public function handleAddToQueueRequest(PlayerQueueRequest $request): PlayerQueueResponse
     {
         if ($request->isPlayerNameEmpty()) {
-            return PlayerQueueResponse::error("PSN name can't be empty.");
+            return $this->responseFactory->createEmptyNameResponse();
         }
 
         $playerName = $request->getPlayerName();
@@ -23,97 +27,53 @@ class PlayerQueueHandler
 
         $cheaterAccountId = $this->service->getCheaterAccountId($playerName);
         if ($cheaterAccountId !== null) {
-            return PlayerQueueResponse::error($this->createCheaterMessage($playerName, $cheaterAccountId));
+            return $this->responseFactory->createCheaterResponse($playerName, $cheaterAccountId);
         }
 
         if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
-            return PlayerQueueResponse::error($this->createQueueLimitMessage());
+            return $this->responseFactory->createQueueLimitResponse();
         }
 
         if (!$this->service->isValidPlayerName($playerName)) {
-            return PlayerQueueResponse::error(
-                "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_)."
-            );
+            return $this->responseFactory->createInvalidNameResponse();
         }
 
         $this->service->addPlayerToQueue($playerName, $ipAddress);
 
-        $playerLink = $this->createPlayerLink($playerName);
-
-        return PlayerQueueResponse::queued($this->createSpinnerMessage("{$playerLink} is being added to the queue."));
+        return $this->responseFactory->createQueuedForAdditionResponse($playerName);
     }
 
     public function handleQueuePositionRequest(PlayerQueueRequest $request): PlayerQueueResponse
     {
         if ($request->isPlayerNameEmpty()) {
-            return PlayerQueueResponse::error("PSN name can't be empty.");
+            return $this->responseFactory->createEmptyNameResponse();
         }
 
         $playerName = $request->getPlayerName();
         $ipAddress = $request->getIpAddress();
 
         if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
-            return PlayerQueueResponse::error($this->createQueueLimitMessage());
+            return $this->responseFactory->createQueueLimitResponse();
         }
 
         if (!$this->service->isValidPlayerName($playerName)) {
-            return PlayerQueueResponse::error(
-                "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_)."
-            );
+            return $this->responseFactory->createInvalidNameResponse();
         }
 
         $playerData = $this->service->getPlayerStatusData($playerName);
         if ($this->service->isCheaterStatus($playerData['status'])) {
-            return PlayerQueueResponse::error($this->createCheaterMessage($playerName, $playerData['account_id']));
+            return $this->responseFactory->createCheaterResponse($playerName, $playerData['account_id']);
         }
 
         if ($this->service->isPlayerBeingScanned($playerName)) {
-            $playerLink = $this->createPlayerLink($playerName);
-
-            return PlayerQueueResponse::queued($this->createSpinnerMessage("{$playerLink} is currently being scanned."));
+            return $this->responseFactory->createQueuedForScanResponse($playerName);
         }
 
         $position = $this->service->getQueuePosition($playerName);
         if ($position !== null) {
-            $playerLink = $this->createPlayerLink($playerName);
-            $positionText = $this->service->escapeHtml((string) $position);
-
-            return PlayerQueueResponse::queued(
-                $this->createSpinnerMessage("{$playerLink} is in the update queue, currently in position {$positionText}.")
-            );
+            return $this->responseFactory->createQueuePositionResponse($playerName, $position);
         }
 
-        $playerLink = $this->createPlayerLink($playerName);
-
-        return PlayerQueueResponse::complete("{$playerLink} has been updated!");
-    }
-
-    private function createPlayerLink(string $playerName): string
-    {
-        $escapedPlayerName = $this->service->escapeHtml($playerName);
-
-        return '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/' . $escapedPlayerName . '">' . $escapedPlayerName . '</a>';
-    }
-
-    private function createSpinnerMessage(string $message): string
-    {
-        return $message . "\n<div class=\"spinner-border\" role=\"status\">\n    <span class=\"visually-hidden\">Loading...</span>\n</div>";
-    }
-
-    private function createCheaterMessage(string $playerName, ?string $accountId): string
-    {
-        $playerLink = $this->createPlayerLink($playerName);
-        $accountIdValue = $accountId ?? '';
-        $playerQuery = rawurlencode($playerName);
-        $accountQuery = rawurlencode((string) $accountIdValue);
-        $disputeUrl = 'https://github.com/Ragowit/psn100/issues?q=label%3Acheater+' . $playerQuery . '+OR+' . $accountQuery;
-        $disputeLink = '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="' . $this->service->escapeHtml($disputeUrl) . '">Dispute</a>';
-
-        return "Player '{$playerLink}' is tagged as a cheater and won't be scanned. {$disputeLink}?";
-    }
-
-    private function createQueueLimitMessage(): string
-    {
-        return 'You have already entered ' . PlayerQueueService::MAX_QUEUE_SUBMISSIONS_PER_IP . ' players into the queue. Please wait a while.';
+        return $this->responseFactory->createQueueCompleteResponse($playerName);
     }
 }

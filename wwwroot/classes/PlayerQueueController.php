@@ -6,6 +6,7 @@ require_once __DIR__ . '/../database.php';
 require_once __DIR__ . '/PlayerQueueService.php';
 require_once __DIR__ . '/PlayerQueueRequest.php';
 require_once __DIR__ . '/PlayerQueueHandler.php';
+require_once __DIR__ . '/PlayerQueueResponseFactory.php';
 
 class PlayerQueueController
 {
@@ -19,7 +20,8 @@ class PlayerQueueController
     public static function create(Database $database): self
     {
         $service = new PlayerQueueService($database);
-        $handler = new PlayerQueueHandler($service);
+        $responseFactory = new PlayerQueueResponseFactory($service);
+        $handler = new PlayerQueueHandler($service, $responseFactory);
 
         return new self($handler);
     }
