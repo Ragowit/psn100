@@ -8,10 +8,7 @@
             <div class="row">
                 <div class="col-3">
                     &copy; <?= htmlspecialchars($footerViewModel->getYearRangeLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getReleaseUrl(), ENT_QUOTES, 'UTF-8'); ?>">
-                        <?= htmlspecialchars($footerViewModel->getVersionLabel(), ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
-                    -
+                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getReleaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($footerViewModel->getVersionLabel(), ENT_QUOTES, 'UTF-8'); ?></a> -
                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getChangelogUrl(), ENT_QUOTES, 'UTF-8'); ?>">Changelog</a>
                 </div>
                 <div class="col-6 text-center">
@@ -19,10 +16,7 @@
                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getIssuesUrl(), ENT_QUOTES, 'UTF-8'); ?>">Issues</a>
                 </div>
                 <div class="col-3 text-end">
-                    Created and maintained by
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getCreatorProfileUrl(), ENT_QUOTES, 'UTF-8'); ?>">
-                        <?= htmlspecialchars($footerViewModel->getCreatorName(), ENT_QUOTES, 'UTF-8'); ?>
-                    </a>.<br>
+                    Created and maintained by <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getCreatorProfileUrl(), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($footerViewModel->getCreatorName(), ENT_QUOTES, 'UTF-8'); ?></a>.<br>
                     Development by
                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($footerViewModel->getContributorsUrl(), ENT_QUOTES, 'UTF-8'); ?>">PSN100 Contributors</a>.
                 </div>
