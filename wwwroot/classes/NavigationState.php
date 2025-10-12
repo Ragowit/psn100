@@ -82,6 +82,11 @@ final class NavigationState
         return $this->getActiveClass('about');
     }
 
+    public function isSectionActive(string $section): bool
+    {
+        return $this->getActiveClass($section) === self::ACTIVE_SUFFIX;
+    }
+
     private function getActiveClass(string $section): string
     {
         return $this->activeClasses[$section] ?? '';

@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/classes/NavigationState.php';
+require_once __DIR__ . '/classes/NavigationMenu.php';
 
 $navigationState = NavigationState::fromGlobals($_SERVER, $_GET);
+$navigationMenu = NavigationMenu::createDefault($navigationState);
 ?>
 
 <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2">
@@ -23,24 +25,21 @@ $navigationState = NavigationState::fromGlobals($_SERVER, $_GET);
             </form>
 
             <ul class="navbar-nav ms-auto mb-2 mb-md-0">
-                <li class="nav-item">
-                    <a class="nav-link<?= $navigationState->getHomeClass(); ?>" href="/">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link<?= $navigationState->getLeaderboardClass(); ?>" href="/leaderboard/trophy">Leaderboards</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link<?= $navigationState->getGameClass(); ?>" href="/game">Games</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link<?= $navigationState->getTrophyClass(); ?>" href="/trophy">Trophies</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link<?= $navigationState->getAvatarClass(); ?>" href="/avatar">Avatars</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link<?= $navigationState->getAboutClass(); ?>" href="/about">About</a>
-                </li>
+                <?php foreach ($navigationMenu->getItems() as $item) { ?>
+                    <?php
+                    $linkClass = htmlspecialchars($item->getLinkCssClass(), ENT_QUOTES, 'UTF-8');
+                    $href = htmlspecialchars($item->getHref(), ENT_QUOTES, 'UTF-8');
+                    $ariaCurrent = $item->getAriaCurrentValue();
+                    $ariaAttribute = $ariaCurrent !== null
+                        ? ' aria-current="' . htmlspecialchars($ariaCurrent, ENT_QUOTES, 'UTF-8') . '"'
+                        : '';
+                    ?>
+                    <li class="nav-item">
+                        <a class="<?= $linkClass; ?>" href="<?= $href; ?>"<?= $ariaAttribute; ?>>
+                            <?= htmlspecialchars($item->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
+                        </a>
+                    </li>
+                <?php } ?>
             </ul>
         </div>
     </div>
