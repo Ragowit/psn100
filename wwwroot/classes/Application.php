@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Router.php';
 require_once __DIR__ . '/RouteResult.php';
 require_once __DIR__ . '/HttpRequest.php';
+require_once __DIR__ . '/TemplateRenderer.php';
 
 class Application
 {
@@ -12,12 +13,20 @@ class Application
 
     private HttpRequest $request;
 
+    private TemplateRenderer $templateRenderer;
+
     private string $notFoundTemplate;
 
-    public function __construct(Router $router, HttpRequest $request, string $notFoundTemplate = '404.php')
+    public function __construct(
+        Router $router,
+        HttpRequest $request,
+        TemplateRenderer $templateRenderer,
+        string $notFoundTemplate = '404.php'
+    )
     {
         $this->router = $router;
         $this->request = $request;
+        $this->templateRenderer = $templateRenderer;
         $this->notFoundTemplate = $notFoundTemplate;
     }
 
@@ -42,24 +51,14 @@ class Application
         if ($routeResult->isNotFound()) {
             $statusCode = $routeResult->getStatusCode() ?? 404;
             http_response_code($statusCode);
-            require_once $this->notFoundTemplate;
+            $this->templateRenderer->render($this->notFoundTemplate);
             exit();
         }
 
         if ($routeResult->shouldInclude()) {
-            $variables = $routeResult->getVariables();
-
-            if ($variables !== []) {
-                extract($variables, EXTR_SKIP);
-            }
-
             $include = $routeResult->getInclude();
             if ($include !== null) {
-                // The included templates expect global variables like $database and $utility
-                // to be available, just as they were when index.php handled the routing in
-                // the global scope. Make them available here before including the template.
-                global $database, $utility, $paginationRenderer;
-                require_once $include;
+                $this->templateRenderer->render($include, $routeResult->getVariables());
             }
         }
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../database.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PaginationRenderer.php';
+require_once __DIR__ . '/TemplateRenderer.php';
 require_once __DIR__ . '/Application.php';
 
 class ApplicationContainer
@@ -22,6 +23,8 @@ class ApplicationContainer
     private ?PlayerRepository $playerRepository = null;
 
     private ?Router $router = null;
+
+    private ?TemplateRenderer $templateRenderer = null;
 
     public function __construct(
         ?Database $database = null,
@@ -93,9 +96,26 @@ class ApplicationContainer
         return $this->router;
     }
 
+    public function getTemplateRenderer(): TemplateRenderer
+    {
+        if ($this->templateRenderer === null) {
+            $this->templateRenderer = new TemplateRenderer(
+                $this->getDatabase(),
+                $this->getUtility(),
+                $this->getPaginationRenderer()
+            );
+        }
+
+        return $this->templateRenderer;
+    }
+
     public function createApplication(HttpRequest $request): Application
     {
-        return new Application($this->getRouter(), $request);
+        return new Application(
+            $this->getRouter(),
+            $request,
+            $this->getTemplateRenderer()
+        );
     }
 
     public function createRequestFromGlobals(): HttpRequest
