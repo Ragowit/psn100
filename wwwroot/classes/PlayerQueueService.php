@@ -139,7 +139,10 @@ class PlayerQueueService
         return $position === false ? null : (int) $position;
     }
 
-    public function getPlayerStatusData(string $playerName): array
+    /**
+     * @return array{account_id: string|null, status: int|null}|null
+     */
+    public function getPlayerStatusData(string $playerName): ?array
     {
         $query = $this->database->prepare(
             <<<'SQL'
@@ -158,10 +161,7 @@ class PlayerQueueService
         $result = $query->fetch(PDO::FETCH_ASSOC);
 
         if (!is_array($result)) {
-            return [
-                'account_id' => null,
-                'status' => null,
-            ];
+            return null;
         }
 
         return [

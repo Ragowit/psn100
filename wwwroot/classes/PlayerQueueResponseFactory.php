@@ -69,6 +69,13 @@ final class PlayerQueueResponseFactory
         return PlayerQueueResponse::complete($playerLink . ' has been updated!');
     }
 
+    public function createPlayerNotFoundResponse(string $playerName): PlayerQueueResponse
+    {
+        $playerLink = $this->createPlayerLink($playerName);
+
+        return PlayerQueueResponse::error($playerLink . ' was not found. Please check the spelling and try again.');
+    }
+
     private function createQueuedResponse(string $message): PlayerQueueResponse
     {
         return PlayerQueueResponse::queued($this->createSpinnerMessage($message));

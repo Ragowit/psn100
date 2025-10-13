@@ -61,7 +61,7 @@ class PlayerQueueHandler
         }
 
         $playerData = $this->service->getPlayerStatusData($playerName);
-        if ($this->service->isCheaterStatus($playerData['status'])) {
+        if ($playerData !== null && $this->service->isCheaterStatus($playerData['status'])) {
             return $this->responseFactory->createCheaterResponse($playerName, $playerData['account_id']);
         }
 
@@ -72,6 +72,10 @@ class PlayerQueueHandler
         $position = $this->service->getQueuePosition($playerName);
         if ($position !== null) {
             return $this->responseFactory->createQueuePositionResponse($playerName, $position);
+        }
+
+        if ($playerData === null) {
+            return $this->responseFactory->createPlayerNotFoundResponse($playerName);
         }
 
         return $this->responseFactory->createQueueCompleteResponse($playerName);
