@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/classes/Cron/CronJobRunner.php';
+require_once dirname(__DIR__) . '/classes/Cron/CronJobApplication.php';
 
-$cronJobRunner = CronJobRunner::create();
-$cronJobRunner->configureEnvironment();
+$application = CronJobApplication::create();
+$application->configureEnvironment();
 
 require_once dirname(__DIR__) . '/init.php';
 require_once dirname(__DIR__) . '/classes/Cron/HourlyCronJob.php';
 
-$hourlyCronJob = new HourlyCronJob($database);
-$cronJobRunner->run($hourlyCronJob);
+$application->run(static fn (): CronJobInterface => new HourlyCronJob($database));
