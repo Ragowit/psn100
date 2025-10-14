@@ -1,9 +1,8 @@
 <?php
-require_once 'classes/HomepagePage.php';
+require_once 'classes/HomepageController.php';
 
-$homepageContentService = new HomepageContentService($database);
-$homepagePage = new HomepagePage($homepageContentService);
-$homepageViewModel = $homepagePage->buildViewModel();
+$homepageController = HomepageController::fromDatabase($database);
+$homepageViewModel = $homepageController->getViewModel();
 
 $title = $homepageViewModel->getTitle();
 $newGames = $homepageViewModel->getNewGames();
