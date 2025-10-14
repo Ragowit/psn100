@@ -111,6 +111,10 @@ class PlayerHeaderViewModel
                 break;
         }
 
+        if ($status === 1) {
+            return $alerts;
+        }
+
         if ($this->isUnranked()) {
             $alerts[] = "This player isn't ranked within the top 10000 and will not have their trophies contributed to the site statistics.";
         }
