@@ -1,55 +1,28 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/classes/PageMetaData.php';
-require_once __DIR__ . '/classes/PlayerSummary.php';
-require_once __DIR__ . '/classes/PlayerSummaryService.php';
-require_once __DIR__ . '/classes/PlayerGamesFilter.php';
-require_once __DIR__ . '/classes/PlayerGamesService.php';
-require_once __DIR__ . '/classes/PlayerGamesPage.php';
+require_once __DIR__ . '/classes/PlayerGamesPageContext.php';
 
 if (!isset($accountId)) {
     header("Location: /player/", true, 303);
     die();
 }
 
-$playerSummaryService = new PlayerSummaryService($database);
-$playerSummary = $playerSummaryService->getSummary((int) $accountId);
-$numberOfGames = $playerSummary->getNumberOfGames();
-
-$playerGamesFilter = PlayerGamesFilter::fromArray($_GET ?? []);
-$playerGamesService = new PlayerGamesService($database);
-$playerGamesPage = new PlayerGamesPage(
-    $playerGamesService,
-    $playerGamesFilter,
-    (int) $player["account_id"],
-    (int) $player["status"]
+$pageContext = PlayerGamesPageContext::fromGlobals(
+    $database,
+    $player,
+    (int) $accountId,
+    $_GET ?? []
 );
-$playerGames = $playerGamesPage->getGames();
 
-$metaData = (new PageMetaData())
-    ->setTitle($player["online_id"] . "'s Trophy Progress");
-
-if ($player["status"] == 1) {
-    $metaData->setDescription('The player is flagged as a cheater.');
-} elseif ($player["status"] == 3) {
-    $metaData->setDescription('The player is private.');
-} else {
-    $metaData->setDescription(
-        'Level ' . $player["level"] . '.' . $player["progress"]
-        . ' ~ ' . $numberOfGames . ' Unique Games ~ '
-        . $player["platinum"] . ' Unique Platinums'
-    );
-}
-
-$metaData
-    ->setImage('https://psn100.net/img/avatar/' . $player["avatar_url"])
-    ->setUrl('https://psn100.net/player/' . $player["online_id"]);
-
-$playerSearch = $playerGamesFilter->getSearch();
-$sort = $playerGamesFilter->getSort();
-
-$title = $player["online_id"] . "'s Trophy Progress ~ PSN 100%";
+$playerSummary = $pageContext->getPlayerSummary();
+$playerGamesFilter = $pageContext->getFilter();
+$playerGamesPage = $pageContext->getPlayerGamesPage();
+$playerGames = $pageContext->getGames();
+$metaData = $pageContext->getMetaData();
+$playerSearch = $pageContext->getSearch();
+$sort = $pageContext->getSort();
+$title = $pageContext->getTitle();
 require_once("header.php");
 ?>
 
