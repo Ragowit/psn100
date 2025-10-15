@@ -240,7 +240,7 @@ class GameListService
             GameListFilter::SORT_COMPLETION => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListFilter::SORT_OWNERS => 'ORDER BY owners DESC, `name`',
             GameListFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, owners DESC, `name`',
-            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`',
+            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
             default => 'ORDER BY id DESC',
         };
     }
