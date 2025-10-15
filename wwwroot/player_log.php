@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerLogFilter.php';
 require_once __DIR__ . '/classes/PlayerLogService.php';
 require_once __DIR__ . '/classes/PlayerLogPage.php';
@@ -8,10 +9,8 @@ require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 
-if (!isset($accountId)) {
-    header("Location: /player/", true, 303);
-    die();
-}
+$playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
+$accountId = $playerPageAccessGuard->requireAccountId();
 
 $playerLogFilter = PlayerLogFilter::fromArray($_GET ?? []);
 $playerLogService = new PlayerLogService($database);

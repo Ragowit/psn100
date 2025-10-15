@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerGamesPageContext.php';
 
-if (!isset($accountId)) {
-    header("Location: /player/", true, 303);
-    die();
-}
+$playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
+$accountId = $playerPageAccessGuard->requireAccountId();
 
 $pageContext = PlayerGamesPageContext::fromGlobals(
     $database,

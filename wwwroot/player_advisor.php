@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerAdvisorFilter.php';
 require_once __DIR__ . '/classes/PlayerAdvisorService.php';
 require_once __DIR__ . '/classes/PlayerAdvisorPage.php';
@@ -8,10 +9,8 @@ require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 
-if (!isset($accountId)) {
-    header("Location: /player/", true, 303);
-    die();
-}
+$playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
+$accountId = $playerPageAccessGuard->requireAccountId();
 
 $playerAdvisorFilter = PlayerAdvisorFilter::fromArray($_GET ?? []);
 $playerAdvisorService = new PlayerAdvisorService($database, $utility);

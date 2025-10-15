@@ -1,15 +1,16 @@
 <?php
-if (!isset($accountId)) {
-    header("Location: /player/", true, 303);
-    die();
-}
+declare(strict_types=1);
 
+require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerRandomGame.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesFilter.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesService.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesPage.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
+
+$playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
+$accountId = $playerPageAccessGuard->requireAccountId();
 
 $playerRandomGamesFilter = PlayerRandomGamesFilter::fromArray($_GET ?? []);
 $playerRandomGamesService = new PlayerRandomGamesService($database, $utility);
