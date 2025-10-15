@@ -60,7 +60,7 @@ class PlayerQueueResponse implements \JsonSerializable
         ];
     }
 
-    public function jsonSerialize(): array
+    public function jsonSerialize(): mixed
     {
         return $this->toArray();
     }
