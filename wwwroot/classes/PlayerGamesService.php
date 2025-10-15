@@ -160,7 +160,7 @@ class PlayerGamesService
             PlayerGamesFilter::SORT_MAX_RARITY => 'ORDER BY max_rarity_points DESC, `name`',
             PlayerGamesFilter::SORT_NAME => 'ORDER BY `name`',
             PlayerGamesFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`',
+            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
             default => 'ORDER BY last_updated_date DESC',
         };
     }
