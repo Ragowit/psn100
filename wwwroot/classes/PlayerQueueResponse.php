@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class PlayerQueueResponse
+class PlayerQueueResponse implements \JsonSerializable
 {
     private const STATUS_QUEUED = 'queued';
     private const STATUS_COMPLETE = 'complete';
@@ -58,5 +58,10 @@ class PlayerQueueResponse
             'message' => $this->getMessage(),
             'shouldPoll' => $this->shouldPoll(),
         ];
+    }
+
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }
