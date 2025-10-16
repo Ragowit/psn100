@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PossibleCheaterRuleGroup.php';
 require_once __DIR__ . '/PossibleCheaterSectionDefinition.php';
+require_once __DIR__ . '/PossibleCheaterReport.php';
 
 class PossibleCheaterService
 {
@@ -1002,10 +1003,76 @@ class PossibleCheaterService
         $this->database = $database;
     }
 
+    public function createReport(): PossibleCheaterReport
+    {
+        return new PossibleCheaterReport(
+            $this->buildGeneralReportEntries(),
+            $this->buildSectionReports()
+        );
+    }
+
+    private function buildGeneralWhereClause(): string
+    {
+        $conditions = [];
+
+        foreach ($this->getGeneralRuleGroups() as $group) {
+            foreach ($group->getRules() as $rule) {
+                $conditions[] = '(' . $rule->getCondition() . ')';
+            }
+        }
+
+        if ($conditions === []) {
+            return '()';
+        }
+
+        return '(' . implode(' OR ', $conditions) . ')';
+    }
+
+    /**
+     * @return PossibleCheaterReportEntry[]
+     */
+    private function buildGeneralReportEntries(): array
+    {
+        return array_map(
+            static fn(array $row): PossibleCheaterReportEntry => PossibleCheaterReportEntry::fromArray($row),
+            $this->fetchGeneralPossibleCheaterRows()
+        );
+    }
+
+    /**
+     * @return PossibleCheaterReportSection[]
+     */
+    private function buildSectionReports(): array
+    {
+        $sections = [];
+
+        foreach ($this->getSectionDefinitions() as $definition) {
+            $entries = array_map(
+                static function (array $row) use ($definition): PossibleCheaterReportSectionEntry {
+                    $onlineId = (string) $row['online_id'];
+
+                    return new PossibleCheaterReportSectionEntry(
+                        $definition->buildLink($onlineId),
+                        $onlineId,
+                        (int) $row['account_id']
+                    );
+                },
+                $this->fetchAll($definition->getQuery())
+            );
+
+            $sections[] = new PossibleCheaterReportSection(
+                $definition->getTitle(),
+                $entries
+            );
+        }
+
+        return $sections;
+    }
+
     /**
      * @return list<array{account_id:int, player_name:string, game_id:int, game_name:string}>
      */
-    public function getGeneralPossibleCheaters(): array
+    private function fetchGeneralPossibleCheaterRows(): array
     {
         $whereClause = $this->buildGeneralWhereClause();
 
@@ -1049,54 +1116,6 @@ class PossibleCheaterService
             ],
             $rows
         );
-    }
-
-    /**
-     * @return list<array{title:string, entries:list<array{account_id:int, online_id:string, url:string}>}>
-     */
-    public function getSectionResults(): array
-    {
-        $sections = [];
-
-        foreach ($this->getSectionDefinitions() as $definition) {
-            $rows = $this->fetchAll($definition->getQuery());
-            $entries = array_map(
-                static function (array $row) use ($definition): array {
-                    $onlineId = (string) $row['online_id'];
-
-                    return [
-                        'account_id' => (int) $row['account_id'],
-                        'online_id' => $onlineId,
-                        'url' => $definition->buildLink($onlineId),
-                    ];
-                },
-                $rows
-            );
-
-            $sections[] = [
-                'title' => $definition->getTitle(),
-                'entries' => $entries,
-            ];
-        }
-
-        return $sections;
-    }
-
-    private function buildGeneralWhereClause(): string
-    {
-        $conditions = [];
-
-        foreach ($this->getGeneralRuleGroups() as $group) {
-            foreach ($group->getRules() as $rule) {
-                $conditions[] = '(' . $rule->getCondition() . ')';
-            }
-        }
-
-        if ($conditions === []) {
-            return '()';
-        }
-
-        return '(' . implode(' OR ', $conditions) . ')';
     }
 
     /**
