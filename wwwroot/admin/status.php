@@ -7,10 +7,8 @@ require_once '../classes/Admin/GameStatusRequestHandler.php';
 $gameStatusService = new GameStatusService($database);
 $requestHandler = new GameStatusRequestHandler($gameStatusService);
 
-$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$postData = $_POST ?? [];
-
-$result = $requestHandler->handleRequest($requestMethod, $postData);
+$request = AdminRequest::fromGlobals($_SERVER ?? [], $_POST ?? []);
+$result = $requestHandler->handleRequest($request);
 $success = $result->getSuccessMessage();
 $error = $result->getErrorMessage();
 

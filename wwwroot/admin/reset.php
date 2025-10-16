@@ -9,10 +9,8 @@ require_once '../classes/Admin/GameResetRequestHandler.php';
 $gameResetService = new GameResetService($database);
 $requestHandler = new GameResetRequestHandler($gameResetService);
 
-$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$postData = $_POST ?? [];
-
-$result = $requestHandler->handleRequest($requestMethod, $postData);
+$request = AdminRequest::fromGlobals($_SERVER ?? [], $_POST ?? []);
+$result = $requestHandler->handleRequest($request);
 $success = $result->getSuccessMessage();
 $error = $result->getErrorMessage();
 

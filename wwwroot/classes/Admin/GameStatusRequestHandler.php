@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/AdminRequest.php';
 require_once __DIR__ . '/GameStatusRequestResult.php';
 require_once __DIR__ . '/../GameStatusService.php';
 
@@ -14,21 +15,18 @@ class GameStatusRequestHandler
         $this->gameStatusService = $gameStatusService;
     }
 
-    /**
-     * @param array<string, mixed> $postData
-     */
-    public function handleRequest(string $requestMethod, array $postData): GameStatusRequestResult
+    public function handleRequest(AdminRequest $request): GameStatusRequestResult
     {
-        if (strtoupper($requestMethod) !== 'POST') {
+        if (!$request->isPost()) {
             return GameStatusRequestResult::empty();
         }
 
-        $gameId = $this->parseNonNegativeInt($postData['game'] ?? null);
+        $gameId = $request->getPostNonNegativeInt('game');
         if ($gameId === null) {
             return GameStatusRequestResult::error('<p>Invalid game ID provided.</p>');
         }
 
-        $status = $this->parseInt($postData['status'] ?? null);
+        $status = $request->getPostInt('status');
         if ($status === null) {
             return GameStatusRequestResult::error('<p>Invalid status provided.</p>');
         }
@@ -45,28 +43,6 @@ class GameStatusRequestHandler
         } catch (Throwable $exception) {
             return GameStatusRequestResult::error('<p>Failed to update game status. Please try again.</p>');
         }
-    }
-
-    private function parseInt(mixed $value): ?int
-    {
-        if (!is_scalar($value)) {
-            return null;
-        }
-
-        $filtered = filter_var($value, FILTER_VALIDATE_INT);
-
-        return $filtered === false ? null : (int) $filtered;
-    }
-
-    private function parseNonNegativeInt(mixed $value): ?int
-    {
-        $number = $this->parseInt($value);
-
-        if ($number === null || $number < 0) {
-            return null;
-        }
-
-        return $number;
     }
 
     private function formatSuccessMessage(int $gameId, string $statusText): string
