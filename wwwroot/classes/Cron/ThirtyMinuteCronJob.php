@@ -1209,6 +1209,16 @@ class ThirtyMinuteCronJob implements CronJobInterface
             }
         }
 
+        $separatorPosition = strpos($name, ' - ');
+
+        if ($separatorPosition !== false) {
+            $prefix = substr($name, 0, $separatorPosition);
+
+            if (strpos($prefix, ':') === false) {
+                $name = substr_replace($name, ': ', $separatorPosition, 3);
+            }
+        }
+
         return trim($name);
     }
 
