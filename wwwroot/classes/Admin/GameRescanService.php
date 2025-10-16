@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameRescanProgressListener.php';
+
 use Tustin\PlayStation\Client;
 
 class GameRescanService
@@ -23,21 +25,21 @@ class GameRescanService
         $this->trophyCalculator = $trophyCalculator;
     }
 
-    public function rescan(int $gameId, ?callable $progressCallback = null): string
+    public function rescan(int $gameId, ?GameRescanProgressListener $progressListener = null): string
     {
         $this->lastProgress = 0;
-        $this->emitProgress($progressCallback, 5, 'Validating game id…');
+        $this->notifyProgress($progressListener, 5, 'Validating game id…');
         $npCommunicationId = $this->getGameNpCommunicationId($gameId);
 
-        $this->emitProgress($progressCallback, 10, 'Checking game entry…');
+        $this->notifyProgress($progressListener, 10, 'Checking game entry…');
 
         if (!$this->isOriginalGame($npCommunicationId)) {
             return 'Can only rescan original game entries.';
         }
 
-        $this->emitProgress($progressCallback, 15, 'Signing in to worker account…');
+        $this->notifyProgress($progressListener, 15, 'Signing in to worker account…');
         $client = $this->loginToWorker();
-        $this->emitProgress($progressCallback, 20, 'Locating accessible player…');
+        $this->notifyProgress($progressListener, 20, 'Locating accessible player…');
         $user = $this->findAccessibleUserWithGame($client, $npCommunicationId);
 
         if ($user === null) {
@@ -50,20 +52,20 @@ class GameRescanService
             throw new RuntimeException('Unable to find trophy title for the specified game.');
         }
 
-        $this->emitProgress($progressCallback, 25, 'Refreshing trophy details…');
-        $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId, $progressCallback);
-        $this->emitProgress($progressCallback, 70, 'Recalculating player statistics…');
+        $this->notifyProgress($progressListener, 25, 'Refreshing trophy details…');
+        $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId, $progressListener);
+        $this->notifyProgress($progressListener, 70, 'Recalculating player statistics…');
         $this->recalculateTrophies(
             $trophyTitle,
             $npCommunicationId,
             (int) $user->accountId(),
             $trophyGroups,
-            $progressCallback
+            $progressListener
         );
 
-        $this->emitProgress($progressCallback, 85, 'Updating trophy set version…');
+        $this->notifyProgress($progressListener, 85, 'Updating trophy set version…');
         $this->updateTrophySetVersion($npCommunicationId, $trophyTitle->trophySetVersion());
-        $this->emitProgress($progressCallback, 90, 'Recording rescan details…');
+        $this->notifyProgress($progressListener, 90, 'Recording rescan details…');
         $this->recordRescan($gameId);
 
         return "Game {$gameId} have been rescanned.";
@@ -152,9 +154,9 @@ class GameRescanService
         return null;
     }
 
-    private function emitProgress(?callable $progressCallback, int $percent, string $message): void
+    private function notifyProgress(?GameRescanProgressListener $progressListener, int $percent, string $message): void
     {
-        if ($progressCallback === null) {
+        if ($progressListener === null) {
             return;
         }
 
@@ -165,18 +167,18 @@ class GameRescanService
             $this->lastProgress = $clampedPercent;
         }
 
-        $progressCallback($clampedPercent, $message);
+        $progressListener->onProgress($clampedPercent, $message);
     }
 
-    private function emitProgressRange(
-        ?callable $progressCallback,
+    private function notifyProgressRange(
+        ?GameRescanProgressListener $progressListener,
         int $startPercent,
         int $endPercent,
         int $step,
         int $totalSteps,
         string $message
     ): void {
-        if ($progressCallback === null || $totalSteps <= 0) {
+        if ($progressListener === null || $totalSteps <= 0) {
             return;
         }
 
@@ -202,7 +204,7 @@ class GameRescanService
             }
         }
 
-        $this->emitProgress($progressCallback, $targetPercent, $message);
+        $this->notifyProgress($progressListener, $targetPercent, $message);
     }
 
     private function describeTrophyGroup(object $trophyGroup): string
@@ -265,7 +267,7 @@ class GameRescanService
         Client $client,
         object $trophyTitle,
         string $npCommunicationId,
-        ?callable $progressCallback
+        ?GameRescanProgressListener $progressListener
     ): array {
         $titleIconFilename = $this->downloadImage($trophyTitle->iconUrl(), self::TITLE_ICON_DIRECTORY);
         $platforms = $this->buildPlatformList($trophyTitle);
@@ -302,7 +304,7 @@ class GameRescanService
         }
 
         if ($groupData === []) {
-            $this->emitProgress($progressCallback, 70, 'Refreshing trophy details…');
+            $this->notifyProgress($progressListener, 70, 'Refreshing trophy details…');
 
             return [];
         }
@@ -319,8 +321,8 @@ class GameRescanService
             $processedGroups++;
             $groupLabel = $this->describeTrophyGroup($trophyGroup);
             $currentStep++;
-            $this->emitProgressRange(
-                $progressCallback,
+            $this->notifyProgressRange(
+                $progressListener,
                 25,
                 70,
                 $currentStep,
@@ -343,8 +345,8 @@ class GameRescanService
 
                 $processedTrophiesInGroup++;
                 $currentStep++;
-                $this->emitProgressRange(
-                    $progressCallback,
+                $this->notifyProgressRange(
+                    $progressListener,
                     25,
                     70,
                     $currentStep,
@@ -373,7 +375,7 @@ class GameRescanService
         string $npCommunicationId,
         int $accountId,
         array $trophyGroups,
-        ?callable $progressCallback
+        ?GameRescanProgressListener $progressListener
     ): void {
         $baseMessage = 'Recalculating player statistics…';
         $totalGroups = count($trophyGroups);
@@ -383,8 +385,8 @@ class GameRescanService
             $this->trophyCalculator->recalculateTrophyGroup($npCommunicationId, $trophyGroup->id(), $accountId);
 
             $currentGroup++;
-            $this->emitProgressRange(
-                $progressCallback,
+            $this->notifyProgressRange(
+                $progressListener,
                 70,
                 82,
                 $currentGroup,
@@ -401,16 +403,16 @@ class GameRescanService
             false
         );
 
-        $this->emitProgress($progressCallback, 83, $baseMessage);
+        $this->notifyProgress($progressListener, 83, $baseMessage);
 
         $this->recalculateParentTitles(
             $npCommunicationId,
             $trophyTitle->lastUpdatedDateTime(),
             $accountId,
-            $progressCallback
+            $progressListener
         );
 
-        $this->emitProgress($progressCallback, 84, $baseMessage);
+        $this->notifyProgress($progressListener, 84, $baseMessage);
     }
 
     private function upsertTrophyGroup(string $npCommunicationId, object $trophyGroup, string $iconFilename): void
@@ -529,7 +531,7 @@ class GameRescanService
         string $childNpCommunicationId,
         string $lastUpdatedDateTime,
         int $accountId,
-        ?callable $progressCallback = null
+        ?GameRescanProgressListener $progressListener = null
     ): void {
         $query = $this->database->prepare(
             'SELECT DISTINCT parent_np_communication_id, parent_group_id
@@ -557,8 +559,8 @@ class GameRescanService
             );
 
             $currentParent++;
-            $this->emitProgressRange(
-                $progressCallback,
+            $this->notifyProgressRange(
+                $progressListener,
                 83,
                 84,
                 $currentParent,

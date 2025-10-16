@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
+require_once __DIR__ . '/GameRescanProgressListener.php';
+require_once __DIR__ . '/CallableGameRescanProgressListener.php';
 
 class GameRescanRequestHandler
 {
@@ -49,13 +51,15 @@ class GameRescanRequestHandler
         ]);
 
         try {
-            $message = $this->gameRescanService->rescan($gameId, function (int $percent, string $message): void {
+            $progressListener = new CallableGameRescanProgressListener(function (int $percent, string $message): void {
                 $this->sendEvent([
                     'type' => 'progress',
                     'progress' => $percent,
                     'message' => $message,
                 ]);
             });
+
+            $message = $this->gameRescanService->rescan($gameId, $progressListener);
 
             $this->sendEvent([
                 'type' => 'complete',
