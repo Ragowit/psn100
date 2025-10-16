@@ -11,17 +11,7 @@ class PossibleCheaterPage
 
     public function __construct(PossibleCheaterService $service)
     {
-        $generalCheaters = array_map(
-            static fn(array $cheater): PossibleCheaterReportEntry => PossibleCheaterReportEntry::fromArray($cheater),
-            $service->getGeneralPossibleCheaters()
-        );
-
-        $sections = array_map(
-            static fn(array $section): PossibleCheaterReportSection => PossibleCheaterReportSection::fromArray($section),
-            $service->getSectionResults()
-        );
-
-        $this->report = new PossibleCheaterReport($generalCheaters, $sections);
+        $this->report = $service->createReport();
     }
 
     public function getReport(): PossibleCheaterReport
