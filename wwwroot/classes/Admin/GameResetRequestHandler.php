@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/AdminRequest.php';
 require_once __DIR__ . '/GameResetRequestResult.php';
 require_once __DIR__ . '/../GameResetService.php';
 
@@ -14,21 +15,18 @@ class GameResetRequestHandler
         $this->gameResetService = $gameResetService;
     }
 
-    /**
-     * @param array<string, mixed> $postData
-     */
-    public function handleRequest(string $requestMethod, array $postData): GameResetRequestResult
+    public function handleRequest(AdminRequest $request): GameResetRequestResult
     {
-        if (strtoupper($requestMethod) !== 'POST') {
+        if (!$request->isPost()) {
             return GameResetRequestResult::empty();
         }
 
-        $gameId = $this->parsePositiveInt($postData['game'] ?? null);
+        $gameId = $request->getPostPositiveInt('game');
         if ($gameId === null) {
             return GameResetRequestResult::error('<p>Please provide a valid game ID.</p>');
         }
 
-        $action = $this->parseAction($postData['status'] ?? null);
+        $action = $request->getPostIntInSet('status', [0, 1]);
         if ($action === null) {
             return GameResetRequestResult::error('<p>Please choose a valid action.</p>');
         }
@@ -44,44 +42,6 @@ class GameResetRequestHandler
         } catch (Throwable $exception) {
             return GameResetRequestResult::error('<p>Failed to process the request. Please try again.</p>');
         }
-    }
-
-    private function parsePositiveInt(mixed $value): ?int
-    {
-        if (!is_scalar($value)) {
-            return null;
-        }
-
-        $filtered = filter_var($value, FILTER_VALIDATE_INT);
-        if ($filtered === false) {
-            return null;
-        }
-
-        $number = (int) $filtered;
-        if ($number <= 0) {
-            return null;
-        }
-
-        return $number;
-    }
-
-    private function parseAction(mixed $value): ?int
-    {
-        if (!is_scalar($value)) {
-            return null;
-        }
-
-        $filtered = filter_var($value, FILTER_VALIDATE_INT);
-        if ($filtered === false) {
-            return null;
-        }
-
-        $action = (int) $filtered;
-        if (!in_array($action, [0, 1], true)) {
-            return null;
-        }
-
-        return $action;
     }
 
     private function escape(string $value): string

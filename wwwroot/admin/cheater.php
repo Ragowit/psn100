@@ -8,10 +8,8 @@ require_once '../classes/Admin/CheaterRequestHandler.php';
 $cheaterService = new CheaterService($database);
 $requestHandler = new CheaterRequestHandler($cheaterService);
 
-$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$postData = $_POST ?? [];
-
-$result = $requestHandler->handle($requestMethod, $postData);
+$request = AdminRequest::fromGlobals($_SERVER ?? [], $_POST ?? []);
+$result = $requestHandler->handle($request);
 $successMessage = $result->getSuccessMessage();
 $errorMessage = $result->getErrorMessage();
 

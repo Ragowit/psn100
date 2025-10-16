@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/AdminRequest.php';
 require_once __DIR__ . '/CheaterRequestResult.php';
 require_once __DIR__ . '/CheaterService.php';
 
@@ -14,16 +15,13 @@ class CheaterRequestHandler
         $this->cheaterService = $cheaterService;
     }
 
-    /**
-     * @param array<string, mixed> $postData
-     */
-    public function handle(string $requestMethod, array $postData): CheaterRequestResult
+    public function handle(AdminRequest $request): CheaterRequestResult
     {
-        if (strtoupper($requestMethod) !== 'POST') {
+        if (!$request->isPost()) {
             return CheaterRequestResult::empty();
         }
 
-        $onlineId = $this->sanitizeOnlineId($postData['player'] ?? null);
+        $onlineId = $request->getPostString('player');
 
         if ($onlineId === '') {
             return CheaterRequestResult::error('<p class="text-danger">Online ID cannot be empty.</p>');
@@ -43,11 +41,6 @@ class CheaterRequestHandler
         $message = sprintf('<p>Player %s is now tagged as a cheater.</p>', $player);
 
         return CheaterRequestResult::success($message);
-    }
-
-    private function sanitizeOnlineId(mixed $onlineId): string
-    {
-        return trim((string) ($onlineId ?? ''));
     }
 
     private function escapeHtml(string $value): string
