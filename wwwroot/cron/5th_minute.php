@@ -2,16 +2,13 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/classes/Cron/CronJobRunner.php';
-require_once dirname(__DIR__) . '/classes/Cron/CronJobApplication.php';
-
-$application = CronJobApplication::create();
-$application->configureEnvironment();
-
-require_once dirname(__DIR__) . '/init.php';
+require_once dirname(__DIR__) . '/classes/Cron/CronJobBootstrapper.php';
 require_once dirname(__DIR__) . '/classes/Cron/PlayerRankingCronJob.php';
 
-$application->run(static function () use ($database): CronJobInterface {
+$bootstrapper = CronJobBootstrapper::create(dirname(__DIR__));
+$bootstrapper->bootstrap();
+
+$bootstrapper->run(static function (\PDO $database): CronJobInterface {
     $playerRankingUpdater = new PlayerRankingUpdater($database);
 
     return new PlayerRankingCronJob($playerRankingUpdater);
