@@ -31,7 +31,8 @@ final class CronJobBootstrapper
             $this->requireProjectFile('vendor/autoload.php');
         }
 
-        $this->requireProjectFile('init.php', false);
+        $initScript = $this->getProjectFilePath('init.php');
+        require $initScript;
 
         if (!isset($database)) {
             throw new \RuntimeException('The init script did not define a $database variable.');
@@ -67,12 +68,17 @@ final class CronJobBootstrapper
 
     private function requireProjectFile(string $relativePath, bool $requireOnce = true): void
     {
-        $fullPath = $this->projectRoot . '/' . ltrim($relativePath, '/\\');
+        $fullPath = $this->getProjectFilePath($relativePath);
         if ($requireOnce) {
             require_once $fullPath;
             return;
         }
 
         require $fullPath;
+    }
+
+    private function getProjectFilePath(string $relativePath): string
+    {
+        return $this->projectRoot . '/' . ltrim($relativePath, '/\\');
     }
 }
