@@ -1263,7 +1263,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
             'vs',
             'vs.',
             'from',
-            'into',
             'onto',
             'upon',
             'without',
