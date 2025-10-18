@@ -1229,6 +1229,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
             }
         }
 
+        $name = rtrim($name);
+
+        if ($name !== '') {
+            $name = rtrim($name, '.');
+        }
+
         return trim($name);
     }
 
