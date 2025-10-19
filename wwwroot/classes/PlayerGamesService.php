@@ -20,9 +20,12 @@ class PlayerGamesService
 
     private PDO $database;
 
-    public function __construct(PDO $database)
+    private SearchQueryHelper $searchQueryHelper;
+
+    public function __construct(PDO $database, SearchQueryHelper $searchQueryHelper)
     {
         $this->database = $database;
+        $this->searchQueryHelper = $searchQueryHelper;
     }
 
     public function countPlayerGames(int $accountId, PlayerGamesFilter $filter): int
@@ -67,7 +70,7 @@ class PlayerGamesService
             'ttp.rarity_points',
         ];
 
-        $columns = SearchQueryHelper::addFulltextSelectColumns(
+        $columns = $this->searchQueryHelper->addFulltextSelectColumns(
             $columns,
             'tt.name',
             $filter->shouldIncludeScoreColumn(),
@@ -118,7 +121,7 @@ class PlayerGamesService
             "tgp.group_id = 'default'",
         ];
 
-        $conditions = SearchQueryHelper::appendFulltextCondition(
+        $conditions = $this->searchQueryHelper->appendFulltextCondition(
             $conditions,
             $filter->shouldApplyFulltextCondition(),
             'tt.name',
@@ -175,7 +178,7 @@ class PlayerGamesService
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
 
         if ($filter->shouldApplyFulltextCondition()) {
-            SearchQueryHelper::bindSearchParameters(
+            $this->searchQueryHelper->bindSearchParameters(
                 $statement,
                 $filter->getSearch(),
                 $bindPrefix

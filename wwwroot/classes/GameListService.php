@@ -11,9 +11,12 @@ class GameListService
 
     private PDO $database;
 
-    public function __construct(PDO $database)
+    private SearchQueryHelper $searchQueryHelper;
+
+    public function __construct(PDO $database, SearchQueryHelper $searchQueryHelper)
     {
         $this->database = $database;
+        $this->searchQueryHelper = $searchQueryHelper;
     }
 
     public function resolvePlayer(?string $onlineId): ?string
@@ -105,7 +108,7 @@ class GameListService
         $statement->bindValue(':online_id', $player, PDO::PARAM_STR);
 
         if ($filter->shouldApplySearch()) {
-            SearchQueryHelper::bindSearchParameters(
+            $this->searchQueryHelper->bindSearchParameters(
                 $statement,
                 $filter->getSearch(),
                 $bindPrefix
@@ -160,7 +163,7 @@ class GameListService
             'ttp.progress',
         ];
 
-        $columns = SearchQueryHelper::addFulltextSelectColumns(
+        $columns = $this->searchQueryHelper->addFulltextSelectColumns(
             $columns,
             'tt.name',
             $filter->shouldApplySearch(),
@@ -215,7 +218,7 @@ class GameListService
                 break;
         }
 
-        $conditions = SearchQueryHelper::appendFulltextCondition(
+        $conditions = $this->searchQueryHelper->appendFulltextCondition(
             $conditions,
             $filter->shouldApplySearch(),
             'tt.name',
