@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once '../init.php';
 require_once '../classes/Admin/GameStatusRequestHandler.php';
+require_once '../classes/Admin/AdminLayoutRenderer.php';
 
 $gameStatusService = new GameStatusService($database);
 $requestHandler = new GameStatusRequestHandler($gameStatusService);
@@ -12,41 +13,31 @@ $result = $requestHandler->handleRequest($request);
 $success = $result->getSuccessMessage();
 $error = $result->getErrorMessage();
 
-?>
-<!doctype html>
-<html lang="en" data-bs-theme="dark">
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <title>Admin ~ Game Status</title>
-    </head>
-    <body>
-        <div class="p-4">
-            <a href="/admin/">Back</a><br><br>
-            <form method="post" autocomplete="off">
-                Game ID:<br>
-                <input type="number" name="game"><br>
-                Status:<br>
-                <select name="status">
-                    <option value="0">Normal</option>
-                    <option value="1">Delisted</option>
-                    <option value="3">Obsolete</option>
-                    <option value="4">Delisted &amp; Obsolete</option>
-                </select><br><br>
-                <input type="submit" value="Submit">
-            </form>
+$layoutRenderer = new AdminLayoutRenderer();
 
-            <?php
-            if ($error !== null) {
-                echo $error;
-            }
+echo $layoutRenderer->render('Admin ~ Game Status', static function () use ($success, $error): void {
+    ?>
+    <form method="post" autocomplete="off">
+        Game ID:<br>
+        <input type="number" name="game"><br>
+        Status:<br>
+        <select name="status">
+            <option value="0">Normal</option>
+            <option value="1">Delisted</option>
+            <option value="3">Obsolete</option>
+            <option value="4">Delisted &amp; Obsolete</option>
+        </select><br><br>
+        <input type="submit" value="Submit">
+    </form>
 
-            if ($success !== null) {
-                echo $success;
-            }
-            ?>
-        </div>
-    </body>
-</html>
+    <?php
+    if ($error !== null) {
+        echo $error;
+    }
+
+    if ($success !== null) {
+        echo $success;
+    }
+    ?>
+    <?php
+});
