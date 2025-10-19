@@ -1,42 +1,30 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/classes/GameRecentPlayersPage.php';
+require_once __DIR__ . '/classes/GameRecentPlayersPageContext.php';
 
-if (!isset($gameId)) {
-    header("Location: /game/", true, 303);
-    die();
+$pageContext = GameRecentPlayersPageContext::fromGlobals(
+    $database,
+    $utility,
+    isset($gameId) ? (int) $gameId : null,
+    isset($player) ? (string) $player : null,
+    $_GET ?? []
+);
+
+if ($pageContext->shouldRedirect()) {
+    header('Location: ' . $pageContext->getRedirectLocation(), true, $pageContext->getRedirectStatusCode());
+    exit();
 }
 
-$gameRecentPlayersService = new GameRecentPlayersService($database);
-$gameHeaderService = new GameHeaderService($database);
+$game = $pageContext->getGame();
+$gameHeaderData = $pageContext->getGameHeaderData();
+$filter = $pageContext->getFilter();
+$recentPlayers = $pageContext->getRecentPlayers();
+$accountId = $pageContext->getPlayerAccountId();
+$gamePlayer = $pageContext->getGamePlayer();
+$gameSlug = $pageContext->getGameSlug();
 
-try {
-    $gameRecentPlayersPage = GameRecentPlayersPage::create(
-        $gameRecentPlayersService,
-        $gameHeaderService,
-        (int) $gameId,
-        isset($player) ? (string) $player : null,
-        $_GET ?? []
-    );
-} catch (GameNotFoundException $exception) {
-    header("Location: /game/", true, 303);
-    die();
-} catch (GameLeaderboardPlayerNotFoundException $exception) {
-    $slug = $utility->slugify($exception->getGameName());
-    header("Location: /game/" . $exception->getGameId() . "-" . $slug, true, 303);
-    die();
-}
-
-$game = $gameRecentPlayersPage->getGame();
-$gameHeaderData = $gameRecentPlayersPage->getGameHeaderData();
-$filter = $gameRecentPlayersPage->getFilter();
-$recentPlayers = $gameRecentPlayersPage->getRecentPlayers();
-$accountId = $gameRecentPlayersPage->getPlayerAccountId();
-$gamePlayer = $gameRecentPlayersPage->getGamePlayer();
-$gameSlug = $gameRecentPlayersPage->getGameSlug($utility);
-
-$title = $gameRecentPlayersPage->getPageTitle();
+$title = $pageContext->getTitle();
 require_once("header.php");
 
 ?>
