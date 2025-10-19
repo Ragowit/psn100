@@ -2,6 +2,8 @@
 
 class TrophyMergeService
 {
+    private const PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];
+
     private PDO $database;
 
     public function __construct(PDO $database)
@@ -783,6 +785,94 @@ SQL
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
+
+        $this->updateParentPlatform($parentNpCommunicationId, $childNpCommunicationId);
+    }
+
+    private function updateParentPlatform(string $parentNpCommunicationId, string $childNpCommunicationId): void
+    {
+        $parentPlatforms = $this->getPlatformsByNpCommunicationId($parentNpCommunicationId);
+        $childPlatforms = $this->getPlatformsByNpCommunicationId($childNpCommunicationId);
+
+        if ($childPlatforms === []) {
+            return;
+        }
+
+        $platformLookup = [];
+        foreach ($parentPlatforms as $platform) {
+            if ($platform === '') {
+                continue;
+            }
+
+            $platformLookup[$platform] = true;
+        }
+
+        $updated = false;
+
+        foreach ($childPlatforms as $platform) {
+            if ($platform === '') {
+                continue;
+            }
+
+            if (!isset($platformLookup[$platform])) {
+                $platformLookup[$platform] = true;
+                $updated = true;
+            }
+        }
+
+        if (!$updated) {
+            return;
+        }
+
+        $sortedPlatforms = $this->sortPlatforms(array_keys($platformLookup));
+
+        $query = $this->database->prepare(
+            'UPDATE trophy_title SET platform = :platform WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':platform', implode(',', $sortedPlatforms), PDO::PARAM_STR);
+        $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function getPlatformsByNpCommunicationId(string $npCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $platforms = $query->fetchColumn();
+
+        if ($platforms === false || $platforms === null || $platforms === '') {
+            return [];
+        }
+
+        $platforms = array_map('trim', explode(',', (string) $platforms));
+        $platforms = array_filter($platforms, static fn(string $platform): bool => $platform !== '');
+
+        return array_values($platforms);
+    }
+
+    private function sortPlatforms(array $platforms): array
+    {
+        $order = array_flip(self::PLATFORM_ORDER);
+
+        usort(
+            $platforms,
+            static function (string $left, string $right) use ($order): int {
+                $leftOrder = $order[$left] ?? PHP_INT_MAX;
+                $rightOrder = $order[$right] ?? PHP_INT_MAX;
+
+                if ($leftOrder === $rightOrder) {
+                    return strcmp($left, $right);
+                }
+
+                return $leftOrder <=> $rightOrder;
+            }
+        );
+
+        return $platforms;
     }
 
     private function logChange(string $changeType, int $param1, int $param2): void
