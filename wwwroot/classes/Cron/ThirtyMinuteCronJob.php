@@ -8,6 +8,11 @@ use Tustin\PlayStation\Client;
 
 class ThirtyMinuteCronJob implements CronJobInterface
 {
+    private const TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
+    private const GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
+    private const TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
+    private const REWARD_ICON_DIRECTORY = '/home/psn100/public_html/img/reward/';
+
     private PDO $database;
 
     private TrophyCalculator $trophyCalculator;
@@ -517,13 +522,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query->execute();
                         $setVersion = $query->fetchColumn();
                         if (!$setVersion || $setVersion != $trophyTitle->trophySetVersion()) {
-                            // Get the title icon url we want to save
-                            $trophyTitleIconUrl = $trophyTitle->iconUrl();
-                            $trophyTitleIconFilename = md5_file($trophyTitleIconUrl) . strtolower(substr($trophyTitleIconUrl, strrpos($trophyTitleIconUrl, ".")));
-                            // Download the title icon if we don't have it
-                            if (!file_exists("/home/psn100/public_html/img/title/". $trophyTitleIconFilename)) {
-                                file_put_contents("/home/psn100/public_html/img/title/". $trophyTitleIconFilename, fopen($trophyTitleIconUrl, "r"));
-                            }
+                            $trophyTitleIconFilename = $this->downloadMandatoryImage(
+                                $trophyTitle->iconUrl(),
+                                self::TITLE_ICON_DIRECTORY,
+                                sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid)
+                            );
 
                             $query = $this->database->prepare("INSERT INTO trophy_title(
                                     np_communication_id,
@@ -582,12 +585,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $query->execute();
                             $check = $query->fetchColumn();
                             if ($check == 0 || $setVersion != $trophyTitle->trophySetVersion()) {
-                                $trophyGroupIconUrl = $trophyGroup->iconUrl();
-                                $trophyGroupIconFilename = md5_file($trophyGroupIconUrl) . strtolower(substr($trophyGroupIconUrl, strrpos($trophyGroupIconUrl, ".")));
-                                // Download the group icon if we don't have it
-                                if (!file_exists("/home/psn100/public_html/img/group/". $trophyGroupIconFilename)) {
-                                    file_put_contents("/home/psn100/public_html/img/group/". $trophyGroupIconFilename, fopen($trophyGroupIconUrl, "r"));
-                                }
+                                $trophyGroupIconFilename = $this->downloadMandatoryImage(
+                                    $trophyGroup->iconUrl(),
+                                    self::GROUP_ICON_DIRECTORY,
+                                    sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroup->name(), $npid, $trophyGroup->id())
+                                );
 
                                 $query = $this->database->prepare("INSERT INTO trophy_group(
                                         np_communication_id,
@@ -628,23 +630,29 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $query->execute();
                                     $check = $query->fetchColumn();
                                     if ($check == 0 || $setVersion != $trophyTitle->trophySetVersion()) {
-                                        $trophyIconUrl = $trophy->iconUrl();
-                                        $trophyIconFilename = md5_file($trophyIconUrl) . strtolower(substr($trophyIconUrl, strrpos($trophyIconUrl, ".")));
-                                        // Download the trophy icon if we don't have it
-                                        if (!file_exists("/home/psn100/public_html/img/trophy/". $trophyIconFilename)) {
-                                            file_put_contents("/home/psn100/public_html/img/trophy/". $trophyIconFilename, fopen($trophyIconUrl, "r"));
-                                        }
+                                        $trophyIconFilename = $this->downloadMandatoryImage(
+                                            $trophy->iconUrl(),
+                                            self::TROPHY_ICON_DIRECTORY,
+                                            sprintf(
+                                                'trophy icon for "%s" (%s/%s/%d)',
+                                                $trophy->name(),
+                                                $npid,
+                                                $trophyGroup->id(),
+                                                $trophy->id()
+                                            )
+                                        );
 
-                                        $rewardImageUrl = $trophy->rewardImageUrl();
-                                        if ($rewardImageUrl === '') {
-                                            $rewardImageFilename = null;
-                                        } else {
-                                            $rewardImageFilename = md5_file($rewardImageUrl) . strtolower(substr($rewardImageUrl, strrpos($rewardImageUrl, ".")));
-                                            // Download the reward image if we don't have it
-                                            if (!file_exists("/home/psn100/public_html/img/reward/". $rewardImageFilename)) {
-                                                file_put_contents("/home/psn100/public_html/img/reward/". $rewardImageFilename, fopen($rewardImageUrl, "r"));
-                                            }
-                                        }
+                                        $rewardImageFilename = $this->downloadOptionalImage(
+                                            $trophy->rewardImageUrl(),
+                                            self::REWARD_ICON_DIRECTORY,
+                                            sprintf(
+                                                'reward image for "%s" (%s/%s/%d)',
+                                                $trophy->name(),
+                                                $npid,
+                                                $trophyGroup->id(),
+                                                $trophy->id()
+                                            )
+                                        );
 
                                         $query = $this->database->prepare("INSERT INTO trophy(
                                                 np_communication_id,
@@ -1182,6 +1190,85 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
             }
         }
+    }
+
+    private function downloadMandatoryImage(string $url, string $directory, string $description): string
+    {
+        $contents = $this->fetchRemoteFile($url);
+        if ($contents === null) {
+            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+
+            return '.png';
+        }
+
+        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
+
+        return $storedFilename ?? '.png';
+    }
+
+    private function downloadOptionalImage(?string $url, string $directory, string $description): ?string
+    {
+        if ($url === null || $url === '') {
+            return null;
+        }
+
+        $contents = $this->fetchRemoteFile($url);
+        if ($contents === null) {
+            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+
+            return '.png';
+        }
+
+        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
+
+        return $storedFilename ?? '.png';
+    }
+
+    private function storeImageContents(string $url, string $directory, string $description, string $contents): ?string
+    {
+        $filename = $this->buildFilename($url, $contents);
+        $path = $directory . $filename;
+
+        if (!file_exists($path)) {
+            if (@file_put_contents($path, $contents) === false) {
+                $this->logger->log(sprintf('Unable to save %s from "%s" to "%s".', $description, $url, $path));
+
+                return null;
+            }
+        }
+
+        return $filename;
+    }
+
+    private function fetchRemoteFile(string $url): ?string
+    {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 30,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $contents = @file_get_contents($url, false, $context);
+        if ($contents === false) {
+            return null;
+        }
+
+        $statusLine = $http_response_header[0] ?? '';
+        if ($statusLine !== '' && !preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
+            return null;
+        }
+
+        return $contents;
+    }
+
+    private function buildFilename(string $url, string $contents): string
+    {
+        $hash = md5($contents);
+        $extensionPosition = strrpos($url, '.');
+        $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
+
+        return $hash . $extension;
     }
 
     private function sanitizeTrophyTitleName(string $name): string
