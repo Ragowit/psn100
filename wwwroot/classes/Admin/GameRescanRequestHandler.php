@@ -51,6 +51,13 @@ class GameRescanRequestHandler
         ]);
 
         try {
+            $logListener = function (string $message): void {
+                $this->sendEvent([
+                    'type' => 'log',
+                    'message' => $message,
+                ]);
+            };
+
             $progressListener = new CallableGameRescanProgressListener(function (int $percent, string $message): void {
                 $this->sendEvent([
                     'type' => 'progress',
@@ -59,7 +66,7 @@ class GameRescanRequestHandler
                 ]);
             });
 
-            $message = $this->gameRescanService->rescan($gameId, $progressListener);
+            $message = $this->gameRescanService->rescan($gameId, $progressListener, $logListener);
 
             $this->sendEvent([
                 'type' => 'complete',

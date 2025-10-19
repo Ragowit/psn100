@@ -19,56 +19,74 @@ class GameRescanService
     private TrophyCalculator $trophyCalculator;
     private int $lastProgress = 0;
 
+    /**
+     * @var callable(string):void|null
+     */
+    private $logListener = null;
+
     public function __construct(PDO $database, TrophyCalculator $trophyCalculator)
     {
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
     }
 
-    public function rescan(int $gameId, ?GameRescanProgressListener $progressListener = null): string
-    {
-        $this->lastProgress = 0;
-        $this->notifyProgress($progressListener, 5, 'Validating game id…');
-        $npCommunicationId = $this->getGameNpCommunicationId($gameId);
+    /**
+     * @param callable(string):void|null $logListener
+     */
+    public function rescan(
+        int $gameId,
+        ?GameRescanProgressListener $progressListener = null,
+        ?callable $logListener = null
+    ): string {
+        $previousLogListener = $this->logListener;
+        $this->logListener = $logListener;
 
-        $this->notifyProgress($progressListener, 10, 'Checking game entry…');
+        try {
+            $this->lastProgress = 0;
+            $this->notifyProgress($progressListener, 5, 'Validating game id…');
+            $npCommunicationId = $this->getGameNpCommunicationId($gameId);
 
-        if (!$this->isOriginalGame($npCommunicationId)) {
-            return 'Can only rescan original game entries.';
+            $this->notifyProgress($progressListener, 10, 'Checking game entry…');
+
+            if (!$this->isOriginalGame($npCommunicationId)) {
+                return 'Can only rescan original game entries.';
+            }
+
+            $this->notifyProgress($progressListener, 15, 'Signing in to worker account…');
+            $client = $this->loginToWorker();
+            $this->notifyProgress($progressListener, 20, 'Locating accessible player…');
+            $user = $this->findAccessibleUserWithGame($client, $npCommunicationId);
+
+            if ($user === null) {
+                throw new RuntimeException('Unable to find accessible player for the specified game.');
+            }
+
+            $trophyTitle = $this->findTrophyTitleForUser($user, $npCommunicationId);
+
+            if ($trophyTitle === null) {
+                throw new RuntimeException('Unable to find trophy title for the specified game.');
+            }
+
+            $this->notifyProgress($progressListener, 25, 'Refreshing trophy details…');
+            $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId, $progressListener);
+            $this->notifyProgress($progressListener, 70, 'Recalculating player statistics…');
+            $this->recalculateTrophies(
+                $trophyTitle,
+                $npCommunicationId,
+                (int) $user->accountId(),
+                $trophyGroups,
+                $progressListener
+            );
+
+            $this->notifyProgress($progressListener, 85, 'Updating trophy set version…');
+            $this->updateTrophySetVersion($npCommunicationId, $trophyTitle->trophySetVersion());
+            $this->notifyProgress($progressListener, 90, 'Recording rescan details…');
+            $this->recordRescan($gameId);
+
+            return "Game {$gameId} have been rescanned.";
+        } finally {
+            $this->logListener = $previousLogListener;
         }
-
-        $this->notifyProgress($progressListener, 15, 'Signing in to worker account…');
-        $client = $this->loginToWorker();
-        $this->notifyProgress($progressListener, 20, 'Locating accessible player…');
-        $user = $this->findAccessibleUserWithGame($client, $npCommunicationId);
-
-        if ($user === null) {
-            throw new RuntimeException('Unable to find accessible player for the specified game.');
-        }
-
-        $trophyTitle = $this->findTrophyTitleForUser($user, $npCommunicationId);
-
-        if ($trophyTitle === null) {
-            throw new RuntimeException('Unable to find trophy title for the specified game.');
-        }
-
-        $this->notifyProgress($progressListener, 25, 'Refreshing trophy details…');
-        $trophyGroups = $this->updateTrophyTitle($client, $trophyTitle, $npCommunicationId, $progressListener);
-        $this->notifyProgress($progressListener, 70, 'Recalculating player statistics…');
-        $this->recalculateTrophies(
-            $trophyTitle,
-            $npCommunicationId,
-            (int) $user->accountId(),
-            $trophyGroups,
-            $progressListener
-        );
-
-        $this->notifyProgress($progressListener, 85, 'Updating trophy set version…');
-        $this->updateTrophySetVersion($npCommunicationId, $trophyTitle->trophySetVersion());
-        $this->notifyProgress($progressListener, 90, 'Recording rescan details…');
-        $this->recordRescan($gameId);
-
-        return "Game {$gameId} have been rescanned.";
     }
 
     private function getGameNpCommunicationId(int $gameId): string
@@ -120,6 +138,12 @@ class GameRescanService
 
     private function logMessage(string $message): void
     {
+        if ($this->logListener !== null) {
+            ($this->logListener)($message);
+
+            return;
+        }
+
         $query = $this->database->prepare('INSERT INTO log(message) VALUES(:message)');
         $query->bindValue(':message', $message, PDO::PARAM_STR);
         $query->execute();
