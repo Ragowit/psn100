@@ -8,26 +8,23 @@ require_once __DIR__ . '/TrophyRarityFormatter.php';
 require_once __DIR__ . '/TrophyNotFoundException.php';
 require_once __DIR__ . '/TrophyPlayerNotFoundException.php';
 require_once __DIR__ . '/Utility.php';
+require_once __DIR__ . '/TrophyDetails.php';
+require_once __DIR__ . '/PlayerTrophyProgress.php';
+require_once __DIR__ . '/TrophyAchiever.php';
 
 class TrophyPage
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private array $trophy;
+    private TrophyDetails $trophy;
+
+    private ?PlayerTrophyProgress $playerTrophy;
 
     /**
-     * @var array<string, mixed>|null
-     */
-    private ?array $playerTrophy;
-
-    /**
-     * @var array<int, array<string, mixed>>
+     * @var list<TrophyAchiever>
      */
     private array $firstAchievers;
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var list<TrophyAchiever>
      */
     private array $latestAchievers;
 
@@ -42,14 +39,12 @@ class TrophyPage
     private TrophyRarity $trophyRarity;
 
     /**
-     * @param array<string, mixed> $trophy
-     * @param array<string, mixed>|null $playerTrophy
-     * @param array<int, array<string, mixed>> $firstAchievers
-     * @param array<int, array<string, mixed>> $latestAchievers
+     * @param list<TrophyAchiever> $firstAchievers
+     * @param list<TrophyAchiever> $latestAchievers
      */
     private function __construct(
-        array $trophy,
-        ?array $playerTrophy,
+        TrophyDetails $trophy,
+        ?PlayerTrophyProgress $playerTrophy,
         array $firstAchievers,
         array $latestAchievers,
         ?int $playerAccountId,
@@ -81,15 +76,15 @@ class TrophyPage
             throw new TrophyNotFoundException('Trophy not found.');
         }
 
-        $trophyName = (string) $trophy['trophy_name'];
+        $trophyName = $trophy->getName();
         $metaData = (new PageMetaData())
             ->setTitle($trophyName . ' Trophy')
-            ->setDescription(htmlentities((string) $trophy['trophy_detail'], ENT_QUOTES, 'UTF-8'))
-            ->setImage('https://psn100.net/img/trophy/' . $trophy['trophy_icon'])
-            ->setUrl('https://psn100.net/trophy/' . $trophy['trophy_id'] . '-' . $utility->slugify($trophyName));
+            ->setDescription(htmlentities($trophy->getDetail(), ENT_QUOTES, 'UTF-8'))
+            ->setImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())
+            ->setUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
 
         $pageTitle = $trophyName . ' Trophy ~ PSN 100%';
-        $trophyRarity = $rarityFormatter->format($trophy['rarity_percent'], (int) $trophy['status']);
+        $trophyRarity = $rarityFormatter->format($trophy->getRarityPercent(), $trophy->getStatus());
 
         $playerAccountId = null;
         $playerOnlineId = null;
@@ -100,25 +95,20 @@ class TrophyPage
             $playerAccountId = $trophyService->getPlayerAccountId($player);
 
             if ($playerAccountId === null) {
-                throw new TrophyPlayerNotFoundException((string) $trophy['trophy_id'], $trophyName);
+                throw new TrophyPlayerNotFoundException((string) $trophy->getId(), $trophyName);
             }
 
             $playerOnlineId = $player;
-            $progressTargetValue = $trophy['progress_target_value'] ?? null;
-            if ($progressTargetValue !== null) {
-                $progressTargetValue = (string) $progressTargetValue;
-            }
-
             $playerTrophy = $trophyService->getPlayerTrophy(
                 $playerAccountId,
-                (string) $trophy['np_communication_id'],
-                (int) $trophy['order_id'],
-                $progressTargetValue
+                $trophy->getNpCommunicationId(),
+                $trophy->getOrderId(),
+                $trophy->getProgressTargetValue()
             );
         }
 
-        $npCommunicationId = (string) $trophy['np_communication_id'];
-        $orderId = (int) $trophy['order_id'];
+        $npCommunicationId = $trophy->getNpCommunicationId();
+        $orderId = $trophy->getOrderId();
 
         $firstAchievers = $trophyService->getFirstAchievers($npCommunicationId, $orderId);
         $latestAchievers = $trophyService->getLatestAchievers($npCommunicationId, $orderId);
@@ -136,24 +126,18 @@ class TrophyPage
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function getTrophy(): array
+    public function getTrophy(): TrophyDetails
     {
         return $this->trophy;
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function getPlayerTrophy(): ?array
+    public function getPlayerTrophy(): ?PlayerTrophyProgress
     {
         return $this->playerTrophy;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<TrophyAchiever>
      */
     public function getFirstAchievers(): array
     {
@@ -161,7 +145,7 @@ class TrophyPage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<TrophyAchiever>
      */
     public function getLatestAchievers(): array
     {

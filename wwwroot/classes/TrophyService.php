@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyDetails.php';
+require_once __DIR__ . '/PlayerTrophyProgress.php';
+require_once __DIR__ . '/TrophyAchiever.php';
+
 class TrophyService
 {
     private PDO $database;
@@ -11,7 +15,7 @@ class TrophyService
         $this->database = $database;
     }
 
-    public function getTrophyById(int $trophyId): ?array
+    public function getTrophyById(int $trophyId): ?TrophyDetails
     {
         $query = $this->database->prepare(
             'SELECT
@@ -44,7 +48,11 @@ class TrophyService
 
         $trophy = $query->fetch(PDO::FETCH_ASSOC);
 
-        return $trophy === false ? null : $trophy;
+        if ($trophy === false) {
+            return null;
+        }
+
+        return TrophyDetails::fromArray($trophy);
     }
 
     public function getPlayerAccountId(string $onlineId): ?int
@@ -70,7 +78,7 @@ class TrophyService
         string $npCommunicationId,
         int $orderId,
         ?string $progressTargetValue
-    ): ?array {
+    ): ?PlayerTrophyProgress {
         $query = $this->database->prepare(
             'SELECT
                 earned_date,
@@ -95,15 +103,11 @@ class TrophyService
             return null;
         }
 
-        if ((int) $playerTrophy['earned'] === 1 && $progressTargetValue !== null) {
-            $playerTrophy['progress'] = $progressTargetValue;
-        }
-
-        return $playerTrophy;
+        return PlayerTrophyProgress::fromArray($playerTrophy, $progressTargetValue);
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<TrophyAchiever>
      */
     public function getFirstAchievers(string $npCommunicationId, int $orderId): array
     {
@@ -111,7 +115,7 @@ class TrophyService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<TrophyAchiever>
      */
     public function getLatestAchievers(string $npCommunicationId, int $orderId): array
     {
@@ -119,7 +123,7 @@ class TrophyService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<TrophyAchiever>
      */
     private function getAchievers(string $npCommunicationId, int $orderId, bool $latest): array
     {
@@ -163,6 +167,6 @@ class TrophyService
         /** @var array<int, array<string, mixed>> $achievers */
         $achievers = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return $achievers;
+        return array_map(static fn (array $row): TrophyAchiever => TrophyAchiever::fromArray($row), $achievers);
     }
 }
