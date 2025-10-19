@@ -269,7 +269,15 @@ class GameRescanService
         string $npCommunicationId,
         ?GameRescanProgressListener $progressListener
     ): array {
-        $titleIconFilename = $this->downloadImage($trophyTitle->iconUrl(), self::TITLE_ICON_DIRECTORY);
+        $existingTitleIcon = $this->fetchExistingTitleIcon($npCommunicationId);
+        $existingGroupIcons = $this->fetchExistingTrophyGroupIcons($npCommunicationId);
+        $existingTrophyAssets = $this->fetchExistingTrophyAssets($npCommunicationId);
+
+        $titleIconFilename = $this->downloadImage(
+            $trophyTitle->iconUrl(),
+            self::TITLE_ICON_DIRECTORY,
+            $existingTitleIcon
+        );
         $platforms = $this->buildPlatformList($trophyTitle);
 
         $query = $this->database->prepare(
@@ -315,7 +323,11 @@ class GameRescanService
 
         foreach ($groupData as $data) {
             $trophyGroup = $data['group'];
-            $groupIconFilename = $this->downloadImage($trophyGroup->iconUrl(), self::GROUP_ICON_DIRECTORY);
+            $groupIconFilename = $this->downloadImage(
+                $trophyGroup->iconUrl(),
+                self::GROUP_ICON_DIRECTORY,
+                $existingGroupIcons[$trophyGroup->id()] ?? null
+            );
             $this->upsertTrophyGroup($npCommunicationId, $trophyGroup, $groupIconFilename);
 
             $processedGroups++;
@@ -339,8 +351,21 @@ class GameRescanService
             $processedTrophiesInGroup = 0;
 
             foreach ($data['trophies'] as $trophy) {
-                $trophyIconFilename = $this->downloadImage($trophy->iconUrl(), self::TROPHY_ICON_DIRECTORY);
-                $rewardImageFilename = $this->downloadOptionalImage($trophy->rewardImageUrl(), self::REWARD_ICON_DIRECTORY);
+                $existingTrophyAsset = $existingTrophyAssets[$trophyGroup->id()][(int) $trophy->id()] ?? [
+                    'icon' => null,
+                    'reward' => null,
+                ];
+
+                $trophyIconFilename = $this->downloadImage(
+                    $trophy->iconUrl(),
+                    self::TROPHY_ICON_DIRECTORY,
+                    $existingTrophyAsset['icon']
+                );
+                $rewardImageFilename = $this->downloadOptionalImage(
+                    $trophy->rewardImageUrl(),
+                    self::REWARD_ICON_DIRECTORY,
+                    $existingTrophyAsset['reward']
+                );
                 $this->upsertTrophy($npCommunicationId, $trophyGroup->id(), $trophy, $trophyIconFilename, $rewardImageFilename);
 
                 $processedTrophiesInGroup++;
@@ -591,30 +616,140 @@ class GameRescanService
         $query->execute();
     }
 
-    private function downloadImage(string $url, string $directory): string
+    private function fetchExistingTitleIcon(string $npCommunicationId): ?string
     {
-        $filename = $this->buildFilename($url);
+        $query = $this->database->prepare(
+            'SELECT icon_url FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $iconUrl = $query->fetchColumn();
+
+        return $iconUrl === false ? null : (string) $iconUrl;
+    }
+
+    private function fetchExistingTrophyGroupIcons(string $npCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT group_id, icon_url FROM trophy_group WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $icons = [];
+        while (($row = $query->fetch(PDO::FETCH_ASSOC)) !== false) {
+            $groupId = (string) $row['group_id'];
+            $iconUrl = $row['icon_url'];
+            $icons[$groupId] = $iconUrl === null ? null : (string) $iconUrl;
+        }
+
+        return $icons;
+    }
+
+    private function fetchExistingTrophyAssets(string $npCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT group_id, order_id, icon_url, reward_image_url'
+            . ' FROM trophy WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $assets = [];
+        while (($row = $query->fetch(PDO::FETCH_ASSOC)) !== false) {
+            $groupId = (string) $row['group_id'];
+            $orderId = (int) $row['order_id'];
+            $assets[$groupId][$orderId] = [
+                'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
+                'reward' => $row['reward_image_url'] === null ? null : (string) $row['reward_image_url'],
+            ];
+        }
+
+        return $assets;
+    }
+
+    private function downloadImage(string $url, string $directory, ?string $existingFilename = null): string
+    {
+        $contents = $this->fetchRemoteFile($url);
+
+        if ($contents === null) {
+            if ($existingFilename !== null && $existingFilename !== '') {
+                $this->logMessage(
+                    sprintf('Reusing cached image "%s" because "%s" is unavailable.', $existingFilename, $url)
+                );
+
+                return $existingFilename;
+            }
+
+            $this->logMessage(sprintf('Unable to download image from "%s".', $url));
+
+            throw new RuntimeException(sprintf('Unable to download image from "%s".', $url));
+        }
+
+        $filename = $this->buildFilename($url, $contents);
         $path = $directory . $filename;
 
         if (!file_exists($path)) {
-            file_put_contents($path, fopen($url, 'r'));
+            file_put_contents($path, $contents);
         }
 
         return $filename;
     }
 
-    private function downloadOptionalImage(?string $url, string $directory): ?string
+    private function downloadOptionalImage(?string $url, string $directory, ?string $existingFilename = null): ?string
     {
         if ($url === null || $url === '') {
+            return $existingFilename;
+        }
+
+        $contents = $this->fetchRemoteFile($url);
+
+        if ($contents === null) {
+            if ($existingFilename !== null && $existingFilename !== '') {
+                $this->logMessage(
+                    sprintf('Keeping cached optional image "%s" because "%s" is unavailable.', $existingFilename, $url)
+                );
+            }
+
+            return $existingFilename;
+        }
+
+        $filename = $this->buildFilename($url, $contents);
+        $path = $directory . $filename;
+
+        if (!file_exists($path)) {
+            file_put_contents($path, $contents);
+        }
+
+        return $filename;
+    }
+
+    private function fetchRemoteFile(string $url): ?string
+    {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 30,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $contents = @file_get_contents($url, false, $context);
+        if ($contents === false) {
             return null;
         }
 
-        return $this->downloadImage($url, $directory);
+        $statusLine = $http_response_header[0] ?? '';
+        if ($statusLine !== '' && !preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
+            return null;
+        }
+
+        return $contents;
     }
 
-    private function buildFilename(string $url): string
+    private function buildFilename(string $url, string $contents): string
     {
-        $hash = md5_file($url);
+        $hash = md5($contents);
         $extensionPosition = strrpos($url, '.');
         $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
 
