@@ -6,6 +6,7 @@ require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesPage.php';
 require_once __DIR__ . '/PlayerGamesService.php';
+require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 
@@ -57,7 +58,8 @@ final class PlayerGamesPageContext
         $playerSummary = $playerSummaryService->getSummary($accountId);
 
         $filter = PlayerGamesFilter::fromArray($queryParameters);
-        $playerGamesService = new PlayerGamesService($database);
+        $searchQueryHelper = new SearchQueryHelper();
+        $playerGamesService = new PlayerGamesService($database, $searchQueryHelper);
         $playerGamesPage = new PlayerGamesPage(
             $playerGamesService,
             $filter,

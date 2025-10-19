@@ -8,7 +8,7 @@ final class SearchQueryHelper
      * @param array<int, string> $columns
      * @return array<int, string>
      */
-    public static function addFulltextSelectColumns(
+    public function addFulltextSelectColumns(
         array $columns,
         string $column,
         bool $includeScore,
@@ -18,7 +18,7 @@ final class SearchQueryHelper
             return $columns;
         }
 
-        $variants = self::getSearchVariants($searchTerm);
+        $variants = $this->getSearchVariants($searchTerm);
 
         if ($variants === []) {
             $columns[] = '0 AS exact_match';
@@ -64,7 +64,7 @@ final class SearchQueryHelper
      * @param array<int, string> $conditions
      * @return array<int, string>
      */
-    public static function appendFulltextCondition(
+    public function appendFulltextCondition(
         array $conditions,
         bool $shouldApply,
         string $column,
@@ -74,7 +74,7 @@ final class SearchQueryHelper
             return $conditions;
         }
 
-        $variants = self::getSearchVariants($searchTerm);
+        $variants = $this->getSearchVariants($searchTerm);
 
         if ($variants === []) {
             return $conditions;
@@ -101,9 +101,9 @@ final class SearchQueryHelper
         return $conditions;
     }
 
-    public static function bindSearchParameters(\PDOStatement $statement, string $searchTerm, bool $bindPrefix): void
+    public function bindSearchParameters(\PDOStatement $statement, string $searchTerm, bool $bindPrefix): void
     {
-        $variants = self::getSearchVariants($searchTerm);
+        $variants = $this->getSearchVariants($searchTerm);
 
         foreach ($variants as $index => $variant) {
             $statement->bindValue(':search_fulltext_' . $index, $variant, \PDO::PARAM_STR);
@@ -116,7 +116,7 @@ final class SearchQueryHelper
         foreach ($variants as $index => $variant) {
             $statement->bindValue(
                 ':search_like_' . $index,
-                self::buildSearchLikeParameter($variant),
+                $this->buildSearchLikeParameter($variant),
                 \PDO::PARAM_STR
             );
         }
@@ -125,19 +125,19 @@ final class SearchQueryHelper
             foreach ($variants as $index => $variant) {
                 $statement->bindValue(
                     ':search_prefix_' . $index,
-                    self::buildSearchPrefixParameter($variant),
+                    $this->buildSearchPrefixParameter($variant),
                     \PDO::PARAM_STR
                 );
             }
         }
     }
 
-    public static function buildSearchLikeParameter(string $search): string
+    private function buildSearchLikeParameter(string $search): string
     {
         return '%' . addcslashes($search, "\\%_") . '%';
     }
 
-    public static function buildSearchPrefixParameter(string $search): string
+    private function buildSearchPrefixParameter(string $search): string
     {
         return addcslashes($search, "\\%_") . '%';
     }
@@ -145,16 +145,16 @@ final class SearchQueryHelper
     /**
      * @return list<string>
      */
-    private static function getSearchVariants(string $searchTerm): array
+    private function getSearchVariants(string $searchTerm): array
     {
         $variants = [$searchTerm];
 
-        $romanVariant = self::replaceDigitsWithRomans($searchTerm);
+        $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
         if ($romanVariant !== $searchTerm) {
             $variants[] = $romanVariant;
         }
 
-        $numericVariant = self::replaceRomansWithDigits($searchTerm);
+        $numericVariant = $this->replaceRomansWithDigits($searchTerm);
         if ($numericVariant !== $searchTerm && !in_array($numericVariant, $variants, true)) {
             $variants[] = $numericVariant;
         }
@@ -162,13 +162,13 @@ final class SearchQueryHelper
         return $variants;
     }
 
-    private static function replaceDigitsWithRomans(string $value): string
+    private function replaceDigitsWithRomans(string $value): string
     {
         return (string) preg_replace_callback(
             '/\b\d+\b/u',
-            static function (array $matches): string {
+            function (array $matches): string {
                 $number = (int) $matches[0];
-                $roman = self::convertIntToRoman($number);
+                $roman = $this->convertIntToRoman($number);
 
                 return $roman ?? $matches[0];
             },
@@ -176,19 +176,19 @@ final class SearchQueryHelper
         );
     }
 
-    private static function replaceRomansWithDigits(string $value): string
+    private function replaceRomansWithDigits(string $value): string
     {
         return (string) preg_replace_callback(
             '/\b[ivxlcdm]+\b/ui',
-            static function (array $matches): string {
+            function (array $matches): string {
                 $roman = strtoupper($matches[0]);
-                $number = self::convertRomanToInt($roman);
+                $number = $this->convertRomanToInt($roman);
 
                 if ($number === null) {
                     return $matches[0];
                 }
 
-                $normalizedRoman = self::convertIntToRoman($number);
+                $normalizedRoman = $this->convertIntToRoman($number);
                 if ($normalizedRoman !== $roman) {
                     return $matches[0];
                 }
@@ -199,7 +199,7 @@ final class SearchQueryHelper
         );
     }
 
-    private static function convertIntToRoman(int $number): ?string
+    private function convertIntToRoman(int $number): ?string
     {
         if ($number <= 0 || $number >= 4000) {
             return null;
@@ -232,7 +232,7 @@ final class SearchQueryHelper
         return $result;
     }
 
-    private static function convertRomanToInt(string $roman): ?int
+    private function convertRomanToInt(string $roman): ?int
     {
         if ($roman === '') {
             return null;

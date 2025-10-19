@@ -4,11 +4,13 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/GameListFilter.php';
 require_once __DIR__ . '/classes/GameListService.php';
 require_once __DIR__ . '/classes/GameListPage.php';
+require_once __DIR__ . '/classes/SearchQueryHelper.php';
 
 $title = "Games ~ PSN 100%";
 
 $filter = GameListFilter::fromArray($_GET ?? []);
-$gameListService = new GameListService($database);
+$searchQueryHelper = new SearchQueryHelper();
+$gameListService = new GameListService($database, $searchQueryHelper);
 $gameListPage = new GameListPage($gameListService, $filter);
 
 $filter = $gameListPage->getFilter();
