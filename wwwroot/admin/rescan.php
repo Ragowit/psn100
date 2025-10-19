@@ -34,6 +34,11 @@ require_once("../init.php");
                 <p id="progress-message" class="text-body-secondary small mt-2">Preparing rescan…</p>
             </div>
 
+            <div id="log-wrapper" class="mt-3 d-none">
+                <h2 class="h6 mb-2">Activity log</h2>
+                <div id="log-entries" class="border rounded p-2 small font-monospace bg-body-tertiary" style="max-height: 240px; overflow-y: auto;"></div>
+            </div>
+
             <div id="result" class="mt-3"></div>
         </div>
 
@@ -46,6 +51,8 @@ require_once("../init.php");
                     progressWrapperId,
                     progressBarId,
                     progressMessageId,
+                    logWrapperId,
+                    logEntriesId,
                     resultId,
                 }) {
                     this.form = document.getElementById(formId);
@@ -54,6 +61,8 @@ require_once("../init.php");
                     this.progressWrapper = document.getElementById(progressWrapperId);
                     this.progressBar = document.getElementById(progressBarId);
                     this.progressMessage = document.getElementById(progressMessageId);
+                    this.logWrapper = document.getElementById(logWrapperId);
+                    this.logEntries = document.getElementById(logEntriesId);
                     this.result = document.getElementById(resultId);
                 }
 
@@ -73,6 +82,8 @@ require_once("../init.php");
                         this.progressWrapper,
                         this.progressBar,
                         this.progressMessage,
+                        this.logWrapper,
+                        this.logEntries,
                         this.result,
                     ].every((element) => element instanceof HTMLElement);
                 }
@@ -80,6 +91,7 @@ require_once("../init.php");
                 handleSubmit(event) {
                     event.preventDefault();
                     this.clearResult();
+                    this.resetLog();
 
                     const trimmedValue = (this.gameInput.value || '').trim();
                     if (!/^\d+$/.test(trimmedValue)) {
@@ -182,6 +194,14 @@ require_once("../init.php");
 
                     const processPayload = (payload) => {
                         if (!payload || typeof payload !== 'object') {
+                            return;
+                        }
+
+                        if (payload.type === 'log') {
+                            if (typeof payload.message === 'string' && payload.message.trim() !== '') {
+                                this.appendLogMessage(payload.message);
+                            }
+
                             return;
                         }
 
@@ -289,6 +309,16 @@ require_once("../init.php");
                     this.progressMessage.textContent = 'Preparing rescan…';
                 }
 
+                resetLog() {
+                    if (this.logEntries instanceof HTMLElement) {
+                        this.logEntries.replaceChildren();
+                    }
+
+                    if (this.logWrapper instanceof HTMLElement) {
+                        this.logWrapper.classList.add('d-none');
+                    }
+                }
+
                 updateProgress(value, message = null) {
                     if (!this.progressBar) {
                         return;
@@ -305,6 +335,22 @@ require_once("../init.php");
                     if (message !== null && this.progressMessage) {
                         this.progressMessage.textContent = message;
                     }
+                }
+
+                appendLogMessage(message) {
+                    if (!(this.logEntries instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    if (this.logWrapper instanceof HTMLElement) {
+                        this.logWrapper.classList.remove('d-none');
+                    }
+
+                    const entry = document.createElement('div');
+                    entry.textContent = message;
+
+                    this.logEntries.appendChild(entry);
+                    this.logEntries.scrollTop = this.logEntries.scrollHeight;
                 }
 
                 setFormDisabled(disabled) {
@@ -387,6 +433,8 @@ require_once("../init.php");
                     progressWrapperId: 'progress-wrapper',
                     progressBarId: 'progress-bar',
                     progressMessageId: 'progress-message',
+                    logWrapperId: 'log-wrapper',
+                    logEntriesId: 'log-entries',
                     resultId: 'result',
                 });
 
