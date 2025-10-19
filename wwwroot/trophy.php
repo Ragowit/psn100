@@ -42,7 +42,7 @@ require_once("header.php");
 
 <main class="container">
     <?php
-    if ($trophy["status"] == 1) {
+    if ($trophy->isUnobtainable()) {
         ?>
         <div class="row">
             <div class="col-12">
@@ -59,30 +59,35 @@ require_once("header.php");
         <div class="col-12">
             <div class="card rounded-4">
                 <div class="d-flex justify-content-center align-items-center">
-                    <img class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= ($trophy["game_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophy["game_icon"]; ?>" alt="<?= $trophy["game_name"]; ?>" title="<?= $trophy["game_name"]; ?>" />
+                    <img class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" />
                     <div class="card-img-overlay d-flex align-items-end">
                         <div class="bg-body-tertiary p-3 rounded w-100">
                             <div class="row">
                                 <div class="col-8">
                                     <div class="hstack gap-3">
                                         <div>
-                                            <img src="/img/trophy/<?= ($trophy["trophy_icon"] == ".png") ? ((str_contains($trophy["platform"], "PS5")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["trophy_icon"]; ?>" alt="<?= $trophy["trophy_name"]; ?>" title="<?= $trophy["trophy_name"]; ?>" style="width: 5rem;" />
+                                            <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
                                         </div>
 
                                         <div>
                                             <div class="vstack gap-1">
                                                 <div class="hstack gap-3">
                                                     <div>
-                                                        <b><?= htmlentities($trophy["trophy_name"]); ?></b>
+                                                        <b><?= htmlentities($trophy->getName()); ?></b>
                                                     </div>
 
                                                     <?php
-                                                    if (isset($playerTrophy) && $playerTrophy && $playerTrophy["earned"] == 1) {
+                                                    if ($playerTrophy !== null && $playerTrophy->wasEarned()) {
+                                                        $earnedDate = $playerTrophy->getEarnedDate();
                                                         ?>
                                                         <div>
                                                             <span class="badge rounded-pill text-bg-success" id="earnedTrophy"></span>
                                                             <script>
-                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned ' + new Date('<?= $playerTrophy["earned_date"]; ?> UTC').toLocaleString('sv-SE');
+                                                                <?php if ($earnedDate !== null) { ?>
+                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned ' + new Date('<?= $earnedDate; ?> UTC').toLocaleString('sv-SE');
+                                                                <?php } else { ?>
+                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned';
+                                                                <?php } ?>
                                                             </script>
                                                         </div>
                                                         <?php
@@ -91,33 +96,35 @@ require_once("header.php");
                                                 </div>
 
                                                 <div>
-                                                    <?= nl2br(htmlentities($trophy["trophy_detail"], ENT_QUOTES, "UTF-8")); ?>
+                                                    <?= nl2br(htmlentities($trophy->getDetail(), ENT_QUOTES, "UTF-8")); ?>
                                                     <?php
-                                                    if ($trophy["progress_target_value"] != null) {
-                                                        echo "<br><b>";
-                                                        if (isset($playerTrophy) && isset($playerTrophy["progress"])) {
-                                                            echo $playerTrophy["progress"];
-                                                        } else {
-                                                            echo "0";
-                                                        }
-                                                        echo "/". $trophy["progress_target_value"] ."</b>";
+                                                    $progressTargetValue = $trophy->getProgressTargetValue();
+                                                    if ($progressTargetValue !== null) {
+                                                        $progress = $playerTrophy !== null ? $playerTrophy->getProgress() : null;
+                                                        ?>
+                                                        <br><b><?= htmlspecialchars($progress ?? '0', ENT_QUOTES, 'UTF-8'); ?>/<?= htmlspecialchars($progressTargetValue, ENT_QUOTES, 'UTF-8'); ?></b>
+                                                        <?php
                                                     }
 
-                                                    if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
-                                                        echo "<br>Reward: <a href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a>";
+                                                    $rewardName = $trophy->getRewardName();
+                                                    $rewardImageUrl = $trophy->getRewardImageUrl();
+                                                    if ($rewardName !== null && $rewardImageUrl !== null) {
+                                                        ?>
+                                                        <br>Reward: <a href="/img/reward/<?= htmlspecialchars($rewardImageUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($rewardName, ENT_QUOTES, 'UTF-8'); ?></a>
+                                                        <?php
                                                     }
                                                     ?>
                                                 </div>
-                                                
+
                                                 <div>
                                                     <div class="hstack gap-1">
                                                         <?php
-                                                        foreach (explode(",", $trophy["platform"]) as $platform) {
-                                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2\">". $platform ."</span> ";
+                                                        foreach ($trophy->getPlatforms() as $platform) {
+                                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . htmlentities($platform) . "</span> ";
                                                         }
                                                         ?>
 
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?><?= ($playerOnlineId !== null ? '/' . $playerOnlineId : ''); ?>"><?= htmlentities($trophy["game_name"]); ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($trophy->getGameLink($utility, $playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlentities($trophy->getGameName()); ?></a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -132,9 +139,9 @@ require_once("header.php");
                                         <?= $trophyRarity->renderSpan(); ?>
                                     <?php } ?>
                                 </div>
-                                
+
                                 <div class="col-2 text-center align-self-center">
-                                    <img src="/img/trophy-<?= $trophy["trophy_type"]; ?>.svg" alt="<?= ucfirst($trophy["trophy_type"]); ?>" title="<?= ucfirst($trophy["trophy_type"]); ?>" height="50" />
+                                    <img src="/img/trophy-<?= htmlspecialchars($trophy->getType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= ucfirst($trophy->getType()); ?>" title="<?= ucfirst($trophy->getType()); ?>" height="50" />
                                 </div>
                             </div>
                         </div>
@@ -171,16 +178,16 @@ require_once("header.php");
 
                                     foreach ($firstAchievers as $result) {
                                         ?>
-                                        <tr<?= ($playerOnlineId !== null && $result["online_id"] === $playerOnlineId) ? " class='table-primary'" : ""; ?>>
+                                        <tr<?= $result->matchesOnlineId($playerOnlineId) ? " class='table-primary'" : ""; ?>>
                                             <th class="align-middle" scope="row">
                                                 <?= ++$count; ?>
                                             </th>
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
-                                                    <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($trophy->getGameSlug($utility), ENT_QUOTES, 'UTF-8'); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
                                                     <?php
-                                                    if ($result["trophy_count_npwr"] < $result["trophy_count_sony"]) {
+                                                    if ($result->hasHiddenTrophies()) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
                                                     }
                                                     ?>
@@ -190,7 +197,7 @@ require_once("header.php");
                                             </td>
 
                                             <script>
-                                                document.getElementById("faDate<?= $count; ?>").innerHTML = new Date('<?= $result["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                document.getElementById("faDate<?= $count; ?>").innerHTML = new Date('<?= $result->getEarnedDate(); ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
                                             </script>
                                         </tr>
                                         <?php
@@ -228,16 +235,16 @@ require_once("header.php");
 
                                     foreach ($latestAchievers as $result) {
                                         ?>
-                                        <tr<?= ($playerOnlineId !== null && $result["online_id"] === $playerOnlineId) ? " class='table-primary'" : ""; ?>>
+                                        <tr<?= $result->matchesOnlineId($playerOnlineId) ? " class='table-primary'" : ""; ?>>
                                             <th class="align-middle" scope="row">
                                                 <?= ++$count; ?>
                                             </th>
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
-                                                    <img src="/img/avatar/<?= $result["avatar_url"]; ?>" alt="<?= $result["online_id"]; ?>" height="60" />
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $trophy["game_id"] ."-". $utility->slugify($trophy["game_name"]); ?>/<?= $result["online_id"]; ?>"><?= $result["online_id"]; ?></a>
+                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($trophy->getGameSlug($utility), ENT_QUOTES, 'UTF-8'); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
                                                     <?php
-                                                    if ($result["trophy_count_npwr"] < $result["trophy_count_sony"]) {
+                                                    if ($result->hasHiddenTrophies()) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
                                                     }
                                                     ?>
@@ -247,7 +254,7 @@ require_once("header.php");
                                             </td>
 
                                             <script>
-                                                document.getElementById("laDate<?= $count; ?>").innerHTML = new Date('<?= $result["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                document.getElementById("laDate<?= $count; ?>").innerHTML = new Date('<?= $result->getEarnedDate(); ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
                                             </script>
                                         </tr>
                                         <?php
