@@ -557,7 +557,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
                             $platforms = "";
                             foreach ($trophyTitle->platform() as $platform) {
-                                $platforms .= $platform->value .",";
+                                $platformValue = $platform->value;
+                                if ($platformValue === 'PSPC') {
+                                    $platformValue = 'PC';
+                                }
+
+                                $platforms .= $platformValue .",";
                             }
                             $platforms = rtrim($platforms, ",");
                             $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
