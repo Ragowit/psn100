@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerGamesPageContext.php';
+require_once __DIR__ . '/classes/PlayerNavigation.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -21,6 +22,7 @@ $playerGames = $pageContext->getGames();
 $metaData = $pageContext->getMetaData();
 $playerSearch = $pageContext->getSearch();
 $sort = $pageContext->getSort();
+$playerNavigation = PlayerNavigation::forSection((string) $player['online_id'], PlayerNavigation::SECTION_GAMES);
 $title = $pageContext->getTitle();
 require_once("header.php");
 ?>
@@ -37,13 +39,7 @@ require_once("header.php");
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
-                <div class="btn-group">
-                    <a class="btn btn-primary active" href="/player/<?= $player["online_id"]; ?>">Games</a>
-                    <a class="btn btn-outline-primary" href="/player/<?= $player["online_id"]; ?>/log">Log</a>
-                    <a class="btn btn-outline-primary" href="/player/<?= $player["online_id"]; ?>/advisor">Trophy Advisor</a>
-                    <a class="btn btn-outline-primary" href="/game?sort=completion&filter=true&player=<?= $player["online_id"]; ?>">Game Advisor</a>
-                    <a class="btn btn-outline-primary" href="/player/<?= $player["online_id"]; ?>/random">Random Games</a>
-                </div>
+                <?php require __DIR__ . '/player_navigation.php'; ?>
             </div>
 
             <div class="col-12 col-lg-3 mb-3">
