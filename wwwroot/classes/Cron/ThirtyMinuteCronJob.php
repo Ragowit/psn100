@@ -1279,7 +1279,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
             return $name;
         }
 
-        $name = str_replace('™', '', $name);
+        $name = str_replace(['™', '®', '©'], '', $name);
 
         if ($name === '') {
             return $name;
