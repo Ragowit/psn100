@@ -28,6 +28,25 @@ class GameCopyService
             tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id
         SQL;
 
+    private const TROPHY_TITLE_UPDATE_QUERY = <<<'SQL'
+        WITH
+            child_title AS (
+            SELECT
+                icon_url
+            FROM
+                trophy_title
+            WHERE
+                np_communication_id = :child_np_communication_id
+        )
+        UPDATE
+            trophy_title parent,
+            child_title
+        SET
+            parent.icon_url = child_title.icon_url
+        WHERE
+            parent.np_communication_id = :parent_np_communication_id
+        SQL;
+
     private const TROPHY_UPDATE_QUERY = <<<'SQL'
         WITH
             tg_org AS(
@@ -76,6 +95,7 @@ class GameCopyService
         $this->ensureChildIsNotMergeTitle($childNpCommunicationId);
         $this->ensureParentIsMergeTitle($parentNpCommunicationId);
 
+        $this->copyTrophyTitle($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
         $this->recordCopyAction($childId, $parentId);
@@ -112,6 +132,14 @@ class GameCopyService
     private function copyTrophyGroups(string $childNpCommunicationId, string $parentNpCommunicationId): void
     {
         $query = $this->database->prepare(self::TROPHY_GROUP_UPDATE_QUERY);
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function copyTrophyTitle(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $query = $this->database->prepare(self::TROPHY_TITLE_UPDATE_QUERY);
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
