@@ -283,7 +283,7 @@ class GameCopyService
             'SELECT 1
              FROM   trophy_group
              WHERE  np_communication_id = :np_communication_id
-             AND    (group_id = :group_id OR name = :group_id)
+             AND    group_id = :group_id
              LIMIT 1'
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
