@@ -222,6 +222,8 @@ class GameCopyService
             $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
         }
 
+        $this->updateTrophyTitleCounts($parentNpCommunicationId);
+
         $this->recordCopyAction($childId, $parentId);
     }
 
@@ -291,6 +293,43 @@ class GameCopyService
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
+    }
+
+    private function updateTrophyTitleCounts(string $npCommunicationId): void
+    {
+        $select = $this->database->prepare(
+            'SELECT COALESCE(SUM(bronze), 0) AS bronze,
+                    COALESCE(SUM(silver), 0) AS silver,
+                    COALESCE(SUM(gold), 0) AS gold,
+                    COALESCE(SUM(platinum), 0) AS platinum
+             FROM   trophy_group
+             WHERE  np_communication_id = :np_communication_id'
+        );
+        $select->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $select->execute();
+
+        $counts = $select->fetch(PDO::FETCH_ASSOC) ?: [];
+        $select->closeCursor();
+
+        $bronze = (int) ($counts['bronze'] ?? 0);
+        $silver = (int) ($counts['silver'] ?? 0);
+        $gold = (int) ($counts['gold'] ?? 0);
+        $platinum = (int) ($counts['platinum'] ?? 0);
+
+        $update = $this->database->prepare(
+            'UPDATE trophy_title
+             SET    bronze = :bronze,
+                    silver = :silver,
+                    gold = :gold,
+                    platinum = :platinum
+             WHERE  np_communication_id = :np_communication_id'
+        );
+        $update->bindValue(':bronze', $bronze, PDO::PARAM_INT);
+        $update->bindValue(':silver', $silver, PDO::PARAM_INT);
+        $update->bindValue(':gold', $gold, PDO::PARAM_INT);
+        $update->bindValue(':platinum', $platinum, PDO::PARAM_INT);
+        $update->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $update->execute();
     }
 
     private function isBaseList(string $npCommunicationId): bool
