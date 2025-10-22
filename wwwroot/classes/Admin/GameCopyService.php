@@ -189,8 +189,10 @@ class GameCopyService
 
         $this->copyTrophyTitle($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+        $groupIdMapping = $this->copyConflictingTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
+        $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
         $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
         $this->recordCopyAction($childId, $parentId);
     }
@@ -261,6 +263,715 @@ class GameCopyService
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function copyConflictingTrophyGroups(string $childNpCommunicationId, string $parentNpCommunicationId): array
+    {
+        $conflictingGroupIds = $this->getConflictingGroupIds($childNpCommunicationId, $parentNpCommunicationId);
+
+        if ($conflictingGroupIds === []) {
+            return [];
+        }
+
+        $existingGroupIds = $this->getExistingGroupIds($parentNpCommunicationId);
+        $existingGroupMappings = $this->getExistingGroupMappings($childNpCommunicationId, $parentNpCommunicationId);
+        $groupIdMapping = $existingGroupMappings;
+
+        $childGroupTrophyNames = $this->getTrophyNamesByGroup($childNpCommunicationId, $conflictingGroupIds);
+        $parentGroupTrophyNames = $this->getTrophyNamesByGroup($parentNpCommunicationId, null);
+
+        $usedParentGroups = [];
+        foreach ($existingGroupMappings as $parentGroupId) {
+            $usedParentGroups[$parentGroupId] = true;
+        }
+
+        $groupOffset = $this->determineGroupOffset($existingGroupIds);
+
+        $select = $this->database->prepare(
+            'SELECT group_id, name, detail, icon_url, bronze, silver, gold, platinum
+             FROM   trophy_group
+             WHERE  np_communication_id = :np_communication_id
+             AND    group_id = :group_id'
+        );
+        $upsert = $this->database->prepare(
+            'INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url, bronze, silver, gold, platinum)
+             VALUES (:np_communication_id, :group_id, :name, :detail, :icon_url, :bronze, :silver, :gold, :platinum)
+             ON DUPLICATE KEY UPDATE
+                 name = VALUES(name),
+                 detail = VALUES(detail),
+                 icon_url = VALUES(icon_url),
+                 bronze = VALUES(bronze),
+                 silver = VALUES(silver),
+                 gold = VALUES(gold),
+                 platinum = VALUES(platinum)'
+        );
+
+        foreach ($conflictingGroupIds as $groupId) {
+            $numericGroupId = $this->parseNumericGroupId($groupId);
+
+            if ($numericGroupId === null) {
+                continue;
+            }
+
+            $select->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $select->bindValue(':group_id', $groupId, PDO::PARAM_STR);
+            $select->execute();
+
+            $group = $select->fetch(PDO::FETCH_ASSOC);
+
+            if ($group === false) {
+                $select->closeCursor();
+                continue;
+            }
+
+            $targetGroupId = $groupIdMapping[$groupId] ?? null;
+
+            if ($targetGroupId === null) {
+                $targetGroupId = $this->findMatchingParentGroupId(
+                    $groupId,
+                    $childGroupTrophyNames,
+                    $parentGroupTrophyNames,
+                    $usedParentGroups
+                );
+            }
+
+            if ($targetGroupId !== null) {
+                $this->upsertTrophyGroup(
+                    $upsert,
+                    $parentNpCommunicationId,
+                    $targetGroupId,
+                    $group
+                );
+
+                $groupIdMapping[$groupId] = $targetGroupId;
+                $existingGroupIds[$targetGroupId] = true;
+                $usedParentGroups[$targetGroupId] = true;
+                $parentGroupTrophyNames[$targetGroupId] = $childGroupTrophyNames[$groupId] ?? [];
+                $select->closeCursor();
+                continue;
+            }
+
+            $candidateOffset = $groupOffset;
+            $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
+
+            while (isset($existingGroupIds[$newGroupId])) {
+                $candidateOffset += 100;
+                $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
+            }
+
+            $groupOffset = $candidateOffset;
+
+            $this->upsertTrophyGroup(
+                $upsert,
+                $parentNpCommunicationId,
+                $newGroupId,
+                $group
+            );
+
+            $groupIdMapping[$groupId] = $newGroupId;
+            $existingGroupIds[$newGroupId] = true;
+            $usedParentGroups[$newGroupId] = true;
+            $parentGroupTrophyNames[$newGroupId] = $childGroupTrophyNames[$groupId] ?? [];
+
+            $select->closeCursor();
+        }
+
+        return $groupIdMapping;
+    }
+
+    /**
+     * @param array<string, string> $groupIdMapping
+     */
+    private function copyConflictingTrophies(string $childNpCommunicationId, string $parentNpCommunicationId, array $groupIdMapping): void
+    {
+        if ($groupIdMapping === []) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($groupIdMapping), '?'));
+
+        $query = $this->database->prepare(
+            'SELECT group_id,
+                    order_id,
+                    hidden,
+                    type,
+                    name,
+                    detail,
+                    icon_url,
+                    rarity_percent,
+                    rarity_point,
+                    status,
+                    owners,
+                    rarity_name,
+                    progress_target_value,
+                    reward_name,
+                    reward_image_url
+             FROM   trophy
+             WHERE  np_communication_id = ?
+             AND    group_id IN (' . $placeholders . ')
+             ORDER BY group_id, order_id'
+        );
+
+        $parameters = array_merge([$childNpCommunicationId], array_keys($groupIdMapping));
+        $query->execute($parameters);
+
+        $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($trophies === []) {
+            return;
+        }
+
+        $existingTrophyMappings = $this->getExistingTrophyMappings($childNpCommunicationId, $parentNpCommunicationId);
+        $nextOrderId = $this->getNextOrderId($parentNpCommunicationId);
+
+        $insert = $this->database->prepare(
+            'INSERT INTO trophy (
+                np_communication_id,
+                group_id,
+                order_id,
+                hidden,
+                type,
+                name,
+                detail,
+                icon_url,
+                rarity_percent,
+                rarity_point,
+                status,
+                owners,
+                rarity_name,
+                progress_target_value,
+                reward_name,
+                reward_image_url
+            ) VALUES (
+                :np_communication_id,
+                :group_id,
+                :order_id,
+                :hidden,
+                :type,
+                :name,
+                :detail,
+                :icon_url,
+                :rarity_percent,
+                :rarity_point,
+                :status,
+                :owners,
+                :rarity_name,
+                :progress_target_value,
+                :reward_name,
+                :reward_image_url
+            )'
+        );
+        $update = $this->database->prepare(
+            'UPDATE trophy
+             SET    hidden = :hidden,
+                    type = :type,
+                    name = :name,
+                    detail = :detail,
+                    icon_url = :icon_url,
+                    rarity_percent = :rarity_percent,
+                    rarity_point = :rarity_point,
+                    status = :status,
+                    owners = :owners,
+                    rarity_name = :rarity_name,
+                    progress_target_value = :progress_target_value,
+                    reward_name = :reward_name,
+                    reward_image_url = :reward_image_url
+             WHERE  np_communication_id = :np_communication_id
+             AND    group_id = :group_id
+             AND    order_id = :order_id'
+        );
+        $exists = $this->database->prepare(
+            'SELECT 1
+             FROM   trophy
+             WHERE  np_communication_id = :np_communication_id
+             AND    group_id = :group_id
+             AND    order_id = :order_id'
+        );
+        $findExisting = $this->database->prepare(
+            'SELECT order_id
+             FROM   trophy
+             WHERE  np_communication_id = :np_communication_id
+             AND    group_id = :group_id
+             AND    name = :name
+             LIMIT 1'
+        );
+        $merge = $this->database->prepare(
+            'INSERT INTO trophy_merge (
+                child_np_communication_id,
+                child_group_id,
+                child_order_id,
+                parent_np_communication_id,
+                parent_group_id,
+                parent_order_id
+            ) VALUES (
+                :child_np_communication_id,
+                :child_group_id,
+                :child_order_id,
+                :parent_np_communication_id,
+                :parent_group_id,
+                :parent_order_id
+            )
+            ON DUPLICATE KEY UPDATE
+                parent_np_communication_id = VALUES(parent_np_communication_id),
+                parent_group_id = VALUES(parent_group_id),
+                parent_order_id = VALUES(parent_order_id)'
+        );
+
+        foreach ($trophies as $trophy) {
+            $childGroupId = (string) $trophy['group_id'];
+            $childOrderId = (int) $trophy['order_id'];
+            $targetGroupId = $groupIdMapping[$childGroupId] ?? $childGroupId;
+            $parentGroupId = $targetGroupId;
+            $parentOrderId = null;
+
+            $existingMapping = $existingTrophyMappings[$childGroupId][$childOrderId] ?? null;
+
+            if ($existingMapping !== null) {
+                $parentGroupId = $existingMapping['parent_group_id'];
+                $parentOrderId = $existingMapping['parent_order_id'];
+
+                if ($this->trophyExists($exists, $parentNpCommunicationId, $parentGroupId, $parentOrderId)) {
+                    $this->updateParentTrophy($update, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
+                    $this->upsertTrophyMergeMapping(
+                        $merge,
+                        $childNpCommunicationId,
+                        $childGroupId,
+                        $childOrderId,
+                        $parentNpCommunicationId,
+                        $parentGroupId,
+                        $parentOrderId
+                    );
+
+                    continue;
+                }
+
+                $parentOrderId = null;
+            }
+
+            if ($parentOrderId === null) {
+                $parentOrderId = $this->findExistingParentTrophyOrderId(
+                    $findExisting,
+                    $parentNpCommunicationId,
+                    $parentGroupId,
+                    (string) $trophy['name']
+                );
+
+                if ($parentOrderId !== null) {
+                    $this->updateParentTrophy($update, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
+                    $this->upsertTrophyMergeMapping(
+                        $merge,
+                        $childNpCommunicationId,
+                        $childGroupId,
+                        $childOrderId,
+                        $parentNpCommunicationId,
+                        $parentGroupId,
+                        $parentOrderId
+                    );
+
+                    continue;
+                }
+            }
+
+            $parentOrderId = ++$nextOrderId;
+
+            $this->insertParentTrophy($insert, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
+            $this->upsertTrophyMergeMapping(
+                $merge,
+                $childNpCommunicationId,
+                $childGroupId,
+                $childOrderId,
+                $parentNpCommunicationId,
+                $parentGroupId,
+                $parentOrderId
+            );
+        }
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getConflictingGroupIds(string $childNpCommunicationId, string $parentNpCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT child.group_id
+             FROM   trophy_group child
+                    INNER JOIN trophy_group parent ON parent.np_communication_id = :parent_np_communication_id
+                                                 AND parent.group_id = child.group_id
+             WHERE  child.np_communication_id = :child_np_communication_id
+             ORDER BY child.group_id'
+        );
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $groupIds = [];
+
+        while (($groupId = $query->fetchColumn()) !== false) {
+            $groupId = (string) $groupId;
+
+            if ($this->parseNumericGroupId($groupId) === null) {
+                continue;
+            }
+
+            $groupIds[] = $groupId;
+        }
+
+        return $groupIds;
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function getExistingGroupIds(string $npCommunicationId): array
+    {
+        $query = $this->database->prepare('SELECT group_id FROM trophy_group WHERE np_communication_id = :np_communication_id');
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $groupIds = [];
+
+        while (($groupId = $query->fetchColumn()) !== false) {
+            $groupIds[(string) $groupId] = true;
+        }
+
+        return $groupIds;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function getExistingGroupMappings(string $childNpCommunicationId, string $parentNpCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT child_group_id, parent_group_id, parent_order_id
+             FROM   trophy_merge
+             WHERE  child_np_communication_id = :child_np_communication_id
+             AND    parent_np_communication_id = :parent_np_communication_id
+             ORDER BY child_group_id, parent_order_id DESC'
+        );
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $mappings = [];
+
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $childGroupId = (string) $row['child_group_id'];
+            $parentGroupId = (string) $row['parent_group_id'];
+
+            if ($parentGroupId === '') {
+                continue;
+            }
+
+            if (!isset($mappings[$childGroupId])) {
+                $mappings[$childGroupId] = $parentGroupId;
+            }
+        }
+
+        $query->closeCursor();
+
+        return $mappings;
+    }
+
+    /**
+     * @return array<string, array<int, array{parent_group_id: string, parent_order_id: int}>>
+     */
+    private function getExistingTrophyMappings(string $childNpCommunicationId, string $parentNpCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT child_group_id, child_order_id, parent_group_id, parent_order_id
+             FROM   trophy_merge
+             WHERE  child_np_communication_id = :child_np_communication_id
+             AND    parent_np_communication_id = :parent_np_communication_id'
+        );
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $mappings = [];
+
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $parentGroupId = (string) $row['parent_group_id'];
+
+            if ($parentGroupId === '') {
+                continue;
+            }
+
+            $childGroupId = (string) $row['child_group_id'];
+            $childOrderId = (int) $row['child_order_id'];
+            $mappings[$childGroupId][$childOrderId] = [
+                'parent_group_id' => $parentGroupId,
+                'parent_order_id' => (int) $row['parent_order_id'],
+            ];
+        }
+
+        $query->closeCursor();
+
+        return $mappings;
+    }
+
+    /**
+     * @param string[]|null $groupIds
+     * @return array<string, string[]>
+     */
+    private function getTrophyNamesByGroup(string $npCommunicationId, ?array $groupIds): array
+    {
+        if ($groupIds !== null && $groupIds === []) {
+            return [];
+        }
+
+        $sql = 'SELECT group_id, name FROM trophy WHERE np_communication_id = ?';
+        $parameters = [$npCommunicationId];
+
+        if ($groupIds !== null) {
+            $placeholders = implode(',', array_fill(0, count($groupIds), '?'));
+            $sql .= ' AND group_id IN (' . $placeholders . ')';
+
+            foreach ($groupIds as $groupId) {
+                $parameters[] = $groupId;
+            }
+        }
+
+        $sql .= ' ORDER BY group_id, name';
+
+        $query = $this->database->prepare($sql);
+        $query->execute($parameters);
+
+        $names = [];
+
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $groupId = (string) $row['group_id'];
+            $names[$groupId][] = (string) $row['name'];
+        }
+
+        $query->closeCursor();
+
+        foreach ($names as &$groupNames) {
+            sort($groupNames, SORT_STRING);
+        }
+        unset($groupNames);
+
+        return $names;
+    }
+
+    /**
+     * @param array<string, string[]> $childGroupTrophyNames
+     * @param array<string, string[]> $parentGroupTrophyNames
+     * @param array<string, bool> $usedParentGroups
+     */
+    private function findMatchingParentGroupId(
+        string $childGroupId,
+        array $childGroupTrophyNames,
+        array $parentGroupTrophyNames,
+        array $usedParentGroups
+    ): ?string {
+        $childNames = $childGroupTrophyNames[$childGroupId] ?? null;
+
+        if ($childNames === null || $childNames === []) {
+            return null;
+        }
+
+        foreach ($parentGroupTrophyNames as $parentGroupId => $parentNames) {
+            if ($parentGroupId === $childGroupId) {
+                continue;
+            }
+
+            if (isset($usedParentGroups[$parentGroupId])) {
+                continue;
+            }
+
+            if ($parentNames === $childNames) {
+                return $parentGroupId;
+            }
+        }
+
+        return null;
+    }
+
+    private function upsertTrophyGroup(PDOStatement $statement, string $parentNpCommunicationId, string $groupId, array $group): void
+    {
+        $statement->execute([
+            ':np_communication_id' => $parentNpCommunicationId,
+            ':group_id' => $groupId,
+            ':name' => (string) $group['name'],
+            ':detail' => (string) $group['detail'],
+            ':icon_url' => (string) $group['icon_url'],
+            ':bronze' => (int) $group['bronze'],
+            ':silver' => (int) $group['silver'],
+            ':gold' => (int) $group['gold'],
+            ':platinum' => (int) $group['platinum'],
+        ]);
+
+        $statement->closeCursor();
+    }
+
+    private function trophyExists(PDOStatement $statement, string $parentNpCommunicationId, string $parentGroupId, int $parentOrderId): bool
+    {
+        $statement->execute([
+            ':np_communication_id' => $parentNpCommunicationId,
+            ':group_id' => $parentGroupId,
+            ':order_id' => $parentOrderId,
+        ]);
+
+        $exists = $statement->fetchColumn() !== false;
+        $statement->closeCursor();
+
+        return $exists;
+    }
+
+    private function findExistingParentTrophyOrderId(PDOStatement $statement, string $parentNpCommunicationId, string $parentGroupId, string $trophyName): ?int
+    {
+        $statement->execute([
+            ':np_communication_id' => $parentNpCommunicationId,
+            ':group_id' => $parentGroupId,
+            ':name' => $trophyName,
+        ]);
+
+        $orderId = $statement->fetchColumn();
+        $statement->closeCursor();
+
+        if ($orderId === false) {
+            return null;
+        }
+
+        return (int) $orderId;
+    }
+
+    private function updateParentTrophy(PDOStatement $statement, string $parentNpCommunicationId, string $parentGroupId, int $parentOrderId, array $trophy): void
+    {
+        $statement->execute([
+            ':hidden' => (int) $trophy['hidden'],
+            ':type' => (string) $trophy['type'],
+            ':name' => (string) $trophy['name'],
+            ':detail' => (string) $trophy['detail'],
+            ':icon_url' => (string) $trophy['icon_url'],
+            ':rarity_percent' => (string) $trophy['rarity_percent'],
+            ':rarity_point' => (int) $trophy['rarity_point'],
+            ':status' => (int) $trophy['status'],
+            ':owners' => (int) $trophy['owners'],
+            ':rarity_name' => (string) $trophy['rarity_name'],
+            ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
+            ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
+            ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
+            ':np_communication_id' => $parentNpCommunicationId,
+            ':group_id' => $parentGroupId,
+            ':order_id' => $parentOrderId,
+        ]);
+
+        $statement->closeCursor();
+    }
+
+    private function insertParentTrophy(PDOStatement $statement, string $parentNpCommunicationId, string $parentGroupId, int $parentOrderId, array $trophy): void
+    {
+        $statement->execute([
+            ':np_communication_id' => $parentNpCommunicationId,
+            ':group_id' => $parentGroupId,
+            ':order_id' => $parentOrderId,
+            ':hidden' => (int) $trophy['hidden'],
+            ':type' => (string) $trophy['type'],
+            ':name' => (string) $trophy['name'],
+            ':detail' => (string) $trophy['detail'],
+            ':icon_url' => (string) $trophy['icon_url'],
+            ':rarity_percent' => (string) $trophy['rarity_percent'],
+            ':rarity_point' => (int) $trophy['rarity_point'],
+            ':status' => (int) $trophy['status'],
+            ':owners' => (int) $trophy['owners'],
+            ':rarity_name' => (string) $trophy['rarity_name'],
+            ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
+            ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
+            ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
+        ]);
+
+        $statement->closeCursor();
+    }
+
+    private function upsertTrophyMergeMapping(
+        PDOStatement $statement,
+        string $childNpCommunicationId,
+        string $childGroupId,
+        int $childOrderId,
+        string $parentNpCommunicationId,
+        string $parentGroupId,
+        int $parentOrderId
+    ): void {
+        $statement->execute([
+            ':child_np_communication_id' => $childNpCommunicationId,
+            ':child_group_id' => $childGroupId,
+            ':child_order_id' => $childOrderId,
+            ':parent_np_communication_id' => $parentNpCommunicationId,
+            ':parent_group_id' => $parentGroupId,
+            ':parent_order_id' => $parentOrderId,
+        ]);
+
+        $statement->closeCursor();
+    }
+
+    /**
+     * @param array<string, bool> $existingGroupIds
+     */
+    private function determineGroupOffset(array $existingGroupIds): int
+    {
+        $maxBlock = -1;
+
+        foreach (array_keys($existingGroupIds) as $groupId) {
+            $numericGroupId = $this->parseNumericGroupId($groupId);
+
+            if ($numericGroupId === null) {
+                continue;
+            }
+
+            $block = intdiv($numericGroupId, 100);
+
+            if ($block > $maxBlock) {
+                $maxBlock = $block;
+            }
+        }
+
+        if ($maxBlock < 0) {
+            $maxBlock = 0;
+        }
+
+        return ($maxBlock + 1) * 100;
+    }
+
+    private function parseNumericGroupId(string $groupId): ?int
+    {
+        if (!ctype_digit($groupId)) {
+            return null;
+        }
+
+        $trimmed = ltrim($groupId, '0');
+
+        if ($trimmed === '') {
+            return 0;
+        }
+
+        return (int) $trimmed;
+    }
+
+    private function formatGroupId(int $numericValue, string $originalGroupId): string
+    {
+        $length = max(strlen($originalGroupId), 3);
+
+        return str_pad((string) $numericValue, $length, '0', STR_PAD_LEFT);
+    }
+
+    private function getNextOrderId(string $npCommunicationId): int
+    {
+        $query = $this->database->prepare('SELECT MAX(order_id) FROM trophy WHERE np_communication_id = :np_communication_id');
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $maxOrderId = $query->fetchColumn();
+
+        if ($maxOrderId === false || $maxOrderId === null) {
+            return -1;
+        }
+
+        return (int) $maxOrderId;
     }
 
     private function recordCopyAction(int $childId, int $parentId): void
