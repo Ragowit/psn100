@@ -201,10 +201,20 @@ class GameCopyService
         $this->copyTrophyTitle($childNpCommunicationId, $parentNpCommunicationId);
 
         if ($this->isBaseList($childNpCommunicationId)) {
-            $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-            $groupIdMapping = $this->copyConflictingTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+            $conflictingGroupIds = $this->getConflictingGroupIds(
+                $childNpCommunicationId,
+                $parentNpCommunicationId
+            );
+
+            $groupIdMapping = $this->copyConflictingTrophyGroups(
+                $childNpCommunicationId,
+                $parentNpCommunicationId,
+                [],
+                $conflictingGroupIds
+            );
+            $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId, $conflictingGroupIds);
             $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-            $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
+            $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId, $conflictingGroupIds);
             $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
             $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
         } else {
@@ -256,11 +266,31 @@ class GameCopyService
         $query->execute();
     }
 
-    private function copyNewTrophyGroups(string $childNpCommunicationId, string $parentNpCommunicationId): void
-    {
-        $query = $this->database->prepare(self::TROPHY_GROUP_INSERT_QUERY);
+    private function copyNewTrophyGroups(
+        string $childNpCommunicationId,
+        string $parentNpCommunicationId,
+        array $excludedGroupIds = []
+    ): void {
+        $sql = self::TROPHY_GROUP_INSERT_QUERY;
+
+        if ($excludedGroupIds !== []) {
+            $placeholders = [];
+
+            foreach ($excludedGroupIds as $index => $groupId) {
+                $placeholders[] = ':excluded_group_id_' . $index;
+            }
+
+            $sql .= ' AND tg.group_id NOT IN (' . implode(', ', $placeholders) . ')';
+        }
+
+        $query = $this->database->prepare($sql);
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+
+        foreach ($excludedGroupIds as $index => $groupId) {
+            $query->bindValue(':excluded_group_id_' . $index, $groupId, PDO::PARAM_STR);
+        }
+
         $query->execute();
     }
 
@@ -280,11 +310,31 @@ class GameCopyService
         $query->execute();
     }
 
-    private function copyNewTrophies(string $childNpCommunicationId, string $parentNpCommunicationId): void
-    {
-        $query = $this->database->prepare(self::TROPHY_INSERT_QUERY);
+    private function copyNewTrophies(
+        string $childNpCommunicationId,
+        string $parentNpCommunicationId,
+        array $excludedGroupIds = []
+    ): void {
+        $sql = self::TROPHY_INSERT_QUERY;
+
+        if ($excludedGroupIds !== []) {
+            $placeholders = [];
+
+            foreach ($excludedGroupIds as $index => $groupId) {
+                $placeholders[] = ':excluded_group_id_' . $index;
+            }
+
+            $sql .= ' AND t.group_id NOT IN (' . implode(', ', $placeholders) . ')';
+        }
+
+        $query = $this->database->prepare($sql);
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+
+        foreach ($excludedGroupIds as $index => $groupId) {
+            $query->bindValue(':excluded_group_id_' . $index, $groupId, PDO::PARAM_STR);
+        }
+
         $query->execute();
     }
 
@@ -340,14 +390,16 @@ class GameCopyService
 
     /**
      * @param string[] $forcedGroupIds
+     * @param string[]|null $conflictingGroupIds
      * @return array<string, string>
      */
     private function copyConflictingTrophyGroups(
         string $childNpCommunicationId,
         string $parentNpCommunicationId,
-        array $forcedGroupIds = []
+        array $forcedGroupIds = [],
+        ?array $conflictingGroupIds = null
     ): array {
-        $conflictingGroupIds = $this->getConflictingGroupIds($childNpCommunicationId, $parentNpCommunicationId);
+        $conflictingGroupIds ??= $this->getConflictingGroupIds($childNpCommunicationId, $parentNpCommunicationId);
 
         if ($forcedGroupIds !== []) {
             foreach ($forcedGroupIds as $groupId) {
