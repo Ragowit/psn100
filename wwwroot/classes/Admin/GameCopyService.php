@@ -1042,7 +1042,9 @@ class GameCopyService
     {
         $maxBlock = -1;
 
-        foreach (array_keys($existingGroupIds) as $groupId) {
+        foreach ($existingGroupIds as $groupId => $_) {
+            $groupId = (string) $groupId;
+
             $numericGroupId = $this->parseNumericGroupId($groupId);
 
             if ($numericGroupId === null) {
