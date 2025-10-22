@@ -32,7 +32,8 @@ class GameCopyService
         WITH
             child_title AS (
             SELECT
-                icon_url
+                icon_url,
+                set_version
             FROM
                 trophy_title
             WHERE
@@ -42,7 +43,8 @@ class GameCopyService
             trophy_title parent,
             child_title
         SET
-            parent.icon_url = child_title.icon_url
+            parent.icon_url = child_title.icon_url,
+            parent.set_version = child_title.set_version
         WHERE
             parent.np_communication_id = :parent_np_communication_id
         SQL;
