@@ -170,6 +170,17 @@ class GameCopyService
                     existing.np_communication_id = :parent_np_communication_id
                     AND existing.order_id = t.order_id
             )
+            AND NOT EXISTS (
+                SELECT
+                    1
+                FROM
+                    trophy_merge tm
+                WHERE
+                    tm.child_np_communication_id = :child_np_communication_id
+                    AND tm.child_group_id = t.group_id
+                    AND tm.child_order_id = t.order_id
+                    AND tm.parent_np_communication_id = :parent_np_communication_id
+            )
         SQL;
 
     private PDO $database;
