@@ -28,6 +28,44 @@ class GameCopyService
             tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id
         SQL;
 
+    private const TROPHY_GROUP_INSERT_QUERY = <<<'SQL'
+        INSERT INTO
+            trophy_group (
+                np_communication_id,
+                group_id,
+                name,
+                detail,
+                icon_url,
+                bronze,
+                silver,
+                gold,
+                platinum
+            )
+        SELECT
+            :parent_np_communication_id,
+            tg.group_id,
+            tg.name,
+            tg.detail,
+            tg.icon_url,
+            tg.bronze,
+            tg.silver,
+            tg.gold,
+            tg.platinum
+        FROM
+            trophy_group tg
+        WHERE
+            tg.np_communication_id = :child_np_communication_id
+            AND NOT EXISTS (
+                SELECT
+                    1
+                FROM
+                    trophy_group existing
+                WHERE
+                    existing.np_communication_id = :parent_np_communication_id
+                    AND existing.group_id = tg.group_id
+            )
+        SQL;
+
     private const TROPHY_TITLE_UPDATE_QUERY = <<<'SQL'
         WITH
             child_title AS (
@@ -82,6 +120,58 @@ class GameCopyService
             tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id AND tg.order_id = tg_org.order_id
         SQL;
 
+    private const TROPHY_INSERT_QUERY = <<<'SQL'
+        INSERT INTO
+            trophy (
+                np_communication_id,
+                group_id,
+                order_id,
+                hidden,
+                type,
+                name,
+                detail,
+                icon_url,
+                rarity_percent,
+                rarity_point,
+                status,
+                owners,
+                rarity_name,
+                progress_target_value,
+                reward_name,
+                reward_image_url
+            )
+        SELECT
+            :parent_np_communication_id,
+            t.group_id,
+            t.order_id,
+            t.hidden,
+            t.type,
+            t.name,
+            t.detail,
+            t.icon_url,
+            t.rarity_percent,
+            t.rarity_point,
+            t.status,
+            t.owners,
+            t.rarity_name,
+            t.progress_target_value,
+            t.reward_name,
+            t.reward_image_url
+        FROM
+            trophy t
+        WHERE
+            t.np_communication_id = :child_np_communication_id
+            AND NOT EXISTS (
+                SELECT
+                    1
+                FROM
+                    trophy existing
+                WHERE
+                    existing.np_communication_id = :parent_np_communication_id
+                    AND existing.order_id = t.order_id
+            )
+        SQL;
+
     private PDO $database;
 
     public function __construct(PDO $database)
@@ -98,7 +188,9 @@ class GameCopyService
         $this->ensureParentIsMergeTitle($parentNpCommunicationId);
 
         $this->copyTrophyTitle($childNpCommunicationId, $parentNpCommunicationId);
+        $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+        $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
         $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
         $this->recordCopyAction($childId, $parentId);
     }
@@ -139,6 +231,14 @@ class GameCopyService
         $query->execute();
     }
 
+    private function copyNewTrophyGroups(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $query = $this->database->prepare(self::TROPHY_GROUP_INSERT_QUERY);
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
     private function copyTrophyTitle(string $childNpCommunicationId, string $parentNpCommunicationId): void
     {
         $query = $this->database->prepare(self::TROPHY_TITLE_UPDATE_QUERY);
@@ -150,6 +250,14 @@ class GameCopyService
     private function copyTrophies(string $childNpCommunicationId, string $parentNpCommunicationId): void
     {
         $query = $this->database->prepare(self::TROPHY_UPDATE_QUERY);
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function copyNewTrophies(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $query = $this->database->prepare(self::TROPHY_INSERT_QUERY);
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
