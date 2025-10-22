@@ -188,12 +188,24 @@ class GameCopyService
         $this->ensureParentIsMergeTitle($parentNpCommunicationId);
 
         $this->copyTrophyTitle($childNpCommunicationId, $parentNpCommunicationId);
-        $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-        $groupIdMapping = $this->copyConflictingTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-        $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-        $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
-        $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
-        $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
+
+        if ($this->isBaseList($childNpCommunicationId)) {
+            $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+            $groupIdMapping = $this->copyConflictingTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+            $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+            $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
+            $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
+            $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
+        } else {
+            $numericGroupIds = $this->getNumericGroupIds($childNpCommunicationId);
+            $groupIdMapping = $this->copyConflictingTrophyGroups(
+                $childNpCommunicationId,
+                $parentNpCommunicationId,
+                $numericGroupIds
+            );
+            $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
+        }
+
         $this->recordCopyAction($childId, $parentId);
     }
 
@@ -265,12 +277,78 @@ class GameCopyService
         $query->execute();
     }
 
+    private function isBaseList(string $npCommunicationId): bool
+    {
+        $query = $this->database->prepare(
+            'SELECT 1
+             FROM   trophy_group
+             WHERE  np_communication_id = :np_communication_id
+             AND    (group_id = :group_id OR name = :group_id)
+             LIMIT 1'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':group_id', 'default', PDO::PARAM_STR);
+        $query->execute();
+
+        $isBaseList = $query->fetchColumn() !== false;
+        $query->closeCursor();
+
+        return $isBaseList;
+    }
+
     /**
+     * @return string[]
+     */
+    private function getNumericGroupIds(string $npCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT group_id
+             FROM   trophy_group
+             WHERE  np_communication_id = :np_communication_id
+             ORDER BY group_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $groupIds = [];
+
+        while (($groupId = $query->fetchColumn()) !== false) {
+            $groupId = (string) $groupId;
+
+            if ($this->parseNumericGroupId($groupId) === null) {
+                continue;
+            }
+
+            $groupIds[] = $groupId;
+        }
+
+        $query->closeCursor();
+
+        return $groupIds;
+    }
+
+    /**
+     * @param string[] $forcedGroupIds
      * @return array<string, string>
      */
-    private function copyConflictingTrophyGroups(string $childNpCommunicationId, string $parentNpCommunicationId): array
-    {
+    private function copyConflictingTrophyGroups(
+        string $childNpCommunicationId,
+        string $parentNpCommunicationId,
+        array $forcedGroupIds = []
+    ): array {
         $conflictingGroupIds = $this->getConflictingGroupIds($childNpCommunicationId, $parentNpCommunicationId);
+
+        if ($forcedGroupIds !== []) {
+            foreach ($forcedGroupIds as $groupId) {
+                if ($this->parseNumericGroupId($groupId) === null) {
+                    continue;
+                }
+
+                if (!in_array($groupId, $conflictingGroupIds, true)) {
+                    $conflictingGroupIds[] = $groupId;
+                }
+            }
+        }
 
         if ($conflictingGroupIds === []) {
             return [];
