@@ -457,11 +457,13 @@ class GameCopyService
                 $candidateOffset = $preferredOffset ?? $groupOffset;
                 $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
 
-                if ($preferredOffset === null) {
-                    while (isset($existingGroupIds[$newGroupId])) {
-                        $candidateOffset += 100;
-                        $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
+                while (isset($existingGroupIds[$newGroupId])) {
+                    if ($preferredOffset !== null) {
+                        $preferredOffset = null;
                     }
+
+                    $candidateOffset += 100;
+                    $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
                 }
 
                 $groupOffset = $candidateOffset;
