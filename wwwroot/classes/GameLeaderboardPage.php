@@ -7,6 +7,7 @@ require_once __DIR__ . '/GameLeaderboardFilter.php';
 require_once __DIR__ . '/GameLeaderboardRow.php';
 require_once __DIR__ . '/GameLeaderboardService.php';
 require_once __DIR__ . '/GameHeaderService.php';
+require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
@@ -170,5 +171,15 @@ class GameLeaderboardPage
     public function getPage(): int
     {
         return $this->filter->getPage();
+    }
+
+    public function getPageTitle(): string
+    {
+        return $this->game->getName() . ' Leaderboard ~ PSN 100%';
+    }
+
+    public function getGameSlug(Utility $utility): string
+    {
+        return $this->game->getId() . '-' . $utility->slugify($this->game->getName());
     }
 }
