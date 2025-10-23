@@ -302,7 +302,8 @@ class GameRescanService
             self::TITLE_ICON_DIRECTORY,
             $existingTitleIcon
         );
-        $platforms = $this->buildPlatformList($trophyTitle);
+        $existingPlatforms = $this->fetchExistingPlatforms($npCommunicationId);
+        $platforms = $this->buildPlatformList($trophyTitle, $existingPlatforms);
 
         $query = $this->database->prepare(
             'UPDATE trophy_title
@@ -780,13 +781,72 @@ class GameRescanService
         return $hash . $extension;
     }
 
-    private function buildPlatformList(object $trophyTitle): string
+    /**
+     * @param array<int, string> $existingPlatforms
+     */
+    private function buildPlatformList(object $trophyTitle, array $existingPlatforms): string
     {
         $platforms = [];
         foreach ($trophyTitle->platform() as $platform) {
             $platforms[] = $platform->value;
         }
 
+        $platforms = array_values(array_filter($platforms, static fn(string $platform): bool => $platform !== ''));
+        $platforms = array_values(array_unique($platforms));
+
+        $existingPlatforms = array_values(array_unique(array_filter(
+            $existingPlatforms,
+            static fn(string $platform): bool => $platform !== ''
+        )));
+
+        if (in_array('PSVR2', $existingPlatforms, true)) {
+            if (!in_array('PSVR2', $platforms, true)) {
+                $platforms[] = 'PSVR2';
+            }
+
+            if (!in_array('PS5', $existingPlatforms, true)) {
+                $platforms = array_values(array_filter(
+                    $platforms,
+                    static fn(string $platform): bool => $platform !== 'PS5'
+                ));
+            }
+        }
+
+        if (in_array('PSVR', $existingPlatforms, true)) {
+            if (!in_array('PSVR', $platforms, true)) {
+                $platforms[] = 'PSVR';
+            }
+
+            if (!in_array('PS4', $existingPlatforms, true)) {
+                $platforms = array_values(array_filter(
+                    $platforms,
+                    static fn(string $platform): bool => $platform !== 'PS4'
+                ));
+            }
+        }
+
         return implode(',', $platforms);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function fetchExistingPlatforms(string $npCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $platforms = $query->fetchColumn();
+
+        if (!is_string($platforms) || $platforms === '') {
+            return [];
+        }
+
+        $platforms = array_map('trim', explode(',', $platforms));
+
+        return array_values(array_filter($platforms, static fn(string $platform): bool => $platform !== ''));
     }
 }
