@@ -24,8 +24,16 @@ class GameCopyHandler
             return 'Child and parent must be numeric IDs.';
         }
 
+        $copyIconUrl = $this->shouldCopySetting($postData, 'copy_icon_url');
+        $copySetVersion = $this->shouldCopySetting($postData, 'copy_set_version');
+
         try {
-            $this->gameCopyService->copyChildToParent($childId, $parentId);
+            $this->gameCopyService->copyChildToParent(
+                $childId,
+                $parentId,
+                $copyIconUrl,
+                $copySetVersion
+            );
         } catch (RuntimeException $exception) {
             return $exception->getMessage();
         }
@@ -49,5 +57,22 @@ class GameCopyHandler
         }
 
         return (int) $value;
+    }
+
+    private function shouldCopySetting(array $postData, string $key): bool
+    {
+        if (!array_key_exists($key, $postData)) {
+            return true;
+        }
+
+        $value = $postData[$key];
+
+        if (is_array($value)) {
+            $value = end($value);
+        }
+
+        $value = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+
+        return $value ?? true;
     }
 }

@@ -66,27 +66,6 @@ class GameCopyService
             )
         SQL;
 
-    private const TROPHY_TITLE_UPDATE_QUERY = <<<'SQL'
-        WITH
-            child_title AS (
-            SELECT
-                icon_url,
-                set_version
-            FROM
-                trophy_title
-            WHERE
-                np_communication_id = :child_np_communication_id
-        )
-        UPDATE
-            trophy_title parent,
-            child_title
-        SET
-            parent.icon_url = child_title.icon_url,
-            parent.set_version = child_title.set_version
-        WHERE
-            parent.np_communication_id = :parent_np_communication_id
-        SQL;
-
     private const TROPHY_UPDATE_QUERY = <<<'SQL'
         WITH
             tg_org AS(
@@ -190,15 +169,24 @@ class GameCopyService
         $this->database = $database;
     }
 
-    public function copyChildToParent(int $childId, int $parentId): void
-    {
+    public function copyChildToParent(
+        int $childId,
+        int $parentId,
+        bool $copyIconUrl = true,
+        bool $copySetVersion = true
+    ): void {
         $childNpCommunicationId = $this->getNpCommunicationId($childId);
         $parentNpCommunicationId = $this->getNpCommunicationId($parentId);
 
         $this->ensureChildIsNotMergeTitle($childNpCommunicationId);
         $this->ensureParentIsMergeTitle($parentNpCommunicationId);
 
-        $this->copyTrophyTitle($childNpCommunicationId, $parentNpCommunicationId);
+        $this->copyTrophyTitle(
+            $childNpCommunicationId,
+            $parentNpCommunicationId,
+            $copyIconUrl,
+            $copySetVersion
+        );
 
         if ($this->isBaseList($childNpCommunicationId)) {
             $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
@@ -271,9 +259,36 @@ class GameCopyService
         $query->execute();
     }
 
-    private function copyTrophyTitle(string $childNpCommunicationId, string $parentNpCommunicationId): void
-    {
-        $query = $this->database->prepare(self::TROPHY_TITLE_UPDATE_QUERY);
+    private function copyTrophyTitle(
+        string $childNpCommunicationId,
+        string $parentNpCommunicationId,
+        bool $copyIconUrl,
+        bool $copySetVersion
+    ): void {
+        if (!$copyIconUrl && !$copySetVersion) {
+            return;
+        }
+
+        $fields = [];
+
+        if ($copyIconUrl) {
+            $fields[] = 'parent.icon_url = child_title.icon_url';
+        }
+
+        if ($copySetVersion) {
+            $fields[] = 'parent.set_version = child_title.set_version';
+        }
+
+        $query = $this->database->prepare(
+            'WITH child_title AS (
+                SELECT icon_url, set_version
+                FROM trophy_title
+                WHERE np_communication_id = :child_np_communication_id
+            )
+            UPDATE trophy_title parent, child_title
+            SET ' . implode(', ', $fields) . '
+            WHERE parent.np_communication_id = :parent_np_communication_id'
+        );
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
