@@ -1,45 +1,34 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/classes/GameLeaderboardPage.php';
+require_once __DIR__ . '/classes/GameLeaderboardPageContext.php';
 
-if (!isset($gameId)) {
-    header("Location: /game/", true, 303);
-    die();
+$pageContext = GameLeaderboardPageContext::fromGlobals(
+    $database,
+    $utility,
+    isset($gameId) ? (int) $gameId : null,
+    isset($player) ? (string) $player : null,
+    $_GET ?? []
+);
+
+if ($pageContext->shouldRedirect()) {
+    header('Location: ' . $pageContext->getRedirectLocation(), true, $pageContext->getRedirectStatusCode());
+    exit();
 }
 
-$gameLeaderboardService = new GameLeaderboardService($database);
-$gameHeaderService = new GameHeaderService($database);
+$game = $pageContext->getGame();
+$gameHeaderData = $pageContext->getGameHeaderData();
+$filter = $pageContext->getFilter();
+$totalPlayers = $pageContext->getTotalPlayers();
+$currentPage = $pageContext->getCurrentPage();
+$limit = $pageContext->getLimit();
+$offset = $pageContext->getOffset();
+$totalPagesCount = $pageContext->getTotalPagesCount();
+$rows = $pageContext->getRows();
+$accountId = $pageContext->getPlayerAccountId();
+$gameSlug = $pageContext->getGameSlug();
 
-try {
-    $gameLeaderboardPage = GameLeaderboardPage::create(
-        $gameLeaderboardService,
-        $gameHeaderService,
-        (int) $gameId,
-        isset($player) ? (string) $player : null,
-        $_GET ?? []
-    );
-} catch (GameNotFoundException $exception) {
-    header("Location: /game/", true, 303);
-    die();
-} catch (GameLeaderboardPlayerNotFoundException $exception) {
-    $slug = $utility->slugify($exception->getGameName());
-    header("Location: /game/" . $exception->getGameId() . "-" . $slug, true, 303);
-    die();
-}
-
-$game = $gameLeaderboardPage->getGame();
-$gameHeaderData = $gameLeaderboardPage->getGameHeaderData();
-$filter = $gameLeaderboardPage->getFilter();
-$totalPlayers = $gameLeaderboardPage->getTotalPlayers();
-$page = $gameLeaderboardPage->getPage();
-$limit = $gameLeaderboardPage->getLimit();
-$offset = $gameLeaderboardPage->getOffset();
-$totalPagesCount = $gameLeaderboardPage->getTotalPagesCount();
-$rows = $gameLeaderboardPage->getRows();
-$accountId = $gameLeaderboardPage->getPlayerAccountId();
-
-$title = $game->getName() . " Leaderboard ~ PSN 100%";
+$title = $pageContext->getTitle();
 require_once("header.php");
 ?>
 
@@ -55,9 +44,9 @@ require_once("header.php");
 
             <div class="col-6 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
-                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
+                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
                 </div>
             </div>
 
@@ -88,7 +77,7 @@ require_once("header.php");
                                 $paramsAvatar = $row->getAvatarQueryParameters($filter);
                                 $paramsCountry = $row->getCountryQueryParameters($filter);
                                 $playerName = $row->getOnlineId();
-                                $playerUrl = '/game/' . $game->getId() . '-' . $utility->slugify($game->getName()) . '/' . rawurlencode($playerName);
+                                $playerUrl = '/game/' . $gameSlug . '/' . rawurlencode($playerName);
                                 ?>
                                 <tr<?= $row->matchesAccountId($accountId) ? " class='table-primary'" : ""; ?>>
                                     <th class="align-middle" style="width: 2rem;" scope="row"><?= ++$rank; ?></th>
@@ -159,7 +148,7 @@ require_once("header.php");
         </div>
         <div class="col-12">
             <?= $paginationRenderer->render(
-                $page,
+                $currentPage,
                 $totalPagesCount,
                 static fn (int $pageNumber): array => $filter->withPage($pageNumber),
                 'Game Leaderboard page navigation'
