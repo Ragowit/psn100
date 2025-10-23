@@ -1466,14 +1466,14 @@ class ThirtyMinuteCronJob implements CronJobInterface
             return implode('-', $segments);
         }
 
-        if ($this->shouldPreserveTitleWord($word)) {
-            return $word;
-        }
-
         $wordLower = mb_strtolower($word, 'UTF-8');
 
         if (!$forceCapitalize && in_array($wordLower, $lowercaseWords, true)) {
             return $wordLower;
+        }
+
+        if ($this->shouldPreserveTitleWord($word)) {
+            return $word;
         }
 
         return $this->uppercaseFirstCharacter($wordLower);
