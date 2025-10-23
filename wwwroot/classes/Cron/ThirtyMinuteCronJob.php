@@ -1439,7 +1439,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
             if ($coreWord === '') {
                 $convertedWords[] = $word;
-                $capitalizeNext = str_contains($word, ':');
+                $capitalizeNext = $this->shouldCapitalizeAfterPunctuation($word);
                 continue;
             }
 
@@ -1451,7 +1451,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
             $convertedWords[] = $leadingPunctuation . $processedCore . $trailingPunctuation;
 
-            $capitalizeNext = str_contains($trailingPunctuation, ':');
+            $capitalizeNext = $this->shouldCapitalizeAfterPunctuation($trailingPunctuation);
         }
 
         return implode(' ', $convertedWords);
@@ -1523,5 +1523,22 @@ class ThirtyMinuteCronJob implements CronJobInterface
     private function uppercaseFirstCharacter(string $word): string
     {
         return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    private function shouldCapitalizeAfterPunctuation(string $punctuation): bool
+    {
+        if ($punctuation === '') {
+            return false;
+        }
+
+        $triggerCharacters = [':', '!', '?', '.'];
+
+        foreach ($triggerCharacters as $character) {
+            if (str_contains($punctuation, $character)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
