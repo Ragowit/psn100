@@ -27,6 +27,20 @@ $message = $gameCopyHandler->handle($_POST);
                 <input type="number" name="child"><br>
                 Game Parent ID:<br>
                 <input type="number" name="parent"><br>
+                <div class="form-check mt-3">
+                    <input type="hidden" name="copy_icon_url" value="0">
+                    <input class="form-check-input" type="checkbox" name="copy_icon_url" id="copy-icon-url" value="1" checked>
+                    <label class="form-check-label" for="copy-icon-url">
+                        Copy icon URL
+                    </label>
+                </div>
+                <div class="form-check mt-2">
+                    <input type="hidden" name="copy_set_version" value="0">
+                    <input class="form-check-input" type="checkbox" name="copy_set_version" id="copy-set-version" value="1" checked>
+                    <label class="form-check-label" for="copy-set-version">
+                        Copy set version
+                    </label>
+                </div>
                 <br>
                 <input type="submit" value="Submit">
             </form>
