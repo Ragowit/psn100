@@ -31,7 +31,7 @@ class ApplicationContainer
         ?Utility $utility = null,
         ?PaginationRenderer $paginationRenderer = null
     ) {
-        $this->database = $database ?? new Database();
+        $this->database = $database ?? Database::fromEnvironment($_ENV ?? []);
         $this->utility = $utility ?? new Utility();
         $this->paginationRenderer = $paginationRenderer ?? new PaginationRenderer();
     }
