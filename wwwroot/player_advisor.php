@@ -9,6 +9,7 @@ require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 require_once __DIR__ . '/classes/PlayerNavigation.php';
+require_once __DIR__ . '/classes/PlayerPlatformFilterOptions.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -35,6 +36,9 @@ $filterParameters = $playerAdvisorPage->getFilterParameters();
 $shouldDisplayAdvisor = $playerAdvisorPage->shouldDisplayAdvisor();
 $trophyRarityFormatter = new TrophyRarityFormatter();
 $playerNavigation = PlayerNavigation::forSection((string) $player['online_id'], PlayerNavigation::SECTION_TROPHY_ADVISOR);
+$platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
+    static fn (string $platform): bool => $playerAdvisorFilter->isPlatformSelected($platform)
+);
 
 $title = $player["online_id"] . "'s Trophy Advisor ~ PSN 100%";
 require_once("header.php");
@@ -60,62 +64,24 @@ require_once("header.php");
                     <div class="input-group d-flex justify-content-end">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                         <ul class="dropdown-menu p-2">
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('pc') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPC" name="pc">
-                                    <label class="form-check-label" for="filterPC">
-                                        PC
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('ps3') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS3" name="ps3">
-                                    <label class="form-check-label" for="filterPS3">
-                                        PS3
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('ps4') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS4" name="ps4">
-                                    <label class="form-check-label" for="filterPS4">
-                                        PS4
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('ps5') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPS5" name="ps5">
-                                    <label class="form-check-label" for="filterPS5">
-                                        PS5
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('psvita') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVITA" name="psvita">
-                                    <label class="form-check-label" for="filterPSVITA">
-                                        PSVITA
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('psvr') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVR" name="psvr">
-                                    <label class="form-check-label" for="filterPSVR">
-                                        PSVR
-                                    </label>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"<?= $playerAdvisorFilter->isPlatformSelected('psvr2') ? ' checked' : ''; ?> value="true" onChange="this.form.submit()" id="filterPSVR2" name="psvr2">
-                                    <label class="form-check-label" for="filterPSVR2">
-                                        PSVR2
-                                    </label>
-                                </div>
-                            </li>
+                            <?php foreach ($platformFilterOptions->getOptions() as $platformOption) { ?>
+                                <li>
+                                    <div class="form-check">
+                                        <?php $inputId = htmlspecialchars($platformOption->getInputId(), ENT_QUOTES, 'UTF-8'); ?>
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"<?= $platformOption->isSelected() ? ' checked' : ''; ?>
+                                            value="true"
+                                            onChange="this.form.submit()"
+                                            id="<?= $inputId; ?>"
+                                            name="<?= htmlspecialchars($platformOption->getInputName(), ENT_QUOTES, 'UTF-8'); ?>"
+                                        >
+                                        <label class="form-check-label" for="<?= $inputId; ?>">
+                                            <?= htmlspecialchars($platformOption->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
+                                        </label>
+                                    </div>
+                                </li>
+                            <?php } ?>
                         </ul>
                     </div>
                 </form>
