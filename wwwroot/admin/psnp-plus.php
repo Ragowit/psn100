@@ -39,7 +39,7 @@ try {
                     <div class="mb-3">
                         <?php foreach ($psnpPlusReport->getMissingGames() as $missingGame) { ?>
                             <p>
-                                PSNProfiles ID <a href="<?= $missingGame->getPsnprofilesUrl(); ?>" target="_blank" rel="noopener"><?= htmlentities($missingGame->getPsnprofilesId(), ENT_QUOTES, 'UTF-8'); ?></a> not in our database.
+                                PSNProfiles ID <a href="<?= htmlentities($missingGame->getPsnprofilesUrl(), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?= htmlentities((string) $missingGame->getPsnprofilesId(), ENT_QUOTES, 'UTF-8'); ?></a> not in our database.
                             </p>
                         <?php } ?>
                     </div>
