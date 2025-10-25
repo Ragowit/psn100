@@ -54,15 +54,11 @@ try {
                         </strong><br>
 
                         <?php if ($difference->hasUnobtainable()) { ?>
-                            <a href="unobtainable.php?status=1&amp;trophy=<?= $difference->getUnobtainableTrophyIdQuery(); ?>">
-                                Unobtainable
-                            </a>: <?= htmlentities($difference->getUnobtainableOrderList(), ENT_QUOTES, 'UTF-8'); ?><br>
+                            <a href="unobtainable.php?status=1&amp;trophy=<?= $difference->getUnobtainableTrophyIdQuery(); ?>">Unobtainable</a>: <?= htmlentities($difference->getUnobtainableOrderList(), ENT_QUOTES, 'UTF-8'); ?><br>
                         <?php } ?>
 
                         <?php if ($difference->hasObtainable()) { ?>
-                            <a href="unobtainable.php?status=0&amp;trophy=<?= $difference->getObtainableTrophyIdQuery(); ?>">
-                                Obtainable
-                            </a>: <?= htmlentities($difference->getObtainableOrderList(), ENT_QUOTES, 'UTF-8'); ?><br>
+                            <a href="unobtainable.php?status=0&amp;trophy=<?= $difference->getObtainableTrophyIdQuery(); ?>">Obtainable</a>: <?= htmlentities($difference->getObtainableOrderList(), ENT_QUOTES, 'UTF-8'); ?><br>
                         <?php } ?>
                     </div>
                 <?php } ?>
@@ -78,9 +74,7 @@ try {
                         </strong><br>
 
                         <?php if ($fixedGame->hasTrophies()) { ?>
-                            <a href="unobtainable.php?status=0&amp;trophy=<?= $fixedGame->getTrophyIdQuery(); ?>">
-                                Obtainable
-                            </a>: <?= htmlentities($fixedGame->getTrophyIdList(), ENT_QUOTES, 'UTF-8'); ?><br>
+                            <a href="unobtainable.php?status=0&amp;trophy=<?= $fixedGame->getTrophyIdQuery(); ?>">Obtainable</a>: <?= htmlentities($fixedGame->getTrophyIdList(), ENT_QUOTES, 'UTF-8'); ?><br>
                         <?php } ?>
                     </div>
                 <?php } ?>
