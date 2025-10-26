@@ -8,7 +8,11 @@ class Utility
     {
         $text = $text ?? '';
 
-        $text = trim(preg_replace('/\s+/', ' ', $text));
+        $normalizedWhitespace = preg_replace('/\s+/', ' ', $text);
+        if (!is_string($normalizedWhitespace)) {
+            $normalizedWhitespace = $text;
+        }
+        $text = trim($normalizedWhitespace);
         $text = str_replace('&', 'and', $text);
         $text = str_replace('%', 'percent', $text);
         $text = str_replace(' - ', ' ', $text);
@@ -33,8 +37,12 @@ class Utility
         }
 
         $text = strtolower($text);
-        $text = preg_replace('/[^a-z0-9]+/', '-', $text);
-        return trim($text, '-');
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $text);
+        if (!is_string($slug)) {
+            $slug = $text;
+        }
+
+        return trim($slug, '-');
     }
 
     public function getCountryName(?string $countryCode): string
