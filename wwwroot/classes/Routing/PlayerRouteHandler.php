@@ -23,7 +23,9 @@ class PlayerRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect('/leaderboard/trophy');
         }
 
-        $onlineId = array_shift($segments) ?? '';
+        $onlineIdSegment = array_shift($segments) ?? '';
+        $onlineId = rawurldecode($onlineIdSegment);
+
         $accountId = $this->playerRepository->findAccountIdByOnlineId($onlineId);
 
         if ($accountId === null) {
@@ -56,7 +58,7 @@ class PlayerRouteHandler implements RouteHandlerInterface
             case 'report':
                 return RouteResult::include('player_report.php', $variables);
             default:
-                return RouteResult::redirect('/player/' . $onlineId);
+                return RouteResult::redirect('/player/' . rawurlencode($onlineId));
         }
     }
 }
