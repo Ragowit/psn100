@@ -1,8 +1,9 @@
 <?php
-require_once __DIR__ . '/classes/ApplicationContainer.php';
+require_once __DIR__ . '/classes/ApplicationBootstrapper.php';
 
-$applicationContainer = ApplicationContainer::create();
+$applicationBootstrapper = ApplicationBootstrapper::bootstrap();
+$applicationContainer = $applicationBootstrapper->getApplicationContainer();
 
-$database = $applicationContainer->getDatabase();
-$utility = $applicationContainer->getUtility();
-$paginationRenderer = $applicationContainer->getPaginationRenderer();
+$database = $applicationBootstrapper->getDatabase();
+$utility = $applicationBootstrapper->getUtility();
+$paginationRenderer = $applicationBootstrapper->getPaginationRenderer();

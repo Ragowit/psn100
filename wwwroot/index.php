@@ -17,7 +17,6 @@ if ($maintenanceMode->isEnabled()) {
 }
 
 require_once __DIR__ . '/init.php';
-require_once __DIR__ . '/classes/ApplicationRunner.php';
 
-$applicationRunner = ApplicationRunner::create($applicationContainer, $maintenanceMode);
+$applicationRunner = $applicationBootstrapper->createApplicationRunner($maintenanceMode);
 $applicationRunner->run();
