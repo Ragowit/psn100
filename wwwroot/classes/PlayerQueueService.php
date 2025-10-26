@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class PlayerQueueService
 {
     public const MAX_QUEUE_SUBMISSIONS_PER_IP = 10;

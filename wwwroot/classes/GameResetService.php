@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class GameResetService
 {
     private const ACTION_RESET = 0;

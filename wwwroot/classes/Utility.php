@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class Utility
 {
     public function slugify(?string $text): string
