@@ -34,6 +34,6 @@ class TemplateRenderer
         $utility = $this->utility;
         $paginationRenderer = $this->paginationRenderer;
 
-        require_once $templatePath;
+        require $templatePath;
     }
 }
