@@ -37,8 +37,24 @@ class PlayerQueueRequest
         return $this->playerName === '';
     }
 
-    private static function sanitizeValue(?string $value): string
+    private static function sanitizeValue(mixed $value): string
     {
+        if (is_array($value)) {
+            $value = reset($value);
+        }
+
+        if (is_object($value)) {
+            if (method_exists($value, '__toString')) {
+                $value = (string) $value;
+            } else {
+                return '';
+            }
+        }
+
+        if (!is_scalar($value) && $value !== null) {
+            return '';
+        }
+
         return trim((string) ($value ?? ''));
     }
 }
