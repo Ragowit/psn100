@@ -37,6 +37,12 @@ final class ApplicationRunner
 
     private function renderMaintenancePage(): void
     {
+        http_response_code(503);
+
+        if (!headers_sent()) {
+            header('Retry-After: 300');
+        }
+
         require_once $this->maintenanceMode->getTemplatePath();
         exit();
     }
