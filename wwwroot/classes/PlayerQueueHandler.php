@@ -52,11 +52,6 @@ class PlayerQueueHandler
         }
 
         $playerName = $request->getPlayerName();
-        $ipAddress = $request->getIpAddress();
-
-        if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
-            return $this->responseFactory->createQueueLimitResponse();
-        }
 
         if (!$this->service->isValidPlayerName($playerName)) {
             return $this->responseFactory->createInvalidNameResponse();
