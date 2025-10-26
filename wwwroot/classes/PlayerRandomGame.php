@@ -130,6 +130,12 @@ class PlayerRandomGame
 
     public function getGameLink(string $playerOnlineId): string
     {
-        return $this->id . '-' . $this->utility->slugify($this->name) . '/' . $playerOnlineId;
+        $slug = $this->id . '-' . $this->utility->slugify($this->name);
+
+        if ($playerOnlineId === '') {
+            return $slug;
+        }
+
+        return $slug . '/' . rawurlencode($playerOnlineId);
     }
 }

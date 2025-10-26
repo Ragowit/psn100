@@ -186,12 +186,24 @@ class PlayerAdvisableTrophy
 
     public function getGameLink(string $playerOnlineId): string
     {
-        return $this->gameId . '-' . $this->utility->slugify($this->gameName) . '/' . $playerOnlineId;
+        $slug = $this->gameId . '-' . $this->utility->slugify($this->gameName);
+
+        if ($playerOnlineId === '') {
+            return $slug;
+        }
+
+        return $slug . '/' . rawurlencode($playerOnlineId);
     }
 
     public function getTrophyLink(string $playerOnlineId): string
     {
-        return $this->trophyId . '-' . $this->utility->slugify($this->trophyName) . '/' . $playerOnlineId;
+        $slug = $this->trophyId . '-' . $this->utility->slugify($this->trophyName);
+
+        if ($playerOnlineId === '') {
+            return $slug;
+        }
+
+        return $slug . '/' . rawurlencode($playerOnlineId);
     }
 
     /**
