@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/PlayerQueueRequest.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerQueueResponseFactory.php';

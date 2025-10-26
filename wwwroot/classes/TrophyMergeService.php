@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class TrophyMergeService
 {
     private const PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];

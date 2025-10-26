@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/Homepage/HomepageItem.php';
 require_once __DIR__ . '/Homepage/HomepageTitle.php';
 require_once __DIR__ . '/Homepage/HomepageNewGame.php';
