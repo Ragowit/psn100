@@ -1290,6 +1290,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
         $prefixPatterns = [
             '/^Trophy Set\b[:\s-]*/i',
+            '/^Trophyset\b[:\s-]*/i',
         ];
 
         foreach ($prefixPatterns as $pattern) {
