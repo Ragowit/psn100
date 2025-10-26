@@ -29,7 +29,7 @@ final class GameListItem
 
     private int $rarityPoints;
 
-    private int $difficulty;
+    private string $difficulty;
 
     private int $platinum;
 
@@ -49,7 +49,7 @@ final class GameListItem
         string $platformValue,
         int $owners,
         int $rarityPoints,
-        int $difficulty,
+        string $difficulty,
         int $platinum,
         int $gold,
         int $silver,
@@ -84,7 +84,7 @@ final class GameListItem
             (string) ($row['platform'] ?? ''),
             isset($row['owners']) ? (int) $row['owners'] : 0,
             isset($row['rarity_points']) ? (int) $row['rarity_points'] : 0,
-            isset($row['difficulty']) ? (int) $row['difficulty'] : 0,
+            (string) ($row['difficulty'] ?? '0'),
             isset($row['platinum']) ? (int) $row['platinum'] : 0,
             isset($row['gold']) ? (int) $row['gold'] : 0,
             isset($row['silver']) ? (int) $row['silver'] : 0,
@@ -162,7 +162,7 @@ final class GameListItem
         return $this->owners === 1 ? 'owner' : 'owners';
     }
 
-    public function getDifficulty(): int
+    public function getDifficulty(): string
     {
         return $this->difficulty;
     }
