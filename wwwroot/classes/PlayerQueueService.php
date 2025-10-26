@@ -167,8 +167,12 @@ class PlayerQueueService
         }
 
         return [
-            'account_id' => array_key_exists('account_id', $result) ? (string) $result['account_id'] : null,
-            'status' => array_key_exists('status', $result) ? (int) $result['status'] : null,
+            'account_id' => array_key_exists('account_id', $result) && $result['account_id'] !== null
+                ? (string) $result['account_id']
+                : null,
+            'status' => array_key_exists('status', $result) && $result['status'] !== null
+                ? (int) $result['status']
+                : null,
         ];
     }
 
