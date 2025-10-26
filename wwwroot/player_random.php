@@ -107,7 +107,7 @@ require_once("header.php");
                             <div>
                                 <div class="card">
                                     <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
-                                        <a href="/game/<?= $gameLink; ?>">
+                                        <a href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
                                             <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= $game->getIconUrl(); ?>" alt="<?= htmlentities($game->getName()); ?>">
                                             <div class="card-img-overlay d-flex align-items-end p-2">
                                                 <?php
@@ -128,7 +128,7 @@ require_once("header.php");
 
                             <!-- name -->
                             <div class="text-center">
-                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $gameLink; ?>">
+                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
                                     <?= htmlentities($game->getName()); ?>
                                 </a>
                             </div>
