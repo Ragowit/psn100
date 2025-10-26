@@ -84,9 +84,11 @@ final class PlayerQueueResponseFactory
     private function createPlayerLink(string $playerName): string
     {
         $escapedPlayerName = $this->service->escapeHtml($playerName);
+        $playerUrl = '/player/' . rawurlencode($playerName);
+        $escapedPlayerUrl = $this->service->escapeHtml($playerUrl);
 
-        return '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/'
-            . $escapedPlayerName . '">' . $escapedPlayerName . '</a>';
+        return '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="'
+            . $escapedPlayerUrl . '">' . $escapedPlayerName . '</a>';
     }
 
     private function createSpinnerMessage(string $message): string
