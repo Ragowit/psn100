@@ -47,13 +47,14 @@ final class PlayerQueueResponseFactoryTest extends TestCase
         $this->assertSame('error', $response->getStatus());
 
         $message = $response->getMessage();
-        $this->assertStringContainsString("Player '<a class=\"link-underline link-underline-opacity-0 link-underline-opacity-100-hover\" href=\"/player/Bad User\">Bad User</a>' is tagged as a cheater and won't be scanned.", $message);
+        $this->assertStringContainsString("Player '<a class=\"link-underline link-underline-opacity-0 link-underline-opacity-100-hover\" href=\"/player/Bad%20User\">Bad User</a>' is tagged as a cheater and won't be scanned.", $message);
         $this->assertStringContainsString('Dispute</a>?', $message);
         $this->assertStringContainsString('https://github.com/Ragowit/psn100/issues?q=label%3Acheater+Bad%20User+OR+Account%2F123', $message);
 
         $this->assertSame(
             [
                 'Bad User',
+                '/player/Bad%20User',
                 'https://github.com/Ragowit/psn100/issues?q=label%3Acheater+Bad%20User+OR+Account%2F123',
             ],
             $service->getEscapedValues()
@@ -71,12 +72,12 @@ final class PlayerQueueResponseFactoryTest extends TestCase
         $this->assertTrue($response->shouldPoll());
 
         $message = $response->getMessage();
-        $this->assertStringContainsString('href="/player/Queue &lt;User&gt;"', $message);
+        $this->assertStringContainsString('href="/player/Queue%20%3CUser%3E"', $message);
         $this->assertStringContainsString('">Queue &lt;User&gt;</a> is in the update queue, currently in position &lt;script&gt;.', $message);
         $this->assertStringContainsString('<div class="spinner-border" role="status">', $message);
 
         $this->assertSame(
-            ['<script>', 'Queue <User>'],
+            ['<script>', 'Queue <User>', '/player/Queue%20%3CUser%3E'],
             $service->getEscapedValues()
         );
     }
