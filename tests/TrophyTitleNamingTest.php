@@ -42,6 +42,13 @@ final class TrophyTitleNamingTest extends TestCase
         $this->assertSame('Ratchet & Clank', $formatted);
     }
 
+    public function testSanitizeRemovesTrophysetPrefix(): void
+    {
+        $formatted = $this->formatTitle('Trophyset: Horizon Forbidden West');
+
+        $this->assertSame('Horizon Forbidden West', $formatted);
+    }
+
     public function testHyphenSeparatorsAreConvertedToColons(): void
     {
         $formatted = $this->formatTitle("Marvel's Spider-Man - Miles Morales");
