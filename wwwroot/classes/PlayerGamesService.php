@@ -14,7 +14,7 @@ class PlayerGamesService
         PlayerGamesFilter::PLATFORM_PS4 => "tt.platform LIKE '%PS4%'",
         PlayerGamesFilter::PLATFORM_PS5 => "tt.platform LIKE '%PS5%'",
         PlayerGamesFilter::PLATFORM_PSVITA => "tt.platform LIKE '%PSVITA%'",
-        PlayerGamesFilter::PLATFORM_PSVR => "(tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%')",
+        PlayerGamesFilter::PLATFORM_PSVR => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
         PlayerGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
     ];
 
