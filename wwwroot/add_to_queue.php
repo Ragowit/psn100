@@ -6,4 +6,4 @@ require_once 'init.php';
 require_once 'classes/PlayerQueueEndpoint.php';
 
 $endpoint = PlayerQueueEndpoint::fromDatabase($database);
-$endpoint->handleAddToQueue($_REQUEST ?? [], $_SERVER ?? []);
+$endpoint->handleAddToQueue($_GET ?? [], $_SERVER ?? []);
