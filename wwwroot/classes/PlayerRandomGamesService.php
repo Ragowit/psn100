@@ -10,7 +10,7 @@ class PlayerRandomGamesService
         'ps4' => "tt.platform LIKE '%PS4%'",
         'ps5' => "tt.platform LIKE '%PS5%'",
         'psvita' => "tt.platform LIKE '%PSVITA%'",
-        'psvr' => "tt.platform LIKE '%PSVR' OR tt.platform LIKE '%PSVR,%'",
+        'psvr' => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
         'psvr2' => "tt.platform LIKE '%PSVR2%'",
     ];
 
