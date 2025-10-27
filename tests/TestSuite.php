@@ -5,8 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/TestResult.php';
 require_once __DIR__ . '/TestSuiteResult.php';
+require_once __DIR__ . '/TestSuiteInterface.php';
 
-final class TestSuite
+final class TestSuite implements TestSuiteInterface
 {
     private string $directory;
 
