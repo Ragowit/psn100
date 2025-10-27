@@ -23,12 +23,12 @@ class GameStatusRequestHandler
 
         $gameId = $request->getPostNonNegativeInt('game');
         if ($gameId === null) {
-            return GameStatusRequestResult::error('<p>Invalid game ID provided.</p>');
+            return GameStatusRequestResult::error('Invalid game ID provided.');
         }
 
         $status = $request->getPostInt('status');
         if ($status === null) {
-            return GameStatusRequestResult::error('<p>Invalid status provided.</p>');
+            return GameStatusRequestResult::error('Invalid status provided.');
         }
 
         try {
@@ -37,28 +37,18 @@ class GameStatusRequestHandler
 
             return GameStatusRequestResult::success($message);
         } catch (InvalidArgumentException $exception) {
-            $message = $this->escapeMessage($exception->getMessage());
-
-            return GameStatusRequestResult::error('<p>' . $message . '</p>');
+            return GameStatusRequestResult::error($exception->getMessage());
         } catch (Throwable $exception) {
-            return GameStatusRequestResult::error('<p>Failed to update game status. Please try again.</p>');
+            return GameStatusRequestResult::error('Failed to update game status. Please try again.');
         }
     }
 
     private function formatSuccessMessage(int $gameId, string $statusText): string
     {
-        $gameIdText = $this->escapeMessage((string) $gameId);
-        $statusTextEscaped = $this->escapeMessage($statusText);
-
         return sprintf(
-            '<p>Game %s is now set as %s. All affected players will be updated soon, and ranks updated the next whole hour.</p>',
-            $gameIdText,
-            $statusTextEscaped
+            'Game %d is now set as %s. All affected players will be updated soon, and ranks updated the next whole hour.',
+            $gameId,
+            $statusText
         );
-    }
-
-    private function escapeMessage(string $message): string
-    {
-        return htmlentities($message, ENT_QUOTES, 'UTF-8');
     }
 }

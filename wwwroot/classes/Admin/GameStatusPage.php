@@ -78,12 +78,12 @@ HTML;
 
         $error = $this->result->getErrorMessage();
         if ($error !== null) {
-            $messages[] = sprintf('<div class="text-danger">%s</div>', htmlspecialchars($error, ENT_QUOTES, 'UTF-8'));
+            $messages[] = $this->renderAlert('danger', $error);
         }
 
         $success = $this->result->getSuccessMessage();
         if ($success !== null) {
-            $messages[] = sprintf('<div class="text-success">%s</div>', htmlspecialchars($success, ENT_QUOTES, 'UTF-8'));
+            $messages[] = $this->renderAlert('success', $success);
         }
 
         if ($messages === []) {
@@ -91,5 +91,12 @@ HTML;
         }
 
         return '<div class="mt-3">' . implode('', $messages) . '</div>';
+    }
+
+    private function renderAlert(string $type, string $message): string
+    {
+        $escapedMessage = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+
+        return sprintf('<div class="alert alert-%s" role="alert">%s</div>', $type, $escapedMessage);
     }
 }
