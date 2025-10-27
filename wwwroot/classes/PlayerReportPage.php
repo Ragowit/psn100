@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerReportHandler.php';
 require_once __DIR__ . '/PlayerReportResult.php';
+require_once __DIR__ . '/PlayerReportRequest.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 
@@ -56,13 +57,12 @@ class PlayerReportPage
     private function initialize(): void
     {
         $this->playerSummary = $this->playerSummaryService->getSummary($this->accountId);
-        $this->explanation = $this->playerReportHandler->getExplanation($this->queryParameters);
-        $this->explanationSubmitted = array_key_exists('explanation', $this->queryParameters);
+        $request = PlayerReportRequest::fromArrays($this->queryParameters, $this->serverParameters);
+        $this->explanation = $request->getExplanation();
+        $this->explanationSubmitted = $request->wasExplanationSubmitted();
         $this->reportResult = $this->playerReportHandler->handleReportRequest(
             $this->accountId,
-            $this->explanation,
-            $this->explanationSubmitted,
-            $this->serverParameters
+            $request
         );
     }
 
