@@ -2,36 +2,30 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
-require_once __DIR__ . '/classes/PlayerLogFilter.php';
-require_once __DIR__ . '/classes/PlayerLogService.php';
-require_once __DIR__ . '/classes/PlayerLogPage.php';
-require_once __DIR__ . '/classes/PlayerSummary.php';
-require_once __DIR__ . '/classes/PlayerSummaryService.php';
-require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
-require_once __DIR__ . '/classes/PlayerNavigation.php';
-require_once __DIR__ . '/classes/PlayerPlatformFilterOptions.php';
+require_once __DIR__ . '/classes/PlayerLogPageContext.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
 
-$playerLogFilter = PlayerLogFilter::fromArray($_GET ?? []);
-$playerLogService = new PlayerLogService($database);
-$playerSummaryService = new PlayerSummaryService($database);
-$playerSummary = $playerSummaryService->getSummary((int) $accountId);
-$playerLogPage = new PlayerLogPage(
-    $playerLogService,
-    $playerLogFilter,
-    (int) $player['account_id'],
-    (int) $player['status']
-);
-$trophiesLog = $playerLogPage->getTrophies();
-$trophyRarityFormatter = new TrophyRarityFormatter();
-$playerNavigation = PlayerNavigation::forSection((string) $player['online_id'], PlayerNavigation::SECTION_LOG);
-$platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
-    static fn (string $platform): bool => $playerLogFilter->isPlatformSelected($platform)
+$pageContext = PlayerLogPageContext::fromGlobals(
+    $database,
+    $player,
+    (int) $accountId,
+    $_GET ?? []
 );
 
-$title = $player["online_id"] . "'s Trophy Log ~ PSN 100%";
+$playerSummary = $pageContext->getPlayerSummary();
+$playerLogPage = $pageContext->getPlayerLogPage();
+$playerLogFilter = $pageContext->getFilter();
+$trophiesLog = $pageContext->getTrophies();
+$trophyRarityFormatter = $pageContext->getTrophyRarityFormatter();
+$playerNavigation = $pageContext->getPlayerNavigation();
+$platformFilterOptions = $pageContext->getPlatformFilterOptions();
+
+$playerOnlineId = $pageContext->getPlayerOnlineId();
+$playerAccountId = $pageContext->getPlayerAccountId();
+
+$title = $pageContext->getTitle();
 require_once("header.php");
 ?>
 
@@ -103,19 +97,19 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if ($player["status"] == 1) {
+                            if ($pageContext->isPlayerFlagged()) {
                                 ?>
                                 <tr>
-                                    <td colspan="5" class="text-center"><h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3></td>
+                                    <td colspan="5" class="text-center"><h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $playerOnlineId; ?>+OR+<?= $playerAccountId; ?>">Dispute</a>?</h3></td>
                                 </tr>
                                 <?php
-                            } elseif ($player["status"] == 3) {
+                            } elseif ($pageContext->isPlayerPrivate()) {
                                 ?>
                                 <tr>
                                     <td colspan="5" class="text-center"><h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>
                                 </tr>
                                 <?php
-                            } else {
+                            } elseif ($pageContext->shouldDisplayLog()) {
                                 foreach ($trophiesLog as $trophy) {
                                     $rowClassAttribute = $trophy->requiresWarning() ? ' class="table-warning"' : '';
                                     $gameSlug = $trophy->getGameSlug($utility);
