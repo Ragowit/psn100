@@ -2,33 +2,38 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TestResult.php';
+
 abstract class TestCase
 {
     /**
-     * @return list<array{method:string,status:string,message?:string}>
+     * @return list<TestResult>
      */
     public final function runTests(): array
     {
         $results = [];
+        $className = get_class($this);
 
         foreach ($this->getTestMethods() as $method) {
             $this->setUp();
 
             try {
                 $this->$method();
-                $results[] = ['method' => $method, 'status' => 'passed'];
+                $results[] = new TestResult($className, $method, 'passed');
             } catch (AssertionError $assertionError) {
-                $results[] = [
-                    'method' => $method,
-                    'status' => 'failed',
-                    'message' => $assertionError->getMessage(),
-                ];
+                $results[] = new TestResult(
+                    $className,
+                    $method,
+                    'failed',
+                    $assertionError->getMessage()
+                );
             } catch (Throwable $throwable) {
-                $results[] = [
-                    'method' => $method,
-                    'status' => 'error',
-                    'message' => $throwable->getMessage(),
-                ];
+                $results[] = new TestResult(
+                    $className,
+                    $method,
+                    'error',
+                    $throwable->getMessage()
+                );
             } finally {
                 $this->tearDown();
             }
