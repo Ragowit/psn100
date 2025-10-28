@@ -779,7 +779,44 @@ SQL
             sprintf('Found %d merged trophies to copy…', $total)
         );
 
-        $insertMissingParentEarned = $this->database->prepare(
+        $mergeQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                parent_np_communication_id,
+                parent_group_id,
+                parent_order_id,
+                child_group_id,
+                child_order_id
+            FROM trophy_merge
+            WHERE child_np_communication_id = :child_np_communication_id
+            ORDER BY parent_np_communication_id, parent_group_id, parent_order_id
+        SQL
+        );
+        $mergeQuery->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $mergeQuery->execute();
+
+        $childEarnedQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT account_id, earned_date, progress, earned
+            FROM trophy_earned
+            WHERE np_communication_id = :np_communication_id
+              AND group_id = :group_id
+              AND order_id = :order_id
+        SQL
+        );
+
+        $parentEarnedQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT earned_date, progress, earned
+            FROM trophy_earned
+            WHERE np_communication_id = :np_communication_id
+              AND group_id = :group_id
+              AND order_id = :order_id
+              AND account_id = :account_id
+        SQL
+        );
+
+        $insertParentEarned = $this->database->prepare(
             <<<'SQL'
             INSERT INTO trophy_earned (
                 np_communication_id,
@@ -789,68 +826,156 @@ SQL
                 earned_date,
                 progress,
                 earned
+            ) VALUES (
+                :np_communication_id,
+                :group_id,
+                :order_id,
+                :account_id,
+                :earned_date,
+                :progress,
+                :earned
             )
-            SELECT
-                tm.parent_np_communication_id,
-                tm.parent_group_id,
-                tm.parent_order_id,
-                child.account_id,
-                child.earned_date,
-                child.progress,
-                child.earned
-            FROM trophy_merge AS tm
-            JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
-                AND child.group_id = tm.child_group_id
-                AND child.order_id = tm.child_order_id
-            LEFT JOIN trophy_earned AS parent ON parent.np_communication_id = tm.parent_np_communication_id
-                AND parent.group_id = tm.parent_group_id
-                AND parent.order_id = tm.parent_order_id
-                AND parent.account_id = child.account_id
-            WHERE tm.child_np_communication_id = :child_np_communication_id
-              AND parent.account_id IS NULL
-SQL
+        SQL
         );
-        $insertMissingParentEarned->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-        $insertMissingParentEarned->execute();
 
-        $synchronizeExistingEarned = $this->database->prepare(
+        $updateParentEarned = $this->database->prepare(
             <<<'SQL'
-            UPDATE trophy_earned AS parent
-            JOIN trophy_merge AS tm ON tm.parent_np_communication_id = parent.np_communication_id
-                AND tm.parent_group_id = parent.group_id
-                AND tm.parent_order_id = parent.order_id
-            JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
-                AND child.group_id = tm.child_group_id
-                AND child.order_id = tm.child_order_id
-                AND child.account_id = parent.account_id
-            SET
-                parent.earned_date = CASE
-                    WHEN parent.earned_date IS NULL THEN child.earned_date
-                    WHEN child.earned_date IS NULL THEN parent.earned_date
-                    WHEN child.earned_date < parent.earned_date THEN child.earned_date
-                    ELSE parent.earned_date
-                END,
-                parent.progress = CASE
-                    WHEN parent.progress IS NULL THEN child.progress
-                    WHEN child.progress IS NULL THEN parent.progress
-                    WHEN child.progress > parent.progress THEN child.progress
-                    ELSE parent.progress
-                END,
-                parent.earned = CASE
-                    WHEN child.earned = 1 THEN 1
-                    ELSE parent.earned
-                END
-            WHERE tm.child_np_communication_id = :child_np_communication_id
-SQL
+            UPDATE trophy_earned
+            SET earned_date = :earned_date,
+                progress = :progress,
+                earned = :earned
+            WHERE np_communication_id = :np_communication_id
+              AND group_id = :group_id
+              AND order_id = :order_id
+              AND account_id = :account_id
+        SQL
         );
-        $synchronizeExistingEarned->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-        $synchronizeExistingEarned->execute();
 
-        $this->notifyProgress(
-            $progressListener,
-            75,
-            sprintf('Copying merged trophies… (%d/%d)', $total, $total)
-        );
+        $processed = 0;
+
+        while (($mapping = $mergeQuery->fetch(PDO::FETCH_ASSOC)) !== false) {
+            $childGroupId = (string) $mapping['child_group_id'];
+            $childOrderId = (int) $mapping['child_order_id'];
+            $parentGroupId = (string) $mapping['parent_group_id'];
+            $parentOrderId = (int) $mapping['parent_order_id'];
+            $parentNpCommunicationId = (string) $mapping['parent_np_communication_id'];
+
+            $childEarnedQuery->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $childEarnedQuery->bindValue(':group_id', $childGroupId, PDO::PARAM_STR);
+            $childEarnedQuery->bindValue(':order_id', $childOrderId, PDO::PARAM_INT);
+            $childEarnedQuery->execute();
+
+            while (($childEarned = $childEarnedQuery->fetch(PDO::FETCH_ASSOC)) !== false) {
+                $accountId = (int) $childEarned['account_id'];
+                $childEarnedDate = $childEarned['earned_date'];
+                $childEarnedDate = $childEarnedDate === null ? null : (string) $childEarnedDate;
+                $childProgress = $childEarned['progress'];
+                $childProgress = $childProgress === null ? null : (int) $childProgress;
+                $childEarnedFlag = (int) $childEarned['earned'];
+
+                $parentEarnedQuery->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+                $parentEarnedQuery->bindValue(':group_id', $parentGroupId, PDO::PARAM_STR);
+                $parentEarnedQuery->bindValue(':order_id', $parentOrderId, PDO::PARAM_INT);
+                $parentEarnedQuery->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+                $parentEarnedQuery->execute();
+
+                $parentEarned = $parentEarnedQuery->fetch(PDO::FETCH_ASSOC);
+                $parentEarnedQuery->closeCursor();
+
+                if ($parentEarned === false) {
+                    $insertParentEarned->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+                    $insertParentEarned->bindValue(':group_id', $parentGroupId, PDO::PARAM_STR);
+                    $insertParentEarned->bindValue(':order_id', $parentOrderId, PDO::PARAM_INT);
+                    $insertParentEarned->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+                    $this->bindNullableValue($insertParentEarned, ':earned_date', $childEarnedDate);
+                    $this->bindNullableValue($insertParentEarned, ':progress', $childProgress);
+                    $insertParentEarned->bindValue(':earned', $childEarnedFlag, PDO::PARAM_INT);
+                    $insertParentEarned->execute();
+
+                    continue;
+                }
+
+                $parentEarnedDate = $parentEarned['earned_date'];
+                $parentEarnedDate = $parentEarnedDate === null ? null : (string) $parentEarnedDate;
+                $parentProgress = $parentEarned['progress'];
+                $parentProgress = $parentProgress === null ? null : (int) $parentProgress;
+                $parentEarnedFlag = (int) $parentEarned['earned'];
+
+                $updatedEarnedDate = $this->earliestEarnedDate($parentEarnedDate, $childEarnedDate);
+                $updatedProgress = $this->highestProgress($parentProgress, $childProgress);
+                $updatedEarnedFlag = $childEarnedFlag === 1 ? 1 : $parentEarnedFlag;
+
+                $updateParentEarned->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+                $updateParentEarned->bindValue(':group_id', $parentGroupId, PDO::PARAM_STR);
+                $updateParentEarned->bindValue(':order_id', $parentOrderId, PDO::PARAM_INT);
+                $updateParentEarned->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+                $this->bindNullableValue($updateParentEarned, ':earned_date', $updatedEarnedDate);
+                $this->bindNullableValue($updateParentEarned, ':progress', $updatedProgress);
+                $updateParentEarned->bindValue(':earned', $updatedEarnedFlag, PDO::PARAM_INT);
+                $updateParentEarned->execute();
+            }
+
+            $childEarnedQuery->closeCursor();
+
+            $processed++;
+            $percent = 75;
+
+            if ($processed < $total) {
+                $percent = 73 + (int) floor(($processed / $total) * 2);
+                $percent = max(74, $percent);
+            }
+
+            $this->notifyProgress(
+                $progressListener,
+                $percent,
+                sprintf('Copying merged trophies… (%d/%d)', $processed, $total)
+            );
+        }
+
+        $mergeQuery->closeCursor();
+    }
+
+    private function earliestEarnedDate(?string $parentEarnedDate, ?string $childEarnedDate): ?string
+    {
+        if ($parentEarnedDate === null) {
+            return $childEarnedDate;
+        }
+
+        if ($childEarnedDate === null) {
+            return $parentEarnedDate;
+        }
+
+        return $childEarnedDate < $parentEarnedDate ? $childEarnedDate : $parentEarnedDate;
+    }
+
+    private function highestProgress(?int $parentProgress, ?int $childProgress): ?int
+    {
+        if ($parentProgress === null) {
+            return $childProgress;
+        }
+
+        if ($childProgress === null) {
+            return $parentProgress;
+        }
+
+        return $childProgress > $parentProgress ? $childProgress : $parentProgress;
+    }
+
+    private function bindNullableValue(PDOStatement $statement, string $parameter, int|string|null $value): void
+    {
+        if ($value === null) {
+            $statement->bindValue($parameter, null, PDO::PARAM_NULL);
+
+            return;
+        }
+
+        if (is_int($value)) {
+            $statement->bindValue($parameter, $value, PDO::PARAM_INT);
+
+            return;
+        }
+
+        $statement->bindValue($parameter, $value, PDO::PARAM_STR);
     }
 
     private function updateParentRelationship(string $childNpCommunicationId, string $parentNpCommunicationId): void
