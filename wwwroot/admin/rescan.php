@@ -10,6 +10,56 @@ require_once("../init.php");
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
         <title>Admin ~ Rescan Game</title>
+        <style>
+            .diff-card .card-header {
+                font-weight: 600;
+            }
+
+            .diff-entry + .diff-entry {
+                margin-top: 1rem;
+            }
+
+            .diff-metadata {
+                font-size: 0.875rem;
+                color: var(--bs-secondary-color);
+                margin-bottom: 0.5rem;
+            }
+
+            .diff-pane {
+                border: 1px solid var(--bs-border-color);
+                border-radius: var(--bs-border-radius);
+                padding: 0.75rem;
+                background-color: var(--bs-body-bg);
+                min-height: 120px;
+            }
+
+            .diff-pane-old {
+                border-color: rgba(220, 53, 69, 0.4);
+                background-color: rgba(220, 53, 69, 0.1);
+            }
+
+            .diff-pane-new {
+                border-color: rgba(25, 135, 84, 0.4);
+                background-color: rgba(25, 135, 84, 0.1);
+            }
+
+            .diff-pane-header {
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.5rem;
+                color: var(--bs-secondary-color);
+            }
+
+            .diff-pre {
+                margin-bottom: 0;
+                white-space: pre-wrap;
+                word-break: break-word;
+                font-family: var(--bs-font-monospace);
+                font-size: 0.875rem;
+            }
+        </style>
     </head>
     <body>
         <div class="container py-4">
@@ -149,11 +199,14 @@ require_once("../init.php");
                                 return;
                             }
 
+                            const dataDifferences = Array.isArray(data && data.differences) ? data.differences : [];
+
                             finalPayload = {
                                 type: 'complete',
                                 success: true,
                                 progress: 100,
                                 message: data.message ?? 'Rescan completed successfully.',
+                                differences: dataDifferences,
                             };
 
                             this.updateProgress(100, finalPayload.message);
@@ -163,8 +216,11 @@ require_once("../init.php");
 
                         if (finalPayload && finalPayload.success) {
                             const successMessage = finalPayload.message ?? 'Rescan completed successfully.';
+                            const differences = Array.isArray(finalPayload.differences)
+                                ? finalPayload.differences
+                                : [];
                             this.markProgressAsSuccess(successMessage);
-                            this.showAlert('success', successMessage);
+                            this.showAlert('success', successMessage, differences);
 
                             return;
                         }
@@ -363,7 +419,7 @@ require_once("../init.php");
                     }
                 }
 
-                showAlert(type, message) {
+                showAlert(type, message, differences = []) {
                     if (!this.result) {
                         return;
                     }
@@ -374,6 +430,102 @@ require_once("../init.php");
                     alert.textContent = message;
 
                     this.result.replaceChildren(alert);
+
+                    const diffContainer = this.buildDifferencesContainer(differences);
+                    if (diffContainer !== null) {
+                        this.result.appendChild(diffContainer);
+                    }
+                }
+
+                buildDifferencesContainer(differences) {
+                    if (!Array.isArray(differences) || differences.length === 0) {
+                        return null;
+                    }
+
+                    const filtered = differences.filter((diff) => diff && typeof diff === 'object');
+                    if (filtered.length === 0) {
+                        return null;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'card mt-3 diff-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'card-header';
+                    header.textContent = 'Detected changes';
+                    card.appendChild(header);
+
+                    const body = document.createElement('div');
+                    body.className = 'card-body';
+                    card.appendChild(body);
+
+                    filtered.forEach((diff) => {
+                        const context = typeof diff.context === 'string' && diff.context.trim() !== ''
+                            ? diff.context.trim()
+                            : 'Change';
+                        const field = typeof diff.field === 'string' && diff.field.trim() !== ''
+                            ? diff.field.trim()
+                            : 'Field';
+
+                        const entry = document.createElement('div');
+                        entry.className = 'diff-entry';
+
+                        const metadata = document.createElement('div');
+                        metadata.className = 'diff-metadata';
+                        metadata.textContent = `${context} • ${field}`;
+                        entry.appendChild(metadata);
+
+                        const row = document.createElement('div');
+                        row.className = 'row g-2';
+                        entry.appendChild(row);
+
+                        const previousCol = document.createElement('div');
+                        previousCol.className = 'col-12 col-lg-6';
+                        previousCol.appendChild(this.createDiffPane('Previous', diff.previous, 'diff-pane-old'));
+                        row.appendChild(previousCol);
+
+                        const currentCol = document.createElement('div');
+                        currentCol.className = 'col-12 col-lg-6';
+                        currentCol.appendChild(this.createDiffPane('Updated', diff.current, 'diff-pane-new'));
+                        row.appendChild(currentCol);
+
+                        body.appendChild(entry);
+                    });
+
+                    if (!body.hasChildNodes()) {
+                        return null;
+                    }
+
+                    return card;
+                }
+
+                createDiffPane(title, value, additionalClass) {
+                    const pane = document.createElement('div');
+                    pane.className = `diff-pane ${additionalClass}`;
+
+                    const header = document.createElement('div');
+                    header.className = 'diff-pane-header';
+                    header.textContent = title;
+                    pane.appendChild(header);
+
+                    const pre = document.createElement('pre');
+                    pre.className = 'diff-pre';
+                    pre.textContent = this.formatDifferenceValue(value);
+                    pane.appendChild(pre);
+
+                    return pane;
+                }
+
+                formatDifferenceValue(value) {
+                    if (value === null || value === undefined) {
+                        return '—';
+                    }
+
+                    if (typeof value === 'string') {
+                        return value.trim() === '' ? '—' : value;
+                    }
+
+                    return String(value);
                 }
 
                 clearResult() {

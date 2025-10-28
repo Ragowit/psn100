@@ -66,13 +66,14 @@ class GameRescanRequestHandler
                 ]);
             });
 
-            $message = $this->gameRescanService->rescan($gameId, $progressListener, $logListener);
+            $result = $this->gameRescanService->rescan($gameId, $progressListener, $logListener);
 
             $this->sendEvent([
                 'type' => 'complete',
                 'success' => true,
                 'progress' => 100,
-                'message' => $message,
+                'message' => $result->getMessage(),
+                'differences' => $result->getDifferences(),
             ]);
         } catch (\RuntimeException $exception) {
             http_response_code(200);
