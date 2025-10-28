@@ -52,7 +52,10 @@ class GameRescanService
             $this->notifyProgress($progressListener, 10, 'Checking game entry…');
 
             if (!$this->isOriginalGame($npCommunicationId)) {
-                return 'Can only rescan original game entries.';
+                return new GameRescanResult(
+                    'Can only rescan original game entries.',
+                    $differenceTracker->getDifferences()
+                );
             }
 
             $this->notifyProgress($progressListener, 15, 'Signing in to worker account…');
