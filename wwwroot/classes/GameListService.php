@@ -126,17 +126,18 @@ class GameListService
                 COUNT(*)
             FROM
                 trophy_title tt
+            LEFT JOIN (
+                SELECT
+                    account_id
+                FROM
+                    player
+                WHERE
+                    online_id = :online_id
+            ) p ON TRUE
             LEFT JOIN trophy_title_player ttp ON
                 ttp.np_communication_id = tt.np_communication_id
                 AND ttp.progress = 100
-                AND ttp.account_id = (
-                    SELECT
-                        account_id
-                    FROM
-                        player
-                    WHERE
-                        online_id = :online_id
-                )
+                AND ttp.account_id = p.account_id
             WHERE
                 %s
             SQL,
@@ -179,17 +180,18 @@ class GameListService
                 %s
             FROM
                 trophy_title tt
+            LEFT JOIN (
+                SELECT
+                    account_id
+                FROM
+                    player
+                WHERE
+                    online_id = :online_id
+            ) p ON TRUE
             LEFT JOIN trophy_title_player ttp ON
                 ttp.np_communication_id = tt.np_communication_id
                 AND ttp.progress = 100
-                AND ttp.account_id = (
-                    SELECT
-                        account_id
-                    FROM
-                        player
-                    WHERE
-                        online_id = :online_id
-                )
+                AND ttp.account_id = p.account_id
             WHERE
                 %s
             %s
