@@ -873,26 +873,52 @@ SQL
                 $childProgress = $childProgress === null ? null : (int) $childProgress;
                 $childEarnedFlag = (int) $childEarned['earned'];
 
-                $parentEarnedQuery->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
-                $parentEarnedQuery->bindValue(':group_id', $parentGroupId, PDO::PARAM_STR);
-                $parentEarnedQuery->bindValue(':order_id', $parentOrderId, PDO::PARAM_INT);
-                $parentEarnedQuery->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+                $parentIdentifiers = [
+                    ':np_communication_id' => [$parentNpCommunicationId, PDO::PARAM_STR],
+                    ':group_id' => [$parentGroupId, PDO::PARAM_STR],
+                    ':order_id' => [$parentOrderId, PDO::PARAM_INT],
+                    ':account_id' => [$accountId, PDO::PARAM_INT],
+                ];
+
+                foreach ($parentIdentifiers as $param => [$value, $type]) {
+                    $parentEarnedQuery->bindValue($param, $value, $type);
+                }
+
                 $parentEarnedQuery->execute();
 
                 $parentEarned = $parentEarnedQuery->fetch(PDO::FETCH_ASSOC);
                 $parentEarnedQuery->closeCursor();
 
                 if ($parentEarned === false) {
-                    $insertParentEarned->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
-                    $insertParentEarned->bindValue(':group_id', $parentGroupId, PDO::PARAM_STR);
-                    $insertParentEarned->bindValue(':order_id', $parentOrderId, PDO::PARAM_INT);
-                    $insertParentEarned->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-                    $this->bindNullableValue($insertParentEarned, ':earned_date', $childEarnedDate);
-                    $this->bindNullableValue($insertParentEarned, ':progress', $childProgress);
-                    $insertParentEarned->bindValue(':earned', $childEarnedFlag, PDO::PARAM_INT);
-                    $insertParentEarned->execute();
+                    try {
+                        $insertParentEarned->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+                        $insertParentEarned->bindValue(':group_id', $parentGroupId, PDO::PARAM_STR);
+                        $insertParentEarned->bindValue(':order_id', $parentOrderId, PDO::PARAM_INT);
+                        $insertParentEarned->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+                        $this->bindNullableValue($insertParentEarned, ':earned_date', $childEarnedDate);
+                        $this->bindNullableValue($insertParentEarned, ':progress', $childProgress);
+                        $insertParentEarned->bindValue(':earned', $childEarnedFlag, PDO::PARAM_INT);
+                        $insertParentEarned->execute();
+                        $insertParentEarned->closeCursor();
 
-                    continue;
+                        continue;
+                    } catch (PDOException $exception) {
+                        if ($exception->getCode() !== '23000') {
+                            throw $exception;
+                        }
+
+                        foreach ($parentIdentifiers as $param => [$value, $type]) {
+                            $parentEarnedQuery->bindValue($param, $value, $type);
+                        }
+
+                        $parentEarnedQuery->execute();
+                        $parentEarned = $parentEarnedQuery->fetch(PDO::FETCH_ASSOC);
+                        $parentEarnedQuery->closeCursor();
+
+                        if ($parentEarned === false) {
+                            throw $exception;
+                        }
+                    }
                 }
 
                 $parentEarnedDate = $parentEarned['earned_date'];
