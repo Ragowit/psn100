@@ -820,6 +820,7 @@ SQL
         $driverName = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME);
 
         $processed = 0;
+        $batchSize = 500;
 
         while (($mapping = $mergeQuery->fetch(PDO::FETCH_ASSOC)) !== false) {
             $childGroupId = (string) $mapping['child_group_id'];
@@ -837,96 +838,53 @@ SQL
                 ':child_order_id' => $childOrderId,
             ]);
 
-            $childParentEarnedRows = $childParentEarnedQuery->fetchAll(PDO::FETCH_ASSOC);
+            $mergedRows = [];
+
+            while (($earnedRow = $childParentEarnedQuery->fetch(PDO::FETCH_ASSOC)) !== false) {
+                $accountId = (int) $earnedRow['account_id'];
+                $childEarnedDate = $earnedRow['child_earned_date'];
+                $childEarnedDate = $childEarnedDate === null ? null : (string) $childEarnedDate;
+                $childProgress = $earnedRow['child_progress'];
+                $childProgress = $childProgress === null ? null : (int) $childProgress;
+                $childEarnedFlag = (int) $earnedRow['child_earned'];
+
+                $parentEarnedDate = $earnedRow['parent_earned_date'];
+                $parentEarnedDate = $parentEarnedDate === null ? null : (string) $parentEarnedDate;
+                $parentProgress = $earnedRow['parent_progress'];
+                $parentProgress = $parentProgress === null ? null : (int) $parentProgress;
+                $parentEarned = $earnedRow['parent_earned'];
+                $parentEarnedFlag = $parentEarned === null ? 0 : (int) $parentEarned;
+
+                $mergedRows[] = [
+                    'account_id' => $accountId,
+                    'earned_date' => $this->earliestEarnedDate($parentEarnedDate, $childEarnedDate),
+                    'progress' => $this->highestProgress($parentProgress, $childProgress),
+                    'earned' => $childEarnedFlag === 1 ? 1 : $parentEarnedFlag,
+                ];
+
+                if (count($mergedRows) >= $batchSize) {
+                    $this->insertParentEarnedBatch(
+                        $driverName,
+                        $parentNpCommunicationId,
+                        $parentGroupId,
+                        $parentOrderId,
+                        $mergedRows
+                    );
+
+                    $mergedRows = [];
+                }
+            }
+
             $childParentEarnedQuery->closeCursor();
 
-            if ($childParentEarnedRows !== []) {
-                $mergedRows = [];
-
-                foreach ($childParentEarnedRows as $earnedRow) {
-                    $accountId = (int) $earnedRow['account_id'];
-                    $childEarnedDate = $earnedRow['child_earned_date'];
-                    $childEarnedDate = $childEarnedDate === null ? null : (string) $childEarnedDate;
-                    $childProgress = $earnedRow['child_progress'];
-                    $childProgress = $childProgress === null ? null : (int) $childProgress;
-                    $childEarnedFlag = (int) $earnedRow['child_earned'];
-
-                    $parentEarnedDate = $earnedRow['parent_earned_date'];
-                    $parentEarnedDate = $parentEarnedDate === null ? null : (string) $parentEarnedDate;
-                    $parentProgress = $earnedRow['parent_progress'];
-                    $parentProgress = $parentProgress === null ? null : (int) $parentProgress;
-                    $parentEarned = $earnedRow['parent_earned'];
-                    $parentEarnedFlag = $parentEarned === null ? 0 : (int) $parentEarned;
-
-                    $mergedRows[] = [
-                        'account_id' => $accountId,
-                        'earned_date' => $this->earliestEarnedDate($parentEarnedDate, $childEarnedDate),
-                        'progress' => $this->highestProgress($parentProgress, $childProgress),
-                        'earned' => $childEarnedFlag === 1 ? 1 : $parentEarnedFlag,
-                    ];
-                }
-
-                if ($mergedRows !== []) {
-                    $placeholders = [];
-                    $values = [];
-
-                    foreach ($mergedRows as $row) {
-                        $placeholders[] = '(?, ?, ?, ?, ?, ?, ?)';
-                        $values[] = $parentNpCommunicationId;
-                        $values[] = $parentGroupId;
-                        $values[] = $parentOrderId;
-                        $values[] = $row['account_id'];
-                        $values[] = $row['earned_date'];
-                        $values[] = $row['progress'];
-                        $values[] = $row['earned'];
-                    }
-
-                    $valueList = implode(', ', $placeholders);
-
-                    if ($driverName === 'mysql') {
-                        $insertSql = sprintf(
-                            <<<'SQL'
-INSERT INTO trophy_earned (
-    np_communication_id,
-    group_id,
-    order_id,
-    account_id,
-    earned_date,
-    progress,
-    earned
-) VALUES %s
-ON DUPLICATE KEY UPDATE
-    earned_date = VALUES(earned_date),
-    progress = VALUES(progress),
-    earned = VALUES(earned)
-SQL,
-                            $valueList
-                        );
-                    } else {
-                        $insertSql = sprintf(
-                            <<<'SQL'
-INSERT INTO trophy_earned (
-    np_communication_id,
-    group_id,
-    order_id,
-    account_id,
-    earned_date,
-    progress,
-    earned
-) VALUES %s
-ON CONFLICT(np_communication_id, group_id, order_id, account_id) DO UPDATE SET
-    earned_date = excluded.earned_date,
-    progress = excluded.progress,
-    earned = excluded.earned
-SQL,
-                            $valueList
-                        );
-                    }
-
-                    $insertParentEarned = $this->database->prepare($insertSql);
-                    $insertParentEarned->execute($values);
-                    $insertParentEarned->closeCursor();
-                }
+            if ($mergedRows !== []) {
+                $this->insertParentEarnedBatch(
+                    $driverName,
+                    $parentNpCommunicationId,
+                    $parentGroupId,
+                    $parentOrderId,
+                    $mergedRows
+                );
             }
 
             $processed++;
@@ -945,6 +903,78 @@ SQL,
         }
 
         $mergeQuery->closeCursor();
+    }
+
+    private function insertParentEarnedBatch(
+        string $driverName,
+        string $parentNpCommunicationId,
+        string $parentGroupId,
+        int $parentOrderId,
+        array $mergedRows
+    ): void {
+        if ($mergedRows === []) {
+            return;
+        }
+
+        $placeholders = [];
+        $values = [];
+
+        foreach ($mergedRows as $row) {
+            $placeholders[] = '(?, ?, ?, ?, ?, ?, ?)';
+            $values[] = $parentNpCommunicationId;
+            $values[] = $parentGroupId;
+            $values[] = $parentOrderId;
+            $values[] = $row['account_id'];
+            $values[] = $row['earned_date'];
+            $values[] = $row['progress'];
+            $values[] = $row['earned'];
+        }
+
+        $valueList = implode(', ', $placeholders);
+
+        if ($driverName === 'mysql') {
+            $insertSql = sprintf(
+                <<<'SQL'
+INSERT INTO trophy_earned (
+    np_communication_id,
+    group_id,
+    order_id,
+    account_id,
+    earned_date,
+    progress,
+    earned
+) VALUES %s
+ON DUPLICATE KEY UPDATE
+    earned_date = VALUES(earned_date),
+    progress = VALUES(progress),
+    earned = VALUES(earned)
+SQL,
+                $valueList
+            );
+        } else {
+            $insertSql = sprintf(
+                <<<'SQL'
+INSERT INTO trophy_earned (
+    np_communication_id,
+    group_id,
+    order_id,
+    account_id,
+    earned_date,
+    progress,
+    earned
+) VALUES %s
+ON CONFLICT(np_communication_id, group_id, order_id, account_id) DO UPDATE SET
+    earned_date = excluded.earned_date,
+    progress = excluded.progress,
+    earned = excluded.earned
+SQL,
+                $valueList
+            );
+        }
+
+        $statement = $this->database->prepare($insertSql);
+        $statement->execute($values);
+        $statement->closeCursor();
     }
 
     private function earliestEarnedDate(?string $parentEarnedDate, ?string $childEarnedDate): ?string
