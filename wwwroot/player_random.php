@@ -2,38 +2,26 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
-require_once __DIR__ . '/classes/PlayerRandomGame.php';
-require_once __DIR__ . '/classes/PlayerRandomGamesFilter.php';
-require_once __DIR__ . '/classes/PlayerRandomGamesService.php';
-require_once __DIR__ . '/classes/PlayerRandomGamesPage.php';
-require_once __DIR__ . '/classes/PlayerSummary.php';
-require_once __DIR__ . '/classes/PlayerSummaryService.php';
-require_once __DIR__ . '/classes/PlayerNavigation.php';
-require_once __DIR__ . '/classes/PlayerPlatformFilterOptions.php';
+require_once __DIR__ . '/classes/PlayerRandomGamesPageContext.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
 
-$playerRandomGamesFilter = PlayerRandomGamesFilter::fromArray($_GET ?? []);
-$playerRandomGamesService = new PlayerRandomGamesService($database, $utility);
-$playerSummaryService = new PlayerSummaryService($database);
-$playerRandomGamesPage = new PlayerRandomGamesPage(
-    $playerRandomGamesService,
-    $playerSummaryService,
-    $playerRandomGamesFilter,
+$context = PlayerRandomGamesPageContext::fromGlobals(
+    $database,
+    $utility,
+    $player,
     (int) $accountId,
-    (int) $player["status"]
+    $_GET ?? []
 );
 
-$playerRandomGamesFilter = $playerRandomGamesPage->getFilter();
-$playerSummary = $playerRandomGamesPage->getPlayerSummary();
-$randomGames = $playerRandomGamesPage->getRandomGames();
-$playerNavigation = PlayerNavigation::forSection((string) $player['online_id'], PlayerNavigation::SECTION_RANDOM);
-$platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
-    static fn (string $platform): bool => $playerRandomGamesFilter->isPlatformSelected($platform)
-);
+$playerRandomGamesFilter = $context->getFilter();
+$playerSummary = $context->getPlayerSummary();
+$randomGames = $context->getRandomGames();
+$playerNavigation = $context->getPlayerNavigation();
+$platformFilterOptions = $context->getPlatformFilterOptions();
 
-$title = $player["online_id"] . "'s Random Games ~ PSN 100%";
+$title = $context->getTitle();
 require_once("header.php");
 ?>
 
@@ -84,19 +72,19 @@ require_once("header.php");
 
     <div class="row">
         <?php
-        if ($playerRandomGamesPage->shouldShowFlaggedMessage()) {
+        if ($context->shouldShowFlaggedMessage()) {
             ?>
             <div class="col-12 text-center">
                 <h3>This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3>
             </div>
             <?php
-        } elseif ($playerRandomGamesPage->shouldShowPrivateMessage()) {
+        } elseif ($context->shouldShowPrivateMessage()) {
             ?>
             <div class="col-12 text-center">
                 <h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3>
             </div>
             <?php
-        } elseif ($playerRandomGamesPage->shouldShowRandomGames()) {
+        } elseif ($context->shouldShowRandomGames()) {
             foreach ($randomGames as $game) {
                 $gameLink = $game->getGameLink($player["online_id"]);
                 ?>
