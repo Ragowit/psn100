@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
+
 class TrophyMergeService
 {
     private const PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];
@@ -54,7 +56,12 @@ class TrophyMergeService
         return 'The trophies have been merged.';
     }
 
-    public function mergeGames(int $childGameId, int $parentGameId, string $method): string
+    public function mergeGames(
+        int $childGameId,
+        int $parentGameId,
+        string $method,
+        ?TrophyMergeProgressListener $progressListener = null
+    ): string
     {
         $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
 
@@ -68,6 +75,8 @@ class TrophyMergeService
             throw new InvalidArgumentException('Parent must be a merge title.');
         }
 
+        $this->notifyProgress($progressListener, 10, 'Validating merge configuration…');
+
         $message = '';
 
         $this->beginTransaction();
@@ -75,12 +84,15 @@ class TrophyMergeService
         try {
             switch ($method) {
                 case 'name':
+                    $this->notifyProgress($progressListener, 30, 'Matching trophies by name…');
                     $message .= $this->insertMappingsByName($childGameId, $parentGameId);
                     break;
                 case 'icon':
+                    $this->notifyProgress($progressListener, 30, 'Matching trophies by icon…');
                     $message .= $this->insertMappingsByIcon($childGameId, $parentGameId);
                     break;
                 case 'order':
+                    $this->notifyProgress($progressListener, 30, 'Matching trophies by list order…');
                     $this->insertMappingsByOrder($childGameId, $parentGameId);
                     break;
                 default:
@@ -93,11 +105,19 @@ class TrophyMergeService
             throw $exception;
         }
 
+        $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');
+
+        $this->notifyProgress($progressListener, 65, 'Marking child game as merged…');
         $this->markGameAsMergedById($childGameId);
+        $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
         $this->copyMergedTrophies($childGameId);
+        $this->notifyProgress($progressListener, 80, 'Updating player trophy groups…');
         $this->updateTrophyGroupPlayer($childGameId);
+        $this->notifyProgress($progressListener, 88, 'Updating player trophy titles…');
         $this->updateTrophyTitlePlayer($childGameId);
+        $this->notifyProgress($progressListener, 94, 'Updating parent relationship…');
         $this->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
+        $this->notifyProgress($progressListener, 98, 'Logging merge activity…');
         $this->logChange('GAME_MERGE', $childGameId, $parentGameId);
 
         return $message . 'The games have been merged.';
@@ -1139,5 +1159,14 @@ SQL
         if ($this->database->inTransaction()) {
             $this->database->rollBack();
         }
+    }
+
+    private function notifyProgress(?TrophyMergeProgressListener $listener, int $percent, string $message): void
+    {
+        if ($listener === null) {
+            return;
+        }
+
+        $listener->onProgress($percent, $message);
     }
 }
