@@ -71,12 +71,11 @@ final class TestSuite implements TestSuiteInterface
             $testCase = new $testClass();
 
             foreach ($testCase->runTests() as $result) {
-                $results[] = new TestResult(
-                    $testClass,
-                    $result['method'],
-                    $result['status'],
-                    $result['message'] ?? null
-                );
+                if (!$result instanceof TestResult) {
+                    throw new UnexpectedValueException('Test cases must return TestResult instances.');
+                }
+
+                $results[] = $result;
             }
         }
 
