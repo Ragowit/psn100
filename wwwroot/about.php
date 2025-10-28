@@ -212,7 +212,7 @@ require_once("header.php");
                     <script>
                         (() => {
                             const scanLogData = <?= json_encode($scanLogPlayersData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-                            const displayCount = Math.min(<?= $initialDisplayCount; ?>, scanLogData.length);
+                            const displayCount = Math.min(<?= $initialDisplayCount; ?>, Array.isArray(scanLogData) ? scanLogData.length : 0);
 
                             if (!Array.isArray(scanLogData) || scanLogData.length === 0 || displayCount === 0) {
                                 return;
@@ -230,11 +230,27 @@ require_once("header.php");
                             const baseNewPlayers = <?= (int) $scanSummary->getNewPlayers(); ?>;
                             const numberFormatter = new Intl.NumberFormat('en-US');
 
-                            tableBody.innerHTML = '';
+                            const parseLastUpdatedDate = (value) => {
+                                if (!value) {
+                                    return null;
+                                }
 
-                            const visibleIndices = [];
-                            let nextIndex = displayCount % scanLogData.length;
-                            let rotationCount = 0;
+                                const parsedDate = new Date(`${value} UTC`);
+
+                                return Number.isNaN(parsedDate.valueOf()) ? null : parsedDate;
+                            };
+
+                            const sortedScanLogData = [...scanLogData].sort((playerA, playerB) => {
+                                const dateA = parseLastUpdatedDate(playerA.lastUpdatedDate);
+                                const dateB = parseLastUpdatedDate(playerB.lastUpdatedDate);
+
+                                const timeA = dateA ? dateA.getTime() : Number.NEGATIVE_INFINITY;
+                                const timeB = dateB ? dateB.getTime() : Number.NEGATIVE_INFINITY;
+
+                                return timeB - timeA;
+                            });
+
+                            tableBody.innerHTML = '';
 
                             const createRankCell = (player) => {
                                 const rankCell = document.createElement('th');
@@ -278,10 +294,10 @@ require_once("header.php");
                                 updatedCell.className = 'align-middle text-center';
 
                                 if (player.lastUpdatedDate) {
-                                    const parsedDate = new Date(`${player.lastUpdatedDate} UTC`);
+                                    const parsedDate = parseLastUpdatedDate(player.lastUpdatedDate);
 
-                                    if (!Number.isNaN(parsedDate.valueOf())) {
-                                        updatedCell.textContent = parsedDate.toLocaleString('sv-SE', {timeStyle: 'medium'});
+                                    if (parsedDate) {
+                                        updatedCell.textContent = parsedDate.toLocaleString('sv-SE', { timeStyle: 'medium' });
                                     }
                                 }
 
@@ -392,53 +408,12 @@ require_once("header.php");
                                 return row;
                             };
 
-                            for (let index = 0; index < displayCount; index += 1) {
-                                const row = buildRow(scanLogData[index]);
-                                tableBody.append(row);
-                                visibleIndices.push(index);
-                            }
+                            sortedScanLogData.slice(0, displayCount).forEach((player) => {
+                                tableBody.append(buildRow(player));
+                            });
 
-                            const calculateVisibleNew = () => visibleIndices.reduce(
-                                (total, index) => total + (scanLogData[index].isNew ? 1 : 0),
-                                0
-                            );
-
-                            const initialVisibleNew = calculateVisibleNew();
-
-                            const updateSummary = () => {
-                                const visibleNew = calculateVisibleNew();
-                                const newPlayersDisplay = Math.max(0, baseNewPlayers - initialVisibleNew + visibleNew);
-                                const scannedPlayersDisplay = baseScannedPlayers + rotationCount;
-
-                                summaryScannedElement.textContent = numberFormatter.format(scannedPlayersDisplay);
-                                summaryNewElement.textContent = numberFormatter.format(newPlayersDisplay);
-                            };
-
-                            updateSummary();
-
-                            if (scanLogData.length <= displayCount) {
-                                return;
-                            }
-
-                            const dropInNewEntry = () => {
-                                const newPlayerIndex = nextIndex;
-                                nextIndex = (nextIndex + 1) % scanLogData.length;
-                                rotationCount = (rotationCount + 1) % scanLogData.length;
-
-                                const newRow = buildRow(scanLogData[newPlayerIndex]);
-                                newRow.classList.add('scan-log-row--enter');
-                                tableBody.insertBefore(newRow, tableBody.firstChild);
-                                visibleIndices.unshift(newPlayerIndex);
-
-                                while (visibleIndices.length > displayCount && tableBody.lastElementChild) {
-                                    visibleIndices.pop();
-                                    tableBody.removeChild(tableBody.lastElementChild);
-                                }
-
-                                updateSummary();
-                            };
-
-                            setInterval(dropInNewEntry, 5000);
+                            summaryScannedElement.textContent = numberFormatter.format(baseScannedPlayers);
+                            summaryNewElement.textContent = numberFormatter.format(baseNewPlayers);
                         })();
                     </script>
                 <?php endif; ?>
