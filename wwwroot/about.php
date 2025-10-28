@@ -3,7 +3,31 @@ require_once __DIR__ . '/classes/AboutPageService.php';
 
 $aboutPageService = new AboutPageService($database, $utility);
 $scanSummary = $aboutPageService->getScanSummary();
-$scanLogPlayers = $aboutPageService->getScanLogPlayers();
+$scanLogPlayers = $aboutPageService->getScanLogPlayers(30);
+$initialDisplayCount = min(10, count($scanLogPlayers));
+$initialScanLogPlayers = array_slice($scanLogPlayers, 0, $initialDisplayCount);
+$scanLogPlayersData = array_map(
+    static function (AboutPagePlayer $player): array {
+        return [
+            'onlineId' => $player->getOnlineId(),
+            'countryCode' => $player->getCountryCode(),
+            'countryName' => $player->getCountryName(),
+            'avatarUrl' => $player->getAvatarUrl(),
+            'lastUpdatedDate' => $player->getLastUpdatedDate(),
+            'isRanked' => $player->isRanked(),
+            'ranking' => $player->getRanking(),
+            'hasHiddenTrophies' => $player->hasHiddenTrophies(),
+            'statusLabel' => $player->getStatusLabel(),
+            'isNew' => $player->isNew(),
+            'rankDeltaLabel' => $player->getRankDeltaLabel(),
+            'rankDeltaColor' => $player->getRankDeltaColor(),
+            'progress' => $player->getProgress(),
+            'level' => $player->getLevel(),
+            'status' => $player->getStatus(),
+        ];
+    },
+    $scanLogPlayers
+);
 
 $title = "About ~ PSN 100%";
 require_once("header.php");
@@ -65,23 +89,24 @@ require_once("header.php");
                 <!-- Scan Log -->
                 <div class="bg-body-tertiary p-3 rounded">
                     <h2>Scan Log</h2>
-                    <p>
-                        <?= $scanSummary->getScannedPlayers(); ?> players were scanned in the last 24 hours, and <?= $scanSummary->getNewPlayers(); ?> new players added to the leaderboards this week!
+                    <p id="scanSummaryText">
+                        <span id="scanSummaryScanned"><?= number_format($scanSummary->getScannedPlayers()); ?></span> players were scanned in the last 24 hours, and <span id="scanSummaryNew"><?= number_format($scanSummary->getNewPlayers()); ?></span> new players added to the leaderboards this week!
+                    </p>
 
-                        <div class="table-responsive-xxl">
-                            <table class="table">
-                                <thead>
-                                    <tr class="text-uppercase">
-                                        <th scope="col" class="text-center">Rank</th>
-                                        <th scope="col" class="text-center">Updated</th>
-                                        <th scope="col">User</th>
-                                        <th scope="col" class="text-center" style="width: 75px;">Level</th>
-                                    </tr>
-                                </thead>
+                    <div class="table-responsive-xxl">
+                        <table class="table">
+                            <thead>
+                                <tr class="text-uppercase">
+                                    <th scope="col" class="text-center">Rank</th>
+                                    <th scope="col" class="text-center">Updated</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col" class="text-center" style="width: 75px;">Level</th>
+                                </tr>
+                            </thead>
 
-                                <tbody>
-                                    <?php
-                                    foreach ($scanLogPlayers as $player) {
+                            <tbody id="scanLogTableBody">
+                                <?php
+                                foreach ($initialScanLogPlayers as $player) {
                                         $countryCode = $player->getCountryCode();
                                         $countryName = $player->getCountryName();
                                         $onlineId = $player->getOnlineId();
@@ -160,13 +185,263 @@ require_once("header.php");
                                             </td>
                                         </tr>
                                         <?php
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </p>
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+                <?php if (!empty($scanLogPlayersData)) : ?>
+                    <style>
+                        @keyframes scan-log-drop-in {
+                            from {
+                                opacity: 0;
+                                transform: translateY(-10px);
+                            }
+
+                            to {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                        }
+
+                        .scan-log-row--enter {
+                            animation: scan-log-drop-in 0.4s ease-out;
+                        }
+                    </style>
+                    <script>
+                        (() => {
+                            const scanLogData = <?= json_encode($scanLogPlayersData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+                            const displayCount = Math.min(<?= $initialDisplayCount; ?>, scanLogData.length);
+
+                            if (!Array.isArray(scanLogData) || scanLogData.length === 0 || displayCount === 0) {
+                                return;
+                            }
+
+                            const tableBody = document.getElementById('scanLogTableBody');
+                            const summaryScannedElement = document.getElementById('scanSummaryScanned');
+                            const summaryNewElement = document.getElementById('scanSummaryNew');
+
+                            if (!tableBody || !summaryScannedElement || !summaryNewElement) {
+                                return;
+                            }
+
+                            const baseScannedPlayers = <?= (int) $scanSummary->getScannedPlayers(); ?>;
+                            const baseNewPlayers = <?= (int) $scanSummary->getNewPlayers(); ?>;
+                            const numberFormatter = new Intl.NumberFormat('en-US');
+
+                            tableBody.innerHTML = '';
+
+                            const visibleIndices = [];
+                            let nextIndex = displayCount % scanLogData.length;
+                            let rotationCount = 0;
+
+                            const createRankCell = (player) => {
+                                const rankCell = document.createElement('th');
+                                rankCell.scope = 'row';
+                                rankCell.className = 'align-middle text-center';
+
+                                if (player.isRanked && player.ranking !== null) {
+                                    rankCell.append(document.createTextNode(player.ranking));
+
+                                    if (player.hasHiddenTrophies) {
+                                        const hiddenSpan = document.createElement('span');
+                                        hiddenSpan.style.color = '#9d9d9d';
+                                        hiddenSpan.textContent = ' (H)';
+                                        rankCell.append(hiddenSpan);
+                                    }
+                                } else {
+                                    rankCell.append(document.createTextNode('N/A'));
+                                }
+
+                                rankCell.append(document.createElement('br'));
+
+                                if (player.statusLabel) {
+                                    const statusSpan = document.createElement('span');
+                                    statusSpan.style.color = '#9d9d9d';
+                                    statusSpan.textContent = `(${player.statusLabel})`;
+                                    rankCell.append(statusSpan);
+                                } else if (player.isNew) {
+                                    rankCell.append(document.createTextNode('(New!)'));
+                                } else if (player.rankDeltaLabel && player.rankDeltaColor) {
+                                    const deltaSpan = document.createElement('span');
+                                    deltaSpan.style.color = player.rankDeltaColor;
+                                    deltaSpan.textContent = player.rankDeltaLabel;
+                                    rankCell.append(deltaSpan);
+                                }
+
+                                return rankCell;
+                            };
+
+                            const createUpdatedCell = (player) => {
+                                const updatedCell = document.createElement('td');
+                                updatedCell.className = 'align-middle text-center';
+
+                                if (player.lastUpdatedDate) {
+                                    const parsedDate = new Date(`${player.lastUpdatedDate} UTC`);
+
+                                    if (!Number.isNaN(parsedDate.valueOf())) {
+                                        updatedCell.textContent = parsedDate.toLocaleString('sv-SE', {timeStyle: 'medium'});
+                                    }
+                                }
+
+                                return updatedCell;
+                            };
+
+                            const createUserCell = (player) => {
+                                const userCell = document.createElement('td');
+                                userCell.className = 'align-middle';
+
+                                const hstack = document.createElement('div');
+                                hstack.className = 'hstack gap-3';
+
+                                const avatarWrapper = document.createElement('div');
+                                const avatarLink = document.createElement('a');
+                                avatarLink.className = 'link-underline link-underline-opacity-0 link-underline-opacity-100-hover';
+                                avatarLink.href = `/player/${encodeURIComponent(player.onlineId)}`;
+
+                                const avatarImage = document.createElement('img');
+                                avatarImage.src = `/img/avatar/${player.avatarUrl}`;
+                                avatarImage.alt = '';
+                                avatarImage.height = 50;
+                                avatarImage.width = 50;
+                                avatarLink.append(avatarImage);
+                                avatarWrapper.append(avatarLink);
+
+                                const nameWrapper = document.createElement('div');
+                                const nameLink = document.createElement('a');
+                                nameLink.className = 'link-underline link-underline-opacity-0 link-underline-opacity-100-hover';
+                                nameLink.style.whiteSpace = 'nowrap';
+                                nameLink.href = `/player/${encodeURIComponent(player.onlineId)}`;
+                                nameLink.textContent = player.onlineId;
+                                nameWrapper.append(nameLink);
+
+                                const countryWrapper = document.createElement('div');
+                                countryWrapper.className = 'ms-auto';
+
+                                const countryImage = document.createElement('img');
+                                countryImage.src = `/img/country/${player.countryCode}.svg`;
+                                countryImage.alt = player.countryName;
+                                countryImage.title = player.countryName;
+                                countryImage.height = 50;
+                                countryImage.width = 50;
+                                countryImage.style.borderRadius = '50%';
+                                countryWrapper.append(countryImage);
+
+                                hstack.append(avatarWrapper, nameWrapper, countryWrapper);
+                                userCell.append(hstack);
+
+                                return userCell;
+                            };
+
+                            const createLevelCell = (player) => {
+                                const levelCell = document.createElement('td');
+                                levelCell.className = 'align-middle text-center';
+
+                                if (player.status === 1 || player.status === 3) {
+                                    levelCell.textContent = 'N/A';
+                                    return levelCell;
+                                }
+
+                                if (player.level === null || player.level === undefined) {
+                                    levelCell.textContent = 'N/A';
+                                    return levelCell;
+                                }
+
+                                const starImage = document.createElement('img');
+                                starImage.src = '/img/star.svg';
+                                starImage.className = 'mb-1';
+                                starImage.alt = 'Level';
+                                starImage.title = 'Level';
+                                starImage.height = 18;
+                                levelCell.append(starImage, document.createTextNode(` ${player.level}`));
+
+                                if (player.progress !== null && player.progress !== undefined) {
+                                    const progressValue = Number.parseFloat(player.progress);
+
+                                    if (!Number.isNaN(progressValue)) {
+                                        const progressContainer = document.createElement('div');
+                                        progressContainer.className = 'progress';
+                                        progressContainer.title = `${progressValue}%`;
+
+                                        const progressBar = document.createElement('div');
+                                        progressBar.className = 'progress-bar bg-primary';
+                                        progressBar.role = 'progressbar';
+                                        progressBar.style.width = `${progressValue}%`;
+                                        progressBar.setAttribute('aria-valuenow', String(progressValue));
+                                        progressBar.setAttribute('aria-valuemin', '0');
+                                        progressBar.setAttribute('aria-valuemax', '100');
+
+                                        progressContainer.append(progressBar);
+                                        levelCell.append(progressContainer);
+                                    }
+                                }
+
+                                return levelCell;
+                            };
+
+                            const buildRow = (player) => {
+                                const row = document.createElement('tr');
+                                row.append(
+                                    createRankCell(player),
+                                    createUpdatedCell(player),
+                                    createUserCell(player),
+                                    createLevelCell(player)
+                                );
+
+                                return row;
+                            };
+
+                            for (let index = 0; index < displayCount; index += 1) {
+                                const row = buildRow(scanLogData[index]);
+                                tableBody.append(row);
+                                visibleIndices.push(index);
+                            }
+
+                            const calculateVisibleNew = () => visibleIndices.reduce(
+                                (total, index) => total + (scanLogData[index].isNew ? 1 : 0),
+                                0
+                            );
+
+                            const initialVisibleNew = calculateVisibleNew();
+
+                            const updateSummary = () => {
+                                const visibleNew = calculateVisibleNew();
+                                const newPlayersDisplay = Math.max(0, baseNewPlayers - initialVisibleNew + visibleNew);
+                                const scannedPlayersDisplay = baseScannedPlayers + rotationCount;
+
+                                summaryScannedElement.textContent = numberFormatter.format(scannedPlayersDisplay);
+                                summaryNewElement.textContent = numberFormatter.format(newPlayersDisplay);
+                            };
+
+                            updateSummary();
+
+                            if (scanLogData.length <= displayCount) {
+                                return;
+                            }
+
+                            const dropInNewEntry = () => {
+                                const newPlayerIndex = nextIndex;
+                                nextIndex = (nextIndex + 1) % scanLogData.length;
+                                rotationCount = (rotationCount + 1) % scanLogData.length;
+
+                                const newRow = buildRow(scanLogData[newPlayerIndex]);
+                                newRow.classList.add('scan-log-row--enter');
+                                tableBody.insertBefore(newRow, tableBody.firstChild);
+                                visibleIndices.unshift(newPlayerIndex);
+
+                                while (visibleIndices.length > displayCount && tableBody.lastElementChild) {
+                                    visibleIndices.pop();
+                                    tableBody.removeChild(tableBody.lastElementChild);
+                                }
+
+                                updateSummary();
+                            };
+
+                            setInterval(dropInNewEntry, 5000);
+                        })();
+                    </script>
+                <?php endif; ?>
             </div>
         </div>
     </div>
