@@ -396,8 +396,21 @@ require_once("header.php");
                                 return levelCell;
                             };
 
+                            const applyRowEntryAnimation = (row) => {
+                                row.classList.add('scan-log-row--enter');
+                                row.addEventListener(
+                                    'animationend',
+                                    () => {
+                                        row.classList.remove('scan-log-row--enter');
+                                    },
+                                    { once: true }
+                                );
+                            };
+
                             const buildRow = (player) => {
                                 const row = document.createElement('tr');
+                                applyRowEntryAnimation(row);
+
                                 row.append(
                                     createRankCell(player),
                                     createUpdatedCell(player),
