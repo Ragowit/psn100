@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/TestRunner.php';
+require __DIR__ . '/TestRunnerCommand.php';
 
-$runner = TestRunner::fromDirectory(__DIR__);
+$command = TestRunnerCommand::fromDirectory(__DIR__);
 
-exit($runner->run());
+exit($command->execute());
