@@ -1,33 +1,14 @@
 <?php
 require_once __DIR__ . '/classes/AboutPageService.php';
+require_once __DIR__ . '/classes/AboutPagePlayerArraySerializer.php';
 
 $aboutPageService = new AboutPageService($database, $utility);
 $scanSummary = $aboutPageService->getScanSummary();
 $scanLogPlayers = $aboutPageService->getScanLogPlayers(30);
-$initialDisplayCount = min(10, count($scanLogPlayers));
+$maxScanLogDisplayCount = 10;
+$initialDisplayCount = min($maxScanLogDisplayCount, count($scanLogPlayers));
 $initialScanLogPlayers = array_slice($scanLogPlayers, 0, $initialDisplayCount);
-$scanLogPlayersData = array_map(
-    static function (AboutPagePlayer $player): array {
-        return [
-            'onlineId' => $player->getOnlineId(),
-            'countryCode' => $player->getCountryCode(),
-            'countryName' => $player->getCountryName(),
-            'avatarUrl' => $player->getAvatarUrl(),
-            'lastUpdatedDate' => $player->getLastUpdatedDate(),
-            'isRanked' => $player->isRanked(),
-            'ranking' => $player->getRanking(),
-            'hasHiddenTrophies' => $player->hasHiddenTrophies(),
-            'statusLabel' => $player->getStatusLabel(),
-            'isNew' => $player->isNew(),
-            'rankDeltaLabel' => $player->getRankDeltaLabel(),
-            'rankDeltaColor' => $player->getRankDeltaColor(),
-            'progress' => $player->getProgress(),
-            'level' => $player->getLevel(),
-            'status' => $player->getStatus(),
-        ];
-    },
-    $scanLogPlayers
-);
+$scanLogPlayersData = AboutPagePlayerArraySerializer::serializeCollection($scanLogPlayers);
 
 $title = "About ~ PSN 100%";
 require_once("header.php");
@@ -212,11 +193,8 @@ require_once("header.php");
                     <script>
                         (() => {
                             const scanLogData = <?= json_encode($scanLogPlayersData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-                            const displayCount = Math.min(<?= $initialDisplayCount; ?>, Array.isArray(scanLogData) ? scanLogData.length : 0);
-
-                            if (!Array.isArray(scanLogData) || scanLogData.length === 0 || displayCount === 0) {
-                                return;
-                            }
+                            const configuredDisplayCount = Math.max(0, <?= $initialDisplayCount; ?>);
+                            const fallbackDisplayCount = Math.max(1, <?= $maxScanLogDisplayCount; ?>);
 
                             const tableBody = document.getElementById('scanLogTableBody');
                             const summaryScannedElement = document.getElementById('scanSummaryScanned');
@@ -229,6 +207,8 @@ require_once("header.php");
                             const baseScannedPlayers = <?= (int) $scanSummary->getScannedPlayers(); ?>;
                             const baseNewPlayers = <?= (int) $scanSummary->getNewPlayers(); ?>;
                             const numberFormatter = new Intl.NumberFormat('en-US');
+                            const fetchLimit = Math.max(configuredDisplayCount, Array.isArray(scanLogData) ? scanLogData.length : 0, fallbackDisplayCount);
+                            const pollIntervalMs = 60000;
 
                             const parseLastUpdatedDate = (value) => {
                                 if (!value) {
@@ -240,24 +220,24 @@ require_once("header.php");
                                 return Number.isNaN(parsedDate.valueOf()) ? null : parsedDate;
                             };
 
-                            const sortedScanLogData = [...scanLogData].sort((playerA, playerB) => {
-                                const dateA = parseLastUpdatedDate(playerA.lastUpdatedDate);
-                                const dateB = parseLastUpdatedDate(playerB.lastUpdatedDate);
+                            const sortScanLogData = (data) => {
+                                return [...data].sort((playerA, playerB) => {
+                                    const dateA = parseLastUpdatedDate(playerA.lastUpdatedDate);
+                                    const dateB = parseLastUpdatedDate(playerB.lastUpdatedDate);
 
-                                const timeA = dateA ? dateA.getTime() : Number.NEGATIVE_INFINITY;
-                                const timeB = dateB ? dateB.getTime() : Number.NEGATIVE_INFINITY;
+                                    const timeA = dateA ? dateA.getTime() : Number.NEGATIVE_INFINITY;
+                                    const timeB = dateB ? dateB.getTime() : Number.NEGATIVE_INFINITY;
 
-                                return timeB - timeA;
-                            });
-
-                            tableBody.innerHTML = '';
+                                    return timeB - timeA;
+                                });
+                            };
 
                             const createRankCell = (player) => {
                                 const rankCell = document.createElement('th');
                                 rankCell.scope = 'row';
                                 rankCell.className = 'align-middle text-center';
 
-                                if (player.isRanked && player.ranking !== null) {
+                                if (player.isRanked && player.ranking !== null && player.ranking !== undefined) {
                                     rankCell.append(document.createTextNode(player.ranking));
 
                                     if (player.hasHiddenTrophies) {
@@ -314,10 +294,12 @@ require_once("header.php");
                                 const avatarWrapper = document.createElement('div');
                                 const avatarLink = document.createElement('a');
                                 avatarLink.className = 'link-underline link-underline-opacity-0 link-underline-opacity-100-hover';
-                                avatarLink.href = `/player/${encodeURIComponent(player.onlineId)}`;
+                                const onlineId = typeof player.onlineId === 'string' ? player.onlineId : '';
+                                avatarLink.href = `/player/${encodeURIComponent(onlineId)}`;
 
                                 const avatarImage = document.createElement('img');
-                                avatarImage.src = `/img/avatar/${player.avatarUrl}`;
+                                const avatarUrl = typeof player.avatarUrl === 'string' ? player.avatarUrl : '';
+                                avatarImage.src = `/img/avatar/${avatarUrl}`;
                                 avatarImage.alt = '';
                                 avatarImage.height = 50;
                                 avatarImage.width = 50;
@@ -328,21 +310,26 @@ require_once("header.php");
                                 const nameLink = document.createElement('a');
                                 nameLink.className = 'link-underline link-underline-opacity-0 link-underline-opacity-100-hover';
                                 nameLink.style.whiteSpace = 'nowrap';
-                                nameLink.href = `/player/${encodeURIComponent(player.onlineId)}`;
-                                nameLink.textContent = player.onlineId;
+                                nameLink.href = `/player/${encodeURIComponent(onlineId)}`;
+                                nameLink.textContent = onlineId;
                                 nameWrapper.append(nameLink);
 
                                 const countryWrapper = document.createElement('div');
                                 countryWrapper.className = 'ms-auto';
 
-                                const countryImage = document.createElement('img');
-                                countryImage.src = `/img/country/${player.countryCode}.svg`;
-                                countryImage.alt = player.countryName;
-                                countryImage.title = player.countryName;
-                                countryImage.height = 50;
-                                countryImage.width = 50;
-                                countryImage.style.borderRadius = '50%';
-                                countryWrapper.append(countryImage);
+                                const countryCode = typeof player.countryCode === 'string' ? player.countryCode : '';
+                                const countryName = typeof player.countryName === 'string' ? player.countryName : '';
+
+                                if (countryCode !== '') {
+                                    const countryImage = document.createElement('img');
+                                    countryImage.src = `/img/country/${countryCode}.svg`;
+                                    countryImage.alt = countryName;
+                                    countryImage.title = countryName;
+                                    countryImage.height = 50;
+                                    countryImage.width = 50;
+                                    countryImage.style.borderRadius = '50%';
+                                    countryWrapper.append(countryImage);
+                                }
 
                                 hstack.append(avatarWrapper, nameWrapper, countryWrapper);
                                 userCell.append(hstack);
@@ -409,7 +396,11 @@ require_once("header.php");
 
                             const buildRow = (player) => {
                                 const row = document.createElement('tr');
-                                applyRowEntryAnimation(row);
+                                const onlineId = typeof player.onlineId === 'string' ? player.onlineId : '';
+                                const lastUpdated = typeof player.lastUpdatedDate === 'string' ? player.lastUpdatedDate : '';
+
+                                row.dataset.onlineId = onlineId;
+                                row.dataset.lastUpdatedDate = lastUpdated;
 
                                 row.append(
                                     createRankCell(player),
@@ -421,12 +412,110 @@ require_once("header.php");
                                 return row;
                             };
 
-                            sortedScanLogData.slice(0, displayCount).forEach((player) => {
-                                tableBody.append(buildRow(player));
-                            });
+                            const synchronizeTableRows = (playersToDisplay) => {
+                                const existingRows = new Map();
 
-                            summaryScannedElement.textContent = numberFormatter.format(baseScannedPlayers);
-                            summaryNewElement.textContent = numberFormatter.format(baseNewPlayers);
+                                Array.from(tableBody.querySelectorAll('tr')).forEach((row) => {
+                                    const key = row.dataset.onlineId ?? '';
+
+                                    if (key !== '') {
+                                        existingRows.set(key, row);
+                                    }
+                                });
+
+                                const rows = [];
+                                const rowsToAnimate = [];
+
+                                playersToDisplay.forEach((player) => {
+                                    const row = buildRow(player);
+                                    const existingRow = existingRows.get(row.dataset.onlineId ?? '');
+                                    const previousTimestamp = existingRow ? existingRow.dataset.lastUpdatedDate ?? '' : '';
+                                    const currentTimestamp = row.dataset.lastUpdatedDate ?? '';
+
+                                    if (!existingRow || previousTimestamp !== currentTimestamp) {
+                                        rowsToAnimate.push(row);
+                                    }
+
+                                    rows.push(row);
+                                });
+
+                                tableBody.replaceChildren(...rows);
+
+                                rowsToAnimate.forEach((row) => {
+                                    window.requestAnimationFrame(() => applyRowEntryAnimation(row));
+                                });
+                            };
+
+                            const updateSummary = (scannedPlayers, newPlayers) => {
+                                if (typeof scannedPlayers === 'number' && Number.isFinite(scannedPlayers)) {
+                                    summaryScannedElement.textContent = numberFormatter.format(scannedPlayers);
+                                }
+
+                                if (typeof newPlayers === 'number' && Number.isFinite(newPlayers)) {
+                                    summaryNewElement.textContent = numberFormatter.format(newPlayers);
+                                }
+                            };
+
+                            const renderData = (data) => {
+                                if (!Array.isArray(data) || data.length === 0) {
+                                    tableBody.replaceChildren();
+                                    return;
+                                }
+
+                                const sortedData = sortScanLogData(data);
+                                const displayCount = configuredDisplayCount > 0
+                                    ? configuredDisplayCount
+                                    : Math.min(fallbackDisplayCount, sortedData.length);
+                                const playersToDisplay = sortedData.slice(0, displayCount);
+
+                                synchronizeTableRows(playersToDisplay);
+                            };
+
+                            const fetchLatestScanLog = () => {
+                                const url = new URL('scan_log_poll.php', window.location.href);
+                                url.searchParams.set('limit', String(fetchLimit));
+
+                                fetch(url.toString(), {
+                                    headers: {
+                                        Accept: 'application/json',
+                                    },
+                                })
+                                    .then((response) => {
+                                        if (!response.ok) {
+                                            throw new Error('Failed to fetch scan log data');
+                                        }
+
+                                        return response.json();
+                                    })
+                                    .then((payload) => {
+                                        if (!payload || typeof payload !== 'object') {
+                                            return;
+                                        }
+
+                                        if (Array.isArray(payload.players)) {
+                                            renderData(payload.players);
+                                        }
+
+                                        if (payload.summary && typeof payload.summary === 'object') {
+                                            const scannedValue = Number(payload.summary.scannedPlayers);
+                                            const newValue = Number(payload.summary.newPlayers);
+
+                                            updateSummary(
+                                                Number.isNaN(scannedValue) ? undefined : scannedValue,
+                                                Number.isNaN(newValue) ? undefined : newValue
+                                            );
+                                        }
+                                    })
+                                    .catch(() => {
+                                        // Ignore polling errors to avoid interrupting the page.
+                                    });
+                            };
+
+                            renderData(scanLogData);
+                            updateSummary(baseScannedPlayers, baseNewPlayers);
+                            fetchLatestScanLog();
+
+                            window.setInterval(fetchLatestScanLog, pollIntervalMs);
                         })();
                     </script>
                 <?php endif; ?>
