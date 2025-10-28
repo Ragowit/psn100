@@ -347,7 +347,9 @@ ALTER TABLE `player`
   ADD KEY `player_idx_online_id_account_id` (`online_id`,`account_id`),
   ADD KEY `player_idx_status_last_date_online_id` (`status`,`last_updated_date`,`online_id`),
   ADD KEY `player_idx_status_online_last_da_account` (`status`,`online_id`,`last_updated_date`,`account_id`),
-  ADD KEY `player_idx_status_account_avatar_online` (`status`,`account_id`,`avatar_url`,`online_id`) USING BTREE;
+  ADD KEY `player_idx_status_account_avatar_online` (`status`,`account_id`,`avatar_url`,`online_id`) USING BTREE,
+  ADD KEY `player_idx_status_country` (`status`,`country`),
+  ADD KEY `player_idx_status_rank_last_week` (`status`,`rank_last_week`);
 
 --
 -- Indexes for table `player_queue`
