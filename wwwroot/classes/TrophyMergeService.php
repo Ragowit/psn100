@@ -106,19 +106,26 @@ class TrophyMergeService
         }
 
         $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');
-
-        $this->notifyProgress($progressListener, 65, 'Marking child game as merged…');
+        $this->notifyProgress($progressListener, 60, 'Preparing to mark child game as merged…');
+        $this->notifyProgress($progressListener, 62, 'Marking child game as merged…');
         $this->markGameAsMergedById($childGameId);
+        $this->notifyProgress($progressListener, 65, 'Child game marked as merged.');
+        $this->notifyProgress($progressListener, 70, 'Preparing to copy merged trophies…');
         $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
         $this->copyMergedTrophies($childGameId);
+        $this->notifyProgress($progressListener, 75, 'Merged trophies copied.');
         $this->notifyProgress($progressListener, 80, 'Updating player trophy groups…');
         $this->updateTrophyGroupPlayer($childGameId);
+        $this->notifyProgress($progressListener, 85, 'Player trophy groups updated.');
         $this->notifyProgress($progressListener, 88, 'Updating player trophy titles…');
         $this->updateTrophyTitlePlayer($childGameId);
+        $this->notifyProgress($progressListener, 92, 'Player trophy titles updated.');
         $this->notifyProgress($progressListener, 94, 'Updating parent relationship…');
         $this->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
+        $this->notifyProgress($progressListener, 96, 'Parent relationship updated.');
         $this->notifyProgress($progressListener, 98, 'Logging merge activity…');
         $this->logChange('GAME_MERGE', $childGameId, $parentGameId);
+        $this->notifyProgress($progressListener, 100, 'Merge process complete.');
 
         return $message . 'The games have been merged.';
     }
