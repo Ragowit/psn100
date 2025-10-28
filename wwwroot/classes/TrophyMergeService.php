@@ -112,7 +112,7 @@ class TrophyMergeService
         $this->notifyProgress($progressListener, 65, 'Child game marked as merged.');
         $this->notifyProgress($progressListener, 70, 'Preparing to copy merged trophies…');
         $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
-        $this->copyMergedTrophies($childGameId);
+        $this->copyMergedTrophies($childGameId, $progressListener);
         $this->notifyProgress($progressListener, 75, 'Merged trophies copied.');
         $this->notifyProgress($progressListener, 80, 'Updating player trophy groups…');
         $this->updateTrophyGroupPlayer($childGameId);
@@ -767,8 +767,42 @@ SQL
         });
     }
 
-    private function copyMergedTrophies(int $childGameId): void
+    private function copyMergedTrophies(int $childGameId, ?TrophyMergeProgressListener $progressListener = null): void
     {
+        $countQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                COUNT(*)
+            FROM
+                trophy_merge
+            WHERE
+                child_np_communication_id = (
+                    SELECT
+                        np_communication_id
+                    FROM
+                        trophy_title
+                    WHERE
+                        id = :game_id
+                )
+SQL
+        );
+        $countQuery->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
+        $countQuery->execute();
+
+        $total = (int) $countQuery->fetchColumn();
+
+        if ($total === 0) {
+            $this->notifyProgress($progressListener, 73, 'No merged trophies to copy.');
+
+            return;
+        }
+
+        $this->notifyProgress(
+            $progressListener,
+            73,
+            sprintf('Found %d merged trophies to copy…', $total)
+        );
+
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
@@ -794,6 +828,9 @@ SQL
         $query->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
         $query->execute();
 
+        $processed = 0;
+        $lastPercent = 72;
+
         while ($trophyMerge = $query->fetch(PDO::FETCH_ASSOC)) {
             $this->copyTrophyEarned(
                 $trophyMerge['child_np_communication_id'],
@@ -803,6 +840,30 @@ SQL
                 $trophyMerge['parent_group_id'],
                 (int) $trophyMerge['parent_order_id']
             );
+
+            ++$processed;
+
+            if ($processed === $total || $processed % 50 === 0) {
+                $percent = 72 + (int) floor(($processed / $total) * 3);
+
+                if ($processed < $total && $percent <= $lastPercent) {
+                    $percent = min(74, $lastPercent + 1);
+                }
+
+                if ($percent > 75) {
+                    $percent = 75;
+                }
+
+                if ($percent > $lastPercent) {
+                    $lastPercent = $percent;
+                }
+
+                $this->notifyProgress(
+                    $progressListener,
+                    $lastPercent,
+                    sprintf('Copying merged trophies… (%d/%d)', $processed, $total)
+                );
+            }
         }
     }
 
