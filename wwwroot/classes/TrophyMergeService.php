@@ -112,7 +112,7 @@ class TrophyMergeService
         $this->notifyProgress($progressListener, 65, 'Child game marked as merged.');
         $this->notifyProgress($progressListener, 70, 'Preparing to copy merged trophies…');
         $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
-        $this->copyMergedTrophies($childGameId, $progressListener);
+        $this->copyMergedTrophies($childNpCommunicationId, $progressListener);
         $this->notifyProgress($progressListener, 75, 'Merged trophies copied.');
         $this->notifyProgress($progressListener, 80, 'Updating player trophy groups…');
         $this->updateTrophyGroupPlayer($childGameId);
@@ -322,60 +322,43 @@ SQL
                 earned_date,
                 progress,
                 earned
-            ) WITH child AS(
-                SELECT
-                    account_id,
-                    earned_date,
-                    progress,
-                    earned
-                FROM
-                    trophy_earned
-                WHERE
-                    np_communication_id = :child_np_communication_id AND order_id = :child_order_id
             )
             SELECT
                 :parent_np_communication_id,
                 :parent_group_id,
                 :parent_order_id,
                 child.account_id,
-                child.earned_date,
-                child.progress,
-                child.earned
+                CASE
+                    WHEN existing.earned_date IS NULL THEN child.earned_date
+                    WHEN child.earned_date IS NULL THEN existing.earned_date
+                    WHEN child.earned_date < existing.earned_date THEN child.earned_date
+                    ELSE existing.earned_date
+                END AS earned_date,
+                CASE
+                    WHEN existing.progress IS NULL THEN child.progress
+                    WHEN child.progress IS NULL THEN existing.progress
+                    WHEN child.progress > existing.progress THEN child.progress
+                    ELSE existing.progress
+                END AS progress,
+                CASE
+                    WHEN child.earned = 1 THEN 1
+                    WHEN existing.earned = 1 THEN 1
+                    ELSE COALESCE(existing.earned, 0)
+                END AS earned
             FROM
-                child
+                trophy_earned AS child
+            LEFT JOIN trophy_earned AS existing ON existing.np_communication_id = :parent_np_communication_id
+                AND existing.group_id = :parent_group_id
+                AND existing.order_id = :parent_order_id
+                AND existing.account_id = child.account_id
+            WHERE
+                child.np_communication_id = :child_np_communication_id
+                AND child.order_id = :child_order_id
             ON DUPLICATE KEY
             UPDATE
-                earned_date = IF(
-                    child.earned_date IS NULL,
-                    trophy_earned.earned_date,
-                    IF(
-                        trophy_earned.earned_date IS NULL,
-                        child.earned_date,
-                        IF(
-                            child.earned_date < trophy_earned.earned_date,
-                            child.earned_date,
-                            trophy_earned.earned_date
-                        )
-                    )
-                ),
-                progress = IF(
-                    child.progress IS NULL,
-                    trophy_earned.progress,
-                    IF(
-                        trophy_earned.progress IS NULL,
-                        child.progress,
-                        IF(
-                            child.progress > trophy_earned.progress,
-                            child.progress,
-                            trophy_earned.progress
-                        )
-                    )
-                ),
-                earned = IF(
-                    child.earned = 1,
-                    child.earned,
-                    trophy_earned.earned
-                )
+                earned_date = VALUES(earned_date),
+                progress = VALUES(progress),
+                earned = VALUES(earned)
 SQL
         );
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
@@ -767,7 +750,7 @@ SQL
         });
     }
 
-    private function copyMergedTrophies(int $childGameId, ?TrophyMergeProgressListener $progressListener = null): void
+    private function copyMergedTrophies(string $childNpCommunicationId, ?TrophyMergeProgressListener $progressListener = null): void
     {
         $countQuery = $this->database->prepare(
             <<<'SQL'
@@ -776,17 +759,10 @@ SQL
             FROM
                 trophy_merge
             WHERE
-                child_np_communication_id = (
-                    SELECT
-                        np_communication_id
-                    FROM
-                        trophy_title
-                    WHERE
-                        id = :game_id
-                )
+                child_np_communication_id = :child_np_communication_id
 SQL
         );
-        $countQuery->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
+        $countQuery->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $countQuery->execute();
 
         $total = (int) $countQuery->fetchColumn();
@@ -803,68 +779,78 @@ SQL
             sprintf('Found %d merged trophies to copy…', $total)
         );
 
-        $query = $this->database->prepare(
+        $insertMissingParentEarned = $this->database->prepare(
             <<<'SQL'
-            SELECT
-                child_np_communication_id,
-                child_group_id,
-                child_order_id,
-                parent_np_communication_id,
-                parent_group_id,
-                parent_order_id
-            FROM
-                trophy_merge
-            WHERE
-                child_np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :game_id
+            INSERT INTO trophy_earned (
+                np_communication_id,
+                group_id,
+                order_id,
+                account_id,
+                earned_date,
+                progress,
+                earned
             )
+            SELECT
+                tm.parent_np_communication_id,
+                tm.parent_group_id,
+                tm.parent_order_id,
+                child.account_id,
+                child.earned_date,
+                child.progress,
+                child.earned
+            FROM trophy_merge AS tm
+            JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                AND child.group_id = tm.child_group_id
+                AND child.order_id = tm.child_order_id
+            LEFT JOIN trophy_earned AS parent ON parent.np_communication_id = tm.parent_np_communication_id
+                AND parent.group_id = tm.parent_group_id
+                AND parent.order_id = tm.parent_order_id
+                AND parent.account_id = child.account_id
+            WHERE tm.child_np_communication_id = :child_np_communication_id
+              AND parent.account_id IS NULL
 SQL
         );
-        $query->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
-        $query->execute();
+        $insertMissingParentEarned->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $insertMissingParentEarned->execute();
 
-        $processed = 0;
-        $lastPercent = 72;
+        $synchronizeExistingEarned = $this->database->prepare(
+            <<<'SQL'
+            UPDATE trophy_earned AS parent
+            JOIN trophy_merge AS tm ON tm.parent_np_communication_id = parent.np_communication_id
+                AND tm.parent_group_id = parent.group_id
+                AND tm.parent_order_id = parent.order_id
+            JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                AND child.group_id = tm.child_group_id
+                AND child.order_id = tm.child_order_id
+                AND child.account_id = parent.account_id
+            SET
+                parent.earned_date = CASE
+                    WHEN parent.earned_date IS NULL THEN child.earned_date
+                    WHEN child.earned_date IS NULL THEN parent.earned_date
+                    WHEN child.earned_date < parent.earned_date THEN child.earned_date
+                    ELSE parent.earned_date
+                END,
+                parent.progress = CASE
+                    WHEN parent.progress IS NULL THEN child.progress
+                    WHEN child.progress IS NULL THEN parent.progress
+                    WHEN child.progress > parent.progress THEN child.progress
+                    ELSE parent.progress
+                END,
+                parent.earned = CASE
+                    WHEN child.earned = 1 THEN 1
+                    ELSE parent.earned
+                END
+            WHERE tm.child_np_communication_id = :child_np_communication_id
+SQL
+        );
+        $synchronizeExistingEarned->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $synchronizeExistingEarned->execute();
 
-        while ($trophyMerge = $query->fetch(PDO::FETCH_ASSOC)) {
-            $this->copyTrophyEarned(
-                $trophyMerge['child_np_communication_id'],
-                $trophyMerge['child_group_id'],
-                (int) $trophyMerge['child_order_id'],
-                $trophyMerge['parent_np_communication_id'],
-                $trophyMerge['parent_group_id'],
-                (int) $trophyMerge['parent_order_id']
-            );
-
-            ++$processed;
-
-            if ($processed === $total || $processed % 50 === 0) {
-                $percent = 72 + (int) floor(($processed / $total) * 3);
-
-                if ($processed < $total && $percent <= $lastPercent) {
-                    $percent = min(74, $lastPercent + 1);
-                }
-
-                if ($percent > 75) {
-                    $percent = 75;
-                }
-
-                if ($percent > $lastPercent) {
-                    $lastPercent = $percent;
-                }
-
-                $this->notifyProgress(
-                    $progressListener,
-                    $lastPercent,
-                    sprintf('Copying merged trophies… (%d/%d)', $processed, $total)
-                );
-            }
-        }
+        $this->notifyProgress(
+            $progressListener,
+            75,
+            sprintf('Copying merged trophies… (%d/%d)', $total, $total)
+        );
     }
 
     private function updateParentRelationship(string $childNpCommunicationId, string $parentNpCommunicationId): void
