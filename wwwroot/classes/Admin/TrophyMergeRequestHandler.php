@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyMergeProgressListener.php';
+
 class TrophyMergeRequestHandler
 {
     private TrophyMergeService $trophyMergeService;
@@ -82,6 +84,24 @@ class TrophyMergeRequestHandler
     {
         return $this->isNumericValueFromArray($postData, 'parent')
             && $this->isNumericValueFromArray($postData, 'child');
+    }
+
+    /**
+     * @param array<string, mixed> $postData
+     */
+    public function handleGameMergeWithProgress(
+        array $postData,
+        TrophyMergeProgressListener $progressListener
+    ): string {
+        if (!$this->isGameMerge($postData)) {
+            throw new InvalidArgumentException('Child and parent ids must be numeric.');
+        }
+
+        $childId = (int) $postData['child'];
+        $parentId = (int) $postData['parent'];
+        $method = strtolower((string) ($postData['method'] ?? 'order'));
+
+        return $this->trophyMergeService->mergeGames($childId, $parentId, $method, $progressListener);
     }
 
     private function handleGameMerge(array $postData): string
