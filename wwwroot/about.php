@@ -208,7 +208,7 @@ require_once("header.php");
                             const baseNewPlayers = <?= (int) $scanSummary->getNewPlayers(); ?>;
                             const numberFormatter = new Intl.NumberFormat('en-US');
                             const fetchLimit = Math.max(configuredDisplayCount, Array.isArray(scanLogData) ? scanLogData.length : 0, fallbackDisplayCount);
-                            const pollIntervalMs = 60000;
+                            const pollIntervalMs = 5000;
 
                             const parseLastUpdatedDate = (value) => {
                                 if (!value) {
