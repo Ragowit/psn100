@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepageItem.php';
 require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepageTitle.php';
 require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepageNewGame.php';
+require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/../wwwroot/classes/Utility.php';
 
 final class HomepageItemTest extends TestCase
@@ -76,5 +77,27 @@ final class HomepageItemTest extends TestCase
         $utility = new Utility();
 
         $this->assertSame('/game/987-ratchet-and-clank-rift-apart', $item->getRelativeUrl($utility));
+    }
+
+    public function testHomepageDlcRelativeUrlAppendsGroupAnchor(): void
+    {
+        $dlc = HomepageDlc::fromArray([
+            'id' => 42,
+            'game_name' => "Marvel's Spider-Man",
+            'group_id' => 'dlc-pack-1',
+            'group_name' => 'The City That Never Sleeps',
+            'icon_url' => 'dlc-icon.png',
+            'platform' => 'PS4',
+            'gold' => 1,
+            'silver' => 2,
+            'bronze' => 3,
+        ]);
+
+        $utility = new Utility();
+
+        $this->assertSame(
+            '/game/42-marvels-spiderman#dlc-pack-1',
+            $dlc->getRelativeUrl($utility)
+        );
     }
 }
