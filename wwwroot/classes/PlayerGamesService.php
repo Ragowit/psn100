@@ -133,7 +133,7 @@ class PlayerGamesService
         }
 
         if ($filter->isUncompletedSelected()) {
-            $conditions[] = 'ttp.progress != 100';
+            $conditions[] = 'ttp.progress < 100';
         }
 
         if ($filter->isBaseSelected()) {
