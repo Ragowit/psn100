@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 class PlayerRandomGamesService
 {
-    private const MIN_POOL_SIZE = 32;
-
     private const PLATFORM_FILTERS = [
         'pc' => "tt.platform LIKE '%PC%'",
         'ps3' => "tt.platform LIKE '%PS3%'",
@@ -32,21 +30,12 @@ class PlayerRandomGamesService
     public function getRandomGames(int $accountId, PlayerRandomGamesFilter $filter, int $limit = 8): array
     {
         $limit = max(1, $limit);
-        $totalEligible = $this->countEligibleGames($accountId, $filter);
 
-        if ($totalEligible === 0) {
-            return [];
-        }
-
-        $poolSize = (int) min($totalEligible, max($limit * 4, self::MIN_POOL_SIZE));
-        $offset = $totalEligible > $poolSize ? random_int(0, $totalEligible - $poolSize) : 0;
-
-        $sql = $this->buildSelectableQuery($filter) . ' ORDER BY tt.id LIMIT :offset, :limit';
+        $sql = $this->buildSelectableQuery($filter) . ' ORDER BY RAND() LIMIT :limit';
 
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $statement->bindValue(':limit', $poolSize, PDO::PARAM_INT);
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
         $statement->execute();
 
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
@@ -61,12 +50,9 @@ class PlayerRandomGamesService
             return [];
         }
 
-        shuffle($rows);
-        $selectedRows = array_slice($rows, 0, $limit);
-
         $games = [];
 
-        foreach ($selectedRows as $gameData) {
+        foreach ($rows as $gameData) {
             $games[] = new PlayerRandomGame($gameData, $this->utility);
         }
 
@@ -92,19 +78,6 @@ class PlayerRandomGamesService
                 ttp.progress
             SQL
             . $this->buildBaseQuery($filter);
-    }
-
-    private function countEligibleGames(int $accountId, PlayerRandomGamesFilter $filter): int
-    {
-        $sql = 'SELECT COUNT(*)' . $this->buildBaseQuery($filter);
-
-        $statement = $this->database->prepare($sql);
-        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $statement->execute();
-
-        $count = $statement->fetchColumn();
-
-        return $count === false ? 0 : (int) $count;
     }
 
     private function buildBaseQuery(PlayerRandomGamesFilter $filter): string
