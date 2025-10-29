@@ -81,4 +81,80 @@ final class PlayerQueueResponseFactoryTest extends TestCase
             $service->getEscapedValues()
         );
     }
+
+    public function testCreateQueueLimitResponseReturnsErrorWithConfiguredLimitMessage(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $response = $factory->createQueueLimitResponse();
+
+        $this->assertSame('error', $response->getStatus());
+        $this->assertSame(
+            'You have already entered ' . PlayerQueueService::MAX_QUEUE_SUBMISSIONS_PER_IP
+            . ' players into the queue. Please wait a while.',
+            $response->getMessage()
+        );
+        $this->assertSame([], $service->getEscapedValues());
+    }
+
+    public function testCreateQueuedForAdditionResponseEscapesPlayerAndAddsSpinner(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $response = $factory->createQueuedForAdditionResponse('Queue User');
+
+        $this->assertSame('queued', $response->getStatus());
+        $this->assertTrue($response->shouldPoll());
+
+        $message = $response->getMessage();
+        $this->assertStringContainsString('href="/player/Queue%20User"', $message);
+        $this->assertStringContainsString('">Queue User</a> is being added to the queue.', $message);
+        $this->assertStringContainsString('<div class="spinner-border" role="status">', $message);
+
+        $this->assertSame(
+            ['Queue User', '/player/Queue%20User'],
+            $service->getEscapedValues()
+        );
+    }
+
+    public function testCreatePlayerNotFoundResponseReturnsErrorWithEscapedLink(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $response = $factory->createPlayerNotFoundResponse('<Invalid>');
+
+        $this->assertSame('error', $response->getStatus());
+
+        $message = $response->getMessage();
+        $this->assertStringContainsString('href="/player/%3CInvalid%3E"', $message);
+        $this->assertStringContainsString('">&lt;Invalid&gt;</a> was not found. Please check the spelling and try again.', $message);
+
+        $this->assertSame(
+            ['<Invalid>', '/player/%3CInvalid%3E'],
+            $service->getEscapedValues()
+        );
+    }
+
+    public function testCreateQueueCompleteResponseReturnsCompleteStatusWithEscapedLink(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $response = $factory->createQueueCompleteResponse('Player One');
+
+        $this->assertSame('complete', $response->getStatus());
+        $this->assertFalse($response->shouldPoll());
+
+        $message = $response->getMessage();
+        $this->assertStringContainsString('href="/player/Player%20One"', $message);
+        $this->assertStringContainsString('">Player One</a> has been updated!', $message);
+
+        $this->assertSame(
+            ['Player One', '/player/Player%20One'],
+            $service->getEscapedValues()
+        );
+    }
 }
