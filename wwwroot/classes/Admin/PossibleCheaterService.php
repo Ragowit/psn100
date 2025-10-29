@@ -1402,16 +1402,16 @@ class PossibleCheaterService
         $whereClause = $this->buildGeneralWhereClause();
 
         $sql = <<<'SQL'
-        WITH ranked_players AS (
+        SELECT
+            first_games.account_id,
+            first_games.player_name,
+            tt_first.id AS game_id,
+            tt_first.name AS game_name
+        FROM (
             SELECT
                 p.account_id,
                 p.online_id AS player_name,
-                tt.id AS game_id,
-                tt.name AS game_name,
-                ROW_NUMBER() OVER (
-                    PARTITION BY p.online_id
-                    ORDER BY tt.np_communication_id
-                ) AS row_number
+                MIN(tt.np_communication_id) AS first_np_communication_id
             FROM
                 trophy_earned te
             JOIN player p ON p.account_id = te.account_id
@@ -1419,18 +1419,13 @@ class PossibleCheaterService
             WHERE
                 __WHERE_CLAUSE__
                 AND p.status != 1
-        )
-        SELECT
-            account_id,
-            player_name,
-            game_id,
-            game_name
-        FROM
-            ranked_players
-        WHERE
-            row_number = 1
+            GROUP BY
+                p.account_id,
+                p.online_id
+        ) AS first_games
+        JOIN trophy_title tt_first ON tt_first.np_communication_id = first_games.first_np_communication_id
         ORDER BY
-            player_name
+            first_games.player_name
         SQL;
 
         $sql = str_replace('__WHERE_CLAUSE__', $whereClause, $sql);
