@@ -23,14 +23,9 @@ final class GameRecentPlayersQueryBuilder
         FROM
             trophy_title_player ttp
         JOIN player p ON p.account_id = ttp.account_id
-        JOIN (
-            SELECT
-                account_id
-            FROM
-                player_ranking
-            WHERE
-                ranking <= 10000
-        ) r ON r.account_id = ttp.account_id
+        JOIN player_ranking r ON
+            r.account_id = ttp.account_id
+            AND r.ranking <= 10000
         WHERE
             p.status = 0
             AND ttp.np_communication_id = :np_communication_id
