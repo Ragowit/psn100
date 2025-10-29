@@ -15,6 +15,9 @@ $gameDetail = $pageResult->getGameDetail();
 $success = $pageResult->getSuccessMessage();
 $error = $pageResult->getErrorMessage();
 
+$requestedGameId = isset($_GET['game']) ? (string) $_GET['game'] : '';
+$requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_GET['np_communication_id'] : '';
+
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -30,7 +33,10 @@ $error = $pageResult->getErrorMessage();
             <a href="/admin/">Back</a><br><br>
             <form method="get" autocomplete="off">
                 Game ID:<br>
-                <input type="number" name="game"><br>
+                <input type="number" name="game" value="<?= htmlentities($requestedGameId, ENT_QUOTES, 'UTF-8'); ?>"><br>
+                NP Communication ID:<br>
+                <input type="text" name="np_communication_id" style="width: 300px;" value="<?= htmlentities($requestedNpCommunicationId, ENT_QUOTES, 'UTF-8'); ?>"><br>
+                <small>Examples: NPWR10853_00, MERGE_048500</small><br>
                 <input type="submit" value="Fetch">
             </form>
 
