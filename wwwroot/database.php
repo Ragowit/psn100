@@ -137,14 +137,14 @@ class Database extends PDO
 
     private function configureSession(): void
     {
-        try {
-            if ($this->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
-                return;
-            }
+        if ($this->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return;
+        }
 
+        try {
             $this->exec("SET SESSION optimizer_switch = 'with_clause=merged'");
         } catch (PDOException $exception) {
-            throw new DatabaseConnectionException('Unable to configure the database session.', 0, $exception);
+            // The optimizer switch is an optional hint; ignore failures so connections still succeed.
         }
     }
 }
