@@ -13,68 +13,61 @@ class PlayerSummaryService
 
     public function getSummary(int $accountId): PlayerSummary
     {
-        $numberOfGames = $this->fetchNumberOfGames($accountId);
-        $numberOfCompletedGames = $this->fetchNumberOfCompletedGames($accountId);
-        $averageProgress = $this->fetchAverageProgress($accountId);
-        $unearnedTrophies = $this->fetchUnearnedTrophies($accountId);
+        $summaryRow = $this->fetchSummaryRow($accountId);
 
-        return new PlayerSummary($numberOfGames, $numberOfCompletedGames, $averageProgress, $unearnedTrophies);
+        return new PlayerSummary(
+            $summaryRow['number_of_games'],
+            $summaryRow['number_of_completed_games'],
+            $summaryRow['average_progress'],
+            $summaryRow['unearned_trophies']
+        );
     }
 
-    private function fetchNumberOfGames(int $accountId): int
+    /**
+     * @return array{number_of_games: int, number_of_completed_games: int, average_progress: ?float, unearned_trophies: int}
+     */
+    private function fetchSummaryRow(int $accountId): array
     {
         $query = $this->database->prepare(
-            'SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id'
+            <<<'SQL'
+            SELECT
+                COUNT(*)                                                   AS number_of_games,
+                SUM(CASE WHEN ttp.progress = 100 THEN 1 ELSE 0 END)       AS number_of_completed_games,
+                ROUND(AVG(ttp.progress), 2)                               AS average_progress,
+                SUM(
+                    tt.bronze - ttp.bronze +
+                    tt.silver - ttp.silver +
+                    tt.gold - ttp.gold +
+                    tt.platinum - ttp.platinum
+                )                                                         AS unearned_trophies
+            FROM
+                trophy_title_player ttp
+                INNER JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
+            WHERE
+                tt.status = 0
+                AND ttp.account_id = :account_id
+            SQL
         );
+
         $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
         $query->execute();
 
-        $result = $query->fetchColumn();
-
-        return $this->toInt($result);
-    }
-
-    private function fetchNumberOfCompletedGames(int $accountId): int
-    {
-        $query = $this->database->prepare(
-            'SELECT COUNT(*) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.progress = 100 AND ttp.account_id = :account_id'
-        );
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $query->execute();
-
-        $result = $query->fetchColumn();
-
-        return $this->toInt($result);
-    }
-
-    private function fetchAverageProgress(int $accountId): ?float
-    {
-        $query = $this->database->prepare(
-            'SELECT ROUND(AVG(ttp.progress), 2) FROM trophy_title_player ttp JOIN trophy_title tt USING (np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id'
-        );
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $query->execute();
-
-        $result = $query->fetchColumn();
-
-        if ($result === false || $result === null) {
-            return null;
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return [
+                'number_of_games' => 0,
+                'number_of_completed_games' => 0,
+                'average_progress' => null,
+                'unearned_trophies' => 0,
+            ];
         }
 
-        return (float) $result;
-    }
-
-    private function fetchUnearnedTrophies(int $accountId): int
-    {
-        $query = $this->database->prepare(
-            'SELECT SUM(tt.bronze - ttp.bronze + tt.silver - ttp.silver + tt.gold - ttp.gold + tt.platinum - ttp.platinum) FROM trophy_title_player ttp JOIN trophy_title tt USING(np_communication_id) WHERE tt.status = 0 AND ttp.account_id = :account_id'
-        );
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $query->execute();
-
-        $result = $query->fetchColumn();
-
-        return $this->toInt($result);
+        return [
+            'number_of_games' => $this->toInt($row['number_of_games'] ?? null),
+            'number_of_completed_games' => $this->toInt($row['number_of_completed_games'] ?? null),
+            'average_progress' => $this->toFloat($row['average_progress'] ?? null),
+            'unearned_trophies' => $this->toInt($row['unearned_trophies'] ?? null),
+        ];
     }
 
     private function toInt(mixed $value): int
@@ -84,5 +77,14 @@ class PlayerSummaryService
         }
 
         return (int) $value;
+    }
+
+    private function toFloat(mixed $value): ?float
+    {
+        if ($value === false || $value === null) {
+            return null;
+        }
+
+        return (float) $value;
     }
 }

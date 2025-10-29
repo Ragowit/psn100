@@ -20,14 +20,26 @@ class AboutPageService
 
     public function getScanSummary(): AboutPageScanSummary
     {
-        $scannedPlayers = $this->fetchCount(
-            'SELECT COUNT(*) FROM player WHERE last_updated_date >= now() - INTERVAL 1 DAY'
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                SUM(CASE WHEN last_updated_date >= NOW() - INTERVAL 1 DAY THEN 1 ELSE 0 END) AS scanned_players,
+                SUM(CASE WHEN status = 0 AND rank_last_week = 0 THEN 1 ELSE 0 END)       AS new_players
+            FROM
+                player
+            SQL
         );
-        $newPlayers = $this->fetchCount(
-            'SELECT COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0'
-        );
+        $query->execute();
 
-        return new AboutPageScanSummary($scannedPlayers, $newPlayers);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return new AboutPageScanSummary(0, 0);
+        }
+
+        return new AboutPageScanSummary(
+            $this->toInt($row['scanned_players'] ?? null),
+            $this->toInt($row['new_players'] ?? null)
+        );
     }
 
     public function getScanLogPlayers(int $limit = self::DEFAULT_SCAN_LOG_LIMIT): array
@@ -68,13 +80,12 @@ class AboutPageService
         return $players;
     }
 
-    private function fetchCount(string $sql): int
+    private function toInt(mixed $value): int
     {
-        $query = $this->database->prepare($sql);
-        $query->execute();
+        if ($value === false || $value === null) {
+            return 0;
+        }
 
-        $count = $query->fetchColumn();
-
-        return is_numeric($count) ? (int) $count : 0;
+        return (int) $value;
     }
 }
