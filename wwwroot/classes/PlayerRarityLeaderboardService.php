@@ -21,7 +21,8 @@ class PlayerRarityLeaderboardService implements PlayerLeaderboardDataProvider
             SELECT
                 COUNT(*)
             FROM
-                player p
+                player_ranking r
+            JOIN player p ON p.account_id = r.account_id
             WHERE
                 p.status = 0
         SQL;
@@ -46,8 +47,8 @@ class PlayerRarityLeaderboardService implements PlayerLeaderboardDataProvider
                 r.rarity_ranking AS ranking,
                 r.rarity_ranking_country AS ranking_country
             FROM
-                player p
-            JOIN player_ranking r ON p.account_id = r.account_id
+                player_ranking r
+            JOIN player p ON p.account_id = r.account_id
             WHERE
                 p.status = 0
         SQL;

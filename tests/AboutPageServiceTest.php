@@ -42,52 +42,48 @@ final class AboutPageServicePdoStub extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        if (str_contains($query, 'COUNT(*) FROM player WHERE last_updated_date')) {
-            return new class($this->scannedCount) extends PDOStatement {
+        if (str_contains($query, 'SUM(CASE WHEN last_updated_date >= NOW() - INTERVAL 1 DAY')) {
+            return new class($this->scannedCount, $this->newCount) extends PDOStatement {
                 /** @var string|int */
-                private string|int $count;
+                private string|int $scannedCount;
+
+                /** @var string|int */
+                private string|int $newCount;
+
+                private bool $fetched = false;
 
                 /**
-                 * @param string|int $count
+                 * @param string|int $scannedCount
+                 * @param string|int $newCount
                  */
-                public function __construct(string|int $count)
+                public function __construct(string|int $scannedCount, string|int $newCount)
                 {
-                    $this->count = $count;
+                    $this->scannedCount = $scannedCount;
+                    $this->newCount = $newCount;
                 }
 
                 public function execute(?array $params = null): bool
                 {
+                    $this->fetched = false;
+
                     return true;
                 }
 
-                public function fetchColumn(int $column = 0): mixed
-                {
-                    return $this->count;
-                }
-            };
-        }
+                public function fetch(
+                    int $mode = PDO::ATTR_DEFAULT_FETCH_MODE,
+                    int $cursorOrientation = PDO::FETCH_ORI_NEXT,
+                    int $cursorOffset = 0
+                ): mixed {
+                    if ($this->fetched) {
+                        return false;
+                    }
 
-        if (str_contains($query, 'COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0')) {
-            return new class($this->newCount) extends PDOStatement {
-                /** @var string|int */
-                private string|int $count;
+                    $this->fetched = true;
 
-                /**
-                 * @param string|int $count
-                 */
-                public function __construct(string|int $count)
-                {
-                    $this->count = $count;
-                }
-
-                public function execute(?array $params = null): bool
-                {
-                    return true;
-                }
-
-                public function fetchColumn(int $column = 0): mixed
-                {
-                    return $this->count;
+                    return [
+                        'scanned_players' => $this->scannedCount,
+                        'new_players' => $this->newCount,
+                    ];
                 }
             };
         }
