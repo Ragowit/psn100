@@ -20,25 +20,19 @@ class AboutPageService
 
     public function getScanSummary(): AboutPageScanSummary
     {
-        $query = $this->database->prepare(
-            <<<'SQL'
-            SELECT
-                SUM(CASE WHEN last_updated_date >= NOW() - INTERVAL 1 DAY THEN 1 ELSE 0 END) AS scanned_players,
-                SUM(CASE WHEN status = 0 AND rank_last_week = 0 THEN 1 ELSE 0 END)       AS new_players
-            FROM
-                player
-            SQL
+        $scannedQuery = $this->database->prepare(
+            'SELECT COUNT(*) FROM player WHERE last_updated_date >= NOW() - INTERVAL 1 DAY'
         );
-        $query->execute();
+        $scannedQuery->execute();
 
-        $row = $query->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
-            return new AboutPageScanSummary(0, 0);
-        }
+        $newPlayersQuery = $this->database->prepare(
+            'SELECT COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0'
+        );
+        $newPlayersQuery->execute();
 
         return new AboutPageScanSummary(
-            $this->toInt($row['scanned_players'] ?? null),
-            $this->toInt($row['new_players'] ?? null)
+            $this->toInt($scannedQuery->fetchColumn()),
+            $this->toInt($newPlayersQuery->fetchColumn())
         );
     }
 

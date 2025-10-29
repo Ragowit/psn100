@@ -132,17 +132,6 @@ class TrophyService
             : 'ORDER BY te.earned_date IS NULL, te.earned_date';
 
         $sql = <<<SQL
-            WITH filtered_trophy_earned AS (
-                SELECT
-                    account_id,
-                    earned_date
-                FROM
-                    trophy_earned
-                WHERE
-                    np_communication_id = :np_communication_id
-                    AND order_id = :order_id
-                    AND earned = 1
-            )
             SELECT
                 p.avatar_url,
                 p.online_id,
@@ -150,11 +139,14 @@ class TrophyService
                 p.trophy_count_sony,
                 IFNULL(te.earned_date, 'No Timestamp') AS earned_date
             FROM
-                filtered_trophy_earned te
+                trophy_earned te
                 JOIN player_ranking r ON te.account_id = r.account_id
                 JOIN player p ON r.account_id = p.account_id
             WHERE
-                r.ranking <= 10000
+                te.np_communication_id = :np_communication_id
+                AND te.order_id = :order_id
+                AND te.earned = 1
+                AND r.ranking <= 10000
             %s
             LIMIT 50
         SQL;

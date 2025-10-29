@@ -96,6 +96,8 @@ class Database extends PDO
                 $this->config->getPassword(),
                 $this->options
             );
+
+            $this->configureSession();
         } catch (PDOException $exception) {
             throw new DatabaseConnectionException('Unable to connect to the database.', 0, $exception);
         }
@@ -131,5 +133,18 @@ class Database extends PDO
         ];
 
         return $options + $defaultOptions;
+    }
+
+    private function configureSession(): void
+    {
+        try {
+            if ($this->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+                return;
+            }
+
+            $this->exec("SET SESSION optimizer_switch = 'with_clause=merged'");
+        } catch (PDOException $exception) {
+            throw new DatabaseConnectionException('Unable to configure the database session.', 0, $exception);
+        }
     }
 }
