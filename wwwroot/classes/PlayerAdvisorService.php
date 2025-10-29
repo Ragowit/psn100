@@ -38,14 +38,12 @@ class PlayerAdvisorService
             JOIN trophy_title_player ttp ON
                 t.np_communication_id = ttp.np_communication_id
                 AND ttp.account_id = :account_id
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM trophy_earned te
-                WHERE te.np_communication_id = t.np_communication_id
-                    AND te.order_id = t.order_id
-                    AND te.account_id = :account_id
-                    AND te.earned = 1
-            )
+            LEFT JOIN trophy_earned te_completed ON
+                te_completed.np_communication_id = t.np_communication_id
+                AND te_completed.order_id = t.order_id
+                AND te_completed.account_id = :account_id
+                AND te_completed.earned = 1
+            WHERE te_completed.account_id IS NULL
                 AND tt.status = 0
                 AND t.status = 0
         SQL;
@@ -79,25 +77,23 @@ class PlayerAdvisorService
                 tt.name AS game_name,
                 tt.icon_url AS game_icon,
                 tt.platform,
-                te.progress
+                te_progress.progress
             FROM trophy t
             JOIN trophy_title tt USING (np_communication_id)
-            LEFT JOIN trophy_earned te ON
-                t.np_communication_id = te.np_communication_id
-                AND t.order_id = te.order_id
-                AND te.account_id = :account_id
-                AND (te.earned = 0 OR te.earned IS NULL)
+            LEFT JOIN trophy_earned te_progress ON
+                t.np_communication_id = te_progress.np_communication_id
+                AND t.order_id = te_progress.order_id
+                AND te_progress.account_id = :account_id
+                AND te_progress.earned = 0
             JOIN trophy_title_player ttp ON
                 t.np_communication_id = ttp.np_communication_id
                 AND ttp.account_id = :account_id
-            WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM trophy_earned te_earned
-                    WHERE te_earned.np_communication_id = t.np_communication_id
-                        AND te_earned.order_id = t.order_id
-                        AND te_earned.account_id = :account_id
-                        AND te_earned.earned = 1
-                )
+            LEFT JOIN trophy_earned te_completed ON
+                te_completed.np_communication_id = t.np_communication_id
+                AND te_completed.order_id = t.order_id
+                AND te_completed.account_id = :account_id
+                AND te_completed.earned = 1
+            WHERE te_completed.account_id IS NULL
                 AND tt.status = 0
                 AND t.status = 0
         SQL;

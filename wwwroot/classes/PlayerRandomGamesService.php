@@ -52,7 +52,7 @@ class PlayerRandomGamesService
         $sql = "SELECT tt.id, tt.np_communication_id, tt.name, tt.icon_url, tt.platform, tt.owners, tt.difficulty, tt.platinum, tt.gold, tt.silver, tt.bronze, tt.rarity_points, ttp.progress" .
             " FROM trophy_title tt" .
             " LEFT JOIN trophy_title_player ttp ON ttp.np_communication_id = tt.np_communication_id AND ttp.account_id = :account_id" .
-            " WHERE tt.status = 0 AND (ttp.progress != 100 OR ttp.progress IS NULL)";
+            " WHERE tt.status = 0 AND (ttp.progress IS NULL OR ttp.progress < 100)";
 
         $sql .= $this->buildPlatformFilter($filter);
 
