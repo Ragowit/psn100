@@ -39,6 +39,37 @@ class GameDetailService
         return GameDetail::fromArray($gameId, $row);
     }
 
+    public function getGameDetailByNpCommunicationId(string $npCommunicationId): ?GameDetail
+    {
+        $query = $this->database->prepare(
+            'SELECT
+                id,
+                np_communication_id,
+                name,
+                icon_url,
+                platform,
+                message,
+                set_version,
+                region,
+                psnprofiles_id
+            FROM
+                trophy_title
+            WHERE
+                np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            return null;
+        }
+
+        $gameId = (int) ($row['id'] ?? 0);
+
+        return GameDetail::fromArray($gameId, $row);
+    }
+
     public function updateGameDetail(GameDetail $gameDetail): GameDetail
     {
         $this->database->beginTransaction();

@@ -40,14 +40,21 @@ class GameDetailPage
                     $success = sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId());
                 }
             } elseif ($method === 'GET') {
+                $npCommunicationId = null;
                 $gameId = $this->parseGameId($queryParameters['game'] ?? null);
 
                 if ($gameId !== null) {
                     $gameDetail = $this->gameDetailService->getGameDetail($gameId);
+                } else {
+                    $npCommunicationId = $this->parseNpCommunicationId($queryParameters['np_communication_id'] ?? null);
 
-                    if ($gameDetail === null) {
-                        $error = '<p>Unable to find the requested game.</p>';
+                    if ($npCommunicationId !== null) {
+                        $gameDetail = $this->gameDetailService->getGameDetailByNpCommunicationId($npCommunicationId);
                     }
+                }
+
+                if (($gameId !== null || isset($npCommunicationId)) && $gameDetail === null) {
+                    $error = '<p>Unable to find the requested game.</p>';
                 }
             }
         } catch (Throwable $exception) {
@@ -55,6 +62,17 @@ class GameDetailPage
         }
 
         return new GameDetailPageResult($gameDetail, $success, $error);
+    }
+
+    private function parseNpCommunicationId(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     private function parseGameId(mixed $value): ?int
