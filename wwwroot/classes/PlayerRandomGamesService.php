@@ -31,29 +31,69 @@ class PlayerRandomGamesService
     {
         $limit = max(1, $limit);
 
-        $sql = $this->buildSelectableQuery($filter) . ' ORDER BY RAND() LIMIT :limit';
+        $bounds = $this->fetchIdBounds($accountId, $filter);
 
-        $statement = $this->database->prepare($sql);
-        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-        if (!is_array($rows) || $rows === []) {
+        if ($bounds === null) {
             return [];
         }
 
-        $rows = array_values(array_filter($rows, 'is_array'));
+        [$minId, $maxId] = $bounds;
+        $rangeSize = $maxId - $minId + 1;
 
-        if ($rows === []) {
+        if ($rangeSize <= 0) {
             return [];
         }
+
+        $sampleSize = (int) min(max($limit * 4, 20), $rangeSize);
+        $sampleSize = max($sampleSize, $limit);
+        $maxAttempts = max(1, min(5, (int) ceil($rangeSize / $sampleSize)));
 
         $games = [];
+        $seenIds = [];
 
-        foreach ($rows as $gameData) {
-            $games[] = new PlayerRandomGame($gameData, $this->utility);
+        for ($attempt = 0; $attempt < $maxAttempts && count($games) < $limit; $attempt++) {
+            $sampleIds = $this->generateRandomIds($minId, $maxId, $sampleSize);
+            if ($sampleIds === []) {
+                break;
+            }
+
+            $rows = $this->fetchSampledGames($accountId, $filter, $sampleIds);
+
+            if ($rows === []) {
+                continue;
+            }
+
+            foreach ($rows as $gameData) {
+                $id = isset($gameData['id']) ? (int) $gameData['id'] : 0;
+                if ($id === 0 || isset($seenIds[$id])) {
+                    continue;
+                }
+
+                $seenIds[$id] = true;
+                $games[] = new PlayerRandomGame($gameData, $this->utility);
+
+                if (count($games) >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        if (count($games) < $limit) {
+            $fallbackRows = $this->fetchFallbackGames($accountId, $filter, $limit - count($games));
+
+            foreach ($fallbackRows as $gameData) {
+                $id = isset($gameData['id']) ? (int) $gameData['id'] : 0;
+                if ($id === 0 || isset($seenIds[$id])) {
+                    continue;
+                }
+
+                $seenIds[$id] = true;
+                $games[] = new PlayerRandomGame($gameData, $this->utility);
+
+                if (count($games) >= $limit) {
+                    break;
+                }
+            }
         }
 
         return $games;
@@ -111,5 +151,138 @@ class PlayerRandomGamesService
         }
 
         return ' AND (' . implode(' OR ', $conditions) . ')';
+    }
+
+    /**
+     * @return array{0: int, 1: int}|null
+     */
+    private function fetchIdBounds(int $accountId, PlayerRandomGamesFilter $filter): ?array
+    {
+        $sql = 'SELECT MIN(tt.id) AS min_id, MAX(tt.id) AS max_id' . $this->buildBaseQuery($filter);
+
+        $statement = $this->database->prepare($sql);
+        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $statement->execute();
+
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($result)) {
+            return null;
+        }
+
+        $minId = isset($result['min_id']) ? (int) $result['min_id'] : null;
+        $maxId = isset($result['max_id']) ? (int) $result['max_id'] : null;
+
+        if ($minId === null || $maxId === null) {
+            return null;
+        }
+
+        return [$minId, $maxId];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function generateRandomIds(int $minId, int $maxId, int $count): array
+    {
+        $available = $maxId - $minId + 1;
+
+        if ($available <= 0) {
+            return [];
+        }
+
+        $count = max(1, min($count, $available));
+
+        if ($available <= $count * 2) {
+            $pool = range($minId, $maxId);
+            if (count($pool) > 1) {
+                shuffle($pool);
+            }
+
+            return array_slice($pool, 0, $count);
+        }
+
+        $ids = [];
+        $selected = [];
+
+        while (count($ids) < $count) {
+            $candidate = random_int($minId, $maxId);
+
+            if (isset($selected[$candidate])) {
+                continue;
+            }
+
+            $selected[$candidate] = true;
+            $ids[] = $candidate;
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchSampledGames(int $accountId, PlayerRandomGamesFilter $filter, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = [];
+        foreach ($ids as $index => $_) {
+            $placeholders[] = ':id_' . $index;
+        }
+
+        $sql = $this->buildSelectableQuery($filter)
+            . sprintf(' AND tt.id IN (%s)', implode(', ', $placeholders));
+
+        $statement = $this->database->prepare($sql);
+        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+
+        foreach ($ids as $index => $id) {
+            $statement->bindValue(':id_' . $index, $id, PDO::PARAM_INT);
+        }
+
+        $statement->execute();
+
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!is_array($rows) || $rows === []) {
+            return [];
+        }
+
+        $rows = array_values(array_filter($rows, 'is_array'));
+
+        if (count($rows) > 1) {
+            shuffle($rows);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchFallbackGames(int $accountId, PlayerRandomGamesFilter $filter, int $limit): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        $sql = $this->buildSelectableQuery($filter) . ' ORDER BY tt.id LIMIT :limit';
+
+        $statement = $this->database->prepare($sql);
+        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!is_array($rows) || $rows === []) {
+            return [];
+        }
+
+        return array_values(array_filter($rows, 'is_array'));
     }
 }
