@@ -1457,6 +1457,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
         $acronyms = [
             'VR',
+            'HD',
         ];
 
         if (in_array($word, $acronyms, true)) {
