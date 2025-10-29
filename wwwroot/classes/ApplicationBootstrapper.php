@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ApplicationContainer.php';
 require_once __DIR__ . '/ApplicationRunner.php';
+require_once __DIR__ . '/MaintenanceResponder.php';
 
 final class ApplicationBootstrapper
 {
@@ -41,6 +42,10 @@ final class ApplicationBootstrapper
 
     public function createApplicationRunner(MaintenanceMode $maintenanceMode): ApplicationRunner
     {
-        return ApplicationRunner::create($this->applicationContainer, $maintenanceMode);
+        return ApplicationRunner::create(
+            $this->applicationContainer,
+            $maintenanceMode,
+            new MaintenanceResponder()
+        );
     }
 }

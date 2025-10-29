@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ApplicationContainer.php';
 require_once __DIR__ . '/MaintenanceMode.php';
+require_once __DIR__ . '/MaintenanceResponder.php';
 
 final class ApplicationRunner
 {
@@ -11,21 +12,30 @@ final class ApplicationRunner
 
     private MaintenanceMode $maintenanceMode;
 
-    public function __construct(ApplicationContainer $applicationContainer, MaintenanceMode $maintenanceMode)
-    {
+    private MaintenanceResponder $maintenanceResponder;
+
+    public function __construct(
+        ApplicationContainer $applicationContainer,
+        MaintenanceMode $maintenanceMode,
+        ?MaintenanceResponder $maintenanceResponder = null
+    ) {
         $this->applicationContainer = $applicationContainer;
         $this->maintenanceMode = $maintenanceMode;
+        $this->maintenanceResponder = $maintenanceResponder ?? new MaintenanceResponder();
     }
 
-    public static function create(ApplicationContainer $applicationContainer, MaintenanceMode $maintenanceMode): self
-    {
-        return new self($applicationContainer, $maintenanceMode);
+    public static function create(
+        ApplicationContainer $applicationContainer,
+        MaintenanceMode $maintenanceMode,
+        ?MaintenanceResponder $maintenanceResponder = null
+    ): self {
+        return new self($applicationContainer, $maintenanceMode, $maintenanceResponder);
     }
 
     public function run(): void
     {
         if ($this->maintenanceMode->isEnabled()) {
-            $this->renderMaintenancePage();
+            $this->maintenanceResponder->respond($this->maintenanceMode);
 
             return;
         }
@@ -33,17 +43,5 @@ final class ApplicationRunner
         $request = $this->applicationContainer->createRequestFromGlobals();
         $application = $this->applicationContainer->createApplication($request);
         $application->run();
-    }
-
-    private function renderMaintenancePage(): void
-    {
-        http_response_code(503);
-
-        if (!headers_sent()) {
-            header('Retry-After: 300');
-        }
-
-        require_once $this->maintenanceMode->getTemplatePath();
-        exit();
     }
 }

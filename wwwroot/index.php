@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/MaintenanceMode.php';
+require_once __DIR__ . '/classes/MaintenanceResponder.php';
 
 $defaultMaintenanceState = false;
 $maintenanceMode = MaintenanceMode::fromEnvironment(
@@ -11,9 +12,8 @@ $maintenanceMode = MaintenanceMode::fromEnvironment(
 );
 
 if ($maintenanceMode->isEnabled()) {
-    require_once $maintenanceMode->getTemplatePath();
-
-    exit();
+    $maintenanceResponder = new MaintenanceResponder();
+    $maintenanceResponder->respond($maintenanceMode);
 }
 
 require_once __DIR__ . '/init.php';
