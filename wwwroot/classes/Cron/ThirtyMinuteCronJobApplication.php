@@ -7,8 +7,6 @@ require_once __DIR__ . '/CronJobCliArguments.php';
 require_once __DIR__ . '/../TrophyCalculator.php';
 require_once __DIR__ . '/ThirtyMinuteCronJob.php';
 
-use PDO;
-
 final class ThirtyMinuteCronJobApplication
 {
     private CronJobEntryPoint $entryPoint;
