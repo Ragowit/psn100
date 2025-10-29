@@ -6,6 +6,10 @@ PSN 100% is a trophy tracking website, focusing on merging game stacks and remov
 ## What isn't PSN 100%?
 PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handle this with greatness, please use them.
 
+## Technology stack
+- **PHP:** 8.4
+- **MySQL:** 8.4
+
 ## Merge Guideline Priorities
 1. Available > Delisted
 2. English language > Other language
