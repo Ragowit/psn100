@@ -1301,6 +1301,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $suffixPatterns = [
             '/\s*Trophy Set\.$/i',
             '/\s*Trophy Set$/i',
+            '/\s*Trophyset\.$/i',
+            '/\s*Trophyset$/i',
             '/\s*Trophies$/i',
             '/\s*Trophy$/i',
         ];
