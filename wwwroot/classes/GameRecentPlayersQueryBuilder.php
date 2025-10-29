@@ -22,11 +22,17 @@ final class GameRecentPlayersQueryBuilder
             ttp.last_updated_date AS last_known_date
         FROM
             trophy_title_player ttp
-        JOIN player p ON ttp.account_id = p.account_id
-        JOIN player_ranking r ON p.account_id = r.account_id
+        JOIN player p ON p.account_id = ttp.account_id
+        JOIN (
+            SELECT
+                account_id
+            FROM
+                player_ranking
+            WHERE
+                ranking <= 10000
+        ) r ON r.account_id = ttp.account_id
         WHERE
             p.status = 0
-            AND r.ranking <= 10000
             AND ttp.np_communication_id = :np_communication_id
     SQL;
 
