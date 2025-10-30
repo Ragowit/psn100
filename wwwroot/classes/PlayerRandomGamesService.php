@@ -108,13 +108,13 @@ class PlayerRandomGamesService
                 tt.name,
                 tt.icon_url,
                 tt.platform,
-                tt.owners,
-                tt.difficulty,
+                ttm.owners,
+                ttm.difficulty,
                 tt.platinum,
                 tt.gold,
                 tt.silver,
                 tt.bronze,
-                tt.rarity_points,
+                ttm.rarity_points,
                 ttp.progress
             SQL
             . $this->buildBaseQuery($filter);
@@ -124,11 +124,12 @@ class PlayerRandomGamesService
     {
         $sql = <<<'SQL'
              FROM trophy_title tt
+            JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             LEFT JOIN trophy_title_player ttp ON
                 ttp.np_communication_id = tt.np_communication_id
                 AND ttp.account_id = :account_id
             WHERE
-                tt.status = 0
+                ttm.status = 0
                 AND (ttp.progress IS NULL OR ttp.progress < 100)
         SQL;
 

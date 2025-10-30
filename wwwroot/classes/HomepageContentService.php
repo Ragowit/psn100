@@ -29,13 +29,21 @@ class HomepageContentService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                *
+                tt.id,
+                tt.name,
+                tt.icon_url,
+                tt.platform,
+                tt.platinum,
+                tt.gold,
+                tt.silver,
+                tt.bronze
             FROM
-                trophy_title
+                trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                `status` != 2
+                ttm.status != 2
             ORDER BY
-                id DESC
+                tt.id DESC
             LIMIT
                 :limit
             SQL
@@ -71,8 +79,9 @@ class HomepageContentService
             FROM
                 trophy_group tg
                 JOIN trophy_title tt USING (np_communication_id)
+                JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE
-                tt.status != 2
+                ttm.status != 2
                 AND tg.group_id != 'default'
             ORDER BY
                 tg.id DESC
@@ -99,17 +108,18 @@ class HomepageContentService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                id,
-                icon_url,
-                platform,
-                `name`,
-                recent_players
+                tt.id,
+                tt.icon_url,
+                tt.platform,
+                tt.`name`,
+                ttm.recent_players
             FROM
-                trophy_title
+                trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                `status` != 2
+                ttm.status != 2
             ORDER BY
-                recent_players DESC
+                ttm.recent_players DESC
             LIMIT
                 :limit
             SQL

@@ -126,6 +126,7 @@ class GameListService
                 COUNT(*)
             FROM
                 trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             LEFT JOIN player p ON p.online_id = :online_id
             LEFT JOIN trophy_title_player ttp ON
                 ttp.np_communication_id = tt.np_communication_id
@@ -144,16 +145,16 @@ class GameListService
             'tt.np_communication_id',
             'tt.id',
             'tt.name',
-            'tt.status',
+            'ttm.status AS status',
             'tt.icon_url',
             'tt.platform',
-            'tt.owners',
-            'tt.difficulty',
+            'ttm.owners AS owners',
+            'ttm.difficulty AS difficulty',
             'tt.platinum',
             'tt.gold',
             'tt.silver',
             'tt.bronze',
-            'tt.rarity_points',
+            'ttm.rarity_points AS rarity_points',
             'ttp.progress',
         ];
 
@@ -173,6 +174,7 @@ class GameListService
                 %s
             FROM
                 trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             LEFT JOIN player p ON p.online_id = :online_id
             LEFT JOIN trophy_title_player ttp ON
                 ttp.np_communication_id = tt.np_communication_id
@@ -196,13 +198,13 @@ class GameListService
 
         switch ($filter->getSort()) {
             case GameListFilter::SORT_COMPLETION:
-                $conditions[] = "tt.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0";
+                $conditions[] = "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0";
                 break;
             case GameListFilter::SORT_RARITY:
-                $conditions[] = 'tt.status = 0';
+                $conditions[] = 'ttm.status = 0';
                 break;
             default:
-                $conditions[] = 'tt.status != 2';
+                $conditions[] = 'ttm.status != 2';
                 break;
         }
 

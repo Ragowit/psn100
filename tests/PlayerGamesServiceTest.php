@@ -24,7 +24,15 @@ final class PlayerGamesServiceTest extends TestCase
                 np_communication_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 icon_url TEXT,
-                platform TEXT,
+                platform TEXT
+            )
+            SQL
+        );
+
+        $this->pdo->exec(
+            <<<SQL
+            CREATE TABLE trophy_title_meta (
+                np_communication_id TEXT PRIMARY KEY,
                 status INTEGER,
                 rarity_points INTEGER
             )
@@ -182,8 +190,8 @@ final class PlayerGamesServiceTest extends TestCase
         int $maxRarityPoints = 0
     ): void {
         $statement = $this->pdo->prepare(
-            'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform, status, rarity_points) '
-            . 'VALUES (:id, :np, :name, :icon, :platform, :status, :rarity)'
+            'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform) '
+            . 'VALUES (:id, :np, :name, :icon, :platform)'
         );
         $statement->execute([
             ':id' => $id,
@@ -191,6 +199,14 @@ final class PlayerGamesServiceTest extends TestCase
             ':name' => $name,
             ':icon' => 'icon.png',
             ':platform' => $platform,
+        ]);
+
+        $statement = $this->pdo->prepare(
+            'INSERT INTO trophy_title_meta (np_communication_id, status, rarity_points) '
+            . 'VALUES (:np, :status, :rarity)'
+        );
+        $statement->execute([
+            ':np' => $npCommunicationId,
             ':status' => $status,
             ':rarity' => $maxRarityPoints,
         ]);

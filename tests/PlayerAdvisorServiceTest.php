@@ -24,8 +24,23 @@ final class PlayerAdvisorServiceTest extends TestCase
                 np_communication_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 icon_url TEXT NOT NULL,
-                platform TEXT NOT NULL,
-                status INTEGER NOT NULL
+                platform TEXT NOT NULL
+            )'
+        );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_title_meta (
+                np_communication_id TEXT PRIMARY KEY,
+                owners INTEGER DEFAULT 0,
+                difficulty REAL DEFAULT 0,
+                message TEXT DEFAULT NULL,
+                status INTEGER NOT NULL,
+                recent_players INTEGER DEFAULT 0,
+                owners_completed INTEGER DEFAULT 0,
+                psnprofiles_id INTEGER DEFAULT NULL,
+                parent_np_communication_id TEXT DEFAULT NULL,
+                region TEXT DEFAULT NULL,
+                rarity_points INTEGER DEFAULT 0
             )'
         );
 
@@ -70,10 +85,17 @@ final class PlayerAdvisorServiceTest extends TestCase
     public function testCountAdvisableTrophiesIgnoresEarnedAndUnselectedPlatforms(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform, status) VALUES\n" .
-            "('NPWR-PS5-1', 'Game PS5', 'game-ps5.png', 'PS5', 0),\n" .
-            "('NPWR-PS5-2', 'Game PS5 Earned', 'game-ps5-earned.png', 'PS5', 0),\n" .
-            "('NPWR-PS4-1', 'Game PS4', 'game-ps4.png', 'PS4', 0)"
+            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES\n" .
+            "('NPWR-PS5-1', 'Game PS5', 'game-ps5.png', 'PS5'),\n" .
+            "('NPWR-PS5-2', 'Game PS5 Earned', 'game-ps5-earned.png', 'PS5'),\n" .
+            "('NPWR-PS4-1', 'Game PS4', 'game-ps4.png', 'PS4')"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
+            "('NPWR-PS5-1', 0),\n" .
+            "('NPWR-PS5-2', 0),\n" .
+            "('NPWR-PS4-1', 0)"
         );
 
         $this->database->exec(
@@ -105,10 +127,17 @@ final class PlayerAdvisorServiceTest extends TestCase
     public function testGetAdvisableTrophiesReturnsOrderedTrophyCollection(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform, status) VALUES\n" .
-            "('NPWR-1', 'First Game', 'game-1.png', 'PS4', 0),\n" .
-            "('NPWR-2', 'Second Game', 'game-2.png', 'PS4', 0),\n" .
-            "('NPWR-3', 'Third Game', 'game-3.png', 'PS4', 0)"
+            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES\n" .
+            "('NPWR-1', 'First Game', 'game-1.png', 'PS4'),\n" .
+            "('NPWR-2', 'Second Game', 'game-2.png', 'PS4'),\n" .
+            "('NPWR-3', 'Third Game', 'game-3.png', 'PS4')"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
+            "('NPWR-1', 0),\n" .
+            "('NPWR-2', 0),\n" .
+            "('NPWR-3', 0)"
         );
 
         $this->database->exec(

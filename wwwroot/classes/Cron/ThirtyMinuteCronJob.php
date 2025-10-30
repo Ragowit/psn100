@@ -911,16 +911,16 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         foreach ($playerGames as $playerGame) {
                             $game = $playerGame["np_communication_id"];
                             if (!in_array($game, $scannedGames)) {
-                                $query = $this->database->prepare("SELECT tt.parent_np_communication_id
-                                    FROM   trophy_title tt
-                                    WHERE  tt.np_communication_id = :np_communication_id");
+                                $query = $this->database->prepare("SELECT ttm.parent_np_communication_id
+                                    FROM   trophy_title_meta ttm
+                                    WHERE  ttm.np_communication_id = :np_communication_id");
                                 $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
                                 $query->execute();
                                 $mergedGame = $query->fetchColumn(); // MERGE_...
                                 if ($mergedGame) {
-                                    $query = $this->database->prepare("SELECT tt.np_communication_id
-                                        FROM   trophy_title tt
-                                        WHERE  tt.parent_np_communication_id = :parent_np_communication_id AND tt.np_communication_id != :np_communication_id");
+                                    $query = $this->database->prepare("SELECT ttm.np_communication_id
+                                        FROM   trophy_title_meta ttm
+                                        WHERE  ttm.parent_np_communication_id = :parent_np_communication_id AND ttm.np_communication_id != :np_communication_id");
                                     $query->bindValue(":parent_np_communication_id", $mergedGame, PDO::PARAM_STR);
                                     $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
                                     $query->execute();
@@ -987,7 +987,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             Ifnull(Sum(ttp.platinum), 0) AS platinum
                         FROM   trophy_title_player ttp
                             JOIN trophy_title tt USING (np_communication_id)
-                        WHERE  tt.status = 0
+                            JOIN trophy_title_meta ttm USING (np_communication_id)
+                        WHERE  ttm.status = 0
                             AND ttp.account_id = :account_id ");
                     $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
                     $query->execute();

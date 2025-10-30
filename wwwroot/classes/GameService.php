@@ -19,11 +19,32 @@ class GameService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                *
+                tt.id,
+                tt.np_communication_id,
+                tt.name,
+                tt.detail,
+                tt.icon_url,
+                tt.platform,
+                tt.bronze,
+                tt.silver,
+                tt.gold,
+                tt.platinum,
+                tt.set_version,
+                ttm.message,
+                ttm.status,
+                ttm.recent_players,
+                ttm.owners_completed,
+                ttm.owners,
+                ttm.difficulty,
+                ttm.psnprofiles_id,
+                ttm.parent_np_communication_id,
+                ttm.region,
+                ttm.rarity_points
             FROM
-                trophy_title
+                trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                id = :id
+                tt.id = :id
             SQL
         );
         $query->bindValue(':id', $gameId, PDO::PARAM_INT);

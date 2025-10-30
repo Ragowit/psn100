@@ -21,7 +21,8 @@ class TrophyListService
             'SELECT COUNT(*)
             FROM trophy t
             JOIN trophy_title tt USING (np_communication_id)
-            WHERE t.status = 0 AND tt.status = 0'
+            JOIN trophy_title_meta ttm USING (np_communication_id)
+            WHERE t.status = 0 AND ttm.status = 0'
         );
 
         $query->execute();
@@ -55,7 +56,8 @@ class TrophyListService
                 tt.platform
             FROM trophy t
             JOIN trophy_title tt USING(np_communication_id)
-            WHERE t.status = 0 AND tt.status = 0
+            JOIN trophy_title_meta ttm USING (np_communication_id)
+            WHERE t.status = 0 AND ttm.status = 0
             ORDER BY t.rarity_percent DESC
             LIMIT :offset, :limit'
         );

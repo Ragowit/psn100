@@ -52,8 +52,8 @@ class GameResetService
                 'DELETE FROM trophy_earned WHERE np_communication_id = :np_communication_id',
                 'DELETE FROM trophy_group_player WHERE np_communication_id = :np_communication_id',
                 'DELETE FROM trophy_title_player WHERE np_communication_id = :np_communication_id',
-                'UPDATE trophy_title SET owners = 0, owners_completed = 0 WHERE np_communication_id = :np_communication_id',
-                'UPDATE trophy_title SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
+                'UPDATE trophy_title_meta SET owners = 0, owners_completed = 0 WHERE np_communication_id = :np_communication_id',
+                'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
             ];
 
             foreach ($statements as $sql) {
@@ -79,7 +79,7 @@ class GameResetService
                 'DELETE FROM trophy_title_player WHERE np_communication_id = :np_communication_id',
                 'DELETE FROM trophy_group WHERE np_communication_id = :np_communication_id',
                 'DELETE FROM trophy_title WHERE np_communication_id = :np_communication_id',
-                'UPDATE trophy_title SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
+                'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
             ];
 
             foreach ($statements as $sql) {

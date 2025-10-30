@@ -299,6 +299,146 @@ CREATE TABLE `trophy_title` (
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `trophy_title_meta` (
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `owners` int UNSIGNED NOT NULL DEFAULT '0',
+  `difficulty` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
+  `recent_players` int UNSIGNED NOT NULL DEFAULT '0',
+  `owners_completed` int UNSIGNED NOT NULL DEFAULT '0',
+  `psnprofiles_id` int UNSIGNED DEFAULT NULL,
+  `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `rarity_points` int UNSIGNED NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DELIMITER $$
+CREATE TRIGGER `after_insert_trophy_title` AFTER INSERT ON `trophy_title` FOR EACH ROW BEGIN
+    INSERT INTO `trophy_title_meta` (
+        `np_communication_id`,
+        `owners`,
+        `difficulty`,
+        `message`,
+        `status`,
+        `recent_players`,
+        `owners_completed`,
+        `psnprofiles_id`,
+        `parent_np_communication_id`,
+        `region`,
+        `rarity_points`
+    ) VALUES (
+        NEW.`np_communication_id`,
+        NEW.`owners`,
+        NEW.`difficulty`,
+        NEW.`message`,
+        NEW.`status`,
+        NEW.`recent_players`,
+        NEW.`owners_completed`,
+        NEW.`psnprofiles_id`,
+        NEW.`parent_np_communication_id`,
+        NEW.`region`,
+        NEW.`rarity_points`
+    )
+    ON DUPLICATE KEY UPDATE
+        `owners` = VALUES(`owners`),
+        `difficulty` = VALUES(`difficulty`),
+        `message` = VALUES(`message`),
+        `status` = VALUES(`status`),
+        `recent_players` = VALUES(`recent_players`),
+        `owners_completed` = VALUES(`owners_completed`),
+        `psnprofiles_id` = VALUES(`psnprofiles_id`),
+        `parent_np_communication_id` = VALUES(`parent_np_communication_id`),
+        `region` = VALUES(`region`),
+        `rarity_points` = VALUES(`rarity_points`);
+END$$
+
+CREATE TRIGGER `after_update_trophy_title` AFTER UPDATE ON `trophy_title` FOR EACH ROW BEGIN
+    IF NEW.`np_communication_id` <> OLD.`np_communication_id` THEN
+        DELETE FROM `trophy_title_meta` WHERE `np_communication_id` = OLD.`np_communication_id`;
+    END IF;
+
+    INSERT INTO `trophy_title_meta` (
+        `np_communication_id`,
+        `owners`,
+        `difficulty`,
+        `message`,
+        `status`,
+        `recent_players`,
+        `owners_completed`,
+        `psnprofiles_id`,
+        `parent_np_communication_id`,
+        `region`,
+        `rarity_points`
+    ) VALUES (
+        NEW.`np_communication_id`,
+        NEW.`owners`,
+        NEW.`difficulty`,
+        NEW.`message`,
+        NEW.`status`,
+        NEW.`recent_players`,
+        NEW.`owners_completed`,
+        NEW.`psnprofiles_id`,
+        NEW.`parent_np_communication_id`,
+        NEW.`region`,
+        NEW.`rarity_points`
+    )
+    ON DUPLICATE KEY UPDATE
+        `owners` = VALUES(`owners`),
+        `difficulty` = VALUES(`difficulty`),
+        `message` = VALUES(`message`),
+        `status` = VALUES(`status`),
+        `recent_players` = VALUES(`recent_players`),
+        `owners_completed` = VALUES(`owners_completed`),
+        `psnprofiles_id` = VALUES(`psnprofiles_id`),
+        `parent_np_communication_id` = VALUES(`parent_np_communication_id`),
+        `region` = VALUES(`region`),
+        `rarity_points` = VALUES(`rarity_points`);
+END$$
+
+CREATE TRIGGER `after_delete_trophy_title` AFTER DELETE ON `trophy_title` FOR EACH ROW BEGIN
+    DELETE FROM `trophy_title_meta` WHERE `np_communication_id` = OLD.`np_communication_id`;
+END$$
+DELIMITER ;
+
+INSERT INTO `trophy_title_meta` (
+    `np_communication_id`,
+    `owners`,
+    `difficulty`,
+    `message`,
+    `status`,
+    `recent_players`,
+    `owners_completed`,
+    `psnprofiles_id`,
+    `parent_np_communication_id`,
+    `region`,
+    `rarity_points`
+)
+SELECT
+    `np_communication_id`,
+    `owners`,
+    `difficulty`,
+    `message`,
+    `status`,
+    `recent_players`,
+    `owners_completed`,
+    `psnprofiles_id`,
+    `parent_np_communication_id`,
+    `region`,
+    `rarity_points`
+FROM `trophy_title`
+ON DUPLICATE KEY UPDATE
+    `owners` = VALUES(`owners`),
+    `difficulty` = VALUES(`difficulty`),
+    `message` = VALUES(`message`),
+    `status` = VALUES(`status`),
+    `recent_players` = VALUES(`recent_players`),
+    `owners_completed` = VALUES(`owners_completed`),
+    `psnprofiles_id` = VALUES(`psnprofiles_id`),
+    `parent_np_communication_id` = VALUES(`parent_np_communication_id`),
+    `region` = VALUES(`region`),
+    `rarity_points` = VALUES(`rarity_points`);
+
 -- --------------------------------------------------------
 
 --
@@ -454,6 +594,22 @@ ALTER TABLE `trophy_title`
   ADD KEY `idx_psnprofiles_id` (`psnprofiles_id`),
   ADD KEY `trophy_title_idx_np_id_owners` (`np_communication_id`,`owners`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
+
+--
+-- Indexes for table `trophy_title_meta`
+--
+ALTER TABLE `trophy_title_meta`
+  ADD PRIMARY KEY (`np_communication_id`),
+  ADD KEY `idx_ttm_status` (`status`),
+  ADD KEY `idx_ttm_parent_np_communication_id` (`parent_np_communication_id`),
+  ADD KEY `idx_ttm_psnprofiles_id` (`psnprofiles_id`),
+  ADD KEY `idx_ttm_np_id_owners` (`np_communication_id`,`owners`);
+
+--
+-- Constraints for table `trophy_title_meta`
+--
+ALTER TABLE `trophy_title_meta`
+  ADD CONSTRAINT `fk_trophy_title_meta_np` FOREIGN KEY (`np_communication_id`) REFERENCES `trophy_title` (`np_communication_id`) ON DELETE CASCADE;
 
 --
 -- Indexes for table `trophy_title_player`

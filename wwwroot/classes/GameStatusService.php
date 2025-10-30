@@ -36,11 +36,23 @@ class GameStatusService
 
     private function updateStatus(int $gameId, int $status): void
     {
+        $npCommunicationIdQuery = $this->database->prepare(
+            'SELECT np_communication_id FROM trophy_title WHERE id = :game_id'
+        );
+        $npCommunicationIdQuery->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+        $npCommunicationIdQuery->execute();
+
+        $npCommunicationId = $npCommunicationIdQuery->fetchColumn();
+
+        if ($npCommunicationId === false) {
+            return;
+        }
+
         $query = $this->database->prepare(
-            'UPDATE trophy_title SET status = :status WHERE id = :game_id'
+            'UPDATE trophy_title_meta SET status = :status WHERE np_communication_id = :np_communication_id'
         );
         $query->bindValue(':status', $status, PDO::PARAM_INT);
-        $query->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }
 

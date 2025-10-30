@@ -14,9 +14,11 @@ final class GameStatusServiceTest extends TestCase
         $this->database = new PDO('sqlite::memory:');
         $this->database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, status INTEGER NOT NULL)');
+        $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT NOT NULL)');
+        $this->database->exec('CREATE TABLE trophy_title_meta (np_communication_id TEXT PRIMARY KEY, status INTEGER NOT NULL)');
         $this->database->exec('CREATE TABLE psn100_change (change_type TEXT NOT NULL, param_1 INTEGER NOT NULL)');
-        $this->database->exec('INSERT INTO trophy_title (id, status) VALUES (1, 0)');
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id) VALUES (1, 'NPWR-1')");
+        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, status) VALUES ('NPWR-1', 0)");
 
         $this->service = new GameStatusService($this->database);
     }
@@ -28,7 +30,7 @@ final class GameStatusServiceTest extends TestCase
         $this->assertSame('delisted', $statusText);
 
         $status = $this->database
-            ->query('SELECT status FROM trophy_title WHERE id = 1')
+            ->query('SELECT status FROM trophy_title_meta WHERE np_communication_id = "NPWR-1"')
             ->fetchColumn();
         $this->assertSame(1, (int) $status);
 
@@ -62,7 +64,7 @@ final class GameStatusServiceTest extends TestCase
         }
 
         $status = $this->database
-            ->query('SELECT status FROM trophy_title WHERE id = 1')
+            ->query('SELECT status FROM trophy_title_meta WHERE np_communication_id = "NPWR-1"')
             ->fetchColumn();
         $this->assertSame(0, (int) $status);
 

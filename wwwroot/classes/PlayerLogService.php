@@ -31,7 +31,8 @@ class PlayerLogService
             SELECT COUNT(*)
             FROM trophy_earned te
             JOIN trophy_title tt USING (np_communication_id)
-            WHERE tt.status != 2
+            JOIN trophy_title_meta ttm USING (np_communication_id)
+            WHERE ttm.status != 2
                 AND te.account_id = :account_id
                 AND te.earned = 1
         SQL;
@@ -65,13 +66,14 @@ class PlayerLogService
                 t.reward_image_url,
                 tt.id AS game_id,
                 tt.name AS game_name,
-                tt.status AS game_status,
+                ttm.status AS game_status,
                 tt.icon_url AS game_icon,
                 tt.platform
             FROM trophy_earned te
             LEFT JOIN trophy t USING (np_communication_id, order_id)
             LEFT JOIN trophy_title tt USING (np_communication_id)
-            WHERE tt.status != 2
+            LEFT JOIN trophy_title_meta ttm USING (np_communication_id)
+            WHERE ttm.status != 2
                 AND te.account_id = :account_id
                 AND te.earned = 1
         SQL;

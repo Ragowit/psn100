@@ -26,12 +26,28 @@ final class HomepageContentServiceTest extends TestCase
                 name TEXT,
                 icon_url TEXT,
                 platform TEXT,
-                status INTEGER,
                 platinum INTEGER,
                 gold INTEGER,
                 silver INTEGER,
-                bronze INTEGER,
-                recent_players INTEGER
+                bronze INTEGER
+            )
+            SQL
+        );
+
+        $this->pdo->exec(
+            <<<SQL
+            CREATE TABLE trophy_title_meta (
+                np_communication_id TEXT PRIMARY KEY,
+                owners INTEGER DEFAULT 0,
+                difficulty REAL DEFAULT 0,
+                message TEXT DEFAULT NULL,
+                status INTEGER NOT NULL,
+                recent_players INTEGER DEFAULT 0,
+                owners_completed INTEGER DEFAULT 0,
+                psnprofiles_id INTEGER DEFAULT NULL,
+                parent_np_communication_id TEXT DEFAULT NULL,
+                region TEXT DEFAULT NULL,
+                rarity_points INTEGER DEFAULT 0
             )
             SQL
         );
@@ -58,10 +74,17 @@ final class HomepageContentServiceTest extends TestCase
     {
         $this->pdo->exec(
             "INSERT INTO trophy_title " .
-            "(id, np_communication_id, name, icon_url, platform, status, platinum, gold, silver, bronze, recent_players) VALUES" .
-            " (1, 'NPWR001', 'First Game', 'first.png', 'PS4', 0, 1, 2, 3, 4, 10)," .
-            " (2, 'NPWR002', 'Hidden Game', 'hidden.png', 'PS5', 2, 5, 5, 5, 5, 5)," .
-            " (3, 'NPWR003', 'Latest Game', 'latest.png', 'PS5', 0, 0, 1, 1, 1, 20)"
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR001', 'First Game', 'first.png', 'PS4', 1, 2, 3, 4)," .
+            " (2, 'NPWR002', 'Hidden Game', 'hidden.png', 'PS5', 5, 5, 5, 5)," .
+            " (3, 'NPWR003', 'Latest Game', 'latest.png', 'PS5', 0, 1, 1, 1)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR001', 0, 10)," .
+            " ('NPWR002', 2, 5)," .
+            " ('NPWR003', 0, 20)"
         );
 
         $games = $this->service->getNewGames(2);
@@ -81,9 +104,15 @@ final class HomepageContentServiceTest extends TestCase
     {
         $this->pdo->exec(
             "INSERT INTO trophy_title " .
-            "(id, np_communication_id, name, icon_url, platform, status, platinum, gold, silver, bronze, recent_players) VALUES" .
-            " (1, 'NPWR100', 'Visible Game', 'visible.png', 'PS5', 0, 0, 0, 0, 0, 100)," .
-            " (2, 'NPWR200', 'Hidden Game', 'hidden.png', 'PS4', 2, 0, 0, 0, 0, 10)"
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR100', 'Visible Game', 'visible.png', 'PS5', 0, 0, 0, 0)," .
+            " (2, 'NPWR200', 'Hidden Game', 'hidden.png', 'PS4', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR100', 0, 100)," .
+            " ('NPWR200', 2, 10)"
         );
 
         $this->pdo->exec(
@@ -113,10 +142,17 @@ final class HomepageContentServiceTest extends TestCase
     {
         $this->pdo->exec(
             "INSERT INTO trophy_title " .
-            "(id, np_communication_id, name, icon_url, platform, status, platinum, gold, silver, bronze, recent_players) VALUES" .
-            " (1, 'NPWR300', 'Moderate Game', 'moderate.png', 'PS4', 0, 0, 0, 0, 0, 500)," .
-            " (2, 'NPWR400', 'Hidden Game', 'hidden.png', 'PS5', 2, 0, 0, 0, 0, 1000)," .
-            " (3, 'NPWR500', 'Popular Game', 'popular.png', 'PS5', 0, 0, 0, 0, 0, 1500)"
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR300', 'Moderate Game', 'moderate.png', 'PS4', 0, 0, 0, 0)," .
+            " (2, 'NPWR400', 'Hidden Game', 'hidden.png', 'PS5', 0, 0, 0, 0)," .
+            " (3, 'NPWR500', 'Popular Game', 'popular.png', 'PS5', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR300', 0, 500)," .
+            " ('NPWR400', 2, 1000)," .
+            " ('NPWR500', 0, 1500)"
         );
 
         $popularGames = $this->service->getPopularGames(2);

@@ -73,18 +73,19 @@ class GameHeaderService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                id,
-                `name`,
-                platform,
-                region
+                tt.id,
+                tt.`name`,
+                tt.platform,
+                ttm.region
             FROM
-                trophy_title
+                trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                parent_np_communication_id = :parent_np_communication_id
+                ttm.parent_np_communication_id = :parent_np_communication_id
             ORDER BY
-                `name`,
-                platform,
-                region
+                tt.`name`,
+                tt.platform,
+                ttm.region
             SQL
         );
         $query->bindValue(':parent_np_communication_id', $npCommunicationId, PDO::PARAM_STR);
