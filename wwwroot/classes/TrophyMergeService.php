@@ -725,10 +725,10 @@ SQL
         $this->executeTransaction(function () use ($npCommunicationId): void {
             $query = $this->database->prepare(
                 <<<'SQL'
-                UPDATE trophy_title
+                UPDATE trophy_title_meta
                 SET    status = 2
                 WHERE  np_communication_id = :child_np_communication_id
-SQL
+                SQL
             );
             $query->bindValue(':child_np_communication_id', $npCommunicationId, PDO::PARAM_STR);
             $query->execute();
@@ -738,14 +738,30 @@ SQL
     private function markGameAsMergedById(int $gameId): void
     {
         $this->executeTransaction(function () use ($gameId): void {
+            $lookup = $this->database->prepare(
+                <<<'SQL'
+                SELECT np_communication_id
+                FROM   trophy_title
+                WHERE  id = :game_id
+                SQL
+            );
+            $lookup->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+            $lookup->execute();
+
+            $npCommunicationId = $lookup->fetchColumn();
+
+            if ($npCommunicationId === false || $npCommunicationId === null) {
+                return;
+            }
+
             $query = $this->database->prepare(
                 <<<'SQL'
-                UPDATE trophy_title
+                UPDATE trophy_title_meta
                 SET    status = 2
-                WHERE  id = :game_id
-SQL
+                WHERE  np_communication_id = :np_communication_id
+                SQL
             );
-            $query->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+            $query->bindValue(':np_communication_id', (string) $npCommunicationId, PDO::PARAM_STR);
             $query->execute();
         });
     }
@@ -856,7 +872,7 @@ SQL
     private function updateParentRelationship(string $childNpCommunicationId, string $parentNpCommunicationId): void
     {
         $query = $this->database->prepare(
-            "UPDATE trophy_title SET parent_np_communication_id = :parent_np_communication_id WHERE np_communication_id = :np_communication_id"
+            "UPDATE trophy_title_meta SET parent_np_communication_id = :parent_np_communication_id WHERE np_communication_id = :np_communication_id"
         );
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
