@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 29, 2025 at 11:43 AM
+-- Generation Time: Oct 30, 2025 at 08:46 PM
 -- Server version: 8.4.7
 -- PHP Version: 8.4.12
 
@@ -289,6 +289,12 @@ CREATE TABLE `trophy_title` (
   `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_title_meta`
+--
+
 CREATE TABLE `trophy_title_meta` (
   `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
@@ -352,11 +358,11 @@ ALTER TABLE `player`
   ADD KEY `idx_last_updated_date` (`last_updated_date`),
   ADD KEY `player_idx_online_id_account_id` (`online_id`,`account_id`),
   ADD KEY `player_idx_status_last_date_online_id` (`status`,`last_updated_date`,`online_id`),
-  ADD KEY `idx_player_status_avatar_account` (`status`,`avatar_url`,`account_id`),
-  ADD KEY `idx_player_status_country_account` (`status`,`country`,`account_id`),
   ADD KEY `idx_trophy_count_npwr` (`trophy_count_npwr`),
   ADD KEY `idx_player_ranking` (`status`,`points` DESC,`platinum` DESC,`gold` DESC,`silver` DESC),
-  ADD KEY `player_idx_status_rank_last_week` (`status`,`rank_last_week`);
+  ADD KEY `player_idx_status_rank_last_week` (`status`,`rank_last_week`),
+  ADD KEY `idx_player_status_avatar_account` (`status`,`avatar_url`,`account_id`),
+  ADD KEY `idx_player_status_country_account` (`status`,`country`,`account_id`);
 
 --
 -- Indexes for table `player_queue`
@@ -465,12 +471,6 @@ ALTER TABLE `trophy_title_meta`
   ADD KEY `idx_ttm_np_id_owners` (`np_communication_id`,`owners`);
 
 --
--- Constraints for table `trophy_title_meta`
---
-ALTER TABLE `trophy_title_meta`
-  ADD CONSTRAINT `fk_trophy_title_meta_np` FOREIGN KEY (`np_communication_id`) REFERENCES `trophy_title` (`np_communication_id`) ON DELETE CASCADE;
-
---
 -- Indexes for table `trophy_title_player`
 --
 ALTER TABLE `trophy_title_player`
@@ -487,7 +487,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580112;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580163;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -499,13 +499,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26284;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26289;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47687;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47746;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -517,17 +517,27 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1907654;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1908847;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83725;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83776;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59556;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59597;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `trophy_title_meta`
+--
+ALTER TABLE `trophy_title_meta`
+  ADD CONSTRAINT `fk_trophy_title_meta_np` FOREIGN KEY (`np_communication_id`) REFERENCES `trophy_title` (`np_communication_id`) ON DELETE CASCADE;
 COMMIT;
