@@ -32,7 +32,8 @@ final class GameDetailServiceTest extends TestCase
             'np_communication_id TEXT PRIMARY KEY, ' .
             'message TEXT NOT NULL, ' .
             'region TEXT NULL, ' .
-            'psnprofiles_id TEXT NULL)'
+            'psnprofiles_id TEXT NULL, ' .
+            'status INTEGER NOT NULL DEFAULT 0)'
         );
 
         $this->database->exec(
@@ -55,6 +56,7 @@ final class GameDetailServiceTest extends TestCase
             'message' => 'hello world',
             'region' => 'US',
             'psnprofiles_id' => '12345',
+            'status' => 3,
         ]);
 
         $detail = $this->service->getGameDetail(10);
@@ -67,6 +69,7 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame('hello world', $detail->getMessage());
         $this->assertSame('US', $detail->getRegion());
         $this->assertSame('12345', $detail->getPsnprofilesId());
+        $this->assertSame(3, $detail->getStatus());
     }
 
     public function testUpdateGameDetailPersistsMetaFields(): void
@@ -93,7 +96,8 @@ final class GameDetailServiceTest extends TestCase
             'updated message',
             '02.00',
             null,
-            null
+            null,
+            0
         );
 
         $updatedDetail = $this->service->updateGameDetail($detail);
@@ -104,15 +108,17 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame('updated message', $updatedDetail->getMessage());
         $this->assertSame(null, $updatedDetail->getRegion());
         $this->assertSame(null, $updatedDetail->getPsnprofilesId());
+        $this->assertSame(0, $updatedDetail->getStatus());
 
         $metaRow = $this->database->query(
-            "SELECT message, region, psnprofiles_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR-456'"
+            "SELECT message, region, psnprofiles_id, status FROM trophy_title_meta WHERE np_communication_id = 'NPWR-456'"
         )->fetch(PDO::FETCH_ASSOC);
 
         $this->assertSame([
             'message' => 'updated message',
             'region' => null,
             'psnprofiles_id' => null,
+            'status' => 0,
         ], $metaRow);
     }
 
@@ -136,14 +142,15 @@ final class GameDetailServiceTest extends TestCase
         ]);
 
         $metaStatement = $this->database->prepare(
-            'INSERT INTO trophy_title_meta (np_communication_id, message, region, psnprofiles_id)
-            VALUES (:np_communication_id, :message, :region, :psnprofiles_id)'
+            'INSERT INTO trophy_title_meta (np_communication_id, message, region, psnprofiles_id, status)
+            VALUES (:np_communication_id, :message, :region, :psnprofiles_id, :status)'
         );
         $metaStatement->execute([
             ':np_communication_id' => $title['np_communication_id'],
             ':message' => $meta['message'],
             ':region' => $meta['region'] ?? null,
             ':psnprofiles_id' => $meta['psnprofiles_id'] ?? null,
+            ':status' => $meta['status'] ?? 0,
         ]);
     }
 }
