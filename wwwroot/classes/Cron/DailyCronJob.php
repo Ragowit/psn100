@@ -62,15 +62,16 @@ class DailyCronJob implements CronJobInterface
             UPDATE trophy t
             JOIN rarity r USING(order_id)
             JOIN trophy_title tt USING(np_communication_id)
+            JOIN trophy_title_meta ttm USING (np_communication_id)
             SET
                 t.rarity_percent = r.rarity_percent,
                 t.rarity_point = IF(
-                    t.status = 0 AND tt.status = 0,
+                    t.status = 0 AND ttm.status = 0,
                     IF(r.rarity_percent = 0, 99999, FLOOR(1 / (r.rarity_percent / 100) - 1)),
                     0
                 ),
                 t.rarity_name = CASE
-                    WHEN t.status != 0 OR tt.status != 0 THEN 'NONE'
+                    WHEN t.status != 0 OR ttm.status != 0 THEN 'NONE'
                     WHEN r.rarity_percent > 10 THEN 'COMMON'
                     WHEN r.rarity_percent > 2 THEN 'UNCOMMON'
                     WHEN r.rarity_percent > 0.2 THEN 'RARE'
@@ -100,9 +101,9 @@ class DailyCronJob implements CronJobInterface
                 WHERE `status` = 0
                 GROUP BY np_communication_id
             )
-            UPDATE trophy_title tt
+            UPDATE trophy_title_meta ttm
             JOIN rarity r USING(np_communication_id)
-            SET tt.rarity_points = r.rarity_sum"
+            SET ttm.rarity_points = r.rarity_sum"
         );
 
         $query->execute();

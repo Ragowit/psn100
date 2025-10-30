@@ -34,6 +34,7 @@ class PlayerGamesService
             'SELECT COUNT(*)
             FROM trophy_title_player ttp
                 JOIN trophy_title tt USING (np_communication_id)
+                JOIN trophy_title_meta ttm USING (np_communication_id)
                 JOIN trophy_group_player tgp USING (account_id, np_communication_id)
             WHERE %s',
             $this->buildWhereClause($filter, true)
@@ -59,8 +60,8 @@ class PlayerGamesService
             'tt.name',
             'tt.icon_url',
             'tt.platform',
-            'tt.status',
-            'tt.rarity_points AS max_rarity_points',
+            'ttm.status AS status',
+            'ttm.rarity_points AS max_rarity_points',
             'ttp.bronze',
             'ttp.silver',
             'ttp.gold',
@@ -81,6 +82,7 @@ class PlayerGamesService
             'SELECT %s
             FROM trophy_title_player ttp
                 JOIN trophy_title tt USING (np_communication_id)
+                JOIN trophy_title_meta ttm USING (np_communication_id)
                 JOIN trophy_group_player tgp USING (account_id, np_communication_id)
             WHERE %s
             %s
@@ -116,7 +118,7 @@ class PlayerGamesService
     private function buildWhereClause(PlayerGamesFilter $filter, bool $forCount): string
     {
         $conditions = [
-            'tt.status != 2',
+            'ttm.status != 2',
             'ttp.account_id = :account_id',
             "tgp.group_id = 'default'",
         ];

@@ -22,7 +22,8 @@ final class GameResetServiceTest extends TestCase
     public function testProcessResetsMergedGame(): void
     {
         $this->insertMergedGame('MERGE-123', 1, 'Merged Game', 25, 10);
-        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name, owners, owners_completed, parent_np_communication_id) VALUES (2, 'NPWR-OTHER', 'Child Game', 5, 2, 'MERGE-123')");
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (2, 'NPWR-OTHER', 'Child Game')");
+        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-OTHER', 5, 2, 'MERGE-123')");
 
         $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-123')");
         $this->database->exec("INSERT INTO trophy_earned (np_communication_id) VALUES ('MERGE-123')");
@@ -38,12 +39,12 @@ final class GameResetServiceTest extends TestCase
         $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM trophy_group_player")->fetchColumn());
         $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM trophy_title_player")->fetchColumn());
 
-        $owners = $this->database->query('SELECT owners FROM trophy_title WHERE id = 1')->fetchColumn();
-        $ownersCompleted = $this->database->query('SELECT owners_completed FROM trophy_title WHERE id = 1')->fetchColumn();
+        $owners = $this->database->query("SELECT owners FROM trophy_title_meta WHERE np_communication_id = 'MERGE-123'")->fetchColumn();
+        $ownersCompleted = $this->database->query("SELECT owners_completed FROM trophy_title_meta WHERE np_communication_id = 'MERGE-123'")->fetchColumn();
         $this->assertSame(0, (int) $owners);
         $this->assertSame(0, (int) $ownersCompleted);
 
-        $childParent = $this->database->query('SELECT parent_np_communication_id FROM trophy_title WHERE id = 2')->fetchColumn();
+        $childParent = $this->database->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR-OTHER'")->fetchColumn();
         $this->assertSame(null, $childParent);
 
         $changes = $this->database
@@ -72,7 +73,8 @@ final class GameResetServiceTest extends TestCase
     public function testProcessDeletesMergedGame(): void
     {
         $this->insertMergedGame('MERGE-456', 1, 'Merged Game', 12, 4);
-        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name, owners, owners_completed, parent_np_communication_id) VALUES (2, 'NPWR-OTHER', 'Child Game', 5, 2, 'MERGE-456')");
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (2, 'NPWR-OTHER', 'Child Game')");
+        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-OTHER', 5, 2, 'MERGE-456')");
 
         $tables = [
             'trophy_merge' => 'parent_np_communication_id',
@@ -102,7 +104,7 @@ final class GameResetServiceTest extends TestCase
         $remainingTitle = $this->database->query('SELECT COUNT(*) FROM trophy_title WHERE id = 1')->fetchColumn();
         $this->assertSame(0, (int) $remainingTitle);
 
-        $childParent = $this->database->query('SELECT parent_np_communication_id FROM trophy_title WHERE id = 2')->fetchColumn();
+        $childParent = $this->database->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR-OTHER'")->fetchColumn();
         $this->assertSame(null, $childParent);
 
         $changes = $this->database
@@ -140,7 +142,8 @@ final class GameResetServiceTest extends TestCase
 
     public function testProcessThrowsWhenGameIsNotMerged(): void
     {
-        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name, owners, owners_completed) VALUES (5, 'NPWR-123', 'Regular Game', 1, 0)");
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (5, 'NPWR-123', 'Regular Game')");
+        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-123', 1, 0, NULL)");
 
         try {
             $this->service->process(5, 0);
@@ -175,8 +178,8 @@ final class GameResetServiceTest extends TestCase
             $this->assertStringContainsString('delete failure', $exception->getMessage());
         }
 
-        $owners = $this->database->query('SELECT owners FROM trophy_title WHERE id = 9')->fetchColumn();
-        $ownersCompleted = $this->database->query('SELECT owners_completed FROM trophy_title WHERE id = 9')->fetchColumn();
+        $owners = $this->database->query("SELECT owners FROM trophy_title_meta WHERE np_communication_id = 'MERGE-999'")->fetchColumn();
+        $ownersCompleted = $this->database->query("SELECT owners_completed FROM trophy_title_meta WHERE np_communication_id = 'MERGE-999'")->fetchColumn();
         $this->assertSame(33, (int) $owners);
         $this->assertSame(12, (int) $ownersCompleted);
 
@@ -191,7 +194,10 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec('CREATE TABLE trophy_title (
             id INTEGER PRIMARY KEY,
             np_communication_id TEXT,
-            name TEXT,
+            name TEXT
+        )');
+        $this->database->exec('CREATE TABLE trophy_title_meta (
+            np_communication_id TEXT PRIMARY KEY,
             owners INTEGER DEFAULT 0,
             owners_completed INTEGER DEFAULT 0,
             parent_np_communication_id TEXT
@@ -207,10 +213,14 @@ final class GameResetServiceTest extends TestCase
 
     private function insertMergedGame(string $npCommunicationId, int $gameId, string $name, int $owners, int $ownersCompleted): void
     {
-        $statement = $this->database->prepare('INSERT INTO trophy_title (id, np_communication_id, name, owners, owners_completed) VALUES (:id, :np, :name, :owners, :owners_completed)');
+        $statement = $this->database->prepare('INSERT INTO trophy_title (id, np_communication_id, name) VALUES (:id, :np, :name)');
         $statement->bindValue(':id', $gameId, PDO::PARAM_INT);
         $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
         $statement->bindValue(':name', $name, PDO::PARAM_STR);
+        $statement->execute();
+
+        $statement = $this->database->prepare('INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES (:np, :owners, :owners_completed, NULL)');
+        $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
         $statement->bindValue(':owners', $owners, PDO::PARAM_INT);
         $statement->bindValue(':owners_completed', $ownersCompleted, PDO::PARAM_INT);
         $statement->execute();

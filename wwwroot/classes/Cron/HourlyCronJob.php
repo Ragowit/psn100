@@ -19,13 +19,13 @@ class HourlyCronJob implements CronJobInterface
             GROUP BY
                 ttp.np_communication_id
         )
-        UPDATE trophy_title tt
-        JOIN game g ON tt.np_communication_id = g.np_communication_id
+        UPDATE trophy_title_meta ttm
+        JOIN game g ON ttm.np_communication_id = g.np_communication_id
         SET
-            tt.owners = g.owners,
-            tt.owners_completed = g.owners_completed,
-            tt.recent_players = g.recent_players,
-            tt.difficulty = IF(g.owners = 0, 0, (g.owners_completed / g.owners) * 100)
+            ttm.owners = g.owners,
+            ttm.owners_completed = g.owners_completed,
+            ttm.recent_players = g.recent_players,
+            ttm.difficulty = IF(g.owners = 0, 0, (g.owners_completed / g.owners) * 100)
         SQL;
 
     private PDO $database;

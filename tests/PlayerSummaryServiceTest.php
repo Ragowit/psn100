@@ -18,11 +18,17 @@ final class PlayerSummaryServiceTest extends TestCase
         $this->database->exec(
             'CREATE TABLE trophy_title (
                 np_communication_id TEXT PRIMARY KEY,
-                status INTEGER NOT NULL,
                 bronze INTEGER NOT NULL,
                 silver INTEGER NOT NULL,
                 gold INTEGER NOT NULL,
                 platinum INTEGER NOT NULL
+            )'
+        );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_title_meta (
+                np_communication_id TEXT PRIMARY KEY,
+                status INTEGER NOT NULL
             )'
         );
 
@@ -44,10 +50,17 @@ final class PlayerSummaryServiceTest extends TestCase
     public function testGetSummaryAggregatesPlayerStatistics(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, status, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR001', 0, 10, 5, 3, 1),\n" .
-            "('NPWR002', 0, 5, 2, 1, 0),\n" .
-            "('NPWR003', 1, 1, 1, 1, 0)"
+            "INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES\n" .
+            "('NPWR001', 10, 5, 3, 1),\n" .
+            "('NPWR002', 5, 2, 1, 0),\n" .
+            "('NPWR003', 1, 1, 1, 0)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
+            "('NPWR001', 0),\n" .
+            "('NPWR002', 0),\n" .
+            "('NPWR003', 1)"
         );
 
         $this->database->exec(
@@ -69,8 +82,12 @@ final class PlayerSummaryServiceTest extends TestCase
     public function testGetSummaryReturnsEmptySummaryWhenPlayerHasNoVisibleGames(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, status, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR010', 1, 2, 2, 1, 0)"
+            "INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES\n" .
+            "('NPWR010', 2, 2, 1, 0)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES ('NPWR010', 1)"
         );
 
         $this->database->exec(

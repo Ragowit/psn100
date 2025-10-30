@@ -29,6 +29,7 @@ final class GameRecentPlayersServiceTest extends TestCase
         $this->insertTrophyTitle([
             'id' => 1,
             'name' => 'Example Game',
+            'detail' => 'Example detail',
             'np_communication_id' => self::NP_COMMUNICATION_ID,
             'parent_np_communication_id' => null,
             'platform' => 'PS5',
@@ -36,6 +37,7 @@ final class GameRecentPlayersServiceTest extends TestCase
             'set_version' => '01.00',
             'region' => 'US',
             'message' => 'Play responsibly',
+            'recent_players' => 10,
             'platinum' => 1,
             'gold' => 2,
             'silver' => 3,
@@ -44,6 +46,7 @@ final class GameRecentPlayersServiceTest extends TestCase
             'owners' => 200,
             'difficulty' => 'Hard',
             'status' => 1,
+            'psnprofiles_id' => null,
             'rarity_points' => 123,
         ]);
 
@@ -252,21 +255,32 @@ final class GameRecentPlayersServiceTest extends TestCase
             CREATE TABLE trophy_title (
                 id INTEGER PRIMARY KEY,
                 name TEXT,
+                detail TEXT,
                 np_communication_id TEXT,
-                parent_np_communication_id TEXT,
                 platform TEXT,
                 icon_url TEXT,
                 set_version TEXT,
-                region TEXT,
-                message TEXT,
                 platinum INTEGER,
                 gold INTEGER,
                 silver INTEGER,
-                bronze INTEGER,
+                bronze INTEGER
+            )
+            SQL
+        );
+
+        $this->pdo->exec(
+            <<<SQL
+            CREATE TABLE trophy_title_meta (
+                np_communication_id TEXT PRIMARY KEY,
+                parent_np_communication_id TEXT,
+                region TEXT,
+                message TEXT,
+                recent_players INTEGER,
                 owners_completed INTEGER,
                 owners INTEGER,
                 difficulty TEXT,
                 status INTEGER,
+                psnprofiles_id INTEGER,
                 rarity_points INTEGER
             )
             SQL
@@ -316,68 +330,91 @@ final class GameRecentPlayersServiceTest extends TestCase
      */
     private function insertTrophyTitle(array $values): void
     {
-        $statement = $this->pdo->prepare(
+        $titleStatement = $this->pdo->prepare(
             <<<SQL
             INSERT INTO trophy_title (
                 id,
                 name,
+                detail,
                 np_communication_id,
-                parent_np_communication_id,
                 platform,
                 icon_url,
                 set_version,
-                region,
-                message,
                 platinum,
                 gold,
                 silver,
-                bronze,
+                bronze
+            ) VALUES (
+                :id,
+                :name,
+                :detail,
+                :np_communication_id,
+                :platform,
+                :icon_url,
+                :set_version,
+                :platinum,
+                :gold,
+                :silver,
+                :bronze
+            )
+            SQL
+        );
+
+        $titleStatement->execute([
+            ':id' => $values['id'],
+            ':name' => $values['name'],
+            ':detail' => $values['detail'],
+            ':np_communication_id' => $values['np_communication_id'],
+            ':platform' => $values['platform'],
+            ':icon_url' => $values['icon_url'],
+            ':set_version' => $values['set_version'],
+            ':platinum' => $values['platinum'],
+            ':gold' => $values['gold'],
+            ':silver' => $values['silver'],
+            ':bronze' => $values['bronze'],
+        ]);
+
+        $metaStatement = $this->pdo->prepare(
+            <<<SQL
+            INSERT INTO trophy_title_meta (
+                np_communication_id,
+                parent_np_communication_id,
+                region,
+                message,
+                recent_players,
                 owners_completed,
                 owners,
                 difficulty,
                 status,
+                psnprofiles_id,
                 rarity_points
             ) VALUES (
-                :id,
-                :name,
                 :np_communication_id,
                 :parent_np_communication_id,
-                :platform,
-                :icon_url,
-                :set_version,
                 :region,
                 :message,
-                :platinum,
-                :gold,
-                :silver,
-                :bronze,
+                :recent_players,
                 :owners_completed,
                 :owners,
                 :difficulty,
                 :status,
+                :psnprofiles_id,
                 :rarity_points
             )
             SQL
         );
 
-        $statement->execute([
-            ':id' => $values['id'],
-            ':name' => $values['name'],
+        $metaStatement->execute([
             ':np_communication_id' => $values['np_communication_id'],
             ':parent_np_communication_id' => $values['parent_np_communication_id'],
-            ':platform' => $values['platform'],
-            ':icon_url' => $values['icon_url'],
-            ':set_version' => $values['set_version'],
             ':region' => $values['region'],
             ':message' => $values['message'],
-            ':platinum' => $values['platinum'],
-            ':gold' => $values['gold'],
-            ':silver' => $values['silver'],
-            ':bronze' => $values['bronze'],
+            ':recent_players' => $values['recent_players'],
             ':owners_completed' => $values['owners_completed'],
             ':owners' => $values['owners'],
             ':difficulty' => $values['difficulty'],
             ':status' => $values['status'],
+            ':psnprofiles_id' => $values['psnprofiles_id'],
             ':rarity_points' => $values['rarity_points'],
         ]);
     }

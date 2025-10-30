@@ -43,8 +43,9 @@ class PlayerSummaryService
             FROM
                 trophy_title_player ttp
                 INNER JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
+                INNER JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                tt.status = 0
+                ttm.status = 0
                 AND ttp.account_id = :account_id
             SQL
         );

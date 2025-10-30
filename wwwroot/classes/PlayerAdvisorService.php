@@ -35,6 +35,7 @@ class PlayerAdvisorService
             SELECT COUNT(*)
             FROM trophy t
             JOIN trophy_title tt USING (np_communication_id)
+            JOIN trophy_title_meta ttm USING (np_communication_id)
             JOIN trophy_title_player ttp ON
                 t.np_communication_id = ttp.np_communication_id
                 AND ttp.account_id = :account_id
@@ -44,7 +45,7 @@ class PlayerAdvisorService
                 AND te_completed.account_id = :account_id
                 AND te_completed.earned = 1
             WHERE te_completed.account_id IS NULL
-                AND tt.status = 0
+                AND ttm.status = 0
                 AND t.status = 0
         SQL;
 
@@ -80,6 +81,7 @@ class PlayerAdvisorService
                 te_progress.progress
             FROM trophy t
             JOIN trophy_title tt USING (np_communication_id)
+            JOIN trophy_title_meta ttm USING (np_communication_id)
             LEFT JOIN trophy_earned te_progress ON
                 t.np_communication_id = te_progress.np_communication_id
                 AND t.order_id = te_progress.order_id
@@ -94,7 +96,7 @@ class PlayerAdvisorService
                 AND te_completed.account_id = :account_id
                 AND te_completed.earned = 1
             WHERE te_completed.account_id IS NULL
-                AND tt.status = 0
+                AND ttm.status = 0
                 AND t.status = 0
         SQL;
 

@@ -21,9 +21,14 @@ final class GameHeaderServiceTest extends TestCase
             'CREATE TABLE trophy_title (' .
             'id INTEGER PRIMARY KEY, ' .
             'np_communication_id TEXT NOT NULL, ' .
-            'parent_np_communication_id TEXT NULL, ' .
             '`name` TEXT NOT NULL, ' .
-            'platform TEXT NOT NULL, ' .
+            'platform TEXT NOT NULL)'
+        );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_title_meta (' .
+            'np_communication_id TEXT PRIMARY KEY, ' .
+            'parent_np_communication_id TEXT NULL, ' .
             'region TEXT NULL)'
         );
 
@@ -143,24 +148,29 @@ final class GameHeaderServiceTest extends TestCase
     private function insertTrophyTitle(array $row): void
     {
         $statement = $this->database->prepare(
-            'INSERT INTO trophy_title (id, np_communication_id, parent_np_communication_id, `name`, platform, region)
-            VALUES (:id, :np_communication_id, :parent_np_communication_id, :name, :platform, :region)'
+            'INSERT INTO trophy_title (id, np_communication_id, `name`, platform) VALUES (:id, :np, :name, :platform)'
         );
         $statement->bindValue(':id', $row['id'], PDO::PARAM_INT);
-        $statement->bindValue(':np_communication_id', $row['np_communication_id'], PDO::PARAM_STR);
-        if ($row['parent_np_communication_id'] === null) {
-            $statement->bindValue(':parent_np_communication_id', null, PDO::PARAM_NULL);
-        } else {
-            $statement->bindValue(':parent_np_communication_id', $row['parent_np_communication_id'], PDO::PARAM_STR);
-        }
+        $statement->bindValue(':np', $row['np_communication_id'], PDO::PARAM_STR);
         $statement->bindValue(':name', $row['name'], PDO::PARAM_STR);
         $statement->bindValue(':platform', $row['platform'], PDO::PARAM_STR);
-        if ($row['region'] === null || $row['region'] === '') {
-            $statement->bindValue(':region', null, PDO::PARAM_NULL);
-        } else {
-            $statement->bindValue(':region', $row['region'], PDO::PARAM_STR);
-        }
         $statement->execute();
+
+        $meta = $this->database->prepare(
+            'INSERT INTO trophy_title_meta (np_communication_id, parent_np_communication_id, region) VALUES (:np, :parent, :region)'
+        );
+        $meta->bindValue(':np', $row['np_communication_id'], PDO::PARAM_STR);
+        if ($row['parent_np_communication_id'] === null) {
+            $meta->bindValue(':parent', null, PDO::PARAM_NULL);
+        } else {
+            $meta->bindValue(':parent', $row['parent_np_communication_id'], PDO::PARAM_STR);
+        }
+        if ($row['region'] === null || $row['region'] === '') {
+            $meta->bindValue(':region', null, PDO::PARAM_NULL);
+        } else {
+            $meta->bindValue(':region', $row['region'], PDO::PARAM_STR);
+        }
+        $meta->execute();
     }
 
     /**
