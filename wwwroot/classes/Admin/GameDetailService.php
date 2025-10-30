@@ -25,7 +25,7 @@ class GameDetailService
                 ttm.psnprofiles_id
             FROM
                 trophy_title tt
-                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
+                LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
                 tt.id = :game_id'
         );
@@ -55,7 +55,7 @@ class GameDetailService
                 ttm.psnprofiles_id
             FROM
                 trophy_title tt
-                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
+                LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
                 tt.np_communication_id = :np_communication_id'
         );
@@ -111,7 +111,7 @@ class GameDetailService
                 $npCommunicationId = (string) $npCommunicationId;
             }
 
-            $metaQuery = $this->database->prepare(
+            $updateMetaQuery = $this->database->prepare(
                 'UPDATE
                     trophy_title_meta
                 SET
@@ -121,24 +121,19 @@ class GameDetailService
                 WHERE
                     np_communication_id = :np_communication_id'
             );
-            $metaQuery->bindValue(':message', $gameDetail->getMessage(), PDO::PARAM_STR);
+            $this->bindMetaParameters($updateMetaQuery, $gameDetail, $npCommunicationId);
+            $updateMetaQuery->execute();
 
-            $region = $gameDetail->getRegion();
-            if ($region === null) {
-                $metaQuery->bindValue(':region', null, PDO::PARAM_NULL);
-            } else {
-                $metaQuery->bindValue(':region', $region, PDO::PARAM_STR);
+            if ($updateMetaQuery->rowCount() === 0) {
+                $insertMetaQuery = $this->database->prepare(
+                    'INSERT INTO
+                        trophy_title_meta (np_communication_id, message, region, psnprofiles_id)
+                    VALUES
+                        (:np_communication_id, :message, :region, :psnprofiles_id)'
+                );
+                $this->bindMetaParameters($insertMetaQuery, $gameDetail, $npCommunicationId);
+                $insertMetaQuery->execute();
             }
-
-            $psnprofilesId = $gameDetail->getPsnprofilesId();
-            if ($psnprofilesId === null) {
-                $metaQuery->bindValue(':psnprofiles_id', null, PDO::PARAM_NULL);
-            } else {
-                $metaQuery->bindValue(':psnprofiles_id', $psnprofilesId, PDO::PARAM_STR);
-            }
-
-            $metaQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-            $metaQuery->execute();
 
             $this->database->commit();
         } catch (Throwable $exception) {
@@ -163,5 +158,26 @@ class GameDetailService
         );
         $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         $query->execute();
+    }
+
+    private function bindMetaParameters(PDOStatement $statement, GameDetail $gameDetail, string $npCommunicationId): void
+    {
+        $statement->bindValue(':message', $gameDetail->getMessage(), PDO::PARAM_STR);
+
+        $region = $gameDetail->getRegion();
+        if ($region === null) {
+            $statement->bindValue(':region', null, PDO::PARAM_NULL);
+        } else {
+            $statement->bindValue(':region', $region, PDO::PARAM_STR);
+        }
+
+        $psnprofilesId = $gameDetail->getPsnprofilesId();
+        if ($psnprofilesId === null) {
+            $statement->bindValue(':psnprofiles_id', null, PDO::PARAM_NULL);
+        } else {
+            $statement->bindValue(':psnprofiles_id', $psnprofilesId, PDO::PARAM_STR);
+        }
+
+        $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
     }
 }

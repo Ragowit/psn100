@@ -69,6 +69,25 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame('12345', $detail->getPsnprofilesId());
     }
 
+    public function testGetGameDetailReturnsGameWhenMetaIsMissing(): void
+    {
+        $this->database->exec(
+            'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform, set_version)
+            VALUES (30, "NPWR-789", "Meta Missing", "icon.png", "PS5", "01.00")'
+        );
+
+        $detail = $this->service->getGameDetail(30);
+
+        $this->assertTrue($detail instanceof GameDetail, 'Expected game detail to load even without meta.');
+        if (!$detail instanceof GameDetail) {
+            return;
+        }
+
+        $this->assertSame('', $detail->getMessage());
+        $this->assertSame(null, $detail->getRegion());
+        $this->assertSame(null, $detail->getPsnprofilesId());
+    }
+
     public function testUpdateGameDetailPersistsMetaFields(): void
     {
         $this->insertGame([
@@ -113,6 +132,43 @@ final class GameDetailServiceTest extends TestCase
             'message' => 'updated message',
             'region' => null,
             'psnprofiles_id' => null,
+        ], $metaRow);
+    }
+
+    public function testUpdateGameDetailCreatesMetaWhenMissing(): void
+    {
+        $this->database->exec(
+            'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform, set_version)
+            VALUES (40, "NPWR-111", "Example", "icon.png", "PS4", "01.00")'
+        );
+
+        $detail = new GameDetail(
+            40,
+            'NPWR-111',
+            'Example Updated',
+            'icon2.png',
+            'PS5',
+            'meta message',
+            '02.00',
+            'EU',
+            '5555'
+        );
+
+        $updated = $this->service->updateGameDetail($detail);
+
+        $this->assertSame('Example Updated', $updated->getName());
+        $this->assertSame('meta message', $updated->getMessage());
+        $this->assertSame('EU', $updated->getRegion());
+        $this->assertSame('5555', $updated->getPsnprofilesId());
+
+        $metaRow = $this->database->query(
+            "SELECT message, region, psnprofiles_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR-111'"
+        )->fetch(PDO::FETCH_ASSOC);
+
+        $this->assertSame([
+            'message' => 'meta message',
+            'region' => 'EU',
+            'psnprofiles_id' => '5555',
         ], $metaRow);
     }
 
