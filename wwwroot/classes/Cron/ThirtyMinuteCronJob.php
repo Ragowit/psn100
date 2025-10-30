@@ -573,15 +573,18 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         $metaQuery = $this->database->prepare("INSERT INTO trophy_title_meta (
-                                np_communication_id
+                                np_communication_id,
+                                message
                             )
                             VALUES (
-                                :np_communication_id
+                                :np_communication_id,
+                                :message
                             ) AS new
                             ON DUPLICATE KEY
                             UPDATE
                                 np_communication_id = new.np_communication_id");
                         $metaQuery->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
+                        $metaQuery->bindValue(":message", '', PDO::PARAM_STR);
                         $metaQuery->execute();
 
                         // Get "groups" (game and DLCs)
