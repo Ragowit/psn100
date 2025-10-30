@@ -228,8 +228,14 @@ SQL
             if ($metaInsert->rowCount() === 0) {
                 $defaultMetaInsert = $this->database->prepare(
                     <<<'SQL'
-                    INSERT INTO trophy_title_meta (np_communication_id)
-                    VALUES (:np_communication_id)
+                    INSERT INTO trophy_title_meta (
+                        np_communication_id,
+                        message
+                    )
+                    VALUES (
+                        :np_communication_id,
+                        ''
+                    )
 SQL
                 );
                 $defaultMetaInsert->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
