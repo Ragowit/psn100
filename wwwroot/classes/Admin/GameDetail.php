@@ -22,6 +22,8 @@ class GameDetail
 
     private ?string $psnprofilesId;
 
+    private int $status;
+
     public function __construct(
         int $id,
         ?string $npCommunicationId,
@@ -31,7 +33,8 @@ class GameDetail
         string $message,
         string $setVersion,
         ?string $region,
-        ?string $psnprofilesId
+        ?string $psnprofilesId,
+        int $status
     ) {
         $this->id = $id;
         $this->npCommunicationId = $npCommunicationId;
@@ -42,6 +45,7 @@ class GameDetail
         $this->setVersion = $setVersion;
         $this->region = $region;
         $this->psnprofilesId = $psnprofilesId;
+        $this->status = $status;
     }
 
     public static function fromArray(int $id, array $row): self
@@ -56,6 +60,7 @@ class GameDetail
         $psnprofilesId = array_key_exists('psnprofiles_id', $row)
             ? ($row['psnprofiles_id'] !== null ? (string) $row['psnprofiles_id'] : null)
             : null;
+        $status = array_key_exists('status', $row) ? (int) $row['status'] : 0;
 
         return new self(
             $id,
@@ -66,7 +71,8 @@ class GameDetail
             $message,
             $setVersion,
             $region,
-            $psnprofilesId
+            $psnprofilesId,
+            $status
         );
     }
 
@@ -113,5 +119,10 @@ class GameDetail
     public function getPsnprofilesId(): ?string
     {
         return $this->psnprofilesId;
+    }
+
+    public function getStatus(): int
+    {
+        return $this->status;
     }
 }

@@ -22,7 +22,8 @@ class GameDetailService
                 ttm.message,
                 tt.set_version,
                 ttm.region,
-                ttm.psnprofiles_id
+                ttm.psnprofiles_id,
+                ttm.status
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
@@ -52,7 +53,8 @@ class GameDetailService
                 ttm.message,
                 tt.set_version,
                 ttm.region,
-                ttm.psnprofiles_id
+                ttm.psnprofiles_id,
+                ttm.status
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id

@@ -4,14 +4,33 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GameDetailService.php';
 require_once __DIR__ . '/GameDetailPageResult.php';
+require_once __DIR__ . '/../GameStatusService.php';
 
 class GameDetailPage
 {
+    private const STATUS_OPTIONS = [
+        0 => 'Normal',
+        1 => 'Delisted',
+        3 => 'Obsolete',
+        4 => 'Delisted & Obsolete',
+    ];
+
     private GameDetailService $gameDetailService;
 
-    public function __construct(GameDetailService $gameDetailService)
+    private GameStatusService $gameStatusService;
+
+    public function __construct(GameDetailService $gameDetailService, GameStatusService $gameStatusService)
     {
         $this->gameDetailService = $gameDetailService;
+        $this->gameStatusService = $gameStatusService;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getStatusOptions(): array
+    {
+        return self::STATUS_OPTIONS;
     }
 
     /**
@@ -29,15 +48,12 @@ class GameDetailPage
             $method = strtoupper((string) ($serverParameters['REQUEST_METHOD'] ?? 'GET'));
 
             if ($method === 'POST') {
-                $gameId = $this->parseGameId($postData['game'] ?? null);
+                $action = $this->parseAction($postData['action'] ?? null);
 
-                if ($gameId === null) {
-                    $error = '<p>Invalid game ID provided.</p>';
+                if ($action === 'update-status') {
+                    [$gameDetail, $success, $error] = $this->handleStatusUpdate($postData);
                 } else {
-                    $gameDetail = $this->gameDetailService->updateGameDetail(
-                        $this->createGameDetailFromPost($gameId, $postData)
-                    );
-                    $success = sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId());
+                    [$gameDetail, $success, $error] = $this->handleDetailUpdate($postData);
                 }
             } elseif ($method === 'GET') {
                 $npCommunicationId = null;
@@ -62,6 +78,79 @@ class GameDetailPage
         }
 
         return new GameDetailPageResult($gameDetail, $success, $error);
+    }
+
+    /**
+     * @param array<string, mixed> $postData
+     * @return array{0: ?GameDetail, 1: ?string, 2: ?string}
+     */
+    private function handleDetailUpdate(array $postData): array
+    {
+        $gameId = $this->parseGameId($postData['game'] ?? null);
+
+        if ($gameId === null) {
+            return [null, null, '<p>Invalid game ID provided.</p>'];
+        }
+
+        $gameDetail = $this->gameDetailService->updateGameDetail(
+            $this->createGameDetailFromPost($gameId, $postData)
+        );
+
+        return [$gameDetail, sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId()), null];
+    }
+
+    /**
+     * @param array<string, mixed> $postData
+     * @return array{0: ?GameDetail, 1: ?string, 2: ?string}
+     */
+    private function handleStatusUpdate(array $postData): array
+    {
+        $gameId = $this->parseGameId($postData['game'] ?? null);
+        if ($gameId === null) {
+            return [null, null, '<p>Invalid game ID provided.</p>'];
+        }
+
+        $status = $this->parseStatus($postData['status'] ?? null);
+        if ($status === null) {
+            return [
+                $this->gameDetailService->getGameDetail($gameId),
+                null,
+                '<p>Invalid status provided.</p>',
+            ];
+        }
+
+        try {
+            $statusText = $this->gameStatusService->updateGameStatus($gameId, $status);
+        } catch (InvalidArgumentException $exception) {
+            $message = htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8');
+
+            return [
+                $this->gameDetailService->getGameDetail($gameId),
+                null,
+                '<p>' . $message . '</p>',
+            ];
+        } catch (Throwable $exception) {
+            return [
+                $this->gameDetailService->getGameDetail($gameId),
+                null,
+                '<p>Failed to update game status. Please try again.</p>',
+            ];
+        }
+
+        $gameDetail = $this->gameDetailService->getGameDetail($gameId);
+        if ($gameDetail === null) {
+            return [
+                null,
+                null,
+                '<p>Unable to load the requested game.</p>',
+            ];
+        }
+
+        return [
+            $gameDetail,
+            $this->formatStatusSuccessMessage($gameId, $statusText),
+            null,
+        ];
     }
 
     private function parseNpCommunicationId(mixed $value): ?string
@@ -101,6 +190,41 @@ class GameDetailPage
         return (int) $trimmed;
     }
 
+    private function parseAction(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? '' : strtolower($trimmed);
+    }
+
+    private function parseStatus(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return array_key_exists($value, self::STATUS_OPTIONS) ? $value : null;
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '' || $trimmed[0] === '-') {
+            return null;
+        }
+
+        if (!ctype_digit($trimmed)) {
+            return null;
+        }
+
+        $parsed = (int) $trimmed;
+
+        return array_key_exists($parsed, self::STATUS_OPTIONS) ? $parsed : null;
+    }
+
     /**
      * @param array<string, mixed> $postData
      */
@@ -119,7 +243,8 @@ class GameDetailPage
             (string) ($postData['message'] ?? ''),
             (string) ($postData['set_version'] ?? ''),
             $region,
-            $psnprofilesId
+            $psnprofilesId,
+            $this->parseStatus($postData['status'] ?? null) ?? 0
         );
     }
 
@@ -132,5 +257,16 @@ class GameDetailPage
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function formatStatusSuccessMessage(int $gameId, string $statusText): string
+    {
+        $escapedStatus = htmlentities($statusText, ENT_QUOTES, 'UTF-8');
+
+        return sprintf(
+            '<p>Game %d is now set as %s. All affected players will be updated soon, and ranks updated the next whole hour.</p>',
+            $gameId,
+            $escapedStatus
+        );
     }
 }
