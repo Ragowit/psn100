@@ -117,9 +117,10 @@ class PsnpPlusService
     private function findGameByPsnprofilesId(int $psnprofilesId): ?PsnpPlusGame
     {
         $query = $this->database->prepare(
-            'SELECT id, np_communication_id, `name`
-            FROM trophy_title
-            WHERE psnprofiles_id = :psnprofiles_id'
+            'SELECT tt.id, tt.np_communication_id, tt.`name`
+            FROM trophy_title tt
+            JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
+            WHERE ttm.psnprofiles_id = :psnprofiles_id'
         );
         $query->bindValue(':psnprofiles_id', $psnprofilesId, PDO::PARAM_INT);
         $query->execute();
