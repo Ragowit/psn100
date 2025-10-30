@@ -171,7 +171,6 @@ SQL
                              silver,
                              gold,
                              platinum,
-                             message,
                              set_version)
                 SELECT :np_communication_id,
                        name,
@@ -182,7 +181,6 @@ SQL
                        silver,
                        gold,
                        platinum,
-                       message,
                        set_version
                 FROM   trophy_title
                 WHERE  id = :id
@@ -191,6 +189,58 @@ SQL
             $query->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
             $query->bindValue(':id', $childGameId, PDO::PARAM_INT);
             $query->execute();
+
+            $metaInsert = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy_title_meta (
+                    np_communication_id,
+                    owners,
+                    difficulty,
+                    message,
+                    status,
+                    recent_players,
+                    owners_completed,
+                    psnprofiles_id,
+                    parent_np_communication_id,
+                    region,
+                    rarity_points
+                )
+                SELECT
+                    :np_communication_id,
+                    owners,
+                    difficulty,
+                    message,
+                    status,
+                    recent_players,
+                    owners_completed,
+                    psnprofiles_id,
+                    NULL,
+                    region,
+                    rarity_points
+                FROM trophy_title_meta
+                WHERE np_communication_id = :child_np_communication_id
+SQL
+            );
+            $metaInsert->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
+            $metaInsert->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $metaInsert->execute();
+
+            if ($metaInsert->rowCount() === 0) {
+                $defaultMetaInsert = $this->database->prepare(
+                    <<<'SQL'
+                    INSERT INTO trophy_title_meta (
+                        np_communication_id,
+                        message
+                    )
+                    VALUES (
+                        :np_communication_id,
+                        ''
+                    )
+SQL
+                );
+                $defaultMetaInsert->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
+                $defaultMetaInsert->execute();
+            }
 
             $query = $this->database->prepare(
                 <<<'SQL'
