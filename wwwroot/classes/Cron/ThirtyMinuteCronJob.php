@@ -534,7 +534,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     detail,
                                     icon_url,
                                     platform,
-                                    message,
                                     set_version
                                 )
                                 VALUES(
@@ -543,7 +542,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     :detail,
                                     :icon_url,
                                     :platform,
-                                    '',
                                     ''
                                 ) AS new
                                 ON DUPLICATE KEY
@@ -571,7 +569,20 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
                             // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                             $query->execute();
+
                         }
+
+                        $metaQuery = $this->database->prepare("INSERT INTO trophy_title_meta (
+                                np_communication_id
+                            )
+                            VALUES (
+                                :np_communication_id
+                            ) AS new
+                            ON DUPLICATE KEY
+                            UPDATE
+                                np_communication_id = new.np_communication_id");
+                        $metaQuery->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
+                        $metaQuery->execute();
 
                         // Get "groups" (game and DLCs)
                         foreach ($client->trophies($npid, $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
@@ -721,7 +732,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                                 if ($newTrophies) {
                                     $query = $this->database->prepare("SELECT status
-                                        FROM   trophy_title
+                                        FROM   trophy_title_meta
                                         WHERE  np_communication_id = :np_communication_id ");
                                     $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                                     $query->execute();
