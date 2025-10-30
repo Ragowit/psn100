@@ -92,11 +92,36 @@ class GameDetailPage
             return [null, null, '<p>Invalid game ID provided.</p>'];
         }
 
+        $status = $this->parseStatus($postData['status'] ?? null);
+        if ($status === null) {
+            return [
+                $this->gameDetailService->getGameDetail($gameId),
+                null,
+                '<p>Invalid status provided.</p>',
+            ];
+        }
+
         $gameDetail = $this->gameDetailService->updateGameDetail(
-            $this->createGameDetailFromPost($gameId, $postData)
+            $this->createGameDetailFromPost($gameId, $postData, $status)
         );
 
-        return [$gameDetail, sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId()), null];
+        $successMessages = [sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId())];
+        $error = null;
+
+        if ($status !== $gameDetail->getStatus()) {
+            try {
+                $statusText = $this->gameStatusService->updateGameStatus($gameId, $status);
+                $successMessages[] = $this->formatStatusSuccessMessage($gameId, $statusText);
+            } catch (InvalidArgumentException $exception) {
+                $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+            } catch (Throwable $exception) {
+                $error = '<p>Failed to update game status. Please try again.</p>';
+            }
+        }
+
+        $gameDetail = $this->gameDetailService->getGameDetail($gameId) ?? $gameDetail;
+
+        return [$gameDetail, implode('', $successMessages), $error];
     }
 
     /**
@@ -228,7 +253,7 @@ class GameDetailPage
     /**
      * @param array<string, mixed> $postData
      */
-    private function createGameDetailFromPost(int $gameId, array $postData): GameDetail
+    private function createGameDetailFromPost(int $gameId, array $postData, int $status): GameDetail
     {
         $npCommunicationId = $this->normalizeOptionalString($postData['np_communication_id'] ?? null);
         $region = $this->normalizeOptionalString($postData['region'] ?? null);
@@ -244,7 +269,7 @@ class GameDetailPage
             (string) ($postData['set_version'] ?? ''),
             $region,
             $psnprofilesId,
-            $this->parseStatus($postData['status'] ?? null) ?? 0
+            $status
         );
     }
 

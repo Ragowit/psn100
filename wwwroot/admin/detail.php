@@ -63,15 +63,6 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getPsnprofilesId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Message:<br>
                     <textarea name="message" rows="6" cols="120"><?= $gameDetail->getMessage(); ?></textarea><br><br>
-                    <input type="submit" value="Submit">
-                </form>
-
-                <hr>
-
-                <h2>Game Status</h2>
-                <form method="post" autocomplete="off" class="mt-3">
-                    <input type="hidden" name="action" value="update-status">
-                    <input type="hidden" name="game" value="<?= $gameDetail->getId(); ?>">
                     <label for="status">Status:</label><br>
                     <select id="status" name="status" class="form-select" style="max-width: 300px;">
                         <?php foreach ($statusOptions as $value => $label) { ?>
@@ -81,7 +72,7 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                             </option>
                         <?php } ?>
                     </select><br><br>
-                    <input type="submit" value="Update Status">
+                    <input type="submit" value="Submit">
                 </form>
 
                 <p>
