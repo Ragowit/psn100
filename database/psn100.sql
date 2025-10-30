@@ -451,12 +451,7 @@ ALTER TABLE `trophy_merge`
 --
 ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`),
-  ADD KEY `idx_npcid_status` (`np_communication_id`,`status`),
-  ADD KEY `idx_status` (`status`),
-  ADD KEY `idx_parent_np_communication_id` (`parent_np_communication_id`),
-  ADD KEY `idx_psnprofiles_id` (`psnprofiles_id`),
-  ADD KEY `trophy_title_idx_np_id_owners` (`np_communication_id`,`owners`);
+  ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 
 --
