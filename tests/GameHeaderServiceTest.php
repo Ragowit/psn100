@@ -35,8 +35,14 @@ final class GameHeaderServiceTest extends TestCase
         $this->database->exec(
             'CREATE TABLE trophy (' .
             'id INTEGER PRIMARY KEY AUTOINCREMENT, ' .
-            '`status` INTEGER NOT NULL, ' .
             'np_communication_id TEXT NOT NULL)'
+        );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_meta (' .
+            'trophy_id INTEGER PRIMARY KEY, ' .
+            '`status` INTEGER NOT NULL, ' .
+            'FOREIGN KEY(trophy_id) REFERENCES trophy(id))'
         );
 
         $this->service = new GameHeaderService($this->database);
@@ -135,11 +141,19 @@ final class GameHeaderServiceTest extends TestCase
     private function insertTrophy(array $trophy): void
     {
         $statement = $this->database->prepare(
-            'INSERT INTO trophy (`status`, np_communication_id) VALUES (:status, :np_communication_id)'
+            'INSERT INTO trophy (np_communication_id) VALUES (:np_communication_id)'
         );
-        $statement->bindValue(':status', $trophy['status'], PDO::PARAM_INT);
         $statement->bindValue(':np_communication_id', $trophy['np_communication_id'], PDO::PARAM_STR);
         $statement->execute();
+
+        $trophyId = (int) $this->database->lastInsertId();
+
+        $metaStatement = $this->database->prepare(
+            'INSERT INTO trophy_meta (trophy_id, `status`) VALUES (:trophy_id, :status)'
+        );
+        $metaStatement->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
+        $metaStatement->bindValue(':status', $trophy['status'], PDO::PARAM_INT);
+        $metaStatement->execute();
     }
 
     /**
