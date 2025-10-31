@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../TrophyMetaRepository.php';
 
 use Tustin\PlayStation\Client;
 
@@ -21,12 +22,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private int $workerId;
 
+    private TrophyMetaRepository $trophyMetaRepository;
+
     public function __construct(PDO $database, TrophyCalculator $trophyCalculator, Psn100Logger $logger, int $workerId)
     {
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
         $this->logger = $logger;
         $this->workerId = $workerId;
+        $this->trophyMetaRepository = new TrophyMetaRepository($database);
     }
 
     public function run(): void
@@ -731,13 +735,13 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                                         $newTrophies = true;
                                     }
-                                }
 
-                                $this->ensureTrophyMetaRow(
-                                    $npid,
-                                    $trophyGroup->id(),
-                                    (int) $trophy->id()
-                                );
+                                    $this->trophyMetaRepository->ensureExists(
+                                        $npid,
+                                        $trophyGroup->id(),
+                                        (int) $trophy->id()
+                                    );
+                                }
 
                                 if ($newTrophies) {
                                     $query = $this->database->prepare("SELECT status
@@ -1210,44 +1214,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
             }
         }
-    }
-
-    private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
-    {
-        $query = $this->database->prepare(
-            'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
-        $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
-        $query->execute();
-
-        $trophyId = $query->fetchColumn();
-
-        if ($trophyId === false) {
-            return;
-        }
-
-        $metaQuery = $this->database->prepare(
-            "INSERT INTO trophy_meta (
-                trophy_id,
-                rarity_percent,
-                rarity_point,
-                status,
-                owners,
-                rarity_name
-            ) VALUES (
-                :trophy_id,
-                0,
-                0,
-                0,
-                0,
-                'NONE'
-            )
-            ON DUPLICATE KEY UPDATE trophy_id = VALUES(trophy_id)"
-        );
-        $metaQuery->bindValue(':trophy_id', (int) $trophyId, PDO::PARAM_INT);
-        $metaQuery->execute();
     }
 
     private function downloadMandatoryImage(string $url, string $directory, string $description): string
