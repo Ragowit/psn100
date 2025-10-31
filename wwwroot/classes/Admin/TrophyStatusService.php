@@ -151,7 +151,7 @@ class TrophyStatusService
         try {
             $this->database->beginTransaction();
 
-            $query = $this->database->prepare('UPDATE trophy SET status = :status WHERE id = :trophy_id');
+            $query = $this->database->prepare('UPDATE trophy_meta SET status = :status WHERE trophy_id = :trophy_id');
             $query->bindValue(':status', $status, PDO::PARAM_INT);
             $query->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
             $query->execute();
@@ -194,47 +194,47 @@ class TrophyStatusService
             <<<'SQL'
 WITH bronze AS (
     SELECT
-      COUNT(*) AS count
+      COUNT(tm.trophy_id) AS count
     FROM
-      trophy
+      trophy t
+      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
     WHERE
-      np_communication_id = :np_communication_id
-      AND group_id = :group_id
-      AND status = 0
-      AND type = 'bronze'
+      t.np_communication_id = :np_communication_id
+      AND t.group_id = :group_id
+      AND t.type = 'bronze'
   ),
   silver AS (
     SELECT
-      COUNT(*) AS count
+      COUNT(tm.trophy_id) AS count
     FROM
-      trophy
+      trophy t
+      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
     WHERE
-      np_communication_id = :np_communication_id
-      AND group_id = :group_id
-      AND status = 0
-      AND type = 'silver'
+      t.np_communication_id = :np_communication_id
+      AND t.group_id = :group_id
+      AND t.type = 'silver'
   ),
   gold AS (
     SELECT
-      COUNT(*) AS count
+      COUNT(tm.trophy_id) AS count
     FROM
-      trophy
+      trophy t
+      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
     WHERE
-      np_communication_id = :np_communication_id
-      AND group_id = :group_id
-      AND status = 0
-      AND type = 'gold'
+      t.np_communication_id = :np_communication_id
+      AND t.group_id = :group_id
+      AND t.type = 'gold'
   ),
   platinum AS (
     SELECT
-      COUNT(*) AS count
+      COUNT(tm.trophy_id) AS count
     FROM
-      trophy
+      trophy t
+      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
     WHERE
-      np_communication_id = :np_communication_id
-      AND group_id = :group_id
-      AND status = 0
-      AND type = 'platinum'
+      t.np_communication_id = :np_communication_id
+      AND t.group_id = :group_id
+      AND t.type = 'platinum'
   )
   UPDATE
     trophy_group tg,
@@ -327,14 +327,15 @@ SQL,
 WITH player_trophy_count AS(
     SELECT
         account_id,
-        COUNT(type) AS count
+        COUNT(tm.trophy_id) AS count
     FROM
         trophy_earned te
         LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
         AND t.group_id = te.group_id
         AND t.order_id = te.order_id
-        AND t.status = 0
         AND t.type = '%1$s'
+        LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
+        AND tm.status = 0
     WHERE
         te.np_communication_id = :np_communication_id
         AND te.group_id = :group_id
