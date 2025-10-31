@@ -62,11 +62,12 @@ class TrophyCalculator
             FROM trophy_earned te
             LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
                 AND t.order_id = te.order_id
-            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
+            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE account_id = :account_id
                 AND te.np_communication_id = :np_communication_id
                 AND te.group_id = :group_id
                 AND te.earned = 1
+                AND tm.status = 0
             GROUP BY t.type"
         );
         $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
