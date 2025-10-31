@@ -31,8 +31,8 @@ class TrophyMetaRepository
 
         $driver = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME);
 
-        $insertQuery = $driver === 'sqlite'
-            ? <<<'SQL'
+        $insertQuery = match ($driver) {
+            'sqlite' => <<<'SQL'
                 INSERT OR IGNORE INTO trophy_meta (
                     trophy_id,
                     rarity_percent,
@@ -48,9 +48,9 @@ class TrophyMetaRepository
                     0,
                     'NONE'
                 )
-            SQL
-            : <<<'SQL'
-                INSERT INTO trophy_meta (
+            SQL,
+            'mysql' => <<<'SQL'
+                INSERT IGNORE INTO trophy_meta (
                     trophy_id,
                     rarity_percent,
                     rarity_point,
@@ -65,8 +65,9 @@ class TrophyMetaRepository
                     0,
                     'NONE'
                 )
-                ON DUPLICATE KEY UPDATE trophy_id = trophy_meta.trophy_id
-            SQL;
+            SQL,
+            default => throw new RuntimeException("Unsupported PDO driver: {$driver}"),
+        };
 
         $insertMeta = $this->database->prepare($insertQuery);
         $insertMeta->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
