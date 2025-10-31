@@ -110,10 +110,11 @@ class GameHeaderService
             SELECT
                 COUNT(*)
             FROM
-                trophy
+                trophy t
+                JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE
-                `status` = 1
-                AND np_communication_id = :np_communication_id
+                tm.status = 1
+                AND t.np_communication_id = :np_communication_id
             SQL
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
