@@ -11,15 +11,48 @@ final class DeletePlayerService
         $this->database = $database;
     }
 
-    public function findAccountIdByOnlineId(string $onlineId): ?string
+    /**
+     * @return array{account_id: string, online_id: ?string}|null
+     */
+    public function findPlayerByAccountId(string $accountId): ?array
     {
-        $query = $this->database->prepare('SELECT account_id FROM player WHERE online_id = :online_id');
+        $query = $this->database->prepare('SELECT account_id, online_id FROM player WHERE account_id = :account_id');
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
+        $query->execute();
+
+        /** @var array{account_id?: string, online_id?: string|null}|false $player */
+        $player = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($player === false) {
+            return null;
+        }
+
+        return [
+            'account_id' => (string) $player['account_id'],
+            'online_id' => array_key_exists('online_id', $player) ? ($player['online_id'] === null ? null : (string) $player['online_id']) : null,
+        ];
+    }
+
+    /**
+     * @return array{account_id: string, online_id: ?string}|null
+     */
+    public function findPlayerByOnlineId(string $onlineId): ?array
+    {
+        $query = $this->database->prepare('SELECT account_id, online_id FROM player WHERE online_id = :online_id');
         $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
         $query->execute();
 
-        $accountId = $query->fetchColumn();
+        /** @var array{account_id?: string, online_id?: string|null}|false $player */
+        $player = $query->fetch(PDO::FETCH_ASSOC);
 
-        return $accountId === false ? null : (string) $accountId;
+        if ($player === false) {
+            return null;
+        }
+
+        return [
+            'account_id' => (string) $player['account_id'],
+            'online_id' => array_key_exists('online_id', $player) ? ($player['online_id'] === null ? null : (string) $player['online_id']) : null,
+        ];
     }
 
     /**

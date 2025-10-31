@@ -21,6 +21,7 @@ final class DeletePlayerRequestHandler
             return DeletePlayerRequestResult::empty();
         }
 
+        $isConfirmed = $request->getPostString('confirm_delete') === '1';
         $accountIdInput = $request->getPostString('account_id');
         $onlineId = $request->getPostString('online_id');
 
@@ -28,18 +29,31 @@ final class DeletePlayerRequestHandler
             return DeletePlayerRequestResult::error('<p>Please provide an account ID or an online ID.</p>');
         }
 
+        $player = null;
+
         if ($accountIdInput !== '') {
             if (!$this->isValidAccountId($accountIdInput)) {
                 return DeletePlayerRequestResult::error('<p>Please provide a numeric account ID.</p>');
             }
 
-            $accountId = $accountIdInput;
-        } else {
-            $accountId = $this->service->findAccountIdByOnlineId($onlineId);
+            $player = $this->service->findPlayerByAccountId($accountIdInput);
 
-            if ($accountId === null) {
+            if ($player === null) {
+                return DeletePlayerRequestResult::error('<p>No player was found with that account ID.</p>');
+            }
+        } else {
+            $player = $this->service->findPlayerByOnlineId($onlineId);
+
+            if ($player === null) {
                 return DeletePlayerRequestResult::error('<p>No player was found with that online ID.</p>');
             }
+        }
+
+        $accountId = $player['account_id'];
+        $resolvedOnlineId = $player['online_id'];
+
+        if (!$isConfirmed) {
+            return DeletePlayerRequestResult::confirmation(new DeletePlayerConfirmation($accountId, $resolvedOnlineId));
         }
 
         try {
