@@ -29,23 +29,46 @@ class TrophyMetaRepository
 
         $trophyId = (int) $trophyId;
 
-        $insertMeta = $this->database->prepare(<<<'SQL'
-            INSERT IGNORE INTO trophy_meta (
-                trophy_id,
-                rarity_percent,
-                rarity_point,
-                status,
-                owners,
-                rarity_name
-            ) VALUES (
-                :trophy_id,
-                0,
-                0,
-                0,
-                0,
-                'NONE'
-            )
-        SQL);
+        $driver = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        $insertQuery = $driver === 'sqlite'
+            ? <<<'SQL'
+                INSERT OR IGNORE INTO trophy_meta (
+                    trophy_id,
+                    rarity_percent,
+                    rarity_point,
+                    status,
+                    owners,
+                    rarity_name
+                ) VALUES (
+                    :trophy_id,
+                    0,
+                    0,
+                    0,
+                    0,
+                    'NONE'
+                )
+            SQL
+            : <<<'SQL'
+                INSERT INTO trophy_meta (
+                    trophy_id,
+                    rarity_percent,
+                    rarity_point,
+                    status,
+                    owners,
+                    rarity_name
+                ) VALUES (
+                    :trophy_id,
+                    0,
+                    0,
+                    0,
+                    0,
+                    'NONE'
+                )
+                ON DUPLICATE KEY UPDATE trophy_id = trophy_meta.trophy_id
+            SQL;
+
+        $insertMeta = $this->database->prepare($insertQuery);
         $insertMeta->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
         $insertMeta->execute();
     }
