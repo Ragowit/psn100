@@ -70,23 +70,30 @@ class GameCopyService
         WITH
             tg_org AS(
             SELECT
-                group_id,
-                order_id,
-                hidden,
-                name,
-                detail,
-                icon_url,
-                progress_target_value,
-                reward_name,
-                reward_image_url
+                t.group_id,
+                t.order_id,
+                t.hidden,
+                t.name,
+                t.detail,
+                t.icon_url,
+                t.progress_target_value,
+                t.reward_name,
+                t.reward_image_url,
+                tm.rarity_percent,
+                tm.rarity_point,
+                tm.status,
+                tm.owners,
+                tm.rarity_name
             FROM
-                trophy
+                trophy t
+                LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE
-                np_communication_id = :child_np_communication_id
+                t.np_communication_id = :child_np_communication_id
         )
         UPDATE
-            trophy tg,
-            tg_org
+            trophy tg
+            JOIN tg_org ON tg.group_id = tg_org.group_id AND tg.order_id = tg_org.order_id
+            JOIN trophy_meta tgm ON tgm.trophy_id = tg.id
         SET
             tg.hidden = tg_org.hidden,
             tg.name = tg_org.name,
@@ -94,9 +101,14 @@ class GameCopyService
             tg.icon_url = tg_org.icon_url,
             tg.progress_target_value = tg_org.progress_target_value,
             tg.reward_name = tg_org.reward_name,
-            tg.reward_image_url = tg_org.reward_image_url
+            tg.reward_image_url = tg_org.reward_image_url,
+            tgm.rarity_percent = tg_org.rarity_percent,
+            tgm.rarity_point = tg_org.rarity_point,
+            tgm.status = tg_org.status,
+            tgm.owners = tg_org.owners,
+            tgm.rarity_name = tg_org.rarity_name
         WHERE
-            tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id AND tg.order_id = tg_org.order_id
+            tg.np_communication_id = :parent_np_communication_id
         SQL;
 
     private const TROPHY_INSERT_QUERY = <<<'SQL'
@@ -110,11 +122,6 @@ class GameCopyService
                 name,
                 detail,
                 icon_url,
-                rarity_percent,
-                rarity_point,
-                status,
-                owners,
-                rarity_name,
                 progress_target_value,
                 reward_name,
                 reward_image_url
@@ -128,11 +135,6 @@ class GameCopyService
             t.name,
             t.detail,
             t.icon_url,
-            t.rarity_percent,
-            t.rarity_point,
-            t.status,
-            t.owners,
-            t.rarity_name,
             t.progress_target_value,
             t.reward_name,
             t.reward_image_url
@@ -162,7 +164,38 @@ class GameCopyService
             )
         SQL;
 
+    private const TROPHY_META_INSERT_QUERY = <<<'SQL'
+        INSERT INTO
+            trophy_meta (
+                trophy_id,
+                rarity_percent,
+                rarity_point,
+                status,
+                owners,
+                rarity_name
+            )
+        SELECT
+            parent.id,
+            tm.rarity_percent,
+            tm.rarity_point,
+            tm.status,
+            tm.owners,
+            tm.rarity_name
+        FROM
+            trophy parent
+            INNER JOIN trophy t ON t.np_communication_id = :child_np_communication_id
+                AND t.group_id = parent.group_id
+                AND t.order_id = parent.order_id
+            INNER JOIN trophy_meta tm ON tm.trophy_id = t.id
+            LEFT JOIN trophy_meta existing ON existing.trophy_id = parent.id
+        WHERE
+            parent.np_communication_id = :parent_np_communication_id
+            AND existing.trophy_id IS NULL
+        SQL;
+
     private PDO $database;
+
+    private ?PDOStatement $findTrophyIdStatement = null;
 
     public function __construct(PDO $database)
     {
@@ -308,6 +341,12 @@ class GameCopyService
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
+
+        $metaQuery = $this->database->prepare(self::TROPHY_META_INSERT_QUERY);
+        $metaQuery->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $metaQuery->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $metaQuery->execute();
+        $metaQuery->closeCursor();
     }
 
     private function updateTrophyTitleCounts(string $npCommunicationId): void
@@ -554,25 +593,26 @@ class GameCopyService
         $placeholders = implode(',', array_fill(0, count($groupIdMapping), '?'));
 
         $query = $this->database->prepare(
-            'SELECT group_id,
-                    order_id,
-                    hidden,
-                    type,
-                    name,
-                    detail,
-                    icon_url,
-                    rarity_percent,
-                    rarity_point,
-                    status,
-                    owners,
-                    rarity_name,
-                    progress_target_value,
-                    reward_name,
-                    reward_image_url
-             FROM   trophy
-             WHERE  np_communication_id = ?
-             AND    group_id IN (' . $placeholders . ')
-             ORDER BY group_id, order_id'
+            'SELECT t.group_id,
+                    t.order_id,
+                    t.hidden,
+                    t.type,
+                    t.name,
+                    t.detail,
+                    t.icon_url,
+                    tm.rarity_percent,
+                    tm.rarity_point,
+                    tm.status,
+                    tm.owners,
+                    tm.rarity_name,
+                    t.progress_target_value,
+                    t.reward_name,
+                    t.reward_image_url
+             FROM   trophy t
+                    JOIN trophy_meta tm ON tm.trophy_id = t.id
+             WHERE  t.np_communication_id = ?
+             AND    t.group_id IN (' . $placeholders . ')
+             ORDER BY t.group_id, t.order_id'
         );
 
         $parameters = array_merge([$childNpCommunicationId], array_keys($groupIdMapping));
@@ -597,11 +637,6 @@ class GameCopyService
                 name,
                 detail,
                 icon_url,
-                rarity_percent,
-                rarity_point,
-                status,
-                owners,
-                rarity_name,
                 progress_target_value,
                 reward_name,
                 reward_image_url
@@ -614,11 +649,6 @@ class GameCopyService
                 :name,
                 :detail,
                 :icon_url,
-                :rarity_percent,
-                :rarity_point,
-                :status,
-                :owners,
-                :rarity_name,
                 :progress_target_value,
                 :reward_name,
                 :reward_image_url
@@ -631,17 +661,35 @@ class GameCopyService
                     name = :name,
                     detail = :detail,
                     icon_url = :icon_url,
-                    rarity_percent = :rarity_percent,
-                    rarity_point = :rarity_point,
-                    status = :status,
-                    owners = :owners,
-                    rarity_name = :rarity_name,
                     progress_target_value = :progress_target_value,
                     reward_name = :reward_name,
                     reward_image_url = :reward_image_url
              WHERE  np_communication_id = :np_communication_id
              AND    group_id = :group_id
              AND    order_id = :order_id'
+        );
+        $metaUpsert = $this->database->prepare(
+            'INSERT INTO trophy_meta (
+                trophy_id,
+                rarity_percent,
+                rarity_point,
+                status,
+                owners,
+                rarity_name
+            ) VALUES (
+                :trophy_id,
+                :rarity_percent,
+                :rarity_point,
+                :status,
+                :owners,
+                :rarity_name
+            )
+            ON DUPLICATE KEY UPDATE
+                rarity_percent = VALUES(rarity_percent),
+                rarity_point = VALUES(rarity_point),
+                status = VALUES(status),
+                owners = VALUES(owners),
+                rarity_name = VALUES(rarity_name)'
         );
         $exists = $this->database->prepare(
             'SELECT 1
@@ -694,7 +742,7 @@ class GameCopyService
                 $parentOrderId = $existingMapping['parent_order_id'];
 
                 if ($this->trophyExists($exists, $parentNpCommunicationId, $parentGroupId, $parentOrderId)) {
-                    $this->updateParentTrophy($update, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
+                    $this->updateParentTrophy($update, $metaUpsert, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
                     $this->upsertTrophyMergeMapping(
                         $merge,
                         $childNpCommunicationId,
@@ -720,7 +768,7 @@ class GameCopyService
                 );
 
                 if ($parentOrderId !== null) {
-                    $this->updateParentTrophy($update, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
+                    $this->updateParentTrophy($update, $metaUpsert, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
                     $this->upsertTrophyMergeMapping(
                         $merge,
                         $childNpCommunicationId,
@@ -737,7 +785,7 @@ class GameCopyService
 
             $parentOrderId = ++$nextOrderId;
 
-            $this->insertParentTrophy($insert, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
+            $this->insertParentTrophy($insert, $metaUpsert, $parentNpCommunicationId, $parentGroupId, $parentOrderId, $trophy);
             $this->upsertTrophyMergeMapping(
                 $merge,
                 $childNpCommunicationId,
@@ -1000,52 +1048,103 @@ class GameCopyService
         return (int) $orderId;
     }
 
-    private function updateParentTrophy(PDOStatement $statement, string $parentNpCommunicationId, string $parentGroupId, int $parentOrderId, array $trophy): void
-    {
-        $statement->execute([
+    private function updateParentTrophy(
+        PDOStatement $trophyStatement,
+        PDOStatement $metaStatement,
+        string $parentNpCommunicationId,
+        string $parentGroupId,
+        int $parentOrderId,
+        array $trophy
+    ): void {
+        $trophyStatement->execute([
             ':hidden' => (int) $trophy['hidden'],
             ':type' => (string) $trophy['type'],
             ':name' => (string) $trophy['name'],
             ':detail' => (string) $trophy['detail'],
             ':icon_url' => (string) $trophy['icon_url'],
-            ':rarity_percent' => (string) $trophy['rarity_percent'],
-            ':rarity_point' => (int) $trophy['rarity_point'],
-            ':status' => (int) $trophy['status'],
-            ':owners' => (int) $trophy['owners'],
-            ':rarity_name' => (string) $trophy['rarity_name'],
             ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
             ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
             ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
             ':np_communication_id' => $parentNpCommunicationId,
             ':group_id' => $parentGroupId,
             ':order_id' => $parentOrderId,
+        ]);
+
+        $trophyStatement->closeCursor();
+
+        $trophyId = $this->findTrophyId($parentNpCommunicationId, $parentGroupId, $parentOrderId);
+
+        $this->upsertTrophyMeta($metaStatement, $trophyId, $trophy);
+    }
+
+    private function insertParentTrophy(
+        PDOStatement $trophyStatement,
+        PDOStatement $metaStatement,
+        string $parentNpCommunicationId,
+        string $parentGroupId,
+        int $parentOrderId,
+        array $trophy
+    ): void {
+        $trophyStatement->execute([
+            ':np_communication_id' => $parentNpCommunicationId,
+            ':group_id' => $parentGroupId,
+            ':order_id' => $parentOrderId,
+            ':hidden' => (int) $trophy['hidden'],
+            ':type' => (string) $trophy['type'],
+            ':name' => (string) $trophy['name'],
+            ':detail' => (string) $trophy['detail'],
+            ':icon_url' => (string) $trophy['icon_url'],
+            ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
+            ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
+            ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
+        ]);
+
+        $trophyId = (int) $this->database->lastInsertId();
+        $trophyStatement->closeCursor();
+
+        if ($trophyId <= 0) {
+            $trophyId = $this->findTrophyId($parentNpCommunicationId, $parentGroupId, $parentOrderId);
+        }
+
+        $this->upsertTrophyMeta($metaStatement, $trophyId, $trophy);
+    }
+
+    private function upsertTrophyMeta(PDOStatement $statement, int $trophyId, array $trophy): void
+    {
+        $statement->execute([
+            ':trophy_id' => $trophyId,
+            ':rarity_percent' => (string) $trophy['rarity_percent'],
+            ':rarity_point' => (int) $trophy['rarity_point'],
+            ':status' => (int) $trophy['status'],
+            ':owners' => (int) $trophy['owners'],
+            ':rarity_name' => (string) $trophy['rarity_name'],
         ]);
 
         $statement->closeCursor();
     }
 
-    private function insertParentTrophy(PDOStatement $statement, string $parentNpCommunicationId, string $parentGroupId, int $parentOrderId, array $trophy): void
+    private function findTrophyId(string $npCommunicationId, string $groupId, int $orderId): int
     {
-        $statement->execute([
-            ':np_communication_id' => $parentNpCommunicationId,
-            ':group_id' => $parentGroupId,
-            ':order_id' => $parentOrderId,
-            ':hidden' => (int) $trophy['hidden'],
-            ':type' => (string) $trophy['type'],
-            ':name' => (string) $trophy['name'],
-            ':detail' => (string) $trophy['detail'],
-            ':icon_url' => (string) $trophy['icon_url'],
-            ':rarity_percent' => (string) $trophy['rarity_percent'],
-            ':rarity_point' => (int) $trophy['rarity_point'],
-            ':status' => (int) $trophy['status'],
-            ':owners' => (int) $trophy['owners'],
-            ':rarity_name' => (string) $trophy['rarity_name'],
-            ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
-            ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
-            ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
-        ]);
+        if ($this->findTrophyIdStatement === null) {
+            $this->findTrophyIdStatement = $this->database->prepare(
+                'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id'
+            );
+        }
 
+        $statement = $this->findTrophyIdStatement;
+        $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':group_id', $groupId, PDO::PARAM_STR);
+        $statement->bindValue(':order_id', $orderId, PDO::PARAM_INT);
+        $statement->execute();
+
+        $id = $statement->fetchColumn();
         $statement->closeCursor();
+
+        if ($id === false) {
+            throw new RuntimeException('Unable to determine parent trophy ID.');
+        }
+
+        return (int) $id;
     }
 
     private function upsertTrophyMergeMapping(
