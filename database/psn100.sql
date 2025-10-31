@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 31, 2025 at 09:01 AM
+-- Generation Time: Oct 31, 2025 at 07:47 PM
 -- Server version: 8.4.7
 -- PHP Version: 8.4.14
 
@@ -170,21 +170,6 @@ CREATE TABLE `trophy` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `trophy_meta`
---
-
-CREATE TABLE `trophy_meta` (
-  `trophy_id` bigint UNSIGNED NOT NULL,
-  `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
-  `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
-  `owners` int UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `trophy_earned`
 --
 
@@ -277,6 +262,21 @@ CREATE TABLE `trophy_merge` (
   `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `parent_group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `parent_order_id` smallint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_meta`
+--
+
+CREATE TABLE `trophy_meta` (
+  `trophy_id` bigint UNSIGNED NOT NULL,
+  `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
+  `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
+  `owners` int UNSIGNED NOT NULL DEFAULT '0',
+  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -420,15 +420,8 @@ ALTER TABLE `setting`
 --
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `u_npcid_gid_oid` (`np_communication_id`,`order_id`) USING BTREE,
-  ADD KEY `idx_trophy_lookup` (`np_communication_id`,`group_id`,`order_id`);
-
---
--- Indexes for table `trophy_meta`
---
-ALTER TABLE `trophy_meta`
-  ADD PRIMARY KEY (`trophy_id`),
-  ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`);
+  ADD UNIQUE KEY `u_npcid_oid` (`np_communication_id`,`order_id`) USING BTREE,
+  ADD KEY `idx_npcid_gid_oid` (`np_communication_id`,`group_id`,`order_id`);
 
 --
 -- Indexes for table `trophy_earned`
@@ -458,6 +451,13 @@ ALTER TABLE `trophy_group_player`
 --
 ALTER TABLE `trophy_merge`
   ADD PRIMARY KEY (`child_np_communication_id`,`child_group_id`,`child_order_id`);
+
+--
+-- Indexes for table `trophy_meta`
+--
+ALTER TABLE `trophy_meta`
+  ADD PRIMARY KEY (`trophy_id`),
+  ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`);
 
 --
 -- Indexes for table `trophy_title`
@@ -494,7 +494,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580192;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580205;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -506,13 +506,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26292;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26294;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47805;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47874;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -524,19 +524,19 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1910207;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1910593;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83854;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83874;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59622;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59642;
 
 --
 -- Constraints for dumped tables
