@@ -11,6 +11,7 @@ class GameDetailPage
     private const STATUS_OPTIONS = [
         0 => 'Normal',
         1 => 'Delisted',
+        2 => 'Merged',
         3 => 'Obsolete',
         4 => 'Delisted & Obsolete',
     ];
