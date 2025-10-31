@@ -20,20 +20,42 @@ final class DeletePlayerServiceTest extends TestCase
         $this->service = new DeletePlayerService($this->database);
     }
 
-    public function testFindAccountIdByOnlineIdReturnsAccountId(): void
+    public function testFindPlayerByOnlineIdReturnsPlayer(): void
     {
         $this->database->exec("INSERT INTO player (account_id, online_id) VALUES ('1001', 'ExampleUser')");
 
-        $accountId = $this->service->findAccountIdByOnlineId('ExampleUser');
+        $player = $this->service->findPlayerByOnlineId('ExampleUser');
 
-        $this->assertSame('1001', $accountId);
+        $this->assertSame([
+            'account_id' => '1001',
+            'online_id' => 'ExampleUser',
+        ], $player);
     }
 
-    public function testFindAccountIdByOnlineIdReturnsNullWhenNotFound(): void
+    public function testFindPlayerByOnlineIdReturnsNullWhenNotFound(): void
     {
-        $accountId = $this->service->findAccountIdByOnlineId('MissingUser');
+        $player = $this->service->findPlayerByOnlineId('MissingUser');
 
-        $this->assertSame(null, $accountId);
+        $this->assertSame(null, $player);
+    }
+
+    public function testFindPlayerByAccountIdReturnsPlayer(): void
+    {
+        $this->database->exec("INSERT INTO player (account_id, online_id) VALUES ('2002', 'AccountUser')");
+
+        $player = $this->service->findPlayerByAccountId('2002');
+
+        $this->assertSame([
+            'account_id' => '2002',
+            'online_id' => 'AccountUser',
+        ], $player);
+    }
+
+    public function testFindPlayerByAccountIdReturnsNullWhenNotFound(): void
+    {
+        $player = $this->service->findPlayerByAccountId('9999');
+
+        $this->assertSame(null, $player);
     }
 
     public function testDeletePlayerByAccountIdDeletesData(): void

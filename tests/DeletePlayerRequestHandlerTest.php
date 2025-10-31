@@ -29,6 +29,7 @@ final class DeletePlayerRequestHandlerTest extends TestCase
 
         $this->assertSame(null, $result->getSuccessMessage());
         $this->assertSame(null, $result->getErrorMessage());
+        $this->assertSame(null, $result->getConfirmation());
     }
 
     public function testHandleRequestReturnsErrorWhenNoIdentifiersProvided(): void
@@ -41,6 +42,7 @@ final class DeletePlayerRequestHandlerTest extends TestCase
         $result = $this->handler->handleRequest($request);
 
         $this->assertSame('<p>Please provide an account ID or an online ID.</p>', $result->getErrorMessage());
+        $this->assertSame(null, $result->getConfirmation());
     }
 
     public function testHandleRequestReturnsErrorForInvalidAccountId(): void
@@ -52,6 +54,7 @@ final class DeletePlayerRequestHandlerTest extends TestCase
         $result = $this->handler->handleRequest($request);
 
         $this->assertSame('<p>Please provide a numeric account ID.</p>', $result->getErrorMessage());
+        $this->assertSame(null, $result->getConfirmation());
     }
 
     public function testHandleRequestReturnsErrorWhenOnlineIdNotFound(): void
@@ -64,15 +67,45 @@ final class DeletePlayerRequestHandlerTest extends TestCase
         $result = $this->handler->handleRequest($request);
 
         $this->assertSame('<p>No player was found with that online ID.</p>', $result->getErrorMessage());
+        $this->assertSame(null, $result->getConfirmation());
+    }
+
+    public function testHandleRequestReturnsErrorWhenAccountIdNotFound(): void
+    {
+        $request = new AdminRequest('POST', [
+            'account_id' => '1234',
+            'online_id' => '',
+        ]);
+
+        $result = $this->handler->handleRequest($request);
+
+        $this->assertSame('<p>No player was found with that account ID.</p>', $result->getErrorMessage());
+        $this->assertSame(null, $result->getConfirmation());
     }
 
     public function testHandleRequestDeletesPlayerByAccountId(): void
     {
         $this->insertPlayerData('5005', 'DeleteById');
 
-        $request = new AdminRequest('POST', [
+        $confirmationRequest = new AdminRequest('POST', [
             'account_id' => '5005',
             'online_id' => '',
+        ]);
+
+        $confirmationResult = $this->handler->handleRequest($confirmationRequest);
+
+        $this->assertSame(null, $confirmationResult->getErrorMessage());
+        $this->assertSame(null, $confirmationResult->getSuccessMessage());
+
+        $confirmation = $confirmationResult->getConfirmation();
+        $this->assertTrue($confirmation !== null);
+        $this->assertSame('5005', $confirmation->getAccountId());
+        $this->assertSame('DeleteById', $confirmation->getOnlineId());
+
+        $request = new AdminRequest('POST', [
+            'account_id' => '5005',
+            'online_id' => 'DeleteById',
+            'confirm_delete' => '1',
         ]);
 
         $result = $this->handler->handleRequest($request);
@@ -90,9 +123,25 @@ final class DeletePlayerRequestHandlerTest extends TestCase
     {
         $this->insertPlayerData('6006', 'DeleteByOnline');
 
-        $request = new AdminRequest('POST', [
+        $confirmationRequest = new AdminRequest('POST', [
             'account_id' => '',
             'online_id' => 'DeleteByOnline',
+        ]);
+
+        $confirmationResult = $this->handler->handleRequest($confirmationRequest);
+
+        $this->assertSame(null, $confirmationResult->getErrorMessage());
+        $this->assertSame(null, $confirmationResult->getSuccessMessage());
+
+        $confirmation = $confirmationResult->getConfirmation();
+        $this->assertTrue($confirmation !== null);
+        $this->assertSame('6006', $confirmation->getAccountId());
+        $this->assertSame('DeleteByOnline', $confirmation->getOnlineId());
+
+        $request = new AdminRequest('POST', [
+            'account_id' => '6006',
+            'online_id' => 'DeleteByOnline',
+            'confirm_delete' => '1',
         ]);
 
         $result = $this->handler->handleRequest($request);
