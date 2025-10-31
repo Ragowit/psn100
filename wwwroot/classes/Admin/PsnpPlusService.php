@@ -140,7 +140,7 @@ class PsnpPlusService
     {
         $sql = 'SELECT t.order_id + 1 FROM trophy t';
         if ($obtainableOnly) {
-            $sql .= ' JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0';
+            $sql .= ' JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 1';
         }
         $sql .= ' WHERE t.np_communication_id = :np_communication_id ORDER BY t.order_id';
 
@@ -283,7 +283,7 @@ class PsnpPlusService
         $statement = $this->database->prepare(
             'SELECT t.id
             FROM trophy t
-            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
+            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 1
             WHERE t.np_communication_id = :np_communication_id
             ORDER BY t.id'
         );
