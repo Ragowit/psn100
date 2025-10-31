@@ -78,13 +78,19 @@ $encodedConfirmationDisplayName = htmlspecialchars($confirmationDisplayName, ENT
                 <div class="alert alert-warning" role="alert">
                     <p>
                         Are you sure you want to permanently delete player
-                        <?php if ($encodedConfirmationUrl !== null) { ?>
-                            <a href="<?= $encodedConfirmationUrl; ?>" target="_blank" rel="noopener">
-                                <?= $encodedConfirmationDisplayName; ?>
-                            </a>
-                        <?php } else { ?>
-                            <strong><?= $encodedConfirmationDisplayName; ?></strong>
-                        <?php } ?>?
+                        <?php
+                        if ($encodedConfirmationUrl !== null) {
+                            printf(
+                                '<a href="%s" target="_blank" rel="noopener">%s</a>',
+                                $encodedConfirmationUrl,
+                                $encodedConfirmationDisplayName
+                            );
+                        } else {
+                            printf('<strong>%s</strong>', $encodedConfirmationDisplayName);
+                        }
+
+                        echo '?';
+                        ?>
                     </p>
                     <p class="mb-0">This action cannot be undone.</p>
                 </div>
