@@ -138,11 +138,11 @@ class PsnpPlusService
      */
     private function findTrophyOrderNumbers(string $npCommunicationId, bool $obtainableOnly): array
     {
-        $sql = 'SELECT order_id + 1 FROM trophy WHERE np_communication_id = :np_communication_id';
+        $sql = 'SELECT t.order_id + 1 FROM trophy t';
         if ($obtainableOnly) {
-            $sql .= ' AND `status` = 1';
+            $sql .= ' JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0';
         }
-        $sql .= ' ORDER BY order_id';
+        $sql .= ' WHERE t.np_communication_id = :np_communication_id ORDER BY t.order_id';
 
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
@@ -196,10 +196,11 @@ class PsnpPlusService
     private function findGamesWithUnobtainableTrophies(): array
     {
         $statement = $this->database->prepare(
-            "SELECT DISTINCT np_communication_id
-            FROM trophy
-            WHERE `status` = 1 AND np_communication_id LIKE 'N%'
-            ORDER BY np_communication_id"
+            "SELECT DISTINCT t.np_communication_id
+            FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 1
+            WHERE t.np_communication_id LIKE 'N%'
+            ORDER BY t.np_communication_id"
         );
         $statement->execute();
 
@@ -280,7 +281,11 @@ class PsnpPlusService
     private function findObtainableTrophyIds(string $npCommunicationId): array
     {
         $statement = $this->database->prepare(
-            'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND `status` = 1 ORDER BY id'
+            'SELECT t.id
+            FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
+            WHERE t.np_communication_id = :np_communication_id
+            ORDER BY t.id'
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $statement->execute();
