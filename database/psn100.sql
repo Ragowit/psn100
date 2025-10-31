@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 30, 2025 at 08:46 PM
+-- Generation Time: Oct 31, 2025 at 09:01 AM
 -- Server version: 8.4.7
--- PHP Version: 8.4.12
+-- PHP Version: 8.4.14
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -325,17 +325,11 @@ CREATE TABLE `trophy_title_player` (
   `progress` tinyint UNSIGNED NOT NULL,
   `last_updated_date` datetime NOT NULL,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
-  `temp_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `common` smallint UNSIGNED NOT NULL DEFAULT '0',
   `uncommon` smallint UNSIGNED NOT NULL DEFAULT '0',
   `rare` smallint UNSIGNED NOT NULL DEFAULT '0',
   `epic` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `legendary` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `temp_common` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `temp_uncommon` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `temp_rare` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `temp_epic` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `temp_legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
+  `legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -487,7 +481,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580163;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580192;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -499,13 +493,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26289;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26292;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47746;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47805;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -517,19 +511,19 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1908847;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1910207;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83776;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83854;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59597;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59622;
 
 --
 -- Constraints for dumped tables
