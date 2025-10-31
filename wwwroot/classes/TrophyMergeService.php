@@ -474,7 +474,8 @@ SQL
                     FROM
                         trophy_earned te
                     JOIN trophy t ON
-                        t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id AND t.status = 0
+                        t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id
+                    JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
                     WHERE
                         te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
                     GROUP BY

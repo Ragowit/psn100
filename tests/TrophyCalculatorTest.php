@@ -274,7 +274,7 @@ final class FakePDOStatement
         $this->result = [];
         $normalizedQuery = trim($this->query);
 
-        if (str_starts_with($normalizedQuery, 'SELECT type, COUNT(*) AS count')) {
+        if (str_starts_with($normalizedQuery, 'SELECT t.type, COUNT(*) AS count')) {
             $this->executeSelectTrophyCounts();
             return true;
         }
@@ -284,7 +284,7 @@ final class FakePDOStatement
             return true;
         }
 
-        if (str_starts_with($normalizedQuery, 'SELECT type, COUNT(type) AS count')) {
+        if (str_starts_with($normalizedQuery, 'SELECT t.type, COUNT(t.type) AS count')) {
             $this->executeSelectEarnedCounts();
             return true;
         }

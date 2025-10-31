@@ -59,8 +59,8 @@ class PlayerLogService
                 t.name AS trophy_name,
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
-                t.rarity_percent,
-                t.status AS trophy_status,
+                tm.rarity_percent,
+                tm.status AS trophy_status,
                 t.progress_target_value,
                 t.reward_name,
                 t.reward_image_url,
@@ -71,6 +71,7 @@ class PlayerLogService
                 tt.platform
             FROM trophy_earned te
             LEFT JOIN trophy t USING (np_communication_id, order_id)
+            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             LEFT JOIN trophy_title tt USING (np_communication_id)
             LEFT JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE ttm.status != 2
@@ -124,7 +125,7 @@ class PlayerLogService
     private function buildOrderByClause(PlayerLogFilter $filter): string
     {
         if ($filter->isSort(PlayerLogFilter::SORT_RARITY)) {
-            return PHP_EOL . '            ORDER BY t.rarity_percent, te.earned_date';
+            return PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date';
         }
 
         return PHP_EOL . '            ORDER BY te.earned_date DESC';
