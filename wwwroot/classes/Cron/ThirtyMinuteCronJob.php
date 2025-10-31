@@ -733,6 +733,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     }
                                 }
 
+                                $this->ensureTrophyMetaRow(
+                                    $npid,
+                                    $trophyGroup->id(),
+                                    (int) $trophy->id()
+                                );
+
                                 if ($newTrophies) {
                                     $query = $this->database->prepare("SELECT status
                                         FROM   trophy_title_meta
@@ -1125,18 +1131,17 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             rarity AS(
                             SELECT
                                 trophy_earned.np_communication_id,
-                                SUM(trophy.rarity_point) AS points,
-                                SUM(trophy.rarity_name = 'COMMON') common,
-                                SUM(trophy.rarity_name = 'UNCOMMON') uncommon,
-                                SUM(trophy.rarity_name = 'RARE') rare,
-                                SUM(trophy.rarity_name = 'EPIC') epic,
-                                SUM(trophy.rarity_name = 'LEGENDARY') legendary
+                                SUM(tm.rarity_point) AS points,
+                                SUM(tm.rarity_name = 'COMMON') common,
+                                SUM(tm.rarity_name = 'UNCOMMON') uncommon,
+                                SUM(tm.rarity_name = 'RARE') rare,
+                                SUM(tm.rarity_name = 'EPIC') epic,
+                                SUM(tm.rarity_name = 'LEGENDARY') legendary
                             FROM
                                 trophy_earned
-                            JOIN trophy USING(
-                                    np_communication_id,
-                                    order_id
-                                )
+                            JOIN trophy t ON t.np_communication_id = trophy_earned.np_communication_id
+                                AND t.order_id = trophy_earned.order_id
+                            JOIN trophy_meta tm ON tm.trophy_id = t.id
                             WHERE
                                 trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
                             GROUP BY
@@ -1205,6 +1210,44 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
             }
         }
+    }
+
+    private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
+    {
+        $query = $this->database->prepare(
+            'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
+        $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
+        $query->execute();
+
+        $trophyId = $query->fetchColumn();
+
+        if ($trophyId === false) {
+            return;
+        }
+
+        $metaQuery = $this->database->prepare(
+            "INSERT INTO trophy_meta (
+                trophy_id,
+                rarity_percent,
+                rarity_point,
+                status,
+                owners,
+                rarity_name
+            ) VALUES (
+                :trophy_id,
+                0,
+                0,
+                0,
+                0,
+                'NONE'
+            )
+            ON DUPLICATE KEY UPDATE trophy_id = VALUES(trophy_id)"
+        );
+        $metaQuery->bindValue(':trophy_id', (int) $trophyId, PDO::PARAM_INT);
+        $metaQuery->execute();
     }
 
     private function downloadMandatoryImage(string $url, string $directory, string $description): string
