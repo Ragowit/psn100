@@ -162,14 +162,24 @@ CREATE TABLE `trophy` (
   `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `progress_target_value` int UNSIGNED DEFAULT NULL,
+  `reward_name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `reward_image_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_meta`
+--
+
+CREATE TABLE `trophy_meta` (
+  `trophy_id` bigint UNSIGNED NOT NULL,
   `rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `progress_target_value` int UNSIGNED DEFAULT NULL,
-  `reward_name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `reward_image_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -411,11 +421,14 @@ ALTER TABLE `setting`
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `u_npcid_gid_oid` (`np_communication_id`,`order_id`) USING BTREE,
-  ADD KEY `idx_rarity_percent` (`rarity_percent`),
-  ADD KEY `idx_npcid_gid_oid_status_rarpercent` (`np_communication_id`,`group_id`,`order_id`,`status`,`rarity_percent`),
-  ADD KEY `idx_status_npcid_rarname` (`status`,`np_communication_id`,`rarity_name`),
-  ADD KEY `idx_npcid_gid_oid_rarpoint` (`np_communication_id`,`group_id`,`order_id`,`rarity_point`),
-  ADD KEY `trophy_idx_rarity_point_rarity_name` (`rarity_point`,`rarity_name`) USING BTREE;
+  ADD KEY `idx_trophy_lookup` (`np_communication_id`,`group_id`,`order_id`);
+
+--
+-- Indexes for table `trophy_meta`
+--
+ALTER TABLE `trophy_meta`
+  ADD PRIMARY KEY (`trophy_id`),
+  ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`);
 
 --
 -- Indexes for table `trophy_earned`
@@ -528,6 +541,12 @@ ALTER TABLE `trophy_title`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `trophy_meta`
+--
+ALTER TABLE `trophy_meta`
+  ADD CONSTRAINT `fk_trophy_meta_trophy` FOREIGN KEY (`trophy_id`) REFERENCES `trophy` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `trophy_title_meta`
