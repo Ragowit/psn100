@@ -53,11 +53,20 @@ final class PlayerAdvisorServiceTest extends TestCase
                 name TEXT NOT NULL,
                 detail TEXT NOT NULL,
                 icon_url TEXT NOT NULL,
-                rarity_percent REAL NOT NULL,
                 progress_target_value INTEGER,
                 reward_name TEXT,
-                reward_image_url TEXT,
-                status INTEGER NOT NULL
+                reward_image_url TEXT
+            )'
+        );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_meta (
+                trophy_id INTEGER PRIMARY KEY,
+                rarity_percent REAL NOT NULL,
+                rarity_point INTEGER NOT NULL DEFAULT 0,
+                status INTEGER NOT NULL,
+                owners INTEGER NOT NULL DEFAULT 0,
+                rarity_name TEXT NOT NULL DEFAULT "NONE"
             )'
         );
 
@@ -99,10 +108,17 @@ final class PlayerAdvisorServiceTest extends TestCase
         );
 
         $this->database->exec(
-            "INSERT INTO trophy (np_communication_id, order_id, type, name, detail, icon_url, rarity_percent, progress_target_value, reward_name, reward_image_url, status) VALUES\n" .
-            "('NPWR-PS5-1', 1, 'bronze', 'Unearned Trophy', 'Complete a task', 'trophy-1.png', 12.5, NULL, NULL, NULL, 0),\n" .
-            "('NPWR-PS5-2', 1, 'bronze', 'Earned Trophy', 'Already done', 'trophy-2.png', 20.0, NULL, NULL, NULL, 0),\n" .
-            "('NPWR-PS4-1', 1, 'bronze', 'Different Platform', 'Wrong platform', 'trophy-3.png', 30.0, NULL, NULL, NULL, 0)"
+            "INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url) VALUES\n" .
+            "(1, 'NPWR-PS5-1', 1, 'bronze', 'Unearned Trophy', 'Complete a task', 'trophy-1.png', NULL, NULL, NULL),\n" .
+            "(2, 'NPWR-PS5-2', 1, 'bronze', 'Earned Trophy', 'Already done', 'trophy-2.png', NULL, NULL, NULL),\n" .
+            "(3, 'NPWR-PS4-1', 1, 'bronze', 'Different Platform', 'Wrong platform', 'trophy-3.png', NULL, NULL, NULL)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_meta (trophy_id, rarity_percent, status) VALUES\n" .
+            "(1, 12.5, 0),\n" .
+            "(2, 20.0, 0),\n" .
+            "(3, 30.0, 0)"
         );
 
         $this->database->exec(
@@ -141,10 +157,17 @@ final class PlayerAdvisorServiceTest extends TestCase
         );
 
         $this->database->exec(
-            "INSERT INTO trophy (np_communication_id, order_id, type, name, detail, icon_url, rarity_percent, progress_target_value, reward_name, reward_image_url, status) VALUES\n" .
-            "('NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png', 15.0, NULL, NULL, NULL, 0),\n" .
-            "('NPWR-2', 1, 'silver', 'Second Trophy', 'Description 2', 'trophy-2.png', 20.0, NULL, NULL, NULL, 0),\n" .
-            "('NPWR-3', 1, 'gold', 'Third Trophy', 'Description 3', 'trophy-3.png', 15.0, 100, 'Reward', 'reward.png', 0)"
+            "INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url) VALUES\n" .
+            "(1, 'NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png', NULL, NULL, NULL),\n" .
+            "(2, 'NPWR-2', 1, 'silver', 'Second Trophy', 'Description 2', 'trophy-2.png', NULL, NULL, NULL),\n" .
+            "(3, 'NPWR-3', 1, 'gold', 'Third Trophy', 'Description 3', 'trophy-3.png', 100, 'Reward', 'reward.png')"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_meta (trophy_id, rarity_percent, status) VALUES\n" .
+            "(1, 15.0, 0),\n" .
+            "(2, 20.0, 0),\n" .
+            "(3, 15.0, 0)"
         );
 
         $this->database->exec(

@@ -16,12 +16,13 @@ class TrophyCalculator
         $titleHavePlatinum = false;
 
         $query = $this->database->prepare(
-            "SELECT type, COUNT(*) AS count
-            FROM trophy
-            WHERE np_communication_id = :np_communication_id
-                AND group_id = :group_id
-                AND status = 0
-            GROUP BY type"
+            "SELECT t.type, COUNT(*) AS count
+            FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
+            WHERE t.np_communication_id = :np_communication_id
+                AND t.group_id = :group_id
+                AND tm.status = 0
+            GROUP BY t.type"
         );
         $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(":group_id", $groupId, PDO::PARAM_STR);
@@ -57,16 +58,17 @@ class TrophyCalculator
         $maxScore = $trophyTypes["bronze"] * 15 + $trophyTypes["silver"] * 30 + $trophyTypes["gold"] * 90;
 
         $query = $this->database->prepare(
-            "SELECT type, COUNT(type) AS count
+            "SELECT t.type, COUNT(t.type) AS count
             FROM trophy_earned te
             LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
                 AND t.order_id = te.order_id
-                AND t.status = 0
+            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE account_id = :account_id
                 AND te.np_communication_id = :np_communication_id
                 AND te.group_id = :group_id
                 AND te.earned = 1
-            GROUP BY type"
+                AND tm.status = 0
+            GROUP BY t.type"
         );
         $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
         $query->bindValue(":np_communication_id", $npCommunicationId, PDO::PARAM_STR);

@@ -34,6 +34,7 @@ class PlayerAdvisorService
         $sql = <<<'SQL'
             SELECT COUNT(*)
             FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
             JOIN trophy_title_player ttp ON
@@ -46,7 +47,7 @@ class PlayerAdvisorService
                 AND te_completed.earned = 1
             WHERE te_completed.account_id IS NULL
                 AND ttm.status = 0
-                AND t.status = 0
+                AND tm.status = 0
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -70,7 +71,7 @@ class PlayerAdvisorService
                 t.name AS trophy_name,
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
-                t.rarity_percent,
+                tm.rarity_percent,
                 t.progress_target_value,
                 t.reward_name,
                 t.reward_image_url,
@@ -80,6 +81,7 @@ class PlayerAdvisorService
                 tt.platform,
                 te_progress.progress
             FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
             LEFT JOIN trophy_earned te_progress ON
@@ -97,7 +99,7 @@ class PlayerAdvisorService
                 AND te_completed.earned = 1
             WHERE te_completed.account_id IS NULL
                 AND ttm.status = 0
-                AND t.status = 0
+                AND tm.status = 0
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -146,6 +148,6 @@ class PlayerAdvisorService
 
     private function buildOrderByClause(PlayerAdvisorFilter $filter): string
     {
-        return ' ORDER BY t.rarity_percent DESC, ttp.last_updated_date DESC';
+        return ' ORDER BY tm.rarity_percent DESC, ttp.last_updated_date DESC';
     }
 }

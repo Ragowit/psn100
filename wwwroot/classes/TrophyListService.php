@@ -20,9 +20,10 @@ class TrophyListService
         $query = $this->database->prepare(
             'SELECT COUNT(*)
             FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE t.status = 0 AND ttm.status = 0'
+            WHERE tm.status = 0 AND ttm.status = 0'
         );
 
         $query->execute();
@@ -46,7 +47,7 @@ class TrophyListService
                 t.name AS trophy_name,
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
-                t.rarity_percent,
+                tm.rarity_percent,
                 t.progress_target_value,
                 t.reward_name,
                 t.reward_image_url,
@@ -55,10 +56,11 @@ class TrophyListService
                 tt.icon_url AS game_icon,
                 tt.platform
             FROM trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING(np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE t.status = 0 AND ttm.status = 0
-            ORDER BY t.rarity_percent DESC
+            WHERE tm.status = 0 AND ttm.status = 0
+            ORDER BY tm.rarity_percent DESC
             LIMIT :offset, :limit'
         );
 

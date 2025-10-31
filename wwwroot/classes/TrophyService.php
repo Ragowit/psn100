@@ -27,8 +27,8 @@ class TrophyService
                 t.name AS trophy_name,
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
-                t.rarity_percent,
-                t.status,
+                tm.rarity_percent,
+                tm.status,
                 t.progress_target_value,
                 t.reward_name,
                 t.reward_image_url,
@@ -38,6 +38,7 @@ class TrophyService
                 tt.platform
             FROM
                 trophy t
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING(np_communication_id)
             WHERE
                 t.id = :id'

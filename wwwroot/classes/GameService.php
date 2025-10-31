@@ -208,8 +208,8 @@ class GameService
                         t.name,
                         t.detail,
                         t.icon_url,
-                        t.rarity_percent,
-                        t.status,
+                        tm.rarity_percent,
+                        tm.status,
                         t.progress_target_value,
                         t.reward_name,
                         t.reward_image_url,
@@ -218,6 +218,7 @@ class GameService
                         te.earned
                     FROM
                         trophy t
+                    JOIN trophy_meta tm ON tm.trophy_id = t.id
                     LEFT JOIN (
                         SELECT
                             np_communication_id,
@@ -254,20 +255,21 @@ class GameService
                     t.name,
                     t.detail,
                     t.icon_url,
-                    t.rarity_percent,
-                    t.status,
+                    tm.rarity_percent,
+                    tm.status,
                     t.progress_target_value,
                     t.reward_name,
                     t.reward_image_url
                 FROM
                     trophy t
+                JOIN trophy_meta tm ON tm.trophy_id = t.id
                 WHERE
                     t.np_communication_id = :np_communication_id
                     AND t.group_id = :group_id
             SQL;
 
             $sql .= match ($sort) {
-                'rarity' => " ORDER BY t.rarity_percent DESC, FIELD(t.type, 'bronze', 'silver', 'gold', 'platinum'), t.order_id",
+                'rarity' => " ORDER BY tm.rarity_percent DESC, FIELD(t.type, 'bronze', 'silver', 'gold', 'platinum'), t.order_id",
                 default => " ORDER BY t.order_id",
             };
 
