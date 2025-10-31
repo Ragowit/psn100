@@ -29,18 +29,8 @@ class TrophyMetaRepository
 
         $trophyId = (int) $trophyId;
 
-        $existingMetaQuery = $this->database->prepare(
-            'SELECT 1 FROM trophy_meta WHERE trophy_id = :trophy_id LIMIT 1'
-        );
-        $existingMetaQuery->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
-        $existingMetaQuery->execute();
-
-        if ($existingMetaQuery->fetchColumn() !== false) {
-            return;
-        }
-
         $insertMeta = $this->database->prepare(<<<'SQL'
-            INSERT INTO trophy_meta (
+            INSERT IGNORE INTO trophy_meta (
                 trophy_id,
                 rarity_percent,
                 rarity_point,
