@@ -44,7 +44,7 @@ class DailyCronJob implements CronJobInterface
         $query = $this->database->prepare(
             "WITH rarity AS (
                 SELECT
-                    t.order_id,
+                    t.id AS trophy_id,
                     COUNT(p.account_id) AS trophy_owners,
                     (COUNT(p.account_id) / 10000.0) * 100 AS rarity_percent
                 FROM trophy t
@@ -56,22 +56,23 @@ class DailyCronJob implements CronJobInterface
                     ON p.account_id = te.account_id
                         AND p.ranking <= 10000
                 WHERE t.np_communication_id = :np_communication_id
-                GROUP BY order_id
+                GROUP BY t.id
                 ORDER BY NULL
             )
-            UPDATE trophy t
-            JOIN rarity r USING(order_id)
-            JOIN trophy_title tt USING(np_communication_id)
-            JOIN trophy_title_meta ttm USING (np_communication_id)
+            UPDATE trophy_meta tm
+            JOIN rarity r ON tm.trophy_id = r.trophy_id
+            JOIN trophy t ON t.id = tm.trophy_id
+            JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
             SET
-                t.rarity_percent = r.rarity_percent,
-                t.rarity_point = IF(
-                    t.status = 0 AND ttm.status = 0,
+                tm.rarity_percent = r.rarity_percent,
+                tm.owners = r.trophy_owners,
+                tm.rarity_point = IF(
+                    tm.status = 0 AND ttm.status = 0,
                     IF(r.rarity_percent = 0, 99999, FLOOR(1 / (r.rarity_percent / 100) - 1)),
                     0
                 ),
-                t.rarity_name = CASE
-                    WHEN t.status != 0 OR ttm.status != 0 THEN 'NONE'
+                tm.rarity_name = CASE
+                    WHEN tm.status != 0 OR ttm.status != 0 THEN 'NONE'
                     WHEN r.rarity_percent > 10 THEN 'COMMON'
                     WHEN r.rarity_percent > 2 THEN 'UNCOMMON'
                     WHEN r.rarity_percent > 0.2 THEN 'RARE'
@@ -95,11 +96,12 @@ class DailyCronJob implements CronJobInterface
         $query = $this->database->prepare(
             "WITH rarity AS (
                 SELECT
-                    np_communication_id,
-                    IFNULL(SUM(rarity_point), 0) AS rarity_sum
-                FROM trophy
-                WHERE `status` = 0
-                GROUP BY np_communication_id
+                    t.np_communication_id,
+                    IFNULL(SUM(tm.rarity_point), 0) AS rarity_sum
+                FROM trophy t
+                JOIN trophy_meta tm ON tm.trophy_id = t.id
+                WHERE tm.status = 0
+                GROUP BY t.np_communication_id
             )
             UPDATE trophy_title_meta ttm
             JOIN rarity r USING(np_communication_id)
