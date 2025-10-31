@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/GameRescanDifferenceTracker.php';
 require_once __DIR__ . '/GameRescanResult.php';
+require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 
 use Tustin\PlayStation\Client;
 
@@ -21,15 +22,18 @@ class GameRescanService
     private TrophyCalculator $trophyCalculator;
     private int $lastProgress = 0;
 
+    private TrophyHistoryRecorder $historyRecorder;
+
     /**
      * @var callable(string):void|null
      */
     private $logListener = null;
 
-    public function __construct(PDO $database, TrophyCalculator $trophyCalculator)
+    public function __construct(PDO $database, TrophyCalculator $trophyCalculator, ?TrophyHistoryRecorder $historyRecorder = null)
     {
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
+        $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
     }
 
     /**
@@ -98,6 +102,10 @@ class GameRescanService
             );
             $this->notifyProgress($progressListener, 90, 'Recording rescan details…');
             $this->recordRescan($gameId);
+
+            if ($differenceTracker->getDifferences() !== []) {
+                $this->historyRecorder->recordByTitleId($gameId);
+            }
 
             $message = "Game {$gameId} have been rescanned.";
 

@@ -96,6 +96,7 @@ final class ApplicationContainerTest extends TestCase
         $routeHandlers = $routeHandlersProperty->getValue($router);
 
         $this->assertHandlerUsesRepository($routeHandlers, 'game', GameRouteHandler::class, 'gameRepository', $this->container->getGameRepository());
+        $this->assertHandlerUsesRepository($routeHandlers, 'game-history', GameRouteHandler::class, 'gameRepository', $this->container->getGameRepository());
         $this->assertHandlerUsesRepository($routeHandlers, 'player', PlayerRouteHandler::class, 'playerRepository', $this->container->getPlayerRepository());
         $this->assertHandlerUsesRepository($routeHandlers, 'trophy', TrophyRouteHandler::class, 'trophyRepository', $this->container->getTrophyRepository());
     }

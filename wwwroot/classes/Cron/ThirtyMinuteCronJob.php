@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 
 use Tustin\PlayStation\Client;
 
@@ -19,13 +20,22 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private Psn100Logger $logger;
 
+    private TrophyHistoryRecorder $historyRecorder;
+
     private int $workerId;
 
-    public function __construct(PDO $database, TrophyCalculator $trophyCalculator, Psn100Logger $logger, int $workerId)
+    public function __construct(
+        PDO $database,
+        TrophyCalculator $trophyCalculator,
+        Psn100Logger $logger,
+        TrophyHistoryRecorder $historyRecorder,
+        int $workerId
+    )
     {
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
         $this->logger = $logger;
+        $this->historyRecorder = $historyRecorder;
         $this->workerId = $workerId;
     }
 
@@ -475,6 +485,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $npid = $trophyTitle->npCommunicationId();
                         array_push($scannedGames, $npid);
                         $newTrophies = false;
+                        $titleDataChanged = false;
+                        $groupDataChanged = false;
+                        $trophyDataChanged = false;
 
                         $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
                         // Does this user already have the game?
@@ -515,61 +528,62 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         // Add trophy title (game) information into database
-                        $query = $this->database->prepare("SELECT set_version
-                            FROM   trophy_title
-                            WHERE  np_communication_id = :np_communication_id ");
+                        $titleId = null;
+
+                        $trophyTitleIconFilename = $this->downloadMandatoryImage(
+                            $trophyTitle->iconUrl(),
+                            self::TITLE_ICON_DIRECTORY,
+                            sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid)
+                        );
+
+                        $query = $this->database->prepare("INSERT INTO trophy_title(
+                                np_communication_id,
+                                name,
+                                detail,
+                                icon_url,
+                                platform,
+                                set_version
+                            )
+                            VALUES(
+                                :np_communication_id,
+                                :name,
+                                :detail,
+                                :icon_url,
+                                :platform,
+                                :set_version
+                            ) AS new
+                            ON DUPLICATE KEY
+                            UPDATE
+                                name = new.name,
+                                detail = new.detail,
+                                icon_url = new.icon_url,
+                                platform = new.platform,
+                                set_version = new.set_version");
                         $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                        $query->execute();
-                        $setVersion = $query->fetchColumn();
-                        if (!$setVersion || $setVersion != $trophyTitle->trophySetVersion()) {
-                            $trophyTitleIconFilename = $this->downloadMandatoryImage(
-                                $trophyTitle->iconUrl(),
-                                self::TITLE_ICON_DIRECTORY,
-                                sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid)
-                            );
-
-                            $query = $this->database->prepare("INSERT INTO trophy_title(
-                                    np_communication_id,
-                                    name,
-                                    detail,
-                                    icon_url,
-                                    platform,
-                                    set_version
-                                )
-                                VALUES(
-                                    :np_communication_id,
-                                    :name,
-                                    :detail,
-                                    :icon_url,
-                                    :platform,
-                                    ''
-                                ) AS new
-                                ON DUPLICATE KEY
-                                UPDATE
-                                    icon_url = new.icon_url,
-                                    platform = new.platform");
-                            $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                            $query->bindValue(
-                                ":name",
-                                $this->convertToApaTitleCase($this->sanitizeTrophyTitleName($trophyTitle->name())),
-                                PDO::PARAM_STR
-                            );
-                            $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
-                            $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
-                            $platforms = "";
-                            foreach ($trophyTitle->platform() as $platform) {
-                                $platformValue = $platform->value;
-                                if ($platformValue === 'PSPC') {
-                                    $platformValue = 'PC';
-                                }
-
-                                $platforms .= $platformValue .",";
+                        $query->bindValue(
+                            ":name",
+                            $this->convertToApaTitleCase($this->sanitizeTrophyTitleName($trophyTitle->name())),
+                            PDO::PARAM_STR
+                        );
+                        $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
+                        $query->bindValue(":icon_url", $trophyTitleIconFilename, PDO::PARAM_STR);
+                        $platforms = "";
+                        foreach ($trophyTitle->platform() as $platform) {
+                            $platformValue = $platform->value;
+                            if ($platformValue === 'PSPC') {
+                                $platformValue = 'PC';
                             }
-                            $platforms = rtrim($platforms, ",");
-                            $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
-                            // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                            $query->execute();
 
+                            $platforms .= $platformValue .",";
+                        }
+                        $platforms = rtrim($platforms, ",");
+                        $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
+                        $query->bindValue(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
+                        // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
+                        $query->execute();
+
+                        if ($query->rowCount() > 0) {
+                            $titleDataChanged = true;
                         }
 
                         $metaQuery = $this->database->prepare("INSERT INTO trophy_title_meta (
@@ -589,197 +603,187 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                         // Get "groups" (game and DLCs)
                         foreach ($client->trophies($npid, $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
+                            $groupNewTrophies = false;
                             // Add trophy group (game + dlcs) into database
-                            $query = $this->database->prepare("SELECT Count(*)
-                                FROM   trophy_group
-                                WHERE  np_communication_id = :np_communication_id
-                                    AND group_id = :group_id ");
+                            $trophyGroupIconFilename = $this->downloadMandatoryImage(
+                                $trophyGroup->iconUrl(),
+                                self::GROUP_ICON_DIRECTORY,
+                                sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroup->name(), $npid, $trophyGroup->id())
+                            );
+
+                            $query = $this->database->prepare("INSERT INTO trophy_group(
+                                    np_communication_id,
+                                    group_id,
+                                    name,
+                                    detail,
+                                    icon_url
+                                )
+                                VALUES(
+                                    :np_communication_id,
+                                    :group_id,
+                                    :name,
+                                    :detail,
+                                    :icon_url
+                                ) AS new
+                                ON DUPLICATE KEY
+                                UPDATE
+                                    name = new.name,
+                                    detail = new.detail,
+                                    icon_url = new.icon_url");
                             $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                             $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
+                            $query->bindValue(":name", $trophyGroup->name(), PDO::PARAM_STR);
+                            $query->bindValue(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
+                            $query->bindValue(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
+                            // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                             $query->execute();
-                            $check = $query->fetchColumn();
-                            if ($check == 0 || $setVersion != $trophyTitle->trophySetVersion()) {
-                                $trophyGroupIconFilename = $this->downloadMandatoryImage(
-                                    $trophyGroup->iconUrl(),
-                                    self::GROUP_ICON_DIRECTORY,
-                                    sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroup->name(), $npid, $trophyGroup->id())
+
+                            if ($query->rowCount() > 0) {
+                                $groupDataChanged = true;
+                            }
+
+                            // Add trophies into database
+                            foreach ($trophyGroup->trophies() as $trophy) {
+                                $trophyIconFilename = $this->downloadMandatoryImage(
+                                    $trophy->iconUrl(),
+                                    self::TROPHY_ICON_DIRECTORY,
+                                    sprintf(
+                                        'trophy icon for "%s" (%s/%s/%d)',
+                                        $trophy->name(),
+                                        $npid,
+                                        $trophyGroup->id(),
+                                        $trophy->id()
+                                    )
                                 );
 
-                                $query = $this->database->prepare("INSERT INTO trophy_group(
+                                $rewardImageFilename = $this->downloadOptionalImage(
+                                    $trophy->rewardImageUrl(),
+                                    self::REWARD_ICON_DIRECTORY,
+                                    sprintf(
+                                        'reward image for "%s" (%s/%s/%d)',
+                                        $trophy->name(),
+                                        $npid,
+                                        $trophyGroup->id(),
+                                        $trophy->id()
+                                    )
+                                );
+
+                                $query = $this->database->prepare("INSERT INTO trophy(
                                         np_communication_id,
                                         group_id,
+                                        order_id,
+                                        hidden,
+                                        type,
                                         name,
                                         detail,
-                                        icon_url
+                                        icon_url,
+                                        progress_target_value,
+                                        reward_name,
+                                        reward_image_url
                                     )
                                     VALUES(
                                         :np_communication_id,
                                         :group_id,
+                                        :order_id,
+                                        :hidden,
+                                        :type,
                                         :name,
                                         :detail,
-                                        :icon_url
+                                        :icon_url,
+                                        :progress_target_value,
+                                        :reward_name,
+                                        :reward_image_url
                                     ) AS new
                                     ON DUPLICATE KEY
                                     UPDATE
+                                        hidden = new.hidden,
+                                        type = new.type,
+                                        name = new.name,
                                         detail = new.detail,
-                                        icon_url = new.icon_url");
+                                        icon_url = new.icon_url,
+                                        progress_target_value = new.progress_target_value,
+                                        reward_name = new.reward_name,
+                                        reward_image_url = new.reward_image_url");
                                 $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                                 $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                $query->bindValue(":name", $trophyGroup->name(), PDO::PARAM_STR);
-                                $query->bindValue(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
-                                $query->bindValue(":icon_url", $trophyGroupIconFilename, PDO::PARAM_STR);
+                                $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
+                                $query->bindValue(":hidden", $trophy->hidden(), PDO::PARAM_INT);
+                                $trophyTypeEnumValue = $trophy->type()->value;
+                                $query->bindValue(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
+                                $query->bindValue(":name", $trophy->name(), PDO::PARAM_STR);
+                                $query->bindValue(":detail", $trophy->detail(), PDO::PARAM_STR);
+                                $query->bindValue(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
+                                if ($trophy->progressTargetValue() === '') {
+                                    $progressTargetValue = null;
+                                } else {
+                                    $progressTargetValue = $trophy->progressTargetValue();
+                                }
+                                $query->bindValue(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
+                                if ($trophy->rewardName() === '') {
+                                    $rewardName = null;
+                                } else {
+                                    $rewardName = $trophy->rewardName();
+                                }
+                                $query->bindValue(":reward_name", $rewardName, PDO::PARAM_STR);
+                                $query->bindValue(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
                                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                 $query->execute();
 
-                                // Add trophies into database
-                                foreach ($trophyGroup->trophies() as $trophy) {
-                                    $query = $this->database->prepare("SELECT Count(*)
-                                        FROM   trophy
-                                        WHERE  np_communication_id = :np_communication_id
-                                            AND group_id = :group_id
-                                            AND order_id = :order_id ");
-                                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                    $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                    $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
-                                    $query->execute();
-                                    $check = $query->fetchColumn();
-                                    if ($check == 0 || $setVersion != $trophyTitle->trophySetVersion()) {
-                                        $trophyIconFilename = $this->downloadMandatoryImage(
-                                            $trophy->iconUrl(),
-                                            self::TROPHY_ICON_DIRECTORY,
-                                            sprintf(
-                                                'trophy icon for "%s" (%s/%s/%d)',
-                                                $trophy->name(),
-                                                $npid,
-                                                $trophyGroup->id(),
-                                                $trophy->id()
-                                            )
-                                        );
-
-                                        $rewardImageFilename = $this->downloadOptionalImage(
-                                            $trophy->rewardImageUrl(),
-                                            self::REWARD_ICON_DIRECTORY,
-                                            sprintf(
-                                                'reward image for "%s" (%s/%s/%d)',
-                                                $trophy->name(),
-                                                $npid,
-                                                $trophyGroup->id(),
-                                                $trophy->id()
-                                            )
-                                        );
-
-                                        $query = $this->database->prepare("INSERT INTO trophy(
-                                                np_communication_id,
-                                                group_id,
-                                                order_id,
-                                                hidden,
-                                                type,
-                                                name,
-                                                detail,
-                                                icon_url,
-                                                progress_target_value,
-                                                reward_name,
-                                                reward_image_url
-                                            )
-                                            VALUES(
-                                                :np_communication_id,
-                                                :group_id,
-                                                :order_id,
-                                                :hidden,
-                                                :type,
-                                                :name,
-                                                :detail,
-                                                :icon_url,
-                                                :progress_target_value,
-                                                :reward_name,
-                                                :reward_image_url
-                                            ) AS new
-                                            ON DUPLICATE KEY
-                                            UPDATE
-                                                hidden = new.hidden,
-                                                type = new.type,
-                                                name = new.name,
-                                                detail = new.detail,
-                                                icon_url = new.icon_url,
-                                                progress_target_value = new.progress_target_value,
-                                                reward_name = new.reward_name,
-                                                reward_image_url = new.reward_image_url");
-                                        $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                        $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                        $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
-                                        $query->bindValue(":hidden", $trophy->hidden(), PDO::PARAM_INT);
-                                        $trophyTypeEnumValue = $trophy->type()->value;
-                                        $query->bindValue(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
-                                        $query->bindValue(":name", $trophy->name(), PDO::PARAM_STR);
-                                        $query->bindValue(":detail", $trophy->detail(), PDO::PARAM_STR);
-                                        $query->bindValue(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
-                                        if ($trophy->progressTargetValue() === '') {
-                                            $progressTargetValue = null;
-                                        } else {
-                                            $progressTargetValue = $trophy->progressTargetValue();
-                                        }
-                                        $query->bindValue(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
-                                        if ($trophy->rewardName() === '') {
-                                            $rewardName = null;
-                                        } else {
-                                            $rewardName = $trophy->rewardName();
-                                        }
-                                        $query->bindValue(":reward_name", $rewardName, PDO::PARAM_STR);
-                                        $query->bindValue(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
-                                        // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                                        $query->execute();
-
-                                        $newTrophies = true;
-                                    }
+                                $trophyAffectedRows = (int) $query->rowCount();
+                                if ($trophyAffectedRows > 0) {
+                                    $trophyDataChanged = true;
                                 }
+                                if ($trophyAffectedRows === 1) {
+                                    $newTrophies = true;
+                                    $groupNewTrophies = true;
+                                }
+                            }
 
+                            if (isset($trophy)) {
                                 $this->ensureTrophyMetaRow(
                                     $npid,
                                     $trophyGroup->id(),
                                     (int) $trophy->id()
                                 );
+                                unset($trophy);
+                            }
 
-                                if ($newTrophies) {
-                                    $query = $this->database->prepare("SELECT status
-                                        FROM   trophy_title_meta
-                                        WHERE  np_communication_id = :np_communication_id ");
-                                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                    $query->execute();
-                                    $status = $query->fetchColumn();
-                                    if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
-                                        $this->logger->log("New trophies added for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
-                                    } else {
-                                        $this->logger->log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
-                                    }
-
-
+                            if ($groupNewTrophies) {
+                                $query = $this->database->prepare("SELECT status
+                                    FROM   trophy_title_meta
+                                    WHERE  np_communication_id = :np_communication_id ");
+                                $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
+                                $query->execute();
+                                $status = $query->fetchColumn();
+                                if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
+                                    $this->logger->log("New trophies added for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
+                                } else {
+                                    $this->logger->log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
                                 }
                             }
                         }
 
-                        if ($newTrophies) {
-                            $query = $this->database->prepare("SELECT id
-                                FROM   trophy_title
-                                WHERE  np_communication_id = :np_communication_id ");
-                            $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                            $query->execute();
-                            $id = $query->fetchColumn();
+                        if ($titleDataChanged || $groupDataChanged || $trophyDataChanged) {
+                            if ($titleId === null) {
+                                $titleId = $this->findTrophyTitleId($npid);
+                            }
 
-                            $query = $this->database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
-                            $query->bindValue(":param_1", $id, PDO::PARAM_INT);
-                            $query->execute();
+                            if ($titleId !== null) {
+                                $this->historyRecorder->recordByTitleId($titleId);
+                            }
                         }
 
-                        // Successfully went through title, groups and trophies. Set the version.
-                        if (!$setVersion || $setVersion != $trophyTitle->trophySetVersion()) {
-                            $query = $this->database->prepare("UPDATE
-                                    trophy_title
-                                SET
-                                    set_version = :set_version
-                                WHERE
-                                    np_communication_id = :np_communication_id");
-                            $query->bindValue(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
-                            $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
+                        if ($newTrophies) {
+                            if ($titleId === null) {
+                                $titleId = $this->findTrophyTitleId($npid);
+                            }
+
+                            if ($titleId === null) {
+                                continue;
+                            }
+
+                            $query = $this->database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
+                            $query->bindValue(":param_1", $titleId, PDO::PARAM_INT);
                             $query->execute();
                         }
 
@@ -1212,90 +1216,21 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
     }
 
-    private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
+    private function findTrophyTitleId(string $npCommunicationId): ?int
     {
         $query = $this->database->prepare(
-            'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id'
+            'SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id'
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
-        $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
         $query->execute();
 
-        $trophyId = $query->fetchColumn();
+        $id = $query->fetchColumn();
 
-        if ($trophyId === false) {
-            return;
-        }
-
-        $metaQuery = $this->database->prepare(
-            "INSERT INTO trophy_meta (
-                trophy_id,
-                rarity_percent,
-                rarity_point,
-                status,
-                owners,
-                rarity_name
-            ) VALUES (
-                :trophy_id,
-                0,
-                0,
-                0,
-                0,
-                'NONE'
-            )
-            ON DUPLICATE KEY UPDATE trophy_id = VALUES(trophy_id)"
-        );
-        $metaQuery->bindValue(':trophy_id', (int) $trophyId, PDO::PARAM_INT);
-        $metaQuery->execute();
-    }
-
-    private function downloadMandatoryImage(string $url, string $directory, string $description): string
-    {
-        $contents = $this->fetchRemoteFile($url);
-        if ($contents === null) {
-            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
-
-            return '.png';
-        }
-
-        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
-
-        return $storedFilename ?? '.png';
-    }
-
-    private function downloadOptionalImage(?string $url, string $directory, string $description): ?string
-    {
-        if ($url === null || $url === '') {
+        if ($id === false) {
             return null;
         }
 
-        $contents = $this->fetchRemoteFile($url);
-        if ($contents === null) {
-            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
-
-            return '.png';
-        }
-
-        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
-
-        return $storedFilename ?? '.png';
-    }
-
-    private function storeImageContents(string $url, string $directory, string $description, string $contents): ?string
-    {
-        $filename = $this->buildFilename($url, $contents);
-        $path = $directory . $filename;
-
-        if (!file_exists($path)) {
-            if (@file_put_contents($path, $contents) === false) {
-                $this->logger->log(sprintf('Unable to save %s from "%s" to "%s".', $description, $url, $path));
-
-                return null;
-            }
-        }
-
-        return $filename;
+        return (int) $id;
     }
 
     private function fetchRemoteFile(string $url): ?string

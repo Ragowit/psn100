@@ -135,6 +135,51 @@ CREATE TABLE `psn100_change` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `trophy_title_history`
+--
+
+CREATE TABLE `trophy_title_history` (
+  `id` bigint UNSIGNED NOT NULL,
+  `trophy_title_id` bigint UNSIGNED NOT NULL,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `discovered_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_group_history`
+--
+
+CREATE TABLE `trophy_group_history` (
+  `title_history_id` bigint UNSIGNED NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_history`
+--
+
+CREATE TABLE `trophy_history` (
+  `title_history_id` bigint UNSIGNED NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `order_id` smallint UNSIGNED NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `progress_target_value` int UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `setting`
 --
 
@@ -212,6 +257,8 @@ END IF;
 END
 $$
 DELIMITER ;
+
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -408,6 +455,27 @@ ALTER TABLE `psn100_change`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `trophy_title_history`
+--
+ALTER TABLE `trophy_title_history`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_trophy_title_history_title` (`trophy_title_id`),
+  ADD KEY `idx_trophy_title_history_discovered_at` (`discovered_at`);
+
+--
+-- Indexes for table `trophy_group_history`
+--
+ALTER TABLE `trophy_group_history`
+  ADD PRIMARY KEY (`title_history_id`,`group_id`),
+  ADD KEY `idx_trophy_group_history_group` (`group_id`);
+
+--
+-- Indexes for table `trophy_history`
+--
+ALTER TABLE `trophy_history`
+  ADD PRIMARY KEY (`title_history_id`,`group_id`,`order_id`);
+
+--
 -- Indexes for table `setting`
 --
 ALTER TABLE `setting`
@@ -515,6 +583,12 @@ ALTER TABLE `psn100_change`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47874;
 
 --
+-- AUTO_INCREMENT for table `trophy_title_history`
+--
+ALTER TABLE `trophy_title_history`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `setting`
 --
 ALTER TABLE `setting`
@@ -541,6 +615,24 @@ ALTER TABLE `trophy_title`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `trophy_title_history`
+--
+ALTER TABLE `trophy_title_history`
+  ADD CONSTRAINT `trophy_title_history_title_fk` FOREIGN KEY (`trophy_title_id`) REFERENCES `trophy_title` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `trophy_group_history`
+--
+ALTER TABLE `trophy_group_history`
+  ADD CONSTRAINT `trophy_group_history_title_history_fk` FOREIGN KEY (`title_history_id`) REFERENCES `trophy_title_history` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `trophy_history`
+--
+ALTER TABLE `trophy_history`
+  ADD CONSTRAINT `trophy_history_title_history_fk` FOREIGN KEY (`title_history_id`) REFERENCES `trophy_title_history` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `trophy_meta`
