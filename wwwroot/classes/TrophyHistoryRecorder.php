@@ -53,6 +53,8 @@ class TrophyHistoryRecorder
 
             $titleHistoryId = (int) $this->database->lastInsertId();
 
+            $this->recordHistorySnapshotChange($titleId);
+
             $groupSelect = $this->database->prepare(
                 'SELECT group_id, name, detail, icon_url FROM trophy_group WHERE np_communication_id = :np_communication_id'
             );
@@ -115,5 +117,14 @@ class TrophyHistoryRecorder
                 ));
             }
         }
+    }
+
+    private function recordHistorySnapshotChange(int $titleId): void
+    {
+        $changeStatement = $this->database->prepare(
+            "INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_HISTORY_SNAPSHOT', :title_id)"
+        );
+        $changeStatement->bindValue(':title_id', $titleId, PDO::PARAM_INT);
+        $changeStatement->execute();
     }
 }

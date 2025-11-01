@@ -41,6 +41,13 @@ final class TrophyHistorySnapshotTest extends TestCase
         $this->assertSame('Updated detail', $titleHistoryRows[1]['detail']);
         $this->assertSame('01.00', $titleHistoryRows[1]['set_version']);
 
+        $changeRows = $this->database->query('SELECT change_type, param_1 FROM psn100_change ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+        $this->assertCount(2, $changeRows);
+        $this->assertSame('GAME_HISTORY_SNAPSHOT', $changeRows[0]['change_type']);
+        $this->assertSame(1, (int) $changeRows[0]['param_1']);
+        $this->assertSame('GAME_HISTORY_SNAPSHOT', $changeRows[1]['change_type']);
+        $this->assertSame(1, (int) $changeRows[1]['param_1']);
+
         $historyIds = $this->database->query('SELECT id FROM trophy_title_history WHERE trophy_title_id = 1 ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
         $latestHistoryId = (int) $historyIds[1];
 
@@ -61,6 +68,7 @@ final class TrophyHistorySnapshotTest extends TestCase
     private function createSchema(): void
     {
         $this->database->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT)');
+        $this->database->exec('CREATE TABLE psn100_change (id INTEGER PRIMARY KEY AUTOINCREMENT, change_type TEXT NOT NULL, param_1 INTEGER NOT NULL, time TEXT DEFAULT CURRENT_TIMESTAMP)');
         $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT, name TEXT, detail TEXT, icon_url TEXT, platform TEXT, bronze INTEGER, silver INTEGER, gold INTEGER, platinum INTEGER, set_version TEXT)');
         $this->database->exec('CREATE TABLE trophy_group (id INTEGER PRIMARY KEY, np_communication_id TEXT, group_id TEXT, name TEXT, detail TEXT, icon_url TEXT)');
         $this->database->exec('CREATE TABLE trophy (id INTEGER PRIMARY KEY, np_communication_id TEXT, group_id TEXT, order_id INTEGER, hidden INTEGER, type TEXT, name TEXT, detail TEXT, icon_url TEXT, progress_target_value INTEGER, reward_name TEXT, reward_image_url TEXT)');

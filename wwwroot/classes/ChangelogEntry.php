@@ -10,6 +10,7 @@ class ChangelogEntry
     public const TYPE_GAME_DELETE = 'GAME_DELETE';
     public const TYPE_GAME_DELISTED = 'GAME_DELISTED';
     public const TYPE_GAME_DELISTED_AND_OBSOLETE = 'GAME_DELISTED_AND_OBSOLETE';
+    public const TYPE_GAME_HISTORY_SNAPSHOT = 'GAME_HISTORY_SNAPSHOT';
     public const TYPE_GAME_MERGE = 'GAME_MERGE';
     public const TYPE_GAME_NORMAL = 'GAME_NORMAL';
     public const TYPE_GAME_OBSOLETE = 'GAME_OBSOLETE';
