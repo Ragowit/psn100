@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../wwwroot/classes/Psn100Logger.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php';
 
 final class TrophyTitleNamingTest extends TestCase
@@ -18,8 +20,9 @@ final class TrophyTitleNamingTest extends TestCase
 
         $trophyCalculator = new TrophyCalculator($database);
         $logger = new Psn100Logger($database);
+        $historyRecorder = new TrophyHistoryRecorder($database, $logger);
 
-        $this->cronJob = new ThirtyMinuteCronJob($database, $trophyCalculator, $logger, 1);
+        $this->cronJob = new ThirtyMinuteCronJob($database, $trophyCalculator, $logger, $historyRecorder, 1);
 
         $this->sanitizeMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'sanitizeTrophyTitleName');
         $this->sanitizeMethod->setAccessible(true);

@@ -37,8 +37,9 @@ final class ThirtyMinuteCronJobApplication
         $this->entryPoint->runWithFactory(function (PDO $database) use ($workerId): \CronJobInterface {
             $trophyCalculator = new TrophyCalculator($database);
             $logger = new Psn100Logger($database);
+            $historyRecorder = new TrophyHistoryRecorder($database, $logger);
 
-            return new ThirtyMinuteCronJob($database, $trophyCalculator, $logger, $workerId);
+            return new ThirtyMinuteCronJob($database, $trophyCalculator, $logger, $historyRecorder, $workerId);
         }, true);
     }
 }

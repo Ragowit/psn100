@@ -34,6 +34,7 @@ class Router
             'avatar' => new SimpleRouteHandler('avatars.php', '/avatar/'),
             'changelog' => new SimpleRouteHandler('changelog.php', '/changelog/'),
             'game' => new GameRouteHandler($gameRepository, 'game.php', '/game/', 'games.php'),
+            'game-history' => new GameRouteHandler($gameRepository, 'game_history.php', '/game/'),
             'game-leaderboard' => new GameRouteHandler($gameRepository, 'game_leaderboard.php', '/game/'),
             'game-recent-players' => new GameRouteHandler($gameRepository, 'game_recent_players.php', '/game/'),
             'leaderboard' => new LeaderboardRouteHandler(),

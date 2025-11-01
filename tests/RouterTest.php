@@ -153,6 +153,24 @@ final class RouterTest extends TestCase
         );
     }
 
+    public function testDispatchProvidesHistoryVariablesWhenRouteMatches(): void
+    {
+        $this->gameRepository->idsBySegment['77-sample'] = 77;
+
+        $result = $this->router->dispatch('/game-history/77-sample');
+
+        $this->assertSame(['77-sample'], array_filter($this->gameRepository->receivedSegments));
+        $this->assertTrue($result->shouldInclude());
+        $this->assertSame('game_history.php', $result->getInclude());
+        $this->assertSame(
+            [
+                'gameId' => 77,
+                'player' => null,
+            ],
+            $result->getVariables()
+        );
+    }
+
     public function testDispatchProvidesTrophyVariablesWhenRouteMatches(): void
     {
         $this->trophyRepository->idsBySegment['55-trophy'] = 55;

@@ -18,7 +18,8 @@ final class GameRescanProcessor
     public static function fromDatabase(PDO $database): self
     {
         $trophyCalculator = new TrophyCalculator($database);
-        $gameRescanService = new GameRescanService($database, $trophyCalculator);
+        $historyRecorder = new TrophyHistoryRecorder($database, new Psn100Logger($database));
+        $gameRescanService = new GameRescanService($database, $trophyCalculator, $historyRecorder);
         $requestHandler = new GameRescanRequestHandler($gameRescanService);
 
         return new self($requestHandler);

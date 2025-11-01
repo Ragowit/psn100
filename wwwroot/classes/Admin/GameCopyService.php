@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../TrophyHistoryRecorder.php';
+
 class GameCopyService
 {
     private const TROPHY_GROUP_UPDATE_QUERY = <<<'SQL'
@@ -197,9 +199,12 @@ class GameCopyService
 
     private ?PDOStatement $findTrophyIdStatement = null;
 
-    public function __construct(PDO $database)
+    private TrophyHistoryRecorder $historyRecorder;
+
+    public function __construct(PDO $database, ?TrophyHistoryRecorder $historyRecorder = null)
     {
         $this->database = $database;
+        $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
     }
 
     public function copyChildToParent(
@@ -246,6 +251,8 @@ class GameCopyService
         $this->updateTrophyTitleCounts($parentNpCommunicationId);
 
         $this->recordCopyAction($childId, $parentId);
+
+        $this->historyRecorder->recordByTitleId($parentId);
     }
 
     private function getNpCommunicationId(int $gameId): string
