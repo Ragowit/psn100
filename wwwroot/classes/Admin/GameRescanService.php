@@ -440,6 +440,7 @@ class GameRescanService
 
             foreach ($data['trophies'] as $trophy) {
                 $orderId = (int) $trophy->id();
+                $trophyHidden = (int) $trophy->hidden();
                 $existingTrophy = $existingTrophyData[$groupId][$orderId] ?? [
                     'hidden' => null,
                     'type' => null,
@@ -475,7 +476,7 @@ class GameRescanService
                     $trophyContextLabel,
                     'Hidden',
                     $existingTrophy['hidden'],
-                    (int) $trophy->hidden()
+                    $trophyHidden
                 );
                 $differenceTracker->recordTrophyChange(
                     $groupId,
@@ -702,7 +703,7 @@ class GameRescanService
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $query->bindValue(':order_id', $trophy->id(), PDO::PARAM_INT);
-        $query->bindValue(':hidden', $trophy->hidden(), PDO::PARAM_INT);
+        $query->bindValue(':hidden', (int) $trophy->hidden(), PDO::PARAM_INT);
         $query->bindValue(':type', $trophy->type()->value, PDO::PARAM_STR);
         $query->bindValue(':name', $trophy->name(), PDO::PARAM_STR);
         $query->bindValue(':detail', $trophy->detail(), PDO::PARAM_STR);
