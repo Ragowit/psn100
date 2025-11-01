@@ -24,12 +24,12 @@ class TrophyMergeRequestHandler
                 return $this->handleSpecificTrophyMerge($postData);
             }
 
-            if ($this->isGameMerge($postData)) {
-                return $this->handleGameMerge($postData);
-            }
-
             if ($this->isCloneRequest($postData)) {
                 return $this->handleCloneRequest($postData);
+            }
+
+            if ($this->isGameMerge($postData)) {
+                return $this->handleGameMerge($postData);
             }
         } catch (InvalidArgumentException | RuntimeException $exception) {
             return $exception->getMessage();
@@ -115,14 +115,14 @@ class TrophyMergeRequestHandler
 
     private function isCloneRequest(array $postData): bool
     {
-        return $this->isNumericValueFromArray($postData, 'child');
+        return $this->isNumericValueFromArray($postData, 'clone');
     }
 
     private function handleCloneRequest(array $postData): string
     {
-        $childId = (int) $postData['child'];
+        $cloneId = (int) $postData['clone'];
 
-        return $this->trophyMergeService->cloneGame($childId);
+        return $this->trophyMergeService->cloneGame($cloneId);
     }
 
     private function isNumericValueFromArray(array $values, string $key): bool
