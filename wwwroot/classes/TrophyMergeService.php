@@ -282,8 +282,9 @@ SQL
                              name,
                              detail,
                              icon_url,
-                             status,
-                             progress_target_value)
+                             progress_target_value,
+                             reward_name,
+                             reward_image_url)
                 SELECT :np_communication_id,
                        group_id,
                        order_id,
@@ -292,8 +293,9 @@ SQL
                        name,
                        detail,
                        icon_url,
-                       status,
-                       progress_target_value
+                       progress_target_value,
+                       reward_name,
+                       reward_image_url
                 FROM   trophy
                 WHERE  np_communication_id = :child_np_communication_id
 SQL
@@ -301,6 +303,37 @@ SQL
             $query->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
             $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
             $query->execute();
+
+            $trophyMetaInsert = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy_meta (
+                    trophy_id,
+                    rarity_percent,
+                    rarity_point,
+                    status,
+                    owners,
+                    rarity_name
+                )
+                SELECT
+                    parent.id,
+                    tm.rarity_percent,
+                    tm.rarity_point,
+                    tm.status,
+                    tm.owners,
+                    tm.rarity_name
+                FROM trophy parent
+                INNER JOIN trophy child ON child.np_communication_id = :child_np_communication_id
+                    AND child.group_id = parent.group_id
+                    AND child.order_id = parent.order_id
+                INNER JOIN trophy_meta tm ON tm.trophy_id = child.id
+                LEFT JOIN trophy_meta existing ON existing.trophy_id = parent.id
+                WHERE parent.np_communication_id = :parent_np_communication_id
+                    AND existing.trophy_id IS NULL
+SQL
+            );
+            $trophyMetaInsert->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $trophyMetaInsert->bindValue(':parent_np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
+            $trophyMetaInsert->execute();
         });
 
         $this->logChange('GAME_CLONE', $childGameId, (int) $gameId);
