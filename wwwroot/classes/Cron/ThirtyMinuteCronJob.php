@@ -712,9 +712,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                                 $trophyHidden = (int) $trophy->hidden();
 
-                                $progressTargetValue = $trophy->progressTargetValue() === ''
+                                $rawProgressTargetValue = $trophy->progressTargetValue();
+                                $progressTargetValue = $rawProgressTargetValue === null || $rawProgressTargetValue === ''
                                     ? null
-                                    : $trophy->progressTargetValue();
+                                    : (int) $rawProgressTargetValue;
                                 $rewardName = $trophy->rewardName() === '' ? null : $trophy->rewardName();
 
                                 $existingProgressTargetValue = null;
@@ -846,7 +847,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $query->bindValue(":name", $trophy->name(), PDO::PARAM_STR);
                                     $query->bindValue(":detail", $trophy->detail(), PDO::PARAM_STR);
                                     $query->bindValue(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
-                                    $query->bindValue(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
+                                    if ($progressTargetValue === null) {
+                                        $query->bindValue(":progress_target_value", null, PDO::PARAM_NULL);
+                                    } else {
+                                        $query->bindValue(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
+                                    }
                                     $query->bindValue(":reward_name", $rewardName, PDO::PARAM_STR);
                                     $query->bindValue(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
                                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
