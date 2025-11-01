@@ -259,6 +259,7 @@ class GameDetailPage
         $npCommunicationId = $this->normalizeOptionalString($postData['np_communication_id'] ?? null);
         $region = $this->normalizeOptionalString($postData['region'] ?? null);
         $psnprofilesId = $this->normalizeOptionalString($postData['psnprofiles_id'] ?? null);
+        $obsoleteIds = $this->normalizeObsoleteIds($postData['obsolete_ids'] ?? null);
 
         return new GameDetail(
             $gameId,
@@ -270,7 +271,8 @@ class GameDetailPage
             (string) ($postData['set_version'] ?? ''),
             $region,
             $psnprofilesId,
-            $status
+            $status,
+            $obsoleteIds
         );
     }
 
@@ -283,6 +285,39 @@ class GameDetailPage
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function normalizeObsoleteIds(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $segments = array_filter(
+            array_map(static fn(string $segment): string => trim($segment), explode(',', $value)),
+            static fn(string $segment): bool => $segment !== ''
+        );
+
+        if ($segments === []) {
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($segments as $segment) {
+            if (!ctype_digit($segment)) {
+                continue;
+            }
+
+            $normalized[] = (string) (int) $segment;
+        }
+
+        if ($normalized === []) {
+            return null;
+        }
+
+        $normalized = array_values(array_unique($normalized));
+
+        return implode(',', $normalized);
     }
 
     private function formatStatusSuccessMessage(int $gameId, string $statusText): string

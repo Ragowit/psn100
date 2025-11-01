@@ -40,6 +40,7 @@ final class PlayerAdvisorServiceTest extends TestCase
                 psnprofiles_id INTEGER DEFAULT NULL,
                 parent_np_communication_id TEXT DEFAULT NULL,
                 region TEXT DEFAULT NULL,
+                obsolete_ids TEXT DEFAULT NULL,
                 rarity_points INTEGER DEFAULT 0
             )'
         );

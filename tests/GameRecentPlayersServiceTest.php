@@ -281,7 +281,8 @@ final class GameRecentPlayersServiceTest extends TestCase
                 difficulty TEXT,
                 status INTEGER,
                 psnprofiles_id INTEGER,
-                rarity_points INTEGER
+                rarity_points INTEGER,
+                obsolete_ids TEXT
             )
             SQL
         );

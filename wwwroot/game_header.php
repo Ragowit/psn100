@@ -37,6 +37,38 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         <?php
     }
 
+    if ($gameHeaderData->hasObsoleteReplacements()) {
+        $replacementLinks = [];
+        foreach ($gameHeaderData->getObsoleteReplacements() as $replacement) {
+            $replacementLink = '/game/' . $replacement->getId() . '-' . $utility->slugify($replacement->getName());
+            if (isset($player)) {
+                $replacementLink .= '/' . $player;
+            }
+
+            $replacementLinks[] = sprintf(
+                '<a href="%s">%s</a>',
+                htmlentities($replacementLink, ENT_QUOTES, 'UTF-8'),
+                htmlentities($replacement->getName(), ENT_QUOTES, 'UTF-8')
+            );
+        }
+
+        if (count($replacementLinks) === 2) {
+            $replacementText = implode(' and ', $replacementLinks);
+        } elseif (count($replacementLinks) > 2) {
+            $lastLink = array_pop($replacementLinks);
+            $replacementText = implode(', ', $replacementLinks) . ', and ' . $lastLink;
+        } else {
+            $replacementText = $replacementLinks[0];
+        }
+        ?>
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                This game is obsolete, no trophies will be accounted for on any leaderboard. Please play <?= $replacementText; ?> instead.
+            </div>
+        </div>
+        <?php
+    }
+
     if ($game->hasMessage()) {
         ?>
         <div class="col-12">

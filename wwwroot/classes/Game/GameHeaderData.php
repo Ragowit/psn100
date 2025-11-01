@@ -14,13 +14,24 @@ class GameHeaderData
     private int $unobtainableTrophyCount;
 
     /**
-     * @param GameHeaderStack[] $stacks
+     * @var GameObsoleteReplacement[]
      */
-    public function __construct(?GameHeaderParent $parentGame, array $stacks, int $unobtainableTrophyCount)
-    {
+    private array $obsoleteReplacements;
+
+    /**
+     * @param GameHeaderStack[] $stacks
+     * @param GameObsoleteReplacement[] $obsoleteReplacements
+     */
+    public function __construct(
+        ?GameHeaderParent $parentGame,
+        array $stacks,
+        int $unobtainableTrophyCount,
+        array $obsoleteReplacements
+    ) {
         $this->parentGame = $parentGame;
         $this->stacks = $stacks;
         $this->unobtainableTrophyCount = $unobtainableTrophyCount;
+        $this->obsoleteReplacements = $obsoleteReplacements;
     }
 
     public function hasMergedParent(): bool
@@ -54,5 +65,18 @@ class GameHeaderData
     public function hasUnobtainableTrophies(): bool
     {
         return $this->unobtainableTrophyCount > 0;
+    }
+
+    /**
+     * @return GameObsoleteReplacement[]
+     */
+    public function getObsoleteReplacements(): array
+    {
+        return $this->obsoleteReplacements;
+    }
+
+    public function hasObsoleteReplacements(): bool
+    {
+        return $this->obsoleteReplacements !== [];
     }
 }

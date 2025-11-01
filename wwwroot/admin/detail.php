@@ -61,6 +61,9 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <input type="text" name="np_communication_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getNpCommunicationId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>" readonly><br>
                     PSNProfiles ID:<br>
                     <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getPsnprofilesId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    Obsolete Game IDs:<br>
+                    <input type="text" name="obsolete_ids" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getObsoleteIds() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <small>Comma separated trophy_title.id values.</small><br>
                     Message:<br>
                     <textarea name="message" rows="6" cols="120"><?= $gameDetail->getMessage(); ?></textarea><br><br>
                     <label for="status">Status:</label><br>

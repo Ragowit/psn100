@@ -23,7 +23,8 @@ class GameDetailService
                 tt.set_version,
                 ttm.region,
                 ttm.psnprofiles_id,
-                ttm.status
+                ttm.status,
+                ttm.obsolete_ids
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
@@ -54,7 +55,8 @@ class GameDetailService
                 tt.set_version,
                 ttm.region,
                 ttm.psnprofiles_id,
-                ttm.status
+                ttm.status,
+                ttm.obsolete_ids
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
@@ -119,7 +121,8 @@ class GameDetailService
                 SET
                     message = :message,
                     region = :region,
-                    psnprofiles_id = :psnprofiles_id
+                    psnprofiles_id = :psnprofiles_id,
+                    obsolete_ids = :obsolete_ids
                 WHERE
                     np_communication_id = :np_communication_id'
             );
@@ -137,6 +140,13 @@ class GameDetailService
                 $metaQuery->bindValue(':psnprofiles_id', null, PDO::PARAM_NULL);
             } else {
                 $metaQuery->bindValue(':psnprofiles_id', $psnprofilesId, PDO::PARAM_STR);
+            }
+
+            $obsoleteIds = $gameDetail->getObsoleteIds();
+            if ($obsoleteIds === null) {
+                $metaQuery->bindValue(':obsolete_ids', null, PDO::PARAM_NULL);
+            } else {
+                $metaQuery->bindValue(':obsolete_ids', $obsoleteIds, PDO::PARAM_STR);
             }
 
             $metaQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Game/GameObsoleteReplacement.php';
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
@@ -37,7 +38,12 @@ class GameHeaderService
             $unobtainableTrophyCount = $this->countUnobtainableTrophies($npCommunicationId);
         }
 
-        return new GameHeaderData($parentGame, $stacks, $unobtainableTrophyCount);
+        $obsoleteReplacements = [];
+        if ($game->hasObsoleteReplacements()) {
+            $obsoleteReplacements = $this->fetchObsoleteReplacements($game->getObsoleteGameIds());
+        }
+
+        return new GameHeaderData($parentGame, $stacks, $unobtainableTrophyCount, $obsoleteReplacements);
     }
 
     private function fetchParentGame(string $npCommunicationId): ?GameHeaderParent
@@ -121,5 +127,50 @@ class GameHeaderService
         $query->execute();
 
         return (int) $query->fetchColumn();
+    }
+
+    /**
+     * @param int[] $ids
+     * @return GameObsoleteReplacement[]
+     */
+    private function fetchObsoleteReplacements(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $query = $this->database->prepare(
+            sprintf(
+                'SELECT id, `name` FROM trophy_title WHERE id IN (%s)',
+                $placeholders
+            )
+        );
+
+        foreach ($ids as $index => $id) {
+            $query->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
+
+        $query->execute();
+
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $replacementsById = [];
+        foreach ($rows as $row) {
+            $replacement = GameObsoleteReplacement::fromArray($row);
+            $replacementsById[$replacement->getId()] = $replacement;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($replacementsById[$id])) {
+                $ordered[] = $replacementsById[$id];
+            }
+        }
+
+        return $ordered;
     }
 }

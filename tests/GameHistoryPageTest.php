@@ -83,7 +83,7 @@ final class GameHistoryPageTest extends TestCase
 
             public function buildHeaderData(GameDetails $game): GameHeaderData
             {
-                return new GameHeaderData(null, [], 0);
+                return new GameHeaderData(null, [], 0, []);
             }
         };
 
