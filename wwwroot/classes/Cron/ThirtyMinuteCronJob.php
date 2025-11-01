@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
+require_once __DIR__ . '/../TrophyMetaRepository.php';
 
 use Tustin\PlayStation\Client;
 
@@ -24,6 +25,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private int $workerId;
 
+    private TrophyMetaRepository $trophyMetaRepository;
+
     public function __construct(
         PDO $database,
         TrophyCalculator $trophyCalculator,
@@ -37,6 +40,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $this->logger = $logger;
         $this->historyRecorder = $historyRecorder;
         $this->workerId = $workerId;
+        $this->trophyMetaRepository = new TrophyMetaRepository($database);
     }
 
     public function run(): void
@@ -554,10 +558,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             ) AS new
                             ON DUPLICATE KEY
                             UPDATE
-                                name = new.name,
                                 detail = new.detail,
                                 icon_url = new.icon_url,
-                                platform = new.platform,
                                 set_version = new.set_version");
                         $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                         $query->bindValue(
@@ -737,15 +739,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $newTrophies = true;
                                     $groupNewTrophies = true;
                                 }
-                            }
-
-                            if (isset($trophy)) {
-                                $this->ensureTrophyMetaRow(
+                              
+                                $this->trophyMetaRepository->ensureExists(
                                     $npid,
                                     $trophyGroup->id(),
                                     (int) $trophy->id()
                                 );
-                                unset($trophy);
                             }
 
                             if ($groupNewTrophies) {

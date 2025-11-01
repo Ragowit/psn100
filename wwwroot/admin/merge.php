@@ -32,12 +32,12 @@ $message = $requestHandler->handle($_POST ?? []);
             <a href="/admin/">Back</a><br><br>
             <form id="merge-form" method="post" autocomplete="off" class="row g-3">
                 <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-child">Game Child ID</label>
-                    <input type="number" class="form-control" id="merge-child" name="child" inputmode="numeric">
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
                     <label class="form-label" for="merge-parent">Game Parent ID</label>
                     <input type="number" class="form-control" id="merge-parent" name="parent" inputmode="numeric">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="merge-child">Game Child ID</label>
+                    <input type="number" class="form-control" id="merge-child" name="child" inputmode="numeric">
                 </div>
                 <div class="col-12 col-md-6 col-xl-4">
                     <label class="form-label" for="merge-method">Method</label>
@@ -48,12 +48,12 @@ $message = $requestHandler->handle($_POST ?? []);
                     </select>
                 </div>
                 <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-trophy-child">Trophy Child ID</label>
-                    <input type="text" class="form-control" id="merge-trophy-child" name="trophychild">
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
                     <label class="form-label" for="merge-trophy-parent">Trophy Parent ID</label>
                     <input type="number" class="form-control" id="merge-trophy-parent" name="trophyparent" inputmode="numeric">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="merge-trophy-child">Trophy Child ID</label>
+                    <input type="text" class="form-control" id="merge-trophy-child" name="trophychild">
                 </div>
                 <div class="col-12 align-self-end">
                     <button type="submit" class="btn btn-primary" id="merge-submit">Submit</button>

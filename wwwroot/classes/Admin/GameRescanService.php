@@ -6,6 +6,7 @@ require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/GameRescanDifferenceTracker.php';
 require_once __DIR__ . '/GameRescanResult.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
+require_once __DIR__ . '/../TrophyMetaRepository.php';
 
 use Tustin\PlayStation\Client;
 
@@ -21,6 +22,7 @@ class GameRescanService
     private PDO $database;
     private TrophyCalculator $trophyCalculator;
     private int $lastProgress = 0;
+    private TrophyMetaRepository $trophyMetaRepository;
 
     private TrophyHistoryRecorder $historyRecorder;
 
@@ -34,6 +36,7 @@ class GameRescanService
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
+        $this->trophyMetaRepository = new TrophyMetaRepository($database);
     }
 
     /**
@@ -548,6 +551,7 @@ class GameRescanService
                 );
 
                 $this->upsertTrophy($npCommunicationId, $trophyGroup->id(), $trophy, $trophyIconFilename, $rewardImageFilename);
+                $this->trophyMetaRepository->ensureExists($npCommunicationId, $trophyGroup->id(), (int) $trophy->id());
 
                 $processedTrophiesInGroup++;
                 $currentStep++;
