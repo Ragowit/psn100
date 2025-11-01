@@ -65,6 +65,11 @@ class ChangelogEntryPresenter
                     '%s status was set to delisted &amp; obsolete.',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges)
                 );
+            case ChangelogEntry::TYPE_GAME_HISTORY_SNAPSHOT:
+                return sprintf(
+                    'A new trophy history snapshot was recorded for %s.',
+                    $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
+                );
             case ChangelogEntry::TYPE_GAME_MERGE:
                 return sprintf(
                     '%s was merged into %s',
