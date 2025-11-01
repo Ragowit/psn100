@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
@@ -344,17 +345,22 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $result = $query->fetch();
 
                 if (!$result) { // We doesn't seem to have this avatar
-                    $md5Hash = md5_file($avatarUrl);
-                    if (!$md5Hash) {
+                    $avatarContents = @file_get_contents($avatarUrl);
+                    if ($avatarContents === false) {
                         // File not found. Try next.
                         continue;
+                    }
+
+                    $md5Hash = ImageHashCalculator::calculate($avatarContents);
+                    if ($md5Hash === null) {
+                        $md5Hash = md5($avatarContents);
                     }
 
                     $extension = strtolower(pathinfo($avatarUrl, PATHINFO_EXTENSION));
 
                     $avatarFilename = $md5Hash .".". $extension;
                     if (!file_exists("/home/psn100/public_html/img/avatar/". $avatarFilename)) {
-                        file_put_contents("/home/psn100/public_html/img/avatar/". $avatarFilename, fopen($avatarUrl, 'r'));
+                        file_put_contents("/home/psn100/public_html/img/avatar/". $avatarFilename, $avatarContents);
                     }
 
                     // SQL Insert
@@ -1452,7 +1458,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private function buildFilename(string $url, string $contents): string
     {
-        $hash = md5($contents);
+        $hash = ImageHashCalculator::calculate($contents);
+        if ($hash === null) {
+            $hash = md5($contents);
+        }
         $extensionPosition = strrpos($url, '.');
         $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
 
