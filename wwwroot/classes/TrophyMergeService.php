@@ -156,9 +156,16 @@ SQL
             throw new RuntimeException('Unable to determine next trophy title identifier.');
         }
 
+        $gameId = (int) $gameId;
+
         $cloneNpCommunicationId = 'MERGE_' . str_pad((string) $gameId, 6, '0', STR_PAD_LEFT);
 
-        $this->executeTransaction(function () use ($cloneNpCommunicationId, $childGameId, $childNpCommunicationId): void {
+        $this->executeTransaction(function () use (
+            $cloneNpCommunicationId,
+            $childGameId,
+            $childNpCommunicationId,
+            $gameId
+        ): void {
             $query = $this->database->prepare(
                 <<<'SQL'
                 INSERT INTO trophy_title
@@ -334,6 +341,8 @@ SQL
             $trophyMetaInsert->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
             $trophyMetaInsert->bindValue(':parent_np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
             $trophyMetaInsert->execute();
+
+            $this->cloneGameHistory($childGameId, $gameId);
         });
 
         $this->logChange('GAME_CLONE', $childGameId, (int) $gameId);
@@ -1279,6 +1288,110 @@ SQL
         }
 
         return (string) $npCommunicationId;
+    }
+
+    private function cloneGameHistory(int $sourceGameId, int $cloneGameId): void
+    {
+        $historyQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT id,
+                   detail,
+                   icon_url,
+                   set_version,
+                   discovered_at
+            FROM   trophy_title_history
+            WHERE  trophy_title_id = :game_id
+            ORDER BY id
+SQL
+        );
+        $historyQuery->bindValue(':game_id', $sourceGameId, PDO::PARAM_INT);
+        $historyQuery->execute();
+
+        $historyInsert = $this->database->prepare(
+            <<<'SQL'
+            INSERT INTO trophy_title_history (
+                trophy_title_id,
+                detail,
+                icon_url,
+                set_version,
+                discovered_at
+            )
+            VALUES (
+                :clone_game_id,
+                :detail,
+                :icon_url,
+                :set_version,
+                :discovered_at
+            )
+SQL
+        );
+
+        $groupHistoryInsert = $this->database->prepare(
+            <<<'SQL'
+            INSERT INTO trophy_group_history (
+                title_history_id,
+                group_id,
+                name,
+                detail,
+                icon_url
+            )
+            SELECT :new_history_id,
+                   group_id,
+                   name,
+                   detail,
+                   icon_url
+            FROM   trophy_group_history
+            WHERE  title_history_id = :old_history_id
+SQL
+        );
+
+        $trophyHistoryInsert = $this->database->prepare(
+            <<<'SQL'
+            INSERT INTO trophy_history (
+                title_history_id,
+                group_id,
+                order_id,
+                name,
+                detail,
+                icon_url,
+                progress_target_value
+            )
+            SELECT :new_history_id,
+                   group_id,
+                   order_id,
+                   name,
+                   detail,
+                   icon_url,
+                   progress_target_value
+            FROM   trophy_history
+            WHERE  title_history_id = :old_history_id
+SQL
+        );
+
+        while ($historyRow = $historyQuery->fetch(PDO::FETCH_ASSOC)) {
+            $historyInsert->execute([
+                ':clone_game_id' => $cloneGameId,
+                ':detail' => $historyRow['detail'],
+                ':icon_url' => $historyRow['icon_url'],
+                ':set_version' => $historyRow['set_version'],
+                ':discovered_at' => $historyRow['discovered_at'],
+            ]);
+
+            $newHistoryId = (int) $this->database->lastInsertId();
+            $oldHistoryId = (int) $historyRow['id'];
+
+            $groupHistoryInsert->execute([
+                ':new_history_id' => $newHistoryId,
+                ':old_history_id' => $oldHistoryId,
+            ]);
+
+            $trophyHistoryInsert->execute([
+                ':new_history_id' => $newHistoryId,
+                ':old_history_id' => $oldHistoryId,
+            ]);
+        }
+
+        $historyQuery->closeCursor();
     }
 
     private function executeTransaction(callable $operation): void
