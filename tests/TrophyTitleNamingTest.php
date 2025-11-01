@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../wwwroot/classes/Psn100Logger.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php';
 
 final class TrophyTitleNamingTest extends TestCase
