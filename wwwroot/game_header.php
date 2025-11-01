@@ -53,10 +53,10 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         }
 
         if (count($replacementLinks) === 2) {
-            $replacementText = implode(' or ', $replacementLinks);
+            $replacementText = implode(' and ', $replacementLinks);
         } elseif (count($replacementLinks) > 2) {
             $lastLink = array_pop($replacementLinks);
-            $replacementText = implode(', ', $replacementLinks) . ', or ' . $lastLink;
+            $replacementText = implode(', ', $replacementLinks) . ', and ' . $lastLink;
         } else {
             $replacementText = $replacementLinks[0];
         }
