@@ -67,35 +67,44 @@ require_once 'header.php';
                             <div>
                                 <?php
                                 $titleChange = $entry['title'] ?? null;
+                                $titleHighlights = $entry['titleHighlights'] ?? ['detail' => false, 'icon_url' => false, 'set_version' => false];
+                                $hasTitleChanges = $entry['hasTitleChanges'] ?? false;
                                 $setVersion = $titleChange['set_version'] ?? null;
                                 ?>
-                                <span class="fw-semibold">Version <?= htmlentities($setVersion ?? 'Unknown', ENT_QUOTES, 'UTF-8'); ?></span>
+                                <span class="fw-semibold">
+                                    Version <?= htmlentities($setVersion ?? 'Unknown', ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php if ($titleHighlights['set_version'] ?? false) { ?>
+                                        <span class="badge text-bg-success ms-2">New</span>
+                                    <?php } ?>
+                                </span>
                             </div>
                             <div class="text-body-secondary small">
                                 <?= htmlentities($entry['discoveredAt']->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?> UTC
                             </div>
                         </div>
                         <div class="card-body">
-                            <?php if ($titleChange !== null) { ?>
+                            <?php if ($titleChange !== null && $hasTitleChanges && (($titleHighlights['detail'] ?? false) || ($titleHighlights['icon_url'] ?? false))) { ?>
                                 <div class="row g-3 align-items-center mb-3">
-                                    <div class="col-12 col-md-2 text-center text-md-start">
-                                        <?php
-                                        $iconUrl = $titleChange['icon_url'] ?? '';
-                                        $iconPath = ($iconUrl === '.png')
-                                            ? ((str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
-                                                ? '../missing-ps5-game-and-trophy.png'
-                                                : '../missing-ps4-game.png')
-                                            : $iconUrl;
-                                        ?>
-                                        <img class="object-fit-scale" style="height: 5.5rem;" src="/img/title/<?= htmlentities($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName(), ENT_QUOTES, 'UTF-8'); ?>">
-                                    </div>
-                                    <div class="col-12 col-md-10">
-                                        <?php if (($titleChange['detail'] ?? '') !== '') { ?>
-                                            <div><?= nl2br(htmlentities((string) $titleChange['detail'], ENT_QUOTES, 'UTF-8')); ?></div>
-                                        <?php } else { ?>
-                                            <div class="text-body-secondary"><em>No title detail provided.</em></div>
-                                        <?php } ?>
-                                    </div>
+                                    <?php if ($titleHighlights['icon_url'] ?? false) { ?>
+                                        <div class="col-12 col-md-2 text-center text-md-start">
+                                            <?php
+                                            $iconUrl = $titleChange['icon_url'] ?? '';
+                                            $iconPath = ($iconUrl === '.png')
+                                                ? ((str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
+                                                    ? '../missing-ps5-game-and-trophy.png'
+                                                    : '../missing-ps4-game.png')
+                                                : $iconUrl;
+                                            ?>
+                                            <img class="object-fit-scale border border-success border-2 rounded" style="height: 5.5rem;" src="/img/title/<?= htmlentities($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName(), ENT_QUOTES, 'UTF-8'); ?>">
+                                        </div>
+                                    <?php } ?>
+                                    <?php if ($titleHighlights['detail'] ?? false) { ?>
+                                        <div class="col-12 <?= ($titleHighlights['icon_url'] ?? false) ? 'col-md-10' : 'col-md-12'; ?>">
+                                            <div class="p-2 border border-success rounded bg-success-subtle text-success-emphasis">
+                                                <?= nl2br(htmlentities((string) $titleChange['detail'], ENT_QUOTES, 'UTF-8')); ?>
+                                            </div>
+                                        </div>
+                                    <?php } ?>
                                 </div>
                             <?php } ?>
 
@@ -115,11 +124,18 @@ require_once 'header.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($groupChanges as $groupChange) { ?>
-                                                    <tr>
-                                                        <td><span class="badge text-bg-secondary"><?= htmlentities($groupChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                        <td><?= htmlentities($groupChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                        <td><?= nl2br(htmlentities($groupChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?></td>
-                                                        <td class="text-center">
+                                                    <?php $groupChangedFields = $groupChange['changedFields'] ?? ['name' => false, 'detail' => false, 'icon_url' => false]; ?>
+                                                    <tr class="<?= ($groupChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
+                                                        <td class="<?= ($groupChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
+                                                            <span class="badge text-bg-secondary"><?= htmlentities($groupChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                        </td>
+                                                        <td class="<?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
+                                                            <?= htmlentities($groupChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                                        </td>
+                                                        <td class="<?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
+                                                            <?= nl2br(htmlentities($groupChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
+                                                        </td>
+                                                        <td class="text-center <?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['icon_url'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?php
                                                             $groupIconUrl = $groupChange['icon_url'] ?? '';
                                                             $groupIconPath = ($groupIconUrl === '.png')
@@ -128,7 +144,7 @@ require_once 'header.php';
                                                                     : '../missing-ps4-game.png')
                                                                 : $groupIconUrl;
                                                             ?>
-                                                            <img class="object-fit-cover" style="height: 3.5rem;" src="/img/group/<?= htmlentities($groupIconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($groupChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <img class="object-fit-cover <?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['icon_url'] ?? false)) ? 'border border-success border-2 rounded' : ''; ?>" style="height: 3.5rem;" src="/img/group/<?= htmlentities($groupIconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($groupChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                         </td>
                                                     </tr>
                                                 <?php } ?>
@@ -156,13 +172,22 @@ require_once 'header.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($trophyChanges as $trophyChange) { ?>
-                                                    <tr>
-                                                        <td><span class="badge text-bg-secondary"><?= htmlentities($trophyChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                        <td><?= (int) $trophyChange['order_id']; ?></td>
-                                                        <td><?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                        <td><?= nl2br(htmlentities($trophyChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?></td>
-                                                        <td><?= $trophyChange['progress_target_value'] === null ? '&mdash;' : htmlentities((string) $trophyChange['progress_target_value'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                        <td class="text-center">
+                                                    <?php $trophyChangedFields = $trophyChange['changedFields'] ?? ['name' => false, 'detail' => false, 'icon_url' => false, 'progress_target_value' => false]; ?>
+                                                    <tr class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
+                                                        <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
+                                                            <span class="badge text-bg-secondary"><?= htmlentities($trophyChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                        </td>
+                                                        <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>"><?= (int) $trophyChange['order_id']; ?></td>
+                                                        <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
+                                                            <?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                                        </td>
+                                                        <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
+                                                            <?= nl2br(htmlentities($trophyChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
+                                                        </td>
+                                                        <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['progress_target_value'] ?? false)) ? 'table-success' : ''; ?>">
+                                                            <?= $trophyChange['progress_target_value'] === null ? '&mdash;' : htmlentities((string) $trophyChange['progress_target_value'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        </td>
+                                                        <td class="text-center <?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['icon_url'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?php
                                                             $trophyIconUrl = $trophyChange['icon_url'] ?? '';
                                                             $trophyIconPath = ($trophyIconUrl === '.png')
@@ -171,7 +196,7 @@ require_once 'header.php';
                                                                     : '../missing-ps4-trophy.png')
                                                                 : $trophyIconUrl;
                                                             ?>
-                                                            <img class="object-fit-scale" style="height: 3.5rem;" src="/img/trophy/<?= htmlentities($trophyIconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <img class="object-fit-scale <?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['icon_url'] ?? false)) ? 'border border-success border-2 rounded' : ''; ?>" style="height: 3.5rem;" src="/img/trophy/<?= htmlentities($trophyIconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                         </td>
                                                     </tr>
                                                 <?php } ?>
