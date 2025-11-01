@@ -563,9 +563,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             || !file_exists(self::TITLE_ICON_DIRECTORY . $titleIconFilename);
 
                         $titleNeedsUpdate = $existingTitle === null
-                            || $existingTitle['name'] !== $sanitizedTitleName
                             || $existingTitle['detail'] !== $trophyTitle->detail()
-                            || $existingTitle['platform'] !== $platforms
                             || $existingTitle['set_version'] !== $trophyTitle->trophySetVersion();
 
                         if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
@@ -612,17 +610,14 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             }
                         }
 
-                        $metaQuery = $this->database->prepare("INSERT INTO trophy_title_meta (
+                        $metaQuery = $this->database->prepare("INSERT IGNORE INTO trophy_title_meta (
                                 np_communication_id,
                                 message
                             )
                             VALUES (
                                 :np_communication_id,
                                 :message
-                            ) AS new
-                            ON DUPLICATE KEY
-                            UPDATE
-                                np_communication_id = new.np_communication_id");
+                            )");
                         $metaQuery->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                         $metaQuery->bindValue(":message", '', PDO::PARAM_STR);
                         $metaQuery->execute();
@@ -649,7 +644,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 || $existingGroup['name'] !== $trophyGroup->name()
                                 || $existingGroup['detail'] !== $trophyGroup->detail();
 
-                            if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing) {
+                            if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
                                 $groupIconFilename = $this->downloadMandatoryImage(
                                     $trophyGroup->iconUrl(),
                                     self::GROUP_ICON_DIRECTORY,
@@ -657,7 +652,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 );
                             }
 
-                            if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing) {
+                            if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
                                 $query = $this->database->prepare("INSERT INTO trophy_group(
                                         np_communication_id,
                                         group_id,
@@ -742,7 +737,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $iconMissing = $existingIconFilename === null
                                     || !file_exists(self::TROPHY_ICON_DIRECTORY . $existingIconFilename);
 
-                                if ($existingTrophy === null || $trophyNeedsUpdate || $iconMissing) {
+                                if ($existingTrophy === null || $trophyNeedsUpdate || $iconMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
                                     $trophyIconFilename = $this->downloadMandatoryImage(
                                         $trophy->iconUrl(),
                                         self::TROPHY_ICON_DIRECTORY,
@@ -766,7 +761,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $rewardImageMissing = $existingRewardImageFilename === null
                                         || !file_exists(self::REWARD_ICON_DIRECTORY . $existingRewardImageFilename);
 
-                                    if ($existingTrophy === null || $trophyNeedsUpdate || $rewardImageMissing) {
+                                    if ($existingTrophy === null || $trophyNeedsUpdate || $rewardImageMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
                                         $rewardImageFilename = $this->downloadOptionalImage(
                                             $trophy->rewardImageUrl(),
                                             self::REWARD_ICON_DIRECTORY,
