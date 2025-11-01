@@ -55,6 +55,10 @@ $message = $requestHandler->handle($_POST ?? []);
                     <label class="form-label" for="merge-trophy-child">Trophy Child ID</label>
                     <input type="text" class="form-control" id="merge-trophy-child" name="trophychild">
                 </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="merge-clone">Clone Game ID</label>
+                    <input type="number" class="form-control" id="merge-clone" name="clone" inputmode="numeric">
+                </div>
                 <div class="col-12 align-self-end">
                     <button type="submit" class="btn btn-primary" id="merge-submit">Submit</button>
                 </div>
@@ -80,6 +84,7 @@ $message = $requestHandler->handle($_POST ?? []);
                     methodSelectId,
                     trophyChildInputId,
                     trophyParentInputId,
+                    cloneInputId,
                     submitButtonId,
                     progressWrapperId,
                     progressBarId,
@@ -92,6 +97,7 @@ $message = $requestHandler->handle($_POST ?? []);
                     this.methodSelect = document.getElementById(methodSelectId);
                     this.trophyChildInput = document.getElementById(trophyChildInputId);
                     this.trophyParentInput = document.getElementById(trophyParentInputId);
+                    this.cloneInput = document.getElementById(cloneInputId);
                     this.submitButton = document.getElementById(submitButtonId);
                     this.progressWrapper = document.getElementById(progressWrapperId);
                     this.progressBar = document.getElementById(progressBarId);
@@ -117,6 +123,7 @@ $message = $requestHandler->handle($_POST ?? []);
                         this.progressBar,
                         this.progressMessage,
                         this.resultContainer,
+                        this.cloneInput,
                     ].every((element) => element instanceof HTMLElement);
                 }
 
@@ -149,6 +156,11 @@ $message = $requestHandler->handle($_POST ?? []);
                     const parentValue = (this.parentInput?.value || '').trim();
                     const trophyParentValue = (this.trophyParentInput?.value || '').trim();
                     const trophyChildValue = (this.trophyChildInput?.value || '').trim();
+                    const cloneValue = (this.cloneInput?.value || '').trim();
+
+                    if (cloneValue !== '') {
+                        return false;
+                    }
 
                     if (trophyParentValue !== '' || trophyChildValue !== '') {
                         return false;
@@ -473,6 +485,7 @@ $message = $requestHandler->handle($_POST ?? []);
                 methodSelectId: 'merge-method',
                 trophyChildInputId: 'merge-trophy-child',
                 trophyParentInputId: 'merge-trophy-parent',
+                cloneInputId: 'merge-clone',
                 submitButtonId: 'merge-submit',
                 progressWrapperId: 'merge-progress-wrapper',
                 progressBarId: 'merge-progress-bar',
