@@ -124,12 +124,8 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
                 <div>
                     <?php
                     $region = $game->getRegion();
-                    $historyUrl = '/game-history/' . $game->getId() . '-' . $utility->slugify($game->getName());
                     ?>
-                    Version:
-                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlentities($historyUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?= htmlentities($game->getSetVersion(), ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
+                    Version: <?= htmlentities($game->getSetVersion(), ENT_QUOTES, 'UTF-8'); ?>
                     <?= ($region === null ? '' : " <span class=\"badge rounded-pill text-bg-primary\">" . htmlentities($region, ENT_QUOTES, 'UTF-8') . '</span>') ?>
                 </div>
 
