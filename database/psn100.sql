@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 31, 2025 at 07:47 PM
+-- Generation Time: Nov 01, 2025 at 01:16 AM
 -- Server version: 8.4.7
 -- PHP Version: 8.4.14
 
@@ -135,51 +135,6 @@ CREATE TABLE `psn100_change` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `trophy_title_history`
---
-
-CREATE TABLE `trophy_title_history` (
-  `id` bigint UNSIGNED NOT NULL,
-  `trophy_title_id` bigint UNSIGNED NOT NULL,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `discovered_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `trophy_group_history`
---
-
-CREATE TABLE `trophy_group_history` (
-  `title_history_id` bigint UNSIGNED NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `trophy_history`
---
-
-CREATE TABLE `trophy_history` (
-  `title_history_id` bigint UNSIGNED NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `order_id` smallint UNSIGNED NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `progress_target_value` int UNSIGNED DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `setting`
 --
 
@@ -260,8 +215,6 @@ DELIMITER ;
 
 -- --------------------------------------------------------
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `trophy_group`
 --
@@ -282,6 +235,20 @@ CREATE TABLE `trophy_group` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `trophy_group_history`
+--
+
+CREATE TABLE `trophy_group_history` (
+  `title_history_id` bigint UNSIGNED NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `trophy_group_player`
 --
 
@@ -294,6 +261,22 @@ CREATE TABLE `trophy_group_player` (
   `gold` smallint UNSIGNED NOT NULL,
   `platinum` smallint UNSIGNED NOT NULL,
   `progress` tinyint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_history`
+--
+
+CREATE TABLE `trophy_history` (
+  `title_history_id` bigint UNSIGNED NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `order_id` smallint UNSIGNED NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `progress_target_value` int UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -344,6 +327,21 @@ CREATE TABLE `trophy_title` (
   `gold` smallint UNSIGNED NOT NULL DEFAULT '0',
   `platinum` smallint UNSIGNED NOT NULL DEFAULT '0',
   `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trophy_title_history`
+--
+
+CREATE TABLE `trophy_title_history` (
+  `id` bigint UNSIGNED NOT NULL,
+  `trophy_title_id` bigint UNSIGNED NOT NULL,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `discovered_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -455,27 +453,6 @@ ALTER TABLE `psn100_change`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `trophy_title_history`
---
-ALTER TABLE `trophy_title_history`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_trophy_title_history_title` (`trophy_title_id`),
-  ADD KEY `idx_trophy_title_history_discovered_at` (`discovered_at`);
-
---
--- Indexes for table `trophy_group_history`
---
-ALTER TABLE `trophy_group_history`
-  ADD PRIMARY KEY (`title_history_id`,`group_id`),
-  ADD KEY `idx_trophy_group_history_group` (`group_id`);
-
---
--- Indexes for table `trophy_history`
---
-ALTER TABLE `trophy_history`
-  ADD PRIMARY KEY (`title_history_id`,`group_id`,`order_id`);
-
---
 -- Indexes for table `setting`
 --
 ALTER TABLE `setting`
@@ -508,11 +485,24 @@ ALTER TABLE `trophy_group`
   ADD UNIQUE KEY `u_npcid_gid` (`np_communication_id`,`group_id`);
 
 --
+-- Indexes for table `trophy_group_history`
+--
+ALTER TABLE `trophy_group_history`
+  ADD PRIMARY KEY (`title_history_id`,`group_id`),
+  ADD KEY `idx_trophy_group_history_group` (`group_id`);
+
+--
 -- Indexes for table `trophy_group_player`
 --
 ALTER TABLE `trophy_group_player`
   ADD PRIMARY KEY (`np_communication_id`,`group_id`,`account_id`) USING BTREE,
   ADD KEY `idx_account_id` (`account_id`);
+
+--
+-- Indexes for table `trophy_history`
+--
+ALTER TABLE `trophy_history`
+  ADD PRIMARY KEY (`title_history_id`,`group_id`,`order_id`);
 
 --
 -- Indexes for table `trophy_merge`
@@ -534,6 +524,14 @@ ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`);
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
+
+--
+-- Indexes for table `trophy_title_history`
+--
+ALTER TABLE `trophy_title_history`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_trophy_title_history_title` (`trophy_title_id`),
+  ADD KEY `idx_trophy_title_history_discovered_at` (`discovered_at`);
 
 --
 -- Indexes for table `trophy_title_meta`
@@ -562,7 +560,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580205;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580209;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -580,13 +578,7 @@ ALTER TABLE `psn100_avatars`
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47874;
-
---
--- AUTO_INCREMENT for table `trophy_title_history`
---
-ALTER TABLE `trophy_title_history`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47894;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -598,29 +590,29 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1910593;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1910666;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83874;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83881;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59642;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59645;
+
+--
+-- AUTO_INCREMENT for table `trophy_title_history`
+--
+ALTER TABLE `trophy_title_history`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `trophy_title_history`
---
-ALTER TABLE `trophy_title_history`
-  ADD CONSTRAINT `trophy_title_history_title_fk` FOREIGN KEY (`trophy_title_id`) REFERENCES `trophy_title` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `trophy_group_history`
@@ -639,6 +631,12 @@ ALTER TABLE `trophy_history`
 --
 ALTER TABLE `trophy_meta`
   ADD CONSTRAINT `fk_trophy_meta_trophy` FOREIGN KEY (`trophy_id`) REFERENCES `trophy` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `trophy_title_history`
+--
+ALTER TABLE `trophy_title_history`
+  ADD CONSTRAINT `trophy_title_history_title_fk` FOREIGN KEY (`trophy_title_id`) REFERENCES `trophy_title` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `trophy_title_meta`
