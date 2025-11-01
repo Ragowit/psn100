@@ -558,7 +558,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $existingTitleQuery->execute();
                         $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
-                        $titleIconFilename = $existingTitle['icon_url'] ?? null;
+                        $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
+                        $titleIconFilename = $previousTitleIconFilename;
                         $titleIconMissing = $titleIconFilename === null
                             || !file_exists(self::TITLE_ICON_DIRECTORY . $titleIconFilename);
 
@@ -570,7 +571,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $titleIconFilename = $this->downloadMandatoryImage(
                                 $trophyTitle->iconUrl(),
                                 self::TITLE_ICON_DIRECTORY,
-                                sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid)
+                                sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid),
+                                $previousTitleIconFilename
                             );
                         }
 
@@ -636,7 +638,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $existingGroupQuery->execute();
                             $existingGroup = $existingGroupQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
-                            $groupIconFilename = $existingGroup['icon_url'] ?? null;
+                            $previousGroupIconFilename = $existingGroup['icon_url'] ?? null;
+                            $groupIconFilename = $previousGroupIconFilename;
                             $groupIconMissing = $groupIconFilename === null
                                 || !file_exists(self::GROUP_ICON_DIRECTORY . $groupIconFilename);
 
@@ -648,7 +651,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $groupIconFilename = $this->downloadMandatoryImage(
                                     $trophyGroup->iconUrl(),
                                     self::GROUP_ICON_DIRECTORY,
-                                    sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroup->name(), $npid, $trophyGroup->id())
+                                    sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroup->name(), $npid, $trophyGroup->id()),
+                                    $previousGroupIconFilename
                                 );
                             }
 
@@ -737,6 +741,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $iconMissing = $existingIconFilename === null
                                     || !file_exists(self::TROPHY_ICON_DIRECTORY . $existingIconFilename);
 
+                                $previousIconFilename = $existingIconFilename;
+
                                 if ($existingTrophy === null || $trophyNeedsUpdate || $iconMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
                                     $trophyIconFilename = $this->downloadMandatoryImage(
                                         $trophy->iconUrl(),
@@ -747,7 +753,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                             $npid,
                                             $trophyGroup->id(),
                                             $trophy->id()
-                                        )
+                                        ),
+                                        $previousIconFilename
                                     );
                                 } else {
                                     $trophyIconFilename = $existingIconFilename;
@@ -771,7 +778,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                                 $npid,
                                                 $trophyGroup->id(),
                                                 $trophy->id()
-                                            )
+                                            ),
+                                            $existingRewardImageFilename
                                         );
                                     } else {
                                         $rewardImageFilename = $existingRewardImageFilename;
@@ -1340,11 +1348,18 @@ class ThirtyMinuteCronJob implements CronJobInterface
         return (int) $id;
     }
 
-    private function downloadMandatoryImage(string $url, string $directory, string $description): string
+    private function downloadMandatoryImage(
+        string $url,
+        string $directory,
+        string $description,
+        ?string $existingFilename = null
+    ): string
     {
         $contents = $this->fetchRemoteFile($url);
         if ($contents === null) {
-            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+            if ($this->shouldLogDownloadFailure($existingFilename)) {
+                $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+            }
 
             return '.png';
         }
@@ -1354,7 +1369,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
         return $storedFilename ?? '.png';
     }
 
-    private function downloadOptionalImage(?string $url, string $directory, string $description): ?string
+    private function downloadOptionalImage(
+        ?string $url,
+        string $directory,
+        string $description,
+        ?string $existingFilename = null
+    ): ?string
     {
         if ($url === null || $url === '') {
             return null;
@@ -1362,7 +1382,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
         $contents = $this->fetchRemoteFile($url);
         if ($contents === null) {
-            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+            if ($this->shouldLogDownloadFailure($existingFilename)) {
+                $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+            }
 
             return '.png';
         }
@@ -1370,6 +1392,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
 
         return $storedFilename ?? '.png';
+    }
+
+    private function shouldLogDownloadFailure(?string $existingFilename): bool
+    {
+        if ($existingFilename === null || $existingFilename === '') {
+            return true;
+        }
+
+        return $existingFilename !== '.png';
     }
 
     private function storeImageContents(string $url, string $directory, string $description, string $contents): ?string
