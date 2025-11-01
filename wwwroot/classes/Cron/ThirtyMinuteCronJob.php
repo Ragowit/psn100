@@ -1426,24 +1426,28 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private function fetchRemoteFile(string $url): ?string
     {
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 30,
-                'ignore_errors' => true,
-            ],
-        ]);
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 30,
+                    'ignore_errors' => true,
+                ],
+            ]);
 
-        $contents = @file_get_contents($url, false, $context);
-        if ($contents === false) {
-            return null;
+            $contents = @file_get_contents($url, false, $context);
+            if ($contents !== false) {
+                $statusLine = $http_response_header[0] ?? '';
+                if ($statusLine === '' || preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
+                    return $contents;
+                }
+            }
+
+            if ($attempt === 1) {
+                sleep(3);
+            }
         }
 
-        $statusLine = $http_response_header[0] ?? '';
-        if ($statusLine !== '' && !preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
-            return null;
-        }
-
-        return $contents;
+        return null;
     }
 
     private function buildFilename(string $url, string $contents): string
