@@ -34,7 +34,8 @@ final class PlayerGamesServiceTest extends TestCase
             CREATE TABLE trophy_title_meta (
                 np_communication_id TEXT PRIMARY KEY,
                 status INTEGER,
-                rarity_points INTEGER
+                rarity_points INTEGER,
+                obsolete_ids TEXT
             )
             SQL
         );

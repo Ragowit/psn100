@@ -29,7 +29,8 @@ final class GameHeaderServiceTest extends TestCase
             'CREATE TABLE trophy_title_meta (' .
             'np_communication_id TEXT PRIMARY KEY, ' .
             'parent_np_communication_id TEXT NULL, ' .
-            'region TEXT NULL)'
+            'region TEXT NULL, ' .
+            'obsolete_ids TEXT NULL)'
         );
 
         $this->database->exec(
@@ -77,6 +78,24 @@ final class GameHeaderServiceTest extends TestCase
             'region' => '',
         ]);
 
+        $this->insertTrophyTitle([
+            'id' => 201,
+            'np_communication_id' => 'REPL-1',
+            'parent_np_communication_id' => null,
+            'name' => 'Replacement One',
+            'platform' => 'PS5',
+            'region' => null,
+        ]);
+
+        $this->insertTrophyTitle([
+            'id' => 202,
+            'np_communication_id' => 'REPL-2',
+            'parent_np_communication_id' => null,
+            'name' => 'Replacement Two',
+            'platform' => 'PS4',
+            'region' => null,
+        ]);
+
         $this->insertTrophy([
             'status' => 1,
             'np_communication_id' => 'MERGE-123',
@@ -96,6 +115,7 @@ final class GameHeaderServiceTest extends TestCase
             'status' => 2,
             'np_communication_id' => 'MERGE-123',
             'parent_np_communication_id' => 'PARENT-GAME',
+            'obsolete_ids' => '202,201',
         ]);
 
         $headerData = $this->service->buildHeaderData($game);
@@ -115,6 +135,12 @@ final class GameHeaderServiceTest extends TestCase
 
         $this->assertSame(2, $headerData->getUnobtainableTrophyCount());
         $this->assertTrue($headerData->hasUnobtainableTrophies());
+        $this->assertTrue($headerData->hasObsoleteReplacements());
+        $this->assertCount(2, $headerData->getObsoleteReplacements());
+        $this->assertSame(202, $headerData->getObsoleteReplacements()[0]->getId());
+        $this->assertSame('Replacement Two', $headerData->getObsoleteReplacements()[0]->getName());
+        $this->assertSame(201, $headerData->getObsoleteReplacements()[1]->getId());
+        $this->assertSame('Replacement One', $headerData->getObsoleteReplacements()[1]->getName());
     }
 
     public function testBuildHeaderDataOmitsOptionalDataWhenNotAvailable(): void
@@ -133,6 +159,8 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertSame([], $headerData->getStacks());
         $this->assertSame(0, $headerData->getUnobtainableTrophyCount());
         $this->assertFalse($headerData->hasUnobtainableTrophies());
+        $this->assertFalse($headerData->hasObsoleteReplacements());
+        $this->assertSame([], $headerData->getObsoleteReplacements());
     }
 
     /**
@@ -157,7 +185,7 @@ final class GameHeaderServiceTest extends TestCase
     }
 
     /**
-     * @param array{id:int,np_communication_id:string,parent_np_communication_id:?string,name:string,platform:string,region:?string} $row
+     * @param array{id:int,np_communication_id:string,parent_np_communication_id:?string,name:string,platform:string,region:?string,obsolete_ids:?string} $row
      */
     private function insertTrophyTitle(array $row): void
     {
@@ -171,7 +199,7 @@ final class GameHeaderServiceTest extends TestCase
         $statement->execute();
 
         $meta = $this->database->prepare(
-            'INSERT INTO trophy_title_meta (np_communication_id, parent_np_communication_id, region) VALUES (:np, :parent, :region)'
+            'INSERT INTO trophy_title_meta (np_communication_id, parent_np_communication_id, region, obsolete_ids) VALUES (:np, :parent, :region, :obsolete_ids)'
         );
         $meta->bindValue(':np', $row['np_communication_id'], PDO::PARAM_STR);
         if ($row['parent_np_communication_id'] === null) {
@@ -183,6 +211,11 @@ final class GameHeaderServiceTest extends TestCase
             $meta->bindValue(':region', null, PDO::PARAM_NULL);
         } else {
             $meta->bindValue(':region', $row['region'], PDO::PARAM_STR);
+        }
+        if (isset($row['obsolete_ids']) && $row['obsolete_ids'] !== null && $row['obsolete_ids'] !== '') {
+            $meta->bindValue(':obsolete_ids', $row['obsolete_ids'], PDO::PARAM_STR);
+        } else {
+            $meta->bindValue(':obsolete_ids', null, PDO::PARAM_NULL);
         }
         $meta->execute();
     }
@@ -211,6 +244,7 @@ final class GameHeaderServiceTest extends TestCase
             'difficulty' => 'Normal',
             'status' => 0,
             'rarity_points' => 0,
+            'obsolete_ids' => null,
         ];
 
         return GameDetails::fromArray(array_merge($defaults, $overrides));

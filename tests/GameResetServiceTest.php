@@ -200,7 +200,8 @@ final class GameResetServiceTest extends TestCase
             np_communication_id TEXT PRIMARY KEY,
             owners INTEGER DEFAULT 0,
             owners_completed INTEGER DEFAULT 0,
-            parent_np_communication_id TEXT
+            parent_np_communication_id TEXT,
+            obsolete_ids TEXT NULL
         )');
         $this->database->exec('CREATE TABLE trophy_merge (parent_np_communication_id TEXT)');
         $this->database->exec('CREATE TABLE trophy_earned (np_communication_id TEXT)');

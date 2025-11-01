@@ -28,7 +28,8 @@ final class PlayerSummaryServiceTest extends TestCase
         $this->database->exec(
             'CREATE TABLE trophy_title_meta (
                 np_communication_id TEXT PRIMARY KEY,
-                status INTEGER NOT NULL
+                status INTEGER NOT NULL,
+                obsolete_ids TEXT NULL
             )'
         );
 

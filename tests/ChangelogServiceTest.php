@@ -38,7 +38,8 @@ final class ChangelogServiceTest extends TestCase
         $this->database->exec(
             'CREATE TABLE trophy_title_meta (' .
             'np_communication_id TEXT PRIMARY KEY, ' .
-            'region TEXT NULL)'
+            'region TEXT NULL, ' .
+            'obsolete_ids TEXT NULL)'
         );
 
         $this->service = new ChangelogService($this->database);

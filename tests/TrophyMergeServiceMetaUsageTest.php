@@ -85,7 +85,8 @@ final class TrophyMergeServiceMetaUsageTest extends TestCase
             'CREATE TABLE trophy_title_meta (
                 np_communication_id TEXT PRIMARY KEY,
                 parent_np_communication_id TEXT NULL,
-                status INTEGER NOT NULL DEFAULT 0
+                status INTEGER NOT NULL DEFAULT 0,
+                obsolete_ids TEXT NULL
             )'
         );
     }

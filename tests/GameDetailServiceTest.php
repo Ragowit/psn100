@@ -33,7 +33,8 @@ final class GameDetailServiceTest extends TestCase
             'message TEXT NOT NULL, ' .
             'region TEXT NULL, ' .
             'psnprofiles_id TEXT NULL, ' .
-            'status INTEGER NOT NULL DEFAULT 0)'
+            'status INTEGER NOT NULL DEFAULT 0, ' .
+            'obsolete_ids TEXT NULL)'
         );
 
         $this->database->exec(
@@ -57,6 +58,7 @@ final class GameDetailServiceTest extends TestCase
             'region' => 'US',
             'psnprofiles_id' => '12345',
             'status' => 3,
+            'obsolete_ids' => '42,84',
         ]);
 
         $detail = $this->service->getGameDetail(10);
@@ -70,6 +72,7 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame('US', $detail->getRegion());
         $this->assertSame('12345', $detail->getPsnprofilesId());
         $this->assertSame(3, $detail->getStatus());
+        $this->assertSame('42,84', $detail->getObsoleteIds());
     }
 
     public function testUpdateGameDetailPersistsMetaFields(): void
@@ -85,6 +88,7 @@ final class GameDetailServiceTest extends TestCase
             'message' => 'original message',
             'region' => 'EU',
             'psnprofiles_id' => '67890',
+            'obsolete_ids' => '91',
         ]);
 
         $detail = new GameDetail(
@@ -97,7 +101,8 @@ final class GameDetailServiceTest extends TestCase
             '02.00',
             null,
             null,
-            0
+            0,
+            '55,66'
         );
 
         $updatedDetail = $this->service->updateGameDetail($detail);
@@ -109,9 +114,10 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame(null, $updatedDetail->getRegion());
         $this->assertSame(null, $updatedDetail->getPsnprofilesId());
         $this->assertSame(0, $updatedDetail->getStatus());
+        $this->assertSame('55,66', $updatedDetail->getObsoleteIds());
 
         $metaRow = $this->database->query(
-            "SELECT message, region, psnprofiles_id, status FROM trophy_title_meta WHERE np_communication_id = 'NPWR-456'"
+            "SELECT message, region, psnprofiles_id, status, obsolete_ids FROM trophy_title_meta WHERE np_communication_id = 'NPWR-456'"
         )->fetch(PDO::FETCH_ASSOC);
 
         $this->assertSame([
@@ -119,6 +125,7 @@ final class GameDetailServiceTest extends TestCase
             'region' => null,
             'psnprofiles_id' => null,
             'status' => 0,
+            'obsolete_ids' => '55,66',
         ], $metaRow);
     }
 
@@ -142,8 +149,8 @@ final class GameDetailServiceTest extends TestCase
         ]);
 
         $metaStatement = $this->database->prepare(
-            'INSERT INTO trophy_title_meta (np_communication_id, message, region, psnprofiles_id, status)
-            VALUES (:np_communication_id, :message, :region, :psnprofiles_id, :status)'
+            'INSERT INTO trophy_title_meta (np_communication_id, message, region, psnprofiles_id, status, obsolete_ids)
+            VALUES (:np_communication_id, :message, :region, :psnprofiles_id, :status, :obsolete_ids)'
         );
         $metaStatement->execute([
             ':np_communication_id' => $title['np_communication_id'],
@@ -151,6 +158,7 @@ final class GameDetailServiceTest extends TestCase
             ':region' => $meta['region'] ?? null,
             ':psnprofiles_id' => $meta['psnprofiles_id'] ?? null,
             ':status' => $meta['status'] ?? 0,
+            ':obsolete_ids' => $meta['obsolete_ids'] ?? null,
         ]);
     }
 }

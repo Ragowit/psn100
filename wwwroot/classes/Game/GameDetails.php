@@ -40,6 +40,11 @@ class GameDetails
 
     private int $rarityPoints;
 
+    /**
+     * @var int[]
+     */
+    private array $obsoleteGameIds;
+
     private function __construct()
     {
     }
@@ -71,6 +76,7 @@ class GameDetails
         $game->difficulty = (string) ($row['difficulty'] ?? '0');
         $game->status = (int) ($row['status'] ?? 0);
         $game->rarityPoints = (int) ($row['rarity_points'] ?? 0);
+        $game->obsoleteGameIds = self::parseObsoleteIds($row['obsolete_ids'] ?? null);
 
         return $game;
     }
@@ -84,6 +90,32 @@ class GameDetails
         $stringValue = (string) $value;
 
         return $stringValue === '' ? null : $stringValue;
+    }
+
+    /**
+     * @return int[]
+     */
+    private static function parseObsoleteIds(mixed $value): array
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return [];
+        }
+
+        $segments = array_filter(
+            array_map(static fn(string $segment): string => trim($segment), explode(',', $value)),
+            static fn(string $segment): bool => $segment !== ''
+        );
+
+        $ids = [];
+        foreach ($segments as $segment) {
+            if (!ctype_digit($segment)) {
+                continue;
+            }
+
+            $ids[] = (int) $segment;
+        }
+
+        return array_values(array_unique($ids));
     }
 
     public function getId(): int
@@ -179,6 +211,19 @@ class GameDetails
     public function getRarityPoints(): int
     {
         return $this->rarityPoints;
+    }
+
+    /**
+     * @return int[]
+     */
+    public function getObsoleteGameIds(): array
+    {
+        return $this->obsoleteGameIds;
+    }
+
+    public function hasObsoleteReplacements(): bool
+    {
+        return $this->obsoleteGameIds !== [];
     }
 }
 
