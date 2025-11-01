@@ -710,6 +710,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $existingTrophyQuery->execute();
                                 $existingTrophy = $existingTrophyQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
+                                $trophyHidden = (int) $trophy->hidden();
+
                                 $progressTargetValue = $trophy->progressTargetValue() === ''
                                     ? null
                                     : $trophy->progressTargetValue();
@@ -735,7 +737,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $trophyTypeEnumValue = $trophy->type()->value;
 
                                 $trophyNeedsUpdate = $existingTrophy === null
-                                    || (int) ($existingTrophy['hidden'] ?? -1) !== $trophy->hidden()
+                                    || (int) ($existingTrophy['hidden'] ?? -1) !== $trophyHidden
                                     || ($existingTrophy['type'] ?? '') !== $trophyTypeEnumValue
                                     || ($existingTrophy['name'] ?? '') !== $trophy->name()
                                     || ($existingTrophy['detail'] ?? '') !== $trophy->detail()
@@ -839,7 +841,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                                     $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
                                     $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
-                                    $query->bindValue(":hidden", $trophy->hidden(), PDO::PARAM_INT);
+                                    $query->bindValue(":hidden", $trophyHidden, PDO::PARAM_INT);
                                     $query->bindValue(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
                                     $query->bindValue(":name", $trophy->name(), PDO::PARAM_STR);
                                     $query->bindValue(":detail", $trophy->detail(), PDO::PARAM_STR);
