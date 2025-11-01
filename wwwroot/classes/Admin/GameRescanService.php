@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/GameRescanDifferenceTracker.php';
 require_once __DIR__ . '/GameRescanResult.php';
+require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
@@ -1004,7 +1005,10 @@ class GameRescanService
 
     private function buildFilename(string $url, string $contents): string
     {
-        $hash = md5($contents);
+        $hash = ImageHashCalculator::calculate($contents);
+        if ($hash === null) {
+            $hash = md5($contents);
+        }
         $extensionPosition = strrpos($url, '.');
         $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
 
