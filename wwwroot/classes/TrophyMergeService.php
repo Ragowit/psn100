@@ -160,11 +160,13 @@ SQL
 
         $cloneNpCommunicationId = 'MERGE_' . str_pad((string) $gameId, 6, '0', STR_PAD_LEFT);
 
+        $cloneGameId = null;
+
         $this->executeTransaction(function () use (
             $cloneNpCommunicationId,
             $childGameId,
             $childNpCommunicationId,
-            $gameId
+            &$cloneGameId
         ): void {
             $query = $this->database->prepare(
                 <<<'SQL'
@@ -196,6 +198,14 @@ SQL
             $query->bindValue(':np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
             $query->bindValue(':id', $childGameId, PDO::PARAM_INT);
             $query->execute();
+
+            $insertedGameId = $this->database->lastInsertId();
+
+            if ($insertedGameId === false) {
+                throw new RuntimeException('Unable to determine cloned trophy title identifier.');
+            }
+
+            $cloneGameId = (int) $insertedGameId;
 
             $metaInsert = $this->database->prepare(
                 <<<'SQL'
@@ -342,10 +352,14 @@ SQL
             $trophyMetaInsert->bindValue(':parent_np_communication_id', $cloneNpCommunicationId, PDO::PARAM_STR);
             $trophyMetaInsert->execute();
 
-            $this->cloneGameHistory($childGameId, $gameId);
+            $this->cloneGameHistory($childGameId, $cloneGameId);
         });
 
-        $this->logChange('GAME_CLONE', $childGameId, (int) $gameId);
+        if ($cloneGameId === null) {
+            throw new RuntimeException('Unable to determine cloned trophy title identifier.');
+        }
+
+        $this->logChange('GAME_CLONE', $childGameId, $cloneGameId);
 
         return 'The game have been cloned.';
     }
