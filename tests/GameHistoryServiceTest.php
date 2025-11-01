@@ -56,6 +56,56 @@ final class GameHistoryServiceTest extends TestCase
         $this->assertSame([], $entries);
     }
 
+    public function testGetHistoryForGameOrdersGroupsAndTrophies(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (3, 42, NULL, NULL, NULL, '2024-04-01 00:00:00')");
+
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '002', 'Third Group', 'Third detail', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, 'default', 'Base Game', 'Base detail', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '001', 'Second Group', 'Second detail', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '101', 'Fourth Group', 'Fourth detail', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '201', 'Fifth Group', 'Fifth detail', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '102', 'Fourth Group Part 2', 'Fourth detail part 2', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '202', 'Fifth Group Part 2', 'Fifth detail part 2', NULL)");
+        $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '103', 'Fourth Group Part 3', 'Fourth detail part 3', NULL)");
+
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, 'default', 0, 'Base Game First Trophy', 'Base first detail', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, 'default', 1, 'Base Game Later Trophy', 'Base later detail', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '001', 2, 'Second Group Trophy', 'Second group trophy detail', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '001', 3, 'Second Group Additional Trophy', 'Second group trophy detail additional', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '002', 4, 'Third Group Trophy', 'Third group trophy detail', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '101', 5, 'Fourth Group Trophy', 'Fourth group trophy detail', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '102', 6, 'Fourth Group Trophy Part 2', 'Fourth group trophy detail part 2', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '103', 7, 'Fourth Group Trophy Part 3', 'Fourth group trophy detail part 3', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '201', 8, 'Fifth Group Trophy', 'Fifth group trophy detail', NULL, NULL)");
+        $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '202', 9, 'Fifth Group Trophy Part 2', 'Fifth group trophy detail part 2', NULL, NULL)");
+
+        $entries = $this->service->getHistoryForGame(42);
+
+        $this->assertCount(1, $entries);
+
+        $groups = array_column($entries[0]['groups'], 'group_id');
+        $this->assertSame(['default', '001', '002', '101', '102', '103', '201', '202'], $groups);
+
+        $trophies = array_map(
+            static fn (array $trophy): string => $trophy['group_id'] . ':' . $trophy['order_id'],
+            $entries[0]['trophies']
+        );
+
+        $this->assertSame([
+            'default:0',
+            'default:1',
+            '001:2',
+            '001:3',
+            '002:4',
+            '101:5',
+            '102:6',
+            '103:7',
+            '201:8',
+            '202:9',
+        ], $trophies);
+    }
+
     private function createSchema(): void
     {
         $this->database->exec('CREATE TABLE trophy_title_history (id INTEGER PRIMARY KEY AUTOINCREMENT, trophy_title_id INTEGER, detail TEXT, icon_url TEXT, set_version TEXT, discovered_at TEXT)');
