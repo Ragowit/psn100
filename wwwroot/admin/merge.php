@@ -31,36 +31,47 @@ $message = $requestHandler->handle($_POST ?? []);
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form id="merge-form" method="post" autocomplete="off" class="row g-3">
-                <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-parent">Game Parent ID</label>
-                    <input type="number" class="form-control" id="merge-parent" name="parent" inputmode="numeric">
+                <div class="row">
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label" for="merge-parent">Game Parent ID</label>
+                        <input type="number" class="form-control" id="merge-parent" name="parent" inputmode="numeric">
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label" for="merge-child">Game Child ID</label>
+                        <input type="number" class="form-control" id="merge-child" name="child" inputmode="numeric">
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label" for="merge-method">Method</label>
+                        <select class="form-select" id="merge-method" name="method">
+                            <option value="order">Order</option>
+                            <option value="name">Name</option>
+                            <option value="icon">Icon</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-child">Game Child ID</label>
-                    <input type="number" class="form-control" id="merge-child" name="child" inputmode="numeric">
+
+                <div class="row">
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label" for="merge-trophy-parent">Trophy Parent ID</label>
+                        <input type="number" class="form-control" id="merge-trophy-parent" name="trophyparent" inputmode="numeric">
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label" for="merge-trophy-child">Trophy Child ID</label>
+                        <input type="text" class="form-control" id="merge-trophy-child" name="trophychild">
+                    </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-method">Method</label>
-                    <select class="form-select" id="merge-method" name="method">
-                        <option value="order">Order</option>
-                        <option value="name">Name</option>
-                        <option value="icon">Icon</option>
-                    </select>
+
+                <div class="row">
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label" for="merge-clone">Clone Game ID</label>
+                        <input type="number" class="form-control" id="merge-clone" name="clone" inputmode="numeric">
+                    </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-trophy-parent">Trophy Parent ID</label>
-                    <input type="number" class="form-control" id="merge-trophy-parent" name="trophyparent" inputmode="numeric">
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-trophy-child">Trophy Child ID</label>
-                    <input type="text" class="form-control" id="merge-trophy-child" name="trophychild">
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <label class="form-label" for="merge-clone">Clone Game ID</label>
-                    <input type="number" class="form-control" id="merge-clone" name="clone" inputmode="numeric">
-                </div>
-                <div class="col-12 align-self-end">
-                    <button type="submit" class="btn btn-primary" id="merge-submit">Submit</button>
+
+                <div class="row">
+                    <div class="col-12 align-self-end">
+                        <button type="submit" class="btn btn-primary" id="merge-submit">Submit</button>
+                    </div>
                 </div>
             </form>
 
