@@ -837,16 +837,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $query->execute();
 
                                     $trophyAffectedRows = (int) $query->rowCount();
+
                                     if ($trophyAffectedRows > 0) {
                                         $trophyDataChanged = true;
                                     }
+
                                     if ($trophyAffectedRows === 1) {
-                                        $newTrophies = true;
-                                        $groupNewTrophies = true;
-                                    } elseif ($trophyAffectedRows === 2) {
-                                        // MySQL returns 2 when an ON DUPLICATE KEY UPDATE statement
-                                        // updates an existing row with new data. Treat that as a set
-                                        // revision so downstream change notifications still fire.
                                         $newTrophies = true;
                                         $groupNewTrophies = true;
                                     }
