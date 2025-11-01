@@ -110,6 +110,8 @@ final class GameHistoryService
             WHERE
                 title_history_id IN (%s)
             ORDER BY
+                CASE WHEN group_id = 'default' THEN 0 ELSE 1 END,
+                CASE WHEN group_id = 'default' THEN 0 ELSE group_id + 0 END,
                 group_id
             SQL,
             $historyIds
@@ -151,7 +153,8 @@ final class GameHistoryService
             WHERE
                 title_history_id IN (%s)
             ORDER BY
-                group_id,
+                CASE WHEN group_id = 'default' THEN 0 ELSE 1 END,
+                CASE WHEN group_id = 'default' THEN 0 ELSE group_id + 0 END,
                 order_id
             SQL,
             $historyIds
