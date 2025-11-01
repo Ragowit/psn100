@@ -30,8 +30,26 @@ final class GameHistoryPage
      *     historyId: int,
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
-     *     groups: array<int, array{group_id: string, name: ?string, detail: ?string, icon_url: ?string}>,
-     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}>
+     *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
+     *     hasTitleChanges: bool,
+     *     groups: array<int, array{
+     *         group_id: string,
+     *         name: ?string,
+     *         detail: ?string,
+     *         icon_url: ?string,
+     *         changedFields: array{name: bool, detail: bool, icon_url: bool},
+     *         isNewRow: bool
+     *     }>,
+     *     trophies: array<int, array{
+     *         group_id: string,
+     *         order_id: int,
+     *         name: ?string,
+     *         detail: ?string,
+     *         icon_url: ?string,
+     *         progress_target_value: ?int,
+     *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
+     *         isNewRow: bool
+     *     }>
      * }>|null
      */
     private ?array $historyEntries = null;
@@ -85,10 +103,226 @@ final class GameHistoryPage
     public function getHistoryEntries(): array
     {
         if ($this->historyEntries === null) {
-            $this->historyEntries = $this->historyService->getHistoryForGame($this->game->getId());
+            $history = $this->historyService->getHistoryForGame($this->game->getId());
+            $this->historyEntries = $this->filterHistoryEntries($history);
         }
 
         return $this->historyEntries;
+    }
+
+    /**
+     * @param array<int, array{
+     *     historyId: int,
+     *     discoveredAt: DateTimeImmutable,
+     *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
+     *     groups: array<int, array{group_id: string, name: ?string, detail: ?string, icon_url: ?string}>,
+     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}>
+     * }> $entries
+     * @return array<int, array{
+     *     historyId: int,
+     *     discoveredAt: DateTimeImmutable,
+     *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
+     *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
+     *     hasTitleChanges: bool,
+     *     groups: array<int, array{
+     *         group_id: string,
+     *         name: ?string,
+     *         detail: ?string,
+     *         icon_url: ?string,
+     *         changedFields: array{name: bool, detail: bool, icon_url: bool},
+     *         isNewRow: bool
+     *     }>,
+     *     trophies: array<int, array{
+     *         group_id: string,
+     *         order_id: int,
+     *         name: ?string,
+     *         detail: ?string,
+     *         icon_url: ?string,
+     *         progress_target_value: ?int,
+     *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
+     *         isNewRow: bool
+     *     }>
+     * }>
+     */
+    private function filterHistoryEntries(array $entries): array
+    {
+        if ($entries === []) {
+            return [];
+        }
+
+        $previousTitle = [
+            'detail' => null,
+            'icon_url' => null,
+            'set_version' => null,
+        ];
+
+        /** @var array<string, array{name: ?string, detail: ?string, icon_url: ?string}> $previousGroups */
+        $previousGroups = [];
+
+        /** @var array<string, array{name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}> $previousTrophies */
+        $previousTrophies = [];
+
+        $processedEntries = [];
+
+        $chronologicalEntries = array_reverse($entries);
+
+        foreach ($chronologicalEntries as $entry) {
+            $titleChange = $entry['title'];
+            $titleHighlights = [
+                'detail' => false,
+                'icon_url' => false,
+                'set_version' => false,
+            ];
+            $hasTitleChanges = false;
+
+            if ($titleChange !== null) {
+                $titleHighlights['detail'] = $this->isNewNonEmptyString($titleChange['detail'] ?? null, $previousTitle['detail']);
+                $titleHighlights['icon_url'] = $this->isNewNonEmptyString($titleChange['icon_url'] ?? null, $previousTitle['icon_url']);
+                $titleHighlights['set_version'] = $this->isNewNonEmptyString($titleChange['set_version'] ?? null, $previousTitle['set_version']);
+
+                $hasTitleChanges = in_array(true, $titleHighlights, true);
+            }
+
+            $filteredGroups = [];
+            foreach ($entry['groups'] as $groupChange) {
+                $groupId = $groupChange['group_id'];
+                $previousGroup = $previousGroups[$groupId] ?? ['name' => null, 'detail' => null, 'icon_url' => null];
+
+                $changedFields = [
+                    'name' => $this->isNewNonEmptyString($groupChange['name'] ?? null, $previousGroup['name']),
+                    'detail' => $this->isNewNonEmptyString($groupChange['detail'] ?? null, $previousGroup['detail']),
+                    'icon_url' => $this->isNewNonEmptyString($groupChange['icon_url'] ?? null, $previousGroup['icon_url']),
+                ];
+
+                $isNewRow = !array_key_exists($groupId, $previousGroups);
+
+                if ($isNewRow) {
+                    foreach (array_keys($changedFields) as $field) {
+                        if ($this->hasNonEmptyString($groupChange[$field] ?? null)) {
+                            $changedFields[$field] = true;
+                        }
+                    }
+                }
+
+                $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
+
+                if ($hasRowChanges) {
+                    $groupChange['changedFields'] = $changedFields;
+                    $groupChange['isNewRow'] = $isNewRow;
+                    $filteredGroups[] = $groupChange;
+                }
+
+                $previousGroups[$groupId] = [
+                    'name' => $this->normalizeString($groupChange['name'] ?? null),
+                    'detail' => $this->normalizeString($groupChange['detail'] ?? null),
+                    'icon_url' => $this->normalizeString($groupChange['icon_url'] ?? null),
+                ];
+            }
+
+            $filteredTrophies = [];
+            foreach ($entry['trophies'] as $trophyChange) {
+                $trophyKey = $trophyChange['group_id'] . ':' . $trophyChange['order_id'];
+                $previousTrophy = $previousTrophies[$trophyKey] ?? [
+                    'name' => null,
+                    'detail' => null,
+                    'icon_url' => null,
+                    'progress_target_value' => null,
+                ];
+
+                $changedFields = [
+                    'name' => $this->isNewNonEmptyString($trophyChange['name'] ?? null, $previousTrophy['name']),
+                    'detail' => $this->isNewNonEmptyString($trophyChange['detail'] ?? null, $previousTrophy['detail']),
+                    'icon_url' => $this->isNewNonEmptyString($trophyChange['icon_url'] ?? null, $previousTrophy['icon_url']),
+                    'progress_target_value' => $this->isNewInt($trophyChange['progress_target_value'] ?? null, $previousTrophy['progress_target_value']),
+                ];
+
+                $isNewRow = !array_key_exists($trophyKey, $previousTrophies);
+
+                if ($isNewRow) {
+                    foreach (array_keys($changedFields) as $field) {
+                        if ($field === 'progress_target_value') {
+                            if ($trophyChange['progress_target_value'] !== null) {
+                                $changedFields[$field] = true;
+                            }
+                        } else {
+                            if ($this->hasNonEmptyString($trophyChange[$field] ?? null)) {
+                                $changedFields[$field] = true;
+                            }
+                        }
+                    }
+                }
+
+                $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
+
+                if ($hasRowChanges) {
+                    $trophyChange['changedFields'] = $changedFields;
+                    $trophyChange['isNewRow'] = $isNewRow;
+                    $filteredTrophies[] = $trophyChange;
+                }
+
+                $previousTrophies[$trophyKey] = [
+                    'name' => $this->normalizeString($trophyChange['name'] ?? null),
+                    'detail' => $this->normalizeString($trophyChange['detail'] ?? null),
+                    'icon_url' => $this->normalizeString($trophyChange['icon_url'] ?? null),
+                    'progress_target_value' => $trophyChange['progress_target_value'] ?? null,
+                ];
+            }
+
+            $entryHasChanges = $hasTitleChanges || $filteredGroups !== [] || $filteredTrophies !== [];
+
+            if ($entryHasChanges) {
+                $entry['titleHighlights'] = $titleHighlights;
+                $entry['hasTitleChanges'] = $hasTitleChanges;
+                $entry['groups'] = $filteredGroups;
+                $entry['trophies'] = $filteredTrophies;
+
+                $processedEntries[] = $entry;
+            }
+
+            if ($titleChange !== null) {
+                $previousTitle = [
+                    'detail' => $this->normalizeString($titleChange['detail'] ?? null),
+                    'icon_url' => $this->normalizeString($titleChange['icon_url'] ?? null),
+                    'set_version' => $this->normalizeString($titleChange['set_version'] ?? null),
+                ];
+            }
+        }
+
+        return array_reverse($processedEntries);
+    }
+
+    private function normalizeString(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return $value === '' ? null : $value;
+    }
+
+    private function hasNonEmptyString(?string $value): bool
+    {
+        return $this->normalizeString($value) !== null;
+    }
+
+    private function isNewNonEmptyString(?string $value, ?string $previous): bool
+    {
+        $normalized = $this->normalizeString($value);
+
+        if ($normalized === null) {
+            return false;
+        }
+
+        return $normalized !== $previous;
+    }
+
+    private function isNewInt(?int $value, ?int $previous): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        return $value !== $previous;
     }
 
     public function createMetaData(): PageMetaData
