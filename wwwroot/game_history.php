@@ -78,9 +78,10 @@ require_once 'header.php';
                                     <?php } ?>
                                 </span>
                             </div>
-                            <div class="text-body-secondary small">
-                                <?= htmlentities($entry['discoveredAt']->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?> UTC
-                            </div>
+                            <?php $discoveredAt = $entry['discoveredAt']; ?>
+                            <time class="text-body-secondary small js-localized-datetime" datetime="<?= htmlentities($discoveredAt->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
+                                <?= htmlentities($discoveredAt->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?> UTC
+                            </time>
                         </div>
                         <div class="card-body">
                             <?php if ($titleChange !== null && $hasTitleChanges && (($titleHighlights['detail'] ?? false) || ($titleHighlights['icon_url'] ?? false))) { ?>
@@ -211,6 +212,37 @@ require_once 'header.php';
             </div>
         <?php } ?>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Intl === 'undefined' || typeof Intl.DateTimeFormat !== 'function') {
+                return;
+            }
+
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const pad = (value) => value.toString().padStart(2, '0');
+
+            document.querySelectorAll('.js-localized-datetime').forEach((timeElement) => {
+                const isoString = timeElement.getAttribute('datetime');
+
+                if (!isoString) {
+                    return;
+                }
+
+                const date = new Date(isoString);
+
+                if (Number.isNaN(date.getTime())) {
+                    return;
+                }
+
+                const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+                const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+                timeElement.textContent = `${formattedDate} ${formattedTime}${timeZone ? ` ${timeZone}` : ''}`;
+                timeElement.setAttribute('data-timezone', timeZone);
+            });
+        });
+    </script>
 </main>
 
 <?php require_once 'footer.php'; ?>
