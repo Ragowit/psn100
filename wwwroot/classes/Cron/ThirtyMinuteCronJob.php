@@ -740,7 +740,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $groupNewTrophies = true;
                                 }
                               
-                                $this->trophyMetaRepository->ensureExists(
+                                $this->ensureTrophyMetaRow(
                                     $npid,
                                     $trophyGroup->id(),
                                     (int) $trophy->id()
@@ -1230,6 +1230,59 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return (int) $id;
+    }
+
+    private function downloadMandatoryImage(string $url, string $directory, string $description): string
+    {
+        $contents = $this->fetchRemoteFile($url);
+        if ($contents === null) {
+            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+
+            return '.png';
+        }
+
+        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
+
+        return $storedFilename ?? '.png';
+    }
+
+    private function downloadOptionalImage(?string $url, string $directory, string $description): ?string
+    {
+        if ($url === null || $url === '') {
+            return null;
+        }
+
+        $contents = $this->fetchRemoteFile($url);
+        if ($contents === null) {
+            $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
+
+            return '.png';
+        }
+
+        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
+
+        return $storedFilename ?? '.png';
+    }
+
+    private function storeImageContents(string $url, string $directory, string $description, string $contents): ?string
+    {
+        $filename = $this->buildFilename($url, $contents);
+        $path = $directory . $filename;
+
+        if (!file_exists($path)) {
+            if (@file_put_contents($path, $contents) === false) {
+                $this->logger->log(sprintf('Unable to save %s from "%s" to "%s".', $description, $url, $path));
+
+                return null;
+            }
+        }
+
+        return $filename;
+    }
+
+    private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
+    {
+        $this->trophyMetaRepository->ensureExists($npCommunicationId, $groupId, $orderId);
     }
 
     private function fetchRemoteFile(string $url): ?string
