@@ -13,10 +13,10 @@ final class AdminLogServiceTest extends TestCase
         $database = new PDO('sqlite::memory:');
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT, name TEXT)');
-        $database->exec('CREATE TABLE psn100_log (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, message TEXT)');
+        $database->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, message TEXT)');
 
         $database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (59688, 'NPWR47160_00', 'Food Truck Kingdom')");
-        $database->exec("INSERT INTO psn100_log (time, message) VALUES ('2024-05-01 10:00:00', 'SET VERSION for Food Truck Kingdom. NPWR47160_00, default, Food Truck Kingdom')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-01 10:00:00', 'SET VERSION for Food Truck Kingdom. NPWR47160_00, default, Food Truck Kingdom')");
 
         $formatter = new LogEntryFormatter($database, new Utility());
         $service = new LogService($database, $formatter);
@@ -34,10 +34,10 @@ final class AdminLogServiceTest extends TestCase
         $database = new PDO('sqlite::memory:');
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT, name TEXT)');
-        $database->exec('CREATE TABLE psn100_log (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, message TEXT)');
+        $database->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, message TEXT)');
 
         $database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (42, 'NPWR00042_00', 'Example Game')");
-        $database->exec("INSERT INTO psn100_log (time, message) VALUES ('2024-05-01 10:00:00', 'Recorded new trophy_title_history entry 123 for trophy_title.id 42')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-01 10:00:00', 'Recorded new trophy_title_history entry 123 for trophy_title.id 42')");
 
         $formatter = new LogEntryFormatter($database, new Utility());
         $service = new LogService($database, $formatter);
