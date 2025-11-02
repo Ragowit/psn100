@@ -158,6 +158,7 @@ if ($pageResult->getTotalPages() > 1) {
                 const deleteSelectedButton = document.getElementById('delete-selected-button');
                 const logCheckboxes = Array.from(form.querySelectorAll('.js-log-checkbox'))
                     .filter((element) => element instanceof HTMLInputElement);
+                let lastChangedCheckbox = null;
 
                 const updateBulkDeleteState = () => {
                     if (!(deleteSelectedButton instanceof HTMLButtonElement)) {
@@ -196,7 +197,38 @@ if ($pageResult->getTotalPages() > 1) {
                 }
 
                 logCheckboxes.forEach((checkbox) => {
-                    checkbox.addEventListener('change', updateBulkDeleteState);
+                    checkbox.addEventListener('click', (event) => {
+                        if (!(event instanceof MouseEvent)) {
+                            return;
+                        }
+
+                        if (!event.shiftKey || lastChangedCheckbox === null || lastChangedCheckbox === checkbox) {
+                            return;
+                        }
+
+                        const startIndex = logCheckboxes.indexOf(lastChangedCheckbox);
+                        const endIndex = logCheckboxes.indexOf(checkbox);
+
+                        if (startIndex === -1 || endIndex === -1) {
+                            return;
+                        }
+
+                        const [fromIndex, toIndex] = startIndex < endIndex
+                            ? [startIndex, endIndex]
+                            : [endIndex, startIndex];
+                        const shouldCheck = checkbox.checked;
+
+                        for (let index = fromIndex; index <= toIndex; index += 1) {
+                            logCheckboxes[index].checked = shouldCheck;
+                        }
+
+                        updateBulkDeleteState();
+                    });
+
+                    checkbox.addEventListener('change', () => {
+                        lastChangedCheckbox = checkbox;
+                        updateBulkDeleteState();
+                    });
                 });
 
                 updateBulkDeleteState();
