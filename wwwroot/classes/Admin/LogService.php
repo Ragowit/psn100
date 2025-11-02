@@ -90,24 +90,68 @@ final class LogService
 
     public function deleteLogById(int $logId): bool
     {
+        return $this->deleteLogsByIds([$logId]) > 0;
+    }
+
+    /**
+     * @param iterable<int|string> $logIds
+     */
+    public function deleteLogsByIds(iterable $logIds): int
+    {
+        $uniqueIds = [];
+
+        foreach ($logIds as $logId) {
+            if (is_int($logId)) {
+                $normalizedId = $logId;
+            } elseif (is_string($logId)) {
+                $trimmed = trim($logId);
+
+                if ($trimmed === '' || !ctype_digit($trimmed)) {
+                    continue;
+                }
+
+                $normalizedId = (int) $trimmed;
+            } else {
+                continue;
+            }
+
+            if ($normalizedId <= 0) {
+                continue;
+            }
+
+            $uniqueIds[$normalizedId] = $normalizedId;
+        }
+
+        if ($uniqueIds === []) {
+            return 0;
+        }
+
+        $ids = array_values($uniqueIds);
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
         $table = $this->getLogTable();
-        $queryString = sprintf('DELETE FROM %s WHERE id = :id', $this->quoteIdentifier($table));
+        $queryString = sprintf(
+            'DELETE FROM %s WHERE id IN (%s)',
+            $this->quoteIdentifier($table),
+            $placeholders
+        );
 
         try {
             $statement = $this->database->prepare($queryString);
         } catch (PDOException $exception) {
-            return false;
+            return 0;
         }
 
-        $statement->bindValue(':id', $logId, PDO::PARAM_INT);
+        foreach ($ids as $index => $id) {
+            $statement->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
 
         try {
             $statement->execute();
         } catch (PDOException $exception) {
-            return false;
+            return 0;
         }
 
-        return $statement->rowCount() > 0;
+        return (int) $statement->rowCount();
     }
 
     private function createDateTime(?string $value): DateTimeImmutable

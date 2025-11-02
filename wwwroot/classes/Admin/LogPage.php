@@ -26,18 +26,49 @@ final class LogPage
         $successMessage = null;
         $errorMessage = null;
 
-        if (strtoupper($method) === 'POST' && array_key_exists('delete_id', $postData)) {
-            $deleteId = $this->parsePositiveInt($postData['delete_id'] ?? null);
+        if (strtoupper($method) === 'POST') {
+            if (array_key_exists('delete_id', $postData)) {
+                $deleteId = $this->parsePositiveInt($postData['delete_id'] ?? null);
 
-            if ($deleteId === null) {
-                $errorMessage = 'Please provide a valid log entry ID to delete.';
-            } else {
-                $deleted = $this->logService->deleteLogById($deleteId);
-
-                if ($deleted) {
-                    $successMessage = sprintf('Log entry %d deleted successfully.', $deleteId);
+                if ($deleteId === null) {
+                    $errorMessage = 'Please provide a valid log entry ID to delete.';
                 } else {
-                    $errorMessage = sprintf('Log entry %d could not be found.', $deleteId);
+                    $deleted = $this->logService->deleteLogById($deleteId);
+
+                    if ($deleted) {
+                        $successMessage = sprintf('Log entry %d deleted successfully.', $deleteId);
+                    } else {
+                        $errorMessage = sprintf('Log entry %d could not be found.', $deleteId);
+                    }
+                }
+            } elseif (array_key_exists('delete_selected', $postData) || array_key_exists('delete_ids', $postData)) {
+                $deleteIds = $this->parsePositiveIntList($postData['delete_ids'] ?? []);
+
+                if ($deleteIds === []) {
+                    $errorMessage = 'Please select at least one log entry to delete.';
+                } else {
+                    $deletedCount = $this->logService->deleteLogsByIds($deleteIds);
+
+                    if ($deletedCount === 0) {
+                        $errorMessage = 'No matching log entries were found for the selected IDs.';
+                    } else {
+                        $entryLabel = $deletedCount === 1 ? 'log entry' : 'log entries';
+
+                        if ($deletedCount === count($deleteIds)) {
+                            $successMessage = sprintf(
+                                'Deleted %d %s (IDs: %s).',
+                                $deletedCount,
+                                $entryLabel,
+                                implode(', ', $deleteIds)
+                            );
+                        } else {
+                            $successMessage = sprintf(
+                                'Deleted %d %s. Some selected entries may no longer exist.',
+                                $deletedCount,
+                                $entryLabel
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -80,5 +111,30 @@ final class LogPage
         $intValue = (int) $trimmed;
 
         return $intValue > 0 ? $intValue : null;
+    }
+
+    /**
+     * @param mixed $values
+     * @return list<int>
+     */
+    private function parsePositiveIntList(mixed $values): array
+    {
+        if (!is_iterable($values)) {
+            return [];
+        }
+
+        $uniqueValues = [];
+
+        foreach ($values as $value) {
+            $parsed = $this->parsePositiveInt($value);
+
+            if ($parsed === null) {
+                continue;
+            }
+
+            $uniqueValues[$parsed] = $parsed;
+        }
+
+        return array_values($uniqueValues);
     }
 }

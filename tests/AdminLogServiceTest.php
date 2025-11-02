@@ -70,6 +70,28 @@ final class AdminLogServiceTest extends TestCase
         $this->assertFalse($service->deleteLogById(1));
     }
 
+    public function testDeleteLogsByIdsRemovesMultipleEntries(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT, name TEXT)');
+        $database->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, message TEXT)');
+
+        $database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (1, 'NPWR00001_00', 'Example Game')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-01 10:00:00', 'Example message for entry 1')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-01 11:00:00', 'Example message for entry 2')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-01 12:00:00', 'Example message for entry 3')");
+
+        $formatter = new LogEntryFormatter($database, new Utility());
+        $service = new LogService($database, $formatter);
+
+        $deletedCount = $service->deleteLogsByIds(['1', '3', '3', 'abc', 0, 99]);
+
+        $this->assertSame(2, $deletedCount);
+        $this->assertSame(1, $service->countEntries());
+        $this->assertTrue($service->deleteLogById(2));
+    }
+
     public function testFallsBackToLegacyLogTable(): void
     {
         $database = new PDO('sqlite::memory:');
