@@ -53,6 +53,14 @@ class TrophyHistoryRecorder
 
             $titleHistoryId = (int) $this->database->lastInsertId();
 
+            if ($this->logger !== null) {
+                $this->logger->log(sprintf(
+                    'Recorded new trophy_title_history entry %d for trophy_title.id %d',
+                    $titleHistoryId,
+                    $titleId
+                ));
+            }
+
             $this->recordHistorySnapshotChange($titleId);
 
             $groupSelect = $this->database->prepare(
