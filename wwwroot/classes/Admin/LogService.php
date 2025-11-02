@@ -128,32 +128,11 @@ final class LogService
 
     private function getLogTable(): string
     {
-        if ($this->logTable !== null) {
-            return $this->logTable;
+        if ($this->logTable === null) {
+            $this->logTable = 'log';
         }
 
-        foreach (['psn100_log', 'log'] as $candidate) {
-            if ($this->tableExists($candidate)) {
-                $this->logTable = $candidate;
-
-                return $this->logTable;
-            }
-        }
-
-        throw new RuntimeException('Unable to locate a log table.');
-    }
-
-    private function tableExists(string $table): bool
-    {
-        $queryString = sprintf('SELECT 1 FROM %s LIMIT 1', $this->quoteIdentifier($table));
-
-        try {
-            $this->database->query($queryString);
-
-            return true;
-        } catch (PDOException $exception) {
-            return false;
-        }
+        return $this->logTable;
     }
 
     private function quoteIdentifier(string $identifier): string
