@@ -75,8 +75,8 @@ if ($pageResult->getTotalPages() > 1) {
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <?php $time = $entry->getTime(); ?>
-                                        <time class="small text-body-secondary" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
-                                            <?= htmlspecialchars($time->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?> UTC
+                                        <time class="small text-body-secondary js-localized-datetime" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?= htmlspecialchars($time->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
                                         </time>
                                     </td>
                                     <td><?= $entry->getFormattedMessage(); ?></td>
@@ -97,5 +97,35 @@ if ($pageResult->getTotalPages() > 1) {
                 <?= $pagination; ?>
             <?php } ?>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof Intl === 'undefined' || typeof Intl.DateTimeFormat !== 'function') {
+                    return;
+                }
+
+                const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+                const pad = (value) => value.toString().padStart(2, '0');
+
+                document.querySelectorAll('.js-localized-datetime').forEach((timeElement) => {
+                    const isoString = timeElement.getAttribute('datetime');
+
+                    if (!isoString) {
+                        return;
+                    }
+
+                    const date = new Date(isoString);
+
+                    if (Number.isNaN(date.getTime())) {
+                        return;
+                    }
+
+                    const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+                    const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+                    timeElement.textContent = `${formattedDate} ${formattedTime}${timeZone ? ` ${timeZone}` : ''}`;
+                    timeElement.setAttribute('data-timezone', timeZone);
+                });
+            });
+        </script>
     </body>
 </html>
