@@ -67,6 +67,7 @@ class AdminNavigation
             new AdminNavigationItem('Copy group and trophy data', '/admin/copy.php'),
             new AdminNavigationItem('Delete Player', '/admin/delete-player.php'),
             new AdminNavigationItem('Game Details', '/admin/detail.php'),
+            new AdminNavigationItem('Logs', '/admin/log.php'),
             new AdminNavigationItem('Game Merge', '/admin/merge.php'),
             new AdminNavigationItem('Possible Cheaters', '/admin/possible.php'),
             new AdminNavigationItem('PSNP+', '/admin/psnp-plus.php'),
