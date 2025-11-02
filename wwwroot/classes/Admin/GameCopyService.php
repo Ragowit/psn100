@@ -162,11 +162,13 @@ class GameCopyService
         INSERT INTO
             trophy_meta (
                 trophy_id,
-                status
+                status,
+                rarity_name
             )
         SELECT
             parent.id,
-            tm.status
+            tm.status,
+            'NONE'
         FROM
             trophy parent
             INNER JOIN trophy t ON t.np_communication_id = :child_np_communication_id
