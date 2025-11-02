@@ -81,11 +81,7 @@ class GameCopyService
                 t.progress_target_value,
                 t.reward_name,
                 t.reward_image_url,
-                tm.rarity_percent,
-                tm.rarity_point,
-                tm.status,
-                tm.owners,
-                tm.rarity_name
+                tm.status
             FROM
                 trophy t
                 LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
@@ -104,11 +100,7 @@ class GameCopyService
             tg.progress_target_value = tg_org.progress_target_value,
             tg.reward_name = tg_org.reward_name,
             tg.reward_image_url = tg_org.reward_image_url,
-            tgm.rarity_percent = tg_org.rarity_percent,
-            tgm.rarity_point = tg_org.rarity_point,
-            tgm.status = tg_org.status,
-            tgm.owners = tg_org.owners,
-            tgm.rarity_name = tg_org.rarity_name
+            tgm.status = tg_org.status
         WHERE
             tg.np_communication_id = :parent_np_communication_id
         SQL;
@@ -170,19 +162,13 @@ class GameCopyService
         INSERT INTO
             trophy_meta (
                 trophy_id,
-                rarity_percent,
-                rarity_point,
                 status,
-                owners,
                 rarity_name
             )
         SELECT
             parent.id,
-            tm.rarity_percent,
-            tm.rarity_point,
             tm.status,
-            tm.owners,
-            tm.rarity_name
+            'NONE'
         FROM
             trophy parent
             INNER JOIN trophy t ON t.np_communication_id = :child_np_communication_id
@@ -607,11 +593,7 @@ class GameCopyService
                     t.name,
                     t.detail,
                     t.icon_url,
-                    tm.rarity_percent,
-                    tm.rarity_point,
                     tm.status,
-                    tm.owners,
-                    tm.rarity_name,
                     t.progress_target_value,
                     t.reward_name,
                     t.reward_image_url
@@ -678,25 +660,13 @@ class GameCopyService
         $metaUpsert = $this->database->prepare(
             'INSERT INTO trophy_meta (
                 trophy_id,
-                rarity_percent,
-                rarity_point,
-                status,
-                owners,
-                rarity_name
+                status
             ) VALUES (
                 :trophy_id,
-                :rarity_percent,
-                :rarity_point,
-                :status,
-                :owners,
-                :rarity_name
+                :status
             )
             ON DUPLICATE KEY UPDATE
-                rarity_percent = VALUES(rarity_percent),
-                rarity_point = VALUES(rarity_point),
-                status = VALUES(status),
-                owners = VALUES(owners),
-                rarity_name = VALUES(rarity_name)'
+                status = VALUES(status)'
         );
         $exists = $this->database->prepare(
             'SELECT 1
@@ -1120,11 +1090,7 @@ class GameCopyService
     {
         $statement->execute([
             ':trophy_id' => $trophyId,
-            ':rarity_percent' => (string) $trophy['rarity_percent'],
-            ':rarity_point' => (int) $trophy['rarity_point'],
             ':status' => (int) $trophy['status'],
-            ':owners' => (int) $trophy['owners'],
-            ':rarity_name' => (string) $trophy['rarity_name'],
         ]);
 
         $statement->closeCursor();
