@@ -26,7 +26,29 @@ final class AdminLogServiceTest extends TestCase
         $this->assertCount(1, $entries);
         $this->assertSame(1, $entries[0]->getId());
         $this->assertSame('2024-05-01 10:00:00', $entries[0]->getTime()->format('Y-m-d H:i:s'));
+        $this->assertSame('UTC', $entries[0]->getTime()->getTimezone()->getName());
         $this->assertStringContainsString('/game/59688-food-truck-kingdom', $entries[0]->getFormattedMessage());
+    }
+
+    public function testFetchEntriesForPageOrdersAscendingById(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT, name TEXT)');
+        $database->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, message TEXT)');
+
+        $database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (1, 'NPWR00001_00', 'Game One')");
+        $database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (2, 'NPWR00002_00', 'Game Two')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-01 10:00:00', 'First message for Game One. NPWR00001_00, default, Game One')");
+        $database->exec("INSERT INTO log (time, message) VALUES ('2024-05-02 10:00:00', 'Second message for Game Two. NPWR00002_00, default, Game Two')");
+
+        $formatter = new LogEntryFormatter($database, new Utility());
+        $service = new LogService($database, $formatter);
+
+        $entries = $service->fetchEntriesForPage(1, 10);
+
+        $this->assertCount(2, $entries);
+        $this->assertSame([1, 2], [$entries[0]->getId(), $entries[1]->getId()]);
     }
 
     public function testDeleteLogByIdRemovesEntry(): void

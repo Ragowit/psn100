@@ -29,7 +29,7 @@ final class LogService
 
         $table = $this->getLogTable();
         $queryString = sprintf(
-            'SELECT id, time, message FROM %s ORDER BY id DESC LIMIT :limit OFFSET :offset',
+            'SELECT id, time, message FROM %s ORDER BY id ASC LIMIT :limit OFFSET :offset',
             $this->quoteIdentifier($table)
         );
 
