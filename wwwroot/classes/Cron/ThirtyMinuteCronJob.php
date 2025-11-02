@@ -89,9 +89,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
             try {
                 // Get our queue.
                 // #1 - Users added from the front page, ordered by time entered
-                // #2 - Top 100 players who haven't been updated within a day, ordered by the oldest one.
-                // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a week, ordered by the oldest one.
-                // #4 - Top 10000 players who haven't been updated within a month, ordered by the oldest one.
+                // #2 - Top 100 players who haven't been updated within an hour, ordered by the oldest one.
+                // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a day, ordered by the oldest one.
+                // #4 - Top 10000 players who haven't been updated within a week, ordered by the oldest one.
                 // #5 - Oldest scanned player who is not tagged as a cheater
                 $query = $this->database->prepare("
                     WITH
