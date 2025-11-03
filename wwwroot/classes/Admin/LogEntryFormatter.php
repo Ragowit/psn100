@@ -70,7 +70,7 @@ final class LogEntryFormatter
 
     private function formatSetVersionMessage(string $message): ?string
     {
-        if (!preg_match('/^SET VERSION for (.+)\. ([A-Z0-9_]+), ([^,]+), (.+)$/', $message, $matches, PREG_OFFSET_CAPTURE)) {
+        if (!preg_match('/^SET VERSION for (.+)\s*\.\s*([A-Z0-9_]+),\s*([^,]+),\s*(.+)$/', $message, $matches, PREG_OFFSET_CAPTURE)) {
             return null;
         }
 
@@ -101,7 +101,7 @@ final class LogEntryFormatter
 
     private function formatNewTrophiesAddedMessage(string $message): ?string
     {
-        if (!preg_match('/^New trophies added for (.+)\. ([A-Z0-9_]+), ([^,]+), (.+)$/', $message, $matches, PREG_OFFSET_CAPTURE)) {
+        if (!preg_match('/^New trophies added for (.+)\s*\.\s*([A-Z0-9_]+),\s*([^,]+),\s*(.+)$/', $message, $matches, PREG_OFFSET_CAPTURE)) {
             return null;
         }
 

@@ -43,6 +43,17 @@ final class AdminLogEntryFormatterTest extends TestCase
         $this->assertStringContainsString('/game/59688-food-truck-kingdom#default', $formatted);
     }
 
+    public function testFormatsSetVersionMessageWithSpacesAroundPeriod(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (7777, 'NPWR53360_00', 'Cazzarion: Shellfish Frenzy')");
+
+        $message = 'SET VERSION for Cazzarion: Shellfish Frenzy . NPWR53360_00, default, Cazzarion: Shellfish Frenzy';
+        $formatted = $this->formatter->format($message);
+
+        $this->assertStringContainsString('/game/7777-cazzarion-shellfish-frenzy', $formatted);
+        $this->assertStringContainsString('/game/7777-cazzarion-shellfish-frenzy#default', $formatted);
+    }
+
     public function testFormatsNewTrophiesMessageWithLinks(): void
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (1234, 'NPWR99999_00', 'Sample Game')");
