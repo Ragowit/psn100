@@ -6,8 +6,6 @@ final class Worker
 {
     private int $id;
 
-    private string $refreshToken;
-
     private string $npsso;
 
     private string $scanning;
@@ -16,13 +14,11 @@ final class Worker
 
     public function __construct(
         int $id,
-        string $refreshToken,
         string $npsso,
         string $scanning,
         DateTimeImmutable $scanStart
     ) {
         $this->id = $id;
-        $this->refreshToken = $refreshToken;
         $this->npsso = $npsso;
         $this->scanning = $scanning;
         $this->scanStart = $scanStart;
@@ -31,11 +27,6 @@ final class Worker
     public function getId(): int
     {
         return $this->id;
-    }
-
-    public function getRefreshToken(): string
-    {
-        return $this->refreshToken;
     }
 
     public function getNpsso(): string
