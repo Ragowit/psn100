@@ -19,7 +19,7 @@ final class WorkerService
     public function fetchWorkers(): array
     {
         $statement = $this->database->query(
-            'SELECT id, refresh_token, npsso, scanning, scan_start FROM setting ORDER BY scan_start ASC'
+            'SELECT id, npsso, scanning, scan_start FROM setting ORDER BY scan_start ASC'
         );
 
         if ($statement === false) {
@@ -30,7 +30,6 @@ final class WorkerService
 
         while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
             $id = isset($row['id']) ? (int) $row['id'] : 0;
-            $refreshToken = (string) ($row['refresh_token'] ?? '');
             $npsso = (string) ($row['npsso'] ?? '');
             $scanning = (string) ($row['scanning'] ?? '');
             $scanStartRaw = (string) ($row['scan_start'] ?? '');
@@ -41,7 +40,7 @@ final class WorkerService
                 $scanStart = new DateTimeImmutable('1970-01-01 00:00:00');
             }
 
-            $workers[] = new Worker($id, $refreshToken, $npsso, $scanning, $scanStart);
+            $workers[] = new Worker($id, $npsso, $scanning, $scanStart);
         }
 
         return $workers;

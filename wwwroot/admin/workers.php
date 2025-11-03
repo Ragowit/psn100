@@ -78,7 +78,6 @@ $workers = $workerService->fetchWorkers();
                         <thead>
                             <tr>
                                 <th scope="col" style="width: 4rem;">ID</th>
-                                <th scope="col">Refresh Token</th>
                                 <th scope="col" style="width: 18rem;">NPSSO</th>
                                 <th scope="col" style="width: 16rem;">Scanning</th>
                                 <th scope="col" style="width: 16rem;">Scan Start</th>
@@ -88,16 +87,12 @@ $workers = $workerService->fetchWorkers();
                             <?php foreach ($workers as $worker) { ?>
                                 <?php
                                 $scanStart = $worker->getScanStart();
-                                $scanStartFormatted = htmlspecialchars($scanStart->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8');
                                 $scanning = $worker->getScanning();
                                 $scanningDisplay = htmlspecialchars($scanning, ENT_QUOTES, 'UTF-8');
                                 $scanningLink = $scanning !== '' ? '/player/' . rawurlencode($scanning) : null;
                                 ?>
                                 <tr>
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td class="text-nowrap">
-                                        <code><?= htmlspecialchars($worker->getRefreshToken(), ENT_QUOTES, 'UTF-8'); ?></code>
-                                    </td>
                                     <td>
                                         <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
                                             <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
@@ -121,8 +116,11 @@ $workers = $workerService->fetchWorkers();
                                         <?php } ?>
                                     </td>
                                     <td class="text-nowrap">
-                                        <time datetime="<?= htmlspecialchars($scanStart->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
-                                            <?= $scanStartFormatted; ?>
+                                        <time
+                                            class="js-localized-datetime"
+                                            datetime="<?= htmlspecialchars($scanStart->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>"
+                                        >
+                                            <?= htmlspecialchars($scanStart->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
                                         </time>
                                     </td>
                                 </tr>
@@ -132,5 +130,40 @@ $workers = $workerService->fetchWorkers();
                 </div>
             <?php } ?>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof Intl !== 'object' || typeof Intl.DateTimeFormat !== 'function') {
+                    return;
+                }
+
+                const pad = (value) => value.toString().padStart(2, '0');
+                const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+
+                document.querySelectorAll('.js-localized-datetime').forEach((element) => {
+                    if (!(element instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const isoString = element.getAttribute('datetime');
+
+                    if (!isoString) {
+                        return;
+                    }
+
+                    const date = new Date(isoString);
+
+                    if (Number.isNaN(date.getTime())) {
+                        return;
+                    }
+
+                    const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+                    const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+                    const timeZoneSuffix = timeZone !== '' ? ` ${timeZone}` : '';
+
+                    element.textContent = `${formattedDate} ${formattedTime}${timeZoneSuffix}`;
+                    element.setAttribute('data-timezone', timeZone);
+                });
+            });
+        </script>
     </body>
 </html>

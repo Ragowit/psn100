@@ -20,9 +20,6 @@ final class AdminWorkerServiceTest extends TestCase
         $workers = $service->fetchWorkers();
 
         $this->assertCount(3, $workers);
-        $this->assertSame('token-1', $workers[0]->getRefreshToken());
-        $this->assertSame('token-2', $workers[1]->getRefreshToken());
-        $this->assertSame('token-3', $workers[2]->getRefreshToken());
         $this->assertSame('player-one', $workers[0]->getScanning());
         $this->assertSame('2024-01-01 09:00:00', $workers[0]->getScanStart()->format('Y-m-d H:i:s'));
     }
