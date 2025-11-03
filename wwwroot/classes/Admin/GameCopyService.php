@@ -291,11 +291,7 @@ class GameCopyService
         bool $copyIconUrl,
         bool $copySetVersion
     ): void {
-        if (!$copyIconUrl && !$copySetVersion) {
-            return;
-        }
-
-        $fields = [];
+        $fields = ['parent.detail = child_title.detail'];
 
         if ($copyIconUrl) {
             $fields[] = 'parent.icon_url = child_title.icon_url';
@@ -307,7 +303,7 @@ class GameCopyService
 
         $query = $this->database->prepare(
             'WITH child_title AS (
-                SELECT icon_url, set_version
+                SELECT detail, icon_url, set_version
                 FROM trophy_title
                 WHERE np_communication_id = :child_np_communication_id
             )
