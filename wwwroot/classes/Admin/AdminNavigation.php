@@ -74,6 +74,7 @@ class AdminNavigation
             new AdminNavigationItem('Reported Players', '/admin/report.php'),
             new AdminNavigationItem('Rescan Game', '/admin/rescan.php'),
             new AdminNavigationItem('Reset Trophy Data or Delete Merged Game', '/admin/reset.php'),
+            new AdminNavigationItem('Workers', '/admin/workers.php'),
             new AdminNavigationItem('Unobtainable trophy', '/admin/unobtainable.php'),
         ];
     }
