@@ -117,6 +117,9 @@ final class GameHistoryPageTest extends TestCase
         $this->assertSame([], $latestEntry['groups']);
         $this->assertCount(1, $latestEntry['trophies']);
         $this->assertTrue($latestEntry['trophies'][0]['changedFields']['progress_target_value']);
+        $this->assertTrue(array_key_exists('previousValues', $latestEntry['trophies'][0]));
+        $this->assertSame(50, $latestEntry['trophies'][0]['previousValues']['progress_target_value']);
+        $this->assertSame('Challenger', $latestEntry['trophies'][0]['previousValues']['name']);
 
         $midEntry = $entries[1];
         $this->assertTrue($midEntry['hasTitleChanges']);
@@ -126,6 +129,7 @@ final class GameHistoryPageTest extends TestCase
         $this->assertCount(1, $midEntry['trophies']);
         $this->assertTrue($midEntry['trophies'][0]['isNewRow']);
         $this->assertTrue($midEntry['trophies'][0]['is_unobtainable']);
+        $this->assertFalse(array_key_exists('previousValues', $midEntry['trophies'][0]));
 
         $earliestEntry = $entries[2];
         $this->assertTrue($earliestEntry['hasTitleChanges']);
