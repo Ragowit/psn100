@@ -38,7 +38,8 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool},
-     *         isNewRow: bool
+     *         isNewRow: bool,
+     *         previousValues?: array{name: ?string, detail: ?string, icon_url: ?string}
      *     }>,
      *     trophies: array<int, array{
      *         group_id: string,
@@ -49,7 +50,13 @@ final class GameHistoryPage
      *         progress_target_value: ?int,
      *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
-     *         isNewRow: bool
+     *         isNewRow: bool,
+     *         previousValues?: array{
+     *             name: ?string,
+     *             detail: ?string,
+     *             icon_url: ?string,
+     *             progress_target_value: ?int
+     *         }
      *     }>
      * }>|null
      */
@@ -131,7 +138,8 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool},
-     *         isNewRow: bool
+     *         isNewRow: bool,
+     *         previousValues?: array{name: ?string, detail: ?string, icon_url: ?string}
      *     }>,
      *     trophies: array<int, array{
      *         group_id: string,
@@ -142,7 +150,13 @@ final class GameHistoryPage
      *         progress_target_value: ?int,
      *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
-     *         isNewRow: bool
+     *         isNewRow: bool,
+     *         previousValues?: array{
+     *             name: ?string,
+     *             detail: ?string,
+     *             icon_url: ?string,
+     *             progress_target_value: ?int
+     *         }
      *     }>
      * }>
      */
@@ -197,6 +211,7 @@ final class GameHistoryPage
                 ];
 
                 $isNewRow = !array_key_exists($groupId, $previousGroups);
+                $hasFieldChanges = in_array(true, $changedFields, true);
 
                 if ($isNewRow) {
                     foreach (array_keys($changedFields) as $field) {
@@ -204,9 +219,11 @@ final class GameHistoryPage
                             $changedFields[$field] = true;
                         }
                     }
+                } elseif ($hasFieldChanges) {
+                    $groupChange['previousValues'] = $previousGroup;
                 }
 
-                $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
+                $hasRowChanges = $isNewRow || $hasFieldChanges;
 
                 if ($hasRowChanges) {
                     $groupChange['changedFields'] = $changedFields;
@@ -239,6 +256,7 @@ final class GameHistoryPage
                 ];
 
                 $isNewRow = !array_key_exists($trophyKey, $previousTrophies);
+                $hasFieldChanges = in_array(true, $changedFields, true);
 
                 if ($isNewRow) {
                     foreach (array_keys($changedFields) as $field) {
@@ -252,9 +270,11 @@ final class GameHistoryPage
                             }
                         }
                     }
+                } elseif ($hasFieldChanges) {
+                    $trophyChange['previousValues'] = $previousTrophy;
                 }
 
-                $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
+                $hasRowChanges = $isNewRow || $hasFieldChanges;
 
                 if ($hasRowChanges) {
                     $trophyChange['changedFields'] = $changedFields;
