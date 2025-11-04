@@ -178,12 +178,15 @@ require_once 'header.php';
                                                         <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
                                                             <span class="badge text-bg-secondary"><?= htmlentities($trophyChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
                                                         </td>
-                                                        <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>"><?= (int) $trophyChange['order_id']; ?></td>
+                                                        <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
+                                                            <?php if ($trophyChange['is_unobtainable'] ?? false) { ?>
+                                                                <span class="badge text-bg-warning" title="This trophy is unobtainable and not accounted for on any leaderboard."><?= (int) $trophyChange['order_id']; ?></span>
+                                                            <?php } else { ?>
+                                                                <?= (int) $trophyChange['order_id']; ?>
+                                                            <?php } ?>
+                                                        </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                                            <?php if ($trophyChange['is_unobtainable'] ?? false) { ?>
-                                                                <span class="badge text-bg-warning ms-1" title="This trophy is unobtainable and not accounted for on any leaderboard.">Unobtainable</span>
-                                                            <?php } ?>
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?= nl2br(htmlentities($trophyChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
