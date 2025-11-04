@@ -14,11 +14,21 @@ final class GameHistoryPageTest extends TestCase
         $database->exec('CREATE TABLE trophy_title_history (id INTEGER PRIMARY KEY AUTOINCREMENT, trophy_title_id INTEGER, detail TEXT, icon_url TEXT, set_version TEXT, discovered_at TEXT)');
         $database->exec('CREATE TABLE trophy_group_history (title_history_id INTEGER, group_id TEXT, name TEXT, detail TEXT, icon_url TEXT)');
         $database->exec('CREATE TABLE trophy_history (title_history_id INTEGER, group_id TEXT, order_id INTEGER, name TEXT, detail TEXT, icon_url TEXT, progress_target_value INTEGER)');
+        $database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY AUTOINCREMENT, np_communication_id TEXT)');
+        $database->exec('CREATE TABLE trophy (id INTEGER PRIMARY KEY AUTOINCREMENT, np_communication_id TEXT, group_id TEXT, order_id INTEGER)');
+        $database->exec('CREATE TABLE trophy_meta (trophy_id INTEGER, status INTEGER)');
 
         $database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (1, 42, 'Initial detail', 'icon-a.png', '01.00', '2024-01-01 00:00:00')");
         $database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (2, 42, NULL, NULL, '01.05', '2024-02-01 00:00:00')");
         $database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (3, 42, NULL, NULL, '01.10', '2024-03-05 00:00:00')");
         $database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (4, 42, NULL, NULL, '01.10', '2024-04-01 00:00:00')");
+
+        $database->exec("INSERT INTO trophy_title (id, np_communication_id) VALUES (42, 'NPWR12345_00')");
+
+        $database->exec("INSERT INTO trophy (id, np_communication_id, group_id, order_id) VALUES (100, 'NPWR12345_00', 'default', 1)");
+        $database->exec("INSERT INTO trophy (id, np_communication_id, group_id, order_id) VALUES (101, 'NPWR12345_00', '001', 5)");
+        $database->exec("INSERT INTO trophy_meta (trophy_id, status) VALUES (100, 0)");
+        $database->exec("INSERT INTO trophy_meta (trophy_id, status) VALUES (101, 1)");
 
         $database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (1, 'default', 'Base', 'Base detail', 'group-a.png')");
         $database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (2, 'default', 'Base', 'Base detail', 'group-a.png')");
@@ -115,6 +125,7 @@ final class GameHistoryPageTest extends TestCase
         $this->assertTrue($midEntry['groups'][0]['isNewRow']);
         $this->assertCount(1, $midEntry['trophies']);
         $this->assertTrue($midEntry['trophies'][0]['isNewRow']);
+        $this->assertTrue($midEntry['trophies'][0]['is_unobtainable']);
 
         $earliestEntry = $entries[2];
         $this->assertTrue($earliestEntry['hasTitleChanges']);
@@ -124,5 +135,6 @@ final class GameHistoryPageTest extends TestCase
         $this->assertTrue($earliestEntry['groups'][0]['isNewRow']);
         $this->assertCount(1, $earliestEntry['trophies']);
         $this->assertTrue($earliestEntry['trophies'][0]['isNewRow']);
+        $this->assertFalse($earliestEntry['trophies'][0]['is_unobtainable']);
     }
 }

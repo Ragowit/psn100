@@ -47,6 +47,7 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         progress_target_value: ?int,
+     *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
      *         isNewRow: bool
      *     }>
@@ -97,7 +98,7 @@ final class GameHistoryPage
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     groups: array<int, array{group_id: string, name: ?string, detail: ?string, icon_url: ?string}>,
-     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}>
+     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int, is_unobtainable: bool}>
      * }>
      */
     public function getHistoryEntries(): array
@@ -116,7 +117,7 @@ final class GameHistoryPage
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     groups: array<int, array{group_id: string, name: ?string, detail: ?string, icon_url: ?string}>,
-     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}>
+     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int, is_unobtainable: bool}>
      * }> $entries
      * @return array<int, array{
      *     historyId: int,
@@ -139,6 +140,7 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         progress_target_value: ?int,
+     *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
      *         isNewRow: bool
      *     }>

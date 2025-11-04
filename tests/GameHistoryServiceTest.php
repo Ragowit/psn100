@@ -25,6 +25,13 @@ final class GameHistoryServiceTest extends TestCase
         $this->database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (1, 42, 'Detail A', 'icon-a.png', '01.00', '2024-02-01 10:11:12')");
         $this->database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (2, 42, 'Detail B', '.png', '01.10', '2024-03-05 05:04:03')");
 
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id) VALUES (42, 'NPWRTEST_00')");
+
+        $this->database->exec("INSERT INTO trophy (id, np_communication_id, group_id, order_id) VALUES (100, 'NPWRTEST_00', 'default', 1)");
+        $this->database->exec("INSERT INTO trophy (id, np_communication_id, group_id, order_id) VALUES (101, 'NPWRTEST_00', '001', 5)");
+        $this->database->exec("INSERT INTO trophy_meta (trophy_id, status) VALUES (100, 0)");
+        $this->database->exec("INSERT INTO trophy_meta (trophy_id, status) VALUES (101, 1)");
+
         $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (1, 'default', 'Base', 'Base detail', 'group-a.png')");
         $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (2, '001', 'Expansion', 'Expansion detail', '.png')");
 
@@ -47,6 +54,9 @@ final class GameHistoryServiceTest extends TestCase
         $this->assertSame('Detail A', $entries[1]['title']['detail']);
         $this->assertSame('Base', $entries[1]['groups'][0]['name']);
         $this->assertSame('First Trophy', $entries[1]['trophies'][0]['name']);
+        $this->assertFalse($entries[1]['trophies'][0]['is_unobtainable']);
+
+        $this->assertTrue($entries[0]['trophies'][0]['is_unobtainable']);
     }
 
     public function testGetHistoryForGameReturnsEmptyArrayWhenNoHistoryExists(): void
@@ -59,6 +69,8 @@ final class GameHistoryServiceTest extends TestCase
     public function testGetHistoryForGameOrdersGroupsAndTrophies(): void
     {
         $this->database->exec("INSERT INTO trophy_title_history (id, trophy_title_id, detail, icon_url, set_version, discovered_at) VALUES (3, 42, NULL, NULL, NULL, '2024-04-01 00:00:00')");
+
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id) VALUES (42, 'NPWRORDER_00')");
 
         $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, '002', 'Third Group', 'Third detail', NULL)");
         $this->database->exec("INSERT INTO trophy_group_history (title_history_id, group_id, name, detail, icon_url) VALUES (3, 'default', 'Base Game', 'Base detail', NULL)");
@@ -79,6 +91,33 @@ final class GameHistoryServiceTest extends TestCase
         $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '103', 7, 'Fourth Group Trophy Part 3', 'Fourth group trophy detail part 3', NULL, NULL)");
         $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '201', 8, 'Fifth Group Trophy', 'Fifth group trophy detail', NULL, NULL)");
         $this->database->exec("INSERT INTO trophy_history (title_history_id, group_id, order_id, name, detail, icon_url, progress_target_value) VALUES (3, '202', 9, 'Fifth Group Trophy Part 2', 'Fifth group trophy detail part 2', NULL, NULL)");
+
+        $trophies = [
+            ['default', 0],
+            ['default', 1],
+            ['001', 2],
+            ['001', 3],
+            ['002', 4],
+            ['101', 5],
+            ['102', 6],
+            ['103', 7],
+            ['201', 8],
+            ['202', 9],
+        ];
+
+        foreach ($trophies as $index => $trophy) {
+            $trophyId = 200 + $index;
+            $this->database->exec(sprintf(
+                "INSERT INTO trophy (id, np_communication_id, group_id, order_id) VALUES (%d, 'NPWRORDER_00', '%s', %d)",
+                $trophyId,
+                $trophy[0],
+                $trophy[1]
+            ));
+            $this->database->exec(sprintf(
+                "INSERT INTO trophy_meta (trophy_id, status) VALUES (%d, 0)",
+                $trophyId
+            ));
+        }
 
         $entries = $this->service->getHistoryForGame(42);
 
@@ -111,5 +150,8 @@ final class GameHistoryServiceTest extends TestCase
         $this->database->exec('CREATE TABLE trophy_title_history (id INTEGER PRIMARY KEY AUTOINCREMENT, trophy_title_id INTEGER, detail TEXT, icon_url TEXT, set_version TEXT, discovered_at TEXT)');
         $this->database->exec('CREATE TABLE trophy_group_history (title_history_id INTEGER, group_id TEXT, name TEXT, detail TEXT, icon_url TEXT)');
         $this->database->exec('CREATE TABLE trophy_history (title_history_id INTEGER, group_id TEXT, order_id INTEGER, name TEXT, detail TEXT, icon_url TEXT, progress_target_value INTEGER)');
+        $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY AUTOINCREMENT, np_communication_id TEXT)');
+        $this->database->exec('CREATE TABLE trophy (id INTEGER PRIMARY KEY AUTOINCREMENT, np_communication_id TEXT, group_id TEXT, order_id INTEGER)');
+        $this->database->exec('CREATE TABLE trophy_meta (trophy_id INTEGER, status INTEGER)');
     }
 }

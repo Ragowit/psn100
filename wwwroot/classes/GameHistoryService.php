@@ -17,7 +17,7 @@ final class GameHistoryService
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     groups: array<int, array{group_id: string, name: ?string, detail: ?string, icon_url: ?string}>,
-     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}>
+     *     trophies: array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int, is_unobtainable: bool}>
      * }>
      */
     public function getHistoryForGame(int $gameId): array
@@ -134,28 +134,35 @@ final class GameHistoryService
 
     /**
      * @param array<int, int> $historyIds
-     * @return array<int, array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int}>>
-     */
+     * @return array<int, array<int, array{group_id: string, order_id: int, name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int, is_unobtainable: bool}>>
+    */
     private function fetchTrophyChanges(array $historyIds): array
     {
         $rows = $this->fetchRows(
             <<<'SQL'
             SELECT
-                title_history_id,
-                group_id,
-                order_id,
-                name,
-                detail,
-                icon_url,
-                progress_target_value
+                th.title_history_id,
+                th.group_id,
+                th.order_id,
+                th.name,
+                th.detail,
+                th.icon_url,
+                th.progress_target_value,
+                tm.status AS trophy_status
             FROM
-                trophy_history
+                trophy_history th
+                JOIN trophy_title_history tth ON tth.id = th.title_history_id
+                JOIN trophy_title tt ON tt.id = tth.trophy_title_id
+                LEFT JOIN trophy t ON t.np_communication_id = tt.np_communication_id
+                    AND t.group_id = th.group_id
+                    AND t.order_id = th.order_id
+                LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE
-                title_history_id IN (%s)
+                th.title_history_id IN (%s)
             ORDER BY
-                CASE WHEN group_id = 'default' THEN 0 ELSE 1 END,
-                CASE WHEN group_id = 'default' THEN 0 ELSE group_id + 0 END,
-                order_id
+                CASE WHEN th.group_id = 'default' THEN 0 ELSE 1 END,
+                CASE WHEN th.group_id = 'default' THEN 0 ELSE th.group_id + 0 END,
+                th.order_id
             SQL,
             $historyIds
         );
@@ -173,6 +180,7 @@ final class GameHistoryService
                 'progress_target_value' => isset($row['progress_target_value'])
                     ? ($row['progress_target_value'] === null ? null : (int) $row['progress_target_value'])
                     : null,
+                'is_unobtainable' => isset($row['trophy_status']) ? ((int) $row['trophy_status'] === 1) : false,
             ];
         }
 
