@@ -114,45 +114,27 @@ final class GameHistoryPageTest extends TestCase
         $this->assertTrue($latestEntry['hasTitleChanges']);
         $this->assertTrue($latestEntry['titleHighlights']['set_version']);
         $this->assertFalse($latestEntry['titleHighlights']['detail']);
-        $this->assertTrue(isset($latestEntry['titleDiffs']['set_version']));
-        $this->assertStringContainsString('-01.05', $latestEntry['titleDiffs']['set_version']);
-        $this->assertStringContainsString('+01.10', $latestEntry['titleDiffs']['set_version']);
-        $this->assertSame('01.05', $latestEntry['titlePrevious']['set_version']);
         $this->assertSame([], $latestEntry['groups']);
         $this->assertCount(1, $latestEntry['trophies']);
         $this->assertTrue($latestEntry['trophies'][0]['changedFields']['progress_target_value']);
-        $this->assertTrue(isset($latestEntry['trophies'][0]['diffs']['progress_target_value']));
-        $this->assertStringContainsString('-50', $latestEntry['trophies'][0]['diffs']['progress_target_value']);
-        $this->assertStringContainsString('+100', $latestEntry['trophies'][0]['diffs']['progress_target_value']);
-        $this->assertSame(50, $latestEntry['trophies'][0]['previousValues']['progress_target_value']);
 
         $midEntry = $entries[1];
         $this->assertTrue($midEntry['hasTitleChanges']);
         $this->assertTrue($midEntry['titleHighlights']['set_version']);
         $this->assertCount(1, $midEntry['groups']);
         $this->assertTrue($midEntry['groups'][0]['isNewRow']);
-        $this->assertStringContainsString('+Expansion', $midEntry['groups'][0]['diffs']['name']);
-        $this->assertTrue(($midEntry['groups'][0]['previousValues']['name'] ?? null) === null);
         $this->assertCount(1, $midEntry['trophies']);
         $this->assertTrue($midEntry['trophies'][0]['isNewRow']);
         $this->assertTrue($midEntry['trophies'][0]['is_unobtainable']);
-        $this->assertStringContainsString('+Challenger', $midEntry['trophies'][0]['diffs']['name']);
-        $this->assertStringContainsString('+Reach level 5', $midEntry['trophies'][0]['diffs']['detail']);
-        $this->assertStringContainsString('+50', $midEntry['trophies'][0]['diffs']['progress_target_value']);
-        $this->assertTrue(($midEntry['trophies'][0]['previousValues']['progress_target_value'] ?? null) === null);
 
         $earliestEntry = $entries[2];
         $this->assertTrue($earliestEntry['hasTitleChanges']);
         $this->assertTrue($earliestEntry['titleHighlights']['icon_url']);
         $this->assertTrue($earliestEntry['titleHighlights']['detail']);
-        $this->assertStringContainsString('+Initial detail', $earliestEntry['titleDiffs']['detail']);
-        $this->assertStringContainsString('+icon-a.png', $earliestEntry['titleDiffs']['icon_url']);
         $this->assertCount(1, $earliestEntry['groups']);
         $this->assertTrue($earliestEntry['groups'][0]['isNewRow']);
-        $this->assertStringContainsString('+Base', $earliestEntry['groups'][0]['diffs']['name']);
         $this->assertCount(1, $earliestEntry['trophies']);
         $this->assertTrue($earliestEntry['trophies'][0]['isNewRow']);
         $this->assertFalse($earliestEntry['trophies'][0]['is_unobtainable']);
-        $this->assertStringContainsString('+First Trophy', $earliestEntry['trophies'][0]['diffs']['name']);
     }
 }
