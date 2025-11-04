@@ -30,6 +30,7 @@ final class GameHistoryPage
      *     historyId: int,
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
+     *     previousTitle: array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
      *     hasTitleChanges: bool,
      *     groups: array<int, array{
@@ -38,6 +39,7 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool},
+     *         previous: array{name: ?string, detail: ?string, icon_url: ?string},
      *         isNewRow: bool
      *     }>,
      *     trophies: array<int, array{
@@ -49,6 +51,7 @@ final class GameHistoryPage
      *         progress_target_value: ?int,
      *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
+     *         previous: array{name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int},
      *         isNewRow: bool
      *     }>
      * }>|null
@@ -123,6 +126,7 @@ final class GameHistoryPage
      *     historyId: int,
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
+     *     previousTitle: array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
      *     hasTitleChanges: bool,
      *     groups: array<int, array{
@@ -131,6 +135,7 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool},
+     *         previous: array{name: ?string, detail: ?string, icon_url: ?string},
      *         isNewRow: bool
      *     }>,
      *     trophies: array<int, array{
@@ -142,6 +147,7 @@ final class GameHistoryPage
      *         progress_target_value: ?int,
      *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
+     *         previous: array{name: ?string, detail: ?string, icon_url: ?string, progress_target_value: ?int},
      *         isNewRow: bool
      *     }>
      * }>
@@ -210,6 +216,7 @@ final class GameHistoryPage
 
                 if ($hasRowChanges) {
                     $groupChange['changedFields'] = $changedFields;
+                    $groupChange['previous'] = $previousGroup;
                     $groupChange['isNewRow'] = $isNewRow;
                     $filteredGroups[] = $groupChange;
                 }
@@ -258,6 +265,7 @@ final class GameHistoryPage
 
                 if ($hasRowChanges) {
                     $trophyChange['changedFields'] = $changedFields;
+                    $trophyChange['previous'] = $previousTrophy;
                     $trophyChange['isNewRow'] = $isNewRow;
                     $filteredTrophies[] = $trophyChange;
                 }
@@ -275,6 +283,7 @@ final class GameHistoryPage
             if ($entryHasChanges) {
                 $entry['titleHighlights'] = $titleHighlights;
                 $entry['hasTitleChanges'] = $hasTitleChanges;
+                $entry['previousTitle'] = $previousTitle;
                 $entry['groups'] = $filteredGroups;
                 $entry['trophies'] = $filteredTrophies;
 
