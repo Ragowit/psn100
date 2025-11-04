@@ -75,8 +75,25 @@ require_once("header.php");
         document.addEventListener('DOMContentLoaded', () => {
             const pad = (value) => value.toString().padStart(2, '0');
 
-            const formatUtcDate = (date) => `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
-            const formatUtcTime = (date) => `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+            const resolveTimeZone = () => {
+                if (typeof Intl === 'undefined' || typeof Intl.DateTimeFormat !== 'function') {
+                    return '';
+                }
+
+                try {
+                    const options = Intl.DateTimeFormat().resolvedOptions();
+                    const { timeZone } = options;
+
+                    return typeof timeZone === 'string' ? timeZone : '';
+                } catch (error) {
+                    return '';
+                }
+            };
+
+            const formatLocalDate = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+            const formatLocalTime = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+            const timeZone = resolveTimeZone();
 
             document.querySelectorAll('.js-localized-changelog-date').forEach((element) => {
                 const isoString = element.getAttribute('datetime');
@@ -91,7 +108,11 @@ require_once("header.php");
                     return;
                 }
 
-                element.textContent = formatUtcDate(date);
+                element.textContent = formatLocalDate(date);
+
+                if (timeZone !== '') {
+                    element.setAttribute('data-timezone', timeZone);
+                }
             });
 
             document.querySelectorAll('.js-localized-changelog-time').forEach((element) => {
@@ -107,7 +128,13 @@ require_once("header.php");
                     return;
                 }
 
-                element.textContent = formatUtcTime(date);
+                const formattedTime = formatLocalTime(date);
+
+                element.textContent = timeZone !== '' ? `${formattedTime} ${timeZone}` : formattedTime;
+
+                if (timeZone !== '') {
+                    element.setAttribute('data-timezone', timeZone);
+                }
             });
         });
     </script>
