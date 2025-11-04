@@ -21,13 +21,31 @@ require_once("header.php");
     <div class="bg-body-tertiary p-3 rounded">
         <div class="row">
             <?php foreach ($dateGroups as $dateGroup) { ?>
+                <?php $entries = $dateGroup->getEntries(); ?>
                 <div class="col-12">
-                    <h2><?= $dateGroup->getDateLabel(); ?></h2>
+                    <h2>
+                        <?php if ($entries !== []) { ?>
+                            <?php $firstEntry = $entries[0]; ?>
+                            <time
+                                class="js-localized-changelog-date"
+                                datetime="<?= htmlspecialchars($firstEntry->getIsoTimestamp(), ENT_QUOTES, 'UTF-8'); ?>"
+                            >
+                                <?= $dateGroup->getDateLabel(); ?>
+                            </time>
+                        <?php } else { ?>
+                            <?= $dateGroup->getDateLabel(); ?>
+                        <?php } ?>
+                    </h2>
                 </div>
 
-                <?php foreach ($dateGroup->getEntries() as $presenter) { ?>
+                <?php foreach ($entries as $presenter) { ?>
                     <div class="col-1">
-                        <?= $presenter->getTimeLabel(); ?>
+                        <time
+                            class="js-localized-changelog-time"
+                            datetime="<?= htmlspecialchars($presenter->getIsoTimestamp(), ENT_QUOTES, 'UTF-8'); ?>"
+                        >
+                            <?= $presenter->getTimeLabel(); ?>
+                        </time>
                     </div>
                     <div class="col-11">
                         <?= $presenter->getMessage(); ?>
@@ -52,6 +70,48 @@ require_once("header.php");
             ); ?>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pad = (value) => value.toString().padStart(2, '0');
+
+            document.querySelectorAll('.js-localized-changelog-date').forEach((element) => {
+                const isoString = element.getAttribute('datetime');
+
+                if (!isoString) {
+                    return;
+                }
+
+                const date = new Date(isoString);
+
+                if (Number.isNaN(date.getTime())) {
+                    return;
+                }
+
+                const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+                element.textContent = formattedDate;
+            });
+
+            document.querySelectorAll('.js-localized-changelog-time').forEach((element) => {
+                const isoString = element.getAttribute('datetime');
+
+                if (!isoString) {
+                    return;
+                }
+
+                const date = new Date(isoString);
+
+                if (Number.isNaN(date.getTime())) {
+                    return;
+                }
+
+                const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+                element.textContent = formattedTime;
+            });
+        });
+    </script>
 </main>
 
 <?php

@@ -26,6 +26,11 @@ class ChangelogEntryPresenter
         return $this->entry->getTime()->format('H:i:s');
     }
 
+    public function getIsoTimestamp(): string
+    {
+        return $this->entry->getTime()->format(\DateTimeInterface::ATOM);
+    }
+
     public function getMessage(): string
     {
         $param1Link = $this->buildGameLink($this->entry->getParam1Id(), $this->entry->getParam1Name());
