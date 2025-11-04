@@ -137,22 +137,54 @@ function historyBuildTokenDiff(array $previousTokens, array $currentTokens): arr
 function historyRenderHighlightedTokens(array $tokens, bool $isMultiline, string $state): string
 {
     $html = '';
+    $highlightState = null;
+    $highlightBuffer = '';
 
-    foreach ($tokens as $token) {
-        $escaped = htmlentities($token['value'], ENT_QUOTES, 'UTF-8');
+    $escapeTokenValue = static function (string $value) use ($isMultiline): string {
+        $escaped = htmlentities($value, ENT_QUOTES, 'UTF-8');
 
         if ($isMultiline) {
             $escaped = str_replace(["\r\n", "\n", "\r"], '<br>', $escaped);
         }
 
-        $isWhitespace = trim($token['value']) === '';
+        return $escaped;
+    };
 
-        if (($token['state'] === 'removed' || $token['state'] === 'added') && !$isWhitespace) {
-            $modifierClass = $token['state'] === 'removed' ? 'history-diff__token--removed' : 'history-diff__token--added';
-            $html .= '<span class="history-diff__token ' . $modifierClass . ' history-diff__token--' . $state . '">' . $escaped . '</span>';
-        } else {
-            $html .= $escaped;
+    foreach ($tokens as $token) {
+        $isWhitespace = trim($token['value']) === '';
+        $isHighlightedToken = ($token['state'] === 'removed' || $token['state'] === 'added') && !$isWhitespace;
+        $escaped = $escapeTokenValue($token['value']);
+
+        $shouldFlushHighlight = $highlightState !== null
+            && ($isHighlightedToken ? $token['state'] !== $highlightState : !$isWhitespace);
+
+        if ($shouldFlushHighlight) {
+            $modifierClass = $highlightState === 'removed' ? 'history-diff__token--removed' : 'history-diff__token--added';
+            $html .= '<span class="history-diff__token ' . $modifierClass . ' history-diff__token--' . $state . '">' . $highlightBuffer . '</span>';
+            $highlightState = null;
+            $highlightBuffer = '';
         }
+
+        if ($isHighlightedToken) {
+            if ($highlightState === null) {
+                $highlightState = $token['state'];
+            }
+
+            $highlightBuffer .= $escaped;
+            continue;
+        }
+
+        if ($highlightState !== null && $isWhitespace) {
+            $highlightBuffer .= $escaped;
+            continue;
+        }
+
+        $html .= $escaped;
+    }
+
+    if ($highlightState !== null && $highlightBuffer !== '') {
+        $modifierClass = $highlightState === 'removed' ? 'history-diff__token--removed' : 'history-diff__token--added';
+        $html .= '<span class="history-diff__token ' . $modifierClass . ' history-diff__token--' . $state . '">' . $highlightBuffer . '</span>';
     }
 
     return $html;
