@@ -74,40 +74,120 @@ require_once("header.php");
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const pad = (value) => value.toString().padStart(2, '0');
+            const formatLocalDateLabel = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+            const formatLocalDateKey = formatLocalDateLabel;
+            const formatLocalTime = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 
-            const formatUtcDate = (date) => `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
-            const formatUtcTime = (date) => `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
-
-            document.querySelectorAll('.js-localized-changelog-date').forEach((element) => {
-                const isoString = element.getAttribute('datetime');
-
+            const parseIsoDate = (isoString) => {
                 if (!isoString) {
-                    return;
+                    return null;
                 }
 
                 const date = new Date(isoString);
 
                 if (Number.isNaN(date.getTime())) {
-                    return;
+                    return null;
                 }
 
-                element.textContent = formatUtcDate(date);
+                return date;
+            };
+
+            const rowElement = document.querySelector('.bg-body-tertiary .row');
+
+            if (!rowElement) {
+                return;
+            }
+
+            const entries = Array.from(rowElement.querySelectorAll('.js-localized-changelog-time')).map((timeElement) => {
+                const isoString = timeElement.getAttribute('datetime');
+                const date = parseIsoDate(isoString);
+
+                if (!date) {
+                    return null;
+                }
+
+                const parentColumn = timeElement.parentElement;
+
+                if (!parentColumn) {
+                    return null;
+                }
+
+                const messageColumn = parentColumn.nextElementSibling;
+
+                if (!messageColumn) {
+                    return null;
+                }
+
+                return {
+                    isoString,
+                    date,
+                    messageHtml: messageColumn.innerHTML,
+                };
+            }).filter((entry) => entry !== null);
+
+            if (entries.length === 0) {
+                Array.from(rowElement.querySelectorAll('.js-localized-changelog-date')).forEach((dateElement) => {
+                    const date = parseIsoDate(dateElement.getAttribute('datetime'));
+
+                    if (!date) {
+                        return;
+                    }
+
+                    dateElement.textContent = formatLocalDateLabel(date);
+                });
+
+                return;
+            }
+
+            const dateGroups = new Map();
+
+            entries.forEach((entry) => {
+                const dateKey = formatLocalDateKey(entry.date);
+
+                if (!dateGroups.has(dateKey)) {
+                    dateGroups.set(dateKey, {
+                        date: entry.date,
+                        entries: [],
+                    });
+                }
+
+                dateGroups.get(dateKey).entries.push(entry);
             });
 
-            document.querySelectorAll('.js-localized-changelog-time').forEach((element) => {
-                const isoString = element.getAttribute('datetime');
+            rowElement.innerHTML = '';
 
-                if (!isoString) {
-                    return;
-                }
+            dateGroups.forEach((group) => {
+                const headingColumn = document.createElement('div');
+                headingColumn.className = 'col-12';
 
-                const date = new Date(isoString);
+                const heading = document.createElement('h2');
+                const headingTime = document.createElement('time');
+                headingTime.className = 'js-localized-changelog-date';
+                headingTime.setAttribute('datetime', group.entries[0]?.isoString ?? group.date.toISOString());
+                headingTime.textContent = formatLocalDateLabel(group.date);
 
-                if (Number.isNaN(date.getTime())) {
-                    return;
-                }
+                heading.appendChild(headingTime);
+                headingColumn.appendChild(heading);
+                rowElement.appendChild(headingColumn);
 
-                element.textContent = formatUtcTime(date);
+                group.entries.forEach((entry) => {
+                    const timeColumn = document.createElement('div');
+                    timeColumn.className = 'col-1';
+
+                    const timeElement = document.createElement('time');
+                    timeElement.className = 'js-localized-changelog-time';
+                    timeElement.setAttribute('datetime', entry.isoString);
+                    timeElement.textContent = formatLocalTime(entry.date);
+
+                    timeColumn.appendChild(timeElement);
+                    rowElement.appendChild(timeColumn);
+
+                    const messageColumn = document.createElement('div');
+                    messageColumn.className = 'col-11';
+                    messageColumn.innerHTML = entry.messageHtml;
+
+                    rowElement.appendChild(messageColumn);
+                });
             });
         });
     </script>
