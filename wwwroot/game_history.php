@@ -478,21 +478,27 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                                             <span class="badge text-bg-secondary"><?= htmlentities($groupChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
                                                         </td>
                                                         <td>
-                                                            <?php if ($groupIsNewRow || ($groupChangedFields['name'] ?? false)) { ?>
+                                                            <?php if ($groupIsNewRow) { ?>
+                                                                <?= historyRenderSingleText($groupChange['name'] ?? null); ?>
+                                                            <?php } elseif ($groupChangedFields['name'] ?? false) { ?>
                                                                 <?= historyRenderTextDiff($groupFieldDiffs['name'] ?? null); ?>
                                                             <?php } else { ?>
                                                                 <?= historyRenderSingleText($groupChange['name'] ?? null); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td>
-                                                            <?php if ($groupIsNewRow || ($groupChangedFields['detail'] ?? false)) { ?>
+                                                            <?php if ($groupIsNewRow) { ?>
+                                                                <?= historyRenderSingleText($groupChange['detail'] ?? null, true); ?>
+                                                            <?php } elseif ($groupChangedFields['detail'] ?? false) { ?>
                                                                 <?= historyRenderTextDiff($groupFieldDiffs['detail'] ?? null, true); ?>
                                                             <?php } else { ?>
                                                                 <?= historyRenderSingleText($groupChange['detail'] ?? null, true); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="text-center">
-                                                            <?php if ($groupIsNewRow || ($groupChangedFields['icon_url'] ?? false)) { ?>
+                                                            <?php if ($groupIsNewRow) { ?>
+                                                                <?= historyRenderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                            <?php } elseif ($groupChangedFields['icon_url'] ?? false) { ?>
                                                                 <?= historyRenderIconDiff($groupFieldDiffs['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
                                                             <?php } else { ?>
                                                                 <?= historyRenderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
@@ -541,28 +547,36 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                                             <?php } ?>
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?php if ($trophyIsNewRow || ($trophyChangedFields['name'] ?? false)) { ?>
+                                                            <?php if ($trophyIsNewRow) { ?>
+                                                                <?= historyRenderSingleText($trophyChange['name'] ?? null); ?>
+                                                            <?php } elseif ($trophyChangedFields['name'] ?? false) { ?>
                                                                 <?= historyRenderTextDiff($trophyFieldDiffs['name'] ?? null); ?>
                                                             <?php } else { ?>
                                                                 <?= historyRenderSingleText($trophyChange['name'] ?? null); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?php if ($trophyIsNewRow || ($trophyChangedFields['detail'] ?? false)) { ?>
+                                                            <?php if ($trophyIsNewRow) { ?>
+                                                                <?= historyRenderSingleText($trophyChange['detail'] ?? null, true); ?>
+                                                            <?php } elseif ($trophyChangedFields['detail'] ?? false) { ?>
                                                                 <?= historyRenderTextDiff($trophyFieldDiffs['detail'] ?? null, true); ?>
                                                             <?php } else { ?>
                                                                 <?= historyRenderSingleText($trophyChange['detail'] ?? null, true); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['progress_target_value'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?php if ($trophyIsNewRow || ($trophyChangedFields['progress_target_value'] ?? false)) { ?>
+                                                            <?php if ($trophyIsNewRow) { ?>
+                                                                <?= historyFormatNumber($trophyChange['progress_target_value'] ?? null); ?>
+                                                            <?php } elseif ($trophyChangedFields['progress_target_value'] ?? false) { ?>
                                                                 <?= historyRenderNumberDiff($trophyFieldDiffs['progress_target_value'] ?? null); ?>
                                                             <?php } else { ?>
                                                                 <?= historyFormatNumber($trophyChange['progress_target_value'] ?? null); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="text-center">
-                                                            <?php if ($trophyIsNewRow || ($trophyChangedFields['icon_url'] ?? false)) { ?>
+                                                            <?php if ($trophyIsNewRow) { ?>
+                                                                <?= historyRenderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                            <?php } elseif ($trophyChangedFields['icon_url'] ?? false) { ?>
                                                                 <?= historyRenderIconDiff($trophyFieldDiffs['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
                                                             <?php } else { ?>
                                                                 <?= historyRenderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
