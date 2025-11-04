@@ -38,6 +38,7 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool},
+     *         fieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *         isNewRow: bool
      *     }>,
      *     trophies: array<int, array{
@@ -49,6 +50,7 @@ final class GameHistoryPage
      *         progress_target_value: ?int,
      *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
+     *         fieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *         isNewRow: bool
      *     }>
      * }>|null
@@ -131,6 +133,7 @@ final class GameHistoryPage
      *         detail: ?string,
      *         icon_url: ?string,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool},
+     *         fieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *         isNewRow: bool
      *     }>,
      *     trophies: array<int, array{
@@ -142,6 +145,7 @@ final class GameHistoryPage
      *         progress_target_value: ?int,
      *         is_unobtainable: bool,
      *         changedFields: array{name: bool, detail: bool, icon_url: bool, progress_target_value: bool},
+     *         fieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *         isNewRow: bool
      *     }>
      * }>
@@ -209,6 +213,21 @@ final class GameHistoryPage
                 $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
 
                 if ($hasRowChanges) {
+                    $fieldDiffs = [];
+
+                    foreach ($changedFields as $field => $hasChanged) {
+                        if ($hasChanged || $isNewRow) {
+                            $fieldDiffs[$field] = [
+                                'previous' => $previousGroup[$field] ?? null,
+                                'current' => $this->normalizeString($groupChange[$field] ?? null),
+                            ];
+                        }
+                    }
+
+                    if ($fieldDiffs !== []) {
+                        $groupChange['fieldDiffs'] = $fieldDiffs;
+                    }
+
                     $groupChange['changedFields'] = $changedFields;
                     $groupChange['isNewRow'] = $isNewRow;
                     $filteredGroups[] = $groupChange;
@@ -257,6 +276,29 @@ final class GameHistoryPage
                 $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
 
                 if ($hasRowChanges) {
+                    $fieldDiffs = [];
+
+                    foreach ($changedFields as $field => $hasChanged) {
+                        if ($hasChanged || $isNewRow) {
+                            if ($field === 'progress_target_value') {
+                                $currentValue = $trophyChange['progress_target_value'] ?? null;
+                                $previousValue = $previousTrophy['progress_target_value'] ?? null;
+                            } else {
+                                $currentValue = $this->normalizeString($trophyChange[$field] ?? null);
+                                $previousValue = $previousTrophy[$field] ?? null;
+                            }
+
+                            $fieldDiffs[$field] = [
+                                'previous' => $previousValue,
+                                'current' => $currentValue,
+                            ];
+                        }
+                    }
+
+                    if ($fieldDiffs !== []) {
+                        $trophyChange['fieldDiffs'] = $fieldDiffs;
+                    }
+
                     $trophyChange['changedFields'] = $changedFields;
                     $trophyChange['isNewRow'] = $isNewRow;
                     $filteredTrophies[] = $trophyChange;
