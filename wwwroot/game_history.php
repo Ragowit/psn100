@@ -58,6 +58,122 @@ function historyFormatNumber(?int $value): string
     return htmlentities((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * @return list<string>
+ */
+function historyTokenizeString(string $value): array
+{
+    $tokens = preg_split('/(\s+)/u', $value, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+    if ($tokens === false) {
+        return [$value];
+    }
+
+    return $tokens;
+}
+
+/**
+ * @param list<string> $previousTokens
+ * @param list<string> $currentTokens
+ * @return array{previous: list<array{value: string, state: string}>, current: list<array{value: string, state: string}>}
+ */
+function historyBuildTokenDiff(array $previousTokens, array $currentTokens): array
+{
+    $previousLength = count($previousTokens);
+    $currentLength = count($currentTokens);
+
+    $lcs = array_fill(0, $previousLength + 1, array_fill(0, $currentLength + 1, 0));
+
+    for ($i = $previousLength - 1; $i >= 0; $i--) {
+        for ($j = $currentLength - 1; $j >= 0; $j--) {
+            if ($previousTokens[$i] === $currentTokens[$j]) {
+                $lcs[$i][$j] = $lcs[$i + 1][$j + 1] + 1;
+            } else {
+                $lcs[$i][$j] = max($lcs[$i + 1][$j], $lcs[$i][$j + 1]);
+            }
+        }
+    }
+
+    $previousDiff = [];
+    $currentDiff = [];
+    $i = 0;
+    $j = 0;
+
+    while ($i < $previousLength && $j < $currentLength) {
+        if ($previousTokens[$i] === $currentTokens[$j]) {
+            $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'equal'];
+            $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'equal'];
+            $i++;
+            $j++;
+            continue;
+        }
+
+        if ($lcs[$i + 1][$j] >= $lcs[$i][$j + 1]) {
+            $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'removed'];
+            $i++;
+            continue;
+        }
+
+        $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'added'];
+        $j++;
+    }
+
+    while ($i < $previousLength) {
+        $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'removed'];
+        $i++;
+    }
+
+    while ($j < $currentLength) {
+        $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'added'];
+        $j++;
+    }
+
+    return ['previous' => $previousDiff, 'current' => $currentDiff];
+}
+
+/**
+ * @param list<array{value: string, state: string}> $tokens
+ */
+function historyRenderHighlightedTokens(array $tokens, bool $isMultiline, string $state): string
+{
+    $html = '';
+
+    foreach ($tokens as $token) {
+        $escaped = htmlentities($token['value'], ENT_QUOTES, 'UTF-8');
+
+        if ($isMultiline) {
+            $escaped = str_replace(["\r\n", "\n", "\r"], '<br>', $escaped);
+        }
+
+        $isWhitespace = trim($token['value']) === '';
+
+        if (($token['state'] === 'removed' || $token['state'] === 'added') && !$isWhitespace) {
+            $modifierClass = $token['state'] === 'removed' ? 'history-diff__token--removed' : 'history-diff__token--added';
+            $html .= '<span class="history-diff__token ' . $modifierClass . ' history-diff__token--' . $state . '">' . $escaped . '</span>';
+        } else {
+            $html .= $escaped;
+        }
+    }
+
+    return $html;
+}
+
+/**
+ * @return array{previous: string, current: string}
+ */
+function historyHighlightTextDiff(string $previousValue, string $currentValue, bool $isMultiline): array
+{
+    $previousTokens = historyTokenizeString($previousValue);
+    $currentTokens = historyTokenizeString($currentValue);
+
+    $diff = historyBuildTokenDiff($previousTokens, $currentTokens);
+
+    $previousHtml = historyRenderHighlightedTokens($diff['previous'], $isMultiline, 'previous');
+    $currentHtml = historyRenderHighlightedTokens($diff['current'], $isMultiline, 'current');
+
+    return ['previous' => $previousHtml, 'current' => $currentHtml];
+}
+
 function historyRenderDiffBlocks(string $previousHtml, string $currentHtml): string
 {
     return '<div class="history-diff">'
@@ -75,15 +191,17 @@ function historyRenderTextDiff(?array $diff, bool $isMultiline = false): string
         return '';
     }
 
-    $previous = historyFormatText(
-        is_string($diff['previous'] ?? null) ? $diff['previous'] : null,
-        $isMultiline
-    );
+    $previousValue = is_string($diff['previous'] ?? null) ? $diff['previous'] : null;
+    $currentValue = is_string($diff['current'] ?? null) ? $diff['current'] : null;
 
-    $current = historyFormatText(
-        is_string($diff['current'] ?? null) ? $diff['current'] : null,
-        $isMultiline
-    );
+    if ($previousValue !== null && $currentValue !== null) {
+        $highlighted = historyHighlightTextDiff($previousValue, $currentValue, $isMultiline);
+        $previous = $highlighted['previous'];
+        $current = $highlighted['current'];
+    } else {
+        $previous = historyFormatText($previousValue, $isMultiline);
+        $current = historyFormatText($currentValue, $isMultiline);
+    }
 
     return historyRenderDiffBlocks($previous, $current);
 }
@@ -208,6 +326,24 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
         .history-diff__empty {
             display: inline-block;
             opacity: 0.75;
+        }
+
+        .history-diff__token {
+            border-radius: var(--bs-border-radius-sm);
+            box-decoration-break: clone;
+            display: inline;
+            margin: 0 -0.05rem;
+            padding: 0.05rem 0.15rem;
+        }
+
+        .history-diff__token--previous.history-diff__token--removed {
+            background-color: var(--bs-danger-border-subtle);
+            color: var(--bs-danger-text-emphasis);
+        }
+
+        .history-diff__token--current.history-diff__token--added {
+            background-color: var(--bs-success-border-subtle);
+            color: var(--bs-success-text-emphasis);
         }
     </style>
     <?php require_once 'game_header.php'; ?>
