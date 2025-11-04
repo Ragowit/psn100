@@ -75,6 +75,9 @@ require_once("header.php");
         document.addEventListener('DOMContentLoaded', () => {
             const pad = (value) => value.toString().padStart(2, '0');
 
+            const formatUtcDate = (date) => `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+            const formatUtcTime = (date) => `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+
             document.querySelectorAll('.js-localized-changelog-date').forEach((element) => {
                 const isoString = element.getAttribute('datetime');
 
@@ -88,9 +91,7 @@ require_once("header.php");
                     return;
                 }
 
-                const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-
-                element.textContent = formattedDate;
+                element.textContent = formatUtcDate(date);
             });
 
             document.querySelectorAll('.js-localized-changelog-time').forEach((element) => {
@@ -106,9 +107,7 @@ require_once("header.php");
                     return;
                 }
 
-                const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-
-                element.textContent = formattedTime;
+                element.textContent = formatUtcTime(date);
             });
         });
     </script>
