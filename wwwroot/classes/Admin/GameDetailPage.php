@@ -16,6 +16,15 @@ class GameDetailPage
         4 => 'Delisted & Obsolete',
     ];
 
+    private const PLATFORM_OPTIONS = [
+        'PS3',
+        'PSVITA',
+        'PS4',
+        'PSVR',
+        'PS5',
+        'PSVR2',
+    ];
+
     private GameDetailService $gameDetailService;
 
     private GameStatusService $gameStatusService;
@@ -32,6 +41,14 @@ class GameDetailPage
     public function getStatusOptions(): array
     {
         return self::STATUS_OPTIONS;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getPlatformOptions(): array
+    {
+        return self::PLATFORM_OPTIONS;
     }
 
     /**
@@ -266,7 +283,7 @@ class GameDetailPage
             $npCommunicationId,
             (string) ($postData['name'] ?? ''),
             (string) ($postData['icon_url'] ?? ''),
-            (string) ($postData['platform'] ?? ''),
+            $this->normalizePlatforms($postData['platform'] ?? null),
             (string) ($postData['message'] ?? ''),
             (string) ($postData['set_version'] ?? ''),
             $region,
@@ -274,6 +291,40 @@ class GameDetailPage
             $status,
             $obsoleteIds
         );
+    }
+
+    private function normalizePlatforms(mixed $value): string
+    {
+        $candidates = [];
+
+        if (is_array($value)) {
+            $candidates = $value;
+        } elseif (is_string($value)) {
+            $candidates = explode(',', $value);
+        }
+
+        $selected = [];
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate)) {
+                continue;
+            }
+
+            $platform = strtoupper(trim($candidate));
+            if ($platform === '') {
+                continue;
+            }
+
+            $selected[$platform] = true;
+        }
+
+        $ordered = [];
+        foreach (self::PLATFORM_OPTIONS as $platform) {
+            if (isset($selected[$platform])) {
+                $ordered[] = $platform;
+            }
+        }
+
+        return implode(',', $ordered);
     }
 
     private function normalizeOptionalString(mixed $value): ?string
