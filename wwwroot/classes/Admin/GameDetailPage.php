@@ -23,6 +23,7 @@ class GameDetailPage
         'PSVR',
         'PS5',
         'PSVR2',
+        'PC',
     ];
 
     private GameDetailService $gameDetailService;
