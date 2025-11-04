@@ -32,6 +32,126 @@ $metaData = $gameHistoryPage->createMetaData();
 $title = $gameHistoryPage->getPageTitle();
 
 require_once 'header.php';
+
+$renderDiffTextLines = static function (string $label, ?string $previous, ?string $current, bool $multiline = false): string {
+    if ($previous === null && $current === null) {
+        return '';
+    }
+
+    $escapeValue = static function (?string $value) use ($multiline): string {
+        if ($value === null) {
+            return '';
+        }
+
+        $escaped = htmlentities($value, ENT_QUOTES, 'UTF-8');
+
+        return $multiline ? nl2br($escaped) : $escaped;
+    };
+
+    $labelHtml = htmlentities($label, ENT_QUOTES, 'UTF-8');
+
+    $html = '';
+
+    if ($previous !== null) {
+        $html .= '<div class="diff-line diff-removed"><span class="diff-symbol">-</span><span class="diff-label">' . $labelHtml . '</span><span class="diff-value">' . $escapeValue($previous) . '</span></div>';
+    }
+
+    if ($current !== null) {
+        $html .= '<div class="diff-line diff-added"><span class="diff-symbol">+</span><span class="diff-label">' . $labelHtml . '</span><span class="diff-value">' . $escapeValue($current) . '</span></div>';
+    }
+
+    return $html;
+};
+
+$renderDiffIconLines = static function (
+    string $label,
+    ?string $previous,
+    ?string $current,
+    callable $pathResolver,
+    string $basePath,
+    string $altText,
+    string $imageClass
+): string {
+    if ($previous === null && $current === null) {
+        return '';
+    }
+
+    $labelHtml = htmlentities($label, ENT_QUOTES, 'UTF-8');
+    $altHtml = htmlentities($altText !== '' ? $altText : 'Icon', ENT_QUOTES, 'UTF-8');
+    $imageClassHtml = htmlentities($imageClass, ENT_QUOTES, 'UTF-8');
+
+    $buildImage = static function (?string $iconValue) use ($pathResolver, $basePath, $altHtml, $imageClassHtml): ?string {
+        if ($iconValue === null) {
+            return null;
+        }
+
+        $resolvedPath = $pathResolver($iconValue);
+
+        if ($resolvedPath === null || $resolvedPath === '') {
+            return null;
+        }
+
+        $src = htmlentities($basePath . $resolvedPath, ENT_QUOTES, 'UTF-8');
+
+        return '<img class="diff-image ' . $imageClassHtml . '" src="' . $src . '" alt="' . $altHtml . '">';
+    };
+
+    $html = '';
+
+    $previousImage = $buildImage($previous);
+    if ($previousImage !== null) {
+        $html .= '<div class="diff-line diff-removed"><span class="diff-symbol">-</span><span class="diff-label">' . $labelHtml . '</span><span class="diff-value">' . $previousImage . '</span></div>';
+    }
+
+    $currentImage = $buildImage($current);
+    if ($currentImage !== null) {
+        $html .= '<div class="diff-line diff-added"><span class="diff-symbol">+</span><span class="diff-label">' . $labelHtml . '</span><span class="diff-value">' . $currentImage . '</span></div>';
+    }
+
+    return $html;
+};
+
+$resolveTitleIconPath = static function (?string $iconUrl) use ($game): ?string {
+    if ($iconUrl === null || $iconUrl === '') {
+        return null;
+    }
+
+    if ($iconUrl === '.png') {
+        return (str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
+            ? '../missing-ps5-game-and-trophy.png'
+            : '../missing-ps4-game.png';
+    }
+
+    return $iconUrl;
+};
+
+$resolveGroupIconPath = static function (?string $iconUrl) use ($game): ?string {
+    if ($iconUrl === null || $iconUrl === '') {
+        return null;
+    }
+
+    if ($iconUrl === '.png') {
+        return (str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
+            ? '../missing-ps5-game-and-trophy.png'
+            : '../missing-ps4-game.png';
+    }
+
+    return $iconUrl;
+};
+
+$resolveTrophyIconPath = static function (?string $iconUrl) use ($game): ?string {
+    if ($iconUrl === null || $iconUrl === '') {
+        return null;
+    }
+
+    if ($iconUrl === '.png') {
+        return (str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
+            ? '../missing-ps5-game-and-trophy.png'
+            : '../missing-ps4-trophy.png';
+    }
+
+    return $iconUrl;
+};
 ?>
 
 <main class="container">
@@ -55,6 +175,108 @@ require_once 'header.php';
             </div>
         </div>
     </div>
+
+    <style>
+        .diff-block {
+            font-family: var(--bs-font-monospace);
+            border: 1px solid var(--bs-border-color);
+            border-radius: var(--bs-border-radius-lg);
+            overflow: hidden;
+        }
+
+        .diff-block + .diff-block {
+            margin-top: 1rem;
+        }
+
+        .diff-line {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .diff-line + .diff-line {
+            border-top: 1px solid var(--bs-border-color);
+        }
+
+        .diff-header {
+            background-color: var(--bs-secondary-bg);
+            color: var(--bs-secondary-color);
+        }
+
+        .diff-symbol {
+            font-weight: 700;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .diff-label {
+            font-weight: 600;
+            min-width: 4.5rem;
+        }
+
+        .diff-label::after {
+            content: ':';
+            margin-left: 0.25rem;
+        }
+
+        .diff-value {
+            flex: 1 1 auto;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .diff-added {
+            background-color: var(--bs-success-bg-subtle);
+            color: var(--bs-success-text-emphasis);
+        }
+
+        .diff-removed {
+            background-color: var(--bs-danger-bg-subtle);
+            color: var(--bs-danger-text-emphasis);
+        }
+
+        .diff-context {
+            flex: 1 1 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .diff-image {
+            border-radius: var(--bs-border-radius);
+            border: 1px solid var(--bs-border-color);
+            background-color: var(--bs-body-bg);
+        }
+
+        .diff-image-lg {
+            max-height: 5.5rem;
+        }
+
+        .diff-image-md {
+            max-height: 3.5rem;
+        }
+
+        @media (max-width: 576px) {
+            .diff-line {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .diff-symbol {
+                width: auto;
+            }
+
+            .diff-label {
+                min-width: 0;
+            }
+
+            .diff-context {
+                width: 100%;
+            }
+        }
+    </style>
 
     <div class="bg-body-tertiary p-3 rounded mb-3">
         <?php if ($historyEntries === []) { ?>
@@ -84,132 +306,103 @@ require_once 'header.php';
                             </time>
                         </div>
                         <div class="card-body">
-                            <?php if ($titleChange !== null && $hasTitleChanges && (($titleHighlights['detail'] ?? false) || ($titleHighlights['icon_url'] ?? false))) { ?>
-                                <div class="row g-3 align-items-center mb-3">
-                                    <?php if ($titleHighlights['icon_url'] ?? false) { ?>
-                                        <div class="col-12 col-md-2 text-center text-md-start">
-                                            <?php
-                                            $iconUrl = $titleChange['icon_url'] ?? '';
-                                            $iconPath = ($iconUrl === '.png')
-                                                ? ((str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
-                                                    ? '../missing-ps5-game-and-trophy.png'
-                                                    : '../missing-ps4-game.png')
-                                                : $iconUrl;
-                                            ?>
-                                            <img class="object-fit-scale border border-success border-2 rounded" style="height: 5.5rem;" src="/img/title/<?= htmlentities($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName(), ENT_QUOTES, 'UTF-8'); ?>">
-                                        </div>
-                                    <?php } ?>
-                                    <?php if ($titleHighlights['detail'] ?? false) { ?>
-                                        <div class="col-12 <?= ($titleHighlights['icon_url'] ?? false) ? 'col-md-10' : 'col-md-12'; ?>">
-                                            <div class="p-2 border border-success rounded bg-success-subtle text-success-emphasis">
-                                                <?= nl2br(htmlentities((string) $titleChange['detail'], ENT_QUOTES, 'UTF-8')); ?>
+                            <?php
+                            $previousTitle = $entry['previousTitle'] ?? ['detail' => null, 'icon_url' => null, 'set_version' => null];
+                            $groupChanges = $entry['groups'] ?? [];
+                            $trophyChanges = $entry['trophies'] ?? [];
+                            ?>
+
+                            <?php if ($titleChange !== null && $hasTitleChanges) { ?>
+                                <div class="mb-3">
+                                    <h2 class="h5">Title</h2>
+                                    <div class="diff-block">
+                                        <div class="diff-line diff-header">
+                                            <span class="diff-symbol">@</span>
+                                            <div class="diff-context">
+                                                <span>Title metadata</span>
                                             </div>
                                         </div>
-                                    <?php } ?>
+                                        <?php if ($titleHighlights['detail'] ?? false) { ?>
+                                            <?= $renderDiffTextLines('Detail', $previousTitle['detail'] ?? null, $titleChange['detail'] ?? null, true); ?>
+                                        <?php } ?>
+                                        <?php if ($titleHighlights['icon_url'] ?? false) { ?>
+                                            <?= $renderDiffIconLines('Icon', $previousTitle['icon_url'] ?? null, $titleChange['icon_url'] ?? null, $resolveTitleIconPath, '/img/title/', $game->getName(), 'diff-image-lg object-fit-scale'); ?>
+                                        <?php } ?>
+                                        <?php if ($titleHighlights['set_version'] ?? false) { ?>
+                                            <?= $renderDiffTextLines('Version', $previousTitle['set_version'] ?? null, $titleChange['set_version'] ?? null); ?>
+                                        <?php } ?>
+                                    </div>
                                 </div>
                             <?php } ?>
 
-                            <?php $groupChanges = $entry['groups'] ?? []; ?>
                             <?php if ($groupChanges !== []) { ?>
                                 <div class="mb-3">
                                     <h2 class="h5">Trophy Groups</h2>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm align-middle mb-0">
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col">Group</th>
-                                                    <th scope="col">Name</th>
-                                                    <th scope="col">Detail</th>
-                                                    <th scope="col" class="text-center">Icon</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ($groupChanges as $groupChange) { ?>
-                                                    <?php $groupChangedFields = $groupChange['changedFields'] ?? ['name' => false, 'detail' => false, 'icon_url' => false]; ?>
-                                                    <tr class="<?= ($groupChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
-                                                        <td class="<?= ($groupChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
-                                                            <span class="badge text-bg-secondary"><?= htmlentities($groupChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
-                                                        </td>
-                                                        <td class="<?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?= htmlentities($groupChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                                        </td>
-                                                        <td class="<?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?= nl2br(htmlentities($groupChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
-                                                        </td>
-                                                        <td class="text-center <?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['icon_url'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?php
-                                                            $groupIconUrl = $groupChange['icon_url'] ?? '';
-                                                            $groupIconPath = ($groupIconUrl === '.png')
-                                                                ? ((str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
-                                                                    ? '../missing-ps5-game-and-trophy.png'
-                                                                    : '../missing-ps4-game.png')
-                                                                : $groupIconUrl;
-                                                            ?>
-                                                            <img class="object-fit-cover <?= (($groupChange['isNewRow'] ?? false) || ($groupChangedFields['icon_url'] ?? false)) ? 'border border-success border-2 rounded' : ''; ?>" style="height: 3.5rem;" src="/img/group/<?= htmlentities($groupIconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($groupChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                        </td>
-                                                    </tr>
+                                    <div class="vstack gap-3">
+                                        <?php foreach ($groupChanges as $groupChange) { ?>
+                                            <?php $groupChangedFields = $groupChange['changedFields'] ?? ['name' => false, 'detail' => false, 'icon_url' => false]; ?>
+                                            <div class="diff-block">
+                                                <div class="diff-line diff-header">
+                                                    <span class="diff-symbol">@</span>
+                                                    <div class="diff-context">
+                                                        <span>Group <span class="badge text-bg-secondary"><?= htmlentities($groupChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span></span>
+                                                        <?php if ($groupChange['isNewRow'] ?? false) { ?>
+                                                            <span class="badge text-bg-success">New</span>
+                                                        <?php } ?>
+                                                    </div>
+                                                </div>
+                                                <?php if ($groupChangedFields['name'] ?? false) { ?>
+                                                    <?= $renderDiffTextLines('Name', $groupChange['previous']['name'] ?? null, $groupChange['name'] ?? null); ?>
                                                 <?php } ?>
-                                            </tbody>
-                                        </table>
+                                                <?php if ($groupChangedFields['detail'] ?? false) { ?>
+                                                    <?= $renderDiffTextLines('Detail', $groupChange['previous']['detail'] ?? null, $groupChange['detail'] ?? null, true); ?>
+                                                <?php } ?>
+                                                <?php if ($groupChangedFields['icon_url'] ?? false) { ?>
+                                                    <?= $renderDiffIconLines('Icon', $groupChange['previous']['icon_url'] ?? null, $groupChange['icon_url'] ?? null, $resolveGroupIconPath, '/img/group/', $groupChange['name'] ?? '', 'diff-image-md object-fit-cover'); ?>
+                                                <?php } ?>
+                                            </div>
+                                        <?php } ?>
                                     </div>
                                 </div>
                             <?php } ?>
 
-                            <?php $trophyChanges = $entry['trophies'] ?? []; ?>
                             <?php if ($trophyChanges !== []) { ?>
-                                <div>
+                                <div class="vstack gap-3">
                                     <h2 class="h5">Trophies</h2>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm align-middle mb-0">
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col">Group</th>
-                                                    <th scope="col">#</th>
-                                                    <th scope="col">Name</th>
-                                                    <th scope="col">Detail</th>
-                                                    <th scope="col">Target</th>
-                                                    <th scope="col" class="text-center">Icon</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ($trophyChanges as $trophyChange) { ?>
-                                                    <?php $trophyChangedFields = $trophyChange['changedFields'] ?? ['name' => false, 'detail' => false, 'icon_url' => false, 'progress_target_value' => false]; ?>
-                                                    <tr class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
-                                                        <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
-                                                            <span class="badge text-bg-secondary"><?= htmlentities($trophyChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
-                                                        </td>
-                                                        <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
-                                                            <?php if ($trophyChange['is_unobtainable'] ?? false) { ?>
-                                                                <span class="badge text-bg-warning" title="This trophy is unobtainable and not accounted for on any leaderboard."><?= (int) $trophyChange['order_id']; ?></span>
-                                                            <?php } else { ?>
-                                                                <?= (int) $trophyChange['order_id']; ?>
-                                                            <?php } ?>
-                                                        </td>
-                                                        <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                                        </td>
-                                                        <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?= nl2br(htmlentities($trophyChange['detail'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
-                                                        </td>
-                                                        <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['progress_target_value'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?= $trophyChange['progress_target_value'] === null ? '&mdash;' : htmlentities((string) $trophyChange['progress_target_value'], ENT_QUOTES, 'UTF-8'); ?>
-                                                        </td>
-                                                        <td class="text-center <?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['icon_url'] ?? false)) ? 'table-success' : ''; ?>">
-                                                            <?php
-                                                            $trophyIconUrl = $trophyChange['icon_url'] ?? '';
-                                                            $trophyIconPath = ($trophyIconUrl === '.png')
-                                                                ? ((str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
-                                                                    ? '../missing-ps5-game-and-trophy.png'
-                                                                    : '../missing-ps4-trophy.png')
-                                                                : $trophyIconUrl;
-                                                            ?>
-                                                            <img class="object-fit-scale <?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['icon_url'] ?? false)) ? 'border border-success border-2 rounded' : ''; ?>" style="height: 3.5rem;" src="/img/trophy/<?= htmlentities($trophyIconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophyChange['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                        </td>
-                                                    </tr>
-                                                <?php } ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <?php foreach ($trophyChanges as $trophyChange) { ?>
+                                        <?php $trophyChangedFields = $trophyChange['changedFields'] ?? ['name' => false, 'detail' => false, 'icon_url' => false, 'progress_target_value' => false]; ?>
+                                        <div class="diff-block">
+                                            <div class="diff-line diff-header">
+                                                <span class="diff-symbol">@</span>
+                                                <div class="diff-context">
+                                                    <span>Group <span class="badge text-bg-secondary"><?= htmlentities($trophyChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span></span>
+                                                    <span>#<?= (int) $trophyChange['order_id']; ?></span>
+                                                    <?php if ($trophyChange['is_unobtainable'] ?? false) { ?>
+                                                        <span class="badge text-bg-warning" title="This trophy is unobtainable and not accounted for on any leaderboard.">Unobtainable</span>
+                                                    <?php } ?>
+                                                    <?php if ($trophyChange['isNewRow'] ?? false) { ?>
+                                                        <span class="badge text-bg-success">New</span>
+                                                    <?php } ?>
+                                                </div>
+                                            </div>
+                                            <?php if ($trophyChangedFields['name'] ?? false) { ?>
+                                                <?= $renderDiffTextLines('Name', $trophyChange['previous']['name'] ?? null, $trophyChange['name'] ?? null); ?>
+                                            <?php } ?>
+                                            <?php if ($trophyChangedFields['detail'] ?? false) { ?>
+                                                <?= $renderDiffTextLines('Detail', $trophyChange['previous']['detail'] ?? null, $trophyChange['detail'] ?? null, true); ?>
+                                            <?php } ?>
+                                            <?php if ($trophyChangedFields['progress_target_value'] ?? false) { ?>
+                                                <?php
+                                                $previousTarget = $trophyChange['previous']['progress_target_value'] ?? null;
+                                                $currentTarget = $trophyChange['progress_target_value'] ?? null;
+                                                ?>
+                                                <?= $renderDiffTextLines('Target', $previousTarget === null ? null : (string) $previousTarget, $currentTarget === null ? null : (string) $currentTarget); ?>
+                                            <?php } ?>
+                                            <?php if ($trophyChangedFields['icon_url'] ?? false) { ?>
+                                                <?= $renderDiffIconLines('Icon', $trophyChange['previous']['icon_url'] ?? null, $trophyChange['icon_url'] ?? null, $resolveTrophyIconPath, '/img/trophy/', $trophyChange['name'] ?? '', 'diff-image-md object-fit-scale'); ?>
+                                            <?php } ?>
+                                        </div>
+                                    <?php } ?>
                                 </div>
                             <?php } ?>
                         </div>

@@ -114,18 +114,23 @@ final class GameHistoryPageTest extends TestCase
         $this->assertTrue($latestEntry['hasTitleChanges']);
         $this->assertTrue($latestEntry['titleHighlights']['set_version']);
         $this->assertFalse($latestEntry['titleHighlights']['detail']);
+        $this->assertSame('01.05', $latestEntry['previousTitle']['set_version']);
         $this->assertSame([], $latestEntry['groups']);
         $this->assertCount(1, $latestEntry['trophies']);
         $this->assertTrue($latestEntry['trophies'][0]['changedFields']['progress_target_value']);
+        $this->assertSame(50, $latestEntry['trophies'][0]['previous']['progress_target_value']);
 
         $midEntry = $entries[1];
         $this->assertTrue($midEntry['hasTitleChanges']);
         $this->assertTrue($midEntry['titleHighlights']['set_version']);
+        $this->assertSame('01.00', $midEntry['previousTitle']['set_version']);
         $this->assertCount(1, $midEntry['groups']);
         $this->assertTrue($midEntry['groups'][0]['isNewRow']);
+        $this->assertSame(null, $midEntry['groups'][0]['previous']['name']);
         $this->assertCount(1, $midEntry['trophies']);
         $this->assertTrue($midEntry['trophies'][0]['isNewRow']);
         $this->assertTrue($midEntry['trophies'][0]['is_unobtainable']);
+        $this->assertSame(null, $midEntry['trophies'][0]['previous']['progress_target_value']);
 
         $earliestEntry = $entries[2];
         $this->assertTrue($earliestEntry['hasTitleChanges']);
