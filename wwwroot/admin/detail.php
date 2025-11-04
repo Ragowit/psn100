@@ -12,6 +12,7 @@ $gameDetailService = new GameDetailService($database);
 $gameStatusService = new GameStatusService($database);
 $gameDetailPage = new GameDetailPage($gameDetailService, $gameStatusService);
 $statusOptions = $gameDetailPage->getStatusOptions();
+$platformOptions = $gameDetailPage->getPlatformOptions();
 $pageResult = $gameDetailPage->handle($_SERVER ?? [], $_GET ?? [], $_POST ?? []);
 
 $gameDetail = $pageResult->getGameDetail();
@@ -51,8 +52,39 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <input type="text" name="name" style="width: 859px;" value="<?= htmlentities($gameDetail->getName(), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Icon URL:<br>
                     <input type="text" name="icon_url" style="width: 859px;" value="<?= htmlentities($gameDetail->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>"><br>
-                    Platform:<br>
-                    <input type="text" name="platform" style="width: 859px;" value="<?= htmlentities($gameDetail->getPlatform(), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <?php
+                    $selectedPlatforms = [];
+                    foreach (explode(',', $gameDetail->getPlatform()) as $platformValue) {
+                        $normalizedPlatform = strtoupper(trim($platformValue));
+                        if ($normalizedPlatform === '') {
+                            continue;
+                        }
+
+                        $selectedPlatforms[$normalizedPlatform] = true;
+                    }
+                    ?>
+                    <fieldset class="mb-3">
+                        <legend class="col-form-label pt-0">Platform:</legend>
+                        <?php foreach ($platformOptions as $platformOption) { ?>
+                            <?php
+                            $lowerCasePlatform = strtolower($platformOption);
+                            $isChecked = isset($selectedPlatforms[$platformOption]) ? 'checked' : '';
+                            ?>
+                            <div class="form-check form-check-inline">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="platform-<?= $lowerCasePlatform; ?>"
+                                    name="platform[]"
+                                    value="<?= htmlentities($platformOption, ENT_QUOTES, 'UTF-8'); ?>"
+                                    <?= $isChecked; ?>
+                                >
+                                <label class="form-check-label" for="platform-<?= $lowerCasePlatform; ?>">
+                                    <?= htmlentities($platformOption, ENT_QUOTES, 'UTF-8'); ?>
+                                </label>
+                            </div>
+                        <?php } ?>
+                    </fieldset>
                     Set Version:<br>
                     <input type="text" name="set_version" style="width: 859px;" value="<?= htmlentities($gameDetail->getSetVersion(), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     Region:<br>
