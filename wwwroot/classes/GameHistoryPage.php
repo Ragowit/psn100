@@ -33,6 +33,7 @@ final class GameHistoryPage
      *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
      *     titleFieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *     hasTitleChanges: bool,
+     *     isTitleNewRow: bool,
      *     groups: array<int, array{
      *         group_id: string,
      *         name: ?string,
@@ -129,6 +130,7 @@ final class GameHistoryPage
      *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
      *     titleFieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *     hasTitleChanges: bool,
+     *     isTitleNewRow: bool,
      *     groups: array<int, array{
      *         group_id: string,
      *         name: ?string,
@@ -184,6 +186,10 @@ final class GameHistoryPage
             $hasTitleChanges = false;
 
             $titleFieldDiffs = [];
+            $isTitleNewRow = $titleChange !== null
+                && $previousTitle['detail'] === null
+                && $previousTitle['icon_url'] === null
+                && $previousTitle['set_version'] === null;
 
             if ($titleChange !== null) {
                 $titleHighlights['detail'] = $this->isNewNonEmptyString($titleChange['detail'] ?? null, $previousTitle['detail']);
@@ -334,6 +340,7 @@ final class GameHistoryPage
                     $entry['titleFieldDiffs'] = $titleFieldDiffs;
                 }
                 $entry['hasTitleChanges'] = $hasTitleChanges;
+                $entry['isTitleNewRow'] = $isTitleNewRow;
                 $entry['groups'] = $filteredGroups;
                 $entry['trophies'] = $filteredTrophies;
 

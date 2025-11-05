@@ -235,18 +235,24 @@ function historyHighlightTextDiff(string $previousValue, string $currentValue, b
     return ['previous' => $previousHtml, 'current' => $currentHtml];
 }
 
-function historyRenderDiffBlocks(string $previousHtml, string $currentHtml): string
+function historyRenderDiffBlocks(string $previousHtml, string $currentHtml, bool $hidePrevious = false): string
 {
-    return '<div class="history-diff">'
-        . '<div class="history-diff__previous"><span class="visually-hidden">Previous value:</span>' . $previousHtml . '</div>'
-        . '<div class="history-diff__current"><span class="visually-hidden">New value:</span>' . $currentHtml . '</div>'
-        . '</div>';
+    $html = '<div class="history-diff">';
+
+    if (!$hidePrevious) {
+        $html .= '<div class="history-diff__previous"><span class="visually-hidden">Previous value:</span>' . $previousHtml . '</div>';
+    }
+
+    $html .= '<div class="history-diff__current"><span class="visually-hidden">New value:</span>' . $currentHtml . '</div>';
+    $html .= '</div>';
+
+    return $html;
 }
 
 /**
  * @param array{previous: mixed, current: mixed}|null $diff
  */
-function historyRenderTextDiff(?array $diff, bool $isMultiline = false): string
+function historyRenderTextDiff(?array $diff, bool $isMultiline = false, bool $hidePrevious = false): string
 {
     if ($diff === null) {
         return '';
@@ -264,13 +270,13 @@ function historyRenderTextDiff(?array $diff, bool $isMultiline = false): string
         $current = historyFormatText($currentValue, $isMultiline);
     }
 
-    return historyRenderDiffBlocks($previous, $current);
+    return historyRenderDiffBlocks($previous, $current, $hidePrevious);
 }
 
 /**
  * @param array{previous: mixed, current: mixed}|null $diff
  */
-function historyRenderNumberDiff(?array $diff): string
+function historyRenderNumberDiff(?array $diff, bool $hidePrevious = false): string
 {
     if ($diff === null) {
         return '';
@@ -279,7 +285,7 @@ function historyRenderNumberDiff(?array $diff): string
     $previous = historyFormatNumber(isset($diff['previous']) ? (is_int($diff['previous']) ? $diff['previous'] : null) : null);
     $current = historyFormatNumber(isset($diff['current']) ? (is_int($diff['current']) ? $diff['current'] : null) : null);
 
-    return historyRenderDiffBlocks($previous, $current);
+    return historyRenderDiffBlocks($previous, $current, $hidePrevious);
 }
 
 function historyRenderSingleText(?string $value, bool $isMultiline = false): string
@@ -338,7 +344,7 @@ function historyFormatIcon(?string $iconUrl, GameDetails $game, string $type, ?s
 /**
  * @param array{previous: mixed, current: mixed}|null $diff
  */
-function historyRenderIconDiff(?array $diff, GameDetails $game, string $type, ?string $name): string
+function historyRenderIconDiff(?array $diff, GameDetails $game, string $type, ?string $name, bool $hidePrevious = false): string
 {
     if ($diff === null) {
         return '';
@@ -347,7 +353,7 @@ function historyRenderIconDiff(?array $diff, GameDetails $game, string $type, ?s
     $previous = historyFormatIcon(is_string($diff['previous'] ?? null) ? $diff['previous'] : null, $game, $type, $name, 'previous');
     $current = historyFormatIcon(is_string($diff['current'] ?? null) ? $diff['current'] : null, $game, $type, $name, 'current');
 
-    return historyRenderDiffBlocks($previous, $current);
+    return historyRenderDiffBlocks($previous, $current, $hidePrevious);
 }
 
 function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $type, ?string $name): string
@@ -458,6 +464,7 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                 $titleChange = $entry['title'] ?? null;
                                 $titleHighlights = $entry['titleHighlights'] ?? ['detail' => false, 'icon_url' => false, 'set_version' => false];
                                 $hasTitleChanges = $entry['hasTitleChanges'] ?? false;
+                                $titleIsNewRow = $entry['isTitleNewRow'] ?? false;
                                 $setVersion = $titleChange['set_version'] ?? null;
                                 $titleFieldDiffs = $entry['titleFieldDiffs'] ?? [];
                                 ?>
@@ -477,7 +484,7 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                             <?php if ($titleChange !== null && ($titleHighlights['set_version'] ?? false)) { ?>
                                 <div class="row mb-3">
                                     <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                                        <?= historyRenderTextDiff($titleFieldDiffs['set_version'] ?? null); ?>
+                                        <?= historyRenderTextDiff($titleFieldDiffs['set_version'] ?? null, false, $titleIsNewRow); ?>
                                     </div>
                                 </div>
                             <?php } ?>
@@ -486,12 +493,12 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                 <div class="row g-3 align-items-start mb-3">
                                     <?php if ($titleHighlights['icon_url'] ?? false) { ?>
                                         <div class="col-12 col-md-4 col-lg-3">
-                                            <?= historyRenderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, 'title', $game->getName()); ?>
+                                            <?= historyRenderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, 'title', $game->getName(), $titleIsNewRow); ?>
                                         </div>
                                     <?php } ?>
                                     <?php if ($titleHighlights['detail'] ?? false) { ?>
                                         <div class="col-12 <?= ($titleHighlights['icon_url'] ?? false) ? 'col-md-8 col-lg-9' : 'col-md-12'; ?>">
-                                            <?= historyRenderTextDiff($titleFieldDiffs['detail'] ?? null, true); ?>
+                                            <?= historyRenderTextDiff($titleFieldDiffs['detail'] ?? null, true, $titleIsNewRow); ?>
                                         </div>
                                     <?php } ?>
                                 </div>
