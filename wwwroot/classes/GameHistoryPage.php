@@ -31,6 +31,7 @@ final class GameHistoryPage
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
+     *     titleFieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *     hasTitleChanges: bool,
      *     groups: array<int, array{
      *         group_id: string,
@@ -126,6 +127,7 @@ final class GameHistoryPage
      *     discoveredAt: DateTimeImmutable,
      *     title: ?array{detail: ?string, icon_url: ?string, set_version: ?string},
      *     titleHighlights: array{detail: bool, icon_url: bool, set_version: bool},
+     *     titleFieldDiffs?: array<string, array{previous: mixed, current: mixed}>,
      *     hasTitleChanges: bool,
      *     groups: array<int, array{
      *         group_id: string,
@@ -181,12 +183,24 @@ final class GameHistoryPage
             ];
             $hasTitleChanges = false;
 
+            $titleFieldDiffs = [];
+
             if ($titleChange !== null) {
                 $titleHighlights['detail'] = $this->isNewNonEmptyString($titleChange['detail'] ?? null, $previousTitle['detail']);
                 $titleHighlights['icon_url'] = $this->isNewNonEmptyString($titleChange['icon_url'] ?? null, $previousTitle['icon_url']);
                 $titleHighlights['set_version'] = $this->isNewNonEmptyString($titleChange['set_version'] ?? null, $previousTitle['set_version']);
 
                 $hasTitleChanges = in_array(true, $titleHighlights, true);
+
+                foreach (['detail', 'icon_url', 'set_version'] as $field) {
+                    if ($titleHighlights[$field]) {
+                        $currentValue = $this->normalizeString($titleChange[$field] ?? null);
+                        $titleFieldDiffs[$field] = [
+                            'previous' => $previousTitle[$field] ?? null,
+                            'current' => $currentValue,
+                        ];
+                    }
+                }
             }
 
             $filteredGroups = [];
@@ -316,6 +330,9 @@ final class GameHistoryPage
 
             if ($entryHasChanges) {
                 $entry['titleHighlights'] = $titleHighlights;
+                if ($titleFieldDiffs !== []) {
+                    $entry['titleFieldDiffs'] = $titleFieldDiffs;
+                }
                 $entry['hasTitleChanges'] = $hasTitleChanges;
                 $entry['groups'] = $filteredGroups;
                 $entry['trophies'] = $filteredTrophies;
