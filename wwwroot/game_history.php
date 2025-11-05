@@ -481,14 +481,6 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                             </time>
                         </div>
                         <div class="card-body">
-                            <?php if ($titleChange !== null && ($titleHighlights['set_version'] ?? false)) { ?>
-                                <div class="row mb-3">
-                                    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                                        <?= historyRenderTextDiff($titleFieldDiffs['set_version'] ?? null, false, $titleIsNewRow); ?>
-                                    </div>
-                                </div>
-                            <?php } ?>
-
                             <?php if ($titleChange !== null && $hasTitleChanges && (($titleHighlights['detail'] ?? false) || ($titleHighlights['icon_url'] ?? false))) { ?>
                                 <div class="row g-3 align-items-start mb-3">
                                     <?php if ($titleHighlights['icon_url'] ?? false) { ?>
