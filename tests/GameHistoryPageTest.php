@@ -114,6 +114,12 @@ final class GameHistoryPageTest extends TestCase
         $this->assertTrue($latestEntry['hasTitleChanges']);
         $this->assertTrue($latestEntry['titleHighlights']['set_version']);
         $this->assertFalse($latestEntry['titleHighlights']['detail']);
+        $this->assertSame([
+            'set_version' => [
+                'previous' => '01.05',
+                'current' => '01.10',
+            ],
+        ], $latestEntry['titleFieldDiffs']);
         $this->assertSame([], $latestEntry['groups']);
         $this->assertCount(1, $latestEntry['trophies']);
         $this->assertTrue($latestEntry['trophies'][0]['changedFields']['progress_target_value']);
@@ -121,6 +127,12 @@ final class GameHistoryPageTest extends TestCase
         $midEntry = $entries[1];
         $this->assertTrue($midEntry['hasTitleChanges']);
         $this->assertTrue($midEntry['titleHighlights']['set_version']);
+        $this->assertSame([
+            'set_version' => [
+                'previous' => '01.00',
+                'current' => '01.05',
+            ],
+        ], $midEntry['titleFieldDiffs']);
         $this->assertCount(1, $midEntry['groups']);
         $this->assertTrue($midEntry['groups'][0]['isNewRow']);
         $this->assertCount(1, $midEntry['trophies']);
@@ -131,6 +143,20 @@ final class GameHistoryPageTest extends TestCase
         $this->assertTrue($earliestEntry['hasTitleChanges']);
         $this->assertTrue($earliestEntry['titleHighlights']['icon_url']);
         $this->assertTrue($earliestEntry['titleHighlights']['detail']);
+        $this->assertSame([
+            'detail' => [
+                'previous' => null,
+                'current' => 'Initial detail',
+            ],
+            'icon_url' => [
+                'previous' => null,
+                'current' => 'icon-a.png',
+            ],
+            'set_version' => [
+                'previous' => null,
+                'current' => '01.00',
+            ],
+        ], $earliestEntry['titleFieldDiffs']);
         $this->assertCount(1, $earliestEntry['groups']);
         $this->assertTrue($earliestEntry['groups'][0]['isNewRow']);
         $this->assertCount(1, $earliestEntry['trophies']);

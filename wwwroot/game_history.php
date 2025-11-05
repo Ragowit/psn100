@@ -296,7 +296,7 @@ function historyResolveIconPath(?string $iconUrl, GameDetails $game, string $typ
     if ($iconUrl === '.png') {
         $hasPs5Assets = str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2');
 
-        if ($type === 'group') {
+        if ($type === 'group' || $type === 'title') {
             return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-game.png';
         }
 
@@ -317,13 +317,21 @@ function historyFormatIcon(?string $iconUrl, GameDetails $game, string $type, ?s
     }
 
     $borderClass = $state === 'previous' ? 'border-danger' : 'border-success';
-    $objectFit = $type === 'group' ? 'object-fit-cover' : 'object-fit-scale';
-    $directory = $type === 'group' ? 'group' : 'trophy';
+    $objectFit = 'object-fit-scale';
+    $directory = 'trophy';
+    $height = 3.5;
+
+    if ($type === 'group') {
+        $objectFit = 'object-fit-cover';
+        $directory = 'group';
+    } elseif ($type === 'title') {
+        $directory = 'title';
+        $height = 5.5;
+    }
 
     return '<div class="text-center">'
-        . '<img class="' . $objectFit . ' border border-2 ' . $borderClass . ' rounded" style="height: 3.5rem;" src="/img/'
-        . $directory . '/' . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="'
-        . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">' 
+        . '<img class="' . $objectFit . ' border border-2 ' . $borderClass . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
+        . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">'
         . '</div>';
 }
 
@@ -350,12 +358,21 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
         return '<div class="text-center"><span class="history-diff__empty">&mdash;</span></div>';
     }
 
-    $objectFit = $type === 'group' ? 'object-fit-cover' : 'object-fit-scale';
-    $directory = $type === 'group' ? 'group' : 'trophy';
+    $objectFit = 'object-fit-scale';
+    $directory = 'trophy';
+    $height = 3.5;
+
+    if ($type === 'group') {
+        $objectFit = 'object-fit-cover';
+        $directory = 'group';
+    } elseif ($type === 'title') {
+        $directory = 'title';
+        $height = 5.5;
+    }
 
     return '<div class="text-center">'
-        . '<img class="' . $objectFit . ' rounded" style="height: 3.5rem;" src="/img/' . $directory . '/'
-        . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">' 
+        . '<img class="' . $objectFit . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
+        . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">'
         . '</div>';
 }
 ?>
@@ -442,6 +459,7 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                 $titleHighlights = $entry['titleHighlights'] ?? ['detail' => false, 'icon_url' => false, 'set_version' => false];
                                 $hasTitleChanges = $entry['hasTitleChanges'] ?? false;
                                 $setVersion = $titleChange['set_version'] ?? null;
+                                $titleFieldDiffs = $entry['titleFieldDiffs'] ?? [];
                                 ?>
                                 <span class="fw-semibold">
                                     Version <?= htmlentities($setVersion ?? 'Unknown', ENT_QUOTES, 'UTF-8'); ?>
@@ -456,26 +474,24 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                             </time>
                         </div>
                         <div class="card-body">
+                            <?php if ($titleChange !== null && ($titleHighlights['set_version'] ?? false)) { ?>
+                                <div class="row mb-3">
+                                    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                                        <?= historyRenderTextDiff($titleFieldDiffs['set_version'] ?? null); ?>
+                                    </div>
+                                </div>
+                            <?php } ?>
+
                             <?php if ($titleChange !== null && $hasTitleChanges && (($titleHighlights['detail'] ?? false) || ($titleHighlights['icon_url'] ?? false))) { ?>
-                                <div class="row g-3 align-items-center mb-3">
+                                <div class="row g-3 align-items-start mb-3">
                                     <?php if ($titleHighlights['icon_url'] ?? false) { ?>
-                                        <div class="col-12 col-md-2 text-center text-md-start">
-                                            <?php
-                                            $iconUrl = $titleChange['icon_url'] ?? '';
-                                            $iconPath = ($iconUrl === '.png')
-                                                ? ((str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2'))
-                                                    ? '../missing-ps5-game-and-trophy.png'
-                                                    : '../missing-ps4-game.png')
-                                                : $iconUrl;
-                                            ?>
-                                            <img class="object-fit-scale border border-success border-2 rounded" style="height: 5.5rem;" src="/img/title/<?= htmlentities($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName(), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <div class="col-12 col-md-4 col-lg-3">
+                                            <?= historyRenderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, 'title', $game->getName()); ?>
                                         </div>
                                     <?php } ?>
                                     <?php if ($titleHighlights['detail'] ?? false) { ?>
-                                        <div class="col-12 <?= ($titleHighlights['icon_url'] ?? false) ? 'col-md-10' : 'col-md-12'; ?>">
-                                            <div class="p-2 border border-success rounded bg-success-subtle text-success-emphasis">
-                                                <?= nl2br(htmlentities((string) $titleChange['detail'], ENT_QUOTES, 'UTF-8')); ?>
-                                            </div>
+                                        <div class="col-12 <?= ($titleHighlights['icon_url'] ?? false) ? 'col-md-8 col-lg-9' : 'col-md-12'; ?>">
+                                            <?= historyRenderTextDiff($titleFieldDiffs['detail'] ?? null, true); ?>
                                         </div>
                                     <?php } ?>
                                 </div>
