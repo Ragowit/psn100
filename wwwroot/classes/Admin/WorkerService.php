@@ -19,7 +19,7 @@ final class WorkerService
     public function fetchWorkers(): array
     {
         $statement = $this->database->query(
-            'SELECT id, npsso, scanning, scan_start FROM setting ORDER BY scan_start ASC'
+            'SELECT id, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY scan_start ASC'
         );
 
         if ($statement === false) {
@@ -33,6 +33,7 @@ final class WorkerService
             $npsso = (string) ($row['npsso'] ?? '');
             $scanning = (string) ($row['scanning'] ?? '');
             $scanStartRaw = (string) ($row['scan_start'] ?? '');
+            $scanProgressValue = $row['scan_progress'] ?? null;
 
             try {
                 $scanStart = new DateTimeImmutable($scanStartRaw ?: '1970-01-01 00:00:00');
@@ -40,10 +41,50 @@ final class WorkerService
                 $scanStart = new DateTimeImmutable('1970-01-01 00:00:00');
             }
 
-            $workers[] = new Worker($id, $npsso, $scanning, $scanStart);
+            $scanProgress = $this->decodeScanProgress(
+                is_string($scanProgressValue) ? $scanProgressValue : null
+            );
+
+            $workers[] = new Worker($id, $npsso, $scanning, $scanStart, $scanProgress);
         }
 
         return $workers;
+    }
+
+    /**
+     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
+     */
+    private function decodeScanProgress(?string $value): ?array
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $progress = [];
+
+        if (array_key_exists('current', $decoded) && is_numeric($decoded['current'])) {
+            $progress['current'] = max(0, (int) $decoded['current']);
+        }
+
+        if (array_key_exists('total', $decoded) && is_numeric($decoded['total'])) {
+            $progress['total'] = max(0, (int) $decoded['total']);
+        }
+
+        if (array_key_exists('title', $decoded) && is_string($decoded['title'])) {
+            $progress['title'] = $decoded['title'];
+        }
+
+        if (array_key_exists('npCommunicationId', $decoded) && is_string($decoded['npCommunicationId'])) {
+            $progress['npCommunicationId'] = $decoded['npCommunicationId'];
+        }
+
+        return $progress === [] ? null : $progress;
     }
 
     public function updateWorkerNpsso(int $workerId, string $npsso): bool

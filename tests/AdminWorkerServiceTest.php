@@ -13,7 +13,11 @@ final class AdminWorkerServiceTest extends TestCase
         $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
 
         $database->exec("INSERT INTO setting (refresh_token, npsso, scanning, scan_start) VALUES ('token-2', 'npsso-2', 'player-two', '2024-01-02 10:00:00')");
-        $database->exec("INSERT INTO setting (refresh_token, npsso, scanning, scan_start) VALUES ('token-1', 'npsso-1', 'player-one', '2024-01-01 09:00:00')");
+        $database->exec(<<<'SQL'
+INSERT INTO setting (refresh_token, npsso, scanning, scan_start, scan_progress)
+VALUES ('token-1', 'npsso-1', 'player-one', '2024-01-01 09:00:00', '{"current": 5, "total": 10, "title": "Example"}')
+SQL
+        );
         $database->exec("INSERT INTO setting (refresh_token, npsso, scanning, scan_start) VALUES ('token-3', 'npsso-3', '', '2024-01-03 08:00:00')");
 
         $service = new WorkerService($database);
@@ -22,6 +26,14 @@ final class AdminWorkerServiceTest extends TestCase
         $this->assertCount(3, $workers);
         $this->assertSame('player-one', $workers[0]->getScanning());
         $this->assertSame('2024-01-01 09:00:00', $workers[0]->getScanStart()->format('Y-m-d H:i:s'));
+        $this->assertSame(
+            [
+                'current' => 5,
+                'total' => 10,
+                'title' => 'Example',
+            ],
+            $workers[0]->getScanProgress()
+        );
     }
 
     public function testUpdateWorkerNpssoReturnsTrueWhenRowUpdated(): void
@@ -48,5 +60,20 @@ final class AdminWorkerServiceTest extends TestCase
 
         $service = new WorkerService($database);
         $this->assertFalse($service->updateWorkerNpsso(42, 'does-not-exist'));
+    }
+
+    public function testFetchWorkersHandlesInvalidScanProgress(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
+
+        $database->exec("INSERT INTO setting (refresh_token, npsso, scanning, scan_start, scan_progress) VALUES ('token-1', 'npsso-1', 'player-one', '2024-01-01 09:00:00', 'not-json')");
+
+        $service = new WorkerService($database);
+        $workers = $service->fetchWorkers();
+
+        $this->assertCount(1, $workers);
+        $this->assertSame(null, $workers[0]->getScanProgress());
     }
 }

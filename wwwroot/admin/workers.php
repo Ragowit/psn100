@@ -81,6 +81,7 @@ $workers = $workerService->fetchWorkers();
                                 <th scope="col" style="width: 18rem;">NPSSO</th>
                                 <th scope="col" style="width: 16rem;">Scanning</th>
                                 <th scope="col" style="width: 16rem;">Scan Start</th>
+                                <th scope="col" style="width: 20rem;">Scan Progress</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,6 +91,7 @@ $workers = $workerService->fetchWorkers();
                                 $scanning = $worker->getScanning();
                                 $scanningDisplay = htmlspecialchars($scanning, ENT_QUOTES, 'UTF-8');
                                 $scanningLink = $scanning !== '' ? '/player/' . rawurlencode($scanning) : null;
+                                $scanProgress = $worker->getScanProgress();
                                 ?>
                                 <tr>
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -122,6 +124,52 @@ $workers = $workerService->fetchWorkers();
                                         >
                                             <?= htmlspecialchars($scanStart->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
                                         </time>
+                                    </td>
+                                    <td>
+                                        <?php if ($scanning === '') { ?>
+                                            <span class="text-body-secondary">—</span>
+                                        <?php } elseif ($scanProgress === null) { ?>
+                                            <span class="text-body-secondary">Not reported</span>
+                                        <?php } else { ?>
+                                            <div class="small">
+                                                <?php if (array_key_exists('title', $scanProgress)) { ?>
+                                                    <div>
+                                                        <strong>Title:</strong>
+                                                        <?= htmlspecialchars((string) $scanProgress['title'], ENT_QUOTES, 'UTF-8'); ?>
+                                                    </div>
+                                                <?php } ?>
+                                                <?php
+                                                $current = $scanProgress['current'] ?? null;
+                                                $total = $scanProgress['total'] ?? null;
+                                                $progressSummary = null;
+                                                $percentage = null;
+
+                                                if (is_int($current) && is_int($total) && $total > 0) {
+                                                    $progressSummary = sprintf('%d / %d', $current, $total);
+                                                    $percentage = round(($current / $total) * 100, 1);
+                                                } elseif (is_int($current) && $total === null) {
+                                                    $progressSummary = (string) $current;
+                                                } elseif (is_int($total) && $current === null) {
+                                                    $progressSummary = '0 / ' . $total;
+                                                }
+                                                ?>
+                                                <?php if ($progressSummary !== null) { ?>
+                                                    <div>
+                                                        <strong>Progress:</strong>
+                                                        <?= htmlspecialchars($progressSummary, ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?php if ($percentage !== null) { ?>
+                                                            (<?= htmlspecialchars(number_format($percentage, 1), ENT_QUOTES, 'UTF-8'); ?>%)
+                                                        <?php } ?>
+                                                    </div>
+                                                <?php } ?>
+                                                <?php if (array_key_exists('npCommunicationId', $scanProgress)) { ?>
+                                                    <div>
+                                                        <strong>NP Communication ID:</strong>
+                                                        <?= htmlspecialchars((string) $scanProgress['npCommunicationId'], ENT_QUOTES, 'UTF-8'); ?>
+                                                    </div>
+                                                <?php } ?>
+                                            </div>
+                                        <?php } ?>
                                     </td>
                                 </tr>
                             <?php } ?>
