@@ -61,6 +61,11 @@ final class AutomaticTrophyTitleMergeService
                     $newTitle['np_communication_id'],
                     $cloneCandidate['np_communication_id']
                 );
+
+                $this->clearTrophyCache(
+                    $newTitle['np_communication_id'],
+                    $cloneCandidate['np_communication_id']
+                );
             }
 
             $this->mergeAndReportWarnings(
@@ -447,6 +452,13 @@ final class AutomaticTrophyTitleMergeService
         $this->trophyCache[$npCommunicationId] = $trophies;
 
         return $trophies;
+    }
+
+    private function clearTrophyCache(string ...$npCommunicationIds): void
+    {
+        foreach ($npCommunicationIds as $npCommunicationId) {
+            unset($this->trophyCache[$npCommunicationId]);
+        }
     }
 
     /**

@@ -92,6 +92,33 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->mergedGames);
     }
 
+    public function testClearsTrophyCacheAfterCopy(): void
+    {
+        $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
+        $this->insertTitle(2, 'MERGE_000001', 'Example Game', 'PS4');
+
+        $this->insertTrophies('NP_NEW', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->insertTrophies('MERGE_000001', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->service->handleNewTitle('NP_NEW');
+
+        $this->assertSame([
+            ['NP_NEW', 'MERGE_000001'],
+        ], $this->mergeService->copiedGames);
+
+        $cache = $this->getTrophyCache();
+
+        $this->assertFalse(array_key_exists('NP_NEW', $cache));
+        $this->assertFalse(array_key_exists('MERGE_000001', $cache));
+    }
+
     public function testClonesPreferredPs5GameWhenNoCloneExists(): void
     {
         $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
@@ -191,6 +218,21 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             $query->bindValue(':detail', $detail, PDO::PARAM_STR);
             $query->execute();
         }
+    }
+
+    /**
+     * @return array<string, list<array{group_id:string, order_id:int, name:string, detail:string}>>
+     */
+    private function getTrophyCache(): array
+    {
+        $reflection = new ReflectionObject($this->service);
+        $property = $reflection->getProperty('trophyCache');
+        $property->setAccessible(true);
+
+        /** @var array<string, list<array{group_id:string, order_id:int, name:string, detail:string}>> $cache */
+        $cache = $property->getValue($this->service);
+
+        return $cache;
     }
 }
 
