@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
+require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
 use Tustin\PlayStation\Client;
@@ -28,6 +30,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private TrophyMetaRepository $trophyMetaRepository;
 
+    private AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
+
     public function __construct(
         PDO $database,
         TrophyCalculator $trophyCalculator,
@@ -42,6 +46,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $this->historyRecorder = $historyRecorder;
         $this->workerId = $workerId;
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
+        $this->automaticTrophyTitleMergeService = new AutomaticTrophyTitleMergeService(
+            $database,
+            new TrophyMergeService($database)
+        );
     }
 
     public function run(): void
@@ -563,6 +571,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $existingTitleQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
                         $existingTitleQuery->execute();
                         $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
+                        $isNewTitle = $existingTitle === null;
 
                         $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
                         $titleIconFilename = $previousTitleIconFilename;
@@ -899,6 +908,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             if ($titleId !== null) {
                                 $this->historyRecorder->recordByTitleId($titleId);
                             }
+                        }
+
+                        if ($isNewTitle) {
+                            $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
                         }
 
                         if ($newTrophies) {

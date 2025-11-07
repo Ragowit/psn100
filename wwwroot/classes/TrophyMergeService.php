@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Admin/GameCopyService.php';
 require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
 
 class TrophyMergeService
@@ -131,6 +132,37 @@ class TrophyMergeService
     }
 
     public function cloneGame(int $childGameId): string
+    {
+        $this->cloneGameInternal($childGameId);
+
+        return 'The game have been cloned.';
+    }
+
+    /**
+     * @return array{clone_game_id:int, clone_np_communication_id:string}
+     */
+    public function cloneGameWithInfo(int $childGameId): array
+    {
+        return $this->cloneGameInternal($childGameId);
+    }
+
+    public function copyGameData(string $sourceNpCommunicationId, string $targetNpCommunicationId): void
+    {
+        if ($sourceNpCommunicationId === $targetNpCommunicationId) {
+            return;
+        }
+
+        $sourceGameId = $this->getGameIdByNpCommunicationId($sourceNpCommunicationId);
+        $targetGameId = $this->getGameIdByNpCommunicationId($targetNpCommunicationId);
+
+        $gameCopyService = new GameCopyService($this->database);
+        $gameCopyService->copyChildToParent($sourceGameId, $targetGameId);
+    }
+
+    /**
+     * @return array{clone_game_id:int, clone_np_communication_id:string}
+     */
+    private function cloneGameInternal(int $childGameId): array
     {
         $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
 
@@ -361,7 +393,10 @@ SQL
 
         $this->logChange('GAME_CLONE', $childGameId, $cloneGameId);
 
-        return 'The game have been cloned.';
+        return [
+            'clone_game_id' => $cloneGameId,
+            'clone_np_communication_id' => $cloneNpCommunicationId,
+        ];
     }
 
     private function getTrophyById(int $trophyId): array
@@ -1302,6 +1337,27 @@ SQL
         }
 
         return (string) $npCommunicationId;
+    }
+
+    private function getGameIdByNpCommunicationId(string $npCommunicationId): int
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT id
+            FROM   trophy_title
+            WHERE  np_communication_id = :np_communication_id
+SQL
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $gameId = $query->fetchColumn();
+
+        if ($gameId === false) {
+            throw new RuntimeException('Unable to locate trophy title for copy operation.');
+        }
+
+        return (int) $gameId;
     }
 
     private function cloneGameHistory(int $sourceGameId, int $cloneGameId): void
