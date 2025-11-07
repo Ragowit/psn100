@@ -1,0 +1,392 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/TrophyMergeService.php';
+
+final class AutomaticTrophyTitleMergeService
+{
+    private PDO $database;
+
+    private TrophyMergeService $trophyMergeService;
+
+    /** @var array<string, list<array{group_id:string, order_id:int, name:string, detail:string}>> */
+    private array $trophyCache = [];
+
+    public function __construct(PDO $database, TrophyMergeService $trophyMergeService)
+    {
+        $this->database = $database;
+        $this->trophyMergeService = $trophyMergeService;
+    }
+
+    public function handleNewTitle(string $npCommunicationId): void
+    {
+        $newTitle = $this->getTitleByNpCommunicationId($npCommunicationId);
+
+        if ($newTitle === null) {
+            return;
+        }
+
+        $matchingTitles = $this->findMatchingTitles($newTitle);
+
+        if ($matchingTitles === []) {
+            return;
+        }
+
+        $cloneCandidate = $this->selectCloneCandidate($matchingTitles);
+
+        if ($cloneCandidate !== null) {
+            if ($this->shouldCopyPlatforms($cloneCandidate['platforms'], $newTitle['platforms'])) {
+                $this->trophyMergeService->copyGameData(
+                    $newTitle['np_communication_id'],
+                    $cloneCandidate['np_communication_id']
+                );
+            }
+
+            $comparison = $this->compareTrophies(
+                $cloneCandidate['np_communication_id'],
+                $newTitle['np_communication_id']
+            );
+
+            if (!$comparison['matches']) {
+                return;
+            }
+
+            $mergeMethod = $comparison['orderMatches'] ? 'order' : 'name';
+            $this->trophyMergeService->mergeGames($newTitle['id'], $cloneCandidate['id'], $mergeMethod);
+
+            return;
+        }
+
+        $gamesToMerge = $this->createUniqueGameList($newTitle, $matchingTitles);
+        $gameToClone = $this->selectGameToClone($gamesToMerge);
+
+        if ($gameToClone === null) {
+            return;
+        }
+
+        $mergeMethods = [];
+        foreach ($gamesToMerge as $game) {
+            $comparison = $this->compareTrophies(
+                $gameToClone['np_communication_id'],
+                $game['np_communication_id']
+            );
+
+            if (!$comparison['matches']) {
+                continue;
+            }
+
+            $mergeMethods[$game['id']] = $comparison['orderMatches'] ? 'order' : 'name';
+        }
+
+        if ($mergeMethods === []) {
+            return;
+        }
+
+        $cloneInfo = $this->trophyMergeService->cloneGameWithInfo($gameToClone['id']);
+        $parentGameId = (int) $cloneInfo['clone_game_id'];
+
+        foreach ($gamesToMerge as $game) {
+            if (!isset($mergeMethods[$game['id']])) {
+                continue;
+            }
+
+            $this->trophyMergeService->mergeGames($game['id'], $parentGameId, $mergeMethods[$game['id']]);
+        }
+    }
+
+    /**
+     * @return array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}|null
+     */
+    private function getTitleByNpCommunicationId(string $npCommunicationId): ?array
+    {
+        $query = $this->database->prepare(
+            'SELECT id, np_communication_id, name, platform
+            FROM trophy_title
+            WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        $platform = $row['platform'] ?? null;
+
+        return [
+            'id' => (int) $row['id'],
+            'np_communication_id' => (string) $row['np_communication_id'],
+            'name' => (string) $row['name'],
+            'platform' => $platform,
+            'platforms' => $this->parsePlatforms($platform),
+        ];
+    }
+
+    /**
+     * @param array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]} $newTitle
+     * @return list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}>
+     */
+    private function findMatchingTitles(array $newTitle): array
+    {
+        $query = $this->database->prepare(
+            'SELECT id, np_communication_id, platform
+            FROM trophy_title
+            WHERE name = :name AND np_communication_id != :np_communication_id'
+        );
+        $query->bindValue(':name', $newTitle['name'], PDO::PARAM_STR);
+        $query->bindValue(':np_communication_id', $newTitle['np_communication_id'], PDO::PARAM_STR);
+        $query->execute();
+
+        $matches = [];
+
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $comparison = $this->compareTrophies(
+                $newTitle['np_communication_id'],
+                (string) $row['np_communication_id']
+            );
+
+            if (!$comparison['matches']) {
+                continue;
+            }
+
+            $npCommunicationId = (string) $row['np_communication_id'];
+            $platform = $row['platform'] ?? null;
+
+            $matches[] = [
+                'id' => (int) $row['id'],
+                'np_communication_id' => $npCommunicationId,
+                'platform' => $platform,
+                'platforms' => $this->parsePlatforms($platform),
+                'is_clone' => str_starts_with($npCommunicationId, 'MERGE'),
+                'matches_by_order' => $comparison['orderMatches'],
+            ];
+        }
+
+        return $matches;
+    }
+
+    /**
+     * @param list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}> $matches
+     * @return array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}|null
+     */
+    private function selectCloneCandidate(array $matches): ?array
+    {
+        foreach ($matches as $candidate) {
+            if ($candidate['is_clone'] && $candidate['matches_by_order']) {
+                return $candidate;
+            }
+        }
+
+        foreach ($matches as $candidate) {
+            if ($candidate['is_clone']) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]} $newTitle
+     * @param list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}> $matches
+     * @return list<array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}>
+     */
+    private function createUniqueGameList(array $newTitle, array $matches): array
+    {
+        $games = [
+            $newTitle['id'] => $newTitle,
+        ];
+
+        foreach ($matches as $match) {
+            if (str_starts_with($match['np_communication_id'], 'MERGE')) {
+                continue;
+            }
+
+            $games[$match['id']] = [
+                'id' => $match['id'],
+                'np_communication_id' => $match['np_communication_id'],
+                'name' => $newTitle['name'],
+                'platform' => $match['platform'],
+                'platforms' => $match['platforms'],
+            ];
+        }
+
+        return array_values($games);
+    }
+
+    /**
+     * @param list<array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}> $games
+     * @return array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}|null
+     */
+    private function selectGameToClone(array $games): ?array
+    {
+        foreach ($games as $game) {
+            if ($this->hasPs5OrPsvr2($game['platforms'])) {
+                return $game;
+            }
+        }
+
+        return $games[0] ?? null;
+    }
+
+    /**
+     * @param string $leftNpCommunicationId
+     * @param string $rightNpCommunicationId
+     * @return array{matches:bool, orderMatches:bool}
+     */
+    private function compareTrophies(string $leftNpCommunicationId, string $rightNpCommunicationId): array
+    {
+        $leftTrophies = $this->getTrophiesByNpCommunicationId($leftNpCommunicationId);
+        $rightTrophies = $this->getTrophiesByNpCommunicationId($rightNpCommunicationId);
+
+        if (count($leftTrophies) !== count($rightTrophies)) {
+            return ['matches' => false, 'orderMatches' => false];
+        }
+
+        if ($leftTrophies === [] && $rightTrophies === []) {
+            return ['matches' => true, 'orderMatches' => true];
+        }
+
+        $leftCounts = $this->createNameDetailCounter($leftTrophies);
+        $rightCounts = $this->createNameDetailCounter($rightTrophies);
+
+        if ($leftCounts !== $rightCounts) {
+            return ['matches' => false, 'orderMatches' => false];
+        }
+
+        $orderMatches = $this->trophiesMatchByOrder($leftTrophies, $rightTrophies);
+
+        return ['matches' => true, 'orderMatches' => $orderMatches];
+    }
+
+    /**
+     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $left
+     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $right
+     */
+    private function trophiesMatchByOrder(array $left, array $right): bool
+    {
+        $lookup = [];
+
+        foreach ($left as $trophy) {
+            $key = $this->createOrderKey($trophy['group_id'], $trophy['order_id']);
+            $lookup[$key] = $this->createTrophyKey($trophy['name'], $trophy['detail']);
+        }
+
+        foreach ($right as $trophy) {
+            $key = $this->createOrderKey($trophy['group_id'], $trophy['order_id']);
+            $value = $this->createTrophyKey($trophy['name'], $trophy['detail']);
+
+            if (!isset($lookup[$key]) || $lookup[$key] !== $value) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $trophies
+     * @return array<string,int>
+     */
+    private function createNameDetailCounter(array $trophies): array
+    {
+        $counts = [];
+
+        foreach ($trophies as $trophy) {
+            $key = $this->createTrophyKey($trophy['name'], $trophy['detail']);
+            $counts[$key] = ($counts[$key] ?? 0) + 1;
+        }
+
+        ksort($counts);
+
+        return $counts;
+    }
+
+    private function createTrophyKey(string $name, string $detail): string
+    {
+        return $name . "\0" . $detail;
+    }
+
+    private function createOrderKey(string $groupId, int $orderId): string
+    {
+        return $groupId . '|' . $orderId;
+    }
+
+    /**
+     * @return list<array{group_id:string, order_id:int, name:string, detail:string}>
+     */
+    private function getTrophiesByNpCommunicationId(string $npCommunicationId): array
+    {
+        if (isset($this->trophyCache[$npCommunicationId])) {
+            return $this->trophyCache[$npCommunicationId];
+        }
+
+        $query = $this->database->prepare(
+            'SELECT group_id, order_id, name, detail
+            FROM trophy
+            WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $trophies = [];
+
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $trophies[] = [
+                'group_id' => (string) $row['group_id'],
+                'order_id' => (int) $row['order_id'],
+                'name' => (string) $row['name'],
+                'detail' => (string) ($row['detail'] ?? ''),
+            ];
+        }
+
+        $this->trophyCache[$npCommunicationId] = $trophies;
+
+        return $trophies;
+    }
+
+    /**
+     * @param string[] $clonePlatforms
+     * @param string[] $newPlatforms
+     */
+    private function shouldCopyPlatforms(array $clonePlatforms, array $newPlatforms): bool
+    {
+        if (!$this->hasPs5OrPsvr2($newPlatforms)) {
+            return false;
+        }
+
+        return !$this->hasPs5OrPsvr2($clonePlatforms);
+    }
+
+    /**
+     * @param string[] $platforms
+     */
+    private function hasPs5OrPsvr2(array $platforms): bool
+    {
+        foreach ($platforms as $platform) {
+            if ($platform === 'PS5' || $platform === 'PSVR2') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function parsePlatforms(?string $platforms): array
+    {
+        if ($platforms === null || trim($platforms) === '') {
+            return [];
+        }
+
+        $parts = array_map('trim', explode(',', $platforms));
+        $parts = array_filter($parts, static fn(string $platform): bool => $platform !== '');
+
+        return array_values(array_map('strtoupper', $parts));
+    }
+}
