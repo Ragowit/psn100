@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 01, 2025 at 01:16 AM
+-- Generation Time: Nov 07, 2025 at 09:07 PM
 -- Server version: 8.4.7
 -- PHP Version: 8.4.14
 
@@ -144,7 +144,7 @@ CREATE TABLE `setting` (
   `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `scan_start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `scan_progress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+  `scan_progress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -432,7 +432,9 @@ ALTER TABLE `player_ranking`
   ADD KEY `ranking_country` (`ranking_country`),
   ADD KEY `rarity_ranking` (`rarity_ranking`),
   ADD KEY `rarity_ranking_country` (`rarity_ranking_country`),
-  ADD KEY `idx_pr_account_id_ranking` (`account_id`,`ranking`);
+  ADD KEY `idx_pr_account_id_ranking` (`account_id`,`ranking`),
+  ADD KEY `idx_pr_ranking_account` (`ranking`,`account_id`),
+  ADD KEY `idx_pr_rarity_ranking_account` (`rarity_ranking`,`account_id`);
 
 --
 -- Indexes for table `player_report`
@@ -475,9 +477,10 @@ ALTER TABLE `trophy`
 --
 ALTER TABLE `trophy_earned`
   ADD PRIMARY KEY (`np_communication_id`,`order_id`,`account_id`),
-  ADD KEY `idx_te_acc_earned_comm_order_date` (`account_id`,`earned`,`np_communication_id`,`order_id`,`earned_date`),
   ADD KEY `idx_te_comm_order_earned_acc_date` (`np_communication_id`,`order_id`,`earned`,`account_id`,`earned_date`),
-  ADD KEY `idx_te_comm_progress` (`np_communication_id`,`progress`);
+  ADD KEY `idx_te_comm_progress` (`np_communication_id`,`progress`),
+  ADD KEY `idx_te_npcomm_order_earned_date` (`np_communication_id`,`order_id`,`earned`,`earned_date`),
+  ADD KEY `idx_te_acc_comm_order_earned_date` (`account_id`,`np_communication_id`,`order_id`,`earned`,`earned_date`);
 
 --
 -- Indexes for table `trophy_group`
@@ -562,7 +565,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1580209;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1581022;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -574,13 +577,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26294;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17122;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47894;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49055;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -592,25 +595,25 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1910666;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2699977;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83881;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84581;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59645;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59894;
 
 --
 -- AUTO_INCREMENT for table `trophy_title_history`
 --
 ALTER TABLE `trophy_title_history`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69190;
 
 --
 -- Constraints for dumped tables
