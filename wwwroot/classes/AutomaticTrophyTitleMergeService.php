@@ -36,13 +36,6 @@ final class AutomaticTrophyTitleMergeService
         $cloneCandidate = $this->selectCloneCandidate($matchingTitles);
 
         if ($cloneCandidate !== null) {
-            if ($this->shouldCopyPlatforms($cloneCandidate['platforms'], $newTitle['platforms'])) {
-                $this->trophyMergeService->copyGameData(
-                    $newTitle['np_communication_id'],
-                    $cloneCandidate['np_communication_id']
-                );
-            }
-
             $comparison = $this->compareTrophies(
                 $cloneCandidate['np_communication_id'],
                 $newTitle['np_communication_id']
@@ -52,8 +45,31 @@ final class AutomaticTrophyTitleMergeService
                 return;
             }
 
-            $mergeMethod = $comparison['orderMatches'] ? 'order' : 'name';
-            $this->trophyMergeService->mergeGames($newTitle['id'], $cloneCandidate['id'], $mergeMethod);
+            $mergeMethod = $this->selectMergeMethod($comparison);
+
+            if ($mergeMethod === null) {
+                $this->logAmbiguousNameMerge(
+                    $newTitle['np_communication_id'],
+                    $cloneCandidate['np_communication_id']
+                );
+
+                return;
+            }
+
+            if ($this->shouldCopyPlatforms($cloneCandidate['platforms'], $newTitle['platforms'])) {
+                $this->trophyMergeService->copyGameData(
+                    $newTitle['np_communication_id'],
+                    $cloneCandidate['np_communication_id']
+                );
+            }
+
+            $this->mergeAndReportWarnings(
+                $newTitle['id'],
+                $cloneCandidate['id'],
+                $mergeMethod,
+                $newTitle['np_communication_id'],
+                $cloneCandidate['np_communication_id']
+            );
 
             return;
         }
@@ -76,7 +92,18 @@ final class AutomaticTrophyTitleMergeService
                 continue;
             }
 
-            $mergeMethods[$game['id']] = $comparison['orderMatches'] ? 'order' : 'name';
+            $mergeMethod = $this->selectMergeMethod($comparison);
+
+            if ($mergeMethod === null) {
+                $this->logAmbiguousNameMerge(
+                    $game['np_communication_id'],
+                    $gameToClone['np_communication_id']
+                );
+
+                continue;
+            }
+
+            $mergeMethods[$game['id']] = $mergeMethod;
         }
 
         if ($mergeMethods === []) {
@@ -91,7 +118,13 @@ final class AutomaticTrophyTitleMergeService
                 continue;
             }
 
-            $this->trophyMergeService->mergeGames($game['id'], $parentGameId, $mergeMethods[$game['id']]);
+            $this->mergeAndReportWarnings(
+                $game['id'],
+                $parentGameId,
+                $mergeMethods[$game['id']],
+                $game['np_communication_id'],
+                $gameToClone['np_communication_id']
+            );
         }
     }
 
@@ -235,7 +268,7 @@ final class AutomaticTrophyTitleMergeService
     /**
      * @param string $leftNpCommunicationId
      * @param string $rightNpCommunicationId
-     * @return array{matches:bool, orderMatches:bool}
+     * @return array{matches:bool, orderMatches:bool, nameMatches:bool}
      */
     private function compareTrophies(string $leftNpCommunicationId, string $rightNpCommunicationId): array
     {
@@ -243,23 +276,24 @@ final class AutomaticTrophyTitleMergeService
         $rightTrophies = $this->getTrophiesByNpCommunicationId($rightNpCommunicationId);
 
         if (count($leftTrophies) !== count($rightTrophies)) {
-            return ['matches' => false, 'orderMatches' => false];
+            return ['matches' => false, 'orderMatches' => false, 'nameMatches' => false];
         }
 
         if ($leftTrophies === [] && $rightTrophies === []) {
-            return ['matches' => true, 'orderMatches' => true];
+            return ['matches' => true, 'orderMatches' => true, 'nameMatches' => true];
         }
 
         $leftCounts = $this->createNameDetailCounter($leftTrophies);
         $rightCounts = $this->createNameDetailCounter($rightTrophies);
 
         if ($leftCounts !== $rightCounts) {
-            return ['matches' => false, 'orderMatches' => false];
+            return ['matches' => false, 'orderMatches' => false, 'nameMatches' => false];
         }
 
         $orderMatches = $this->trophiesMatchByOrder($leftTrophies, $rightTrophies);
+        $nameMatches = $this->trophiesMatchByName($leftTrophies, $rightTrophies);
 
-        return ['matches' => true, 'orderMatches' => $orderMatches];
+        return ['matches' => true, 'orderMatches' => $orderMatches, 'nameMatches' => $nameMatches];
     }
 
     /**
@@ -305,6 +339,25 @@ final class AutomaticTrophyTitleMergeService
         return $counts;
     }
 
+    /**
+     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $left
+     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $right
+     */
+    private function trophiesMatchByName(array $left, array $right): bool
+    {
+        $leftNames = array_map(static fn(array $trophy): string => $trophy['name'], $left);
+        $rightNames = array_map(static fn(array $trophy): string => $trophy['name'], $right);
+
+        sort($leftNames);
+        sort($rightNames);
+
+        if ($leftNames !== $rightNames) {
+            return false;
+        }
+
+        return count($leftNames) === count(array_unique($leftNames));
+    }
+
     private function createTrophyKey(string $name, string $detail): string
     {
         return $name . "\0" . $detail;
@@ -313,6 +366,54 @@ final class AutomaticTrophyTitleMergeService
     private function createOrderKey(string $groupId, int $orderId): string
     {
         return $groupId . '|' . $orderId;
+    }
+
+    /**
+     * @param array{matches:bool, orderMatches:bool, nameMatches:bool} $comparison
+     */
+    private function selectMergeMethod(array $comparison): ?string
+    {
+        if ($comparison['orderMatches']) {
+            return 'order';
+        }
+
+        if ($comparison['nameMatches']) {
+            return 'name';
+        }
+
+        return null;
+    }
+
+    private function logAmbiguousNameMerge(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        error_log(
+            sprintf(
+                'Automatic trophy merge skipped due to ambiguous name mapping between %s and %s.',
+                $childNpCommunicationId,
+                $parentNpCommunicationId
+            )
+        );
+    }
+
+    private function mergeAndReportWarnings(
+        int $childGameId,
+        int $parentGameId,
+        string $mergeMethod,
+        string $childNpCommunicationId,
+        string $parentNpCommunicationId
+    ): void {
+        $message = $this->trophyMergeService->mergeGames($childGameId, $parentGameId, $mergeMethod);
+
+        if ($message !== 'The games have been merged.') {
+            error_log(
+                sprintf(
+                    'Automatic trophy merge between %s and %s returned warnings: %s',
+                    $childNpCommunicationId,
+                    $parentNpCommunicationId,
+                    $message
+                )
+            );
+        }
     }
 
     /**

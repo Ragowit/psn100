@@ -49,6 +49,29 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->mergedGames);
     }
 
+    public function testSkipsMergeWhenNameMappingAmbiguous(): void
+    {
+        $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
+        $this->insertTitle(2, 'MERGE_000001', 'Example Game', 'PS4');
+
+        $this->insertTrophies('NP_NEW', 'default', [
+            [0, 'Hidden Trophy', 'Secret'],
+            [1, 'Hidden Trophy', 'Secret'],
+        ]);
+
+        $this->insertTrophies('MERGE_000001', 'default', [
+            [0, 'Hidden Trophy', 'Secret'],
+        ]);
+
+        $this->insertTrophies('MERGE_000001', 'dlc', [
+            [0, 'Hidden Trophy', 'Secret'],
+        ]);
+
+        $this->service->handleNewTitle('NP_NEW');
+
+        $this->assertSame([], $this->mergeService->mergedGames);
+    }
+
     public function testMergesIntoExistingCloneWithoutCopyWhenNotPs5(): void
     {
         $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS4');
@@ -199,7 +222,7 @@ final class RecordingTrophyMergeService extends TrophyMergeService
     {
         $this->mergedGames[] = [$childGameId, $parentGameId, $method];
 
-        return 'merged';
+        return 'The games have been merged.';
     }
 
     public function cloneGameWithInfo(int $childGameId): array
