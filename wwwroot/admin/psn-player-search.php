@@ -15,7 +15,13 @@ if ($normalizedSearchTerm !== '') {
         $searchService = PsnPlayerSearchService::fromDatabase($database);
         $results = $searchService->search($normalizedSearchTerm);
     } catch (Throwable $exception) {
-        $errorMessage = $exception->getMessage();
+        $message = trim($exception->getMessage());
+
+        if ($message === '') {
+            $message = 'An unexpected error occurred while searching for players. Please try again later.';
+        }
+
+        $errorMessage = $message;
     }
 }
 ?>
