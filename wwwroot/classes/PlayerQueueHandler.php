@@ -62,8 +62,12 @@ class PlayerQueueHandler
             return $this->responseFactory->createCheaterResponse($playerName, $playerData['account_id']);
         }
 
-        if ($this->service->isPlayerBeingScanned($playerName)) {
-            return $this->responseFactory->createQueuedForScanResponse($playerName);
+        $scanStatus = $this->service->getActiveScanStatus($playerName);
+        if ($scanStatus !== null) {
+            return $this->responseFactory->createQueuedForScanResponse(
+                $playerName,
+                $scanStatus['progress'] ?? null
+            );
         }
 
         $position = $this->service->getQueuePosition($playerName);
