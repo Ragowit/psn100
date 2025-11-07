@@ -70,6 +70,7 @@ class AdminNavigation
             new AdminNavigationItem('Game Merge', '/admin/merge.php'),
             new AdminNavigationItem('Logs', '/admin/log.php'),
             new AdminNavigationItem('Possible Cheaters', '/admin/possible.php'),
+            new AdminNavigationItem('PSN Player Search', '/admin/psn-player-search.php'),
             new AdminNavigationItem('PSNP+', '/admin/psnp-plus.php'),
             new AdminNavigationItem('Reported Players', '/admin/report.php'),
             new AdminNavigationItem('Rescan Game', '/admin/rescan.php'),
