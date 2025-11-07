@@ -157,4 +157,30 @@ final class PlayerQueueResponseFactoryTest extends TestCase
             $service->getEscapedValues()
         );
     }
+
+    public function testCreateQueuedForScanResponseIncludesProgressDetails(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $response = $factory->createQueuedForScanResponse('Player <Name>', [
+            'current' => 5,
+            'total' => 34,
+            'title' => 'Game <Title>',
+        ]);
+
+        $this->assertSame('queued', $response->getStatus());
+        $this->assertTrue($response->shouldPoll());
+
+        $message = $response->getMessage();
+        $this->assertStringContainsString('href="/player/Player%20%3CName%3E"', $message);
+        $this->assertStringContainsString('Currently scanning <strong>Game &lt;Title&gt;</strong> (5/34).', $message);
+        $this->assertStringContainsString('class="progress mt-2"', $message);
+        $this->assertStringContainsString('spinner-border', $message);
+
+        $this->assertSame(
+            ['Player <Name>', '/player/Player%20%3CName%3E', 'Game <Title>'],
+            $service->getEscapedValues()
+        );
+    }
 }

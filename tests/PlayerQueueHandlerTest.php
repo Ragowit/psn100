@@ -17,8 +17,6 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
 
     private bool $isValidPlayerName = true;
 
-    private bool $playerBeingScanned = false;
-
     private ?int $queuePosition = null;
 
     /** @var array{account_id: string|null, status: int|null}|null */
@@ -26,6 +24,9 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
 
     /** @var list<array{playerName: string, ipAddress: string}> */
     private array $queuedPlayers = [];
+
+    /** @var array{progress: array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null}|null */
+    private ?array $scanStatus = null;
 
     public function __construct()
     {
@@ -80,12 +81,36 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
 
     public function setPlayerBeingScanned(bool $playerBeingScanned): void
     {
-        $this->playerBeingScanned = $playerBeingScanned;
+        $this->scanStatus = $playerBeingScanned ? ['progress' => null] : null;
+    }
+
+    /**
+     * @param array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null $progress
+     */
+    public function setScanProgress(?array $progress): void
+    {
+        if ($progress === null) {
+            $this->scanStatus = null;
+
+            return;
+        }
+
+        $this->scanStatus = ['progress' => $progress];
     }
 
     public function isPlayerBeingScanned(string $playerName): bool
     {
-        return $this->playerBeingScanned;
+        return $this->scanStatus !== null;
+    }
+
+    public function getActiveScanStatus(string $playerName): ?array
+    {
+        return $this->scanStatus;
+    }
+
+    public function getActiveScanProgress(string $playerName): ?array
+    {
+        return $this->scanStatus['progress'] ?? null;
     }
 
     public function setQueuePosition(?int $queuePosition): void
@@ -252,7 +277,11 @@ final class PlayerQueueHandlerTest extends TestCase
             'account_id' => null,
             'status' => null,
         ]);
-        $service->setPlayerBeingScanned(true);
+        $service->setScanProgress([
+            'current' => 3,
+            'total' => 10,
+            'title' => 'Game <Title>',
+        ]);
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
         $request = PlayerQueueRequest::fromArrays(['q' => 'ScanningUser'], ['REMOTE_ADDR' => '10.0.0.6']);
 
@@ -261,6 +290,8 @@ final class PlayerQueueHandlerTest extends TestCase
         $this->assertSame('queued', $response->getStatus());
         $this->assertTrue($response->shouldPoll());
         $this->assertStringContainsString('is currently being scanned.', $response->getMessage());
+        $this->assertStringContainsString('Currently scanning <strong>Game &lt;Title&gt;</strong> (3/10).', $response->getMessage());
+        $this->assertStringContainsString('class="progress mt-2"', $response->getMessage());
     }
 
     public function testHandleQueuePositionRequestReturnsQueuePositionWhenAvailable(): void

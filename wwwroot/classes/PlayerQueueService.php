@@ -94,10 +94,22 @@ class PlayerQueueService
 
     public function isPlayerBeingScanned(string $playerName): bool
     {
+        return $this->getActiveScanStatus($playerName) !== null;
+    }
+
+    /**
+     * @return array{progress: array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null}|null
+     */
+    public function getActiveScanStatus(string $playerName): ?array
+    {
+        if ($playerName === '') {
+            return null;
+        }
+
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                scanning
+                scan_progress
             FROM
                 setting
             WHERE
@@ -107,7 +119,31 @@ class PlayerQueueService
         $query->bindValue(":online_id", $playerName, PDO::PARAM_STR);
         $query->execute();
 
-        return $query->fetchColumn() !== false;
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $progress = $this->decodeScanProgress($row['scan_progress'] ?? null);
+
+        return [
+            'progress' => $progress,
+        ];
+    }
+
+    /**
+     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
+     */
+    public function getActiveScanProgress(string $playerName): ?array
+    {
+        $status = $this->getActiveScanStatus($playerName);
+
+        if ($status === null) {
+            return null;
+        }
+
+        return $status['progress'] ?? null;
     }
 
     public function getQueuePosition(string $playerName): ?int
@@ -187,6 +223,42 @@ class PlayerQueueService
                 ? (int) $result['status']
                 : null,
         ];
+    }
+
+    /**
+     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
+     */
+    private function decodeScanProgress(?string $value): ?array
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $progress = [];
+
+        if (array_key_exists('current', $decoded) && is_numeric($decoded['current'])) {
+            $progress['current'] = max(0, (int) $decoded['current']);
+        }
+
+        if (array_key_exists('total', $decoded) && is_numeric($decoded['total'])) {
+            $progress['total'] = max(0, (int) $decoded['total']);
+        }
+
+        if (array_key_exists('title', $decoded) && is_string($decoded['title'])) {
+            $progress['title'] = $decoded['title'];
+        }
+
+        if (array_key_exists('npCommunicationId', $decoded) && is_string($decoded['npCommunicationId'])) {
+            $progress['npCommunicationId'] = $decoded['npCommunicationId'];
+        }
+
+        return $progress === [] ? null : $progress;
     }
 
     public function isCheaterStatus(?int $status): bool

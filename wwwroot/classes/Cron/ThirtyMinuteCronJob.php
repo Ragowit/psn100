@@ -52,6 +52,63 @@ class ThirtyMinuteCronJob implements CronJobInterface
         );
     }
 
+    /**
+     * @param array<int, object> $trophyTitles
+     * @param array<string, string> $gameLastUpdatedDate
+     */
+    private function determineScanStartIndex(array $trophyTitles, array $gameLastUpdatedDate): int
+    {
+        foreach ($trophyTitles as $index => $trophyTitle) {
+            $npid = $trophyTitle->npCommunicationId();
+            $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
+
+            if (!isset($gameLastUpdatedDate[$npid])) {
+                return (int) $index;
+            }
+
+            $dbLastUpdatedDate = date_create($gameLastUpdatedDate[$npid]);
+
+            if ($sonyLastUpdatedDate === false || $dbLastUpdatedDate === false) {
+                if ($gameLastUpdatedDate[$npid] !== $trophyTitle->lastUpdatedDateTime()) {
+                    return (int) $index;
+                }
+
+                continue;
+            }
+
+            if ($sonyLastUpdatedDate != $dbLastUpdatedDate) {
+                return (int) $index;
+            }
+        }
+
+        return count($trophyTitles);
+    }
+
+    /**
+     * @param array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null $progress
+     */
+    private function setWorkerScanProgress(int $workerId, ?array $progress): void
+    {
+        $query = $this->database->prepare(
+            'UPDATE setting SET scan_progress = :scan_progress WHERE id = :worker_id'
+        );
+
+        if ($progress === null) {
+            $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
+        } else {
+            $encodedProgress = json_encode($progress, JSON_UNESCAPED_UNICODE);
+
+            if ($encodedProgress === false) {
+                $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
+            } else {
+                $query->bindValue(':scan_progress', $encodedProgress, PDO::PARAM_STR);
+            }
+        }
+
+        $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
+        $query->execute();
+    }
+
     public function run(): void
     {
         $recheck = "";
@@ -85,7 +142,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $this->logger->log("Can't login with worker ". $worker["id"]);
 
                     // Something went wrong, 'release' the current scanning profile so other workers can pick it up.
-                    $query = $this->database->prepare("UPDATE setting SET scanning = :id WHERE id = :id");
+                    $query = $this->database->prepare("UPDATE setting SET scanning = :id, scan_progress = NULL WHERE id = :id");
                     $query->bindValue(":id", $worker["id"], PDO::PARAM_INT);
                     $query->execute();
 
@@ -199,7 +256,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
                 $player = $query->fetch();
 
-                $query = $this->database->prepare("UPDATE setting SET scanning = :scanning WHERE id = :worker_id");
+                $query = $this->database->prepare("UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id");
                 $query->bindValue(":scanning", $player["online_id"], PDO::PARAM_STR);
                 $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
                 $query->execute();
@@ -286,7 +343,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $query->bindValue(":online_id_old", $player["online_id"], PDO::PARAM_STR);
                     $query->execute();
 
-                    $query = $this->database->prepare("UPDATE setting SET scanning = :scanning WHERE id = :worker_id");
+                    $query = $this->database->prepare("UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id");
                     $query->bindValue(":scanning", $user->onlineId(), PDO::PARAM_STR);
                     $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
                     $query->execute();
@@ -476,77 +533,82 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $privateUser = true;
             }
 
-            if (!$privateUser) {
-                $totalTrophiesStart = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
+            try {
+                if (!$privateUser) {
+                    $totalTrophiesStart = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
 
-                if ($level !== 0) {
-                    $query = $this->database->prepare("SELECT p.last_updated_date, p.trophy_count_npwr, p.trophy_count_sony
-                        FROM   player p
-                        WHERE  p.account_id = :account_id ");
-                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                    $query->execute();
-                    $playerData = $query->fetch();
+                    if ($level !== 0) {
+                        $query = $this->database->prepare("SELECT np_communication_id,
+                                last_updated_date
+                            FROM   trophy_title_player
+                            WHERE  account_id = :account_id ");
+                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                        $query->execute();
+                        $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
-                    $query = $this->database->prepare("SELECT np_communication_id,
-                            last_updated_date
-                        FROM   trophy_title_player
-                        WHERE  account_id = :account_id ");
-                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                    $query->execute();
-                    $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
+                        $trophyTitleCollection = $user->trophyTitles();
+                        $psnGameCount = $trophyTitleCollection->getIterator()->count();
+                        $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
+                        usort(
+                            $trophyTitles,
+                            function ($left, $right): int {
+                                $leftTimestamp = strtotime($left->lastUpdatedDateTime());
+                                $rightTimestamp = strtotime($right->lastUpdatedDateTime());
 
-                    $psnGameCount = $user->trophyTitles()->getIterator()->count();
-                    $scannedGames = array();
-
-                    // Look through each and every game
-                    foreach ($user->trophyTitles() as $trophyTitle) {
-                        $npid = $trophyTitle->npCommunicationId();
-                        array_push($scannedGames, $npid);
-                        $newTrophies = false;
-                        $titleDataChanged = false;
-                        $groupDataChanged = false;
-                        $trophyDataChanged = false;
-
-                        $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
-                        // Does this user already have the game?
-                        if (isset($gameLastUpdatedDate[$npid])) {
-                            $dbLastUpdatedDate = date_create($gameLastUpdatedDate[$npid]);
-
-                            // Is the timestamp for this game the same as before?
-                            if ($sonyLastUpdatedDate == $dbLastUpdatedDate) {
-                                $isReturningPlayer = $playerData["last_updated_date"] !== null;
-                                $noHiddenTrophies = $playerData["trophy_count_npwr"] == $playerData["trophy_count_sony"];
-
-                                if ($isReturningPlayer && $noHiddenTrophies) {
-                                    // Check if game count is the same
-                                    $stmt = $this->database->prepare("
-                                        SELECT COUNT(ttp.np_communication_id)
-                                        FROM trophy_title_player ttp
-                                        WHERE ttp.account_id = :account_id
-                                        AND ttp.np_communication_id LIKE 'N%'
-                                    ");
-                                    $stmt->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                    $stmt->execute();
-                                    $ourGameCount = (int)$stmt->fetchColumn();
-
-                                    if ($ourGameCount === $psnGameCount) {
-                                        $playerLastUpdated = date_create($playerData["last_updated_date"]);
-
-                                        // Check if we have passed player's last update date
-                                        if ($dbLastUpdatedDate < $playerLastUpdated) {
-                                            // Assume we are done, and break out of the scan loop
-                                            break;
-                                        }
-                                    }
+                                if ($leftTimestamp === false || $rightTimestamp === false) {
+                                    return strcmp($left->lastUpdatedDateTime(), $right->lastUpdatedDateTime());
                                 }
 
-                                // Game seems scanned already, skip to next.
+                                return $leftTimestamp <=> $rightTimestamp;
+                            }
+                        );
+
+                        $scanStartIndex = $this->determineScanStartIndex($trophyTitles, $gameLastUpdatedDate);
+                        $totalGamesToProcess = max(0, count($trophyTitles) - $scanStartIndex);
+                        $currentScanPosition = 0;
+                        $scannedGames = array();
+
+                        // Look through each and every game
+                        foreach ($trophyTitles as $index => $trophyTitle) {
+                            $npid = $trophyTitle->npCommunicationId();
+                            array_push($scannedGames, $npid);
+
+                            if ($index < $scanStartIndex) {
                                 continue;
                             }
-                        }
 
-                        // Add trophy title (game) information into database
-                        $titleId = null;
+                            if ($totalGamesToProcess > 0) {
+                                $currentScanPosition++;
+                                $this->setWorkerScanProgress(
+                                    (int) $worker['id'],
+                                    [
+                                        'current' => $currentScanPosition,
+                                        'total' => $totalGamesToProcess,
+                                        'title' => $trophyTitle->name(),
+                                        'npCommunicationId' => $npid,
+                                    ]
+                                );
+                            }
+
+                            $newTrophies = false;
+                            $titleDataChanged = false;
+                            $groupDataChanged = false;
+                            $trophyDataChanged = false;
+
+                            $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
+                            // Does this user already have the game?
+                            if (isset($gameLastUpdatedDate[$npid])) {
+                                $dbLastUpdatedDate = date_create($gameLastUpdatedDate[$npid]);
+
+                                // Is the timestamp for this game the same as before?
+                                if ($sonyLastUpdatedDate == $dbLastUpdatedDate) {
+                                    // Game seems scanned already, skip to next.
+                                    continue;
+                                }
+                            }
+
+                            // Add trophy title (game) information into database
+                            $titleId = null;
 
                         $platforms = "";
                         foreach ($trophyTitle->platform() as $platform) {
@@ -1353,6 +1415,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
                 $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
                 $query->execute();
+                }
+            } finally {
+                $this->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
     }

@@ -38,7 +38,8 @@ final class PlayerQueueServiceTest extends TestCase
         $this->pdo->exec(
             <<<SQL
             CREATE TABLE setting (
-                scanning TEXT
+                scanning TEXT,
+                scan_progress TEXT
             )
             SQL
         );
@@ -131,6 +132,51 @@ final class PlayerQueueServiceTest extends TestCase
 
         $this->assertTrue($this->service->isPlayerBeingScanned('ScanningPlayer'));
         $this->assertFalse($this->service->isPlayerBeingScanned('AnotherPlayer'));
+    }
+
+    public function testGetActiveScanStatusReturnsNullWhenPlayerNotScanning(): void
+    {
+        $this->assertSame(null, $this->service->getActiveScanStatus('Nobody'));
+    }
+
+    public function testGetActiveScanStatusDecodesProgressData(): void
+    {
+        $payload = json_encode([
+            'current' => 5,
+            'total' => 34,
+            'title' => 'Example Game',
+            'npCommunicationId' => 'NPWR12345',
+        ], JSON_THROW_ON_ERROR);
+
+        $statement = $this->pdo->prepare('INSERT INTO setting (scanning, scan_progress) VALUES (:scanning, :progress)');
+        $statement->execute([
+            ':scanning' => 'ScanningPlayer',
+            ':progress' => $payload,
+        ]);
+
+        $status = $this->service->getActiveScanStatus('ScanningPlayer');
+
+        $this->assertTrue(is_array($status));
+        $this->assertSame(
+            [
+                'current' => 5,
+                'total' => 34,
+                'title' => 'Example Game',
+                'npCommunicationId' => 'NPWR12345',
+            ],
+            $status['progress']
+        );
+    }
+
+    public function testGetActiveScanProgressReturnsNullWhenPayloadInvalid(): void
+    {
+        $statement = $this->pdo->prepare('INSERT INTO setting (scanning, scan_progress) VALUES (:scanning, :progress)');
+        $statement->execute([
+            ':scanning' => 'ScanningPlayer',
+            ':progress' => '{invalid json}',
+        ]);
+
+        $this->assertSame(null, $this->service->getActiveScanProgress('ScanningPlayer'));
     }
 
     public function testGetQueuePositionReturnsRowNumberForPlayer(): void
