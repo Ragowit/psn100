@@ -35,7 +35,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
         $searchResults = [];
         for ($index = 1; $index <= 60; $index++) {
-            $searchResults[] = new StubUserSearchResult('Player' . $index, (string) $index, 'US');
+            $searchResults[] = new StubUserSearchResult('Player' . $index, (string) $index, 'US', 'https://example.com/avatar.png', ['l' => 'https://example.com/avatar.png'], $index % 2 === 0, 'About me');
         }
 
         $userCollection = new StubUserCollection(['example' => $searchResults]);
@@ -54,6 +54,11 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $this->assertCount(50, $results);
         $this->assertSame('Player1', $results[0]->getOnlineId());
         $this->assertSame('Player50', $results[49]->getOnlineId());
+        $this->assertSame('https://example.com/avatar.png', $results[0]->getAvatarUrl());
+        $this->assertSame(['l' => 'https://example.com/avatar.png'], $results[0]->getAvatars());
+        $this->assertSame('About me', $results[0]->getAboutMe());
+        $this->assertFalse($results[0]->isPlus());
+        $this->assertTrue($results[1]->isPlus());
     }
 
     public function testSearchSkipsWorkersThatFailToLogin(): void
@@ -64,7 +69,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
         ];
 
         $userCollection = new StubUserCollection([
-            'example' => [new StubUserSearchResult('Hunter', '42', 'SE')],
+            'example' => [new StubUserSearchResult('Hunter', '42', 'SE', 'https://example.com/hunter.png', ['m' => 'https://example.com/hunter.png'], true, 'Hunter here')],
         ]);
 
         $clients = [
@@ -94,6 +99,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertSame('Hunter', $results[0]->getOnlineId());
+        $this->assertSame('Hunter here', $results[0]->getAboutMe());
+        $this->assertTrue($results[0]->isPlus());
     }
 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void
@@ -173,11 +180,27 @@ final class StubUserSearchResult
 
     private string $country;
 
-    public function __construct(string $onlineId, string $accountId, string $country)
+    private string $avatarUrl;
+
+    /** @var array<string, string> */
+    private array $avatars;
+
+    private bool $isPlus;
+
+    private string $aboutMe;
+
+    /**
+     * @param array<string, string> $avatars
+     */
+    public function __construct(string $onlineId, string $accountId, string $country, string $avatarUrl = '', array $avatars = [], bool $isPlus = false, string $aboutMe = '')
     {
         $this->onlineId = $onlineId;
         $this->accountId = $accountId;
         $this->country = $country;
+        $this->avatarUrl = $avatarUrl;
+        $this->avatars = $avatars;
+        $this->isPlus = $isPlus;
+        $this->aboutMe = $aboutMe;
     }
 
     public function onlineId(): string
@@ -193,5 +216,28 @@ final class StubUserSearchResult
     public function country(): string
     {
         return $this->country;
+    }
+
+    public function avatarUrl(): string
+    {
+        return $this->avatarUrl;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function avatarUrls(): array
+    {
+        return $this->avatars;
+    }
+
+    public function hasPlus(): bool
+    {
+        return $this->isPlus;
+    }
+
+    public function aboutMe(): string
+    {
+        return $this->aboutMe;
     }
 }

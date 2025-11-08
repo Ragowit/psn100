@@ -95,9 +95,7 @@ final class UsersApi
                     continue;
                 }
 
-                $country = isset($player->region) && is_scalar($player->region)
-                    ? (string) $player->region
-                    : (string) ($player->country ?? '');
+                $country = $this->extractCountry($player);
 
                 $metadata = (object) [
                     'onlineId' => $onlineId,
@@ -106,6 +104,8 @@ final class UsersApi
                     'avatarUrl' => isset($player->avatarUrl) ? (string) $player->avatarUrl : null,
                     'profilePicUrl' => isset($player->profilePicUrl) ? (string) $player->profilePicUrl : null,
                     'avatars' => $this->buildAvatarMetadata($player),
+                    'isPlus' => $this->extractPlusStatus($player),
+                    'aboutMe' => $this->extractAboutMe($player),
                 ];
 
                 $results[] = new UserSearchResult(
@@ -179,5 +179,65 @@ final class UsersApi
         }
 
         return $avatars;
+    }
+
+    private function extractCountry(object $player): string
+    {
+        $countrySources = [
+            'region',
+            'country',
+            'countryCode',
+            'accountCountry',
+        ];
+
+        foreach ($countrySources as $source) {
+            if (isset($player->{$source}) && is_scalar($player->{$source})) {
+                $country = strtoupper((string) $player->{$source});
+
+                if ($country !== '') {
+                    return $country;
+                }
+            }
+        }
+
+        if (isset($player->socialMetadata) && is_object($player->socialMetadata)) {
+            foreach ($countrySources as $source) {
+                if (isset($player->socialMetadata->{$source}) && is_scalar($player->socialMetadata->{$source})) {
+                    $country = strtoupper((string) $player->socialMetadata->{$source});
+
+                    if ($country !== '') {
+                        return $country;
+                    }
+                }
+            }
+        }
+
+        return '';
+    }
+
+    private function extractPlusStatus(object $player): ?bool
+    {
+        if (isset($player->isPlus) && is_bool($player->isPlus)) {
+            return $player->isPlus;
+        }
+
+        if (isset($player->isPsPlus) && is_bool($player->isPsPlus)) {
+            return $player->isPsPlus;
+        }
+
+        return null;
+    }
+
+    private function extractAboutMe(object $player): ?string
+    {
+        if (isset($player->aboutMe) && is_scalar($player->aboutMe)) {
+            return (string) $player->aboutMe;
+        }
+
+        if (isset($player->personalDetail) && is_object($player->personalDetail) && isset($player->personalDetail->aboutMe) && is_scalar($player->personalDetail->aboutMe)) {
+            return (string) $player->personalDetail->aboutMe;
+        }
+
+        return null;
     }
 }

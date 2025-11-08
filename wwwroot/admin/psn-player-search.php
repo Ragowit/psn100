@@ -66,6 +66,10 @@ if ($normalizedSearchTerm !== '') {
                                 <th scope="col">Online ID</th>
                                 <th scope="col">Account ID</th>
                                 <th scope="col">Country</th>
+                                <th scope="col">Avatar URL</th>
+                                <th scope="col">Avatars</th>
+                                <th scope="col">PS Plus</th>
+                                <th scope="col">About Me</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,7 +78,49 @@ if ($normalizedSearchTerm !== '') {
                                     <th scope="row"><?= $index + 1; ?></th>
                                     <td><?= htmlentities($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?= htmlentities($result->getAccountId(), ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td><?= htmlentities($result->getCountry(), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>
+                                        <?php if ($result->getCountry() !== '') { ?>
+                                            <?= htmlentities($result->getCountry(), ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php } else { ?>
+                                            <span class="text-body-secondary">-</span>
+                                        <?php } ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($result->getAvatarUrl() !== '') { ?>
+                                            <a href="<?= htmlentities($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noreferrer noopener" class="link-light">View</a>
+                                        <?php } else { ?>
+                                            <span class="text-body-secondary">-</span>
+                                        <?php } ?>
+                                    </td>
+                                    <td>
+                                        <?php $avatars = $result->getAvatars(); ?>
+                                        <?php if ($avatars === []) { ?>
+                                            <span class="text-body-secondary">-</span>
+                                        <?php } else { ?>
+                                            <ul class="list-unstyled mb-0 small">
+                                                <?php foreach ($avatars as $size => $url) { ?>
+                                                    <li>
+                                                        <span class="text-body-secondary text-uppercase"><?= htmlentities((string) $size, ENT_QUOTES, 'UTF-8'); ?>:</span>
+                                                        <a href="<?= htmlentities($url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noreferrer noopener" class="link-light">link</a>
+                                                    </li>
+                                                <?php } ?>
+                                            </ul>
+                                        <?php } ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($result->isPlus()) { ?>
+                                            <span class="badge text-bg-success">Yes</span>
+                                        <?php } else { ?>
+                                            <span class="text-body-secondary">No</span>
+                                        <?php } ?>
+                                    </td>
+                                    <td class="text-break">
+                                        <?php if ($result->getAboutMe() !== '') { ?>
+                                            <span class="small"><?= nl2br(htmlentities($result->getAboutMe(), ENT_QUOTES, 'UTF-8'), false); ?></span>
+                                        <?php } else { ?>
+                                            <span class="text-body-secondary">-</span>
+                                        <?php } ?>
+                                    </td>
                                 </tr>
                             <?php } ?>
                         </tbody>
