@@ -8,6 +8,8 @@ use ArrayIterator;
 
 final class Users
 {
+    private const PAGE_SIZE = 50;
+
     private Client $client;
 
     public function __construct(Client $client)
@@ -25,12 +27,19 @@ final class Users
             return [];
         }
 
-        $response = $this->client->get('/api/search/v1/universalSearch', [
-            'searchDomains' => 'SocialAllAccounts',
-            'countryCode' => 'us',
-            'languageCode' => 'en',
+        $response = $this->client->postJson('/api/search/v1/universalSearch', [
             'age' => '69',
-            'pageSize' => '50',
+            'countryCode' => 'us',
+            'domainRequests' => [
+                [
+                    'domain' => 'SocialAllAccounts',
+                    'pagination' => [
+                        'cursor' => '',
+                        'pageSize' => (string) self::PAGE_SIZE,
+                    ],
+                ],
+            ],
+            'languageCode' => 'en',
             'searchTerm' => $trimmed,
         ]);
 

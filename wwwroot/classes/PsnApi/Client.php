@@ -54,35 +54,40 @@ final class Client
      */
     public function get(string $path, array $queryParameters = []): array
     {
-        $this->assertAuthenticated();
-
-        $uri = self::MOBILE_BASE_URI . '/' . ltrim($path, '/');
-        if ($queryParameters !== []) {
-            $uri .= '?' . http_build_query($queryParameters);
-        }
-
-        $response = $this->sendCurlRequest(
-            $uri,
+        return $this->request(
+            $path,
+            'GET',
+            $queryParameters,
             [
                 'Accept: application/json',
                 'Authorization: Bearer ' . $this->authTokens->getAccessToken(),
                 'User-Agent: psnapi-php/1.0',
             ]
         );
+    }
 
-        if ($response['status'] === 401 || $response['status'] === 403) {
-            throw new AuthenticationException(sprintf('PSN API authentication failed with status %d.', $response['status']));
+    /**
+     * @return array<string, mixed>
+     */
+    public function postJson(string $path, array $payload): array
+    {
+        $body = json_encode($payload);
+        if ($body === false) {
+            throw new PsnApiException('Unable to encode JSON payload.');
         }
 
-        if ($response['status'] === 404) {
-            throw new NotFoundException(sprintf('PSN API resource "%s" was not found.', $path));
-        }
-
-        if ($response['status'] < 200 || $response['status'] >= 300) {
-            throw new PsnApiException(sprintf('PSN API request failed with status %d.', $response['status']));
-        }
-
-        return $this->decodeJsonResponse($response['body'], $response['status']);
+        return $this->request(
+            $path,
+            'POST',
+            [],
+            [
+                'Accept: application/json',
+                'Authorization: Bearer ' . $this->authTokens->getAccessToken(),
+                'Content-Type: application/json',
+                'User-Agent: psnapi-php/1.0',
+            ],
+            $body
+        );
     }
 
     /**
@@ -134,6 +139,37 @@ final class Client
             'headers' => $headersList,
             'body' => $bodySection,
         ];
+    }
+
+    /**
+     * @param array<string, scalar> $queryParameters
+     * @param list<string> $headers
+     * @return array<string, mixed>
+     */
+    private function request(string $path, string $method, array $queryParameters, array $headers, ?string $body = null): array
+    {
+        $this->assertAuthenticated();
+
+        $uri = self::MOBILE_BASE_URI . '/' . ltrim($path, '/');
+        if ($queryParameters !== []) {
+            $uri .= '?' . http_build_query($queryParameters);
+        }
+
+        $response = $this->sendCurlRequest($uri, $headers, $method, $body);
+
+        if ($response['status'] === 401 || $response['status'] === 403) {
+            throw new AuthenticationException(sprintf('PSN API authentication failed with status %d.', $response['status']));
+        }
+
+        if ($response['status'] === 404) {
+            throw new NotFoundException(sprintf('PSN API resource "%s" was not found.', $path));
+        }
+
+        if ($response['status'] < 200 || $response['status'] >= 300) {
+            throw new PsnApiException(sprintf('PSN API request failed with status %d.', $response['status']));
+        }
+
+        return $this->decodeJsonResponse($response['body'], $response['status']);
     }
 
     private function fetchAuthorizationCode(string $npsso): string
