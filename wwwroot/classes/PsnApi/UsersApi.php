@@ -6,6 +6,10 @@ namespace PsnApi;
 
 final class UsersApi
 {
+    private const GRAPHQL_OPERATION = 'metGetContextSearchResults';
+
+    private const GRAPHQL_HASH = 'ac5fb2b82c4d086ca0d272fba34418ab327a7762dd2cd620e63f175bbc5aff10';
+
     private HttpClient $httpClient;
 
     public function __construct(HttpClient $httpClient)
@@ -23,59 +27,94 @@ final class UsersApi
             return [];
         }
 
-        $payload = [
-            'age' => '69',
-            'countryCode' => 'us',
-            'domainRequests' => [
-                [
-                    'domain' => 'SocialAllAccounts',
-                    'pagination' => [
-                        'cursor' => '',
-                        'pageSize' => '50',
-                    ],
-                ],
-            ],
-            'languageCode' => 'en',
+        $variables = [
             'searchTerm' => $normalizedQuery,
+            'searchContext' => 'MobileUniversalSearchSocial',
+            'displayTitleLocale' => 'en-US',
         ];
 
-        $encodedPayload = json_encode($payload, JSON_UNESCAPED_UNICODE);
-        if ($encodedPayload === false) {
-            throw new \RuntimeException('Failed to encode search payload.');
-        }
+        $extensions = [
+            'persistedQuery' => [
+                'version' => 1,
+                'sha256Hash' => self::GRAPHQL_HASH,
+            ],
+        ];
 
-        $response = $this->httpClient->post(
-            'search/v1/universalSearch',
-            [],
-            [],
-            null,
-            $encodedPayload
+        $response = $this->httpClient->get(
+            'graphql/v1/op',
+            [
+                'operationName' => self::GRAPHQL_OPERATION,
+                'variables' => $this->encodeJson($variables),
+                'extensions' => $this->encodeJson($extensions),
+            ],
+            [
+                'apollographql-client-name' => 'PlayStationApp-Android',
+                'Accept' => 'application/json',
+            ]
         );
 
-        $data = $response->getJson();
-        if (!is_object($data) || !isset($data->domainResponses[0])) {
+        $payload = $response->getJson();
+        if (!is_object($payload) || !isset($payload->data) || !is_object($payload->data)) {
             return [];
         }
 
-        $domainResponse = $data->domainResponses[0];
-        if (!isset($domainResponse->results) || !is_array($domainResponse->results)) {
+        $searchData = $payload->data->universalContextSearch ?? null;
+        if (!is_object($searchData) || !isset($searchData->results) || !is_array($searchData->results)) {
             return [];
         }
 
         $results = [];
-        foreach ($domainResponse->results as $result) {
-            if (!isset($result->socialMetadata)) {
+        foreach ($searchData->results as $domainResult) {
+            if (!is_object($domainResult)) {
                 continue;
             }
 
-            $metadata = $result->socialMetadata;
-            $results[] = new UserSearchResult(
-                $this->httpClient,
-                (string) ($metadata->onlineId ?? ''),
-                (string) ($metadata->accountId ?? ''),
-                (string) ($metadata->country ?? ''),
-                $metadata
-            );
+            if ((string) ($domainResult->domain ?? '') !== 'SocialAllAccounts') {
+                continue;
+            }
+
+            if (!isset($domainResult->searchResults) || !is_array($domainResult->searchResults)) {
+                continue;
+            }
+
+            foreach ($domainResult->searchResults as $searchResult) {
+                if (!is_object($searchResult) || !isset($searchResult->result) || !is_object($searchResult->result)) {
+                    continue;
+                }
+
+                $player = $searchResult->result;
+                $onlineId = isset($player->onlineId) && is_scalar($player->onlineId)
+                    ? (string) $player->onlineId
+                    : '';
+                $accountId = isset($player->accountId) && is_scalar($player->accountId)
+                    ? (string) $player->accountId
+                    : '';
+
+                if ($onlineId === '' || $accountId === '') {
+                    continue;
+                }
+
+                $country = isset($player->region) && is_scalar($player->region)
+                    ? (string) $player->region
+                    : (string) ($player->country ?? '');
+
+                $metadata = (object) [
+                    'onlineId' => $onlineId,
+                    'accountId' => $accountId,
+                    'country' => $country,
+                    'avatarUrl' => isset($player->avatarUrl) ? (string) $player->avatarUrl : null,
+                    'profilePicUrl' => isset($player->profilePicUrl) ? (string) $player->profilePicUrl : null,
+                    'avatars' => $this->buildAvatarMetadata($player),
+                ];
+
+                $results[] = new UserSearchResult(
+                    $this->httpClient,
+                    $onlineId,
+                    $accountId,
+                    $country,
+                    $metadata
+                );
+            }
         }
 
         return $results;
@@ -84,5 +123,60 @@ final class UsersApi
     public function find(string $accountId): UserProfile
     {
         return new UserProfile($this->httpClient, $accountId);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $encoded = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if ($encoded === false) {
+            throw new \RuntimeException('Failed to encode request payload.');
+        }
+
+        return $encoded;
+    }
+
+    /**
+     * @return list<object>
+     */
+    private function buildAvatarMetadata(object $player): array
+    {
+        $avatars = [];
+
+        $largeAvatar = isset($player->avatarUrl) && is_scalar($player->avatarUrl)
+            ? (string) $player->avatarUrl
+            : null;
+        $profileAvatar = isset($player->profilePicUrl) && is_scalar($player->profilePicUrl)
+            ? (string) $player->profilePicUrl
+            : null;
+
+        if (is_string($largeAvatar) && $largeAvatar !== '') {
+            foreach (['xl', 'l'] as $size) {
+                $avatars[] = (object) ['size' => $size, 'url' => $largeAvatar];
+            }
+        }
+
+        if (is_string($profileAvatar) && $profileAvatar !== '') {
+            foreach (['m', 's'] as $size) {
+                $avatars[] = (object) ['size' => $size, 'url' => $profileAvatar];
+            }
+        }
+
+        if ($avatars === [] && is_string($largeAvatar) && $largeAvatar !== '') {
+            foreach (['xl', 'l', 'm', 's'] as $size) {
+                $avatars[] = (object) ['size' => $size, 'url' => $largeAvatar];
+            }
+        }
+
+        if ($avatars === [] && is_string($profileAvatar) && $profileAvatar !== '') {
+            foreach (['xl', 'l', 'm', 's'] as $size) {
+                $avatars[] = (object) ['size' => $size, 'url' => $profileAvatar];
+            }
+        }
+
+        return $avatars;
     }
 }
