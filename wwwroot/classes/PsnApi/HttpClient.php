@@ -84,7 +84,7 @@ final class HttpClient
         if ($json !== null) {
             curl_setopt($curl, CURLOPT_POSTFIELDS, $json);
         } elseif ($formParams !== null) {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($formParams));
+            curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($formParams, '', '&', PHP_QUERY_RFC3986));
         }
 
         $rawResponse = curl_exec($curl);
@@ -125,7 +125,7 @@ final class HttpClient
             return $base;
         }
 
-        return $base . '?' . http_build_query($query);
+        return $base . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 
     private function isAbsoluteUri(string $uri): bool
@@ -147,6 +147,7 @@ final class HttpClient
 
         if ($isJson) {
             $merged['Content-Type'] = $merged['Content-Type'] ?? 'application/json';
+            $merged['Accept'] = $merged['Accept'] ?? 'application/json';
         } elseif ($isForm) {
             $merged['Content-Type'] = $merged['Content-Type'] ?? 'application/x-www-form-urlencoded';
         }
