@@ -70,6 +70,10 @@ final class Client
             ]
         );
 
+        if ($response['status'] === 401 || $response['status'] === 403) {
+            throw new AuthenticationException(sprintf('PSN API authentication failed with status %d.', $response['status']));
+        }
+
         if ($response['status'] === 404) {
             throw new NotFoundException(sprintf('PSN API resource "%s" was not found.', $path));
         }

@@ -6,6 +6,7 @@ require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/PsnPlayerSearchResult.php';
 
 use PsnApi\Client;
+use PsnApi\Exception\AuthenticationException;
 
 final class PsnPlayerSearchService
 {
@@ -56,26 +57,32 @@ final class PsnPlayerSearchService
             return [];
         }
 
-        $client = $this->createAuthenticatedClient();
+        return $this->withAuthenticatedClient(function ($client) use ($normalizedPlayerName): array {
+            $results = [];
+            $count = 0;
 
-        $results = [];
-        $count = 0;
+            foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
+                $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
+                $count++;
 
-        foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
-            $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
-            $count++;
-
-            if ($count >= self::RESULT_LIMIT) {
-                break;
+                if ($count >= self::RESULT_LIMIT) {
+                    break;
+                }
             }
-        }
 
-        return $results;
+            return $results;
+        });
     }
 
-    private function createAuthenticatedClient(): object
+    /**
+     * @template TResult
+     * @param callable(object):TResult $callback
+     * @return TResult
+     */
+    private function withAuthenticatedClient(callable $callback)
     {
         $factory = $this->clientFactory;
+        $authenticationFailure = false;
 
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
@@ -100,11 +107,25 @@ final class PsnPlayerSearchService
                 }
 
                 $client->loginWithNpsso($npsso);
+            } catch (AuthenticationException $exception) {
+                $authenticationFailure = true;
 
-                return $client;
+                continue;
             } catch (Throwable $exception) {
                 continue;
             }
+
+            try {
+                return $callback($client);
+            } catch (AuthenticationException $exception) {
+                $authenticationFailure = true;
+
+                continue;
+            }
+        }
+
+        if ($authenticationFailure) {
+            throw new RuntimeException('Unable to authenticate with any worker accounts.');
         }
 
         throw new RuntimeException('Unable to login to any worker accounts.');
