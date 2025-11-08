@@ -28,7 +28,7 @@ final class CronJobBootstrapper
         $this->application->configureEnvironment();
 
         if ($loadComposerAutoload) {
-            $this->requireProjectFile('vendor/autoload.php');
+            $this->requireProjectFile('classes/PsnApi/autoload.php');
         }
 
         $initScript = $this->getProjectFilePath('init.php');

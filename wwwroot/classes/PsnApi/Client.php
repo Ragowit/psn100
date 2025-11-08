@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PsnApi;
 
 use PsnApi\Exception\AuthenticationException;
+use PsnApi\Exception\NotFoundException;
 use PsnApi\Exception\PsnApiException;
 use PsnApi\Internal\AuthTokens;
 
@@ -68,6 +69,10 @@ final class Client
                 'User-Agent: psnapi-php/1.0',
             ]
         );
+
+        if ($response['status'] === 404) {
+            throw new NotFoundException(sprintf('PSN API resource "%s" was not found.', $path));
+        }
 
         if ($response['status'] < 200 || $response['status'] >= 300) {
             throw new PsnApiException(sprintf('PSN API request failed with status %d.', $response['status']));

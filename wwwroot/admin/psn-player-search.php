@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 require_once '../init.php';
-require_once '../vendor/autoload.php';
+require_once '../classes/PsnApi/autoload.php';
 require_once '../classes/Admin/PsnPlayerSearchService.php';
 
 $searchTerm = isset($_GET['player']) ? (string) $_GET['player'] : '';

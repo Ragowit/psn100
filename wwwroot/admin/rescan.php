@@ -1,5 +1,5 @@
 <?php
-require_once("../vendor/autoload.php");
+require_once '../classes/PsnApi/autoload.php';
 require_once("../init.php");
 ?>
 <!doctype html>

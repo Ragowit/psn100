@@ -10,6 +10,8 @@ require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
 use PsnApi\Client;
+use PsnApi\Exception\AuthenticationException;
+use PsnApi\Exception\NotFoundException;
 use PsnApi\Exception\PsnApiException;
 
 class ThirtyMinuteCronJob implements CronJobInterface
@@ -350,13 +352,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $query->execute();
                 }
             } catch (Exception $e) {
-                // $e->getMessage() == "User not found", and another "Resource not found" error
-                $query = $this->database->prepare("DELETE FROM player_queue
-                    WHERE  online_id = :online_id ");
-                $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
+                if ($e instanceof NotFoundException) {
+                    $query = $this->database->prepare("DELETE FROM player_queue
+                        WHERE  online_id = :online_id ");
+                    $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
+                    $query->execute();
 
-                if ($e instanceof PsnApiException) {
                     $query = $this->database->prepare("SELECT account_id
                         FROM   player
                         WHERE  online_id = :online_id ");
@@ -374,6 +375,24 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
                         $query->execute();
                     }
+
+                    continue;
+                }
+
+                if ($e instanceof AuthenticationException) {
+                    $this->logger->log("Authentication error while scanning ". $player["online_id"] .": ". $e->getMessage());
+
+                    $query = $this->database->prepare("UPDATE setting SET scanning = :id, scan_progress = NULL WHERE id = :id");
+                    $query->bindValue(":id", $worker["id"], PDO::PARAM_INT);
+                    $query->execute();
+
+                    continue;
+                }
+
+                if ($e instanceof PsnApiException) {
+                    $this->logger->log("PSN API error while scanning ". $player["online_id"] .": ". $e->getMessage());
+                } else {
+                    $this->logger->log("Unexpected error while scanning ". $player["online_id"] .": ". $e->getMessage());
                 }
 
                 continue;

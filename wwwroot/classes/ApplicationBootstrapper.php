@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/ApplicationContainer.php';
 require_once __DIR__ . '/ApplicationRunner.php';
 require_once __DIR__ . '/MaintenanceResponder.php';
+require_once __DIR__ . '/PsnApi/autoload.php';
 
 final class ApplicationBootstrapper
 {
