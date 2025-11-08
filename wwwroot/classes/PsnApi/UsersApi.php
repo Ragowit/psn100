@@ -27,30 +27,27 @@ final class UsersApi
             return [];
         }
 
-        $variables = [
-            'searchTerm' => $normalizedQuery,
-            'searchContext' => 'MobileUniversalSearchSocial',
-            'displayTitleLocale' => 'en-US',
-        ];
-
-        $extensions = [
-            'persistedQuery' => [
-                'version' => 1,
-                'sha256Hash' => self::GRAPHQL_HASH,
+        $payload = [
+            'operationName' => self::GRAPHQL_OPERATION,
+            'variables' => $variables,
+            'extensions' => [
+                'persistedQuery' => [
+                    'version' => 1,
+                    'sha256Hash' => self::GRAPHQL_HASH,
+                ],
             ],
         ];
 
-        $response = $this->httpClient->get(
+        $response = $this->httpClient->post(
             'graphql/v1/op',
-            [
-                'operationName' => self::GRAPHQL_OPERATION,
-                'variables' => $this->encodeJson($variables),
-                'extensions' => $this->encodeJson($extensions),
-            ],
+            [],
             [
                 'apollographql-client-name' => 'PlayStationApp-Android',
+                'apollographql-client-version' => '1.0.0',
                 'Accept' => 'application/json',
-            ]
+            ],
+            null,
+            $this->encodeJson($payload)
         );
 
         $payload = $response->getJson();
