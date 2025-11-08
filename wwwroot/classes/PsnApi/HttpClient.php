@@ -104,7 +104,9 @@ final class HttpClient
         $body = $bodyPart === false ? '' : $bodyPart;
 
         if ($statusCode >= 400) {
-            throw new HttpException($statusCode, $body);
+            $message = $this->buildErrorMessage($method, $url, $statusCode, $body);
+
+            throw new HttpException($method, $url, $statusCode, $body, $message);
         }
 
         return new HttpResponse($statusCode, $this->parseHeaders($headerPart), $body);
@@ -158,6 +160,89 @@ final class HttpClient
         }
 
         return $built;
+    }
+
+    private function buildErrorMessage(string $method, string $url, int $statusCode, string $body): string
+    {
+        $summaryUrl = $this->summarizeUrl($url);
+        $details = $this->summarizeErrorBody($body);
+
+        $message = sprintf(
+            'HTTP %s %s returned status code %d',
+            strtoupper($method),
+            $summaryUrl,
+            $statusCode
+        );
+
+        if ($details !== '') {
+            $message .= ': ' . $details;
+        } else {
+            $message .= '.';
+        }
+
+        return $message;
+    }
+
+    private function summarizeUrl(string $url): string
+    {
+        $parts = parse_url($url);
+
+        if ($parts === false) {
+            return $url;
+        }
+
+        $path = ($parts['scheme'] ?? '') !== '' && ($parts['host'] ?? '') !== ''
+            ? sprintf('%s://%s%s', $parts['scheme'], $parts['host'], $parts['path'] ?? '')
+            : ($parts['path'] ?? $url);
+
+        if (!isset($parts['query']) || $parts['query'] === '') {
+            return $path;
+        }
+
+        parse_str($parts['query'], $query);
+
+        if ($query === []) {
+            return $path;
+        }
+
+        $keys = array_keys($query);
+
+        return $path . '?[' . implode(', ', $keys) . ']';
+    }
+
+    private function summarizeErrorBody(string $body): string
+    {
+        $trimmed = trim($body);
+
+        if ($trimmed === '') {
+            return '';
+        }
+
+        $decoded = json_decode($trimmed, true);
+
+        if (is_array($decoded)) {
+            $fields = [];
+
+            foreach (['error', 'error_code', 'errorCode', 'code'] as $key) {
+                if (isset($decoded[$key]) && is_scalar($decoded[$key])) {
+                    $fields[] = (string) $decoded[$key];
+                    break;
+                }
+            }
+
+            foreach (['error_description', 'errorMessage', 'message'] as $key) {
+                if (isset($decoded[$key]) && is_scalar($decoded[$key])) {
+                    $fields[] = (string) $decoded[$key];
+                    break;
+                }
+            }
+
+            if ($fields !== []) {
+                return implode(' - ', $fields);
+            }
+        }
+
+        return substr($trimmed, 0, 200);
     }
 
     /**

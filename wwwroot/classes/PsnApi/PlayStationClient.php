@@ -31,20 +31,27 @@ final class PlayStationClient
 
     public function loginWithNpsso(string $npsso): void
     {
-        $authorizeResponse = $this->authClient->get(
-            'authz/v3/oauth/authorize',
-            [
-                'access_type' => 'offline',
-                'client_id' => '09515159-7237-4370-9b40-3806e67c0891',
-                'redirect_uri' => 'com.scee.psxandroid.scecompcall://redirect',
-                'response_type' => 'code',
-                'scope' => 'psn:mobile.v2.core psn:clientapp',
-                'smcid' => 'psapp:settings-entrance',
-            ],
-            [
-                'Cookie' => 'npsso=' . $npsso,
-            ]
-        );
+        try {
+            $authorizeResponse = $this->authClient->get(
+                'authz/v3/oauth/authorize',
+                [
+                    'access_type' => 'offline',
+                    'client_id' => '09515159-7237-4370-9b40-3806e67c0891',
+                    'redirect_uri' => 'com.scee.psxandroid.scecompcall://redirect',
+                    'response_type' => 'code',
+                    'scope' => 'psn:mobile.v2.core psn:clientapp',
+                    'smcid' => 'psapp:settings-entrance',
+                ],
+                [
+                    'Cookie' => 'npsso=' . $npsso,
+                ]
+            );
+        } catch (HttpException $exception) {
+            throw $this->wrapHttpException(
+                $exception,
+                'Authorization request failed while logging in with NPSSO.'
+            );
+        }
 
         if ($authorizeResponse->getStatusCode() !== 302) {
             throw new \RuntimeException('Unexpected response from authorization endpoint.');
@@ -65,42 +72,56 @@ final class PlayStationClient
             throw new \RuntimeException('Authorization redirect missing authorization code.');
         }
 
-        $tokenResponse = $this->authClient->post(
-            'authz/v3/oauth/token',
-            [],
-            [
-                'Cookie' => 'npsso=' . $npsso,
-                'Authorization' => 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
-            ],
-            [
-                'smcid' => 'psapp:settings-entrance',
-                'access_type' => 'offline',
-                'code' => $params['code'],
-                'grant_type' => 'authorization_code',
-                'redirect_uri' => 'com.scee.psxandroid.scecompcall://redirect',
-                'scope' => 'psn:mobile.v2.core psn:clientapp',
-                'token_format' => 'jwt',
-            ]
-        );
+        try {
+            $tokenResponse = $this->authClient->post(
+                'authz/v3/oauth/token',
+                [],
+                [
+                    'Cookie' => 'npsso=' . $npsso,
+                    'Authorization' => 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
+                ],
+                [
+                    'smcid' => 'psapp:settings-entrance',
+                    'access_type' => 'offline',
+                    'code' => $params['code'],
+                    'grant_type' => 'authorization_code',
+                    'redirect_uri' => 'com.scee.psxandroid.scecompcall://redirect',
+                    'scope' => 'psn:mobile.v2.core psn:clientapp',
+                    'token_format' => 'jwt',
+                ]
+            );
+        } catch (HttpException $exception) {
+            throw $this->wrapHttpException(
+                $exception,
+                'Token exchange failed while finalizing NPSSO login.'
+            );
+        }
 
         $this->finalizeLogin($tokenResponse);
     }
 
     public function loginWithRefreshToken(string $refreshToken): void
     {
-        $tokenResponse = $this->authClient->post(
-            'authz/v3/oauth/token',
-            [],
-            [
-                'Authorization' => 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
-            ],
-            [
-                'scope' => 'psn:mobile.v2.core psn:clientapp',
-                'refresh_token' => $refreshToken,
-                'grant_type' => 'refresh_token',
-                'token_format' => 'jwt',
-            ]
-        );
+        try {
+            $tokenResponse = $this->authClient->post(
+                'authz/v3/oauth/token',
+                [],
+                [
+                    'Authorization' => 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
+                ],
+                [
+                    'scope' => 'psn:mobile.v2.core psn:clientapp',
+                    'refresh_token' => $refreshToken,
+                    'grant_type' => 'refresh_token',
+                    'token_format' => 'jwt',
+                ]
+            );
+        } catch (HttpException $exception) {
+            throw $this->wrapHttpException(
+                $exception,
+                'Token refresh failed while renewing access token.'
+            );
+        }
 
         $this->finalizeLogin($tokenResponse);
     }
@@ -151,5 +172,24 @@ final class PlayStationClient
         if (isset($payload->refresh_token, $payload->refresh_token_expires_in)) {
             $this->refreshToken = new OAuthToken((string) $payload->refresh_token, (int) $payload->refresh_token_expires_in);
         }
+    }
+
+    private function wrapHttpException(HttpException $exception, string $context): HttpException
+    {
+        $message = rtrim($context);
+        if ($message !== '') {
+            $message .= ' ';
+        }
+
+        $message .= $exception->getMessage();
+
+        return new HttpException(
+            $exception->getMethod(),
+            $exception->getUri(),
+            $exception->getStatusCode(),
+            $exception->getBody(),
+            $message,
+            $exception
+        );
     }
 }
