@@ -12,11 +12,18 @@ final class TrophyTitle
 
     private string $serviceName;
 
-    public function __construct(HttpClient $httpClient, string $npCommunicationId, string $serviceName = 'trophy')
-    {
+    private ?string $accountId;
+
+    public function __construct(
+        HttpClient $httpClient,
+        string $npCommunicationId,
+        string $serviceName = 'trophy',
+        ?string $accountId = null
+    ) {
         $this->httpClient = $httpClient;
         $this->npCommunicationId = $npCommunicationId;
         $this->serviceName = $serviceName;
+        $this->accountId = $accountId;
     }
 
     public function npCommunicationId(): string
@@ -34,6 +41,11 @@ final class TrophyTitle
      */
     public function trophyGroups(): array
     {
-        return TrophyGroup::forTitle($this->httpClient, null, $this->npCommunicationId, $this->serviceName);
+        return TrophyGroup::forTitle(
+            $this->httpClient,
+            $this->accountId,
+            $this->npCommunicationId,
+            $this->serviceName
+        );
     }
 }

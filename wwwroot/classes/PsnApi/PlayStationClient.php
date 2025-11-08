@@ -149,9 +149,12 @@ final class PlayStationClient
         return new UsersApi($this->httpClient);
     }
 
-    public function trophies(string $npCommunicationId, string $serviceName = 'trophy'): TrophyTitle
-    {
-        return new TrophyTitle($this->httpClient, $npCommunicationId, $serviceName);
+    public function trophies(
+        string $npCommunicationId,
+        string $serviceName = 'trophy',
+        ?string $accountId = null
+    ): TrophyTitle {
+        return new TrophyTitle($this->httpClient, $npCommunicationId, $serviceName, $accountId);
     }
 
     private function finalizeLogin(HttpResponse $response): void

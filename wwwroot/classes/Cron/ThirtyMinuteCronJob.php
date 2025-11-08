@@ -704,7 +704,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $metaQuery->execute();
 
                         // Get "groups" (game and DLCs)
-                        foreach ($client->trophies($npid, $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
+                        foreach (
+                            $client->trophies($npid, $trophyTitle->serviceName(), $user->accountId())->trophyGroups()
+                            as $trophyGroup
+                        ) {
                             $groupNewTrophies = false;
                             // Add trophy group (game + dlcs) into database
                             $existingGroupQuery = $this->database->prepare(

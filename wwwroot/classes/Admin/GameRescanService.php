@@ -88,7 +88,8 @@ class GameRescanService
                 $trophyTitle,
                 $npCommunicationId,
                 $progressListener,
-                $differenceTracker
+                $differenceTracker,
+                $user->accountId()
             );
             $this->notifyProgress($progressListener, 70, 'Recalculating player statistics…');
             $this->recalculateTrophies(
@@ -323,7 +324,8 @@ class GameRescanService
         object $trophyTitle,
         string $npCommunicationId,
         ?GameRescanProgressListener $progressListener,
-        GameRescanDifferenceTracker $differenceTracker
+        GameRescanDifferenceTracker $differenceTracker,
+        string $accountId
     ): array {
         $existingTitleInfo = $this->fetchExistingTrophyTitleInfo($npCommunicationId);
         $existingGroupData = $this->fetchExistingTrophyGroupData($npCommunicationId);
@@ -354,7 +356,11 @@ class GameRescanService
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
-        $trophies = $client->trophies($npCommunicationId, $trophyTitle->serviceName());
+        $trophies = $client->trophies(
+            $npCommunicationId,
+            $trophyTitle->serviceName(),
+            $accountId
+        );
         $groupData = [];
         $totalSteps = 0;
 
