@@ -184,27 +184,31 @@ final class UsersApi
     private function extractCountry(object $player): string
     {
         $countrySources = [
-            'region',
             'country',
             'countryCode',
+            'region',
             'accountCountry',
         ];
 
-        if (isset($player->socialMetadata) && is_object($player->socialMetadata)) {
-            foreach ($countrySources as $source) {
-                if (isset($player->socialMetadata->{$source}) && is_scalar($player->socialMetadata->{$source})) {
-                    $country = strtoupper((string) $player->socialMetadata->{$source});
+        $objects = [];
 
-                    if ($country !== '') {
-                        return $country;
-                    }
-                }
+        if (isset($player->socialMetadata) && is_object($player->socialMetadata)) {
+            $objects[] = $player->socialMetadata;
+
+            if (isset($player->socialMetadata->personalDetail) && is_object($player->socialMetadata->personalDetail)) {
+                $objects[] = $player->socialMetadata->personalDetail;
             }
         }
 
-        foreach ($countrySources as $source) {
-            if (isset($player->{$source}) && is_scalar($player->{$source})) {
-                $country = strtoupper((string) $player->{$source});
+        $objects[] = $player;
+
+        foreach ($objects as $object) {
+            foreach ($countrySources as $source) {
+                if (!isset($object->{$source}) || !is_scalar($object->{$source})) {
+                    continue;
+                }
+
+                $country = strtoupper((string) $object->{$source});
 
                 if ($country !== '') {
                     return $country;
