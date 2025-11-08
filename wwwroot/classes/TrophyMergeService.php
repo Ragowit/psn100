@@ -1033,11 +1033,13 @@ SQL
                     INSERT INTO trophy_title_meta (
                         np_communication_id,
                         message,
-                        parent_np_communication_id
+                        parent_np_communication_id,
+                        status
                     ) VALUES (
                         :np_communication_id,
                         '',
-                        :parent_np_communication_id
+                        :parent_np_communication_id,
+                        2
                     )
 SQL
                 );
