@@ -114,7 +114,21 @@ final class Trophy extends AbstractResource
 
     public function progressTargetValue(): string
     {
-        return (string) ($this->pluck('trophyProgressTargetValue') ?? '');
+        $value = $this->pluck('trophyProgressTargetValue');
+
+        if ($value === null) {
+            $value = $this->pluck('comparedUser.progressTargetValue');
+        }
+
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return (string) $value;
     }
 
     public function rewardName(): string
@@ -127,13 +141,71 @@ final class Trophy extends AbstractResource
         return (string) ($this->pluck('trophyRewardImageUrl') ?? '');
     }
 
+    public function earned(): bool
+    {
+        $earned = $this->pluck('comparedUser.earned');
+
+        if ($earned === null) {
+            $earned = $this->pluck('earned');
+        }
+
+        if ($earned === null) {
+            return false;
+        }
+
+        return (bool) $earned;
+    }
+
+    public function earnedDateTime(): string
+    {
+        $earnedDateTime = $this->pluck('comparedUser.earnedDateTime');
+
+        if ($earnedDateTime === null) {
+            $earnedDateTime = $this->pluck('comparedUser.earnedDate');
+        }
+
+        if ($earnedDateTime === null) {
+            $earnedDateTime = $this->pluck('earnedDateTime');
+        }
+
+        if ($earnedDateTime === null) {
+            $earnedDateTime = $this->pluck('earnedDate');
+        }
+
+        return is_string($earnedDateTime) ? $earnedDateTime : '';
+    }
+
+    public function progress(): string
+    {
+        $progress = $this->pluck('comparedUser.progress');
+
+        if ($progress === null) {
+            $progress = $this->pluck('progress');
+        }
+
+        if ($progress === null) {
+            return '';
+        }
+
+        if (is_int($progress) || is_float($progress)) {
+            return (string) $progress;
+        }
+
+        return is_string($progress) ? $progress : '';
+    }
+
     protected function fetch(): object
     {
-        return $this->httpClient
-            ->get(
-                'trophy/v1/npCommunicationIds/' . $this->npCommunicationId . '/trophyGroups/' . $this->groupId . '/trophies/' . $this->trophyId,
-                ['npServiceName' => $this->serviceName]
-            )
-            ->getJson();
+        $query = ['npServiceName' => $this->serviceName];
+
+        if ($this->accountId !== null) {
+            $uri = 'trophy/v1/users/' . $this->accountId . '/npCommunicationIds/' . $this->npCommunicationId
+                . '/trophyGroups/' . $this->groupId . '/trophies/' . $this->trophyId;
+        } else {
+            $uri = 'trophy/v1/npCommunicationIds/' . $this->npCommunicationId . '/trophyGroups/' . $this->groupId
+                . '/trophies/' . $this->trophyId;
+        }
+
+        return $this->httpClient->get($uri, $query)->getJson();
     }
 }

@@ -10,6 +10,7 @@ require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../PsnApi/autoload.php';
 
+use PsnApi\HttpException;
 use PsnApi\PlayStationClient;
 
 class ThirtyMinuteCronJob implements CronJobInterface
@@ -356,7 +357,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
                 $query->execute();
 
-                if (get_class($e) == "Tustin\Haste\Exception\NotFoundHttpException") {
+                if ($e instanceof HttpException && $e->getStatusCode() === 404) {
                     $query = $this->database->prepare("SELECT account_id
                         FROM   player
                         WHERE  online_id = :online_id ");

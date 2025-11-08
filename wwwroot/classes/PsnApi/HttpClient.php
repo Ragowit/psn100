@@ -101,8 +101,13 @@ final class HttpClient
 
         $headerPart = substr($rawResponse, 0, $headerSize);
         $bodyPart = substr($rawResponse, $headerSize);
+        $body = $bodyPart === false ? '' : $bodyPart;
 
-        return new HttpResponse($statusCode, $this->parseHeaders($headerPart), $bodyPart === false ? '' : $bodyPart);
+        if ($statusCode >= 400) {
+            throw new HttpException($statusCode, $body);
+        }
+
+        return new HttpResponse($statusCode, $this->parseHeaders($headerPart), $body);
     }
 
     /**
