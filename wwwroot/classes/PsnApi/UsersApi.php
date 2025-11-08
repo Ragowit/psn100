@@ -196,6 +196,8 @@ final class UsersApi
         $objects[] = $player;
 
         $countrySources = [
+            'countryAlphaTwo',
+            'countryAlpha2',
             'countryCode',
             'country',
             'accountCountry',
