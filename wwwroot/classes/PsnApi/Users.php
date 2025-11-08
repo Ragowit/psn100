@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PsnApi;
 
 use ArrayIterator;
+use PsnApi\Exception\AuthenticationException;
 
 final class Users
 {
@@ -27,21 +28,32 @@ final class Users
             return [];
         }
 
-        $response = $this->client->postJson('/api/search/v1/universalSearch', [
-            'age' => '69',
-            'countryCode' => 'us',
-            'domainRequests' => [
-                [
-                    'domain' => 'SocialAllAccounts',
-                    'pagination' => [
-                        'cursor' => '',
-                        'pageSize' => (string) self::PAGE_SIZE,
+        try {
+            $response = $this->client->postJson('/api/search/v1/universalSearch', [
+                'age' => 69,
+                'countryCode' => 'us',
+                'domainRequests' => [
+                    [
+                        'domain' => 'SocialAllAccounts',
+                        'pagination' => [
+                            'cursor' => '',
+                            'pageSize' => self::PAGE_SIZE,
+                        ],
                     ],
                 ],
-            ],
-            'languageCode' => 'en',
-            'searchTerm' => $trimmed,
-        ]);
+                'languageCode' => 'en',
+                'searchTerm' => $trimmed,
+            ]);
+        } catch (AuthenticationException $exception) {
+            $response = $this->client->get('/api/search/v1/universalSearch', [
+                'searchDomains' => 'SocialAllAccounts',
+                'countryCode' => 'us',
+                'languageCode' => 'en',
+                'age' => '69',
+                'pageSize' => (string) self::PAGE_SIZE,
+                'searchTerm' => $trimmed,
+            ]);
+        }
 
         $results = [];
         foreach ($response['domainResponses'] ?? [] as $domainResponse) {
