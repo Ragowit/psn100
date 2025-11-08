@@ -4,7 +4,9 @@
             "php": "8.4.0"
         }
     },
-    "require-dev": {
-        "tustin/psn-php": "dev-master"
+    "autoload": {
+        "psr-4": {
+            "PsnApi\\": "classes/PsnApi/"
+        }
     }
 }

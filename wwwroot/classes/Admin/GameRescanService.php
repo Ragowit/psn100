@@ -9,7 +9,7 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
-use Tustin\PlayStation\Client;
+use PsnApi\Client;
 
 class GameRescanService
 {

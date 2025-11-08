@@ -30,7 +30,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
     public function testSearchReturnsUpToFiftyResults(): void
     {
-        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'));
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $searchResults = [];
         for ($index = 1; $index <= 60; $index++) {
@@ -58,8 +58,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
     public function testSearchSkipsWorkersThatFailToLogin(): void
     {
         $workers = [
-            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00')),
-            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00')),
+            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
         $userCollection = new StubUserCollection([
