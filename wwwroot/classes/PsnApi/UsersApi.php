@@ -29,7 +29,11 @@ final class UsersApi
 
         $payload = [
             'operationName' => self::GRAPHQL_OPERATION,
-            'variables' => $variables,
+            'variables' => [
+				'searchTerm' => $normalizedQuery,
+				'searchContext' => 'MobileUniversalSearchSocial',
+				'displayTitleLocale' => 'en-US',
+			],
             'extensions' => [
                 'persistedQuery' => [
                     'version' => 1,
