@@ -88,7 +88,7 @@ final class PlayStationClient
                 'Authorization' => 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
             ],
             [
-                'smcid' => 'psapp%3Asettings-entrance',
+                'smcid' => 'psapp:settings-entrance',
                 'access_type' => 'offline',
                 'code' => $params['code'],
                 'service_logo' => 'ps',
