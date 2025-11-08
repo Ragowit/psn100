@@ -1020,6 +1020,33 @@ SQL
         $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
+        if ($query->rowCount() === 0) {
+            $metaExists = $this->database->prepare(
+                'SELECT 1 FROM trophy_title_meta WHERE np_communication_id = :np_communication_id'
+            );
+            $metaExists->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $metaExists->execute();
+
+            if ($metaExists->fetchColumn() === false) {
+                $metaInsert = $this->database->prepare(
+                    <<<'SQL'
+                    INSERT INTO trophy_title_meta (
+                        np_communication_id,
+                        message,
+                        parent_np_communication_id
+                    ) VALUES (
+                        :np_communication_id,
+                        '',
+                        :parent_np_communication_id
+                    )
+SQL
+                );
+                $metaInsert->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+                $metaInsert->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+                $metaInsert->execute();
+            }
+        }
+
         $this->updateParentPlatform($parentNpCommunicationId, $childNpCommunicationId);
     }
 
