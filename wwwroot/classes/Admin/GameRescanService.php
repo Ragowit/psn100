@@ -8,8 +8,9 @@ require_once __DIR__ . '/GameRescanResult.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../PsnApi/autoload.php';
 
-use Tustin\PlayStation\Client;
+use PsnApi\PlayStationClient;
 
 class GameRescanService
 {
@@ -138,12 +139,12 @@ class GameRescanService
         return str_starts_with($npCommunicationId, self::ORIGINAL_GAME_PREFIX);
     }
 
-    private function loginToWorker(): Client
+    private function loginToWorker(): PlayStationClient
     {
         while (true) {
             foreach ($this->fetchWorkers() as $worker) {
                 try {
-                    $client = new Client();
+                    $client = new PlayStationClient();
                     $client->loginWithNpsso($worker['npsso']);
 
                     return $client;
@@ -179,7 +180,7 @@ class GameRescanService
         $query->execute();
     }
 
-    private function findAccessibleUserWithGame(Client $client, string $npCommunicationId): ?object
+    private function findAccessibleUserWithGame(PlayStationClient $client, string $npCommunicationId): ?object
     {
         $query = $this->database->prepare(
             'SELECT account_id
@@ -318,7 +319,7 @@ class GameRescanService
     }
 
     private function updateTrophyTitle(
-        Client $client,
+        PlayStationClient $client,
         object $trophyTitle,
         string $npCommunicationId,
         ?GameRescanProgressListener $progressListener,

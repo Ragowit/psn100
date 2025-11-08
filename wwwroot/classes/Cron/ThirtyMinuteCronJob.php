@@ -8,8 +8,9 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../PsnApi/autoload.php';
 
-use Tustin\PlayStation\Client;
+use PsnApi\PlayStationClient;
 
 class ThirtyMinuteCronJob implements CronJobInterface
 {
@@ -130,7 +131,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $worker = $query->fetch();
 
                 try {
-                    $client = new Client();
+                    $client = new PlayStationClient();
                     $npsso = $worker["npsso"];
                     $client->loginWithNpsso($npsso);
 

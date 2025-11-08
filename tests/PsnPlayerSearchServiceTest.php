@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/../wwwroot/classes/PsnApi/autoload.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
@@ -30,7 +31,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
     public function testSearchReturnsUpToFiftyResults(): void
     {
-        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'));
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $searchResults = [];
         for ($index = 1; $index <= 60; $index++) {
@@ -58,8 +59,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
     public function testSearchSkipsWorkersThatFailToLogin(): void
     {
         $workers = [
-            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00')),
-            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00')),
+            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
         $userCollection = new StubUserCollection([

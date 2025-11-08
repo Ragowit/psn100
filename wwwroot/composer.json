@@ -1,10 +1,10 @@
 {
+    "name": "psn100/app",
+    "description": "PSN100 web application",
+    "license": "proprietary",
     "config": {
         "platform": {
             "php": "8.4.0"
         }
-    },
-    "require-dev": {
-        "tustin/psn-php": "dev-master"
     }
 }

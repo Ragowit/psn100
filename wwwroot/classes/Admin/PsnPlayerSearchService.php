@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/PsnPlayerSearchResult.php';
+require_once __DIR__ . '/../PsnApi/autoload.php';
 
-use Tustin\PlayStation\Client;
+use PsnApi\PlayStationClient;
 
 final class PsnPlayerSearchService
 {
@@ -29,7 +30,7 @@ final class PsnPlayerSearchService
     {
         $this->workerFetcher = $workerFetcher;
         $this->clientFactory = $clientFactory ?? static function (): object {
-            return new Client();
+            return new PlayStationClient();
         };
     }
 

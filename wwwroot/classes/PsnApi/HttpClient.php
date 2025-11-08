@@ -1,0 +1,186 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PsnApi;
+
+final class HttpClient
+{
+    private ?string $baseUri;
+
+    /**
+     * @var array<string, string>
+     */
+    private array $defaultHeaders;
+
+    public function __construct(?string $baseUri = null, array $defaultHeaders = [])
+    {
+        $this->baseUri = $baseUri;
+        $this->defaultHeaders = $defaultHeaders;
+    }
+
+    public function setHeader(string $name, string $value): void
+    {
+        $this->defaultHeaders[$name] = $value;
+    }
+
+    public function removeHeader(string $name): void
+    {
+        unset($this->defaultHeaders[$name]);
+    }
+
+    /**
+     * @param array<string, scalar> $query
+     * @param array<string, string> $headers
+     */
+    public function get(string $uri, array $query = [], array $headers = []): HttpResponse
+    {
+        return $this->request('GET', $uri, $query, $headers);
+    }
+
+    /**
+     * @param array<string, scalar> $query
+     * @param array<string, string> $headers
+     * @param array<string, scalar>|null $formParams
+     */
+    public function post(
+        string $uri,
+        array $query = [],
+        array $headers = [],
+        ?array $formParams = null,
+        ?string $json = null
+    ): HttpResponse {
+        return $this->request('POST', $uri, $query, $headers, $formParams, $json);
+    }
+
+    /**
+     * @param array<string, scalar> $query
+     * @param array<string, string> $headers
+     * @param array<string, scalar>|null $formParams
+     */
+    private function request(
+        string $method,
+        string $uri,
+        array $query = [],
+        array $headers = [],
+        ?array $formParams = null,
+        ?string $json = null
+    ): HttpResponse {
+        $url = $this->buildUrl($uri, $query);
+
+        $curl = curl_init($url);
+        if ($curl === false) {
+            throw new \RuntimeException('Failed to initialize cURL.');
+        }
+
+        $requestHeaders = $this->buildHeaders($headers, $json !== null, $formParams !== null);
+
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HEADER, true);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $requestHeaders);
+
+        if ($json !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $json);
+        } elseif ($formParams !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($formParams));
+        }
+
+        $rawResponse = curl_exec($curl);
+        if ($rawResponse === false) {
+            $error = curl_error($curl);
+            curl_close($curl);
+
+            throw new \RuntimeException('HTTP request failed: ' . $error);
+        }
+
+        $statusCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $headerSize = (int) curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+        curl_close($curl);
+
+        $headerPart = substr($rawResponse, 0, $headerSize);
+        $bodyPart = substr($rawResponse, $headerSize);
+
+        return new HttpResponse($statusCode, $this->parseHeaders($headerPart), $bodyPart === false ? '' : $bodyPart);
+    }
+
+    /**
+     * @param array<string, scalar> $query
+     */
+    private function buildUrl(string $uri, array $query): string
+    {
+        if ($this->isAbsoluteUri($uri)) {
+            $base = $uri;
+        } else {
+            $base = rtrim((string) $this->baseUri, '/') . '/' . ltrim($uri, '/');
+        }
+
+        if ($query === []) {
+            return $base;
+        }
+
+        return $base . '?' . http_build_query($query);
+    }
+
+    private function isAbsoluteUri(string $uri): bool
+    {
+        return str_starts_with($uri, 'http://') || str_starts_with($uri, 'https://');
+    }
+
+    /**
+     * @param array<string, string> $headers
+     * @return list<string>
+     */
+    private function buildHeaders(array $headers, bool $isJson, bool $isForm): array
+    {
+        $merged = $this->defaultHeaders;
+
+        foreach ($headers as $name => $value) {
+            $merged[$name] = $value;
+        }
+
+        if ($isJson) {
+            $merged['Content-Type'] = $merged['Content-Type'] ?? 'application/json';
+        } elseif ($isForm) {
+            $merged['Content-Type'] = $merged['Content-Type'] ?? 'application/x-www-form-urlencoded';
+        }
+
+        $built = [];
+        foreach ($merged as $name => $value) {
+            $built[] = $name . ': ' . $value;
+        }
+
+        return $built;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function parseHeaders(string $headerChunk): array
+    {
+        $headers = [];
+
+        $lines = preg_split('/\r?\n/', trim($headerChunk));
+        if ($lines === false) {
+            return $headers;
+        }
+
+        foreach ($lines as $line) {
+            if ($line === '') {
+                continue;
+            }
+
+            if (str_contains($line, ':')) {
+                [$name, $value] = explode(':', $line, 2);
+                $name = trim($name);
+                $value = trim($value);
+
+                $headers[$name] ??= [];
+                $headers[$name][] = $value;
+            }
+        }
+
+        return $headers;
+    }
+}
