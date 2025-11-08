@@ -183,34 +183,34 @@ final class UsersApi
 
     private function extractCountry(object $player): string
     {
-        $countrySources = [
-            'country',
-            'countryCode',
-            'region',
-            'accountCountry',
-        ];
-
         $objects = [];
 
         if (isset($player->socialMetadata) && is_object($player->socialMetadata)) {
-            $objects[] = $player->socialMetadata;
-
             if (isset($player->socialMetadata->personalDetail) && is_object($player->socialMetadata->personalDetail)) {
                 $objects[] = $player->socialMetadata->personalDetail;
             }
+
+            $objects[] = $player->socialMetadata;
         }
 
         $objects[] = $player;
 
+        $countrySources = [
+            'countryCode',
+            'country',
+            'accountCountry',
+            'region',
+        ];
+
         foreach ($objects as $object) {
             foreach ($countrySources as $source) {
-                if (!isset($object->{$source}) || !is_scalar($object->{$source})) {
+                if (!isset($object->{$source})) {
                     continue;
                 }
 
-                $country = strtoupper((string) $object->{$source});
+                $country = $this->normalizeCountry($object->{$source});
 
-                if ($country !== '') {
+                if ($country !== null) {
                     return $country;
                 }
             }
@@ -240,6 +240,69 @@ final class UsersApi
 
         if (isset($player->personalDetail) && is_object($player->personalDetail) && isset($player->personalDetail->aboutMe) && is_scalar($player->personalDetail->aboutMe)) {
             return (string) $player->personalDetail->aboutMe;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function normalizeCountry($value): ?string
+    {
+        if (is_string($value) || is_numeric($value)) {
+            $country = strtoupper(trim((string) $value));
+
+            if ($country === '') {
+                return null;
+            }
+
+            if (preg_match('/^[A-Z]{2}$/', $country) === 1) {
+                return $country;
+            }
+
+            if (preg_match('/^[A-Z]{3}$/', $country) === 1) {
+                return $country;
+            }
+
+            if (preg_match('/^[A-Z]{2}_[A-Z]{2}$/', $country) === 1) {
+                return substr($country, -2);
+            }
+
+            return $country;
+        }
+
+        if (is_object($value)) {
+            foreach ([
+                'alphaTwoCode',
+                'alpha2',
+                'alphaTwo',
+                'isoCode',
+                'code',
+                'value',
+            ] as $property) {
+                if (!isset($value->{$property})) {
+                    continue;
+                }
+
+                $country = $this->normalizeCountry($value->{$property});
+
+                if ($country !== null) {
+                    return $country;
+                }
+            }
+
+            return null;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $country = $this->normalizeCountry($item);
+
+                if ($country !== null) {
+                    return $country;
+                }
+            }
         }
 
         return null;
