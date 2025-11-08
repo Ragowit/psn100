@@ -190,16 +190,6 @@ final class UsersApi
             'accountCountry',
         ];
 
-        foreach ($countrySources as $source) {
-            if (isset($player->{$source}) && is_scalar($player->{$source})) {
-                $country = strtoupper((string) $player->{$source});
-
-                if ($country !== '') {
-                    return $country;
-                }
-            }
-        }
-
         if (isset($player->socialMetadata) && is_object($player->socialMetadata)) {
             foreach ($countrySources as $source) {
                 if (isset($player->socialMetadata->{$source}) && is_scalar($player->socialMetadata->{$source})) {
@@ -208,6 +198,16 @@ final class UsersApi
                     if ($country !== '') {
                         return $country;
                     }
+                }
+            }
+        }
+
+        foreach ($countrySources as $source) {
+            if (isset($player->{$source}) && is_scalar($player->{$source})) {
+                $country = strtoupper((string) $player->{$source});
+
+                if ($country !== '') {
+                    return $country;
                 }
             }
         }
