@@ -55,6 +55,10 @@ final class HttpClient
             $bodyPart = $this->decodeBody($bodyPart, $headersMap['content-encoding']);
         }
 
+        if ($bodyPart !== '') {
+            $bodyPart = $this->stripUtf8Bom($bodyPart);
+        }
+
         if ($statusCode === 401) {
             throw new AuthenticationException('Authentication failed with the PlayStation Network API.', $statusCode);
         }
@@ -202,6 +206,15 @@ final class HttpClient
                 case 'none':
                     break;
             }
+        }
+
+        return $body;
+    }
+
+    private function stripUtf8Bom(string $body): string
+    {
+        if (substr($body, 0, 3) === "\xEF\xBB\xBF") {
+            return substr($body, 3);
         }
 
         return $body;
