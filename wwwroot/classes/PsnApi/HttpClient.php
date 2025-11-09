@@ -29,6 +29,7 @@ final class HttpClient
         curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($handle, CURLOPT_HTTPHEADER, $formattedHeaders);
         curl_setopt($handle, CURLOPT_HEADER, true);
+        curl_setopt($handle, CURLOPT_ENCODING, '');
 
         if ($body !== null) {
             curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
@@ -90,6 +91,7 @@ final class HttpClient
         curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($handle, CURLOPT_HTTPHEADER, $formattedHeaders);
         curl_setopt($handle, CURLOPT_HEADER, true);
+        curl_setopt($handle, CURLOPT_ENCODING, '');
         curl_setopt($handle, CURLOPT_NOBODY, true);
         curl_setopt($handle, CURLOPT_FOLLOWLOCATION, false);
 
