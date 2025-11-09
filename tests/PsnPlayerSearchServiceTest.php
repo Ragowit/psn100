@@ -111,7 +111,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->fail('Expected RuntimeException to be thrown when no worker can authenticate.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Admin player search failed while creating an authenticated client: RuntimeException: Unable to login to any worker accounts.',
+                'Admin player search failed while creating an authenticated client: RuntimeException: Unable to login to any worker accounts: worker fetcher did not return any Worker instances.',
                 $exception->getMessage()
             );
         }
@@ -141,7 +141,69 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->fail('Expected RuntimeException to be thrown when the search fails.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Admin player search failed while querying "example": RuntimeException: API offline',
+                'Admin player search failed while querying "example" using worker #1: RuntimeException: API offline',
+                $exception->getMessage()
+            );
+        }
+    }
+
+    public function testSearchReportsAuthenticationFailuresWithDetails(): void
+    {
+        $workers = [
+            new Worker(1, '', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
+        ];
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($workers): array {
+                return $workers;
+            },
+            static function (): object {
+                return new StubClient(
+                    new StubUserCollection([]),
+                    static function (): void {
+                        throw new RuntimeException('Invalid credentials.');
+                    }
+                );
+            }
+        );
+
+        try {
+            $service->search('example');
+            $this->fail('Expected RuntimeException to be thrown when authentication fails.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Admin player search failed while creating an authenticated client: RuntimeException: Unable to login to any worker accounts: Worker #1 has no NPSSO token.; Worker #2 login failed: RuntimeException: Invalid credentials.',
+                $exception->getMessage()
+            );
+        }
+    }
+
+    public function testSearchDescribesExceptionsWithoutMessages(): void
+    {
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function (): object {
+                return new StubClient(
+                    new StubUserCollection([
+                        'silent' => static function (): iterable {
+                            throw new RuntimeException('');
+                        },
+                    ])
+                );
+            }
+        );
+
+        try {
+            $service->search('silent');
+            $this->fail('Expected RuntimeException to be thrown when the search fails.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Admin player search failed while querying "silent" using worker #1: RuntimeException (no message provided)',
                 $exception->getMessage()
             );
         }

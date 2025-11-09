@@ -57,13 +57,12 @@ final class PsnPlayerSearchService
         }
 
         try {
-            $client = $this->createAuthenticatedClient();
+            ['client' => $client, 'worker' => $worker] = $this->createAuthenticatedClient();
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf(
-                    'Admin player search failed while creating an authenticated client: %s: %s',
-                    get_class($exception),
-                    $exception->getMessage()
+                    'Admin player search failed while creating an authenticated client: %s',
+                    $this->describeException($exception)
                 ),
                 (int) $exception->getCode(),
                 $exception
@@ -85,10 +84,10 @@ final class PsnPlayerSearchService
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf(
-                    'Admin player search failed while querying "%s": %s: %s',
+                    'Admin player search failed while querying "%s" using worker #%d: %s',
                     $normalizedPlayerName,
-                    get_class($exception),
-                    $exception->getMessage()
+                    $worker->getId(),
+                    $this->describeException($exception)
                 ),
                 (int) $exception->getCode(),
                 $exception
@@ -98,18 +97,34 @@ final class PsnPlayerSearchService
         return $results;
     }
 
-    private function createAuthenticatedClient(): object
+    /**
+     * @return array{client: object, worker: Worker}
+     */
+    private function createAuthenticatedClient(): array
     {
         $factory = $this->clientFactory;
 
+        $authenticationErrors = [];
+        $encounteredWorker = false;
+
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
+                $authenticationErrors[] = sprintf(
+                    'Worker fetcher returned unexpected value (%s).',
+                    get_debug_type($worker)
+                );
                 continue;
             }
 
-            $npsso = $worker->getNpsso();
+            $encounteredWorker = true;
+
+            $npsso = trim($worker->getNpsso());
 
             if ($npsso === '') {
+                $authenticationErrors[] = sprintf(
+                    'Worker #%d has no NPSSO token.',
+                    $worker->getId()
+                );
                 continue;
             }
 
@@ -126,12 +141,44 @@ final class PsnPlayerSearchService
 
                 $client->loginWithNpsso($npsso);
 
-                return $client;
+                return [
+                    'client' => $client,
+                    'worker' => $worker,
+                ];
             } catch (Throwable $exception) {
-                continue;
+                $authenticationErrors[] = sprintf(
+                    'Worker #%d login failed: %s',
+                    $worker->getId(),
+                    $this->describeException($exception)
+                );
             }
         }
 
-        throw new RuntimeException('Unable to login to any worker accounts.');
+        if (!$encounteredWorker) {
+            $details = $authenticationErrors === [] ? '' : ' Details: ' . implode(' ', $authenticationErrors);
+
+            throw new RuntimeException(
+                'Unable to login to any worker accounts: worker fetcher did not return any Worker instances.' . $details
+            );
+        }
+
+        if ($authenticationErrors === []) {
+            throw new RuntimeException('Unable to login to any worker accounts: no workers with NPSSO tokens were available.');
+        }
+
+        throw new RuntimeException(
+            'Unable to login to any worker accounts: ' . implode('; ', $authenticationErrors)
+        );
+    }
+
+    private function describeException(Throwable $exception): string
+    {
+        $message = $exception->getMessage();
+
+        if ($message === '') {
+            return sprintf('%s (no message provided)', get_class($exception));
+        }
+
+        return sprintf('%s: %s', get_class($exception), $message);
     }
 }
