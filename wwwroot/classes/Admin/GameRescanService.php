@@ -8,8 +8,9 @@ require_once __DIR__ . '/GameRescanResult.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../PsnApi/bootstrap.php';
 
-use Tustin\PlayStation\Client;
+use Achievements\PsnApi\Client;
 
 class GameRescanService
 {

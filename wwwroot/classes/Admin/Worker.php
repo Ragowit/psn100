@@ -22,7 +22,7 @@ final class Worker
         string $npsso,
         string $scanning,
         DateTimeImmutable $scanStart,
-        ?array $scanProgress
+        ?array $scanProgress = null
     ) {
         $this->id = $id;
         $this->npsso = $npsso;

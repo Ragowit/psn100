@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/PsnPlayerSearchResult.php';
+require_once __DIR__ . '/../PsnApi/bootstrap.php';
 
-use Tustin\PlayStation\Client;
+use Achievements\PsnApi\Client;
 
 final class PsnPlayerSearchService
 {
