@@ -30,7 +30,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
     public function testSearchReturnsUpToFiftyResults(): void
     {
-        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'));
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $searchResults = [];
         for ($index = 1; $index <= 60; $index++) {
@@ -58,12 +58,12 @@ final class PsnPlayerSearchServiceTest extends TestCase
     public function testSearchSkipsWorkersThatFailToLogin(): void
     {
         $workers = [
-            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00')),
-            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00')),
+            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
         $userCollection = new StubUserCollection([
-            'example' => [new StubUserSearchResult('Hunter', '42', 'SE')],
+            'example' => [new StubUserSearchResult('Hunter', '42', 'se')],
         ]);
 
         $clients = [
@@ -93,6 +93,34 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertSame('Hunter', $results[0]->getOnlineId());
+        $this->assertSame('SE', $results[0]->getCountry());
+    }
+
+    public function testSearchNormalizesCountryCodes(): void
+    {
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+
+        $userCollection = new StubUserCollection([
+            'example' => [
+                new StubUserSearchResult('First', '1', 'se'),
+                new StubUserSearchResult('Second', '2', '123'),
+            ],
+        ]);
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use ($userCollection): object {
+                return new StubClient($userCollection);
+            }
+        );
+
+        $results = $service->search('example');
+
+        $this->assertCount(2, $results);
+        $this->assertSame('SE', $results[0]->getCountry());
+        $this->assertSame('US', $results[1]->getCountry());
     }
 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void

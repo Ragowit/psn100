@@ -10,6 +10,7 @@ use Tustin\PlayStation\Client;
 final class PsnPlayerSearchService
 {
     private const RESULT_LIMIT = 50;
+    private const DEFAULT_COUNTRY_CODE = 'US';
 
     /**
      * @var callable(): iterable<Worker>
@@ -62,7 +63,15 @@ final class PsnPlayerSearchService
         $count = 0;
 
         foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
-            $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
+            $onlineId = method_exists($userSearchResult, 'onlineId') ? (string) $userSearchResult->onlineId() : '';
+            $accountId = method_exists($userSearchResult, 'accountId') ? (string) $userSearchResult->accountId() : '';
+            $country = method_exists($userSearchResult, 'country') ? (string) $userSearchResult->country() : null;
+
+            $results[] = new PsnPlayerSearchResult(
+                $onlineId,
+                $accountId,
+                $this->normalizeCountryCode($country)
+            );
             $count++;
 
             if ($count >= self::RESULT_LIMIT) {
@@ -71,6 +80,17 @@ final class PsnPlayerSearchService
         }
 
         return $results;
+    }
+
+    private function normalizeCountryCode(?string $countryCode): string
+    {
+        $normalized = strtoupper(trim((string) $countryCode));
+
+        if (strlen($normalized) === 2 && preg_match('/^[A-Z]{2}$/', $normalized) === 1) {
+            return $normalized;
+        }
+
+        return self::DEFAULT_COUNTRY_CODE;
     }
 
     private function createAuthenticatedClient(): object
