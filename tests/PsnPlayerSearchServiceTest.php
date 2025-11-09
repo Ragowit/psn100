@@ -20,6 +20,9 @@ final class PsnPlayerSearchServiceTest extends TestCase
                     new StubUserCollection([]),
                     static function (): void {
                         throw new RuntimeException('Client should not attempt to authenticate.');
+                    },
+                    static function (): void {
+                        throw new RuntimeException('Client should not attempt to authenticate.');
                     }
                 );
             }
@@ -58,7 +61,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
     public function testSearchSkipsWorkersThatFailToLogin(): void
     {
         $workers = [
-            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00')),
+            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null, 'refresh-token-invalid'),
             new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00')),
         ];
 
@@ -69,6 +72,9 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $clients = [
             new StubClient(
                 $userCollection,
+                static function (): void {
+                    throw new RuntimeException('Invalid credentials.');
+                },
                 static function (): void {
                     throw new RuntimeException('Invalid credentials.');
                 }
@@ -95,6 +101,55 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $this->assertSame('Hunter', $results[0]->getOnlineId());
     }
 
+    public function testSearchFallsBackToRefreshTokenWhenNpssoFails(): void
+    {
+        $worker = new Worker(
+            1,
+            'bad-npsso',
+            '',
+            new DateTimeImmutable('2024-01-01T00:00:00'),
+            null,
+            'good-refresh-token'
+        );
+
+        $userCollection = new StubUserCollection([
+            'example' => [new StubUserSearchResult('Fallback', '314', 'SE')],
+        ]);
+
+        $attempts = [];
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use ($userCollection, &$attempts): object {
+                return new StubClient(
+                    $userCollection,
+                    static function (string $npsso) use (&$attempts): void {
+                        $attempts[] = ['type' => 'npsso', 'value' => $npsso];
+
+                        throw new RuntimeException('NPSSO login failed.');
+                    },
+                    static function (string $refreshToken) use (&$attempts): void {
+                        $attempts[] = ['type' => 'refresh', 'value' => $refreshToken];
+                    }
+                );
+            }
+        );
+
+        $results = $service->search('example');
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Fallback', $results[0]->getOnlineId());
+        $this->assertSame(
+            [
+                ['type' => 'npsso', 'value' => 'bad-npsso'],
+                ['type' => 'refresh', 'value' => 'good-refresh-token'],
+            ],
+            $attempts
+        );
+    }
+ 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void
     {
         $service = new PsnPlayerSearchService(
@@ -120,18 +175,31 @@ final class StubClient
     private StubUserCollection $users;
 
     /** @var callable(string): void */
-    private $loginHandler;
+    private $npssoLoginHandler;
 
-    public function __construct(StubUserCollection $users, ?callable $loginHandler = null)
-    {
+    /** @var callable(string): void */
+    private $refreshTokenLoginHandler;
+
+    public function __construct(
+        StubUserCollection $users,
+        ?callable $npssoLoginHandler = null,
+        ?callable $refreshTokenLoginHandler = null
+    ) {
         $this->users = $users;
-        $this->loginHandler = $loginHandler ?? static function (): void {
+        $this->npssoLoginHandler = $npssoLoginHandler ?? static function (): void {
+        };
+        $this->refreshTokenLoginHandler = $refreshTokenLoginHandler ?? static function (): void {
         };
     }
 
     public function loginWithNpsso(string $npsso): void
     {
-        ($this->loginHandler)($npsso);
+        ($this->npssoLoginHandler)($npsso);
+    }
+
+    public function loginWithRefreshToken(string $refreshToken): void
+    {
+        ($this->refreshTokenLoginHandler)($refreshToken);
     }
 
     public function users(): StubUserCollection

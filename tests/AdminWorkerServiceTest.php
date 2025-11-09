@@ -26,6 +26,7 @@ SQL
         $this->assertCount(3, $workers);
         $this->assertSame('player-one', $workers[0]->getScanning());
         $this->assertSame('2024-01-01 09:00:00', $workers[0]->getScanStart()->format('Y-m-d H:i:s'));
+        $this->assertSame('token-1', $workers[0]->getRefreshToken());
         $this->assertSame(
             [
                 'current' => 5,

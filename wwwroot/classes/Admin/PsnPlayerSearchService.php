@@ -76,15 +76,17 @@ final class PsnPlayerSearchService
     private function createAuthenticatedClient(): object
     {
         $factory = $this->clientFactory;
+        $lastError = null;
 
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
                 continue;
             }
 
-            $npsso = $worker->getNpsso();
+            $npsso = trim($worker->getNpsso());
+            $refreshToken = trim($worker->getRefreshToken());
 
-            if ($npsso === '') {
+            if ($npsso === '' && $refreshToken === '') {
                 continue;
             }
 
@@ -95,18 +97,64 @@ final class PsnPlayerSearchService
                     throw new RuntimeException('Invalid PlayStation client.');
                 }
 
-                if (!method_exists($client, 'loginWithNpsso')) {
-                    throw new RuntimeException('The PlayStation client does not support NPSSO authentication.');
-                }
-
-                $client->loginWithNpsso($npsso);
+                $this->authenticateClient($client, $npsso, $refreshToken);
 
                 return $client;
             } catch (Throwable $exception) {
-                continue;
+                $lastError = $exception;
             }
         }
 
+        if ($lastError instanceof Throwable) {
+            throw new RuntimeException('Unable to login to any worker accounts.', 0, $lastError);
+        }
+
         throw new RuntimeException('Unable to login to any worker accounts.');
+    }
+
+    private function authenticateClient(object $client, string $npsso, string $refreshToken): void
+    {
+        $supportsNpsso = method_exists($client, 'loginWithNpsso');
+        $supportsRefreshToken = method_exists($client, 'loginWithRefreshToken');
+
+        if (!$supportsNpsso && !$supportsRefreshToken) {
+            throw new RuntimeException('The PlayStation client does not support authentication.');
+        }
+
+        $attempts = [];
+
+        if ($supportsNpsso && $npsso !== '') {
+            $attempts[] = static function () use ($client, $npsso): void {
+                $client->loginWithNpsso($npsso);
+            };
+        }
+
+        if ($supportsRefreshToken && $refreshToken !== '') {
+            $attempts[] = static function () use ($client, $refreshToken): void {
+                $client->loginWithRefreshToken($refreshToken);
+            };
+        }
+
+        if ($attempts === []) {
+            throw new RuntimeException('Worker is missing authentication credentials.');
+        }
+
+        $lastError = null;
+
+        foreach ($attempts as $attempt) {
+            try {
+                $attempt();
+
+                return;
+            } catch (Throwable $exception) {
+                $lastError = $exception;
+            }
+        }
+
+        if ($lastError instanceof Throwable) {
+            throw $lastError;
+        }
+
+        throw new RuntimeException('Failed to authenticate with the provided credentials.');
     }
 }
