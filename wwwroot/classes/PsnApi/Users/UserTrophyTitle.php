@@ -65,7 +65,7 @@ final class UserTrophyTitle
     }
 
     /**
-     * @return list<string>
+     * @return list<UserTrophyTitlePlatform>
      */
     public function platform(): array
     {
@@ -75,7 +75,14 @@ final class UserTrophyTitle
             return [];
         }
 
-        return array_map('trim', explode(',', $platform));
+        $values = array_map('trim', explode(',', $platform));
+
+        $platforms = [];
+        foreach ($values as $value) {
+            $platforms[] = new UserTrophyTitlePlatform($value);
+        }
+
+        return $platforms;
     }
 
     /**
