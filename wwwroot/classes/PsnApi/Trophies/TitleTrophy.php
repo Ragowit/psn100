@@ -44,22 +44,18 @@ final class TitleTrophy
         return (string) ($this->data['trophyIconUrl'] ?? '');
     }
 
-    public function progressTargetValue(): ?string
+    public function progressTargetValue(): string
     {
-        $value = $this->data['trophyProgressTargetValue'] ?? null;
+        $value = $this->data['trophyProgressTargetValue'] ?? '';
 
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return (string) $value;
+        return $value === null ? '' : (string) $value;
     }
 
-    public function rewardName(): ?string
+    public function rewardName(): string
     {
-        $value = $this->data['trophyRewardName'] ?? null;
+        $value = $this->data['trophyRewardName'] ?? '';
 
-        return $value === null || $value === '' ? null : (string) $value;
+        return $value === null ? '' : (string) $value;
     }
 
     public function rewardImageUrl(): ?string
