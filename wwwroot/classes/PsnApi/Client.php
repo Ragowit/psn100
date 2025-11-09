@@ -17,6 +17,8 @@ final class Client
     private const ACCEPT_LANGUAGE = 'en-US';
     private const AUTHORIZATION_SCOPE = 'psn:mobile.v2.core psn:clientapp';
     private const AUTH_SMCID = 'psapp:settings-entrance';
+    private const AUTH_DEVICE_ID = '0000000d0004008088347AA0C79542D3B656EBB51CE3EBE1';
+    private const AUTH_CLIENT_CID = '60351282-8C5F-4D5E-9033-E48FEA973E11';
     private const AUTH_CLIENT_ID = '09515159-7237-4370-9b40-3806e67c0891';
     private const AUTH_REDIRECT_URI = 'com.scee.psxandroid.scecompcall://redirect';
     private const AUTHORIZATION_HEADER = 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=';
@@ -219,18 +221,34 @@ final class Client
     {
         $uri = self::AUTH_BASE_URI . '/api/authz/v3/oauth/authorize?' . http_build_query([
             'access_type' => 'offline',
+            'app_context' => 'inapp_ios',
+            'auth_ver' => 'v3',
+            'cid' => self::AUTH_CLIENT_CID,
             'client_id' => self::AUTH_CLIENT_ID,
+            'darkmode' => 'true',
+            'device_base_font_size' => '10',
+            'device_profile' => 'mobile',
+            'duid' => self::AUTH_DEVICE_ID,
+            'elements_visibility' => 'no_aclink',
+            'extraQueryParams' => '{PlatformPrivacyWs1 = minimal;}',
+            'no_captcha' => 'true',
+            'redirect_uri' => self::AUTH_REDIRECT_URI,
             'response_type' => 'code',
             'scope' => self::AUTHORIZATION_SCOPE,
-            'redirect_uri' => self::AUTH_REDIRECT_URI,
+            'service_entity' => 'urn:service-entity:psn',
+            'service_logo' => 'ps',
             'smcid' => self::AUTH_SMCID,
-        ]);
+            'support_scheme' => 'sneiprls',
+            'token_format' => 'jwt',
+            'ui' => 'pr',
+        ], '', '&', PHP_QUERY_RFC3986);
 
         $response = $this->sendCurlRequest(
             $uri,
             [
                 'Cookie: npsso=' . $npsso,
-                'User-Agent: psnapi-php/1.0',
+                'User-Agent: ' . self::USER_AGENT,
+                'Accept-Language: ' . self::ACCEPT_LANGUAGE,
             ]
         );
 
@@ -262,21 +280,31 @@ final class Client
     {
         $uri = self::AUTH_BASE_URI . '/api/authz/v3/oauth/token';
         $payload = http_build_query([
+            'access_type' => 'offline',
+            'app_context' => 'inapp_ios',
             'code' => $code,
+            'darkmode' => 'true',
+            'device_base_font_size' => '10',
+            'device_profile' => 'mobile',
+            'elements_visibility' => 'no_aclink',
+            'extraQueryParams' => '{PlatformPrivacyWs1 = minimal;}',
             'grant_type' => 'authorization_code',
             'redirect_uri' => self::AUTH_REDIRECT_URI,
-            'token_format' => 'jwt',
             'scope' => self::AUTHORIZATION_SCOPE,
+            'service_logo' => 'ps',
             'smcid' => self::AUTH_SMCID,
-            'access_type' => 'offline',
-        ]);
+            'support_scheme' => 'sneiprls',
+            'token_format' => 'jwt',
+            'ui' => 'pr',
+        ], '', '&', PHP_QUERY_RFC3986);
 
         $response = $this->sendCurlRequest(
             $uri,
             [
                 'Authorization: ' . self::AUTHORIZATION_HEADER,
                 'Content-Type: application/x-www-form-urlencoded',
-                'User-Agent: psnapi-php/1.0',
+                'User-Agent: ' . self::USER_AGENT,
+                'Accept-Language: ' . self::ACCEPT_LANGUAGE,
                 'Cookie: npsso=' . $npsso,
             ],
             'POST',
