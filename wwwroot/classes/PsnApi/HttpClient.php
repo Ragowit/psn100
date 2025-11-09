@@ -29,7 +29,7 @@ final class HttpClient
         curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($handle, CURLOPT_HTTPHEADER, $formattedHeaders);
         curl_setopt($handle, CURLOPT_HEADER, true);
-        curl_setopt($handle, CURLOPT_ENCODING, '');
+        curl_setopt($handle, CURLOPT_ENCODING, $this->getAcceptedEncodings());
 
         if ($body !== null) {
             curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
@@ -97,7 +97,7 @@ final class HttpClient
         curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($handle, CURLOPT_HTTPHEADER, $formattedHeaders);
         curl_setopt($handle, CURLOPT_HEADER, true);
-        curl_setopt($handle, CURLOPT_ENCODING, '');
+        curl_setopt($handle, CURLOPT_ENCODING, $this->getAcceptedEncodings());
         curl_setopt($handle, CURLOPT_NOBODY, true);
         curl_setopt($handle, CURLOPT_FOLLOWLOCATION, false);
 
@@ -162,14 +162,18 @@ final class HttpClient
         }
 
         foreach (array_reverse($encodings) as $encoding) {
+            $encoding = trim(explode(';', $encoding, 2)[0]);
+
             switch ($encoding) {
                 case 'gzip':
+                case 'x-gzip':
                     $decoded = @gzdecode($body);
                     if ($decoded !== false) {
                         $body = $decoded;
                     }
                     break;
                 case 'deflate':
+                case 'x-deflate':
                     $decoded = @gzuncompress($body);
                     if ($decoded === false) {
                         $decoded = @gzinflate($body);
@@ -194,9 +198,30 @@ final class HttpClient
                         }
                     }
                     break;
+                case 'identity':
+                case 'none':
+                    break;
             }
         }
 
         return $body;
     }
+
+    private function getAcceptedEncodings(): string
+    {
+        $encodings = ['gzip', 'deflate'];
+
+        if (function_exists('zstd_uncompress')) {
+            $encodings[] = 'zstd';
+        }
+
+        if (function_exists('brotli_uncompress')) {
+            $encodings[] = 'br';
+        }
+
+        $encodings[] = 'identity';
+
+        return implode(', ', $encodings);
+    }
 }
+
