@@ -12,6 +12,12 @@ final class PsnPlayerSearchService
 {
     private const RESULT_LIMIT = 50;
 
+    private const GRAPHQL_ENDPOINT = 'graphql/v1/op';
+
+    private const DEFAULT_OPERATION_NAME = 'searchUniversalSearch';
+
+    private const DEFAULT_PERSISTED_QUERY_HASH = '';
+
     /**
      * @var callable(): iterable<Worker>
      */
@@ -23,14 +29,23 @@ final class PsnPlayerSearchService
     private $clientFactory;
 
     /**
+     * @var callable(object, string): array<array{onlineId: string, accountId: string, country: string}>
+     */
+    private $graphQlExecutor;
+
+    /**
      * @param callable(): iterable<Worker> $workerFetcher
      * @param callable(): object|null $clientFactory
+     * @param callable(object, string): array<array{onlineId: string, accountId: string, country: string}>|null $graphQlExecutor
      */
-    public function __construct(callable $workerFetcher, ?callable $clientFactory = null)
+    public function __construct(callable $workerFetcher, ?callable $clientFactory = null, ?callable $graphQlExecutor = null)
     {
         $this->workerFetcher = $workerFetcher;
         $this->clientFactory = $clientFactory ?? static function (): object {
             return new Client();
+        };
+        $this->graphQlExecutor = $graphQlExecutor ?? function (object $client, string $searchTerm): array {
+            return $this->executeGraphQlSearch($client, $searchTerm);
         };
     }
 
@@ -59,18 +74,8 @@ final class PsnPlayerSearchService
 
         $client = $this->createAuthenticatedClient();
 
-        $results = [];
-        $count = 0;
-
         try {
-            foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
-                $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
-                $count++;
-
-                if ($count >= self::RESULT_LIMIT) {
-                    break;
-                }
-            }
+            $results = $this->transformGraphQlResults((($this->graphQlExecutor)($client, $normalizedPlayerName)));
         } catch (Throwable $exception) {
             $rateLimitException = $this->createRateLimitException($exception);
 
@@ -82,6 +87,190 @@ final class PsnPlayerSearchService
         }
 
         return $results;
+    }
+
+    /**
+     * @param array<array{onlineId: string, accountId: string, country: string}> $rawResults
+     * @return list<PsnPlayerSearchResult>
+     */
+    private function transformGraphQlResults(array $rawResults): array
+    {
+        $results = [];
+
+        foreach ($rawResults as $index => $rawResult) {
+            if ($index >= self::RESULT_LIMIT) {
+                break;
+            }
+
+            $results[] = new PsnPlayerSearchResult(
+                (string) ($rawResult['onlineId'] ?? ''),
+                (string) ($rawResult['accountId'] ?? ''),
+                (string) ($rawResult['country'] ?? '')
+            );
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array<array{onlineId: string, accountId: string, country: string}>
+     */
+    private function executeGraphQlSearch(object $client, string $searchTerm): array
+    {
+        $operationName = $this->resolveOperationName();
+        $persistedQueryHash = $this->resolvePersistedQueryHash();
+
+        $variables = $this->createGraphQlVariables($searchTerm);
+
+        try {
+            $queryParameters = [
+                'operationName' => $operationName,
+                'variables' => json_encode($variables, JSON_THROW_ON_ERROR),
+                'extensions' => json_encode([
+                    'persistedQuery' => [
+                        'version' => 1,
+                        'sha256Hash' => $persistedQueryHash,
+                    ],
+                ], JSON_THROW_ON_ERROR),
+            ];
+        } catch (JsonException $exception) {
+            throw new RuntimeException('Failed to encode GraphQL request parameters.', 0, $exception);
+        }
+
+        $headers = [
+            'X-Apollo-Operation-Name' => $operationName,
+            'Accept' => 'application/json',
+        ];
+
+        $response = $client->get(self::GRAPHQL_ENDPOINT, $queryParameters, $headers);
+
+        return $this->extractGraphQlResults($response, $operationName);
+    }
+
+    /**
+     * @return array<array{onlineId: string, accountId: string, country: string}>
+     */
+    private function extractGraphQlResults(mixed $response, string $operationName): array
+    {
+        if (is_object($response)) {
+            $response = json_decode(json_encode($response, JSON_THROW_ON_ERROR), true);
+        }
+
+        if (!is_array($response)) {
+            return [];
+        }
+
+        $data = $response['data'] ?? null;
+
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $searchData = $data[$operationName] ?? null;
+
+        if (!is_array($searchData)) {
+            return [];
+        }
+
+        $domainResponses = $searchData['domainResponses'] ?? [];
+
+        if (!is_array($domainResponses)) {
+            return [];
+        }
+
+        $results = [];
+
+        foreach ($domainResponses as $domainResponse) {
+            if (is_object($domainResponse)) {
+                $domainResponse = json_decode(json_encode($domainResponse, JSON_THROW_ON_ERROR), true);
+            }
+
+            if (!is_array($domainResponse)) {
+                continue;
+            }
+
+            $entries = $domainResponse['results'] ?? [];
+
+            if (!is_array($entries)) {
+                continue;
+            }
+
+            foreach ($entries as $entry) {
+                if (is_object($entry)) {
+                    $entry = json_decode(json_encode($entry, JSON_THROW_ON_ERROR), true);
+                }
+
+                if (!is_array($entry)) {
+                    continue;
+                }
+
+                $metadata = $entry['socialMetadata'] ?? [];
+
+                if (is_object($metadata)) {
+                    $metadata = json_decode(json_encode($metadata, JSON_THROW_ON_ERROR), true);
+                }
+
+                if (!is_array($metadata)) {
+                    continue;
+                }
+
+                $results[] = [
+                    'onlineId' => isset($metadata['onlineId']) ? (string) $metadata['onlineId'] : '',
+                    'accountId' => isset($metadata['accountId']) ? (string) $metadata['accountId'] : '',
+                    'country' => isset($metadata['country']) ? (string) $metadata['country'] : '',
+                ];
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function createGraphQlVariables(string $searchTerm): array
+    {
+        return [
+            'age' => '69',
+            'countryCode' => 'us',
+            'languageCode' => 'en',
+            'searchTerm' => $searchTerm,
+            'domainRequests' => [
+                [
+                    'domain' => 'SocialAllAccounts',
+                    'pagination' => [
+                        'cursor' => null,
+                        'pageSize' => self::RESULT_LIMIT,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    private function resolveOperationName(): string
+    {
+        $operationName = getenv('PSN_PLAYER_SEARCH_OPERATION_NAME');
+
+        if (is_string($operationName) && $operationName !== '') {
+            return $operationName;
+        }
+
+        return self::DEFAULT_OPERATION_NAME;
+    }
+
+    private function resolvePersistedQueryHash(): string
+    {
+        $hash = getenv('PSN_PLAYER_SEARCH_PERSISTED_QUERY_HASH');
+
+        if (is_string($hash) && $hash !== '') {
+            return $hash;
+        }
+
+        if (self::DEFAULT_PERSISTED_QUERY_HASH === '') {
+            throw new RuntimeException('The PSN player search persisted query hash is not configured.');
+        }
+
+        return self::DEFAULT_PERSISTED_QUERY_HASH;
     }
 
     private function createRateLimitException(Throwable $exception): ?PsnPlayerSearchRateLimitException

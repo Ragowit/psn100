@@ -11,6 +11,41 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
 
 final class PsnPlayerSearchServiceTest extends TestCase
 {
+    private ?string $originalPersistedQueryHash = null;
+
+    private ?string $originalOperationName = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $persistedHash = getenv('PSN_PLAYER_SEARCH_PERSISTED_QUERY_HASH');
+        $operationName = getenv('PSN_PLAYER_SEARCH_OPERATION_NAME');
+
+        $this->originalPersistedQueryHash = $persistedHash === false ? null : $persistedHash;
+        $this->originalOperationName = $operationName === false ? null : $operationName;
+
+        putenv('PSN_PLAYER_SEARCH_PERSISTED_QUERY_HASH=test-hash');
+        putenv('PSN_PLAYER_SEARCH_OPERATION_NAME=searchUniversalSearch');
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->originalPersistedQueryHash === null || $this->originalPersistedQueryHash === '') {
+            putenv('PSN_PLAYER_SEARCH_PERSISTED_QUERY_HASH');
+        } else {
+            putenv('PSN_PLAYER_SEARCH_PERSISTED_QUERY_HASH=' . $this->originalPersistedQueryHash);
+        }
+
+        if ($this->originalOperationName === null || $this->originalOperationName === '') {
+            putenv('PSN_PLAYER_SEARCH_OPERATION_NAME');
+        } else {
+            putenv('PSN_PLAYER_SEARCH_OPERATION_NAME=' . $this->originalOperationName);
+        }
+
+        parent::tearDown();
+    }
+
     public function testSearchReturnsEmptyArrayWhenQueryIsBlank(): void
     {
         $service = new PsnPlayerSearchService(
@@ -18,12 +53,9 @@ final class PsnPlayerSearchServiceTest extends TestCase
                 return [];
             },
             static function (): object {
-                return new StubClient(
-                    new StubUserCollection([]),
-                    static function (): void {
-                        throw new RuntimeException('Client should not attempt to authenticate.');
-                    }
-                );
+                return new StubClient([], static function (): void {
+                    throw new RuntimeException('Client should not attempt to authenticate.');
+                });
             }
         );
 
@@ -35,18 +67,23 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $searchResults = [];
-        for ($index = 1; $index <= 60; $index++) {
-            $searchResults[] = new StubUserSearchResult('Player' . $index, (string) $index, 'US');
-        }
 
-        $userCollection = new StubUserCollection(['example' => $searchResults]);
+        for ($index = 1; $index <= 60; $index++) {
+            $searchResults[] = [
+                'onlineId' => 'Player' . $index,
+                'accountId' => (string) $index,
+                'country' => 'US',
+            ];
+        }
 
         $service = new PsnPlayerSearchService(
             static function () use ($worker): array {
                 return [$worker];
             },
-            static function () use ($userCollection): object {
-                return new StubClient($userCollection);
+            static function () use ($searchResults): object {
+                return new StubClient([
+                    createGraphQlResponse($searchResults),
+                ]);
             }
         );
 
@@ -64,18 +101,22 @@ final class PsnPlayerSearchServiceTest extends TestCase
             new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
-        $userCollection = new StubUserCollection([
-            'example' => [new StubUserSearchResult('Hunter', '42', 'SE')],
-        ]);
-
         $clients = [
             new StubClient(
-                $userCollection,
+                [],
                 static function (): void {
                     throw new RuntimeException('Invalid credentials.');
                 }
             ),
-            new StubClient($userCollection),
+            new StubClient([
+                createGraphQlResponse([
+                    [
+                        'onlineId' => 'Hunter',
+                        'accountId' => '42',
+                        'country' => 'SE',
+                    ],
+                ]),
+            ]),
         ];
 
         $service = new PsnPlayerSearchService(
@@ -104,7 +145,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
                 return [];
             },
             static function (): object {
-                return new StubClient(new StubUserCollection([]));
+                return new StubClient([]);
             }
         );
 
@@ -131,9 +172,9 @@ final class PsnPlayerSearchServiceTest extends TestCase
                     ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
                 );
 
-                $userCollection = new RateLimitedUserCollection(new StubRateLimitedException($response));
-
-                return new StubClient($userCollection);
+                return new StubClient([
+                    new StubRateLimitedException($response),
+                ]);
             }
         );
 
@@ -163,9 +204,9 @@ final class PsnPlayerSearchServiceTest extends TestCase
                     ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
                 );
 
-                $userCollection = new RateLimitedUserCollection(new StubRateLimitedException($response));
-
-                return new StubClient($userCollection);
+                return new StubClient([
+                    new StubRateLimitedException($response),
+                ]);
             }
         );
 
@@ -185,14 +226,22 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
 final class StubClient
 {
-    private StubUserCollection $users;
+    /** @var list<object|array|Throwable> */
+    private array $responses;
 
     /** @var callable(string): void */
     private $loginHandler;
 
-    public function __construct(StubUserCollection $users, ?callable $loginHandler = null)
+    /** @var StubGraphQlRequest|null */
+    private $lastRequest = null;
+
+    /**
+     * @param list<object|array|Throwable> $responses
+     * @param callable(string): void|null $loginHandler
+     */
+    public function __construct(array $responses, ?callable $loginHandler = null)
     {
-        $this->users = $users;
+        $this->responses = array_values($responses);
         $this->loginHandler = $loginHandler ?? static function (): void {
         };
     }
@@ -202,49 +251,65 @@ final class StubClient
         ($this->loginHandler)($npsso);
     }
 
-    public function users(): StubUserCollection
+    public function get(string $path = '', array $query = [], array $headers = []): mixed
     {
-        return $this->users;
+        if ($path !== 'graphql/v1/op') {
+            throw new RuntimeException('Unexpected GraphQL endpoint: ' . $path);
+        }
+
+        $this->lastRequest = new StubGraphQlRequest($query, $headers);
+
+        if ($this->responses === []) {
+            return [];
+        }
+
+        $next = array_shift($this->responses);
+
+        if ($next instanceof Throwable) {
+            throw $next;
+        }
+
+        return $next;
+    }
+
+    public function getLastRequest(): ?StubGraphQlRequest
+    {
+        return $this->lastRequest;
     }
 }
 
-class StubUserCollection
+final class StubGraphQlRequest
 {
-    /**
-     * @var array<string, list<object>>
-     */
-    private array $resultsByQuery;
+    /** @var array<string, mixed> */
+    private array $query;
+
+    /** @var array<string, mixed> */
+    private array $headers;
 
     /**
-     * @param array<string, list<object>> $resultsByQuery
+     * @param array<string, mixed> $query
+     * @param array<string, mixed> $headers
      */
-    public function __construct(array $resultsByQuery)
+    public function __construct(array $query, array $headers)
     {
-        $this->resultsByQuery = $resultsByQuery;
+        $this->query = $query;
+        $this->headers = $headers;
     }
 
     /**
-     * @return iterable<object>
+     * @return array<string, mixed>
      */
-    public function search(string $query): iterable
+    public function getQuery(): array
     {
-        return $this->resultsByQuery[$query] ?? [];
-    }
-}
-
-final class RateLimitedUserCollection extends StubUserCollection
-{
-    private Throwable $throwable;
-
-    public function __construct(Throwable $throwable)
-    {
-        parent::__construct([]);
-        $this->throwable = $throwable;
+        return $this->query;
     }
 
-    public function search(string $query): iterable
+    /**
+     * @return array<string, mixed>
+     */
+    public function getHeaders(): array
     {
-        throw $this->throwable;
+        return $this->headers;
     }
 }
 
@@ -313,33 +378,32 @@ final class StubRateLimitedException extends RuntimeException
     }
 }
 
-final class StubUserSearchResult
+/**
+ * @param list<array{onlineId: string, accountId: string, country: string}> $results
+ */
+function createGraphQlResponse(array $results): array
 {
-    private string $onlineId;
+    $graphQlResults = [];
 
-    private string $accountId;
-
-    private string $country;
-
-    public function __construct(string $onlineId, string $accountId, string $country)
-    {
-        $this->onlineId = $onlineId;
-        $this->accountId = $accountId;
-        $this->country = $country;
+    foreach ($results as $result) {
+        $graphQlResults[] = [
+            'socialMetadata' => [
+                'onlineId' => $result['onlineId'],
+                'accountId' => $result['accountId'],
+                'country' => $result['country'],
+            ],
+        ];
     }
 
-    public function onlineId(): string
-    {
-        return $this->onlineId;
-    }
-
-    public function accountId(): string
-    {
-        return $this->accountId;
-    }
-
-    public function country(): string
-    {
-        return $this->country;
-    }
+    return [
+        'data' => [
+            'searchUniversalSearch' => [
+                'domainResponses' => [
+                    [
+                        'results' => $graphQlResults,
+                    ],
+                ],
+            ],
+        ],
+    ];
 }
