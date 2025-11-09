@@ -16,6 +16,7 @@ final class Client
     private const USER_AGENT = 'PlayStation/21090100 CFNetwork/1126 Darwin/19.5.0';
     private const ACCEPT_LANGUAGE = 'en-US';
     private const AUTHORIZATION_SCOPE = 'psn:mobile.v2.core psn:clientapp';
+    private const AUTH_SMCID = 'psapp:settings-entrance';
     private const AUTH_CLIENT_ID = '09515159-7237-4370-9b40-3806e67c0891';
     private const AUTH_REDIRECT_URI = 'com.scee.psxandroid.scecompcall://redirect';
     private const AUTHORIZATION_HEADER = 'Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=';
@@ -32,7 +33,7 @@ final class Client
         }
 
         $code = $this->fetchAuthorizationCode($trimmed);
-        $this->authTokens = $this->exchangeAuthorizationCodeForTokens($code);
+        $this->authTokens = $this->exchangeAuthorizationCodeForTokens($code, $trimmed);
     }
 
     public function users(): Users
@@ -222,6 +223,7 @@ final class Client
             'response_type' => 'code',
             'scope' => self::AUTHORIZATION_SCOPE,
             'redirect_uri' => self::AUTH_REDIRECT_URI,
+            'smcid' => self::AUTH_SMCID,
         ]);
 
         $response = $this->sendCurlRequest(
@@ -256,7 +258,7 @@ final class Client
         return $code;
     }
 
-    private function exchangeAuthorizationCodeForTokens(string $code): AuthTokens
+    private function exchangeAuthorizationCodeForTokens(string $code, string $npsso): AuthTokens
     {
         $uri = self::AUTH_BASE_URI . '/api/authz/v3/oauth/token';
         $payload = http_build_query([
@@ -264,6 +266,9 @@ final class Client
             'grant_type' => 'authorization_code',
             'redirect_uri' => self::AUTH_REDIRECT_URI,
             'token_format' => 'jwt',
+            'scope' => self::AUTHORIZATION_SCOPE,
+            'smcid' => self::AUTH_SMCID,
+            'access_type' => 'offline',
         ]);
 
         $response = $this->sendCurlRequest(
@@ -272,6 +277,7 @@ final class Client
                 'Authorization: ' . self::AUTHORIZATION_HEADER,
                 'Content-Type: application/x-www-form-urlencoded',
                 'User-Agent: psnapi-php/1.0',
+                'Cookie: npsso=' . $npsso,
             ],
             'POST',
             $payload
