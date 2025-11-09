@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchResult.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchRateLimitException.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
 
 final class PsnPlayerSearchServiceTest extends TestCase
@@ -30,7 +32,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
     public function testSearchReturnsUpToFiftyResults(): void
     {
-        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'));
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $searchResults = [];
         for ($index = 1; $index <= 60; $index++) {
@@ -58,8 +60,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
     public function testSearchSkipsWorkersThatFailToLogin(): void
     {
         $workers = [
-            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00')),
-            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00')),
+            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
         $userCollection = new StubUserCollection([
@@ -113,6 +115,72 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->assertSame('Unable to login to any worker accounts.', $exception->getMessage());
         }
     }
+
+    public function testSearchThrowsRateLimitExceptionWithRetryTimestamp(): void
+    {
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+        $retryAt = new DateTimeImmutable('2024-01-01T01:00:00+00:00');
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use ($retryAt): object {
+                $response = new StubRateLimitResponse(
+                    429,
+                    ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
+                );
+
+                $userCollection = new RateLimitedUserCollection(new StubRateLimitedException($response));
+
+                return new StubClient($userCollection);
+            }
+        );
+
+        try {
+            $service->search('example');
+            $this->fail('Expected PsnPlayerSearchRateLimitException to be thrown.');
+        } catch (PsnPlayerSearchRateLimitException $exception) {
+            $this->assertSame(
+                $retryAt->format(DateTimeInterface::RFC3339),
+                $exception->getRetryAt()?->format(DateTimeInterface::RFC3339)
+            );
+        }
+    }
+
+    public function testRequestHandlerReturnsRateLimitWarning(): void
+    {
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+        $retryAt = new DateTimeImmutable('2024-01-01T02:00:00+00:00');
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use ($retryAt): object {
+                $response = new StubRateLimitResponse(
+                    429,
+                    ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
+                );
+
+                $userCollection = new RateLimitedUserCollection(new StubRateLimitedException($response));
+
+                return new StubClient($userCollection);
+            }
+        );
+
+        $handled = PsnPlayerSearchRequestHandler::handle($service, ' example ');
+
+        $this->assertSame('example', $handled['normalizedSearchTerm']);
+        $this->assertSame([], $handled['results']);
+        $this->assertSame(
+            sprintf(
+                'The PlayStation Network rate limited player search until %s.',
+                $retryAt->format(DateTimeInterface::RFC3339)
+            ),
+            $handled['errorMessage']
+        );
+    }
 }
 
 final class StubClient
@@ -140,7 +208,7 @@ final class StubClient
     }
 }
 
-final class StubUserCollection
+class StubUserCollection
 {
     /**
      * @var array<string, list<object>>
@@ -161,6 +229,87 @@ final class StubUserCollection
     public function search(string $query): iterable
     {
         return $this->resultsByQuery[$query] ?? [];
+    }
+}
+
+final class RateLimitedUserCollection extends StubUserCollection
+{
+    private Throwable $throwable;
+
+    public function __construct(Throwable $throwable)
+    {
+        parent::__construct([]);
+        $this->throwable = $throwable;
+    }
+
+    public function search(string $query): iterable
+    {
+        throw $this->throwable;
+    }
+}
+
+final class StubRateLimitResponse
+{
+    private int $statusCode;
+
+    /**
+     * @var array<string, list<string>>
+     */
+    private array $headers;
+
+    /**
+     * @param array<string, list<string>> $headers
+     */
+    public function __construct(int $statusCode, array $headers = [])
+    {
+        $this->statusCode = $statusCode;
+        $this->headers = [];
+
+        foreach ($headers as $name => $values) {
+            $normalizedName = strtolower($name);
+            $this->headers[$normalizedName] = array_values(array_map('strval', $values));
+        }
+    }
+
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    public function getStatus(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getHeader(string $name): array
+    {
+        $normalizedName = strtolower($name);
+
+        return $this->headers[$normalizedName] ?? [];
+    }
+
+    public function getHeaderLine(string $name): string
+    {
+        return implode(', ', $this->getHeader($name));
+    }
+}
+
+final class StubRateLimitedException extends RuntimeException
+{
+    private object $response;
+
+    public function __construct(object $response)
+    {
+        parent::__construct('Too Many Requests', 429);
+        $this->response = $response;
+    }
+
+    public function getResponse(): object
+    {
+        return $this->response;
     }
 }
 
