@@ -343,6 +343,64 @@ final class PsnPlayerSearchServiceTest extends TestCase
             );
         }
     }
+
+    public function testSearchUsesUniversalSearchWhenTokenMetadataIsAvailable(): void
+    {
+        $worker = new Worker(5, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+
+        $capturedRequest = null;
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use (&$capturedRequest): object {
+                return new StubClient(
+                    new StubUserCollection([]),
+                    null,
+                    [
+                        'age' => 40,
+                        'locale' => 'sv-SE',
+                        'legal_country' => 'SE',
+                    ],
+                    static function (string $path, array $body) use (&$capturedRequest): object {
+                        $capturedRequest = ['path' => $path, 'body' => $body];
+
+                        return (object) [
+                            'domainResponses' => [
+                                (object) [
+                                    'results' => [
+                                        (object) [
+                                            'socialMetadata' => (object) [
+                                                'onlineId' => 'Ragowit',
+                                                'accountId' => '1882371903386905898',
+                                                'country' => 'se',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ];
+                    }
+                );
+            }
+        );
+
+        $results = $service->search('Ragowit');
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Ragowit', $results[0]->getOnlineId());
+        $this->assertSame('1882371903386905898', $results[0]->getAccountId());
+        $this->assertSame('se', $results[0]->getCountry());
+
+        $this->assertTrue($capturedRequest !== null);
+        $this->assertTrue(is_array($capturedRequest));
+        $this->assertSame('search/v1/universalSearch', $capturedRequest['path']);
+        $this->assertSame('40', $capturedRequest['body']['age']);
+        $this->assertSame('se', $capturedRequest['body']['countryCode']);
+        $this->assertSame('sv', $capturedRequest['body']['languageCode']);
+        $this->assertSame('Ragowit', $capturedRequest['body']['searchTerm']);
+    }
 }
 
 final class StubClient
@@ -354,11 +412,19 @@ final class StubClient
 
     private ?StubResponse $lastResponse = null;
 
-    public function __construct(StubUserCollection $users, ?callable $loginHandler = null)
+    /** @var array{age?: int, locale?: string, legal_country?: string}|null */
+    private ?array $accessTokenPayload;
+
+    /** @var callable|null */
+    private $postJsonHandler;
+
+    public function __construct(StubUserCollection $users, ?callable $loginHandler = null, ?array $accessTokenPayload = null, ?callable $postJsonHandler = null)
     {
         $this->users = $users;
         $this->loginHandler = $loginHandler ?? static function (): void {
         };
+        $this->accessTokenPayload = $accessTokenPayload;
+        $this->postJsonHandler = $postJsonHandler;
     }
 
     public function loginWithNpsso(string $npsso): void
@@ -379,6 +445,53 @@ final class StubClient
     public function getLastResponse(): ?StubResponse
     {
         return $this->lastResponse;
+    }
+
+    public function getAccessToken(): object
+    {
+        if ($this->accessTokenPayload === null) {
+            throw new RuntimeException('Access token payload not configured.');
+        }
+
+        return new StubAccessToken($this->accessTokenPayload);
+    }
+
+    public function postJson(string $path, array $body, array $headers = []): object
+    {
+        if ($this->postJsonHandler === null) {
+            throw new RuntimeException('postJson handler not configured.');
+        }
+
+        return ($this->postJsonHandler)($path, $body, $headers);
+    }
+}
+
+final class StubAccessToken
+{
+    /** @var array{age?: int, locale?: string, legal_country?: string} */
+    private array $payload;
+
+    public function __construct(array $payload)
+    {
+        $this->payload = $payload;
+    }
+
+    public function getToken(): string
+    {
+        $header = $this->encodeSegment(['alg' => 'RS256', 'kid' => 'stub']);
+        $payload = $this->encodeSegment($this->payload);
+
+        return implode('.', [$header, $payload, 'signature']);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeSegment(array $data): string
+    {
+        $json = json_encode($data);
+
+        return rtrim(strtr(base64_encode($json === false ? '{}' : $json), '+/', '-_'), '=');
     }
 }
 
