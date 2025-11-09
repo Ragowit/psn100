@@ -62,7 +62,14 @@ final class PsnPlayerSearchService
             $count = 0;
 
             foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
-                $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
+                try {
+                    $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
+                } catch (AuthenticationException $exception) {
+                    continue;
+                } catch (Throwable $exception) {
+                    continue;
+                }
+
                 $count++;
 
                 if ($count >= self::RESULT_LIMIT) {

@@ -7,6 +7,8 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
 
+use PsnApi\Exception\AuthenticationException;
+
 final class PsnPlayerSearchServiceTest extends TestCase
 {
     public function testSearchReturnsEmptyArrayWhenQueryIsBlank(): void
@@ -86,6 +88,32 @@ final class PsnPlayerSearchServiceTest extends TestCase
                 }
 
                 return array_shift($clients);
+            }
+        );
+
+        $results = $service->search('example');
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Hunter', $results[0]->getOnlineId());
+    }
+
+    public function testSearchSkipsResultsThatFailToMap(): void
+    {
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+
+        $userCollection = new StubUserCollection([
+            'example' => [
+                new StubUserSearchResultThrows('MissingCountry', '1'),
+                new StubUserSearchResult('Hunter', '42', 'SE'),
+            ],
+        ]);
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use ($userCollection): object {
+                return new StubClient($userCollection);
             }
         );
 
@@ -192,5 +220,33 @@ final class StubUserSearchResult
     public function country(): string
     {
         return $this->country;
+    }
+}
+
+final class StubUserSearchResultThrows
+{
+    private string $onlineId;
+
+    private string $accountId;
+
+    public function __construct(string $onlineId, string $accountId)
+    {
+        $this->onlineId = $onlineId;
+        $this->accountId = $accountId;
+    }
+
+    public function onlineId(): string
+    {
+        return $this->onlineId;
+    }
+
+    public function accountId(): string
+    {
+        return $this->accountId;
+    }
+
+    public function country(): string
+    {
+        throw new AuthenticationException('Profile is not accessible.');
     }
 }
