@@ -79,10 +79,40 @@ final class PsnPlayerSearchService
         $lastError = null;
         $failureMessages = [];
         $workerFound = false;
+        $attemptedWorkers = 0;
 
-        foreach (($this->workerFetcher)() as $worker) {
+        try {
+            $workers = ($this->workerFetcher)();
+        } catch (Throwable $exception) {
+            $message = 'Failed to fetch admin workers: ' . $this->describeException($exception);
+            error_log('[AdminPlayerSearch] ' . $message);
+
+            throw new RuntimeException($message, 0, $exception);
+        }
+
+        if (!is_iterable($workers)) {
+            $message = sprintf(
+                'Worker fetcher returned a non-iterable value of type %s.',
+                get_debug_type($workers)
+            );
+
+            error_log('[AdminPlayerSearch] ' . $message);
+
+            throw new RuntimeException($message);
+        }
+
+        foreach ($workers as $index => $worker) {
+            $attemptedWorkers++;
+
             if (!$worker instanceof Worker) {
-                $failureMessages[] = 'Encountered a non-worker entry while fetching admin workers.';
+                $message = sprintf(
+                    'Worker fetcher yielded a non-Worker value of type %s at index %s.',
+                    get_debug_type($worker),
+                    is_scalar($index) || $index === null ? (string) $index : gettype($index)
+                );
+
+                $failureMessages[] = $message;
+                error_log('[AdminPlayerSearch] ' . $message);
 
                 continue;
             }
@@ -92,7 +122,13 @@ final class PsnPlayerSearchService
             $refreshToken = trim($worker->getRefreshToken());
 
             if ($npsso === '' && $refreshToken === '') {
-                $failureMessages[] = sprintf('Worker %d is missing both NPSSO and refresh token credentials.', $worker->getId());
+                $message = sprintf(
+                    'Worker %d is missing both NPSSO and refresh token credentials.',
+                    $worker->getId()
+                );
+
+                $failureMessages[] = $message;
+                error_log('[AdminPlayerSearch] ' . $message);
 
                 continue;
             }
@@ -105,11 +141,13 @@ final class PsnPlayerSearchService
                 }
             } catch (Throwable $exception) {
                 $lastError = $exception;
-                $failureMessages[] = sprintf(
+                $message = sprintf(
                     'Worker %d failed to create a PlayStation client: %s',
                     $worker->getId(),
-                    $exception->getMessage()
+                    $this->describeException($exception)
                 );
+                $failureMessages[] = $message;
+                error_log('[AdminPlayerSearch] ' . $message);
 
                 continue;
             }
@@ -120,15 +158,21 @@ final class PsnPlayerSearchService
                 return $client;
             } catch (Throwable $exception) {
                 $lastError = $exception;
-                $failureMessages[] = sprintf(
+                $message = sprintf(
                     'Worker %d authentication failed: %s',
                     $worker->getId(),
-                    $exception->getMessage()
+                    $this->describeException($exception)
                 );
+                $failureMessages[] = $message;
+                error_log('[AdminPlayerSearch] ' . $message);
             }
         }
 
         $message = 'Unable to login to any worker accounts.';
+
+        if ($workerFound) {
+            $message .= sprintf(' Checked %d worker(s).', max(1, $attemptedWorkers));
+        }
 
         if ($failureMessages !== []) {
             $message .= ' Failures: ' . implode(' | ', $failureMessages);
@@ -137,9 +181,11 @@ final class PsnPlayerSearchService
         }
 
         if ($lastError instanceof Throwable) {
+            error_log('[AdminPlayerSearch] ' . $message);
             throw new RuntimeException($message, 0, $lastError);
         }
 
+        error_log('[AdminPlayerSearch] ' . $message);
         throw new RuntimeException($message);
     }
 
@@ -188,7 +234,11 @@ final class PsnPlayerSearchService
                 return;
             } catch (Throwable $exception) {
                 $lastError = $exception;
-                $attemptErrors[] = sprintf('%s login failed: %s', $attempt['label'], $exception->getMessage());
+                $attemptErrors[] = sprintf(
+                    '%s login failed: %s',
+                    $attempt['label'],
+                    $this->describeException($exception)
+                );
             }
         }
 
@@ -199,9 +249,29 @@ final class PsnPlayerSearchService
                 $message .= ' ' . implode(' ', $attemptErrors);
             }
 
+            error_log('[AdminPlayerSearch] ' . $message);
+
             throw new RuntimeException($message, 0, $lastError);
         }
 
         throw new RuntimeException('Failed to authenticate with the provided credentials.');
+    }
+
+    private function describeException(Throwable $exception): string
+    {
+        $message = trim($exception->getMessage());
+        $description = get_class($exception);
+
+        if ($message !== '') {
+            $description .= ': ' . $message;
+        }
+
+        $code = $exception->getCode();
+
+        if (is_int($code) && $code !== 0) {
+            $description .= sprintf(' (code %d)', $code);
+        }
+
+        return $description;
     }
 }

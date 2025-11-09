@@ -205,7 +205,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->fail('Expected RuntimeException due to authentication failures.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Unable to login to any worker accounts. Failures: Worker 4 authentication failed: All authentication attempts failed. NPSSO login failed: Invalid credentials. refresh-token login failed: Refresh token expired.',
+                'Unable to login to any worker accounts. Checked 1 worker(s). Failures: Worker 4 authentication failed: RuntimeException: All authentication attempts failed. NPSSO login failed: RuntimeException: Invalid credentials. refresh-token login failed: RuntimeException: Refresh token expired.',
                 $exception->getMessage()
             );
         }
