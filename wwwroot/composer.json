@@ -5,6 +5,5 @@
         }
     },
     "require-dev": {
-        "tustin/psn-php": "dev-master"
     }
 }

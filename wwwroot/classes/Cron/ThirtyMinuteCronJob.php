@@ -8,8 +8,10 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../PsnApi/bootstrap.php';
 
-use Tustin\PlayStation\Client;
+use Achievements\PsnApi\Client;
+use Achievements\PsnApi\Exceptions\NotFoundException;
 
 class ThirtyMinuteCronJob implements CronJobInterface
 {
@@ -355,7 +357,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
                 $query->execute();
 
-                if (get_class($e) == "Tustin\Haste\Exception\NotFoundHttpException") {
+                if ($e instanceof NotFoundException) {
                     $query = $this->database->prepare("SELECT account_id
                         FROM   player
                         WHERE  online_id = :online_id ");
