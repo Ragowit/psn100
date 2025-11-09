@@ -4,26 +4,15 @@ declare(strict_types=1);
 require_once '../init.php';
 require_once '../vendor/autoload.php';
 require_once '../classes/Admin/PsnPlayerSearchService.php';
+require_once '../classes/Admin/PsnPlayerSearchRequestHandler.php';
 
 $searchTerm = isset($_GET['player']) ? (string) $_GET['player'] : '';
-$normalizedSearchTerm = trim($searchTerm);
-$results = [];
-$errorMessage = null;
+$searchService = PsnPlayerSearchService::fromDatabase($database);
+$handledRequest = PsnPlayerSearchRequestHandler::handle($searchService, $searchTerm);
 
-if ($normalizedSearchTerm !== '') {
-    try {
-        $searchService = PsnPlayerSearchService::fromDatabase($database);
-        $results = $searchService->search($normalizedSearchTerm);
-    } catch (Throwable $exception) {
-        $message = trim($exception->getMessage());
-
-        if ($message === '') {
-            $message = 'An unexpected error occurred while searching for players. Please try again later.';
-        }
-
-        $errorMessage = $message;
-    }
-}
+$normalizedSearchTerm = $handledRequest['normalizedSearchTerm'];
+$results = $handledRequest['results'];
+$errorMessage = $handledRequest['errorMessage'];
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
