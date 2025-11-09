@@ -29,4 +29,26 @@ final class UsersApiTest extends TestCase
 
         $this->assertSame('SE', $country);
     }
+
+    public function testExtractCountryHandlesNestedResidenceCountry(): void
+    {
+        $player = (object) [
+            'country' => 'US',
+            'socialMetadata' => (object) [
+                'personalDetail' => (object) [
+                    'residenceCountry' => (object) [
+                        'alphaTwo' => 'SE',
+                    ],
+                ],
+            ],
+        ];
+
+        $usersApi = new UsersApi(new HttpClient(null));
+        $reflection = new ReflectionMethod(UsersApi::class, 'extractCountry');
+        $reflection->setAccessible(true);
+
+        $country = $reflection->invoke($usersApi, $player);
+
+        $this->assertSame('SE', $country);
+    }
 }

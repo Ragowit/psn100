@@ -187,7 +187,19 @@ final class UsersApi
 
         if (isset($player->socialMetadata) && is_object($player->socialMetadata)) {
             if (isset($player->socialMetadata->personalDetail) && is_object($player->socialMetadata->personalDetail)) {
-                $objects[] = $player->socialMetadata->personalDetail;
+                $personalDetail = $player->socialMetadata->personalDetail;
+
+                $objects[] = $personalDetail;
+
+                foreach ([
+                    'country',
+                    'residenceCountry',
+                    'location',
+                ] as $nestedProperty) {
+                    if (isset($personalDetail->{$nestedProperty}) && is_object($personalDetail->{$nestedProperty})) {
+                        $objects[] = $personalDetail->{$nestedProperty};
+                    }
+                }
             }
 
             $objects[] = $player->socialMetadata;
@@ -200,6 +212,7 @@ final class UsersApi
             'countryAlpha2',
             'countryCode',
             'country',
+            'residenceCountry',
             'accountCountry',
             'region',
         ];
