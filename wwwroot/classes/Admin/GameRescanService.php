@@ -11,6 +11,8 @@ require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../PsnApi/bootstrap.php';
 
 use Achievements\PsnApi\Client;
+use Achievements\PsnApi\Exceptions\ApiException;
+use Achievements\PsnApi\Exceptions\NotFoundException;
 
 class GameRescanService
 {
@@ -193,14 +195,15 @@ class GameRescanService
         $query->execute();
 
         while (($accountId = $query->fetchColumn()) !== false) {
-            $user = $client->users()->find((string) $accountId);
-
             try {
+                $user = $client->users()->find((string) $accountId);
                 $user->trophySummary()->level();
 
                 return $user;
             } catch (TypeError $exception) {
                 // Something odd, try next player.
+            } catch (NotFoundException | ApiException $exception) {
+                // Player probably private or inaccessible, try next player.
             } catch (Exception $exception) {
                 // Player probably private, try next player.
             }
