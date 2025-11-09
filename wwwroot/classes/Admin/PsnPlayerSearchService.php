@@ -99,7 +99,7 @@ final class PsnPlayerSearchService
      */
     private function searchPlayersUsingGraphql(object $client, string $searchTerm): array
     {
-        $results = [];
+        $players = [];
 
         $domainResponse = $this->performContextSearch($client, $searchTerm);
 
@@ -107,29 +107,29 @@ final class PsnPlayerSearchService
             return [];
         }
 
-        $this->appendPlayerSearchResults($results, $domainResponse->searchResults ?? null);
+        $this->appendPlayerEntries($players, $domainResponse->searchResults ?? null);
 
         $nextCursor = $this->extractStringProperty($domainResponse, 'next');
-        $pageOffset = count($results);
+        $pageOffset = count($players);
 
-        while ($nextCursor !== '' && count($results) < self::RESULT_LIMIT) {
+        while ($nextCursor !== '' && count($players) < self::RESULT_LIMIT) {
             $domainResponse = $this->performDomainSearch($client, $searchTerm, $nextCursor, $pageOffset);
 
             if ($domainResponse === null) {
                 break;
             }
 
-            $limitReached = $this->appendPlayerSearchResults($results, $domainResponse->searchResults ?? null);
+            $limitReached = $this->appendPlayerEntries($players, $domainResponse->searchResults ?? null);
 
             if ($limitReached) {
                 break;
             }
 
             $nextCursor = $this->extractStringProperty($domainResponse, 'next');
-            $pageOffset = count($results);
+            $pageOffset = count($players);
         }
 
-        return $results;
+        return $this->hydratePlayerSearchResults($client, $players);
     }
 
     private function performContextSearch(object $client, string $searchTerm): ?object
@@ -287,12 +287,12 @@ final class PsnPlayerSearchService
     }
 
     /**
-     * @param list<PsnPlayerSearchResult> $results
+     * @param list<array{onlineId: string, accountId: string}> $players
      */
-    private function appendPlayerSearchResults(array &$results, mixed $searchResults): bool
+    private function appendPlayerEntries(array &$players, mixed $searchResults): bool
     {
         if (!is_array($searchResults)) {
-            return count($results) >= self::RESULT_LIMIT;
+            return count($players) >= self::RESULT_LIMIT;
         }
 
         foreach ($searchResults as $item) {
@@ -314,74 +314,45 @@ final class PsnPlayerSearchService
 
             $onlineId = $this->extractStringProperty($player, 'onlineId');
             $accountId = $this->extractStringProperty($player, 'accountId');
-            $country = $this->extractPlayerCountry($player, $item);
 
-            $results[] = new PsnPlayerSearchResult($onlineId, $accountId, $country);
+            if ($onlineId === '' && $accountId === '') {
+                continue;
+            }
 
-            if (count($results) >= self::RESULT_LIMIT) {
+            $players[] = [
+                'onlineId' => $onlineId,
+                'accountId' => $accountId,
+            ];
+
+            if (count($players) >= self::RESULT_LIMIT) {
                 return true;
             }
         }
 
-        return count($results) >= self::RESULT_LIMIT;
+        return count($players) >= self::RESULT_LIMIT;
     }
 
-    private function extractPlayerCountry(object $player, ?object $searchResultItem = null): string
+    /**
+     * @param list<array{onlineId: string, accountId: string}> $players
+     * @return list<PsnPlayerSearchResult>
+     */
+    private function hydratePlayerSearchResults(object $client, array $players): array
     {
-        $country = $this->extractFirstNonEmptyString($player, ['country', 'countryCode', 'countryName', 'region']);
+        $results = [];
 
-        if ($country !== '') {
-            return $country;
+        foreach ($players as $player) {
+            $onlineId = $player['onlineId'] ?? '';
+            $accountId = $player['accountId'] ?? '';
+            $languages = '';
+
+            if ($accountId !== '') {
+                $languages = $this->fetchPlayerLanguages($client, $accountId);
+            }
+
+            $results[] = new PsnPlayerSearchResult($onlineId, $accountId, $languages);
         }
 
-        foreach (['profile', 'personalDetail'] as $nestedProperty) {
-            $nested = $player->{$nestedProperty} ?? null;
-
-            if (!is_object($nested)) {
-                continue;
-            }
-
-            $country = $this->extractFirstNonEmptyString($nested, ['country', 'countryCode', 'countryName', 'region']);
-
-            if ($country !== '') {
-                return $country;
-            }
-        }
-
-        if ($searchResultItem !== null) {
-            $highlight = $searchResultItem->highlight ?? null;
-
-            if (is_object($highlight)) {
-                $country = $this->extractFirstNonEmptyString($highlight, ['country', 'countryCode', 'countryName', 'region']);
-
-                if ($country !== '') {
-                    return $country;
-                }
-            }
-        }
-
-        return '';
-    }
-
-    private function extractFirstNonEmptyString(object $source, array $properties): string
-    {
-        foreach ($properties as $property) {
-            if (!property_exists($source, $property)) {
-                continue;
-            }
-
-            $value = $source->{$property};
-
-            if (is_string($value)) {
-                $value = trim($value);
-
-                if ($value !== '') {
-                    return $value;
-                }
-            }
-        }
-
-        return '';
+        return $results;
     }
 
     private function extractStringProperty(object $source, string $property): string
@@ -401,6 +372,59 @@ final class PsnPlayerSearchService
         }
 
         return '';
+    }
+
+    private function fetchPlayerLanguages(object $client, string $accountId): string
+    {
+        try {
+            $profile = $this->executeUserProfileRequest($client, $accountId);
+        } catch (Throwable) {
+            return '';
+        }
+
+        if (!is_object($profile)) {
+            return '';
+        }
+
+        $languages = $profile->languages ?? null;
+
+        if (!is_array($languages)) {
+            return '';
+        }
+
+        $normalized = [];
+
+        foreach ($languages as $language) {
+            if (!is_string($language)) {
+                continue;
+            }
+
+            $language = trim($language);
+
+            if ($language === '') {
+                continue;
+            }
+
+            if (!in_array($language, $normalized, true)) {
+                $normalized[] = $language;
+            }
+        }
+
+        return implode(', ', $normalized);
+    }
+
+    private function executeUserProfileRequest(object $client, string $accountId): ?object
+    {
+        if (!method_exists($client, 'get')) {
+            throw new RuntimeException('The PlayStation client does not support profile requests.');
+        }
+
+        $path = sprintf(
+            'userProfile/v1/internal/users/%s/profiles',
+            rawurlencode($accountId)
+        );
+
+        return $client->get($path, [], ['content-type' => 'application/json']);
     }
 
     private function createRateLimitException(Throwable $exception): ?PsnPlayerSearchRateLimitException

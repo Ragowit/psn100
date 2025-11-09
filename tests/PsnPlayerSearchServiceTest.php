@@ -41,7 +41,6 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $players[] = [
                 'onlineId' => 'Player' . $index,
                 'accountId' => (string) $index,
-                'country' => 'US',
             ];
         }
 
@@ -59,28 +58,46 @@ final class PsnPlayerSearchServiceTest extends TestCase
                     $firstDomainResponse,
                     $secondDomainResponse
                 ): object {
-                    $operationName = $query['operationName'] ?? '';
-                    $variables = PsnPlayerSearchServiceTest::decodeVariables($query);
-                    $searchTerm = (string) ($variables['searchTerm'] ?? '');
+                    if ($path === 'graphql/v1/op') {
+                        $operationName = $query['operationName'] ?? '';
+                        $variables = PsnPlayerSearchServiceTest::decodeVariables($query);
+                        $searchTerm = (string) ($variables['searchTerm'] ?? '');
 
-                    if ($searchTerm !== 'example') {
+                        if ($searchTerm !== 'example') {
+                            return (object) [];
+                        }
+
+                        if ($operationName === 'metGetContextSearchResults') {
+                            return $contextResponse;
+                        }
+
+                        if ($operationName === 'metGetDomainSearchResults') {
+                            $nextCursor = (string) ($variables['nextCursor'] ?? '');
+
+                            if ($nextCursor === 'cursor-1') {
+                                return $firstDomainResponse;
+                            }
+
+                            if ($nextCursor === 'cursor-2') {
+                                return $secondDomainResponse;
+                            }
+                        }
+
                         return (object) [];
                     }
 
-                    if ($operationName === 'metGetContextSearchResults') {
-                        return $contextResponse;
-                    }
-
-                    if ($operationName === 'metGetDomainSearchResults') {
-                        $nextCursor = (string) ($variables['nextCursor'] ?? '');
-
-                        if ($nextCursor === 'cursor-1') {
-                            return $firstDomainResponse;
+                    if (str_starts_with($path, 'userProfile/v1/internal/users/')) {
+                        if (preg_match('~/users/([^/]+)/profiles$~', $path, $matches) !== 1) {
+                            return (object) [];
                         }
 
-                        if ($nextCursor === 'cursor-2') {
-                            return $secondDomainResponse;
+                        $accountId = $matches[1];
+
+                        if ($accountId === '1') {
+                            return (object) ['languages' => ['en-US', 'fr-FR']];
                         }
+
+                        return (object) ['languages' => ['ja-JP']];
                     }
 
                     return (object) [];
@@ -95,6 +112,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $this->assertCount(50, $results);
         $this->assertSame('Player1', $results[0]->getOnlineId());
         $this->assertSame('Player50', $results[49]->getOnlineId());
+        $this->assertSame('en-US, fr-FR', $results[0]->getLanguages());
+        $this->assertSame('ja-JP', $results[1]->getLanguages());
     }
 
     public function testSearchSkipsWorkersThatFailToLogin(): void
@@ -105,15 +124,23 @@ final class PsnPlayerSearchServiceTest extends TestCase
         ];
 
         $graphQlHandler = static function (string $path, array $query, array $headers = []): object {
-            $variables = PsnPlayerSearchServiceTest::decodeVariables($query);
+            if ($path === 'graphql/v1/op') {
+                $variables = PsnPlayerSearchServiceTest::decodeVariables($query);
 
-            if (($variables['searchTerm'] ?? '') !== 'example') {
-                return (object) [];
+                if (($variables['searchTerm'] ?? '') !== 'example') {
+                    return (object) [];
+                }
+
+                return PsnPlayerSearchServiceTest::createContextSearchResponse([
+                    ['onlineId' => 'Hunter', 'accountId' => '42'],
+                ]);
             }
 
-            return PsnPlayerSearchServiceTest::createContextSearchResponse([
-                ['onlineId' => 'Hunter', 'accountId' => '42', 'country' => 'SE'],
-            ]);
+            if (preg_match('~/users/([^/]+)/profiles$~', $path, $matches) === 1 && $matches[1] === '42') {
+                return (object) ['languages' => ['en-GB']];
+            }
+
+            return (object) [];
         };
 
         $clients = [
@@ -143,6 +170,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertSame('Hunter', $results[0]->getOnlineId());
+        $this->assertSame('en-GB', $results[0]->getLanguages());
     }
 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void
@@ -235,7 +263,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
     }
 
     /**
-     * @param list<array{onlineId: string, accountId: string, country: string}> $players
+     * @param list<array{onlineId: string, accountId: string}> $players
      */
     private static function createContextSearchResponse(array $players, ?string $nextCursor = null): object
     {
@@ -251,7 +279,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
     }
 
     /**
-     * @param list<array{onlineId: string, accountId: string, country: string}> $players
+     * @param list<array{onlineId: string, accountId: string}> $players
      */
     private static function createDomainSearchResponse(array $players, ?string $nextCursor = null): object
     {
@@ -263,7 +291,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
     }
 
     /**
-     * @param list<array{onlineId: string, accountId: string, country: string}> $players
+     * @param list<array{onlineId: string, accountId: string}> $players
      */
     private static function createDomainResponseBody(array $players, ?string $nextCursor): object
     {
@@ -279,7 +307,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
     }
 
     /**
-     * @param array{onlineId: string, accountId: string, country: string} $player
+     * @param array{onlineId: string, accountId: string} $player
      */
     private static function createSearchResultItem(array $player): object
     {
@@ -290,7 +318,6 @@ final class PsnPlayerSearchServiceTest extends TestCase
             'result' => (object) [
                 '__typename' => 'Player',
                 'accountId' => $player['accountId'],
-                'country' => $player['country'],
                 'onlineId' => $player['onlineId'],
             ],
             'resultOriginFlag' => null,
