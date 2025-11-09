@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/Exceptions/ApiException.php';
 require_once __DIR__ . '/Exceptions/AuthenticationException.php';
 require_once __DIR__ . '/Exceptions/NotFoundException.php';
+require_once __DIR__ . '/Json/DecodingException.php';
+require_once __DIR__ . '/Json/Decoder.php';
 require_once __DIR__ . '/HttpClient.php';
 require_once __DIR__ . '/AuthTokens.php';
 require_once __DIR__ . '/Authenticator.php';

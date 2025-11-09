@@ -6,9 +6,18 @@ namespace Achievements\PsnApi;
 
 use Achievements\PsnApi\Exceptions\ApiException;
 use Achievements\PsnApi\Exceptions\AuthenticationException;
+use Achievements\PsnApi\Json\Decoder;
+use Achievements\PsnApi\Json\DecodingException;
 
 final class HttpClient
 {
+    private Decoder $decoder;
+
+    public function __construct(?Decoder $decoder = null)
+    {
+        $this->decoder = $decoder ?? new Decoder();
+    }
+
     /**
      * @param array<string, string> $headers
      */
@@ -59,18 +68,16 @@ final class HttpClient
         $trimmedBody = trim($bodyPart);
         if ($trimmedBody !== '') {
             try {
-                /** @var array<string, mixed>|null $decodedBody */
-                $decodedBody = json_decode($trimmedBody, true, 512, JSON_THROW_ON_ERROR);
-            } catch (\JsonException $exception) {
+                $decodedBody = $this->decodeResponse($trimmedBody);
+            } catch (DecodingException $exception) {
                 $fallbackBody = $contentEncoding !== null
                     ? $this->attemptDecompression($bodyPart, $contentEncoding)
                     : $bodyPart;
 
                 if ($fallbackBody !== $bodyPart) {
                     try {
-                        /** @var array<string, mixed>|null $decodedBody */
-                        $decodedBody = json_decode(trim($fallbackBody), true, 512, JSON_THROW_ON_ERROR);
-                    } catch (\JsonException $innerException) {
+                        $decodedBody = $this->decodeResponse(trim($fallbackBody));
+                    } catch (DecodingException $innerException) {
                         throw new ApiException(
                             'Unable to decode response from the PlayStation Network API.',
                             $statusCode,
@@ -227,5 +234,24 @@ final class HttpClient
         }
 
         return $body;
+    }
+
+    /**
+     * @return array<mixed>
+     * @throws DecodingException
+     */
+    private function decodeResponse(string $payload): array
+    {
+        $decoded = $this->decoder->decode($payload);
+
+        if ($decoded === null) {
+            return [];
+        }
+
+        if (!is_array($decoded)) {
+            return ['value' => $decoded];
+        }
+
+        return $decoded;
     }
 }
