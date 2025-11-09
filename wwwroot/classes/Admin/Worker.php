@@ -8,8 +8,6 @@ final class Worker
 
     private string $npsso;
 
-    private string $refreshToken;
-
     private string $scanning;
 
     private DateTimeImmutable $scanStart;
@@ -24,15 +22,13 @@ final class Worker
         string $npsso,
         string $scanning,
         DateTimeImmutable $scanStart,
-        ?array $scanProgress = null,
-        string $refreshToken = ''
+        ?array $scanProgress
     ) {
         $this->id = $id;
         $this->npsso = $npsso;
         $this->scanning = $scanning;
         $this->scanStart = $scanStart;
         $this->scanProgress = $scanProgress;
-        $this->refreshToken = $refreshToken;
     }
 
     public function getId(): int
@@ -61,10 +57,5 @@ final class Worker
     public function getScanProgress(): ?array
     {
         return $this->scanProgress;
-    }
-
-    public function getRefreshToken(): string
-    {
-        return $this->refreshToken;
     }
 }

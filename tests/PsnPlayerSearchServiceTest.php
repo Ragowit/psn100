@@ -20,9 +20,6 @@ final class PsnPlayerSearchServiceTest extends TestCase
                     new StubUserCollection([]),
                     static function (): void {
                         throw new RuntimeException('Client should not attempt to authenticate.');
-                    },
-                    static function (): void {
-                        throw new RuntimeException('Client should not attempt to authenticate.');
                     }
                 );
             }
@@ -33,7 +30,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
     public function testSearchReturnsUpToFiftyResults(): void
     {
-        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'));
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $searchResults = [];
         for ($index = 1; $index <= 60; $index++) {
@@ -61,8 +58,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
     public function testSearchSkipsWorkersThatFailToLogin(): void
     {
         $workers = [
-            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null, 'refresh-token-invalid'),
-            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00')),
+            new Worker(1, 'invalid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
         $userCollection = new StubUserCollection([
@@ -72,9 +69,6 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $clients = [
             new StubClient(
                 $userCollection,
-                static function (): void {
-                    throw new RuntimeException('Invalid credentials.');
-                },
                 static function (): void {
                     throw new RuntimeException('Invalid credentials.');
                 }
@@ -101,55 +95,6 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $this->assertSame('Hunter', $results[0]->getOnlineId());
     }
 
-    public function testSearchFallsBackToRefreshTokenWhenNpssoFails(): void
-    {
-        $worker = new Worker(
-            1,
-            'bad-npsso',
-            '',
-            new DateTimeImmutable('2024-01-01T00:00:00'),
-            null,
-            'good-refresh-token'
-        );
-
-        $userCollection = new StubUserCollection([
-            'example' => [new StubUserSearchResult('Fallback', '314', 'SE')],
-        ]);
-
-        $attempts = [];
-
-        $service = new PsnPlayerSearchService(
-            static function () use ($worker): array {
-                return [$worker];
-            },
-            static function () use ($userCollection, &$attempts): object {
-                return new StubClient(
-                    $userCollection,
-                    static function (string $npsso) use (&$attempts): void {
-                        $attempts[] = ['type' => 'npsso', 'value' => $npsso];
-
-                        throw new RuntimeException('NPSSO login failed.');
-                    },
-                    static function (string $refreshToken) use (&$attempts): void {
-                        $attempts[] = ['type' => 'refresh', 'value' => $refreshToken];
-                    }
-                );
-            }
-        );
-
-        $results = $service->search('example');
-
-        $this->assertCount(1, $results);
-        $this->assertSame('Fallback', $results[0]->getOnlineId());
-        $this->assertSame(
-            [
-                ['type' => 'npsso', 'value' => 'bad-npsso'],
-                ['type' => 'refresh', 'value' => 'good-refresh-token'],
-            ],
-            $attempts
-        );
-    }
- 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void
     {
         $service = new PsnPlayerSearchService(
@@ -166,22 +111,15 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->fail('Expected RuntimeException to be thrown when no worker can authenticate.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Unable to login to any worker accounts. No workers were returned by the worker service.',
+                'Admin player search failed while creating an authenticated client: RuntimeException: Unable to login to any worker accounts.',
                 $exception->getMessage()
             );
         }
     }
 
-    public function testSearchIncludesFailureMessagesWhenAuthenticationFails(): void
+    public function testSearchWrapsUserLookupFailuresWithDiagnosticMessage(): void
     {
-        $worker = new Worker(
-            4,
-            'bad-npsso',
-            '',
-            new DateTimeImmutable('2024-01-01T00:00:00'),
-            null,
-            'bad-refresh-token'
-        );
+        $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
         $service = new PsnPlayerSearchService(
             static function () use ($worker): array {
@@ -189,23 +127,21 @@ final class PsnPlayerSearchServiceTest extends TestCase
             },
             static function (): object {
                 return new StubClient(
-                    new StubUserCollection([]),
-                    static function (): void {
-                        throw new RuntimeException('Invalid credentials.');
-                    },
-                    static function (): void {
-                        throw new RuntimeException('Refresh token expired.');
-                    }
+                    new StubUserCollection([
+                        'example' => static function (): iterable {
+                            throw new RuntimeException('API offline');
+                        },
+                    ])
                 );
             }
         );
 
         try {
             $service->search('example');
-            $this->fail('Expected RuntimeException due to authentication failures.');
+            $this->fail('Expected RuntimeException to be thrown when the search fails.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Unable to login to any worker accounts. Checked 1 worker(s). Failures: Worker 4 authentication failed: RuntimeException: All authentication attempts failed. NPSSO login failed: RuntimeException: Invalid credentials. refresh-token login failed: RuntimeException: Refresh token expired.',
+                'Admin player search failed while querying "example": RuntimeException: API offline',
                 $exception->getMessage()
             );
         }
@@ -217,31 +153,18 @@ final class StubClient
     private StubUserCollection $users;
 
     /** @var callable(string): void */
-    private $npssoLoginHandler;
+    private $loginHandler;
 
-    /** @var callable(string): void */
-    private $refreshTokenLoginHandler;
-
-    public function __construct(
-        StubUserCollection $users,
-        ?callable $npssoLoginHandler = null,
-        ?callable $refreshTokenLoginHandler = null
-    ) {
+    public function __construct(StubUserCollection $users, ?callable $loginHandler = null)
+    {
         $this->users = $users;
-        $this->npssoLoginHandler = $npssoLoginHandler ?? static function (): void {
-        };
-        $this->refreshTokenLoginHandler = $refreshTokenLoginHandler ?? static function (): void {
+        $this->loginHandler = $loginHandler ?? static function (): void {
         };
     }
 
     public function loginWithNpsso(string $npsso): void
     {
-        ($this->npssoLoginHandler)($npsso);
-    }
-
-    public function loginWithRefreshToken(string $refreshToken): void
-    {
-        ($this->refreshTokenLoginHandler)($refreshToken);
+        ($this->loginHandler)($npsso);
     }
 
     public function users(): StubUserCollection
@@ -270,7 +193,17 @@ final class StubUserCollection
      */
     public function search(string $query): iterable
     {
-        return $this->resultsByQuery[$query] ?? [];
+        $results = $this->resultsByQuery[$query] ?? [];
+
+        if ($results instanceof Throwable) {
+            throw $results;
+        }
+
+        if (is_callable($results)) {
+            $results = $results();
+        }
+
+        return $results;
     }
 }
 

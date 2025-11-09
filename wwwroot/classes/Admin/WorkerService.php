@@ -19,7 +19,7 @@ final class WorkerService
     public function fetchWorkers(): array
     {
         $statement = $this->database->query(
-            'SELECT id, refresh_token, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY scan_start ASC'
+            'SELECT id, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY scan_start ASC'
         );
 
         if ($statement === false) {
@@ -31,7 +31,6 @@ final class WorkerService
         while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
             $id = isset($row['id']) ? (int) $row['id'] : 0;
             $npsso = (string) ($row['npsso'] ?? '');
-            $refreshToken = (string) ($row['refresh_token'] ?? '');
             $scanning = (string) ($row['scanning'] ?? '');
             $scanStartRaw = (string) ($row['scan_start'] ?? '');
             $scanProgressValue = $row['scan_progress'] ?? null;
@@ -46,7 +45,7 @@ final class WorkerService
                 is_string($scanProgressValue) ? $scanProgressValue : null
             );
 
-            $workers[] = new Worker($id, $npsso, $scanning, $scanStart, $scanProgress, $refreshToken);
+            $workers[] = new Worker($id, $npsso, $scanning, $scanStart, $scanProgress);
         }
 
         return $workers;
