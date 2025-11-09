@@ -187,7 +187,23 @@ final class Client
             return '';
         }
 
-        return http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
+        $pairs = [];
+        foreach ($queryParameters as $key => $value) {
+            if (!is_scalar($value)) {
+                throw new PsnApiException('Query parameters must be scalar values.');
+            }
+
+            $pairs[] = rawurlencode((string) $key) . '=' . $this->escapeUriComponent((string) $value);
+        }
+
+        return implode('&', $pairs);
+    }
+
+    private function escapeUriComponent(string $value): string
+    {
+        $encoded = rawurlencode($value);
+
+        return str_replace('%7E', '~', $encoded);
     }
 
     private function fetchAuthorizationCode(string $npsso): string
