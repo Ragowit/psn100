@@ -165,7 +165,49 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $service->search('example');
             $this->fail('Expected RuntimeException to be thrown when no worker can authenticate.');
         } catch (RuntimeException $exception) {
-            $this->assertSame('Unable to login to any worker accounts.', $exception->getMessage());
+            $this->assertSame(
+                'Unable to login to any worker accounts. No workers were returned by the worker service.',
+                $exception->getMessage()
+            );
+        }
+    }
+
+    public function testSearchIncludesFailureMessagesWhenAuthenticationFails(): void
+    {
+        $worker = new Worker(
+            4,
+            'bad-npsso',
+            '',
+            new DateTimeImmutable('2024-01-01T00:00:00'),
+            null,
+            'bad-refresh-token'
+        );
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function (): object {
+                return new StubClient(
+                    new StubUserCollection([]),
+                    static function (): void {
+                        throw new RuntimeException('Invalid credentials.');
+                    },
+                    static function (): void {
+                        throw new RuntimeException('Refresh token expired.');
+                    }
+                );
+            }
+        );
+
+        try {
+            $service->search('example');
+            $this->fail('Expected RuntimeException due to authentication failures.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Unable to login to any worker accounts. Failures: Worker 4 authentication failed: All authentication attempts failed. NPSSO login failed: Invalid credentials. refresh-token login failed: Refresh token expired.',
+                $exception->getMessage()
+            );
         }
     }
 }

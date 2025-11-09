@@ -77,16 +77,23 @@ final class PsnPlayerSearchService
     {
         $factory = $this->clientFactory;
         $lastError = null;
+        $failureMessages = [];
+        $workerFound = false;
 
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
+                $failureMessages[] = 'Encountered a non-worker entry while fetching admin workers.';
+
                 continue;
             }
 
+            $workerFound = true;
             $npsso = trim($worker->getNpsso());
             $refreshToken = trim($worker->getRefreshToken());
 
             if ($npsso === '' && $refreshToken === '') {
+                $failureMessages[] = sprintf('Worker %d is missing both NPSSO and refresh token credentials.', $worker->getId());
+
                 continue;
             }
 
@@ -96,23 +103,47 @@ final class PsnPlayerSearchService
                 if (!is_object($client)) {
                     throw new RuntimeException('Invalid PlayStation client.');
                 }
+            } catch (Throwable $exception) {
+                $lastError = $exception;
+                $failureMessages[] = sprintf(
+                    'Worker %d failed to create a PlayStation client: %s',
+                    $worker->getId(),
+                    $exception->getMessage()
+                );
 
-                $this->authenticateClient($client, $npsso, $refreshToken);
+                continue;
+            }
+
+            try {
+                $this->authenticateClient($client, $worker);
 
                 return $client;
             } catch (Throwable $exception) {
                 $lastError = $exception;
+                $failureMessages[] = sprintf(
+                    'Worker %d authentication failed: %s',
+                    $worker->getId(),
+                    $exception->getMessage()
+                );
             }
         }
 
-        if ($lastError instanceof Throwable) {
-            throw new RuntimeException('Unable to login to any worker accounts.', 0, $lastError);
+        $message = 'Unable to login to any worker accounts.';
+
+        if ($failureMessages !== []) {
+            $message .= ' Failures: ' . implode(' | ', $failureMessages);
+        } elseif (!$workerFound) {
+            $message .= ' No workers were returned by the worker service.';
         }
 
-        throw new RuntimeException('Unable to login to any worker accounts.');
+        if ($lastError instanceof Throwable) {
+            throw new RuntimeException($message, 0, $lastError);
+        }
+
+        throw new RuntimeException($message);
     }
 
-    private function authenticateClient(object $client, string $npsso, string $refreshToken): void
+    private function authenticateClient(object $client, Worker $worker): void
     {
         $supportsNpsso = method_exists($client, 'loginWithNpsso');
         $supportsRefreshToken = method_exists($client, 'loginWithRefreshToken');
@@ -122,37 +153,53 @@ final class PsnPlayerSearchService
         }
 
         $attempts = [];
+        $npsso = trim($worker->getNpsso());
+        $refreshToken = trim($worker->getRefreshToken());
 
         if ($supportsNpsso && $npsso !== '') {
-            $attempts[] = static function () use ($client, $npsso): void {
-                $client->loginWithNpsso($npsso);
-            };
+            $attempts[] = [
+                'label' => 'NPSSO',
+                'callback' => static function () use ($client, $npsso): void {
+                    $client->loginWithNpsso($npsso);
+                },
+            ];
         }
 
         if ($supportsRefreshToken && $refreshToken !== '') {
-            $attempts[] = static function () use ($client, $refreshToken): void {
-                $client->loginWithRefreshToken($refreshToken);
-            };
+            $attempts[] = [
+                'label' => 'refresh-token',
+                'callback' => static function () use ($client, $refreshToken): void {
+                    $client->loginWithRefreshToken($refreshToken);
+                },
+            ];
         }
 
         if ($attempts === []) {
-            throw new RuntimeException('Worker is missing authentication credentials.');
+            throw new RuntimeException('Worker is missing usable authentication credentials.');
         }
 
         $lastError = null;
+        $attemptErrors = [];
 
         foreach ($attempts as $attempt) {
             try {
-                $attempt();
+                $attempt['callback']();
 
                 return;
             } catch (Throwable $exception) {
                 $lastError = $exception;
+                $attemptErrors[] = sprintf('%s login failed: %s', $attempt['label'], $exception->getMessage());
             }
         }
 
         if ($lastError instanceof Throwable) {
-            throw $lastError;
+            $message = 'All authentication attempts failed.';
+
+            if ($attemptErrors !== []) {
+                $message .= ' ' . implode(' ', $attemptErrors);
+            }
+
+            throw new RuntimeException($message, 0, $lastError);
         }
 
         throw new RuntimeException('Failed to authenticate with the provided credentials.');
