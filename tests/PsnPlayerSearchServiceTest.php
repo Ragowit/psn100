@@ -7,6 +7,7 @@ require_once __DIR__ . '/../wwwroot/classes/PsnApi/autoload.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchRateLimitException.php';
 
 final class PsnPlayerSearchServiceTest extends TestCase
 {
@@ -121,6 +122,69 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->assertSame('Unable to login to any worker accounts.', $exception->getMessage());
         }
     }
+
+    public function testSearchThrowsRateLimitExceptionWithRetryTimestamp(): void
+    {
+        $retryAt = new DateTimeImmutable('2024-07-15T12:30:00+00:00');
+
+        $workers = [
+            new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
+        ];
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($workers): array {
+                return $workers;
+            },
+            static function () use ($retryAt): object {
+                return new RateLimitedClient($retryAt);
+            }
+        );
+
+        try {
+            $service->search('example');
+            $this->fail('Expected rate limit exception when API returns 429.');
+        } catch (PsnPlayerSearchRateLimitException $exception) {
+            $this->assertSame($retryAt->getTimestamp(), $exception->getRetryAt()->getTimestamp());
+        }
+    }
+
+    public function testControllerDisplaysRateLimitWarning(): void
+    {
+        $retryAt = new DateTimeImmutable('2024-07-15T12:30:00+00:00');
+
+        $_GET['player'] = 'Example';
+        $psnPlayerSearchService = new class ($retryAt)
+        {
+            private DateTimeImmutable $retryAt;
+
+            public function __construct(DateTimeImmutable $retryAt)
+            {
+                $this->retryAt = $retryAt;
+            }
+
+            public function search(string $playerName): array
+            {
+                throw new PsnPlayerSearchRateLimitException($this->retryAt);
+            }
+        };
+
+        $previousTimezone = date_default_timezone_get();
+        date_default_timezone_set('UTC');
+        header_remove();
+        ob_start();
+
+        require __DIR__ . '/../wwwroot/admin/psn-player-search.php';
+
+        $output = (string) ob_get_clean();
+
+        unset($_GET['player'], $psnPlayerSearchService);
+        date_default_timezone_set($previousTimezone);
+
+        $this->assertStringContainsString(
+            'PSN search rate limited until 2024-07-15 12:30:00 UTC. Please wait before retrying.',
+            $output
+        );
+    }
 }
 
 final class StubClient
@@ -169,6 +233,51 @@ final class StubUserCollection
     public function search(string $query): iterable
     {
         return $this->resultsByQuery[$query] ?? [];
+    }
+}
+
+final class RateLimitedUserCollection
+{
+    private DateTimeImmutable $retryAt;
+
+    public function __construct(DateTimeImmutable $retryAt)
+    {
+        $this->retryAt = $retryAt;
+    }
+
+    /**
+     * @return iterable<object>
+     */
+    public function search(string $query): iterable
+    {
+        throw new PsnApi\HttpException(
+            'GET',
+            'https://example.com/users',
+            429,
+            '',
+            'Too many requests.',
+            null,
+            ['X-RateLimit-Next-Available' => [$this->retryAt->format('U')]]
+        );
+    }
+}
+
+final class RateLimitedClient
+{
+    private RateLimitedUserCollection $users;
+
+    public function __construct(DateTimeImmutable $retryAt)
+    {
+        $this->users = new RateLimitedUserCollection($retryAt);
+    }
+
+    public function loginWithNpsso(string $npsso): void
+    {
+    }
+
+    public function users(): RateLimitedUserCollection
+    {
+        return $this->users;
     }
 }
 

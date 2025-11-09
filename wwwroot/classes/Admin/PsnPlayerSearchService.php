@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/PsnPlayerSearchResult.php';
+require_once __DIR__ . '/PsnPlayerSearchRateLimitException.php';
 require_once __DIR__ . '/../PsnApi/autoload.php';
 
 use PsnApi\PlayStationClient;
+use PsnApi\HttpException;
 
 final class PsnPlayerSearchService
 {
@@ -62,16 +64,104 @@ final class PsnPlayerSearchService
         $results = [];
         $count = 0;
 
-        foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
-            $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
-            $count++;
+        try {
+            foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
+                $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
+                $count++;
 
-            if ($count >= self::RESULT_LIMIT) {
-                break;
+                if ($count >= self::RESULT_LIMIT) {
+                    break;
+                }
             }
+        } catch (Throwable $exception) {
+            $rateLimitException = $this->createRateLimitException($exception);
+
+            if ($rateLimitException !== null) {
+                throw $rateLimitException;
+            }
+
+            throw $exception;
         }
 
         return $results;
+    }
+
+    private function createRateLimitException(Throwable $exception): ?PsnPlayerSearchRateLimitException
+    {
+        $retryAt = $this->extractRateLimitRetryAt($exception);
+
+        if ($retryAt === null) {
+            return null;
+        }
+
+        return new PsnPlayerSearchRateLimitException($retryAt, previous: $exception);
+    }
+
+    private function extractRateLimitRetryAt(Throwable $exception): ?DateTimeImmutable
+    {
+        for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
+            if ($current instanceof HttpException && $current->getStatusCode() === 429) {
+                $retryAt = $this->parseRetryAt($current->getHeaderLine('X-RateLimit-Next-Available'));
+
+                if ($retryAt !== null) {
+                    return $retryAt;
+                }
+            }
+
+            $response = $this->extractResponseFromException($current);
+
+            if ($response !== null && (int) $response->getStatusCode() === 429) {
+                $retryAt = $this->parseRetryAt((string) $response->getHeaderLine('X-RateLimit-Next-Available'));
+
+                if ($retryAt !== null) {
+                    return $retryAt;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function parseRetryAt(string $headerValue): ?DateTimeImmutable
+    {
+        $trimmedValue = trim($headerValue);
+
+        if ($trimmedValue === '') {
+            return null;
+        }
+
+        if (ctype_digit($trimmedValue)) {
+            $timestamp = (int) $trimmedValue;
+
+            return (new DateTimeImmutable('@' . $timestamp))->setTimezone(new DateTimeZone('UTC'));
+        }
+
+        $timestamp = strtotime($trimmedValue);
+
+        if ($timestamp !== false) {
+            return (new DateTimeImmutable('@' . $timestamp))->setTimezone(new DateTimeZone('UTC'));
+        }
+
+        return null;
+    }
+
+    private function extractResponseFromException(Throwable $exception): ?object
+    {
+        if (!method_exists($exception, 'getResponse')) {
+            return null;
+        }
+
+        $response = $exception->getResponse();
+
+        if (!is_object($response)) {
+            return null;
+        }
+
+        if (!method_exists($response, 'getStatusCode') || !method_exists($response, 'getHeaderLine')) {
+            return null;
+        }
+
+        return $response;
     }
 
     private function createAuthenticatedClient(): object

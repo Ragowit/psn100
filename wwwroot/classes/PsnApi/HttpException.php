@@ -14,18 +14,28 @@ class HttpException extends \RuntimeException
 
     private string $body;
 
+    /**
+     * @var array<string, list<string>>
+     */
+    private array $headers;
+
+    /**
+     * @param array<string, list<string>> $headers
+     */
     public function __construct(
         string $method,
         string $uri,
         int $statusCode,
         string $body,
         string $message = '',
-        ?\Throwable $previous = null
+        ?\Throwable $previous = null,
+        array $headers = []
     ) {
         $this->method = $method;
         $this->uri = $uri;
         $this->statusCode = $statusCode;
         $this->body = $body;
+        $this->headers = $headers;
 
         if ($message === '') {
             $message = sprintf(
@@ -57,5 +67,26 @@ class HttpException extends \RuntimeException
     public function getBody(): string
     {
         return $this->body;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    public function getHeaderLine(string $name): string
+    {
+        $normalizedName = strtolower($name);
+
+        foreach ($this->headers as $headerName => $values) {
+            if (strtolower($headerName) === $normalizedName) {
+                return implode(', ', $values);
+            }
+        }
+
+        return '';
     }
 }

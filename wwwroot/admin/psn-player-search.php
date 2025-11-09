@@ -1,9 +1,17 @@
 <?php
 declare(strict_types=1);
 
-require_once '../init.php';
-require_once '../vendor/autoload.php';
-require_once '../classes/Admin/PsnPlayerSearchService.php';
+require_once __DIR__ . '/../classes/Admin/PsnPlayerSearchService.php';
+
+$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+if (is_file($vendorAutoload)) {
+    require_once $vendorAutoload;
+}
+
+if (!isset($psnPlayerSearchService)) {
+    require_once __DIR__ . '/../init.php';
+    $psnPlayerSearchService = PsnPlayerSearchService::fromDatabase($database);
+}
 
 $searchTerm = isset($_GET['player']) ? (string) $_GET['player'] : '';
 $normalizedSearchTerm = trim($searchTerm);
@@ -12,8 +20,11 @@ $errorMessage = null;
 
 if ($normalizedSearchTerm !== '') {
     try {
-        $searchService = PsnPlayerSearchService::fromDatabase($database);
-        $results = $searchService->search($normalizedSearchTerm);
+        $results = $psnPlayerSearchService->search($normalizedSearchTerm);
+    } catch (PsnPlayerSearchRateLimitException $exception) {
+        $retryAt = $exception->getRetryAt()->setTimezone(new DateTimeZone(date_default_timezone_get()));
+        $formattedRetryAt = $retryAt->format('Y-m-d H:i:s T');
+        $errorMessage = sprintf('PSN search rate limited until %s. Please wait before retrying.', $formattedRetryAt);
     } catch (Throwable $exception) {
         $message = trim($exception->getMessage());
 

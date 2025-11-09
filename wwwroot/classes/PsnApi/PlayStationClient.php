@@ -189,7 +189,8 @@ final class PlayStationClient
             $exception->getStatusCode(),
             $exception->getBody(),
             $message,
-            $exception
+            $exception,
+            $exception->getHeaders()
         );
     }
 }
