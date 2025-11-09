@@ -27,14 +27,16 @@ final class Users
             return [];
         }
 
-        $response = $this->client->get('/api/search/v1/universalSearch', [
-            'searchDomains' => 'SocialAllAccounts',
-            'countryCode' => 'us',
-            'languageCode' => 'en',
-            'age' => '69',
-            'pageSize' => (string) self::PAGE_SIZE,
-            'searchTerm' => $trimmed,
+        $queryString = implode('&', [
+            'searchDomains=SocialAllAccounts',
+            'countryCode=us',
+            'languageCode=en',
+            'age=69',
+            'pageSize=' . self::PAGE_SIZE,
+            'searchTerm=' . rawurlencode($trimmed),
         ]);
+
+        $response = $this->client->get('/api/search/v1/universalSearch', $queryString);
 
         $results = [];
         foreach ($response['domainResponses'] ?? [] as $domainResponse) {

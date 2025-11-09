@@ -50,9 +50,10 @@ final class Client
     }
 
     /**
+     * @param array<string, scalar>|string $queryParameters
      * @return array<string, mixed>
      */
-    public function get(string $path, array $queryParameters = []): array
+    public function get(string $path, array|string $queryParameters = []): array
     {
         return $this->request(
             $path,
@@ -142,17 +143,18 @@ final class Client
     }
 
     /**
-     * @param array<string, scalar> $queryParameters
+     * @param array<string, scalar>|string $queryParameters
      * @param list<string> $headers
      * @return array<string, mixed>
      */
-    private function request(string $path, string $method, array $queryParameters, array $headers, ?string $body = null): array
+    private function request(string $path, string $method, array|string $queryParameters, array $headers, ?string $body = null): array
     {
         $this->assertAuthenticated();
 
         $uri = self::MOBILE_BASE_URI . '/' . ltrim($path, '/');
-        if ($queryParameters !== []) {
-            $uri .= '?' . http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
+        $queryString = $this->buildQueryString($queryParameters);
+        if ($queryString !== '') {
+            $uri .= '?' . $queryString;
         }
 
         $response = $this->sendCurlRequest($uri, $headers, $method, $body);
@@ -170,6 +172,22 @@ final class Client
         }
 
         return $this->decodeJsonResponse($response['body'], $response['status']);
+    }
+
+    /**
+     * @param array<string, scalar>|string $queryParameters
+     */
+    private function buildQueryString(array|string $queryParameters): string
+    {
+        if (is_string($queryParameters)) {
+            return ltrim($queryParameters, '?');
+        }
+
+        if ($queryParameters === []) {
+            return '';
+        }
+
+        return http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
     }
 
     private function fetchAuthorizationCode(string $npsso): string
