@@ -13,6 +13,8 @@ final class Client
 {
     private const AUTH_BASE_URI = 'https://ca.account.sony.com';
     private const MOBILE_BASE_URI = 'https://m.np.playstation.com';
+    private const USER_AGENT = 'PlayStation/21090100 CFNetwork/1126 Darwin/19.5.0';
+    private const ACCEPT_LANGUAGE = 'en-US';
     private const AUTHORIZATION_SCOPE = 'psn:mobile.v2.core psn:clientapp';
     private const AUTH_CLIENT_ID = '09515159-7237-4370-9b40-3806e67c0891';
     private const AUTH_REDIRECT_URI = 'com.scee.psxandroid.scecompcall://redirect';
@@ -62,17 +64,21 @@ final class Client
             [
                 'Accept: application/json',
                 'Authorization: Bearer ' . $this->authTokens->getAccessToken(),
-                'User-Agent: psnapi-php/1.0',
+                'User-Agent: ' . self::USER_AGENT,
+                'Accept-Language: ' . self::ACCEPT_LANGUAGE,
             ]
         );
     }
 
     /**
+     * @param array<string, mixed> $payload
+     * @param array<string, scalar>|string $queryParameters
+     * @param list<string> $additionalHeaders
      * @return array<string, mixed>
      */
-    public function postJson(string $path, array $payload): array
+    public function postJson(string $path, array $payload, array|string $queryParameters = [], array $additionalHeaders = []): array
     {
-        $body = json_encode($payload);
+        $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($body === false) {
             throw new PsnApiException('Unable to encode JSON payload.');
         }
@@ -80,12 +86,14 @@ final class Client
         return $this->request(
             $path,
             'POST',
-            [],
+            $queryParameters,
             [
                 'Accept: application/json',
                 'Authorization: Bearer ' . $this->authTokens->getAccessToken(),
                 'Content-Type: application/json',
-                'User-Agent: psnapi-php/1.0',
+                'User-Agent: ' . self::USER_AGENT,
+                'Accept-Language: ' . self::ACCEPT_LANGUAGE,
+                ...$additionalHeaders,
             ],
             $body
         );
