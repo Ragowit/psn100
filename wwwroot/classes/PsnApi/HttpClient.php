@@ -47,7 +47,13 @@ final class HttpClient
         $headerSize = (int) curl_getinfo($handle, CURLINFO_HEADER_SIZE);
         curl_close($handle);
 
+        $headerPart = substr($response, 0, $headerSize);
+        $headersMap = $this->parseResponseHeaders($headerPart);
         $bodyPart = substr($response, $headerSize);
+
+        if ($bodyPart !== '' && isset($headersMap['content-encoding'])) {
+            $bodyPart = $this->decodeBody($bodyPart, $headersMap['content-encoding']);
+        }
 
         if ($statusCode === 401) {
             throw new AuthenticationException('Authentication failed with the PlayStation Network API.', $statusCode);
@@ -110,11 +116,29 @@ final class HttpClient
             throw new ApiException('Unexpected response from the PlayStation Network API.', $statusCode);
         }
 
-        $headersMap = [];
-        $lines = preg_split('/\r\n/', trim((string) $response));
-        if ($lines === false) {
-            return $headersMap;
+        return $this->parseResponseHeaders((string) $response);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function parseResponseHeaders(string $rawHeaders): array
+    {
+        $trimmed = trim($rawHeaders);
+
+        if ($trimmed === '') {
+            return [];
         }
+
+        $sections = explode("\r\n\r\n", $trimmed);
+        $lastSection = array_pop($sections);
+
+        if ($lastSection === null || $lastSection === '') {
+            return [];
+        }
+
+        $headersMap = [];
+        $lines = explode("\r\n", $lastSection);
 
         foreach ($lines as $line) {
             $parts = explode(':', $line, 2);
@@ -127,5 +151,52 @@ final class HttpClient
         }
 
         return $headersMap;
+    }
+
+    private function decodeBody(string $body, string $encodingHeader): string
+    {
+        $encodings = array_filter(array_map('trim', explode(',', strtolower($encodingHeader))));
+
+        if ($encodings === []) {
+            return $body;
+        }
+
+        foreach (array_reverse($encodings) as $encoding) {
+            switch ($encoding) {
+                case 'gzip':
+                    $decoded = @gzdecode($body);
+                    if ($decoded !== false) {
+                        $body = $decoded;
+                    }
+                    break;
+                case 'deflate':
+                    $decoded = @gzuncompress($body);
+                    if ($decoded === false) {
+                        $decoded = @gzinflate($body);
+                    }
+                    if ($decoded !== false) {
+                        $body = $decoded;
+                    }
+                    break;
+                case 'br':
+                    if (function_exists('brotli_uncompress')) {
+                        $decoded = @brotli_uncompress($body);
+                        if ($decoded !== false) {
+                            $body = $decoded;
+                        }
+                    }
+                    break;
+                case 'zstd':
+                    if (function_exists('zstd_uncompress')) {
+                        $decoded = @zstd_uncompress($body);
+                        if ($decoded !== false) {
+                            $body = $decoded;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return $body;
     }
 }
