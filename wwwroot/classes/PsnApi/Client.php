@@ -152,7 +152,7 @@ final class Client
 
         $uri = self::MOBILE_BASE_URI . '/' . ltrim($path, '/');
         if ($queryParameters !== []) {
-            $uri .= '?' . http_build_query($queryParameters);
+            $uri .= '?' . http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
         }
 
         $response = $this->sendCurlRequest($uri, $headers, $method, $body);
