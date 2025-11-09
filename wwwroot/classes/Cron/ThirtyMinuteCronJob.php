@@ -296,18 +296,28 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $userCounter = 0;
 
                     foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
-                        if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
-                            $user = $userSearchResult;
-                            $userFound = true;
-                            $country = $user->country();
-                            break;
-                        }
-
                         // Limit to the first 50 search results
-                        $userCounter++;
                         if ($userCounter >= 50) {
                             break;
                         }
+
+                        $userCounter++;
+
+                        if (strtolower($userSearchResult->onlineId()) != strtolower($player["online_id"])) {
+                            continue;
+                        }
+
+                        $accountId = $userSearchResult->accountId();
+
+                        if ($accountId === '') {
+                            continue;
+                        }
+
+                        $user = $client->users()->find($accountId);
+                        $country = $userSearchResult->country();
+                        $userFound = true;
+
+                        break;
                     }
 
                     if (!$userFound) {
