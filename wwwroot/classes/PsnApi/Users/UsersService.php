@@ -121,10 +121,14 @@ final class UsersService
                 $authorizationHeaders
             );
         } catch (ApiException $exception) {
-            $summaryResponse = null;
+            if (in_array($exception->getCode(), [403, 404], true)) {
+                throw new NotFoundException('User trophy summary not accessible.', 0, $exception);
+            }
+
+            throw $exception;
         }
 
-        $summary = $this->createSummary($summaryResponse ?? []);
+        $summary = $this->createSummary($summaryResponse);
 
         return new User(
             $this->client,
