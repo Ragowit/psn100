@@ -104,7 +104,13 @@ final class UserTrophyTitle
                 $authorizationHeaders
             );
         } catch (ApiException $exception) {
-            throw new NotFoundException('Unable to retrieve user trophies for the specified title.', 0, $exception);
+            $statusCode = $exception->getCode();
+
+            if ($statusCode === 403 || $statusCode === 404) {
+                throw new NotFoundException('Unable to retrieve user trophies for the specified title.', 0, $exception);
+            }
+
+            throw $exception;
         }
 
         if (!isset($userTrophiesResponse['trophies']) || !is_array($userTrophiesResponse['trophies'])) {
