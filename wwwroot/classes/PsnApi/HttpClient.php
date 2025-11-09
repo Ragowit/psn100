@@ -47,7 +47,9 @@ final class HttpClient
         $headerSize = (int) curl_getinfo($handle, CURLINFO_HEADER_SIZE);
         curl_close($handle);
 
+        $headerPart = substr($response, 0, $headerSize);
         $bodyPart = substr($response, $headerSize);
+        $contentEncoding = $this->extractHeaderValue($headerPart, 'content-encoding');
 
         if ($statusCode === 401) {
             throw new AuthenticationException('Authentication failed with the PlayStation Network API.', $statusCode);
@@ -60,7 +62,25 @@ final class HttpClient
                 /** @var array<string, mixed>|null $decodedBody */
                 $decodedBody = json_decode($trimmedBody, true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $exception) {
-                throw new ApiException('Unable to decode response from the PlayStation Network API.', $statusCode, null, $exception);
+                $fallbackBody = $contentEncoding !== null
+                    ? $this->attemptDecompression($bodyPart, $contentEncoding)
+                    : $bodyPart;
+
+                if ($fallbackBody !== $bodyPart) {
+                    try {
+                        /** @var array<string, mixed>|null $decodedBody */
+                        $decodedBody = json_decode(trim($fallbackBody), true, 512, JSON_THROW_ON_ERROR);
+                    } catch (\JsonException $innerException) {
+                        throw new ApiException(
+                            'Unable to decode response from the PlayStation Network API.',
+                            $statusCode,
+                            null,
+                            $innerException
+                        );
+                    }
+                } else {
+                    throw new ApiException('Unable to decode response from the PlayStation Network API.', $statusCode, null, $exception);
+                }
             }
         }
 
@@ -127,5 +147,85 @@ final class HttpClient
         }
 
         return $headersMap;
+    }
+
+    private function extractHeaderValue(string $headerBlob, string $headerName): ?string
+    {
+        $segments = preg_split('/\r\n\r\n/', $headerBlob);
+
+        if ($segments === false || $segments === []) {
+            return null;
+        }
+
+        $lastSegment = trim((string) array_pop($segments));
+
+        if ($lastSegment === '') {
+            return null;
+        }
+
+        $headerLines = preg_split('/\r\n/', $lastSegment);
+
+        if ($headerLines === false) {
+            return null;
+        }
+
+        $normalizedName = strtolower($headerName);
+
+        foreach ($headerLines as $line) {
+            $parts = explode(':', $line, 2);
+
+            if (count($parts) !== 2) {
+                continue;
+            }
+
+            if (strtolower(trim($parts[0])) === $normalizedName) {
+                return trim($parts[1]);
+            }
+        }
+
+        return null;
+    }
+
+    private function attemptDecompression(string $body, string $contentEncoding): string
+    {
+        $encoding = strtolower($contentEncoding);
+
+        if (str_contains($encoding, 'gzip')) {
+            $decoded = @gzdecode($body);
+
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+        }
+
+        if (str_contains($encoding, 'deflate')) {
+            $decoded = @gzuncompress($body);
+
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+
+            $decoded = @gzinflate($body);
+
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+
+            $decoded = @zlib_decode($body);
+
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+        }
+
+        if (str_contains($encoding, 'br') && function_exists('brotli_uncompress')) {
+            $decoded = @brotli_uncompress($body);
+
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return $body;
     }
 }
