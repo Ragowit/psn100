@@ -56,56 +56,10 @@ final class PsnPlayerSearchService
             return [];
         }
 
-        try {
-            ['client' => $client, 'worker' => $worker] = $this->createAuthenticatedClient();
-        } catch (Throwable $exception) {
-            throw new RuntimeException(
-                sprintf(
-                    'Admin player search failed while creating an authenticated client: %s',
-                    $this->describeException($exception)
-                ),
-                (int) $exception->getCode(),
-                $exception
-            );
-        }
-
-        $results = [];
-        $count = 0;
-
-        try {
-            foreach ($client->users()->search($normalizedPlayerName) as $userSearchResult) {
-                $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
-                $count++;
-
-                if ($count >= self::RESULT_LIMIT) {
-                    break;
-                }
-            }
-        } catch (Throwable $exception) {
-            throw new RuntimeException(
-                sprintf(
-                    'Admin player search failed while querying "%s" using worker #%d: %s',
-                    $normalizedPlayerName,
-                    $worker->getId(),
-                    $this->describeQueryException($exception, $client)
-                ),
-                (int) $exception->getCode(),
-                $exception
-            );
-        }
-
-        return $results;
-    }
-
-    /**
-     * @return array{client: object, worker: Worker}
-     */
-    private function createAuthenticatedClient(): array
-    {
-        $factory = $this->clientFactory;
-
         $authenticationErrors = [];
+        $queryErrors = [];
         $encounteredWorker = false;
+        $encounteredAuthenticatedWorker = false;
 
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
@@ -129,46 +83,132 @@ final class PsnPlayerSearchService
             }
 
             try {
-                $client = $factory();
+                $client = $this->createClient();
+            } catch (Throwable $exception) {
+                $authenticationErrors[] = sprintf(
+                    'Worker #%d client creation failed: %s',
+                    $worker->getId(),
+                    $this->describeException($exception)
+                );
+                continue;
+            }
 
-                if (!is_object($client)) {
-                    throw new RuntimeException('Invalid PlayStation client.');
-                }
+            if (!method_exists($client, 'loginWithNpsso')) {
+                $authenticationErrors[] = sprintf(
+                    'Worker #%d client does not support NPSSO authentication.',
+                    $worker->getId()
+                );
+                continue;
+            }
 
-                if (!method_exists($client, 'loginWithNpsso')) {
-                    throw new RuntimeException('The PlayStation client does not support NPSSO authentication.');
-                }
-
+            try {
                 $client->loginWithNpsso($npsso);
-
-                return [
-                    'client' => $client,
-                    'worker' => $worker,
-                ];
             } catch (Throwable $exception) {
                 $authenticationErrors[] = sprintf(
                     'Worker #%d login failed: %s',
                     $worker->getId(),
                     $this->describeException($exception)
                 );
+                continue;
+            }
+
+            $encounteredAuthenticatedWorker = true;
+
+            try {
+                return $this->queryPlayerSearchResults($client, $normalizedPlayerName);
+            } catch (Throwable $exception) {
+                $queryErrors[] = sprintf(
+                    'Worker #%d: %s',
+                    $worker->getId(),
+                    $this->describeQueryException($exception, $client)
+                );
+
+                continue;
             }
         }
 
-        if (!$encounteredWorker) {
-            $details = $authenticationErrors === [] ? '' : ' Details: ' . implode(' ', $authenticationErrors);
-
+        if ($encounteredAuthenticatedWorker) {
             throw new RuntimeException(
-                'Unable to login to any worker accounts: worker fetcher did not return any Worker instances.' . $details
+                $this->buildQueryFailureMessage($normalizedPlayerName, $queryErrors, $authenticationErrors)
             );
         }
 
-        if ($authenticationErrors === []) {
-            throw new RuntimeException('Unable to login to any worker accounts: no workers with NPSSO tokens were available.');
+        throw new RuntimeException(
+            sprintf(
+                'Admin player search failed while creating an authenticated client: RuntimeException: %s',
+                $this->buildAuthenticationFailureMessage($authenticationErrors, $encounteredWorker)
+            )
+        );
+    }
+
+    private function createClient(): object
+    {
+        $factory = $this->clientFactory;
+
+        $client = $factory();
+
+        if (!is_object($client)) {
+            throw new RuntimeException('Invalid PlayStation client.');
         }
 
-        throw new RuntimeException(
-            'Unable to login to any worker accounts: ' . implode('; ', $authenticationErrors)
+        return $client;
+    }
+
+    /**
+     * @return list<PsnPlayerSearchResult>
+     */
+    private function queryPlayerSearchResults(object $client, string $playerName): array
+    {
+        $results = [];
+        $count = 0;
+
+        foreach ($client->users()->search($playerName) as $userSearchResult) {
+            $results[] = PsnPlayerSearchResult::fromUserSearchResult($userSearchResult);
+            $count++;
+
+            if ($count >= self::RESULT_LIMIT) {
+                break;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * @param list<string> $queryErrors
+     * @param list<string> $authenticationErrors
+     */
+    private function buildQueryFailureMessage(string $playerName, array $queryErrors, array $authenticationErrors): string
+    {
+        $message = sprintf(
+            'Admin player search failed while querying "%s": %s',
+            $playerName,
+            $queryErrors === [] ? 'no successful worker queries were executed.' : implode('; ', $queryErrors)
         );
+
+        if ($authenticationErrors !== []) {
+            $message .= sprintf(' (additional authentication issues: %s)', implode('; ', $authenticationErrors));
+        }
+
+        return $message;
+    }
+
+    /**
+     * @param list<string> $authenticationErrors
+     */
+    private function buildAuthenticationFailureMessage(array $authenticationErrors, bool $encounteredWorker): string
+    {
+        if (!$encounteredWorker) {
+            $details = $authenticationErrors === [] ? '' : ' Details: ' . implode(' ', $authenticationErrors);
+
+            return 'Unable to login to any worker accounts: worker fetcher did not return any Worker instances.' . $details;
+        }
+
+        if ($authenticationErrors === []) {
+            return 'Unable to login to any worker accounts: no workers with NPSSO tokens were available.';
+        }
+
+        return 'Unable to login to any worker accounts: ' . implode('; ', $authenticationErrors);
     }
 
     private function describeException(Throwable $exception): string

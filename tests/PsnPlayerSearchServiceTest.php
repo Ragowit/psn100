@@ -142,7 +142,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->fail('Expected RuntimeException to be thrown when the search fails.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Admin player search failed while querying "example" using worker #1: RuntimeException: API offline',
+                'Admin player search failed while querying "example": Worker #1: RuntimeException: API offline',
                 $exception->getMessage()
             );
         }
@@ -204,7 +204,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $this->fail('Expected RuntimeException to be thrown when the search fails.');
         } catch (RuntimeException $exception) {
             $this->assertSame(
-                'Admin player search failed while querying "silent" using worker #1: RuntimeException (no message provided)',
+                'Admin player search failed while querying "silent": Worker #1: RuntimeException (no message provided)',
                 $exception->getMessage()
             );
         }
@@ -242,11 +242,105 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $message = $exception->getMessage();
 
             $this->assertStringContainsString(
-                'Admin player search failed while querying "Ragowit" using worker #7: Tustin\Haste\Exception\AccessDeniedHttpException: Access was denied by the PlayStation API (HTTP 403 Forbidden;',
+                'Admin player search failed while querying "Ragowit": Worker #7: Tustin\Haste\Exception\AccessDeniedHttpException: Access was denied by the PlayStation API (HTTP 403 Forbidden;',
                 $message
             );
             $this->assertStringContainsString('Body: {"error":"insufficient_scope"}', $message);
             $this->assertStringContainsString('Confirm the worker account can perform user searches', $message);
+        }
+    }
+
+    public function testSearchRetriesWorkersWhenQueryFails(): void
+    {
+        $workers = [
+            new Worker(1, 'valid-one', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, 'valid-two', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
+        ];
+
+        $userCollections = [
+            new StubUserCollection([
+                'example' => static function (): iterable {
+                    throw new RuntimeException('API offline');
+                },
+            ]),
+            new StubUserCollection([
+                'example' => [new StubUserSearchResult('Hunter', '42', 'SE')],
+            ]),
+        ];
+
+        $clients = [
+            new StubClient($userCollections[0]),
+            new StubClient($userCollections[1]),
+        ];
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($workers): array {
+                return $workers;
+            },
+            static function () use (&$clients): object {
+                return array_shift($clients);
+            }
+        );
+
+        $results = $service->search('example');
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Hunter', $results[0]->getOnlineId());
+    }
+
+    public function testSearchAggregatesQueryFailuresAndAuthenticationIssues(): void
+    {
+        $workers = [
+            new Worker(1, 'valid-one', '', new DateTimeImmutable('2024-01-01T00:00:00'), null),
+            new Worker(2, '', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
+            new Worker(3, 'valid-three', '', new DateTimeImmutable('2024-01-03T00:00:00'), null),
+        ];
+
+        $userCollections = [
+            new StubUserCollection([
+                'example' => static function (): iterable {
+                    throw new RuntimeException('Service unavailable');
+                },
+            ]),
+            new StubUserCollection([
+                'example' => static function (): iterable {
+                    throw new RuntimeException('Rate limited');
+                },
+            ]),
+        ];
+
+        $clients = [
+            new StubClient($userCollections[0]),
+            new StubClient($userCollections[1]),
+        ];
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($workers): array {
+                return $workers;
+            },
+            static function () use (&$clients): object {
+                if ($clients === []) {
+                    throw new RuntimeException('No client available');
+                }
+
+                return array_shift($clients);
+            }
+        );
+
+        try {
+            $service->search('example');
+            $this->fail('Expected RuntimeException to be thrown when all worker queries fail.');
+        } catch (RuntimeException $exception) {
+            $message = $exception->getMessage();
+
+            $this->assertStringContainsString(
+                'Admin player search failed while querying "example": Worker #1: RuntimeException: Service unavailable; Worker #3: RuntimeException: Rate limited',
+                $message
+            );
+            $this->assertStringContainsString(
+                '(additional authentication issues: Worker #2 has no NPSSO token.)',
+                $message
+            );
         }
     }
 }
