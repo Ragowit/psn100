@@ -6,6 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerSearchResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/stubs/Tustin/Haste/Exception/AccessDeniedHttpException.php';
 
 final class PsnPlayerSearchServiceTest extends TestCase
 {
@@ -208,6 +209,46 @@ final class PsnPlayerSearchServiceTest extends TestCase
             );
         }
     }
+
+    public function testSearchAddsContextToAccessDeniedErrors(): void
+    {
+        $worker = new Worker(7, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
+
+        $responseBody = json_encode(['error' => 'insufficient_scope']);
+
+        $client = new StubClient(
+            new StubUserCollection([
+                'Ragowit' => static function (): iterable {
+                    throw new Tustin\Haste\Exception\AccessDeniedHttpException();
+                },
+            ])
+        );
+
+        $client->setLastResponse(new StubResponse(403, 'Forbidden', (string) $responseBody));
+
+        $service = new PsnPlayerSearchService(
+            static function () use ($worker): array {
+                return [$worker];
+            },
+            static function () use ($client): object {
+                return $client;
+            }
+        );
+
+        try {
+            $service->search('Ragowit');
+            $this->fail('Expected RuntimeException to be thrown when the search fails.');
+        } catch (RuntimeException $exception) {
+            $message = $exception->getMessage();
+
+            $this->assertStringContainsString(
+                'Admin player search failed while querying "Ragowit" using worker #7: Tustin\Haste\Exception\AccessDeniedHttpException: Access was denied by the PlayStation API (HTTP 403 Forbidden;',
+                $message
+            );
+            $this->assertStringContainsString('Body: {"error":"insufficient_scope"}', $message);
+            $this->assertStringContainsString('Confirm the worker account can perform user searches', $message);
+        }
+    }
 }
 
 final class StubClient
@@ -216,6 +257,8 @@ final class StubClient
 
     /** @var callable(string): void */
     private $loginHandler;
+
+    private ?StubResponse $lastResponse = null;
 
     public function __construct(StubUserCollection $users, ?callable $loginHandler = null)
     {
@@ -232,6 +275,16 @@ final class StubClient
     public function users(): StubUserCollection
     {
         return $this->users;
+    }
+
+    public function setLastResponse(?StubResponse $response): void
+    {
+        $this->lastResponse = $response;
+    }
+
+    public function getLastResponse(): ?StubResponse
+    {
+        return $this->lastResponse;
     }
 }
 
@@ -297,5 +350,56 @@ final class StubUserSearchResult
     public function country(): string
     {
         return $this->country;
+    }
+}
+
+final class StubResponse
+{
+    private int $statusCode;
+
+    private string $reasonPhrase;
+
+    private StubResponseBody $body;
+
+    public function __construct(int $statusCode, string $reasonPhrase, string $body)
+    {
+        $this->statusCode = $statusCode;
+        $this->reasonPhrase = $reasonPhrase;
+        $this->body = new StubResponseBody($body);
+    }
+
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    public function getReasonPhrase(): string
+    {
+        return $this->reasonPhrase;
+    }
+
+    public function getBody(): StubResponseBody
+    {
+        return $this->body;
+    }
+}
+
+final class StubResponseBody
+{
+    private string $contents;
+
+    public function __construct(string $contents)
+    {
+        $this->contents = $contents;
+    }
+
+    public function __toString(): string
+    {
+        return $this->contents;
+    }
+
+    public function getContents(): string
+    {
+        return $this->contents;
     }
 }

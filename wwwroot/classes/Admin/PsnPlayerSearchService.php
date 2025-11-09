@@ -87,7 +87,7 @@ final class PsnPlayerSearchService
                     'Admin player search failed while querying "%s" using worker #%d: %s',
                     $normalizedPlayerName,
                     $worker->getId(),
-                    $this->describeException($exception)
+                    $this->describeQueryException($exception, $client)
                 ),
                 (int) $exception->getCode(),
                 $exception
@@ -180,5 +180,121 @@ final class PsnPlayerSearchService
         }
 
         return sprintf('%s: %s', get_class($exception), $message);
+    }
+
+    private function describeQueryException(Throwable $exception, object $client): string
+    {
+        $accessDeniedClass = 'Tustin\\Haste\\Exception\\AccessDeniedHttpException';
+
+        if (is_a($exception, $accessDeniedClass)) {
+            return $this->describeAccessDeniedException($exception, $client);
+        }
+
+        return $this->describeException($exception);
+    }
+
+    private function describeAccessDeniedException(Throwable $exception, object $client): string
+    {
+        $responseSummary = $this->summarizeClientResponse($client);
+
+        $status = $responseSummary['status'] ?? 'HTTP 403';
+        $details = $responseSummary['details'] ?? null;
+
+        $message = sprintf(
+            '%s: Access was denied by the PlayStation API (%s',
+            get_class($exception),
+            $status
+        );
+
+        if ($details !== null && $details !== '') {
+            $message .= '; ' . $details;
+        }
+
+        $message .= '). Confirm the worker account can perform user searches and that its credentials are still valid.';
+
+        return $message;
+    }
+
+    /**
+     * @return array{status: string|null, details: string|null}|null
+     */
+    private function summarizeClientResponse(object $client): ?array
+    {
+        if (!method_exists($client, 'getLastResponse')) {
+            return null;
+        }
+
+        try {
+            $response = $client->getLastResponse();
+        } catch (Throwable $exception) {
+            return null;
+        }
+
+        if (!is_object($response)) {
+            return null;
+        }
+
+        $status = null;
+        $details = [];
+
+        if (method_exists($response, 'getStatusCode')) {
+            try {
+                $statusCode = $response->getStatusCode();
+            } catch (Throwable $exception) {
+                $statusCode = null;
+            }
+
+            if (is_int($statusCode)) {
+                $status = 'HTTP ' . $statusCode;
+
+                if (method_exists($response, 'getReasonPhrase')) {
+                    try {
+                        $reason = trim((string) $response->getReasonPhrase());
+                    } catch (Throwable $exception) {
+                        $reason = '';
+                    }
+
+                    if ($reason !== '') {
+                        $status .= ' ' . $reason;
+                    }
+                }
+            }
+        }
+
+        if (method_exists($response, 'getBody')) {
+            try {
+                $body = (string) $response->getBody();
+            } catch (Throwable $exception) {
+                $body = '';
+            }
+
+            $body = trim($body);
+
+            if ($body !== '') {
+                $details[] = 'Body: ' . $this->truncate($body);
+            }
+        }
+
+        if ($status === null && $details === []) {
+            return null;
+        }
+
+        return [
+            'status' => $status,
+            'details' => $details === [] ? null : implode('; ', $details),
+        ];
+    }
+
+    private function truncate(string $value, int $limit = 500): string
+    {
+        if ($limit < 4) {
+            return substr($value, 0, $limit);
+        }
+
+        if (strlen($value) <= $limit) {
+            return $value;
+        }
+
+        return substr($value, 0, $limit - 3) . '...';
     }
 }
