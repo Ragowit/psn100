@@ -8,6 +8,7 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../PlayStationGraphqlPlayerSearch.php';
 
 use Tustin\PlayStation\Client;
 
@@ -287,6 +288,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
                     $query->execute();
                     $country = $query->fetchColumn();
+
+                    if (is_string($country) && strtolower($country) === 'zz') {
+                        $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
+
+                        if ($resolvedCountry !== null) {
+                            $country = $resolvedCountry;
+                            $this->updatePlayerCountry((int) $player["account_id"], $resolvedCountry);
+                        }
+                    }
                 } else {
                     // Search the user
                     unset($user);
@@ -305,6 +315,25 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $userCounter++;
                         if ($userCounter >= 50) {
                             break;
+                        }
+                    }
+
+                    if (!$userFound) {
+                        try {
+                            $graphQlSearcher = new PlayStationGraphqlPlayerSearch($client, 50);
+                            $graphQlPlayer = $graphQlSearcher->findExactPlayer($player["online_id"]);
+
+                            $graphQlAccountId = is_array($graphQlPlayer)
+                                ? (string) ($graphQlPlayer['accountId'] ?? '')
+                                : '';
+
+                            if ($graphQlAccountId !== '') {
+                                $user = $client->users()->find($graphQlAccountId);
+                                $userFound = true;
+                                $country = 'zz';
+                            }
+                        } catch (Throwable $graphQlException) {
+                            // Ignore and fall back to marking the player as private if still not found.
                         }
                     }
 
@@ -1420,6 +1449,52 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
+    }
+
+    private function findPlayerCountry(Client $client, string $onlineId): ?string
+    {
+        $normalizedOnlineId = strtolower($onlineId);
+        $userCounter = 0;
+
+        try {
+            foreach ($client->users()->search($onlineId) as $result) {
+                if (strtolower($result->onlineId()) === $normalizedOnlineId) {
+                    $country = $result->country();
+
+                    if (!is_string($country) || $country === '') {
+                        return null;
+                    }
+
+                    $normalizedCountry = strtolower($country);
+
+                    if ($normalizedCountry === 'zz') {
+                        return null;
+                    }
+
+                    return $normalizedCountry;
+                }
+
+                $userCounter++;
+
+                if ($userCounter >= 50) {
+                    break;
+                }
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function updatePlayerCountry(int $accountId, string $country): void
+    {
+        $query = $this->database->prepare(
+            'UPDATE player SET country = :country WHERE account_id = :account_id'
+        );
+        $query->bindValue(':country', strtolower($country), PDO::PARAM_STR);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->execute();
     }
 
     private function findTrophyTitleId(string $npCommunicationId): ?int
