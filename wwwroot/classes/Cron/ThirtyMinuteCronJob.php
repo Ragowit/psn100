@@ -8,7 +8,6 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
-require_once __DIR__ . '/../PlayStationGraphqlPlayerSearch.php';
 
 use Tustin\PlayStation\Client;
 
@@ -275,111 +274,105 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
             // Initialize the current player
             try {
-                if (is_numeric($player["account_id"])) {
-                    $user = $client->users()->find((string) $player["account_id"]);
-                    // ->find() doesn't have country information, but we should have it in our database from the ->search() when user was new to us.
-                    $query = $this->database->prepare("SELECT
-                            country
-                        FROM
-                            player
-                        WHERE
-                            account_id = :account_id
-                    ");
-                    $query->bindValue(":account_id", $player["account_id"], PDO::PARAM_INT);
-                    $query->execute();
-                    $country = $query->fetchColumn();
+                $originalOnlineId = (string) $player['online_id'];
+                $existingAccountId = $this->normalizeAccountIdValue($player['account_id'] ?? null);
+                $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
+                $country = 'zz';
 
-                    if (is_string($country) && strtolower($country) === 'zz') {
+                if ($profileLookup !== null) {
+                    $profile = $profileLookup['profile'] ?? null;
+
+                    if (!is_array($profile)) {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+                        continue;
+                    }
+
+                    $profileAccountId = $profile['accountId'] ?? null;
+
+                    if (!is_string($profileAccountId) || $profileAccountId === '') {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+                        continue;
+                    }
+
+                    $resolvedOnlineId = $this->determineResolvedOnlineId($profile, $originalOnlineId);
+
+                    if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
+                        $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
+                        $player['online_id'] = $resolvedOnlineId;
+                    } else {
+                        $player['online_id'] = $originalOnlineId;
+                    }
+
+                    $player['account_id'] = $profileAccountId;
+                    $user = $client->users()->find($profileAccountId);
+
+                    $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
+                    $country = $countryFromProfile;
+
+                    if ($country === null || strtolower($country) === 'zz') {
+                        $storedCountry = $this->fetchStoredCountryByAccountId((int) $profileAccountId);
+
+                        if (is_string($storedCountry) && $storedCountry !== '') {
+                            $country = $storedCountry;
+                        } else {
+                            $country = 'zz';
+                        }
+
+                        if (strtolower($country) === 'zz') {
+                            $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
+
+                            if ($resolvedCountry !== null) {
+                                $country = $resolvedCountry;
+                                $this->updatePlayerCountry((int) $profileAccountId, $resolvedCountry);
+                            }
+                        }
+                    } else {
+                        $this->updatePlayerCountry((int) $profileAccountId, $country);
+                    }
+                } else {
+                    if ($existingAccountId === null) {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+                        continue;
+                    }
+
+                    $player['account_id'] = $existingAccountId;
+                    $user = $client->users()->find($existingAccountId);
+
+                    $resolvedOnlineId = (string) $user->onlineId();
+
+                    if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
+                        $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
+                        $player['online_id'] = $resolvedOnlineId;
+                    } else {
+                        $player['online_id'] = $originalOnlineId;
+                    }
+
+                    $storedCountry = $this->fetchStoredCountryByAccountId((int) $existingAccountId);
+
+                    if (is_string($storedCountry) && $storedCountry !== '') {
+                        $country = $storedCountry;
+                    }
+
+                    if (strtolower($country) === 'zz') {
                         $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
 
                         if ($resolvedCountry !== null) {
                             $country = $resolvedCountry;
-                            $this->updatePlayerCountry((int) $player["account_id"], $resolvedCountry);
+                            $this->updatePlayerCountry((int) $existingAccountId, $resolvedCountry);
                         }
                     }
-                } else {
-                    // Search the user
-                    unset($user);
-                    $userFound = false;
-                    $userCounter = 0;
+                }
 
-                    try {
-                        foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
-                            if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
-                                $user = $userSearchResult;
-                                $userFound = true;
-                                $country = $user->country();
-                                break;
-                            }
-
-                            // Limit to the first 50 search results
-                            $userCounter++;
-                            if ($userCounter >= 50) {
-                                break;
-                            }
-                        }
-                    } catch (Exception $e) {
-                        // Some issues with the ->search() endpoint, try GraphQL next.
-                    }
-
-                    if (!$userFound) {
-                        try {
-                            $graphQlSearcher = new PlayStationGraphqlPlayerSearch($client, 50);
-                            $graphQlPlayer = $graphQlSearcher->findExactPlayer($player["online_id"]);
-
-                            $graphQlAccountId = is_array($graphQlPlayer)
-                                ? (string) ($graphQlPlayer['accountId'] ?? '')
-                                : '';
-
-                            if ($graphQlAccountId !== '') {
-                                $user = $client->users()->find($graphQlAccountId);
-                                $userFound = true;
-                                $country = 'zz'; // Country isn't available from GraphQL, set as unknown.
-                            }
-                        } catch (Throwable $graphQlException) {
-                            // Ignore and fall back to marking the player as private if still not found.
-                        }
-                    }
-
-                    if (!$userFound) {
-                        // User not found, set as private and remove from queue.
-                        $query = $this->database->prepare("UPDATE
-                                player
-                            SET
-                                `status` = 3,
-                                last_updated_date = NOW()
-                            WHERE
-                                online_id = :online_id
-                                AND `status` != 1
-                            ");
-                        $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
-                        $query->execute();
-
-                        $query = $this->database->prepare("DELETE
-                            FROM
-                                player_queue
-                            WHERE
-                                online_id = :online_id");
-                        $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
-                        $query->execute();
-
-                        continue;
-                    }
+                if (!is_string($country) || $country === '') {
+                    $country = 'zz';
                 }
 
                 // To test for exception (and apparently collects/updates to new onlineId if changed).
                 $user->aboutMe();
 
-                if (strtolower($player["online_id"]) != strtolower($user->onlineId())) {
-                    $query = $this->database->prepare("UPDATE player_queue SET online_id = :online_id_new WHERE online_id = :online_id_old");
-                    $query->bindValue(":online_id_new", $user->onlineId(), PDO::PARAM_STR);
-                    $query->bindValue(":online_id_old", $player["online_id"], PDO::PARAM_STR);
-                    $query->execute();
-
-                    $query = $this->database->prepare("UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id");
-                    $query->bindValue(":scanning", $user->onlineId(), PDO::PARAM_STR);
-                    $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
-                    $query->execute();
+                if (strcasecmp($player['online_id'], $user->onlineId()) !== 0) {
+                    $this->updateQueuedOnlineId((int) $worker['id'], (string) $player['online_id'], $user->onlineId());
+                    $player['online_id'] = $user->onlineId();
                 }
             } catch (Exception $e) {
                 // $e->getMessage() == "User not found", and another "Resource not found" error
@@ -1453,6 +1446,256 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
+    }
+
+    private function lookupPlayerProfile(Client $client, string $onlineId): ?array
+    {
+        $path = sprintf(
+            'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
+            rawurlencode($onlineId)
+        );
+
+        $query = [
+            'fields' => 'accountId,onlineId,currentOnlineId,npId',
+        ];
+
+        try {
+            $profile = $client->get($path, $query, ['content-type' => 'application/json']);
+        } catch (Throwable $exception) {
+            if ($this->determineStatusCode($exception) === 404) {
+                return null;
+            }
+
+            throw $exception;
+        }
+
+        $normalized = $this->normalizePlayerProfileResponse($profile);
+
+        return is_array($normalized) ? $normalized : null;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function determineResolvedOnlineId(array $profile, string $fallbackOnlineId): string
+    {
+        $currentOnlineId = $profile['currentOnlineId'] ?? null;
+        if (is_string($currentOnlineId) && $currentOnlineId !== '') {
+            return $currentOnlineId;
+        }
+
+        $onlineId = $profile['onlineId'] ?? null;
+        if (is_string($onlineId) && $onlineId !== '') {
+            return $onlineId;
+        }
+
+        return $fallbackOnlineId;
+    }
+
+    private function extractCountryFromNpId(mixed $npId): ?string
+    {
+        if (!is_string($npId) || $npId === '') {
+            return null;
+        }
+
+        $decoded = base64_decode($npId, true);
+        if ($decoded === false || $decoded === '') {
+            return null;
+        }
+
+        $trimmed = trim($decoded);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (strlen($trimmed) < 2) {
+            return null;
+        }
+
+        return strtolower(substr($trimmed, -2));
+    }
+
+    private function markPlayerAsPrivate(string $onlineId): void
+    {
+        $query = $this->database->prepare(
+            'UPDATE
+                player
+            SET
+                `status` = 3,
+                last_updated_date = NOW()
+            WHERE
+                online_id = :online_id
+                AND `status` != 1'
+        );
+        $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
+        $query->execute();
+
+        $query = $this->database->prepare(
+            'DELETE FROM player_queue WHERE online_id = :online_id'
+        );
+        $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function updateQueuedOnlineId(int $workerId, string $previousOnlineId, string $newOnlineId): void
+    {
+        $query = $this->database->prepare(
+            'UPDATE player_queue SET online_id = :online_id_new WHERE online_id = :online_id_old'
+        );
+        $query->bindValue(':online_id_new', $newOnlineId, PDO::PARAM_STR);
+        $query->bindValue(':online_id_old', $previousOnlineId, PDO::PARAM_STR);
+        $query->execute();
+
+        $query = $this->database->prepare(
+            'UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id'
+        );
+        $query->bindValue(':scanning', $newOnlineId, PDO::PARAM_STR);
+        $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
+        $query->execute();
+    }
+
+    /**
+     * @param mixed $accountId
+     */
+    private function normalizeAccountIdValue($accountId): ?string
+    {
+        if (is_int($accountId)) {
+            return (string) $accountId;
+        }
+
+        if (is_string($accountId)) {
+            $trimmed = trim($accountId);
+
+            if ($trimmed === '') {
+                return null;
+            }
+
+            return ctype_digit($trimmed) ? $trimmed : null;
+        }
+
+        if (is_float($accountId)) {
+            return (string) (int) $accountId;
+        }
+
+        if (is_numeric($accountId)) {
+            $numeric = (string) $accountId;
+
+            return ctype_digit($numeric) ? $numeric : null;
+        }
+
+        return null;
+    }
+
+    private function fetchStoredCountryByAccountId(int $accountId): ?string
+    {
+        $query = $this->database->prepare(
+            'SELECT country FROM player WHERE account_id = :account_id'
+        );
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->execute();
+
+        $country = $query->fetchColumn();
+
+        if (!is_string($country) || $country === '') {
+            return null;
+        }
+
+        return $country;
+    }
+
+    private function determineStatusCode(Throwable $exception): ?int
+    {
+        $response = $this->findResponseFromThrowable($exception);
+
+        if ($response !== null) {
+            $status = $this->extractStatusCodeFromResponse($response);
+
+            if ($status !== null) {
+                return $status;
+            }
+        }
+
+        return $this->extractStatusCodeFromThrowable($exception);
+    }
+
+    private function findResponseFromThrowable(Throwable $exception): ?object
+    {
+        if (method_exists($exception, 'getResponse')) {
+            $response = $exception->getResponse();
+
+            if (is_object($response)) {
+                return $response;
+            }
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->findResponseFromThrowable($previous);
+        }
+
+        return null;
+    }
+
+    private function extractStatusCodeFromResponse(object $response): ?int
+    {
+        if (method_exists($response, 'getStatusCode')) {
+            $statusCode = $response->getStatusCode();
+
+            if (is_int($statusCode)) {
+                return $statusCode;
+            }
+        }
+
+        if (method_exists($response, 'getStatus')) {
+            $status = $response->getStatus();
+
+            if (is_int($status)) {
+                return $status;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractStatusCodeFromThrowable(Throwable $exception): ?int
+    {
+        $code = $exception->getCode();
+
+        if (is_int($code) && $code > 0) {
+            return $code;
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->extractStatusCodeFromThrowable($previous);
+        }
+
+        return null;
+    }
+
+    private function normalizePlayerProfileResponse(mixed $profile): array
+    {
+        if (is_array($profile)) {
+            return $profile;
+        }
+
+        if (is_object($profile)) {
+            $encoded = json_encode($profile);
+
+            if ($encoded !== false) {
+                $decoded = json_decode($encoded, true);
+
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+
+            return get_object_vars($profile);
+        }
+
+        return [];
     }
 
     private function findPlayerCountry(Client $client, string $onlineId): ?string
