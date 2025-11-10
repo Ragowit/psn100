@@ -303,19 +303,23 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $userFound = false;
                     $userCounter = 0;
 
-                    foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
-                        if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
-                            $user = $userSearchResult;
-                            $userFound = true;
-                            $country = $user->country();
-                            break;
-                        }
+                    try {
+                        foreach ($client->users()->search($player["online_id"]) as $userSearchResult) {
+                            if (strtolower($userSearchResult->onlineId()) == strtolower($player["online_id"])) {
+                                $user = $userSearchResult;
+                                $userFound = true;
+                                $country = $user->country();
+                                break;
+                            }
 
-                        // Limit to the first 50 search results
-                        $userCounter++;
-                        if ($userCounter >= 50) {
-                            break;
+                            // Limit to the first 50 search results
+                            $userCounter++;
+                            if ($userCounter >= 50) {
+                                break;
+                            }
                         }
+                    } catch (Exception $e) {
+                        // Some issues with the ->search() endpoint, try GraphQL next.
                     }
 
                     if (!$userFound) {
@@ -330,7 +334,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             if ($graphQlAccountId !== '') {
                                 $user = $client->users()->find($graphQlAccountId);
                                 $userFound = true;
-                                $country = 'zz';
+                                $country = 'zz'; // Country isn't available from GraphQL, set as unknown.
                             }
                         } catch (Throwable $graphQlException) {
                             // Ignore and fall back to marking the player as private if still not found.
