@@ -86,18 +86,18 @@ final class PsnPlayerSearchServiceTest extends TestCase
                         return (object) [];
                     }
 
-                    if (str_starts_with($path, 'userProfile/v1/internal/users/')) {
-                        if (preg_match('~/users/([^/]+)/profiles$~', $path, $matches) !== 1) {
-                            return (object) [];
+                    if (preg_match('~^userProfile/v1/users/([^/]+)/profile2$~', $path, $matches) === 1) {
+                        $onlineId = rawurldecode($matches[1]);
+
+                        if ($onlineId === 'Player1') {
+                            return (object) ['npId' => base64_encode('player1@a6.us')];
                         }
 
-                        $accountId = $matches[1];
-
-                        if ($accountId === '1') {
-                            return (object) ['languages' => ['en-US', 'fr-FR']];
+                        if ($onlineId === 'Player2') {
+                            return (object) ['npId' => base64_encode('player2@a6.jp')];
                         }
 
-                        return (object) ['languages' => ['ja-JP']];
+                        return (object) ['npId' => base64_encode(strtolower($onlineId) . '@a6.us')];
                     }
 
                     return (object) [];
@@ -112,8 +112,10 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $this->assertCount(50, $results);
         $this->assertSame('Player1', $results[0]->getOnlineId());
         $this->assertSame('Player50', $results[49]->getOnlineId());
-        $this->assertSame('en-US, fr-FR', $results[0]->getLanguages());
-        $this->assertSame('ja-JP', $results[1]->getLanguages());
+        $this->assertSame('player1@a6.us', $results[0]->getNpId());
+        $this->assertSame('US', $results[0]->getCountry());
+        $this->assertSame('player2@a6.jp', $results[1]->getNpId());
+        $this->assertSame('JP', $results[1]->getCountry());
     }
 
     public function testSearchSkipsWorkersThatFailToLogin(): void
@@ -136,8 +138,12 @@ final class PsnPlayerSearchServiceTest extends TestCase
                 ]);
             }
 
-            if (preg_match('~/users/([^/]+)/profiles$~', $path, $matches) === 1 && $matches[1] === '42') {
-                return (object) ['languages' => ['en-GB']];
+            if (preg_match('~^userProfile/v1/users/([^/]+)/profile2$~', $path, $matches) === 1) {
+                $onlineId = rawurldecode($matches[1]);
+
+                if ($onlineId === 'Hunter') {
+                    return (object) ['npId' => base64_encode('hunter@a6.gb')];
+                }
             }
 
             return (object) [];
@@ -170,7 +176,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertSame('Hunter', $results[0]->getOnlineId());
-        $this->assertSame('en-GB', $results[0]->getLanguages());
+        $this->assertSame('hunter@a6.gb', $results[0]->getNpId());
+        $this->assertSame('GB', $results[0]->getCountry());
     }
 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void
