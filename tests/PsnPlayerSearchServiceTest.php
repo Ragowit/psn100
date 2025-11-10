@@ -90,14 +90,14 @@ final class PsnPlayerSearchServiceTest extends TestCase
                         $onlineId = rawurldecode($matches[1]);
 
                         if ($onlineId === 'Player1') {
-                            return (object) ['npId' => base64_encode('player1@a6.us')];
+                            return (object) ['profile' => (object) ['npId' => base64_encode('player1@a6.us')]];
                         }
 
                         if ($onlineId === 'Player2') {
-                            return (object) ['npId' => base64_encode('player2@a6.jp')];
+                            return (object) ['profile' => (object) ['npId' => base64_encode('player2@a6.jp')]];
                         }
 
-                        return (object) ['npId' => base64_encode(strtolower($onlineId) . '@a6.us')];
+                        return (object) ['profile' => (object) ['npId' => base64_encode(strtolower($onlineId) . '@a6.us')]];
                     }
 
                     return (object) [];
@@ -142,7 +142,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
                 $onlineId = rawurldecode($matches[1]);
 
                 if ($onlineId === 'Hunter') {
-                    return (object) ['npId' => base64_encode('hunter@a6.gb')];
+                    return (object) ['profile' => (object) ['npId' => base64_encode('hunter@a6.gb')]];
                 }
             }
 

@@ -42,13 +42,22 @@ final class PsnPlayerSearchResult
         $encodedNpId = null;
 
         if (is_object($profile)) {
-            $npIdValue = $profile->npId ?? null;
+            $npIdValue = self::extractNpIdFromProfile($profile);
             $encodedNpId = is_string($npIdValue) ? $npIdValue : null;
         }
 
         [$npId, $country] = self::normalizeNpId($encodedNpId);
 
         return new self($onlineId, $accountId, $npId, $country);
+    }
+
+    private static function extractNpIdFromProfile(object $profile): mixed
+    {
+        if (property_exists($profile, 'profile') && is_object($profile->profile)) {
+            return $profile->profile->npId ?? null;
+        }
+
+        return $profile->npId ?? null;
     }
 
     public function getOnlineId(): string
