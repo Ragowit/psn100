@@ -150,6 +150,8 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('', $handled['normalizedOnlineId']);
         $this->assertSame(null, $handled['result']);
         $this->assertSame(null, $handled['errorMessage']);
+        $this->assertSame(null, $handled['decodedNpId']);
+        $this->assertSame(null, $handled['npCountry']);
     }
 
     public function testRequestHandlerReturnsLookupErrorMessage(): void
@@ -172,6 +174,8 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('missing', $handled['normalizedOnlineId']);
         $this->assertSame(null, $handled['result']);
         $this->assertSame('Player "missing" was not found.', $handled['errorMessage']);
+        $this->assertSame(null, $handled['decodedNpId']);
+        $this->assertSame(null, $handled['npCountry']);
     }
 
     public function testRequestHandlerReturnsFallbackMessageForUnexpectedErrors(): void
@@ -191,6 +195,35 @@ final class PsnPlayerLookupServiceTest extends TestCase
             'An unexpected error occurred while looking up the player. Please try again later.',
             $handled['errorMessage']
         );
+        $this->assertSame(null, $handled['decodedNpId']);
+        $this->assertSame(null, $handled['npCountry']);
+    }
+
+    public function testRequestHandlerIncludesNpIdMetadataWhenAvailable(): void
+    {
+        $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static function (string $path = '', array $query = [], array $headers = []): object {
+                    return (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'Example',
+                            'npId' => base64_encode('example@a6.us'),
+                        ],
+                    ];
+                }
+            )
+        );
+
+        $handled = PsnPlayerLookupRequestHandler::handle($service, 'Example');
+
+        $this->assertSame('Example', $handled['normalizedOnlineId']);
+        $this->assertTrue(is_array($handled['result']), 'Expected lookup result to be an array.');
+        $this->assertSame(null, $handled['errorMessage']);
+        $this->assertSame('example@a6.us', $handled['decodedNpId']);
+        $this->assertSame('US', $handled['npCountry']);
     }
 }
 

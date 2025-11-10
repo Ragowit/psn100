@@ -13,6 +13,8 @@ $handledRequest = PsnPlayerLookupRequestHandler::handle($lookupService, $onlineI
 $normalizedOnlineId = $handledRequest['normalizedOnlineId'];
 $result = $handledRequest['result'];
 $errorMessage = $handledRequest['errorMessage'];
+$decodedNpId = $handledRequest['decodedNpId'];
+$npCountry = $handledRequest['npCountry'];
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -44,6 +46,22 @@ $errorMessage = $handledRequest['errorMessage'];
             <?php } elseif ($normalizedOnlineId !== '' && $result === null) { ?>
                 <div class="alert alert-info" role="alert">
                     No profile data was returned for "<?= htmlentities($normalizedOnlineId, ENT_QUOTES, 'UTF-8'); ?>".
+                </div>
+            <?php } ?>
+            <?php if ($decodedNpId !== null || $npCountry !== null) { ?>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <?php if ($decodedNpId !== null) { ?>
+                                <dt class="col-sm-3">Decoded NP ID</dt>
+                                <dd class="col-sm-9"><code><?= htmlentities($decodedNpId, ENT_QUOTES, 'UTF-8'); ?></code></dd>
+                            <?php } ?>
+                            <?php if ($npCountry !== null) { ?>
+                                <dt class="col-sm-3">Country</dt>
+                                <dd class="col-sm-9"><?= htmlentities($npCountry, ENT_QUOTES, 'UTF-8'); ?></dd>
+                            <?php } ?>
+                        </dl>
+                    </div>
                 </div>
             <?php } ?>
             <?php if (is_array($result)) { ?>
