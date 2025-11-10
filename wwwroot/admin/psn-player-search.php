@@ -54,7 +54,7 @@ $errorMessage = $handledRequest['errorMessage'];
                                 <th scope="col">#</th>
                                 <th scope="col">Online ID</th>
                                 <th scope="col">Account ID</th>
-                                <th scope="col">Country</th>
+                                <th scope="col">Languages</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -63,7 +63,7 @@ $errorMessage = $handledRequest['errorMessage'];
                                     <th scope="row"><?= $index + 1; ?></th>
                                     <td><?= htmlentities($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?= htmlentities($result->getAccountId(), ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td><?= htmlentities($result->getCountry(), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?= htmlentities($result->getLanguages(), ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                             <?php } ?>
                         </tbody>

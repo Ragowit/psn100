@@ -8,22 +8,50 @@ final class PsnPlayerSearchResult
 
     private string $accountId;
 
-    private string $country;
+    private string $languages;
 
-    public function __construct(string $onlineId, string $accountId, string $country)
+    public function __construct(string $onlineId, string $accountId, string $languages)
     {
         $this->onlineId = $onlineId;
         $this->accountId = $accountId;
-        $this->country = $country;
+        $this->languages = $languages;
     }
 
     public static function fromUserSearchResult(object $userSearchResult): self
     {
         $onlineId = method_exists($userSearchResult, 'onlineId') ? (string) $userSearchResult->onlineId() : '';
         $accountId = method_exists($userSearchResult, 'accountId') ? (string) $userSearchResult->accountId() : '';
-        $country = method_exists($userSearchResult, 'country') ? (string) $userSearchResult->country() : '';
+        $languages = '';
 
-        return new self($onlineId, $accountId, $country);
+        if (method_exists($userSearchResult, 'languages')) {
+            $languagesValue = $userSearchResult->languages();
+
+            if (is_array($languagesValue)) {
+                $normalized = [];
+
+                foreach ($languagesValue as $language) {
+                    if (!is_string($language)) {
+                        continue;
+                    }
+
+                    $language = trim($language);
+
+                    if ($language === '') {
+                        continue;
+                    }
+
+                    if (!in_array($language, $normalized, true)) {
+                        $normalized[] = $language;
+                    }
+                }
+
+                $languages = implode(', ', $normalized);
+            } elseif (is_string($languagesValue)) {
+                $languages = trim($languagesValue);
+            }
+        }
+
+        return new self($onlineId, $accountId, $languages);
     }
 
     public function getOnlineId(): string
@@ -36,8 +64,8 @@ final class PsnPlayerSearchResult
         return $this->accountId;
     }
 
-    public function getCountry(): string
+    public function getLanguages(): string
     {
-        return $this->country;
+        return $this->languages;
     }
 }

@@ -19,8 +19,10 @@ final class PsnPlayerSearchServiceTest extends TestCase
             },
             static function (): object {
                 return new StubClient(
-                    new StubUserCollection([]),
-                    static function (): void {
+                    graphQlHandler: static function (): object {
+                        throw new RuntimeException('Client should not attempt to perform GraphQL requests.');
+                    },
+                    loginHandler: static function (): void {
                         throw new RuntimeException('Client should not attempt to authenticate.');
                     }
                 );
@@ -34,19 +36,74 @@ final class PsnPlayerSearchServiceTest extends TestCase
     {
         $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
 
-        $searchResults = [];
+        $players = [];
         for ($index = 1; $index <= 60; $index++) {
-            $searchResults[] = new StubUserSearchResult('Player' . $index, (string) $index, 'US');
+            $players[] = [
+                'onlineId' => 'Player' . $index,
+                'accountId' => (string) $index,
+            ];
         }
 
-        $userCollection = new StubUserCollection(['example' => $searchResults]);
+        $contextResponse = self::createContextSearchResponse(array_slice($players, 0, 20), 'cursor-1');
+        $firstDomainResponse = self::createDomainSearchResponse(array_slice($players, 20, 20), 'cursor-2');
+        $secondDomainResponse = self::createDomainSearchResponse(array_slice($players, 40, 20), null);
 
         $service = new PsnPlayerSearchService(
             static function () use ($worker): array {
                 return [$worker];
             },
-            static function () use ($userCollection): object {
-                return new StubClient($userCollection);
+            static function () use ($contextResponse, $firstDomainResponse, $secondDomainResponse): object {
+                $graphQlHandler = static function (string $path, array $query, array $headers = []) use (
+                    $contextResponse,
+                    $firstDomainResponse,
+                    $secondDomainResponse
+                ): object {
+                    if ($path === 'graphql/v1/op') {
+                        $operationName = $query['operationName'] ?? '';
+                        $variables = PsnPlayerSearchServiceTest::decodeVariables($query);
+                        $searchTerm = (string) ($variables['searchTerm'] ?? '');
+
+                        if ($searchTerm !== 'example') {
+                            return (object) [];
+                        }
+
+                        if ($operationName === 'metGetContextSearchResults') {
+                            return $contextResponse;
+                        }
+
+                        if ($operationName === 'metGetDomainSearchResults') {
+                            $nextCursor = (string) ($variables['nextCursor'] ?? '');
+
+                            if ($nextCursor === 'cursor-1') {
+                                return $firstDomainResponse;
+                            }
+
+                            if ($nextCursor === 'cursor-2') {
+                                return $secondDomainResponse;
+                            }
+                        }
+
+                        return (object) [];
+                    }
+
+                    if (str_starts_with($path, 'userProfile/v1/internal/users/')) {
+                        if (preg_match('~/users/([^/]+)/profiles$~', $path, $matches) !== 1) {
+                            return (object) [];
+                        }
+
+                        $accountId = $matches[1];
+
+                        if ($accountId === '1') {
+                            return (object) ['languages' => ['en-US', 'fr-FR']];
+                        }
+
+                        return (object) ['languages' => ['ja-JP']];
+                    }
+
+                    return (object) [];
+                };
+
+                return new StubClient($graphQlHandler);
             }
         );
 
@@ -55,6 +112,8 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $this->assertCount(50, $results);
         $this->assertSame('Player1', $results[0]->getOnlineId());
         $this->assertSame('Player50', $results[49]->getOnlineId());
+        $this->assertSame('en-US, fr-FR', $results[0]->getLanguages());
+        $this->assertSame('ja-JP', $results[1]->getLanguages());
     }
 
     public function testSearchSkipsWorkersThatFailToLogin(): void
@@ -64,18 +123,34 @@ final class PsnPlayerSearchServiceTest extends TestCase
             new Worker(2, 'valid', '', new DateTimeImmutable('2024-01-02T00:00:00'), null),
         ];
 
-        $userCollection = new StubUserCollection([
-            'example' => [new StubUserSearchResult('Hunter', '42', 'SE')],
-        ]);
+        $graphQlHandler = static function (string $path, array $query, array $headers = []): object {
+            if ($path === 'graphql/v1/op') {
+                $variables = PsnPlayerSearchServiceTest::decodeVariables($query);
+
+                if (($variables['searchTerm'] ?? '') !== 'example') {
+                    return (object) [];
+                }
+
+                return PsnPlayerSearchServiceTest::createContextSearchResponse([
+                    ['onlineId' => 'Hunter', 'accountId' => '42'],
+                ]);
+            }
+
+            if (preg_match('~/users/([^/]+)/profiles$~', $path, $matches) === 1 && $matches[1] === '42') {
+                return (object) ['languages' => ['en-GB']];
+            }
+
+            return (object) [];
+        };
 
         $clients = [
             new StubClient(
-                $userCollection,
-                static function (): void {
+                graphQlHandler: $graphQlHandler,
+                loginHandler: static function (): void {
                     throw new RuntimeException('Invalid credentials.');
                 }
             ),
-            new StubClient($userCollection),
+            new StubClient($graphQlHandler),
         ];
 
         $service = new PsnPlayerSearchService(
@@ -95,6 +170,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertSame('Hunter', $results[0]->getOnlineId());
+        $this->assertSame('en-GB', $results[0]->getLanguages());
     }
 
     public function testSearchThrowsWhenNoWorkersCanAuthenticate(): void
@@ -104,7 +180,7 @@ final class PsnPlayerSearchServiceTest extends TestCase
                 return [];
             },
             static function (): object {
-                return new StubClient(new StubUserCollection([]));
+                return new StubClient();
             }
         );
 
@@ -121,19 +197,21 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
         $retryAt = new DateTimeImmutable('2024-01-01T01:00:00+00:00');
 
+        $graphQlHandler = static function () use ($retryAt): object {
+            $response = new StubRateLimitResponse(
+                429,
+                ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
+            );
+
+            throw new StubRateLimitedException($response);
+        };
+
         $service = new PsnPlayerSearchService(
             static function () use ($worker): array {
                 return [$worker];
             },
-            static function () use ($retryAt): object {
-                $response = new StubRateLimitResponse(
-                    429,
-                    ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
-                );
-
-                $userCollection = new RateLimitedUserCollection(new StubRateLimitedException($response));
-
-                return new StubClient($userCollection);
+            static function () use ($graphQlHandler): object {
+                return new StubClient($graphQlHandler);
             }
         );
 
@@ -153,19 +231,21 @@ final class PsnPlayerSearchServiceTest extends TestCase
         $worker = new Worker(1, 'valid', '', new DateTimeImmutable('2024-01-01T00:00:00'), null);
         $retryAt = new DateTimeImmutable('2024-01-01T02:00:00+00:00');
 
+        $graphQlHandler = static function () use ($retryAt): object {
+            $response = new StubRateLimitResponse(
+                429,
+                ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
+            );
+
+            throw new StubRateLimitedException($response);
+        };
+
         $service = new PsnPlayerSearchService(
             static function () use ($worker): array {
                 return [$worker];
             },
-            static function () use ($retryAt): object {
-                $response = new StubRateLimitResponse(
-                    429,
-                    ['X-RateLimit-Next-Available' => [$retryAt->format(DateTimeInterface::RFC3339)]]
-                );
-
-                $userCollection = new RateLimitedUserCollection(new StubRateLimitedException($response));
-
-                return new StubClient($userCollection);
+            static function () use ($graphQlHandler): object {
+                return new StubClient($graphQlHandler);
             }
         );
 
@@ -181,18 +261,101 @@ final class PsnPlayerSearchServiceTest extends TestCase
             $handled['errorMessage']
         );
     }
+
+    /**
+     * @param list<array{onlineId: string, accountId: string}> $players
+     */
+    private static function createContextSearchResponse(array $players, ?string $nextCursor = null): object
+    {
+        return (object) [
+            'data' => (object) [
+                'universalContextSearch' => (object) [
+                    'results' => [
+                        self::createDomainResponseBody($players, $nextCursor),
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param list<array{onlineId: string, accountId: string}> $players
+     */
+    private static function createDomainSearchResponse(array $players, ?string $nextCursor = null): object
+    {
+        return (object) [
+            'data' => (object) [
+                'universalDomainSearch' => self::createDomainResponseBody($players, $nextCursor),
+            ],
+        ];
+    }
+
+    /**
+     * @param list<array{onlineId: string, accountId: string}> $players
+     */
+    private static function createDomainResponseBody(array $players, ?string $nextCursor): object
+    {
+        return (object) [
+            '__typename' => 'UniversalDomainSearchResponse',
+            'domain' => 'SocialAllAccounts',
+            'domainTitle' => 'Players',
+            'next' => $nextCursor,
+            'searchResults' => array_map([self::class, 'createSearchResultItem'], $players),
+            'totalResultCount' => count($players),
+            'zeroState' => false,
+        ];
+    }
+
+    /**
+     * @param array{onlineId: string, accountId: string} $player
+     */
+    private static function createSearchResultItem(array $player): object
+    {
+        return (object) [
+            '__typename' => 'SearchResultItem',
+            'highlight' => (object) [],
+            'id' => $player['accountId'],
+            'result' => (object) [
+                '__typename' => 'Player',
+                'accountId' => $player['accountId'],
+                'onlineId' => $player['onlineId'],
+            ],
+            'resultOriginFlag' => null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @return array<string, mixed>
+     */
+    private static function decodeVariables(array $query): array
+    {
+        $variablesRaw = $query['variables'] ?? '{}';
+
+        if (!is_string($variablesRaw)) {
+            return [];
+        }
+
+        $decoded = json_decode($variablesRaw, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
 }
 
 final class StubClient
 {
-    private StubUserCollection $users;
-
     /** @var callable(string): void */
     private $loginHandler;
 
-    public function __construct(StubUserCollection $users, ?callable $loginHandler = null)
+    /** @var callable(string, array, array): object */
+    private $graphQlHandler;
+
+    public function __construct(?callable $graphQlHandler = null, ?callable $loginHandler = null)
     {
-        $this->users = $users;
+        $this->graphQlHandler = $graphQlHandler ?? static function (): object {
+            return (object) [];
+        };
+
         $this->loginHandler = $loginHandler ?? static function (): void {
         };
     }
@@ -202,49 +365,9 @@ final class StubClient
         ($this->loginHandler)($npsso);
     }
 
-    public function users(): StubUserCollection
+    public function get(string $path = '', array $query = [], array $headers = []): object
     {
-        return $this->users;
-    }
-}
-
-class StubUserCollection
-{
-    /**
-     * @var array<string, list<object>>
-     */
-    private array $resultsByQuery;
-
-    /**
-     * @param array<string, list<object>> $resultsByQuery
-     */
-    public function __construct(array $resultsByQuery)
-    {
-        $this->resultsByQuery = $resultsByQuery;
-    }
-
-    /**
-     * @return iterable<object>
-     */
-    public function search(string $query): iterable
-    {
-        return $this->resultsByQuery[$query] ?? [];
-    }
-}
-
-final class RateLimitedUserCollection extends StubUserCollection
-{
-    private Throwable $throwable;
-
-    public function __construct(Throwable $throwable)
-    {
-        parent::__construct([]);
-        $this->throwable = $throwable;
-    }
-
-    public function search(string $query): iterable
-    {
-        throw $this->throwable;
+        return ($this->graphQlHandler)($path, $query, $headers);
     }
 }
 
@@ -310,36 +433,5 @@ final class StubRateLimitedException extends RuntimeException
     public function getResponse(): object
     {
         return $this->response;
-    }
-}
-
-final class StubUserSearchResult
-{
-    private string $onlineId;
-
-    private string $accountId;
-
-    private string $country;
-
-    public function __construct(string $onlineId, string $accountId, string $country)
-    {
-        $this->onlineId = $onlineId;
-        $this->accountId = $accountId;
-        $this->country = $country;
-    }
-
-    public function onlineId(): string
-    {
-        return $this->onlineId;
-    }
-
-    public function accountId(): string
-    {
-        return $this->accountId;
-    }
-
-    public function country(): string
-    {
-        return $this->country;
     }
 }
