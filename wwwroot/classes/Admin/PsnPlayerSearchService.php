@@ -95,69 +95,45 @@ final class PsnPlayerSearchService
         foreach ($players as $player) {
             $onlineId = $player['onlineId'] ?? '';
             $accountId = $player['accountId'] ?? '';
-            $languages = '';
+            $profile = null;
 
-            if ($accountId !== '') {
-                $languages = $this->fetchPlayerLanguages($client, $accountId);
+            if ($onlineId !== '') {
+                $profile = $this->fetchPlayerProfile($client, $onlineId);
             }
 
-            $results[] = new PsnPlayerSearchResult($onlineId, $accountId, $languages);
+            $results[] = PsnPlayerSearchResult::fromProfileData($onlineId, $accountId, $profile);
         }
 
         return $results;
     }
 
-    private function fetchPlayerLanguages(object $client, string $accountId): string
+    private function fetchPlayerProfile(object $client, string $onlineId): ?object
     {
         try {
-            $profile = $this->executeUserProfileRequest($client, $accountId);
+            $profile = $this->executeUserProfileRequest($client, $onlineId);
         } catch (Throwable) {
-            return '';
+            return null;
         }
 
-        if (!is_object($profile)) {
-            return '';
-        }
-
-        $languages = $profile->languages ?? null;
-
-        if (!is_array($languages)) {
-            return '';
-        }
-
-        $normalized = [];
-
-        foreach ($languages as $language) {
-            if (!is_string($language)) {
-                continue;
-            }
-
-            $language = trim($language);
-
-            if ($language === '') {
-                continue;
-            }
-
-            if (!in_array($language, $normalized, true)) {
-                $normalized[] = $language;
-            }
-        }
-
-        return implode(', ', $normalized);
+        return is_object($profile) ? $profile : null;
     }
 
-    private function executeUserProfileRequest(object $client, string $accountId): ?object
+    private function executeUserProfileRequest(object $client, string $onlineId): ?object
     {
         if (!method_exists($client, 'get')) {
             throw new RuntimeException('The PlayStation client does not support profile requests.');
         }
 
         $path = sprintf(
-            'userProfile/v1/internal/users/%s/profiles',
-            rawurlencode($accountId)
+            'userProfile/v1/users/%s/profile2',
+            rawurlencode($onlineId)
         );
 
-        return $client->get($path, [], ['content-type' => 'application/json']);
+        $query = [
+            'fields' => 'accountId,onlineId,currentOnlineId,npId',
+        ];
+
+        return $client->get($path, $query, ['content-type' => 'application/json']);
     }
 
     private function createRateLimitException(Throwable $exception): ?PsnPlayerSearchRateLimitException
