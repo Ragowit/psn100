@@ -41,7 +41,10 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
         $result = $service->lookup(' Example ');
 
-        $this->assertSame('userProfile/v1/users/Example/profile2', $capturedPath);
+        $this->assertSame(
+            'https://us-prof.np.community.playstation.net/userProfile/v1/users/Example/profile2',
+            $capturedPath
+        );
         $this->assertSame(['fields' => 'accountId,onlineId,currentOnlineId,npId'], $capturedQuery);
         $this->assertSame(['content-type' => 'application/json'], $capturedHeaders);
         $this->assertSame('Example', $result['profile']['onlineId']);

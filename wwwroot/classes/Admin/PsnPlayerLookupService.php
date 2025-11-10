@@ -118,7 +118,10 @@ final class PsnPlayerLookupService
             throw new RuntimeException('The PlayStation client does not support profile requests.');
         }
 
-        $path = sprintf('userProfile/v1/users/%s/profile2', rawurlencode($onlineId));
+        $path = sprintf(
+            'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
+            rawurlencode($onlineId)
+        );
 
         $query = [
             'fields' => 'accountId,onlineId,currentOnlineId,npId',
