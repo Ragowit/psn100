@@ -275,49 +275,82 @@ class ThirtyMinuteCronJob implements CronJobInterface
             // Initialize the current player
             try {
                 $originalOnlineId = (string) $player['online_id'];
+                $existingAccountId = $this->normalizeAccountIdValue($player['account_id'] ?? null);
                 $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
+                $country = 'zz';
 
-                if ($profileLookup === null) {
-                    $this->markPlayerAsPrivate($originalOnlineId);
-                    continue;
-                }
+                if ($profileLookup !== null) {
+                    $profile = $profileLookup['profile'] ?? null;
 
-                $profile = $profileLookup['profile'] ?? null;
+                    if (!is_array($profile)) {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+                        continue;
+                    }
 
-                if (!is_array($profile)) {
-                    $this->markPlayerAsPrivate($originalOnlineId);
-                    continue;
-                }
+                    $profileAccountId = $profile['accountId'] ?? null;
 
-                $profileAccountId = $profile['accountId'] ?? null;
+                    if (!is_string($profileAccountId) || $profileAccountId === '') {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+                        continue;
+                    }
 
-                if (!is_string($profileAccountId) || $profileAccountId === '') {
-                    $this->markPlayerAsPrivate($originalOnlineId);
-                    continue;
-                }
+                    $resolvedOnlineId = $this->determineResolvedOnlineId($profile, $originalOnlineId);
 
-                $resolvedOnlineId = $this->determineResolvedOnlineId($profile, $originalOnlineId);
+                    if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
+                        $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
+                        $player['online_id'] = $resolvedOnlineId;
+                    } else {
+                        $player['online_id'] = $originalOnlineId;
+                    }
 
-                if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
-                    $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
-                    $player['online_id'] = $resolvedOnlineId;
+                    $player['account_id'] = $profileAccountId;
+                    $user = $client->users()->find($profileAccountId);
+
+                    $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
+                    $country = $countryFromProfile;
+
+                    if ($country === null || strtolower($country) === 'zz') {
+                        $storedCountry = $this->fetchStoredCountryByAccountId((int) $profileAccountId);
+
+                        if (is_string($storedCountry) && $storedCountry !== '') {
+                            $country = $storedCountry;
+                        } else {
+                            $country = 'zz';
+                        }
+
+                        if (strtolower($country) === 'zz') {
+                            $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
+
+                            if ($resolvedCountry !== null) {
+                                $country = $resolvedCountry;
+                                $this->updatePlayerCountry((int) $profileAccountId, $resolvedCountry);
+                            }
+                        }
+                    } else {
+                        $this->updatePlayerCountry((int) $profileAccountId, $country);
+                    }
                 } else {
-                    $player['online_id'] = $originalOnlineId;
-                }
+                    if ($existingAccountId === null) {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+                        continue;
+                    }
 
-                $player['account_id'] = $profileAccountId;
-                $user = $client->users()->find($profileAccountId);
+                    $player['account_id'] = $existingAccountId;
+                    $user = $client->users()->find($existingAccountId);
 
-                $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
-                $country = $countryFromProfile;
+                    $resolvedOnlineId = (string) $user->onlineId();
 
-                if ($country === null || strtolower($country) === 'zz') {
-                    $storedCountry = $this->fetchStoredCountryByAccountId((int) $profileAccountId);
+                    if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
+                        $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
+                        $player['online_id'] = $resolvedOnlineId;
+                    } else {
+                        $player['online_id'] = $originalOnlineId;
+                    }
+
+                    $storedCountry = $this->fetchStoredCountryByAccountId((int) $existingAccountId);
 
                     if (is_string($storedCountry) && $storedCountry !== '') {
                         $country = $storedCountry;
-                    } else {
-                        $country = 'zz';
                     }
 
                     if (strtolower($country) === 'zz') {
@@ -325,11 +358,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                         if ($resolvedCountry !== null) {
                             $country = $resolvedCountry;
-                            $this->updatePlayerCountry((int) $profileAccountId, $resolvedCountry);
+                            $this->updatePlayerCountry((int) $existingAccountId, $resolvedCountry);
                         }
                     }
-                } else {
-                    $this->updatePlayerCountry((int) $profileAccountId, $country);
                 }
 
                 if (!is_string($country) || $country === '') {
@@ -1521,6 +1552,38 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $query->bindValue(':scanning', $newOnlineId, PDO::PARAM_STR);
         $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
         $query->execute();
+    }
+
+    /**
+     * @param mixed $accountId
+     */
+    private function normalizeAccountIdValue($accountId): ?string
+    {
+        if (is_int($accountId)) {
+            return (string) $accountId;
+        }
+
+        if (is_string($accountId)) {
+            $trimmed = trim($accountId);
+
+            if ($trimmed === '') {
+                return null;
+            }
+
+            return ctype_digit($trimmed) ? $trimmed : null;
+        }
+
+        if (is_float($accountId)) {
+            return (string) (int) $accountId;
+        }
+
+        if (is_numeric($accountId)) {
+            $numeric = (string) $accountId;
+
+            return ctype_digit($numeric) ? $numeric : null;
+        }
+
+        return null;
     }
 
     private function fetchStoredCountryByAccountId(int $accountId): ?string
