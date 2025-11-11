@@ -462,7 +462,7 @@ class GameCopyService
 
         $usedParentGroups = [];
         foreach ($existingGroupMappings as $parentGroupId) {
-            $usedParentGroups[$parentGroupId] = true;
+            $usedParentGroups[(string) $parentGroupId] = true;
         }
 
         $groupOffset = $this->determineGroupOffset($existingGroupIds);
@@ -511,7 +511,7 @@ class GameCopyService
 
                 $groupIdMapping[$groupId] = $targetGroupId;
                 $existingGroupIds[$targetGroupId] = true;
-                $usedParentGroups[$targetGroupId] = true;
+                $usedParentGroups[(string) $targetGroupId] = true;
                 $parentGroupTrophyNames[$targetGroupId] = $childGroupTrophyNames[$groupId] ?? [];
                 $select->closeCursor();
                 continue;
@@ -561,7 +561,7 @@ class GameCopyService
 
             $groupIdMapping[$groupId] = $targetGroupId;
             $existingGroupIds[$targetGroupId] = true;
-            $usedParentGroups[$targetGroupId] = true;
+            $usedParentGroups[(string) $targetGroupId] = true;
             $parentGroupTrophyNames[$targetGroupId] = $childGroupTrophyNames[$groupId] ?? [];
 
             $select->closeCursor();
@@ -956,16 +956,18 @@ class GameCopyService
         }
 
         foreach ($parentGroupTrophyNames as $parentGroupId => $parentNames) {
-            if ($parentGroupId === $childGroupId) {
+            $parentGroupIdString = (string) $parentGroupId;
+
+            if ($parentGroupIdString === $childGroupId) {
                 continue;
             }
 
-            if (isset($usedParentGroups[$parentGroupId])) {
+            if (isset($usedParentGroups[$parentGroupIdString])) {
                 continue;
             }
 
             if ($parentNames === $childNames) {
-                return $parentGroupId;
+                return $parentGroupIdString;
             }
         }
 
