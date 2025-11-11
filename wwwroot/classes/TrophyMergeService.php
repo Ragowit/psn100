@@ -591,9 +591,9 @@ SQL
                                 GREATEST(
                                     FLOOR(
                                         IF(
-                                            (player.score / tg.max_score) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
+                                            (player.score / NULLIF(tg.max_score, 0)) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
                                             99,
-                                            (player.score / tg.max_score) * 100
+                                            (player.score / NULLIF(tg.max_score, 0)) * 100
                                         )
                                     ),
                                     1
