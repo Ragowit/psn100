@@ -117,17 +117,38 @@ class ThirtyMinuteCronJob implements CronJobInterface
      */
     private function retryNotFound(callable $operation, string $description)
     {
+        $attempt = 0;
+        $delay = 2;
+        $maxAttempts = 5;
+
         while (true) {
             try {
                 return $operation();
             } catch (NotFoundHttpException $exception) {
+                $attempt++;
+
+                if ($attempt >= $maxAttempts) {
+                    $this->logger->log(sprintf(
+                        '%s failed with %s after %d attempts. Aborting retries.',
+                        $description,
+                        $exception->getMessage(),
+                        $attempt
+                    ));
+
+                    throw $exception;
+                }
+
                 $this->logger->log(sprintf(
-                    '%s failed with %s. Retrying in 2 seconds.',
+                    '%s failed with %s. Retrying in %d seconds (%d/%d).',
                     $description,
-                    $exception->getMessage()
+                    $exception->getMessage(),
+                    $delay,
+                    $attempt,
+                    $maxAttempts
                 ));
 
-                sleep(2);
+                sleep($delay);
+                $delay = min($delay * 2, 60);
             }
         }
     }
