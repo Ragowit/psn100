@@ -138,15 +138,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     throw $exception;
                 }
 
-                $this->logger->log(sprintf(
-                    '%s failed with %s. Retrying in %d seconds (%d/%d).',
-                    $description,
-                    $exception->getMessage(),
-                    $delay,
-                    $attempt,
-                    $maxAttempts
-                ));
-
                 sleep($delay);
                 $delay = min($delay * 2, 60);
             }
