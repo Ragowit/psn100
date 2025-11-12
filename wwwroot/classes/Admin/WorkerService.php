@@ -16,11 +16,20 @@ final class WorkerService
     /**
      * @return list<Worker>
      */
-    public function fetchWorkers(): array
+    public function fetchWorkers(string $orderBy = 'scan_start', string $direction = 'ASC'): array
     {
-        $statement = $this->database->query(
-            'SELECT id, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY scan_start ASC'
-        );
+        $orderColumn = match (strtolower($orderBy)) {
+            'id' => 'id',
+            default => 'scan_start',
+        };
+
+        $orderDirection = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+
+        $statement = $this->database->query(sprintf(
+            'SELECT id, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
+            $orderColumn,
+            $orderDirection
+        ));
 
         if ($statement === false) {
             return [];

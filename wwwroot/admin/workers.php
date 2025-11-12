@@ -12,6 +12,29 @@ $request = AdminRequest::fromGlobals($_SERVER ?? [], $_POST ?? []);
 $successMessage = null;
 $errorMessage = null;
 
+$sortField = 'scan_start';
+$sortDirection = 'asc';
+
+$sortParam = $_GET['sort'] ?? null;
+
+if (is_string($sortParam)) {
+    $normalizedSort = strtolower(trim($sortParam));
+
+    if ($normalizedSort === 'id') {
+        $sortField = 'id';
+    }
+}
+
+$directionParam = $_GET['direction'] ?? null;
+
+if (is_string($directionParam)) {
+    $normalizedDirection = strtolower(trim($directionParam));
+
+    if (in_array($normalizedDirection, ['asc', 'desc'], true)) {
+        $sortDirection = $normalizedDirection;
+    }
+}
+
 if ($request->isPost()) {
     $workerId = $request->getPostPositiveInt('worker_id');
     $npsso = $request->getPostString('npsso');
@@ -37,7 +60,24 @@ if ($request->isPost()) {
     }
 }
 
-$workers = $workerService->fetchWorkers();
+$workers = $workerService->fetchWorkers($sortField, strtoupper($sortDirection));
+
+$idSortNextDirection = $sortField === 'id' && $sortDirection === 'asc' ? 'desc' : 'asc';
+$scanStartNextDirection = $sortField === 'scan_start' && $sortDirection === 'asc' ? 'desc' : 'asc';
+
+$idSortUrl = '?' . http_build_query(['sort' => 'id', 'direction' => $idSortNextDirection]);
+$scanStartSortUrl = '?' . http_build_query(['sort' => 'scan_start', 'direction' => $scanStartNextDirection]);
+
+$idSortIndicator = '';
+$scanStartSortIndicator = '';
+
+if ($sortField === 'id') {
+    $idSortIndicator = $sortDirection === 'asc' ? ' ▲' : ' ▼';
+}
+
+if ($sortField === 'scan_start') {
+    $scanStartSortIndicator = $sortDirection === 'asc' ? ' ▲' : ' ▼';
+}
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -77,10 +117,24 @@ $workers = $workerService->fetchWorkers();
                     <table class="table table-striped table-bordered align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" style="width: 4rem;">ID</th>
+                                <th scope="col" style="width: 4rem;">
+                                    <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($idSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                        ID
+                                        <?php if ($idSortIndicator !== '') { ?>
+                                            <span class="ms-1"><?= htmlspecialchars(trim($idSortIndicator), ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php } ?>
+                                    </a>
+                                </th>
                                 <th scope="col" style="width: 18rem;">NPSSO</th>
                                 <th scope="col" style="width: 16rem;">Scanning</th>
-                                <th scope="col" style="width: 16rem;">Scan Start</th>
+                                <th scope="col" style="width: 16rem;">
+                                    <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($scanStartSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                        Scan Start
+                                        <?php if ($scanStartSortIndicator !== '') { ?>
+                                            <span class="ms-1"><?= htmlspecialchars(trim($scanStartSortIndicator), ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php } ?>
+                                    </a>
+                                </th>
                                 <th scope="col" style="width: 20rem;">Scan Progress</th>
                             </tr>
                         </thead>
@@ -185,8 +239,6 @@ $workers = $workerService->fetchWorkers();
                 }
 
                 const pad = (value) => value.toString().padStart(2, '0');
-                const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
-
                 document.querySelectorAll('.js-localized-datetime').forEach((element) => {
                     if (!(element instanceof HTMLElement)) {
                         return;
@@ -206,10 +258,8 @@ $workers = $workerService->fetchWorkers();
 
                     const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
                     const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-                    const timeZoneSuffix = timeZone !== '' ? ` ${timeZone}` : '';
-
-                    element.textContent = `${formattedDate} ${formattedTime}${timeZoneSuffix}`;
-                    element.setAttribute('data-timezone', timeZone);
+                    element.textContent = `${formattedDate} ${formattedTime}`;
+                    element.removeAttribute('data-timezone');
                 });
             });
         </script>
