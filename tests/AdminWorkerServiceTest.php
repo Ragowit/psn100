@@ -36,6 +36,23 @@ SQL
         );
     }
 
+    public function testFetchWorkersCanOrderByIdDescending(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
+
+        $database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start) VALUES (1, 'token-1', 'npsso-1', '', '2024-01-01 09:00:00')");
+        $database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start) VALUES (2, 'token-2', 'npsso-2', '', '2024-01-02 09:00:00')");
+
+        $service = new WorkerService($database);
+        $workers = $service->fetchWorkers('id', 'DESC');
+
+        $this->assertCount(2, $workers);
+        $this->assertSame(2, $workers[0]->getId());
+        $this->assertSame(1, $workers[1]->getId());
+    }
+
     public function testUpdateWorkerNpssoReturnsTrueWhenRowUpdated(): void
     {
         $database = new PDO('sqlite::memory:');
