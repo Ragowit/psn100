@@ -9,6 +9,7 @@ require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
+use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\PlayStation\Client;
 
 class ThirtyMinuteCronJob implements CronJobInterface
@@ -107,6 +108,40 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
         $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
         $query->execute();
+    }
+
+    /**
+     * @template T
+     * @param callable():T $operation
+     * @return T
+     */
+    private function retryNotFound(callable $operation, string $description)
+    {
+        $attempt = 0;
+        $delay = 2;
+        $maxAttempts = 5;
+
+        while (true) {
+            try {
+                return $operation();
+            } catch (NotFoundHttpException $exception) {
+                $attempt++;
+
+                if ($attempt >= $maxAttempts) {
+                    $this->logger->log(sprintf(
+                        '%s failed with %s after %d attempts. Aborting retries.',
+                        $description,
+                        $exception->getMessage(),
+                        $attempt
+                    ));
+
+                    throw $exception;
+                }
+
+                sleep($delay);
+                $delay = min($delay * 2, 60);
+            }
+        }
     }
 
     public function run(): void
@@ -728,7 +763,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $metaQuery->execute();
 
                         // Get "groups" (game and DLCs)
-                        foreach ($client->trophies($npid, $trophyTitle->serviceName())->trophyGroups() as $trophyGroup) {
+                        $trophyGroups = $this->retryNotFound(
+                            fn () => $client->trophies($npid, $trophyTitle->serviceName())->trophyGroups(),
+                            sprintf('Fetching trophy groups for %s (%s)', $trophyTitle->name(), $npid)
+                        );
+
+                        foreach ($trophyGroups as $trophyGroup) {
                             $groupNewTrophies = false;
                             // Add trophy group (game + dlcs) into database
                             $existingGroupQuery = $this->database->prepare(
@@ -792,8 +832,18 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 }
                             }
 
+                            $groupTrophies = $this->retryNotFound(
+                                fn () => $trophyGroup->trophies(),
+                                sprintf(
+                                    'Fetching trophies for %s (%s/%s)',
+                                    $trophyTitle->name(),
+                                    $npid,
+                                    $trophyGroup->id()
+                                )
+                            );
+
                             // Add trophies into database
-                            foreach ($trophyGroup->trophies() as $trophy) {
+                            foreach ($groupTrophies as $trophy) {
                                 $existingTrophyQuery = $this->database->prepare(
                                     'SELECT hidden, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url
                                     FROM trophy
@@ -1017,8 +1067,23 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         // Fetch user trophies
-                        foreach ($trophyTitle->trophyGroups() as $trophyGroup) {
-                            foreach ($trophyGroup->trophies() as $trophy) {
+                        $trophyGroups = $this->retryNotFound(
+                            fn () => $trophyTitle->trophyGroups(),
+                            sprintf('Fetching trophy groups for %s (%s)', $trophyTitle->name(), $npid)
+                        );
+
+                        foreach ($trophyGroups as $trophyGroup) {
+                            $groupTrophies = $this->retryNotFound(
+                                fn () => $trophyGroup->trophies(),
+                                sprintf(
+                                    'Fetching trophies for %s (%s/%s)',
+                                    $trophyTitle->name(),
+                                    $npid,
+                                    $trophyGroup->id()
+                                )
+                            );
+
+                            foreach ($groupTrophies as $trophy) {
                                 $trophyEarned = $trophy->earned();
                                 $progress = (clone $trophy)->progress();
                                 if ($trophyEarned || ($progress != '' && intval($progress) > 0)) {
