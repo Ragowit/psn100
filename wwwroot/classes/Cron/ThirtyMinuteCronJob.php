@@ -1509,7 +1509,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
                 }
             } catch (NotFoundHttpException $exception) {
+                sleep(2);
+                $recheck = '';
+
+                continue;
             } catch (UnauthorizedHttpException $exception) {
+                sleep(2);
+                $recheck = '';
+
+                continue;
             } finally {
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
