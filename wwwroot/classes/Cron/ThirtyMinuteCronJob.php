@@ -10,6 +10,7 @@ require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
+use Tustin\Haste\Exception\UnauthorizedHttpException;
 use Tustin\PlayStation\Client;
 
 class ThirtyMinuteCronJob implements CronJobInterface
@@ -1507,6 +1508,16 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
                 $query->execute();
                 }
+            } catch (NotFoundHttpException $exception) {
+                sleep(2);
+                $recheck = '';
+
+                continue;
+            } catch (UnauthorizedHttpException $exception) {
+                sleep(2);
+                $recheck = '';
+
+                continue;
             } finally {
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
