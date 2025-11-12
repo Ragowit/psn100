@@ -748,10 +748,10 @@ SQL
                     player.silver,
                     player.gold,
                     player.platinum,
-                    IF(
-                        player.score = 0,
-                        0,
-                        IFNULL(
+                    CASE
+                        WHEN :max_score = 0 THEN 0
+                        WHEN player.score = 0 THEN 0
+                        ELSE IFNULL(
                             GREATEST(
                                 FLOOR(
                                     IF(
@@ -764,7 +764,7 @@ SQL
                             ),
                             0
                         )
-                    ) AS progress,
+                    END AS progress,
                     player.last_updated_date
                 FROM
                     player
