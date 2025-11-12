@@ -1507,6 +1507,14 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
                 $query->execute();
                 }
+            } catch (NotFoundHttpException $exception) {
+                $this->logger->log(sprintf(
+                    'Encountered NotFoundHttpException while scanning %s. Restarting scan.',
+                    $player['online_id'] ?? 'unknown'
+                ));
+                $recheck = '';
+
+                continue;
             } finally {
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
