@@ -663,7 +663,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                               sleep(60);
 
-                              break;
+                              continue;
                           }
 
                           $psnGameCount = count($trophyTitles);
