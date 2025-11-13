@@ -353,7 +353,10 @@ class GameRescanService
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
-        $trophies = $client->trophies($npCommunicationId, $trophyTitle->serviceName());
+        $serviceName = $trophyTitle->serviceName();
+        $shouldFetchProgressTargetValue = $this->supportsProgressTargetValue($serviceName);
+
+        $trophies = $client->trophies($npCommunicationId, $serviceName);
         $groupData = [];
         $totalSteps = 0;
 
@@ -515,10 +518,13 @@ class GameRescanService
                     $trophyIconFilename
                 );
 
-                $progressTargetValue = $trophy->progressTargetValue();
-                $normalizedProgressTargetValue = $progressTargetValue === ''
-                    ? null
-                    : (int) $progressTargetValue;
+                $normalizedProgressTargetValue = null;
+                if ($shouldFetchProgressTargetValue) {
+                    $progressTargetValue = $trophy->progressTargetValue();
+                    $normalizedProgressTargetValue = $progressTargetValue === ''
+                        ? null
+                        : (int) $progressTargetValue;
+                }
 
                 $differenceTracker->recordTrophyChange(
                     $groupId,
@@ -552,7 +558,14 @@ class GameRescanService
                     $rewardImageFilename
                 );
 
-                $this->upsertTrophy($npCommunicationId, $trophyGroup->id(), $trophy, $trophyIconFilename, $rewardImageFilename);
+                $this->upsertTrophy(
+                    $npCommunicationId,
+                    $trophyGroup->id(),
+                    $trophy,
+                    $trophyIconFilename,
+                    $rewardImageFilename,
+                    $normalizedProgressTargetValue
+                );
                 $this->trophyMetaRepository->ensureExists($npCommunicationId, $trophyGroup->id(), (int) $trophy->id());
 
                 $processedTrophiesInGroup++;
@@ -661,7 +674,8 @@ class GameRescanService
         string $groupId,
         object $trophy,
         string $iconFilename,
-        ?string $rewardImageFilename
+        ?string $rewardImageFilename,
+        ?int $progressTargetValue
     ): void {
         $query = $this->database->prepare(
             'INSERT INTO trophy (
@@ -709,11 +723,10 @@ class GameRescanService
         $query->bindValue(':detail', $trophy->detail(), PDO::PARAM_STR);
         $query->bindValue(':icon_url', $iconFilename, PDO::PARAM_STR);
 
-        $progressTargetValue = $trophy->progressTargetValue();
-        if ($progressTargetValue === '') {
-            $this->bindNullable($query, ':progress_target_value', null);
+        if ($progressTargetValue === null) {
+            $query->bindValue(':progress_target_value', null, PDO::PARAM_NULL);
         } else {
-            $query->bindValue(':progress_target_value', (int) $progressTargetValue, PDO::PARAM_INT);
+            $query->bindValue(':progress_target_value', $progressTargetValue, PDO::PARAM_INT);
         }
 
         $rewardName = $trophy->rewardName();
@@ -1061,6 +1074,11 @@ class GameRescanService
         }
 
         return implode(',', $platforms);
+    }
+
+    private function supportsProgressTargetValue(string $serviceName): bool
+    {
+        return strcasecmp($serviceName, 'trophy') !== 0;
     }
 
 }
