@@ -655,13 +655,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                               $trophyTitleCollection = $user->trophyTitles();
                               $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
                           } catch (TypeError $exception) {
-                              $this->logger->log(sprintf(
-                                  'Unable to fetch trophy titles for %s due to unexpected response: %s',
-                                  (string) $player['online_id'],
-                                  $exception->getMessage()
-                              ));
-
-                              sleep(60);
+                              // Unable to fetch trophy titles for player['online_id'] due to unexpected response.
+                              sleep(5);
 
                               continue;
                           }
