@@ -3,14 +3,24 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Worker.php';
+require_once __DIR__ . '/CommandExecutionResult.php';
+require_once __DIR__ . '/CommandExecutorInterface.php';
+require_once __DIR__ . '/SystemCommandExecutor.php';
 
 final class WorkerService
 {
     private PDO $database;
 
-    public function __construct(PDO $database)
+    private CommandExecutorInterface $commandExecutor;
+
+    private const WORKER_USERNAME = 'psn100';
+
+    private const WORKER_SCRIPT = '30th_minute.php';
+
+    public function __construct(PDO $database, ?CommandExecutorInterface $commandExecutor = null)
     {
         $this->database = $database;
+        $this->commandExecutor = $commandExecutor ?? new SystemCommandExecutor();
     }
 
     /**
@@ -110,5 +120,27 @@ final class WorkerService
         $statement->execute();
 
         return $statement->rowCount() > 0;
+    }
+
+    public function restartWorker(int $workerId): CommandExecutionResult
+    {
+        return $this->commandExecutor->run([
+            'pkill',
+            '-u',
+            self::WORKER_USERNAME,
+            '-f',
+            sprintf('worker=%d([^0-9]|$)', $workerId),
+        ]);
+    }
+
+    public function restartAllWorkers(): CommandExecutionResult
+    {
+        return $this->commandExecutor->run([
+            'pkill',
+            '-u',
+            self::WORKER_USERNAME,
+            '-f',
+            self::WORKER_SCRIPT,
+        ]);
     }
 }

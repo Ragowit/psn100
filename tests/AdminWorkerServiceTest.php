@@ -93,4 +93,72 @@ SQL
         $this->assertCount(1, $workers);
         $this->assertSame(null, $workers[0]->getScanProgress());
     }
+
+    public function testRestartAllWorkersIssuesPkillCommand(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $result = new CommandExecutionResult(0, '');
+        $executor = new class ($result) implements CommandExecutorInterface {
+            public array $commands = [];
+
+            private CommandExecutionResult $result;
+
+            public function __construct(CommandExecutionResult $result)
+            {
+                $this->result = $result;
+            }
+
+            public function run(array $command): CommandExecutionResult
+            {
+                $this->commands[] = $command;
+
+                return $this->result;
+            }
+        };
+
+        $service = new WorkerService($database, $executor);
+        $executionResult = $service->restartAllWorkers();
+
+        $this->assertTrue($executionResult->isSuccessful());
+        $this->assertSame([
+            ['pkill', '-u', 'psn100', '-f', '30th_minute.php'],
+        ], $executor->commands);
+    }
+
+    public function testRestartWorkerUsesWorkerSpecificPattern(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $result = new CommandExecutionResult(1, 'No process found');
+        $executor = new class ($result) implements CommandExecutorInterface {
+            public array $commands = [];
+
+            private CommandExecutionResult $result;
+
+            public function __construct(CommandExecutionResult $result)
+            {
+                $this->result = $result;
+            }
+
+            public function run(array $command): CommandExecutionResult
+            {
+                $this->commands[] = $command;
+
+                return $this->result;
+            }
+        };
+
+        $service = new WorkerService($database, $executor);
+        $executionResult = $service->restartWorker(3);
+
+        $this->assertFalse($executionResult->isSuccessful());
+        $this->assertSame([
+            ['pkill', '-u', 'psn100', '-f', 'worker=3([^0-9]|$)'],
+        ], $executor->commands);
+        $this->assertSame('No process found', $executionResult->getOutput());
+        $this->assertSame(1, $executionResult->getExitCode());
+    }
 }

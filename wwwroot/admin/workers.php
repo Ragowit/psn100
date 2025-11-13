@@ -36,27 +36,85 @@ if (is_string($directionParam)) {
 }
 
 if ($request->isPost()) {
-    $workerId = $request->getPostPositiveInt('worker_id');
-    $npsso = $request->getPostString('npsso');
+    $action = $request->getPostString('action');
 
-    if ($workerId === null) {
-        $errorMessage = 'Invalid worker selected.';
-    } elseif ($npsso === '') {
-        $errorMessage = 'The NPSSO value cannot be empty.';
-    } elseif (strlen($npsso) > 64) {
-        $errorMessage = 'The NPSSO value must be 64 characters or fewer.';
-    } else {
-        try {
-            $updated = $workerService->updateWorkerNpsso($workerId, $npsso);
+    if ($action === 'update_npsso') {
+        $workerId = $request->getPostPositiveInt('worker_id');
+        $npsso = $request->getPostString('npsso');
 
-            if ($updated) {
-                $successMessage = 'Worker NPSSO updated successfully.';
-            } else {
-                $errorMessage = 'Unable to update NPSSO. Please verify the worker still exists.';
+        if ($workerId === null) {
+            $errorMessage = 'Invalid worker selected.';
+        } elseif ($npsso === '') {
+            $errorMessage = 'The NPSSO value cannot be empty.';
+        } elseif (strlen($npsso) > 64) {
+            $errorMessage = 'The NPSSO value must be 64 characters or fewer.';
+        } else {
+            try {
+                $updated = $workerService->updateWorkerNpsso($workerId, $npsso);
+
+                if ($updated) {
+                    $successMessage = 'Worker NPSSO updated successfully.';
+                } else {
+                    $errorMessage = 'Unable to update NPSSO. Please verify the worker still exists.';
+                }
+            } catch (Throwable $exception) {
+                $errorMessage = 'An unexpected error occurred while updating the NPSSO value.';
             }
-        } catch (Throwable $exception) {
-            $errorMessage = 'An unexpected error occurred while updating the NPSSO value.';
         }
+    } elseif ($action === 'restart_worker') {
+        $workerId = $request->getPostPositiveInt('worker_id');
+
+        if ($workerId === null) {
+            $errorMessage = 'Invalid worker selected for restart.';
+        } else {
+            $result = $workerService->restartWorker($workerId);
+
+            if ($result->isSuccessful()) {
+                $successMessage = sprintf('Worker #%d restart signal sent successfully.', $workerId);
+
+                if ($result->getOutput() !== '') {
+                    $successMessage .= ' ' . $result->getOutput();
+                }
+            } elseif ($result->getExitCode() === 1) {
+                $errorMessage = sprintf(
+                    'No running process matched worker #%d. It may already be stopped.',
+                    $workerId
+                );
+            } else {
+                $errorMessage = sprintf(
+                    'Unable to restart worker #%d (exit code %d).',
+                    $workerId,
+                    $result->getExitCode()
+                );
+
+                if ($result->getOutput() !== '') {
+                    $errorMessage .= ' ' . $result->getOutput();
+                }
+            }
+        }
+    } elseif ($action === 'restart_all_workers') {
+        $result = $workerService->restartAllWorkers();
+
+        if ($result->isSuccessful()) {
+            $successMessage = 'All workers received the restart signal.';
+
+            if ($result->getOutput() !== '') {
+                $successMessage .= ' ' . $result->getOutput();
+            }
+        } elseif ($result->getExitCode() === 1) {
+            $errorMessage = 'No worker processes matched the restart request. They may already be stopped.';
+        } else {
+            $errorMessage = sprintf(
+                'Unable to restart all workers (exit code %d).',
+                $result->getExitCode()
+            );
+
+            if ($result->getOutput() !== '') {
+                $errorMessage .= ' ' . $result->getOutput();
+            }
+        }
+    } else {
+        $errorMessage = 'Unsupported action requested.';
     }
 }
 
@@ -98,6 +156,15 @@ if ($sortField === 'scan_start') {
                 <a href="/admin/">Back</a>
             </div>
 
+            <div class="mb-4 d-flex justify-content-end">
+                <form method="post" onsubmit="return confirm('Restart all workers?');">
+                    <input type="hidden" name="action" value="restart_all_workers">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        Restart All Workers
+                    </button>
+                </form>
+            </div>
+
             <?php if ($successMessage !== null) { ?>
                 <div class="alert alert-success" role="alert">
                     <?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8'); ?>
@@ -136,6 +203,7 @@ if ($sortField === 'scan_start') {
                                     </a>
                                 </th>
                                 <th scope="col" style="width: 20rem;">Scan Progress</th>
+                                <th scope="col" style="width: 10rem;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -151,6 +219,7 @@ if ($sortField === 'scan_start') {
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
+                                            <input type="hidden" name="action" value="update_npsso">
                                             <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                             <input
                                                 type="text"
@@ -224,6 +293,18 @@ if ($sortField === 'scan_start') {
                                                 <?php } ?>
                                             </div>
                                         <?php } ?>
+                                    </td>
+                                    <td>
+                                        <form
+                                            method="post"
+                                            onsubmit="return confirm('Restart worker #<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>?');"
+                                        >
+                                            <input type="hidden" name="action" value="restart_worker">
+                                            <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                Restart
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php } ?>
