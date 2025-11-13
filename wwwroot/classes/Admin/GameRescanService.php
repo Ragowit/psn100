@@ -354,7 +354,6 @@ class GameRescanService
         $query->execute();
 
         $serviceName = $trophyTitle->serviceName();
-        $shouldFetchProgressTargetValue = $this->supportsProgressTargetValue($serviceName);
 
         $trophies = $client->trophies($npCommunicationId, $serviceName);
         $groupData = [];
@@ -519,12 +518,10 @@ class GameRescanService
                 );
 
                 $normalizedProgressTargetValue = null;
-                if ($shouldFetchProgressTargetValue) {
-                    $progressTargetValue = $trophy->progressTargetValue();
-                    $normalizedProgressTargetValue = $progressTargetValue === ''
-                        ? null
-                        : (int) $progressTargetValue;
-                }
+                $progressTargetValue = $trophy->progressTargetValue();
+                $normalizedProgressTargetValue = $progressTargetValue === ''
+                    ? null
+                    : (int) $progressTargetValue;
 
                 $differenceTracker->recordTrophyChange(
                     $groupId,
@@ -1075,10 +1072,4 @@ class GameRescanService
 
         return implode(',', $platforms);
     }
-
-    private function supportsProgressTargetValue(string $serviceName): bool
-    {
-        return strcasecmp($serviceName, 'trophy') !== 0;
-    }
-
 }
