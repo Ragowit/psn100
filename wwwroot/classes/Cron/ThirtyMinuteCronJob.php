@@ -651,10 +651,22 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query->execute();
                         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
-                        $trophyTitleCollection = $user->trophyTitles();
-                        $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
+                          try {
+                              $trophyTitleCollection = $user->trophyTitles();
+                              $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
+                          } catch (TypeError $exception) {
+                              $this->logger->log(sprintf(
+                                  'Unable to fetch trophy titles for %s due to unexpected response: %s',
+                                  (string) $player['online_id'],
+                                  $exception->getMessage()
+                              ));
 
-                        $psnGameCount = count($trophyTitles);
+                              sleep(60);
+
+                              break;
+                          }
+
+                          $psnGameCount = count($trophyTitles);
                         usort(
                             $trophyTitles,
                             function ($left, $right): int {
