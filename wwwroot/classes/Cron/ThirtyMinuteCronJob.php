@@ -825,8 +825,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $metaQuery->execute();
 
                         // Get "groups" (game and DLCs)
+                        $serviceName = $trophyTitle->serviceName();
+                        $shouldFetchProgressTargetValue = $this->supportsProgressTargetValue($serviceName);
+
                         $trophyGroups = $this->retryNotFound(
-                            fn () => $client->trophies($npid, $trophyTitle->serviceName())->trophyGroups(),
+                            fn () => $client->trophies($npid, $serviceName)->trophyGroups(),
                             sprintf('Fetching trophy groups for %s (%s)', $trophyTitle->name(), $npid)
                         );
 
@@ -923,18 +926,21 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                                 $rawProgressTargetValue = null;
                                 $progressTargetLookupFailed = false;
-                                try {
-                                    $rawProgressTargetValue = $trophy->progressTargetValue();
-                                } catch (Throwable $exception) {
-                                    $progressTargetLookupFailed = true;
-                                    $this->logger->log(sprintf(
-                                        'Unable to fetch progress target value for trophy "%s" in %s (%s/%s): %s',
-                                        $trophy->name(),
-                                        $trophyTitle->name(),
-                                        $npid,
-                                        $trophyGroup->id(),
-                                        $exception->getMessage()
-                                    ));
+
+                                if ($shouldFetchProgressTargetValue) {
+                                    try {
+                                        $rawProgressTargetValue = $trophy->progressTargetValue();
+                                    } catch (Throwable $exception) {
+                                        $progressTargetLookupFailed = true;
+                                        $this->logger->log(sprintf(
+                                            'Unable to fetch progress target value for trophy "%s" in %s (%s/%s): %s',
+                                            $trophy->name(),
+                                            $trophyTitle->name(),
+                                            $npid,
+                                            $trophyGroup->id(),
+                                            $exception->getMessage()
+                                        ));
+                                    }
                                 }
 
                                 $existingProgressTargetValue = null;
@@ -2279,5 +2285,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return false;
+    }
+
+    private function supportsProgressTargetValue(string $serviceName): bool
+    {
+        return strcasecmp($serviceName, 'trophy') !== 0;
     }
 }
