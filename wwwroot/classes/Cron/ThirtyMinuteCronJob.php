@@ -860,7 +860,20 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                                 $trophyHidden = (int) $trophy->hidden();
 
-                                $rawProgressTargetValue = $trophy->progressTargetValue();
+                                $rawProgressTargetValue = null;
+                                try {
+                                    $rawProgressTargetValue = $trophy->progressTargetValue();
+                                } catch (Throwable $exception) {
+                                    $this->logger->log(sprintf(
+                                        'Unable to fetch progress target value for trophy "%s" in %s (%s/%s): %s',
+                                        $trophy->name(),
+                                        $trophyTitle->name(),
+                                        $npid,
+                                        $trophyGroup->id(),
+                                        $exception->getMessage()
+                                    ));
+                                }
+
                                 $progressTargetValue = $rawProgressTargetValue === null || $rawProgressTargetValue === ''
                                     ? null
                                     : (int) $rawProgressTargetValue;
@@ -1915,6 +1928,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private function fetchRemoteFile(string $url): ?string
     {
+        if ($url === '') {
+            return null;
+        }
+
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $context = stream_context_create([
                 'http' => [
