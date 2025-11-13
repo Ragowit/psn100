@@ -45,6 +45,16 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
             </form>
 
             <?php if ($gameDetail !== null) { ?>
+                <?php
+                $gameSlug = $utility->slugify($gameDetail->getName());
+                $gameUrl = '/game/' . $gameDetail->getId() . '-' . $gameSlug;
+                ?>
+                <p>
+                    Game page:
+                    <a href="<?= htmlentities($gameUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
+                        <?= htmlentities($gameUrl, ENT_QUOTES, 'UTF-8'); ?>
+                    </a>
+                </p>
                 <form method="post" autocomplete="off">
                     <input type="hidden" name="action" value="update-detail">
                     <input type="hidden" name="game" value="<?= $gameDetail->getId(); ?>"><br>
