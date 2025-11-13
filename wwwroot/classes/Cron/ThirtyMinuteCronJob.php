@@ -826,7 +826,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                         // Get "groups" (game and DLCs)
                         $serviceName = $trophyTitle->serviceName();
-                        $shouldFetchProgressTargetValue = $this->supportsProgressTargetValue($serviceName);
 
                         $trophyGroups = $this->retryNotFound(
                             fn () => $client->trophies($npid, $serviceName)->trophyGroups(),
@@ -927,21 +926,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $rawProgressTargetValue = null;
                                 $progressTargetLookupFailed = false;
 
-                                if ($shouldFetchProgressTargetValue) {
-                                    try {
-                                        $rawProgressTargetValue = $trophy->progressTargetValue();
-                                    } catch (Throwable $exception) {
-                                        $progressTargetLookupFailed = true;
-                                        $this->logger->log(sprintf(
-                                            'Unable to fetch progress target value for trophy "%s" in %s (%s/%s): %s',
-                                            $trophy->name(),
-                                            $trophyTitle->name(),
-                                            $npid,
-                                            $trophyGroup->id(),
-                                            $exception->getMessage()
-                                        ));
-                                        $this->logger->log('Restarting worker to trigger re-authentication after progress target lookup failure.');
-                                    }
+                                try {
+                                    $rawProgressTargetValue = $trophy->progressTargetValue();
+                                } catch (Throwable $exception) {
+                                    $progressTargetLookupFailed = true;
+                                    // Restarting worker to trigger re-authentication after progress target lookup failure.
                                 }
 
                                 if ($progressTargetLookupFailed) {
@@ -2287,10 +2276,5 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return false;
-    }
-
-    private function supportsProgressTargetValue(string $serviceName): bool
-    {
-        return strcasecmp($serviceName, 'trophy') !== 0;
     }
 }
