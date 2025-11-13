@@ -145,6 +145,49 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
     }
 
+    private function ensureTrophyTitleIcon(
+        object $user,
+        object $trophyTitle,
+        string $onlineId
+    ): ?object {
+        $maxAttempts = 2;
+        $npCommunicationId = (string) $trophyTitle->npCommunicationId();
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $iconUrl = trim((string) $trophyTitle->iconUrl());
+
+            if ($iconUrl !== '') {
+                return $trophyTitle;
+            }
+
+            $this->logger->log(sprintf(
+                'Trophy title "%s" (%s) missing icon for %s (attempt %d/%d).',
+                $trophyTitle->name(),
+                $npCommunicationId,
+                $onlineId,
+                $attempt,
+                $maxAttempts
+            ));
+
+            if ($attempt === $maxAttempts) {
+                break;
+            }
+
+            sleep(2);
+
+            $trophyTitleCollection = $user->trophyTitles();
+
+            foreach ($trophyTitleCollection as $refreshedTitle) {
+                if ((string) $refreshedTitle->npCommunicationId() === $npCommunicationId) {
+                    $trophyTitle = $refreshedTitle;
+                    break;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function run(): void
     {
         $recheck = "";
@@ -609,8 +652,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
                         $trophyTitleCollection = $user->trophyTitles();
-                        $psnGameCount = $trophyTitleCollection->getIterator()->count();
                         $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
+
+                        $psnGameCount = count($trophyTitles);
                         usort(
                             $trophyTitles,
                             function ($left, $right): int {
@@ -629,6 +673,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $totalGamesToProcess = max(0, count($trophyTitles) - $scanStartIndex);
                         $currentScanPosition = 0;
                         $scannedGames = array();
+                        $restartScan = false;
 
                         // Look through each and every game
                         foreach ($trophyTitles as $index => $trophyTitle) {
@@ -637,6 +682,22 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                             if ($index < $scanStartIndex) {
                                 continue;
+                            }
+
+                            $trophyTitle = $this->ensureTrophyTitleIcon(
+                                $user,
+                                $trophyTitle,
+                                (string) $player['online_id']
+                            );
+
+                            if ($trophyTitle === null) {
+                                $this->logger->log(sprintf(
+                                    'Unable to fetch trophy title icon for %s. Restarting scan.',
+                                    (string) $player['online_id']
+                                ));
+                                $restartScan = true;
+
+                                break;
                             }
 
                             if ($totalGamesToProcess > 0) {
@@ -1223,6 +1284,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $this->trophyCalculator->recalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], (int) $user->accountId());
                             $this->trophyCalculator->recalculateTrophyTitle($row["parent_np_communication_id"], $trophyTitle->lastUpdatedDateTime(), false, (int) $user->accountId(), true);
                         }
+                    }
+
+                    if ($restartScan) {
+                        $recheck = '';
+
+                        continue;
                     }
 
                     $totalTrophiesEnd = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
