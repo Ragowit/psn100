@@ -940,7 +940,13 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                             $trophyGroup->id(),
                                             $exception->getMessage()
                                         ));
+                                        $this->logger->log('Restarting worker to trigger re-authentication after progress target lookup failure.');
                                     }
+                                }
+
+                                if ($progressTargetLookupFailed) {
+                                    $restartScan = true;
+                                    break 3;
                                 }
 
                                 $existingProgressTargetValue = null;
@@ -960,10 +966,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $progressTargetValue = $rawProgressTargetValue === null || $rawProgressTargetValue === ''
                                     ? null
                                     : (int) $rawProgressTargetValue;
-
-                                if ($progressTargetLookupFailed) {
-                                    $progressTargetValue = $existingProgressTargetValue;
-                                }
 
                                 $rewardName = $trophy->rewardName() === '' ? null : $trophy->rewardName();
 
