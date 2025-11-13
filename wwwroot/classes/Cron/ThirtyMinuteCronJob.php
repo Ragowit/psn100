@@ -861,9 +861,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $trophyHidden = (int) $trophy->hidden();
 
                                 $rawProgressTargetValue = null;
+                                $progressTargetLookupFailed = false;
                                 try {
                                     $rawProgressTargetValue = $trophy->progressTargetValue();
                                 } catch (Throwable $exception) {
+                                    $progressTargetLookupFailed = true;
                                     $this->logger->log(sprintf(
                                         'Unable to fetch progress target value for trophy "%s" in %s (%s/%s): %s',
                                         $trophy->name(),
@@ -873,11 +875,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                         $exception->getMessage()
                                     ));
                                 }
-
-                                $progressTargetValue = $rawProgressTargetValue === null || $rawProgressTargetValue === ''
-                                    ? null
-                                    : (int) $rawProgressTargetValue;
-                                $rewardName = $trophy->rewardName() === '' ? null : $trophy->rewardName();
 
                                 $existingProgressTargetValue = null;
                                 $existingRewardName = null;
@@ -892,6 +889,16 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     $existingRewardImageFilename = $existingTrophy['reward_image_url'];
                                     $existingIconFilename = $existingTrophy['icon_url'];
                                 }
+
+                                $progressTargetValue = $rawProgressTargetValue === null || $rawProgressTargetValue === ''
+                                    ? null
+                                    : (int) $rawProgressTargetValue;
+
+                                if ($progressTargetLookupFailed) {
+                                    $progressTargetValue = $existingProgressTargetValue;
+                                }
+
+                                $rewardName = $trophy->rewardName() === '' ? null : $trophy->rewardName();
 
                                 $rewardImageShouldBeNull = $trophy->rewardImageUrl() === null
                                     || $trophy->rewardImageUrl() === '';
