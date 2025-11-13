@@ -677,6 +677,13 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                         // Look through each and every game
                         foreach ($trophyTitles as $index => $trophyTitle) {
+                            $npid = $trophyTitle->npCommunicationId();
+                            array_push($scannedGames, $npid);
+
+                            if ($index < $scanStartIndex) {
+                                continue;
+                            }
+
                             $trophyTitle = $this->ensureTrophyTitleIcon(
                                 $user,
                                 $trophyTitle,
@@ -691,13 +698,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $restartScan = true;
 
                                 break;
-                            }
-
-                            $npid = $trophyTitle->npCommunicationId();
-                            array_push($scannedGames, $npid);
-
-                            if ($index < $scanStartIndex) {
-                                continue;
                             }
 
                             if ($totalGamesToProcess > 0) {
