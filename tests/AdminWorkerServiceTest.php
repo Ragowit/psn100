@@ -156,7 +156,7 @@ SQL
 
         $this->assertFalse($executionResult->isSuccessful());
         $this->assertSame([
-            ['pkill', '-u', 'psn100', '-f', 'worker=3'],
+            ['pkill', '-u', 'psn100', '-f', 'worker=3([^0-9]|$)'],
         ], $executor->commands);
         $this->assertSame('No process found', $executionResult->getOutput());
         $this->assertSame(1, $executionResult->getExitCode());

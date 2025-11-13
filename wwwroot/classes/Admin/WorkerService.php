@@ -129,7 +129,7 @@ final class WorkerService
             '-u',
             self::WORKER_USERNAME,
             '-f',
-            sprintf('worker=%d', $workerId),
+            sprintf('worker=%d([^0-9]|$)', $workerId),
         ]);
     }
 
