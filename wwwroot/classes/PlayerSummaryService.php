@@ -35,10 +35,10 @@ class PlayerSummaryService
                 SUM(CASE WHEN ttp.progress = 100 THEN 1 ELSE 0 END)       AS number_of_completed_games,
                 ROUND(AVG(ttp.progress), 2)                               AS average_progress,
                 SUM(
-                    tt.bronze - ttp.bronze +
-                    tt.silver - ttp.silver +
-                    tt.gold - ttp.gold +
-                    tt.platinum - ttp.platinum
+                    CASE WHEN tt.bronze > ttp.bronze THEN tt.bronze - ttp.bronze ELSE 0 END +
+                    CASE WHEN tt.silver > ttp.silver THEN tt.silver - ttp.silver ELSE 0 END +
+                    CASE WHEN tt.gold > ttp.gold THEN tt.gold - ttp.gold ELSE 0 END +
+                    CASE WHEN tt.platinum > ttp.platinum THEN tt.platinum - ttp.platinum ELSE 0 END
                 )                                                         AS unearned_trophies
             FROM
                 trophy_title_player ttp

@@ -103,4 +103,25 @@ final class PlayerSummaryServiceTest extends TestCase
         $this->assertSame(null, $summary->getAverageProgress());
         $this->assertSame(0, $summary->getUnearnedTrophies());
     }
+
+    public function testGetSummaryDoesNotAllowNegativeUnearnedTrophies(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES\n" .
+            "('NPWR020', 1, 0, 0, 0)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES ('NPWR020', 0)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES\n" .
+            "('NPWR020', 42, 100, 5, 0, 0, 0)"
+        );
+
+        $summary = $this->service->getSummary(42);
+
+        $this->assertSame(0, $summary->getUnearnedTrophies());
+    }
 }
