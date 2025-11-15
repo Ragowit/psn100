@@ -277,7 +277,7 @@ final class GameHistoryRenderer
             $escaped = htmlentities($token['value'], ENT_QUOTES, 'UTF-8');
 
             if ($isWhitespace && $isMultiline) {
-                $escaped = str_replace(["\r", "\n"], ['<br>', '<br>'], $escaped);
+                $escaped = str_replace(["\r\n", "\n", "\r"], '<br>', $escaped);
             }
 
             if ($token['state'] !== 'equal') {
