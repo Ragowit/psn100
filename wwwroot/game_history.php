@@ -64,7 +64,7 @@ require_once 'header.php';
             opacity: 0.75;
         }
 
-        .history-diff__token {
+        .history-highlight {
             border-radius: var(--bs-border-radius-sm);
             box-decoration-break: clone;
             display: inline;
@@ -72,12 +72,12 @@ require_once 'header.php';
             padding: 0.05rem 0.15rem;
         }
 
-        .history-diff__token--previous.history-diff__token--removed {
+        .history-highlight--removed {
             background-color: var(--bs-danger-border-subtle);
             color: var(--bs-danger-text-emphasis);
         }
 
-        .history-diff__token--current.history-diff__token--added {
+        .history-highlight--added {
             background-color: var(--bs-success-border-subtle);
             color: var(--bs-success-text-emphasis);
         }
