@@ -147,11 +147,11 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
         $handled = PsnPlayerLookupRequestHandler::handle($service, '   ');
 
-        $this->assertSame('', $handled['normalizedOnlineId']);
-        $this->assertSame(null, $handled['result']);
-        $this->assertSame(null, $handled['errorMessage']);
-        $this->assertSame(null, $handled['decodedNpId']);
-        $this->assertSame(null, $handled['npCountry']);
+        $this->assertSame('', $handled->getNormalizedOnlineId());
+        $this->assertSame(null, $handled->getResult());
+        $this->assertSame(null, $handled->getErrorMessage());
+        $this->assertSame(null, $handled->getDecodedNpId());
+        $this->assertSame(null, $handled->getNpCountry());
     }
 
     public function testRequestHandlerReturnsLookupErrorMessage(): void
@@ -171,11 +171,11 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
         $handled = PsnPlayerLookupRequestHandler::handle($service, 'missing');
 
-        $this->assertSame('missing', $handled['normalizedOnlineId']);
-        $this->assertSame(null, $handled['result']);
-        $this->assertSame('Player "missing" was not found.', $handled['errorMessage']);
-        $this->assertSame(null, $handled['decodedNpId']);
-        $this->assertSame(null, $handled['npCountry']);
+        $this->assertSame('missing', $handled->getNormalizedOnlineId());
+        $this->assertSame(null, $handled->getResult());
+        $this->assertSame('Player "missing" was not found.', $handled->getErrorMessage());
+        $this->assertSame(null, $handled->getDecodedNpId());
+        $this->assertSame(null, $handled->getNpCountry());
     }
 
     public function testRequestHandlerReturnsFallbackMessageForUnexpectedErrors(): void
@@ -189,14 +189,14 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
         $handled = PsnPlayerLookupRequestHandler::handle($service, 'example');
 
-        $this->assertSame('example', $handled['normalizedOnlineId']);
-        $this->assertSame(null, $handled['result']);
+        $this->assertSame('example', $handled->getNormalizedOnlineId());
+        $this->assertSame(null, $handled->getResult());
         $this->assertSame(
             'An unexpected error occurred while looking up the player. Please try again later.',
-            $handled['errorMessage']
+            $handled->getErrorMessage()
         );
-        $this->assertSame(null, $handled['decodedNpId']);
-        $this->assertSame(null, $handled['npCountry']);
+        $this->assertSame(null, $handled->getDecodedNpId());
+        $this->assertSame(null, $handled->getNpCountry());
     }
 
     public function testRequestHandlerIncludesNpIdMetadataWhenAvailable(): void
@@ -219,11 +219,11 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
         $handled = PsnPlayerLookupRequestHandler::handle($service, 'Example');
 
-        $this->assertSame('Example', $handled['normalizedOnlineId']);
-        $this->assertTrue(is_array($handled['result']), 'Expected lookup result to be an array.');
-        $this->assertSame(null, $handled['errorMessage']);
-        $this->assertSame('example@a6.us', $handled['decodedNpId']);
-        $this->assertSame('US', $handled['npCountry']);
+        $this->assertSame('Example', $handled->getNormalizedOnlineId());
+        $this->assertTrue(is_array($handled->getResult()), 'Expected lookup result to be an array.');
+        $this->assertSame(null, $handled->getErrorMessage());
+        $this->assertSame('example@a6.us', $handled->getDecodedNpId());
+        $this->assertSame('US', $handled->getNpCountry());
     }
 }
 

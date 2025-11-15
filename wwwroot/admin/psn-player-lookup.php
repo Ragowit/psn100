@@ -10,11 +10,11 @@ $onlineId = isset($_GET['onlineId']) ? (string) $_GET['onlineId'] : '';
 $lookupService = PsnPlayerLookupService::fromDatabase($database);
 $handledRequest = PsnPlayerLookupRequestHandler::handle($lookupService, $onlineId);
 
-$normalizedOnlineId = $handledRequest['normalizedOnlineId'];
-$result = $handledRequest['result'];
-$errorMessage = $handledRequest['errorMessage'];
-$decodedNpId = $handledRequest['decodedNpId'];
-$npCountry = $handledRequest['npCountry'];
+$normalizedOnlineId = $handledRequest->getNormalizedOnlineId();
+$result = $handledRequest->getResult();
+$errorMessage = $handledRequest->getErrorMessage();
+$decodedNpId = $handledRequest->getDecodedNpId();
+$npCountry = $handledRequest->getNpCountry();
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
