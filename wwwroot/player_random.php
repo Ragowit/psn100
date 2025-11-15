@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesPageContext.php';
+require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -20,6 +21,7 @@ $playerSummary = $context->getPlayerSummary();
 $randomGames = $context->getRandomGames();
 $playerNavigation = $context->getPlayerNavigation();
 $platformFilterOptions = $context->getPlatformFilterOptions();
+$platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 
 $title = $context->getTitle();
 require_once("header.php");
@@ -41,31 +43,7 @@ require_once("header.php");
             </div>
 
             <div class="col-12 col-lg-3 mb-3">
-            <form>
-                    <div class="input-group d-flex justify-content-end">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
-                        <ul class="dropdown-menu p-2">
-                            <?php foreach ($platformFilterOptions->getOptions() as $platformOption) { ?>
-                                <li>
-                                    <div class="form-check">
-                                        <?php $inputId = htmlspecialchars($platformOption->getInputId(), ENT_QUOTES, 'UTF-8'); ?>
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"<?= $platformOption->isSelected() ? ' checked' : ''; ?>
-                                            value="true"
-                                            onChange="this.form.submit()"
-                                            id="<?= $inputId; ?>"
-                                            name="<?= htmlspecialchars($platformOption->getInputName(), ENT_QUOTES, 'UTF-8'); ?>"
-                                        >
-                                        <label class="form-check-label" for="<?= $inputId; ?>">
-                                            <?= htmlspecialchars($platformOption->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
-                                        </label>
-                                    </div>
-                                </li>
-                            <?php } ?>
-                        </ul>
-                    </div>
-                </form>
+                <?= $platformFilterRenderer->render($platformFilterOptions); ?>
             </div>
         </div>
     </div>
