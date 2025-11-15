@@ -75,6 +75,46 @@ final class GameTrophyFilterTest extends TestCase
         $this->assertTrue($filter->shouldDisplayTrophy([]));
     }
 
+    public function testShouldDisplayTrophySupportsViewModelInstances(): void
+    {
+        $filter = GameTrophyFilter::fromQueryParameters(['unearned' => true], true);
+
+        $utility = new Utility();
+        $pendingTrophy = GameTrophyRow::fromArray(
+            [
+                'id' => 1,
+                'order_id' => 1,
+                'type' => 'bronze',
+                'name' => 'Pending Trophy',
+                'detail' => 'Detail',
+                'icon_url' => 'icon.png',
+                'rarity_percent' => 10,
+                'status' => 0,
+            ],
+            $utility,
+            false
+        );
+
+        $earnedTrophy = GameTrophyRow::fromArray(
+            [
+                'id' => 2,
+                'order_id' => 2,
+                'type' => 'silver',
+                'name' => 'Earned Trophy',
+                'detail' => 'Detail',
+                'icon_url' => 'icon.png',
+                'rarity_percent' => 5,
+                'status' => 0,
+                'earned' => 1,
+            ],
+            $utility,
+            false
+        );
+
+        $this->assertTrue($filter->shouldDisplayTrophy($pendingTrophy));
+        $this->assertFalse($filter->shouldDisplayTrophy($earnedTrophy));
+    }
+
     public function testFromQueryParametersTreatsUnexpectedTypesAsTruthy(): void
     {
         $filter = GameTrophyFilter::fromQueryParameters(['unearned' => ['unexpected']], true);

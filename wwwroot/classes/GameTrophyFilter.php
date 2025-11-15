@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Game/GameTrophyRow.php';
+
 class GameTrophyFilter
 {
     private bool $unearnedOnly;
@@ -45,12 +47,16 @@ class GameTrophyFilter
     }
 
     /**
-     * @param array<string, mixed> $trophy
+     * @param array<string, mixed>|GameTrophyRow $trophy
      */
-    public function shouldDisplayTrophy(array $trophy): bool
+    public function shouldDisplayTrophy(array|GameTrophyRow $trophy): bool
     {
         if (!$this->unearnedOnly) {
             return true;
+        }
+
+        if ($trophy instanceof GameTrophyRow) {
+            return !$trophy->isEarned();
         }
 
         $earned = isset($trophy['earned']) ? (int) $trophy['earned'] : 0;
