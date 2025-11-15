@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerGamesPageContext.php';
-require_once __DIR__ . '/classes/PlayerNavigation.php';
-require_once __DIR__ . '/classes/PlayerPlatformFilterOptions.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -23,10 +21,10 @@ $playerGames = $pageContext->getGames();
 $metaData = $pageContext->getMetaData();
 $playerSearch = $pageContext->getSearch();
 $sort = $pageContext->getSort();
-$playerNavigation = PlayerNavigation::forSection((string) $player['online_id'], PlayerNavigation::SECTION_GAMES);
-$platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
-    static fn (string $platform): bool => $playerGamesFilter->isPlatformSelected($platform)
-);
+$playerNavigation = $pageContext->getPlayerNavigation();
+$platformFilterOptions = $pageContext->getPlatformFilterOptions();
+$playerOnlineId = $pageContext->getPlayerOnlineId();
+$playerAccountId = $pageContext->getPlayerAccountId();
 $title = $pageContext->getTitle();
 require_once("header.php");
 ?>
@@ -39,7 +37,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="/player/<?= $player["online_id"]; ?>/report">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="/player/<?= htmlspecialchars($playerOnlineId, ENT_QUOTES, 'UTF-8'); ?>/report">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
@@ -127,16 +125,21 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if ($player["status"] == 1) {
+                            if (!$pageContext->shouldDisplayGames()) {
                                 ?>
                                 <tr>
-                                    <td colspan="4" class="text-center"><h3>This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3></td>
-                                </tr>
-                                <?php
-                            } elseif ($player["status"] == 3) {
-                                ?>
-                                <tr>
-                                    <td colspan="4" class="text-center"><h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>
+                                    <td colspan="4" class="text-center">
+                                        <?php if ($pageContext->isPlayerFlagged()) { ?>
+                                            <h3>
+                                                This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards.
+                                                <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= htmlspecialchars($playerOnlineId, ENT_QUOTES, 'UTF-8'); ?>+OR+<?= htmlspecialchars((string) $playerAccountId, ENT_QUOTES, 'UTF-8'); ?>">Dispute</a>?
+                                            </h3>
+                                        <?php } elseif ($pageContext->isPlayerPrivate()) { ?>
+                                            <h3>
+                                                This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.
+                                            </h3>
+                                        <?php } ?>
+                                    </td>
                                 </tr>
                                 <?php
                             } else {
@@ -158,7 +161,7 @@ require_once("header.php");
 
                                                 <div class="vstack">
                                                     <span>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $playerGame->getId() ."-". $utility->slugify($playerGame->getName()); ?>/<?= $player["online_id"]; ?>">
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $playerGame->getId() ."-". $utility->slugify($playerGame->getName()); ?>/<?= htmlspecialchars($playerOnlineId, ENT_QUOTES, 'UTF-8'); ?>">
                                                             <?= htmlentities($playerGame->getName()); ?>
                                                         </a>
                                                     </span>
@@ -209,7 +212,7 @@ require_once("header.php");
                                         </td>
                                         <td class="align-middle text-center">
                                             <?php
-                                            if ($player["status"] == 0 && $playerGame->getStatus() == 0) {
+                                            if ($playerGame->getStatus() == 0) {
                                                 echo number_format($playerGame->getRarityPoints());
                                                 if (!$playerGame->isCompleted()) {
                                                     echo '/'. number_format($playerGame->getMaxRarityPoints());

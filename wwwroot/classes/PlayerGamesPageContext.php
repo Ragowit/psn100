@@ -6,12 +6,17 @@ require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesPage.php';
 require_once __DIR__ . '/PlayerGamesService.php';
+require_once __DIR__ . '/PlayerNavigation.php';
+require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 
 final class PlayerGamesPageContext
 {
+    private const STATUS_FLAGGED = 1;
+    private const STATUS_PRIVATE = 3;
+
     private PlayerGamesPage $playerGamesPage;
 
     private PlayerSummary $playerSummary;
@@ -26,6 +31,16 @@ final class PlayerGamesPageContext
 
     private string $sort;
 
+    private PlayerNavigation $playerNavigation;
+
+    private PlayerPlatformFilterOptions $platformFilterOptions;
+
+    private string $playerOnlineId;
+
+    private int $playerAccountId;
+
+    private int $playerStatus;
+
     /**
      * @param array<string, mixed> $playerData
      */
@@ -33,7 +48,9 @@ final class PlayerGamesPageContext
         PlayerGamesPage $playerGamesPage,
         PlayerSummary $playerSummary,
         PlayerGamesFilter $filter,
-        array $playerData
+        array $playerData,
+        int $playerAccountId,
+        int $playerStatus
     ) {
         $this->playerGamesPage = $playerGamesPage;
         $this->playerSummary = $playerSummary;
@@ -42,6 +59,16 @@ final class PlayerGamesPageContext
         $this->title = $this->buildTitle($playerData);
         $this->playerSearch = $filter->getSearch();
         $this->sort = $filter->getSort();
+        $this->playerAccountId = $playerAccountId;
+        $this->playerStatus = $playerStatus;
+        $this->playerOnlineId = $this->extractString($playerData['online_id'] ?? '');
+        $this->playerNavigation = PlayerNavigation::forSection(
+            $this->playerOnlineId,
+            PlayerNavigation::SECTION_GAMES
+        );
+        $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
+            fn (string $platform): bool => $this->filter->isPlatformSelected($platform)
+        );
     }
 
     /**
@@ -67,7 +94,38 @@ final class PlayerGamesPageContext
             self::extractPlayerStatus($playerData)
         );
 
-        return new self($playerGamesPage, $playerSummary, $filter, $playerData);
+        return new self(
+            $playerGamesPage,
+            $playerSummary,
+            $filter,
+            $playerData,
+            $accountId,
+            self::extractPlayerStatus($playerData)
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $playerData
+     */
+    public static function fromComponents(
+        PlayerGamesPage $playerGamesPage,
+        PlayerSummary $playerSummary,
+        PlayerGamesFilter $filter,
+        array $playerData,
+        int $playerAccountId,
+        int $playerStatus
+    ): self {
+        $normalizedPlayerData = $playerData;
+        $normalizedPlayerData['status'] = $playerStatus;
+
+        return new self(
+            $playerGamesPage,
+            $playerSummary,
+            $filter,
+            $normalizedPlayerData,
+            $playerAccountId,
+            $playerStatus
+        );
     }
 
     public function getPlayerSummary(): PlayerSummary
@@ -116,6 +174,41 @@ final class PlayerGamesPageContext
     public function getSort(): string
     {
         return $this->sort;
+    }
+
+    public function getPlayerNavigation(): PlayerNavigation
+    {
+        return $this->playerNavigation;
+    }
+
+    public function getPlatformFilterOptions(): PlayerPlatformFilterOptions
+    {
+        return $this->platformFilterOptions;
+    }
+
+    public function getPlayerOnlineId(): string
+    {
+        return $this->playerOnlineId;
+    }
+
+    public function getPlayerAccountId(): int
+    {
+        return $this->playerAccountId;
+    }
+
+    public function isPlayerFlagged(): bool
+    {
+        return $this->playerStatus === self::STATUS_FLAGGED;
+    }
+
+    public function isPlayerPrivate(): bool
+    {
+        return $this->playerStatus === self::STATUS_PRIVATE;
+    }
+
+    public function shouldDisplayGames(): bool
+    {
+        return !$this->isPlayerFlagged() && !$this->isPlayerPrivate();
     }
 
     /**
