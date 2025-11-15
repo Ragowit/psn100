@@ -147,6 +147,63 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->mergedGames);
     }
 
+    public function testSkipsCloningMergeNpCommunicationId(): void
+    {
+        $this->insertTitle(1, 'MERGE_000010', 'Example Game', 'PS5');
+        $this->insertTitle(2, 'NP_OLD', 'Example Game', 'PS4');
+
+        $this->insertTrophies('MERGE_000010', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->insertTrophies('NP_OLD', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->mergeService->cloneInfoQueue[] = [
+            'clone_game_id' => 99,
+            'clone_np_communication_id' => 'MERGE_000099',
+        ];
+
+        $this->service->handleNewTitle('MERGE_000010');
+
+        $this->assertSame([2], $this->mergeService->clonedGames);
+        $this->assertSame([
+            [1, 99, 'order'],
+            [2, 99, 'order'],
+        ], $this->mergeService->mergedGames);
+    }
+
+    public function testSkipsPs5GameWithMergedStatus(): void
+    {
+        $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS4');
+        $this->insertTitle(2, 'NP_PS5', 'Example Game', 'PS5', 2);
+
+        $this->insertTrophies('NP_NEW', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->insertTrophies('NP_PS5', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->mergeService->cloneInfoQueue[] = [
+            'clone_game_id' => 99,
+            'clone_np_communication_id' => 'MERGE_000099',
+        ];
+
+        $this->service->handleNewTitle('NP_NEW');
+
+        $this->assertSame([1], $this->mergeService->clonedGames);
+        $this->assertSame([
+            [1, 99, 'order'],
+        ], $this->mergeService->mergedGames);
+    }
+
     public function testDoesNothingWhenNoMatchingTrophies(): void
     {
         $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
@@ -178,6 +235,13 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         );
 
         $this->database->exec(
+            'CREATE TABLE trophy_title_meta (
+                np_communication_id TEXT PRIMARY KEY,
+                status INTEGER NOT NULL DEFAULT 0
+            )'
+        );
+
+        $this->database->exec(
             'CREATE TABLE trophy (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 np_communication_id TEXT NOT NULL,
@@ -189,7 +253,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         );
     }
 
-    private function insertTitle(int $id, string $npCommunicationId, string $name, string $platform): void
+    private function insertTitle(int $id, string $npCommunicationId, string $name, string $platform, int $status = 0): void
     {
         $query = $this->database->prepare(
             'INSERT INTO trophy_title (id, np_communication_id, name, platform) VALUES (:id, :np, :name, :platform)'
@@ -199,6 +263,13 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         $query->bindValue(':name', $name, PDO::PARAM_STR);
         $query->bindValue(':platform', $platform, PDO::PARAM_STR);
         $query->execute();
+
+        $metaQuery = $this->database->prepare(
+            'INSERT INTO trophy_title_meta (np_communication_id, status) VALUES (:np, :status)'
+        );
+        $metaQuery->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
+        $metaQuery->bindValue(':status', $status, PDO::PARAM_INT);
+        $metaQuery->execute();
     }
 
     /**
