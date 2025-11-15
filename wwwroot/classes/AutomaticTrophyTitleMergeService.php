@@ -134,14 +134,15 @@ final class AutomaticTrophyTitleMergeService
     }
 
     /**
-     * @return array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}|null
+     * @return array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[], status:int}|null
      */
     private function getTitleByNpCommunicationId(string $npCommunicationId): ?array
     {
         $query = $this->database->prepare(
-            'SELECT id, np_communication_id, name, platform
-            FROM trophy_title
-            WHERE np_communication_id = :np_communication_id'
+            'SELECT tt.id, tt.np_communication_id, tt.name, tt.platform, COALESCE(ttm.status, 0) AS status
+            FROM trophy_title tt
+            LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
+            WHERE tt.np_communication_id = :np_communication_id'
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
@@ -160,19 +161,21 @@ final class AutomaticTrophyTitleMergeService
             'name' => (string) $row['name'],
             'platform' => $platform,
             'platforms' => $this->parsePlatforms($platform),
+            'status' => (int) ($row['status'] ?? 0),
         ];
     }
 
     /**
-     * @param array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]} $newTitle
-     * @return list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}>
+     * @param array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[], status:int} $newTitle
+     * @return list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool, status:int}>
      */
     private function findMatchingTitles(array $newTitle): array
     {
         $query = $this->database->prepare(
-            'SELECT id, np_communication_id, platform
-            FROM trophy_title
-            WHERE name = :name AND np_communication_id != :np_communication_id'
+            'SELECT tt.id, tt.np_communication_id, tt.platform, COALESCE(ttm.status, 0) AS status
+            FROM trophy_title tt
+            LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
+            WHERE tt.name = :name AND tt.np_communication_id != :np_communication_id'
         );
         $query->bindValue(':name', $newTitle['name'], PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $newTitle['np_communication_id'], PDO::PARAM_STR);
@@ -200,6 +203,7 @@ final class AutomaticTrophyTitleMergeService
                 'platforms' => $this->parsePlatforms($platform),
                 'is_clone' => str_starts_with($npCommunicationId, 'MERGE'),
                 'matches_by_order' => $comparison['orderMatches'],
+                'status' => (int) ($row['status'] ?? 0),
             ];
         }
 
@@ -207,8 +211,8 @@ final class AutomaticTrophyTitleMergeService
     }
 
     /**
-     * @param list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}> $matches
-     * @return array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}|null
+     * @param list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool, status:int}> $matches
+     * @return array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool, status:int}|null
      */
     private function selectCloneCandidate(array $matches): ?array
     {
@@ -228,9 +232,9 @@ final class AutomaticTrophyTitleMergeService
     }
 
     /**
-     * @param array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]} $newTitle
-     * @param list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool}> $matches
-     * @return list<array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}>
+     * @param array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[], status:int} $newTitle
+     * @param list<array{id:int, np_communication_id:string, platform:?string, platforms:string[], is_clone:bool, matches_by_order:bool, status:int}> $matches
+     * @return list<array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[], status:int}>
      */
     private function createUniqueGameList(array $newTitle, array $matches): array
     {
@@ -243,12 +247,17 @@ final class AutomaticTrophyTitleMergeService
                 continue;
             }
 
+            if ($match['status'] === 2) {
+                continue;
+            }
+
             $games[$match['id']] = [
                 'id' => $match['id'],
                 'np_communication_id' => $match['np_communication_id'],
                 'name' => $newTitle['name'],
                 'platform' => $match['platform'],
                 'platforms' => $match['platforms'],
+                'status' => $match['status'],
             ];
         }
 
@@ -256,18 +265,23 @@ final class AutomaticTrophyTitleMergeService
     }
 
     /**
-     * @param list<array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}> $games
-     * @return array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[]}|null
+     * @param list<array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[], status:int}> $games
+     * @return array{id:int, np_communication_id:string, name:string, platform:?string, platforms:string[], status:int}|null
      */
     private function selectGameToClone(array $games): ?array
     {
-        foreach ($games as $game) {
+        $eligibleGames = array_values(array_filter(
+            $games,
+            static fn (array $game): bool => !str_starts_with($game['np_communication_id'], 'MERGE') && $game['status'] !== 2
+        ));
+
+        foreach ($eligibleGames as $game) {
             if ($this->hasPs5OrPsvr2($game['platforms'])) {
                 return $game;
             }
         }
 
-        return $games[0] ?? null;
+        return $eligibleGames[0] ?? null;
     }
 
     /**
