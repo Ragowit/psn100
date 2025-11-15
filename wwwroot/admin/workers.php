@@ -144,26 +144,16 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                             <span class="text-body-secondary">Not reported</span>
                                         <?php } else { ?>
                                             <div class="small">
-                                                <?php if (array_key_exists('title', $scanProgress)) { ?>
+                                                <?php $title = $scanProgress->getTitle(); ?>
+                                                <?php if ($title !== null) { ?>
                                                     <div>
                                                         <strong>Title:</strong>
-                                                        <?= htmlspecialchars((string) $scanProgress['title'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>
                                                     </div>
                                                 <?php } ?>
                                                 <?php
-                                                $current = $scanProgress['current'] ?? null;
-                                                $total = $scanProgress['total'] ?? null;
-                                                $progressSummary = null;
-                                                $percentage = null;
-
-                                                if (is_int($current) && is_int($total) && $total > 0) {
-                                                    $progressSummary = sprintf('%d / %d', $current, $total);
-                                                    $percentage = round(($current / $total) * 100, 1);
-                                                } elseif (is_int($current) && $total === null) {
-                                                    $progressSummary = (string) $current;
-                                                } elseif (is_int($total) && $current === null) {
-                                                    $progressSummary = '0 / ' . $total;
-                                                }
+                                                $progressSummary = $scanProgress->getProgressSummary();
+                                                $percentage = $scanProgress->getPercentage();
                                                 ?>
                                                 <?php if ($progressSummary !== null) { ?>
                                                     <div>
@@ -174,10 +164,11 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                         <?php } ?>
                                                     </div>
                                                 <?php } ?>
-                                                <?php if (array_key_exists('npCommunicationId', $scanProgress)) { ?>
+                                                <?php $npCommunicationId = $scanProgress->getNpCommunicationId(); ?>
+                                                <?php if ($npCommunicationId !== null) { ?>
                                                     <div>
                                                         <strong>NP Communication ID:</strong>
-                                                        <?= htmlspecialchars((string) $scanProgress['npCommunicationId'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?= htmlspecialchars($npCommunicationId, ENT_QUOTES, 'UTF-8'); ?>
                                                     </div>
                                                 <?php } ?>
                                             </div>

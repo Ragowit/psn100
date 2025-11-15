@@ -70,40 +70,9 @@ final class WorkerService
         return $workers;
     }
 
-    /**
-     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
-     */
-    private function decodeScanProgress(?string $value): ?array
+    private function decodeScanProgress(?string $value): ?WorkerScanProgress
     {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $decoded = json_decode($value, true);
-
-        if (!is_array($decoded)) {
-            return null;
-        }
-
-        $progress = [];
-
-        if (array_key_exists('current', $decoded) && is_numeric($decoded['current'])) {
-            $progress['current'] = max(0, (int) $decoded['current']);
-        }
-
-        if (array_key_exists('total', $decoded) && is_numeric($decoded['total'])) {
-            $progress['total'] = max(0, (int) $decoded['total']);
-        }
-
-        if (array_key_exists('title', $decoded) && is_string($decoded['title'])) {
-            $progress['title'] = $decoded['title'];
-        }
-
-        if (array_key_exists('npCommunicationId', $decoded) && is_string($decoded['npCommunicationId'])) {
-            $progress['npCommunicationId'] = $decoded['npCommunicationId'];
-        }
-
-        return $progress === [] ? null : $progress;
+        return WorkerScanProgress::fromJson($value);
     }
 
     public function updateWorkerNpsso(int $workerId, string $npsso): bool
