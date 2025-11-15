@@ -5,137 +5,26 @@ declare(strict_types=1);
 require_once '../init.php';
 require_once '../classes/Admin/AdminRequest.php';
 require_once '../classes/Admin/WorkerService.php';
+require_once '../classes/Admin/WorkerPage.php';
 
 $workerService = new WorkerService($database);
 $request = AdminRequest::fromGlobals($_SERVER ?? [], $_POST ?? []);
 
-$successMessage = null;
-$errorMessage = null;
+$workerPage = new WorkerPage($workerService);
+$pageResult = $workerPage->handle($_GET ?? [], $request);
 
-$sortField = 'scan_start';
-$sortDirection = 'asc';
+$workers = $pageResult->getWorkers();
+$successMessage = $pageResult->getSuccessMessage();
+$errorMessage = $pageResult->getErrorMessage();
 
-$sortParam = $_GET['sort'] ?? null;
+$idSortLink = $pageResult->getSortLink('id');
+$scanStartSortLink = $pageResult->getSortLink('scan_start');
 
-if (is_string($sortParam)) {
-    $normalizedSort = strtolower(trim($sortParam));
+$idSortUrl = $idSortLink?->getUrl() ?? '?sort=id&direction=asc';
+$scanStartSortUrl = $scanStartSortLink?->getUrl() ?? '?sort=scan_start&direction=asc';
 
-    if ($normalizedSort === 'id') {
-        $sortField = 'id';
-    }
-}
-
-$directionParam = $_GET['direction'] ?? null;
-
-if (is_string($directionParam)) {
-    $normalizedDirection = strtolower(trim($directionParam));
-
-    if (in_array($normalizedDirection, ['asc', 'desc'], true)) {
-        $sortDirection = $normalizedDirection;
-    }
-}
-
-if ($request->isPost()) {
-    $action = $request->getPostString('action');
-
-    if ($action === 'update_npsso') {
-        $workerId = $request->getPostPositiveInt('worker_id');
-        $npsso = $request->getPostString('npsso');
-
-        if ($workerId === null) {
-            $errorMessage = 'Invalid worker selected.';
-        } elseif ($npsso === '') {
-            $errorMessage = 'The NPSSO value cannot be empty.';
-        } elseif (strlen($npsso) > 64) {
-            $errorMessage = 'The NPSSO value must be 64 characters or fewer.';
-        } else {
-            try {
-                $updated = $workerService->updateWorkerNpsso($workerId, $npsso);
-
-                if ($updated) {
-                    $successMessage = 'Worker NPSSO updated successfully.';
-                } else {
-                    $errorMessage = 'Unable to update NPSSO. Please verify the worker still exists.';
-                }
-            } catch (Throwable $exception) {
-                $errorMessage = 'An unexpected error occurred while updating the NPSSO value.';
-            }
-        }
-    } elseif ($action === 'restart_worker') {
-        $workerId = $request->getPostPositiveInt('worker_id');
-
-        if ($workerId === null) {
-            $errorMessage = 'Invalid worker selected for restart.';
-        } else {
-            $result = $workerService->restartWorker($workerId);
-
-            if ($result->isSuccessful()) {
-                $successMessage = sprintf('Worker #%d restart signal sent successfully.', $workerId);
-
-                if ($result->getOutput() !== '') {
-                    $successMessage .= ' ' . $result->getOutput();
-                }
-            } elseif ($result->getExitCode() === 1) {
-                $errorMessage = sprintf(
-                    'No running process matched worker #%d. It may already be stopped.',
-                    $workerId
-                );
-            } else {
-                $errorMessage = sprintf(
-                    'Unable to restart worker #%d (exit code %d).',
-                    $workerId,
-                    $result->getExitCode()
-                );
-
-                if ($result->getOutput() !== '') {
-                    $errorMessage .= ' ' . $result->getOutput();
-                }
-            }
-        }
-    } elseif ($action === 'restart_all_workers') {
-        $result = $workerService->restartAllWorkers();
-
-        if ($result->isSuccessful()) {
-            $successMessage = 'All workers received the restart signal.';
-
-            if ($result->getOutput() !== '') {
-                $successMessage .= ' ' . $result->getOutput();
-            }
-        } elseif ($result->getExitCode() === 1) {
-            $errorMessage = 'No worker processes matched the restart request. They may already be stopped.';
-        } else {
-            $errorMessage = sprintf(
-                'Unable to restart all workers (exit code %d).',
-                $result->getExitCode()
-            );
-
-            if ($result->getOutput() !== '') {
-                $errorMessage .= ' ' . $result->getOutput();
-            }
-        }
-    } else {
-        $errorMessage = 'Unsupported action requested.';
-    }
-}
-
-$workers = $workerService->fetchWorkers($sortField, strtoupper($sortDirection));
-
-$idSortNextDirection = $sortField === 'id' && $sortDirection === 'asc' ? 'desc' : 'asc';
-$scanStartNextDirection = $sortField === 'scan_start' && $sortDirection === 'asc' ? 'desc' : 'asc';
-
-$idSortUrl = '?' . http_build_query(['sort' => 'id', 'direction' => $idSortNextDirection]);
-$scanStartSortUrl = '?' . http_build_query(['sort' => 'scan_start', 'direction' => $scanStartNextDirection]);
-
-$idSortIndicator = '';
-$scanStartSortIndicator = '';
-
-if ($sortField === 'id') {
-    $idSortIndicator = $sortDirection === 'asc' ? ' ▲' : ' ▼';
-}
-
-if ($sortField === 'scan_start') {
-    $scanStartSortIndicator = $sortDirection === 'asc' ? ' ▲' : ' ▼';
-}
+$idSortIndicator = $idSortLink?->getIndicator() ?? '';
+$scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
