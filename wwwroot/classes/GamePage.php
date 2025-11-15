@@ -9,6 +9,7 @@ require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
+require_once __DIR__ . '/Game/GameTrophyRow.php';
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Utility.php';
 
@@ -175,6 +176,23 @@ class GamePage
         return $this->trophiesByGroup[$groupId];
     }
 
+    /**
+     * @return GameTrophyRow[]
+     */
+    public function getTrophyRows(string $groupId): array
+    {
+        $usesPlayStation5Assets = $this->usesPlayStation5Assets();
+
+        return array_map(
+            fn (array $trophy): GameTrophyRow => GameTrophyRow::fromArray(
+                $trophy,
+                $this->utility,
+                $usesPlayStation5Assets
+            ),
+            $this->getTrophies($groupId)
+        );
+    }
+
     public function createMetaData(): PageMetaData
     {
         return (new PageMetaData())
@@ -197,5 +215,12 @@ class GamePage
     public function getGameSlug(): string
     {
         return $this->utility->slugify($this->game->getName());
+    }
+
+    private function usesPlayStation5Assets(): bool
+    {
+        $platform = $this->game->getPlatform();
+
+        return str_contains($platform, 'PS5') || str_contains($platform, 'PSVR2');
     }
 }

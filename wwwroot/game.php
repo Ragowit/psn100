@@ -169,69 +169,52 @@ require_once("header.php");
 
                             <tbody>
                                 <?php
-                                $trophies = $gamePage->getTrophies($trophyGroupId);
+                                $trophyRows = $gamePage->getTrophyRows($trophyGroupId);
 
-                                foreach ($trophies as $trophy) {
-                                    if (!$gameTrophyFilter->shouldDisplayTrophy($trophy)) {
+                                foreach ($trophyRows as $trophyRow) {
+                                    if (!$gameTrophyFilter->shouldDisplayTrophy($trophyRow)) {
                                         continue;
                                     }
 
-                                    // A game can have been updated with a progress_target_value, while the user earned the trophy while it hadn't one. This fixes this issue.
-                                    if ($accountId !== null && ($trophy["earned"] ?? null) == 1 && $trophy["progress_target_value"] != null) {
-                                        $trophy["progress"] = $trophy["progress_target_value"];
-                                    }
-
-                                    $trClass = "";
-                                    if ($trophy["status"] == 1) {
-                                        $trClass = " class=\"table-warning\" title=\"This trophy is unobtainable and not accounted for on any leaderboard.\"";
-                                    } elseif ($accountId !== null && ($trophy["earned"] ?? null) == 1) {
-                                        $trClass = " class=\"table-success\"";
-                                    }
+                                    $rowAttributes = $trophyRow->getRowAttributes($accountId);
+                                    $trophyColor = $trophyRow->getTypeColor();
+                                    $trophyLink = $trophyRow->getTrophyLink(isset($player) ? (string) $player : null);
                                     ?>
-                                    <tr scope="row"<?= $trClass; ?>>
-                                        <?php
-                                        switch ($trophy["type"]) {
-                                            case "bronze":
-                                                $trophyColor = "#c46438";
-                                                break;
-                                            case "silver":
-                                                $trophyColor = "#777777";
-                                                break;
-                                            case "gold":
-                                                $trophyColor = "#c2903e";
-                                                break;
-                                            case "platinum":
-                                                $trophyColor = "#667fb2";
-                                                break;
-                                        }
-                                        ?>
+                                    <tr scope="row"<?= $rowAttributes; ?>>
                                         <td style="width: 5rem;">
                                             <div>
-                                                <img class="card-img object-fit-scale" style="height: 5rem;" src="/img/trophy/<?= ($trophy["icon_url"] == ".png") ? ((str_contains($game->getPlatform(), "PS5") || str_contains($game->getPlatform(), "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-trophy.png") : $trophy["icon_url"]; ?>" alt="<?= htmlentities($trophy["name"]); ?>">
+                                                <img
+                                                    class="card-img object-fit-scale"
+                                                    style="height: 5rem;"
+                                                    src="/img/trophy/<?= htmlspecialchars($trophyRow->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    alt="<?= htmlentities($trophyRow->getName()); ?>"
+                                                >
                                             </div>
                                         </td>
 
                                         <td class="w-auto">
                                             <div class="vstack">
                                                 <span>
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= $trophy["id"] ."-". $utility->slugify($trophy["name"]); ?><?= (isset($player) ? "/".$player : ""); ?>">
-                                                        <b><?= htmlentities($trophy["name"]); ?></b>
+                                                    <a
+                                                        class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+                                                        href="<?= htmlspecialchars($trophyLink, ENT_QUOTES, 'UTF-8'); ?>"
+                                                    >
+                                                        <b><?= htmlentities($trophyRow->getName()); ?></b>
                                                     </a>
                                                 </span>
-                                                <?= nl2br(htmlentities($trophy["detail"], ENT_QUOTES, "UTF-8")); ?>
+                                                <?= nl2br(htmlentities($trophyRow->getDetail(), ENT_QUOTES, 'UTF-8')); ?>
                                                 <?php
-                                                if ($trophy["progress_target_value"] != null) {
-                                                    echo "<span>";
-                                                    if (isset($trophy["progress"])) {
-                                                        echo $trophy["progress"];
-                                                    } else {
-                                                        echo "0";
-                                                    }
-                                                    echo "/". $trophy["progress_target_value"] ."</span>";
+                                                $progressDisplay = $trophyRow->getProgressDisplay();
+                                                if ($progressDisplay !== null) {
+                                                    echo '<span>' . htmlspecialchars($progressDisplay, ENT_QUOTES, 'UTF-8') . '</span>';
                                                 }
 
-                                                if ($trophy["reward_name"] != null && $trophy["reward_image_url"] != null) {
-                                                    echo "<span>Reward: <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href='/img/reward/". $trophy["reward_image_url"] ."'>". $trophy["reward_name"] ."</a></span>";
+                                                if ($trophyRow->hasReward()) {
+                                                    $rewardName = htmlspecialchars((string) $trophyRow->getRewardName(), ENT_QUOTES, 'UTF-8');
+                                                    $rewardImageUrl = htmlspecialchars((string) $trophyRow->getRewardImageUrl(), ENT_QUOTES, 'UTF-8');
+                                                    echo "<span>Reward: <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href='/img/reward/{$rewardImageUrl}'>"
+                                                        . $rewardName
+                                                        . '</a></span>';
                                                 }
                                                 ?>
                                             </div>
@@ -239,27 +222,26 @@ require_once("header.php");
 
                                         <td class="w-auto text-end align-middle">
                                             <?php
-                                            if ($accountId !== null && ($trophy["earned"] ?? null) == 1) {
+                                            if ($accountId !== null && $trophyRow->isEarned()) {
+                                                $earnedElementId = $trophyRow->getEarnedElementId();
                                                 ?>
-                                                <span id="earned<?= $trophy["order_id"]; ?>" style="text-wrap: nowrap;"></span>
+                                                <span id="<?= htmlspecialchars($earnedElementId, ENT_QUOTES, 'UTF-8'); ?>" style="text-wrap: nowrap;"></span>
                                                 <script>
-                                                    <?php
-                                                    if ($trophy["earned_date"] == "No Timestamp") {
-                                                        ?>
-                                                        document.getElementById("earned<?= $trophy["order_id"]; ?>").innerHTML = "No Timestamp";
-                                                        <?php
-                                                    } else {
-                                                        ?>
-                                                        document.getElementById("earned<?= $trophy["order_id"]; ?>").innerHTML = new Date('<?= $trophy["earned_date"]; ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
-                                                        <?php
-                                                    }
-                                                    ?>
+                                                    <?php if ($trophyRow->hasRecordedEarnedDate()) { ?>
+                                                        document.getElementById(<?= json_encode($earnedElementId); ?>).innerHTML = new Date(<?= json_encode($trophyRow->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
+                                                    <?php } elseif ($trophyRow->shouldDisplayNoTimestampMessage()) { ?>
+                                                        document.getElementById(<?= json_encode($earnedElementId); ?>).innerHTML = 'No Timestamp';
+                                                    <?php } ?>
                                                 </script>
                                                 <?php
-                                                if ($sort == "date" && $previousTimeStamp !== null && $previousTimeStamp != "No Timestamp" && $trophy["earned_date"] != "No Timestamp") {
+                                                if (
+                                                    $sort == "date"
+                                                    && $previousTimeStamp !== null
+                                                    && $trophyRow->hasRecordedEarnedDate()
+                                                ) {
                                                     echo "<br>";
                                                     $datetime1 = date_create($previousTimeStamp);
-                                                    $datetime2 = date_create($trophy["earned_date"]);
+                                                    $datetime2 = date_create($trophyRow->getEarnedDate());
                                                     $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
                                                     $first = -1;
                                                     $second = -1;
@@ -267,14 +249,14 @@ require_once("header.php");
                                                         if ($completionTimes[$i][0] == "0") {
                                                             continue;
                                                         }
-    
+
                                                         if ($first == -1) {
                                                             $first = $i;
                                                         } elseif ($second == -1) {
                                                             $second = $i;
                                                         }
                                                     }
-    
+
                                                     if ($first >= 0 && $second >= 0) {
                                                         echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
                                                     } elseif ($first >= 0 && $second == -1) {
@@ -282,7 +264,9 @@ require_once("header.php");
                                                     }
                                                 }
                                                 if ($sort == "date") {
-                                                    $previousTimeStamp = $trophy["earned_date"];
+                                                    $previousTimeStamp = $trophyRow->hasRecordedEarnedDate()
+                                                        ? $trophyRow->getEarnedDate()
+                                                        : null;
                                                 }
                                             }
                                             ?>
@@ -290,7 +274,7 @@ require_once("header.php");
 
                                         <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
                                             <?php
-                                            $trophyRarity = $trophyRarityFormatter->format($trophy["rarity_percent"], (int) $trophy["status"]);
+                                            $trophyRarity = $trophyRarityFormatter->format($trophyRow->getRarityPercent(), $trophyRow->getStatus());
 
                                             if ($trophyRarity->isUnobtainable()) {
                                                 echo $trophyRarity->renderSpan('<br>', true);
