@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerService.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerScanProgress.php';
 
 final class AdminWorkerServiceTest extends TestCase
 {
@@ -26,14 +27,11 @@ SQL
         $this->assertCount(3, $workers);
         $this->assertSame('player-one', $workers[0]->getScanning());
         $this->assertSame('2024-01-01 09:00:00', $workers[0]->getScanStart()->format('Y-m-d H:i:s'));
-        $this->assertSame(
-            [
-                'current' => 5,
-                'total' => 10,
-                'title' => 'Example',
-            ],
-            $workers[0]->getScanProgress()
-        );
+        $scanProgress = $workers[0]->getScanProgress();
+        $this->assertTrue($scanProgress instanceof WorkerScanProgress, 'Scan progress should be a value object.');
+        $this->assertSame(5, $scanProgress->getCurrent());
+        $this->assertSame(10, $scanProgress->getTotal());
+        $this->assertSame('Example', $scanProgress->getTitle());
     }
 
     public function testFetchWorkersCanOrderByIdDescending(): void

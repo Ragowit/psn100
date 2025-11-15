@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/WorkerScanProgress.php';
+
 final class Worker
 {
     private int $id;
@@ -12,17 +14,14 @@ final class Worker
 
     private DateTimeImmutable $scanStart;
 
-    /**
-     * @var array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
-     */
-    private ?array $scanProgress;
+    private ?WorkerScanProgress $scanProgress;
 
     public function __construct(
         int $id,
         string $npsso,
         string $scanning,
         DateTimeImmutable $scanStart,
-        ?array $scanProgress
+        ?WorkerScanProgress $scanProgress
     ) {
         $this->id = $id;
         $this->npsso = $npsso;
@@ -51,10 +50,7 @@ final class Worker
         return $this->scanStart;
     }
 
-    /**
-     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
-     */
-    public function getScanProgress(): ?array
+    public function getScanProgress(): ?WorkerScanProgress
     {
         return $this->scanProgress;
     }
