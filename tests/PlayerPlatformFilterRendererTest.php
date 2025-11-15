@@ -46,4 +46,35 @@ final class PlayerPlatformFilterRendererTest extends TestCase
             );
         }
     }
+
+    public function testRenderDropdownControlsDoesNotWrapInForm(): void
+    {
+        $options = PlayerPlatformFilterOptions::fromSelectionCallback(static fn (): bool => false);
+        $renderer = PlayerPlatformFilterRenderer::createDefault();
+
+        $controls = $renderer->renderDropdownControls($options);
+
+        $this->assertStringContainsString('<button', $controls);
+        $this->assertStringContainsString('<ul class="dropdown-menu', $controls);
+        $this->assertFalse(str_contains($controls, '<form'));
+    }
+
+    public function testRenderOptionItemsOutputsListItems(): void
+    {
+        $options = PlayerPlatformFilterOptions::fromSelectionCallback(static fn (): bool => false);
+        $renderer = PlayerPlatformFilterRenderer::createDefault();
+
+        $items = $renderer->renderOptionItems($options);
+
+        foreach ($options->getOptions() as $option) {
+            $this->assertStringContainsString(
+                htmlspecialchars($option->getInputId(), ENT_QUOTES, 'UTF-8'),
+                $items
+            );
+            $this->assertStringContainsString(
+                htmlspecialchars($option->getLabel(), ENT_QUOTES, 'UTF-8'),
+                $items
+            );
+        }
+    }
 }
