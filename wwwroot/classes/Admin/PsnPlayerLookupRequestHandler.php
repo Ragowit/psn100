@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PsnPlayerLookupService.php';
 require_once __DIR__ . '/PsnPlayerLookupException.php';
+require_once __DIR__ . '/PsnPlayerLookupRequestResult.php';
 
 final class PsnPlayerLookupRequestHandler
 {
-    /**
-     * @return array{normalizedOnlineId: string, result: ?array, errorMessage: ?string}
-     */
-    public static function handle(PsnPlayerLookupService $lookupService, string $onlineId): array
+    public static function handle(PsnPlayerLookupService $lookupService, string $onlineId): PsnPlayerLookupRequestResult
     {
         $normalizedOnlineId = trim($onlineId);
         $result = null;
@@ -35,13 +33,13 @@ final class PsnPlayerLookupRequestHandler
             }
         }
 
-        return [
-            'normalizedOnlineId' => $normalizedOnlineId,
-            'result' => $result,
-            'errorMessage' => $errorMessage,
-            'decodedNpId' => $decodedNpId,
-            'npCountry' => $npCountry,
-        ];
+        return new PsnPlayerLookupRequestResult(
+            $normalizedOnlineId,
+            $result,
+            $errorMessage,
+            $decodedNpId,
+            $npCountry
+        );
     }
 
     /**
