@@ -27,17 +27,25 @@ class GameRescanService
 
     private TrophyHistoryRecorder $historyRecorder;
 
+    private ImageHashCalculator $imageHashCalculator;
+
     /**
      * @var callable(string):void|null
      */
     private $logListener = null;
 
-    public function __construct(PDO $database, TrophyCalculator $trophyCalculator, ?TrophyHistoryRecorder $historyRecorder = null)
+    public function __construct(
+        PDO $database,
+        TrophyCalculator $trophyCalculator,
+        ?TrophyHistoryRecorder $historyRecorder = null,
+        ?ImageHashCalculator $imageHashCalculator = null
+    )
     {
         $this->database = $database;
         $this->trophyCalculator = $trophyCalculator;
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
+        $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
     }
 
     /**
@@ -1016,7 +1024,7 @@ class GameRescanService
 
     private function buildFilename(string $url, string $contents): string
     {
-        $hash = ImageHashCalculator::calculate($contents);
+        $hash = $this->imageHashCalculator->calculate($contents);
         if ($hash === null) {
             $hash = md5($contents);
         }
