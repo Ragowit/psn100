@@ -20,23 +20,40 @@ final class PlayerPlatformFilterRenderer
 
     public function render(PlayerPlatformFilterOptions $options): string
     {
-        $buttonLabel = htmlspecialchars($this->buttonLabel, ENT_QUOTES, 'UTF-8');
-        $optionItems = array_map(
-            fn (PlayerPlatformFilterOption $option): string => $this->renderOption($option),
-            $options->getOptions()
-        );
-        $optionsHtml = implode(PHP_EOL, $optionItems);
+        $dropdownControls = $this->renderDropdownControls($options);
 
         return <<<HTML
 <form>
     <div class="input-group d-flex justify-content-end">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">{$buttonLabel}</button>
-        <ul class="dropdown-menu p-2">
-{$optionsHtml}
-        </ul>
+        {$dropdownControls}
     </div>
 </form>
 HTML;
+    }
+
+    public function renderDropdownControls(PlayerPlatformFilterOptions $options): string
+    {
+        $buttonLabel = htmlspecialchars($this->buttonLabel, ENT_QUOTES, 'UTF-8');
+        $optionItems = $this->renderOptionItems($options);
+
+        return <<<HTML
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {$buttonLabel}
+        </button>
+        <ul class="dropdown-menu p-2">
+{$optionItems}
+        </ul>
+HTML;
+    }
+
+    public function renderOptionItems(PlayerPlatformFilterOptions $options): string
+    {
+        $optionItems = array_map(
+            fn (PlayerPlatformFilterOption $option): string => $this->renderOption($option),
+            $options->getOptions()
+        );
+
+        return implode(PHP_EOL, $optionItems);
     }
 
     private function renderOption(PlayerPlatformFilterOption $option): string

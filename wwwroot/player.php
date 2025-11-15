@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerGamesPageContext.php';
+require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -23,6 +24,7 @@ $playerSearch = $pageContext->getSearch();
 $sort = $pageContext->getSort();
 $playerNavigation = $pageContext->getPlayerNavigation();
 $platformFilterOptions = $pageContext->getPlatformFilterOptions();
+$platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerOnlineId = $pageContext->getPlayerOnlineId();
 $playerAccountId = $pageContext->getPlayerAccountId();
 $title = $pageContext->getTitle();
@@ -67,24 +69,7 @@ require_once("header.php");
                                     </label>
                                 </div>
                             </li>
-                            <?php foreach ($platformFilterOptions->getOptions() as $platformOption) { ?>
-                                <li>
-                                    <div class="form-check">
-                                        <?php $inputId = htmlspecialchars($platformOption->getInputId(), ENT_QUOTES, 'UTF-8'); ?>
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"<?= $platformOption->isSelected() ? ' checked' : ''; ?>
-                                            value="true"
-                                            onChange="this.form.submit()"
-                                            id="<?= $inputId; ?>"
-                                            name="<?= htmlspecialchars($platformOption->getInputName(), ENT_QUOTES, 'UTF-8'); ?>"
-                                        >
-                                        <label class="form-check-label" for="<?= $inputId; ?>">
-                                            <?= htmlspecialchars($platformOption->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
-                                        </label>
-                                    </div>
-                                </li>
-                            <?php } ?>
+                            <?= $platformFilterRenderer->renderOptionItems($platformFilterOptions); ?>
                             <li>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox"<?= ($playerGamesFilter->isUncompletedSelected() ? " checked" : "") ?> value="true" onChange="this.form.submit()" id="filterUncompletedGames" name="uncompleted">

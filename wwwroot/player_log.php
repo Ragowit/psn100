@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerLogPageContext.php';
+require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -21,6 +22,7 @@ $trophiesLog = $pageContext->getTrophies();
 $trophyRarityFormatter = $pageContext->getTrophyRarityFormatter();
 $playerNavigation = $pageContext->getPlayerNavigation();
 $platformFilterOptions = $pageContext->getPlatformFilterOptions();
+$platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 
 $playerOnlineId = $pageContext->getPlayerOnlineId();
 $playerAccountId = $pageContext->getPlayerAccountId();
@@ -47,27 +49,7 @@ require_once("header.php");
             <div class="col-12 col-lg-3 mb-3">
                 <form>
                     <div class="input-group d-flex justify-content-end">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
-                        <ul class="dropdown-menu p-2">
-                            <?php foreach ($platformFilterOptions->getOptions() as $platformOption) { ?>
-                                <li>
-                                    <div class="form-check">
-                                        <?php $inputId = htmlspecialchars($platformOption->getInputId(), ENT_QUOTES, 'UTF-8'); ?>
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"<?= $platformOption->isSelected() ? ' checked' : ''; ?>
-                                            value="true"
-                                            onChange="this.form.submit()"
-                                            id="<?= $inputId; ?>"
-                                            name="<?= htmlspecialchars($platformOption->getInputName(), ENT_QUOTES, 'UTF-8'); ?>"
-                                        >
-                                        <label class="form-check-label" for="<?= $inputId; ?>">
-                                            <?= htmlspecialchars($platformOption->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
-                                        </label>
-                                    </div>
-                                </li>
-                            <?php } ?>
-                        </ul>
+                        <?= $platformFilterRenderer->renderDropdownControls($platformFilterOptions); ?>
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
