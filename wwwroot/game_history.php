@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/GameHistoryPage.php';
+require_once __DIR__ . '/classes/GameHistoryRenderer.php';
 
 if (!isset($gameId)) {
     header('Location: /game/', true, 303);
@@ -30,359 +31,10 @@ $gameHeaderData = $gameHistoryPage->getGameHeaderData();
 $historyEntries = $gameHistoryPage->getHistoryEntries();
 $metaData = $gameHistoryPage->createMetaData();
 $title = $gameHistoryPage->getPageTitle();
+$historyRenderer = new GameHistoryRenderer();
 
 require_once 'header.php';
 ?>
-
-<?php
-/**
- * @param string|null $value
- */
-function historyFormatText(?string $value, bool $isMultiline = false): string
-{
-    if ($value === null || $value === '') {
-        return '<span class="history-diff__empty">&mdash;</span>';
-    }
-
-    $escaped = htmlentities($value, ENT_QUOTES, 'UTF-8');
-
-    return $isMultiline ? nl2br($escaped) : $escaped;
-}
-
-function historyFormatNumber(?int $value): string
-{
-    if ($value === null) {
-        return '<span class="history-diff__empty">&mdash;</span>';
-    }
-
-    return htmlentities((string) $value, ENT_QUOTES, 'UTF-8');
-}
-
-/**
- * @return list<string>
- */
-function historyTokenizeString(string $value): array
-{
-    $tokens = preg_split('/(\s+)/u', $value, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-
-    if ($tokens === false) {
-        return [$value];
-    }
-
-    return $tokens;
-}
-
-/**
- * @param list<string> $previousTokens
- * @param list<string> $currentTokens
- * @return array{previous: list<array{value: string, state: string}>, current: list<array{value: string, state: string}>}
- */
-function historyBuildTokenDiff(array $previousTokens, array $currentTokens): array
-{
-    $previousLength = count($previousTokens);
-    $currentLength = count($currentTokens);
-
-    $lcs = array_fill(0, $previousLength + 1, array_fill(0, $currentLength + 1, 0));
-
-    for ($i = $previousLength - 1; $i >= 0; $i--) {
-        for ($j = $currentLength - 1; $j >= 0; $j--) {
-            if ($previousTokens[$i] === $currentTokens[$j]) {
-                $lcs[$i][$j] = $lcs[$i + 1][$j + 1] + 1;
-            } else {
-                $lcs[$i][$j] = max($lcs[$i + 1][$j], $lcs[$i][$j + 1]);
-            }
-        }
-    }
-
-    $previousDiff = [];
-    $currentDiff = [];
-    $i = 0;
-    $j = 0;
-
-    while ($i < $previousLength && $j < $currentLength) {
-        if ($previousTokens[$i] === $currentTokens[$j]) {
-            $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'equal'];
-            $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'equal'];
-            $i++;
-            $j++;
-            continue;
-        }
-
-        if ($lcs[$i + 1][$j] >= $lcs[$i][$j + 1]) {
-            $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'removed'];
-            $i++;
-            continue;
-        }
-
-        $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'added'];
-        $j++;
-    }
-
-    while ($i < $previousLength) {
-        $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'removed'];
-        $i++;
-    }
-
-    while ($j < $currentLength) {
-        $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'added'];
-        $j++;
-    }
-
-    return ['previous' => $previousDiff, 'current' => $currentDiff];
-}
-
-/**
- * @param list<array{value: string, state: string}> $tokens
- */
-function historyRenderHighlightedTokens(array $tokens, bool $isMultiline, string $state): string
-{
-    $html = '';
-    $highlightState = null;
-    /** @var list<array{value: string, isWhitespace: bool}> $highlightTokens */
-    $highlightTokens = [];
-
-    $flushHighlight = static function () use (&$html, &$highlightState, &$highlightTokens, $state): void {
-        if ($highlightState === null) {
-            return;
-        }
-
-        $trailingWhitespace = [];
-
-        while ($highlightTokens !== [] && $highlightTokens[array_key_last($highlightTokens)]['isWhitespace']) {
-            $trailingWhitespace[] = array_pop($highlightTokens);
-        }
-
-        if ($highlightTokens !== []) {
-            $modifierClass = $highlightState === 'removed' ? 'history-diff__token--removed' : 'history-diff__token--added';
-            $spanContent = '';
-
-            foreach ($highlightTokens as $token) {
-                $spanContent .= $token['value'];
-            }
-
-            $html .= '<span class="history-diff__token ' . $modifierClass . ' history-diff__token--' . $state . '">' . $spanContent . '</span>';
-        }
-
-        if ($trailingWhitespace !== []) {
-            for ($index = count($trailingWhitespace) - 1; $index >= 0; $index--) {
-                $html .= $trailingWhitespace[$index]['value'];
-            }
-        }
-
-        $highlightState = null;
-        $highlightTokens = [];
-    };
-
-    $escapeTokenValue = static function (string $value) use ($isMultiline): string {
-        $escaped = htmlentities($value, ENT_QUOTES, 'UTF-8');
-
-        if ($isMultiline) {
-            $escaped = str_replace(["\r\n", "\n", "\r"], '<br>', $escaped);
-        }
-
-        return $escaped;
-    };
-
-    foreach ($tokens as $token) {
-        $isWhitespace = trim($token['value']) === '';
-        $isHighlightedToken = ($token['state'] === 'removed' || $token['state'] === 'added') && !$isWhitespace;
-        $escaped = $escapeTokenValue($token['value']);
-
-        $shouldFlushHighlight = $highlightState !== null
-            && ($isHighlightedToken ? $token['state'] !== $highlightState : !$isWhitespace);
-
-        if ($shouldFlushHighlight) {
-            $flushHighlight();
-        }
-
-        if ($isHighlightedToken) {
-            if ($highlightState === null) {
-                $highlightState = $token['state'];
-            }
-
-            $highlightTokens[] = ['value' => $escaped, 'isWhitespace' => $isWhitespace];
-            continue;
-        }
-
-        if ($highlightState !== null && $isWhitespace) {
-            $highlightTokens[] = ['value' => $escaped, 'isWhitespace' => true];
-            continue;
-        }
-
-        $html .= $escaped;
-    }
-
-    if ($highlightState !== null) {
-        $flushHighlight();
-    }
-
-    return $html;
-}
-
-/**
- * @return array{previous: string, current: string}
- */
-function historyHighlightTextDiff(string $previousValue, string $currentValue, bool $isMultiline): array
-{
-    $previousTokens = historyTokenizeString($previousValue);
-    $currentTokens = historyTokenizeString($currentValue);
-
-    $diff = historyBuildTokenDiff($previousTokens, $currentTokens);
-
-    $previousHtml = historyRenderHighlightedTokens($diff['previous'], $isMultiline, 'previous');
-    $currentHtml = historyRenderHighlightedTokens($diff['current'], $isMultiline, 'current');
-
-    return ['previous' => $previousHtml, 'current' => $currentHtml];
-}
-
-function historyRenderDiffBlocks(string $previousHtml, string $currentHtml, bool $hidePrevious = false): string
-{
-    $html = '<div class="history-diff">';
-
-    if (!$hidePrevious) {
-        $html .= '<div class="history-diff__previous"><span class="visually-hidden">Previous value:</span>' . $previousHtml . '</div>';
-    }
-
-    $html .= '<div class="history-diff__current"><span class="visually-hidden">New value:</span>' . $currentHtml . '</div>';
-    $html .= '</div>';
-
-    return $html;
-}
-
-/**
- * @param array{previous: mixed, current: mixed}|null $diff
- */
-function historyRenderTextDiff(?array $diff, bool $isMultiline = false, bool $hidePrevious = false): string
-{
-    if ($diff === null) {
-        return '';
-    }
-
-    $previousValue = is_string($diff['previous'] ?? null) ? $diff['previous'] : null;
-    $currentValue = is_string($diff['current'] ?? null) ? $diff['current'] : null;
-
-    if ($previousValue !== null && $currentValue !== null) {
-        $highlighted = historyHighlightTextDiff($previousValue, $currentValue, $isMultiline);
-        $previous = $highlighted['previous'];
-        $current = $highlighted['current'];
-    } else {
-        $previous = historyFormatText($previousValue, $isMultiline);
-        $current = historyFormatText($currentValue, $isMultiline);
-    }
-
-    return historyRenderDiffBlocks($previous, $current, $hidePrevious);
-}
-
-/**
- * @param array{previous: mixed, current: mixed}|null $diff
- */
-function historyRenderNumberDiff(?array $diff, bool $hidePrevious = false): string
-{
-    if ($diff === null) {
-        return '';
-    }
-
-    $previous = historyFormatNumber(isset($diff['previous']) ? (is_int($diff['previous']) ? $diff['previous'] : null) : null);
-    $current = historyFormatNumber(isset($diff['current']) ? (is_int($diff['current']) ? $diff['current'] : null) : null);
-
-    return historyRenderDiffBlocks($previous, $current, $hidePrevious);
-}
-
-function historyRenderSingleText(?string $value, bool $isMultiline = false): string
-{
-    return historyFormatText($value, $isMultiline);
-}
-
-function historyResolveIconPath(?string $iconUrl, GameDetails $game, string $type): ?string
-{
-    if ($iconUrl === null || $iconUrl === '') {
-        return null;
-    }
-
-    if ($iconUrl === '.png') {
-        $hasPs5Assets = str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2');
-
-        if ($type === 'group' || $type === 'title') {
-            return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-game.png';
-        }
-
-        if ($type === 'trophy') {
-            return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-trophy.png';
-        }
-    }
-
-    return $iconUrl;
-}
-
-function historyFormatIcon(?string $iconUrl, GameDetails $game, string $type, ?string $name, string $state): string
-{
-    $resolvedPath = historyResolveIconPath($iconUrl, $game, $type);
-
-    if ($resolvedPath === null) {
-        return '<div class="text-center"><span class="history-diff__empty">&mdash;</span></div>';
-    }
-
-    $borderClass = $state === 'previous' ? 'border-danger' : 'border-success';
-    $objectFit = 'object-fit-scale';
-    $directory = 'trophy';
-    $height = 3.5;
-
-    if ($type === 'group') {
-        $objectFit = 'object-fit-cover';
-        $directory = 'group';
-    } elseif ($type === 'title') {
-        $directory = 'title';
-        $height = 5.5;
-    }
-
-    return '<div class="text-center">'
-        . '<img class="' . $objectFit . ' border border-2 ' . $borderClass . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
-        . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">'
-        . '</div>';
-}
-
-/**
- * @param array{previous: mixed, current: mixed}|null $diff
- */
-function historyRenderIconDiff(?array $diff, GameDetails $game, string $type, ?string $name, bool $hidePrevious = false): string
-{
-    if ($diff === null) {
-        return '';
-    }
-
-    $previous = historyFormatIcon(is_string($diff['previous'] ?? null) ? $diff['previous'] : null, $game, $type, $name, 'previous');
-    $current = historyFormatIcon(is_string($diff['current'] ?? null) ? $diff['current'] : null, $game, $type, $name, 'current');
-
-    return historyRenderDiffBlocks($previous, $current, $hidePrevious);
-}
-
-function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $type, ?string $name): string
-{
-    $resolvedPath = historyResolveIconPath($iconUrl, $game, $type);
-
-    if ($resolvedPath === null) {
-        return '<div class="text-center"><span class="history-diff__empty">&mdash;</span></div>';
-    }
-
-    $objectFit = 'object-fit-scale';
-    $directory = 'trophy';
-    $height = 3.5;
-
-    if ($type === 'group') {
-        $objectFit = 'object-fit-cover';
-        $directory = 'group';
-    } elseif ($type === 'title') {
-        $directory = 'title';
-        $height = 5.5;
-    }
-
-    return '<div class="text-center">'
-        . '<img class="' . $objectFit . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
-        . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">'
-        . '</div>';
-}
-?>
-
 <main class="container">
     <style>
         .history-diff {
@@ -485,12 +137,12 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                 <div class="row g-3 align-items-start mb-3">
                                     <?php if ($titleHighlights['icon_url'] ?? false) { ?>
                                         <div class="col-12 col-md-4 col-lg-3">
-                                            <?= historyRenderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, 'title', $game->getName(), $titleIsNewRow); ?>
+                                            <?= $historyRenderer->renderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, 'title', $game->getName(), $titleIsNewRow); ?>
                                         </div>
                                     <?php } ?>
                                     <?php if ($titleHighlights['detail'] ?? false) { ?>
                                         <div class="col-12 <?= ($titleHighlights['icon_url'] ?? false) ? 'col-md-8 col-lg-9' : 'col-md-12'; ?>">
-                                            <?= historyRenderTextDiff($titleFieldDiffs['detail'] ?? null, true, $titleIsNewRow); ?>
+                                            <?= $historyRenderer->renderTextDiff($titleFieldDiffs['detail'] ?? null, true, $titleIsNewRow); ?>
                                         </div>
                                     <?php } ?>
                                 </div>
@@ -523,29 +175,29 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                                         </td>
                                                         <td>
                                                             <?php if ($groupIsNewRow) { ?>
-                                                                <?= historyRenderSingleText($groupChange['name'] ?? null); ?>
+                                                                <?= $historyRenderer->renderSingleText($groupChange['name'] ?? null); ?>
                                                             <?php } elseif ($groupChangedFields['name'] ?? false) { ?>
-                                                                <?= historyRenderTextDiff($groupFieldDiffs['name'] ?? null); ?>
+                                                                <?= $historyRenderer->renderTextDiff($groupFieldDiffs['name'] ?? null); ?>
                                                             <?php } else { ?>
-                                                                <?= historyRenderSingleText($groupChange['name'] ?? null); ?>
+                                                                <?= $historyRenderer->renderSingleText($groupChange['name'] ?? null); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td>
                                                             <?php if ($groupIsNewRow) { ?>
-                                                                <?= historyRenderSingleText($groupChange['detail'] ?? null, true); ?>
+                                                                <?= $historyRenderer->renderSingleText($groupChange['detail'] ?? null, true); ?>
                                                             <?php } elseif ($groupChangedFields['detail'] ?? false) { ?>
-                                                                <?= historyRenderTextDiff($groupFieldDiffs['detail'] ?? null, true); ?>
+                                                                <?= $historyRenderer->renderTextDiff($groupFieldDiffs['detail'] ?? null, true); ?>
                                                             <?php } else { ?>
-                                                                <?= historyRenderSingleText($groupChange['detail'] ?? null, true); ?>
+                                                                <?= $historyRenderer->renderSingleText($groupChange['detail'] ?? null, true); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="text-center">
                                                             <?php if ($groupIsNewRow) { ?>
-                                                                <?= historyRenderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
                                                             <?php } elseif ($groupChangedFields['icon_url'] ?? false) { ?>
-                                                                <?= historyRenderIconDiff($groupFieldDiffs['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderIconDiff($groupFieldDiffs['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
                                                             <?php } else { ?>
-                                                                <?= historyRenderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
                                                             <?php } ?>
                                                         </td>
                                                     </tr>
@@ -592,38 +244,38 @@ function historyRenderSingleIcon(?string $iconUrl, GameDetails $game, string $ty
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['name'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?php if ($trophyIsNewRow) { ?>
-                                                                <?= historyRenderSingleText($trophyChange['name'] ?? null); ?>
+                                                                <?= $historyRenderer->renderSingleText($trophyChange['name'] ?? null); ?>
                                                             <?php } elseif ($trophyChangedFields['name'] ?? false) { ?>
-                                                                <?= historyRenderTextDiff($trophyFieldDiffs['name'] ?? null); ?>
+                                                                <?= $historyRenderer->renderTextDiff($trophyFieldDiffs['name'] ?? null); ?>
                                                             <?php } else { ?>
-                                                                <?= historyRenderSingleText($trophyChange['name'] ?? null); ?>
+                                                                <?= $historyRenderer->renderSingleText($trophyChange['name'] ?? null); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['detail'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?php if ($trophyIsNewRow) { ?>
-                                                                <?= historyRenderSingleText($trophyChange['detail'] ?? null, true); ?>
+                                                                <?= $historyRenderer->renderSingleText($trophyChange['detail'] ?? null, true); ?>
                                                             <?php } elseif ($trophyChangedFields['detail'] ?? false) { ?>
-                                                                <?= historyRenderTextDiff($trophyFieldDiffs['detail'] ?? null, true); ?>
+                                                                <?= $historyRenderer->renderTextDiff($trophyFieldDiffs['detail'] ?? null, true); ?>
                                                             <?php } else { ?>
-                                                                <?= historyRenderSingleText($trophyChange['detail'] ?? null, true); ?>
+                                                                <?= $historyRenderer->renderSingleText($trophyChange['detail'] ?? null, true); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="<?= (($trophyChange['isNewRow'] ?? false) || ($trophyChangedFields['progress_target_value'] ?? false)) ? 'table-success' : ''; ?>">
                                                             <?php if ($trophyIsNewRow) { ?>
-                                                                <?= historyFormatNumber($trophyChange['progress_target_value'] ?? null); ?>
+                                                                <?= $historyRenderer->renderSingleNumber($trophyChange['progress_target_value'] ?? null); ?>
                                                             <?php } elseif ($trophyChangedFields['progress_target_value'] ?? false) { ?>
-                                                                <?= historyRenderNumberDiff($trophyFieldDiffs['progress_target_value'] ?? null); ?>
+                                                                <?= $historyRenderer->renderNumberDiff($trophyFieldDiffs['progress_target_value'] ?? null); ?>
                                                             <?php } else { ?>
-                                                                <?= historyFormatNumber($trophyChange['progress_target_value'] ?? null); ?>
+                                                                <?= $historyRenderer->renderSingleNumber($trophyChange['progress_target_value'] ?? null); ?>
                                                             <?php } ?>
                                                         </td>
                                                         <td class="text-center">
                                                             <?php if ($trophyIsNewRow) { ?>
-                                                                <?= historyRenderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
                                                             <?php } elseif ($trophyChangedFields['icon_url'] ?? false) { ?>
-                                                                <?= historyRenderIconDiff($trophyFieldDiffs['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderIconDiff($trophyFieldDiffs['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
                                                             <?php } else { ?>
-                                                                <?= historyRenderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
                                                             <?php } ?>
                                                         </td>
                                                     </tr>
