@@ -106,7 +106,7 @@ require_once("header.php");
                 <?php
                 $trophyGroups = $gamePage->getTrophyGroups();
                 foreach ($trophyGroups as $trophyGroup) {
-                    $trophyGroupId = (string) $trophyGroup["group_id"];
+                    $trophyGroupId = $trophyGroup->getId();
                     $trophyGroupPlayer = $gamePage->getTrophyGroupPlayer($trophyGroupId);
 
                     $previousTimeStamp = null;
@@ -116,30 +116,30 @@ require_once("header.php");
                     }
                     ?>
                     <div class="table-responsive-xxl">
-                        <table class="table" id="<?= $trophyGroup["group_id"]; ?>">
+                        <table class="table" id="<?= htmlspecialchars($trophyGroupId, ENT_QUOTES, 'UTF-8'); ?>">
                             <thead>
                                 <tr>
                                     <th scope="col" colspan="4" class="bg-dark-subtle">
                                         <div class="hstack gap-3">
                                             <div>
-                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= ($trophyGroup["icon_url"] == ".png") ? ((str_contains($game->getPlatform(), "PS5") || str_contains($game->getPlatform(), "PSVR2")) ? "../missing-ps5-game-and-trophy.png" : "../missing-ps4-game.png") : $trophyGroup["icon_url"]; ?>" alt="<?= htmlentities($trophyGroup["name"]); ?>">
+                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= htmlspecialchars($trophyGroup->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophyGroup->getName()); ?>">
                                             </div>
                                             
                                             <div>
-                                                <b><?= htmlentities($trophyGroup["name"]); ?></b><br>
-                                                <?= nl2br(htmlentities($trophyGroup["detail"], ENT_QUOTES, "UTF-8")); ?>
+                                                <b><?= htmlentities($trophyGroup->getName()); ?></b><br>
+                                                <?= nl2br(htmlentities($trophyGroup->getDetail(), ENT_QUOTES, 'UTF-8')); ?>
                                             </div>
 
                                             <div class="ms-auto">
                                                 <?php
                                                 if ($trophyGroupPlayer !== null) {
-                                                    if ($trophyGroup["group_id"] == "default") {
+                                                    if ($trophyGroup->isDefaultGroup()) {
                                                         ?>
-                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"] ?? "0"; ?>/<?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup["bronze"]; ?></span>
+                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"] ?? "0"; ?>/<?= $trophyGroup->getPlatinumCount(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup->getBronzeCount(); ?></span>
                                                         <?php
                                                     } else {
                                                         ?>
-                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup["bronze"]; ?></span>
+                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup->getBronzeCount(); ?></span>
                                                         <?php
                                                     }
                                                     ?>
@@ -150,13 +150,13 @@ require_once("header.php");
                                                     </div>
                                                     <?php
                                                 } else {
-                                                    if ($trophyGroup["group_id"] == "default") {
+                                                    if ($trophyGroup->isDefaultGroup()) {
                                                         ?>
-                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroup["platinum"]; ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroup["bronze"]; ?></span>
+                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroup->getPlatinumCount(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroup->getBronzeCount(); ?></span>
                                                         <?php
                                                     } else {
                                                         ?>
-                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroup["gold"]; ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroup["silver"]; ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroup["bronze"]; ?></span>
+                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroup->getBronzeCount(); ?></span>
                                                         <?php
                                                     }
                                                 }

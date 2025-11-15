@@ -9,6 +9,7 @@ require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
+require_once __DIR__ . '/Game/GameTrophyGroup.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Utility.php';
@@ -32,7 +33,7 @@ class GamePage
     private ?GamePlayerProgress $gamePlayer;
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var GameTrophyGroup[]
      */
     private array $trophyGroups = [];
 
@@ -128,12 +129,16 @@ class GamePage
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return GameTrophyGroup[]
      */
     public function getTrophyGroups(): array
     {
         if ($this->trophyGroups === []) {
-            $this->trophyGroups = $this->gameService->getTrophyGroups($this->game->getNpCommunicationId());
+            $usesPlayStation5Assets = $this->usesPlayStation5Assets();
+            $this->trophyGroups = array_map(
+                static fn (array $group) => GameTrophyGroup::fromArray($group, $usesPlayStation5Assets),
+                $this->gameService->getTrophyGroups($this->game->getNpCommunicationId())
+            );
         }
 
         return $this->trophyGroups;
