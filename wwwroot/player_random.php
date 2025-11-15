@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesPageContext.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
+require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -22,6 +23,16 @@ $randomGames = $context->getRandomGames();
 $playerNavigation = $context->getPlayerNavigation();
 $platformFilterOptions = $context->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
+$playerStatusNotice = null;
+
+if ($context->shouldShowFlaggedMessage()) {
+    $playerStatusNotice = PlayerStatusNotice::flagged(
+        (string) $player['online_id'],
+        isset($player['account_id']) ? (string) $player['account_id'] : null
+    );
+} elseif ($context->shouldShowPrivateMessage()) {
+    $playerStatusNotice = PlayerStatusNotice::privateProfile();
+}
 
 $title = $context->getTitle();
 require_once("header.php");
@@ -50,16 +61,10 @@ require_once("header.php");
 
     <div class="row">
         <?php
-        if ($context->shouldShowFlaggedMessage()) {
+        if ($playerStatusNotice !== null) {
             ?>
             <div class="col-12 text-center">
-                <h3>This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $player["online_id"]; ?>+OR+<?= $player["account_id"]; ?>">Dispute</a>?</h3>
-            </div>
-            <?php
-        } elseif ($context->shouldShowPrivateMessage()) {
-            ?>
-            <div class="col-12 text-center">
-                <h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3>
+                <h3><?= $playerStatusNotice->getMessage(); ?></h3>
             </div>
             <?php
         } elseif ($context->shouldShowRandomGames()) {
