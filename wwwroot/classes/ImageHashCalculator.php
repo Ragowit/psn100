@@ -2,85 +2,100 @@
 
 declare(strict_types=1);
 
-class ImageHashCalculator
+require_once __DIR__ . '/ImageProcessor.php';
+
+final class ImageHashCalculator
 {
-    public static function calculate(string $contents): ?string
+    private ImageProcessorInterface $imageProcessor;
+
+    public function __construct(?ImageProcessorInterface $imageProcessor = null)
+    {
+        $this->imageProcessor = $imageProcessor ?? new GdImageProcessor();
+    }
+
+    public function calculate(string $contents): ?string
     {
         if ($contents === '') {
             return null;
         }
 
-        if (!extension_loaded('gd')) {
+        if (!$this->imageProcessor->isSupported()) {
+            return null;
+        }
+
+        $image = $this->imageProcessor->createImageFromString($contents);
+
+        if ($image === null) {
             return null;
         }
 
         try {
-            $image = @imagecreatefromstring($contents);
-        } catch (\ValueError $exception) {
-            return null;
+            $width = $this->imageProcessor->getWidth($image);
+            $height = $this->imageProcessor->getHeight($image);
+
+            if ($width <= 0 || $height <= 0) {
+                return null;
+            }
+
+            if (!$this->imageProcessor->isTrueColor($image)) {
+                $this->imageProcessor->convertPaletteToTrueColor($image);
+            }
+
+            $hasTransparency = $this->hasTransparency($image, $width, $height);
+            $buffer = $this->buildPixelBuffer($image, $width, $height, $hasTransparency);
+
+            if ($buffer === '') {
+                return null;
+            }
+
+            return md5($buffer);
+        } finally {
+            $this->imageProcessor->destroyImage($image);
         }
+    }
 
-        if ($image === false) {
-            return null;
-        }
-
-        $width = imagesx($image);
-        $height = imagesy($image);
-
-        if ($width <= 0 || $height <= 0) {
-            imagedestroy($image);
-
-            return null;
-        }
-
-        if (!imageistruecolor($image)) {
-            @imagepalettetotruecolor($image);
-        }
-
-        $hasTransparency = false;
-
-        for ($y = 0; $y < $height && !$hasTransparency; $y++) {
+    private function hasTransparency(mixed $image, int $width, int $height): bool
+    {
+        for ($y = 0; $y < $height; $y++) {
             for ($x = 0; $x < $width; $x++) {
-                $color = imagecolorat($image, $x, $y);
-                $components = imagecolorsforindex($image, $color);
+                $color = $this->imageProcessor->getColorAt($image, $x, $y);
+                $components = $this->imageProcessor->getColorComponents($image, $color);
 
                 if (($components['alpha'] ?? 0) > 0) {
-                    $hasTransparency = true;
-                    break;
+                    return true;
                 }
             }
         }
 
+        return false;
+    }
+
+    private function buildPixelBuffer(
+        mixed $image,
+        int $width,
+        int $height,
+        bool $hasTransparency
+    ): string {
         $buffer = '';
 
         for ($y = 0; $y < $height; $y++) {
             for ($x = 0; $x < $width; $x++) {
-                $color = imagecolorat($image, $x, $y);
-                $components = imagecolorsforindex($image, $color);
+                $color = $this->imageProcessor->getColorAt($image, $x, $y);
+                $components = $this->imageProcessor->getColorComponents($image, $color);
 
-                $buffer .= chr($components['red']);
-                $buffer .= chr($components['green']);
-                $buffer .= chr($components['blue']);
+                $buffer .= chr($components['red'] ?? 0);
+                $buffer .= chr($components['green'] ?? 0);
+                $buffer .= chr($components['blue'] ?? 0);
 
                 if ($hasTransparency) {
                     $alpha = (int) round(($components['alpha'] ?? 0) * 255 / 127);
-                    if ($alpha < 0) {
-                        $alpha = 0;
-                    } elseif ($alpha > 255) {
-                        $alpha = 255;
-                    }
+                    $alpha = max(0, min(255, $alpha));
 
                     $buffer .= chr($alpha);
                 }
             }
         }
 
-        imagedestroy($image);
-
-        if ($buffer === '') {
-            return null;
-        }
-
-        return md5($buffer);
+        return $buffer;
     }
 }

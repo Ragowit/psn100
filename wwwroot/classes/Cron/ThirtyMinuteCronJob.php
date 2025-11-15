@@ -34,12 +34,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
 
+    private ImageHashCalculator $imageHashCalculator;
+
     public function __construct(
         PDO $database,
         TrophyCalculator $trophyCalculator,
         Psn100Logger $logger,
         TrophyHistoryRecorder $historyRecorder,
-        int $workerId
+        int $workerId,
+        ?ImageHashCalculator $imageHashCalculator = null
     )
     {
         $this->database = $database;
@@ -52,6 +55,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
             $database,
             new TrophyMergeService($database)
         );
+        $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
     }
 
     /**
@@ -521,7 +525,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         continue;
                     }
 
-                    $md5Hash = ImageHashCalculator::calculate($avatarContents);
+                    $md5Hash = $this->imageHashCalculator->calculate($avatarContents);
                     if ($md5Hash === null) {
                         $md5Hash = md5($avatarContents);
                     }
@@ -2036,7 +2040,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
     private function buildFilename(string $url, string $contents): string
     {
-        $hash = ImageHashCalculator::calculate($contents);
+        $hash = $this->imageHashCalculator->calculate($contents);
         if ($hash === null) {
             $hash = md5($contents);
         }
