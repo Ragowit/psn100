@@ -1,16 +1,17 @@
 <?php
 require_once __DIR__ . '/classes/AboutPageService.php';
-require_once __DIR__ . '/classes/AboutPagePlayerArraySerializer.php';
+require_once __DIR__ . '/classes/AboutPageContext.php';
 
 $aboutPageService = new AboutPageService($database, $utility);
-$scanSummary = $aboutPageService->getScanSummary();
-$scanLogPlayers = $aboutPageService->getScanLogPlayers(30);
-$maxScanLogDisplayCount = 10;
-$initialDisplayCount = min($maxScanLogDisplayCount, count($scanLogPlayers));
-$initialScanLogPlayers = array_slice($scanLogPlayers, 0, $initialDisplayCount);
-$scanLogPlayersData = AboutPagePlayerArraySerializer::serializeCollection($scanLogPlayers);
+$aboutPageContext = AboutPageContext::create($aboutPageService);
 
-$title = "About ~ PSN 100%";
+$scanSummary = $aboutPageContext->getScanSummary();
+$initialScanLogPlayers = $aboutPageContext->getInitialScanLogPlayers();
+$scanLogPlayersData = $aboutPageContext->getScanLogPlayersData();
+$initialDisplayCount = $aboutPageContext->getInitialDisplayCount();
+$maxScanLogDisplayCount = $aboutPageContext->getMaxInitialDisplayCount();
+
+$title = $aboutPageContext->getTitle();
 require_once("header.php");
 ?>
 
