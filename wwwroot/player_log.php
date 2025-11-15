@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerLogPageContext.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
+require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -26,6 +27,13 @@ $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 
 $playerOnlineId = $pageContext->getPlayerOnlineId();
 $playerAccountId = $pageContext->getPlayerAccountId();
+$playerStatusNotice = null;
+
+if ($pageContext->isPlayerFlagged()) {
+    $playerStatusNotice = PlayerStatusNotice::flagged($playerOnlineId, (string) $playerAccountId);
+} elseif ($pageContext->isPlayerPrivate()) {
+    $playerStatusNotice = PlayerStatusNotice::privateProfile();
+}
 
 $title = $pageContext->getTitle();
 require_once("header.php");
@@ -79,16 +87,10 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if ($pageContext->isPlayerFlagged()) {
+                            if ($playerStatusNotice !== null && !$pageContext->shouldDisplayLog()) {
                                 ?>
                                 <tr>
-                                    <td colspan="5" class="text-center"><h3>This player have some funny looking trophy data. This doesn't necessarily means cheating, but all data from this player will not be in any of the site statistics or leaderboards. <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= $playerOnlineId; ?>+OR+<?= $playerAccountId; ?>">Dispute</a>?</h3></td>
-                                </tr>
-                                <?php
-                            } elseif ($pageContext->isPlayerPrivate()) {
-                                ?>
-                                <tr>
-                                    <td colspan="5" class="text-center"><h3>This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.</h3></td>
+                                    <td colspan="5" class="text-center"><h3><?= $playerStatusNotice->getMessage(); ?></h3></td>
                                 </tr>
                                 <?php
                             } elseif ($pageContext->shouldDisplayLog()) {

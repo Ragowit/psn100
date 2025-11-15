@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PlayerLeaderboardRank.php';
 require_once __DIR__ . '/PlayerLeaderboardRankChange.php';
+require_once __DIR__ . '/PlayerStatusNotice.php';
 
 class PlayerHeaderViewModel
 {
@@ -91,14 +92,12 @@ class PlayerHeaderViewModel
 
         switch ($status) {
             case 1:
-                $alerts[] = sprintf(
-                    "This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href=\"https://github.com/Ragowit/psn100/issues?q=label%%3Acheater+%s+OR+%d\">Dispute</a>?",
-                    rawurlencode($onlineId),
-                    $accountId
-                );
+                $notice = PlayerStatusNotice::flagged($onlineId, (string) $accountId);
+                $alerts[] = $notice->getMessage();
                 break;
             case 3:
-                $alerts[] = "This player seems to have a <a class=\"link-underline link-underline-opacity-0 link-underline-opacity-100-hover\" href=\"https://www.playstation.com/en-us/support/account/privacy-settings-psn/\">private</a> profile. Make sure this player is no longer private, and then issue a new scan of the profile on the front page.";
+                $notice = PlayerStatusNotice::privateProfile();
+                $alerts[] = $notice->getMessage() . ' Make sure this player is no longer private, and then issue a new scan of the profile on the front page.';
                 break;
             case 4:
                 $alerts[] = 'This player has not played a game in over a year and is considered inactive by this site. All data from this player will be excluded from site statistics and leaderboards.';

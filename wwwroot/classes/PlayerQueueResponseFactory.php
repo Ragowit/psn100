@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerQueueService.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
+require_once __DIR__ . '/PlayerStatusNotice.php';
 
 final class PlayerQueueResponseFactory
 {
@@ -157,10 +158,7 @@ final class PlayerQueueResponseFactory
     private function createCheaterMessage(string $playerName, ?string $accountId): string
     {
         $playerLink = $this->createPlayerLink($playerName);
-        $accountIdValue = $accountId ?? '';
-        $playerQuery = rawurlencode($playerName);
-        $accountQuery = rawurlencode((string) $accountIdValue);
-        $disputeUrl = 'https://github.com/Ragowit/psn100/issues?q=label%3Acheater+' . $playerQuery . '+OR+' . $accountQuery;
+        $disputeUrl = PlayerStatusNotice::createDisputeUrl($playerName, $accountId);
         $disputeLink = '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="'
             . $this->service->escapeHtml($disputeUrl) . '">Dispute</a>';
 

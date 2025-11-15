@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerGamesPageContext.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
+require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -27,6 +28,13 @@ $platformFilterOptions = $pageContext->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerOnlineId = $pageContext->getPlayerOnlineId();
 $playerAccountId = $pageContext->getPlayerAccountId();
+$playerStatusNotice = null;
+
+if ($pageContext->isPlayerFlagged()) {
+    $playerStatusNotice = PlayerStatusNotice::flagged($playerOnlineId, (string) $playerAccountId);
+} elseif ($pageContext->isPlayerPrivate()) {
+    $playerStatusNotice = PlayerStatusNotice::privateProfile();
+}
 $title = $pageContext->getTitle();
 require_once("header.php");
 ?>
@@ -110,20 +118,11 @@ require_once("header.php");
 
                         <tbody>
                             <?php
-                            if (!$pageContext->shouldDisplayGames()) {
+                            if ($playerStatusNotice !== null) {
                                 ?>
                                 <tr>
                                     <td colspan="4" class="text-center">
-                                        <?php if ($pageContext->isPlayerFlagged()) { ?>
-                                            <h3>
-                                                This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards.
-                                                <a href="https://github.com/Ragowit/psn100/issues?q=label%3Acheater+<?= htmlspecialchars($playerOnlineId, ENT_QUOTES, 'UTF-8'); ?>+OR+<?= htmlspecialchars((string) $playerAccountId, ENT_QUOTES, 'UTF-8'); ?>">Dispute</a>?
-                                            </h3>
-                                        <?php } elseif ($pageContext->isPlayerPrivate()) { ?>
-                                            <h3>
-                                                This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://www.playstation.com/en-us/support/account/privacy-settings-psn/">private</a> profile.
-                                            </h3>
-                                        <?php } ?>
+                                        <h3><?= $playerStatusNotice->getMessage(); ?></h3>
                                     </td>
                                 </tr>
                                 <?php

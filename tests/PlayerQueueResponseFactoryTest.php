@@ -49,13 +49,13 @@ final class PlayerQueueResponseFactoryTest extends TestCase
         $message = $response->getMessage();
         $this->assertStringContainsString("Player '<a class=\"link-underline link-underline-opacity-0 link-underline-opacity-100-hover\" href=\"/player/Bad%20User\">Bad User</a>' is tagged as a cheater and won't be scanned.", $message);
         $this->assertStringContainsString('Dispute</a>?', $message);
-        $this->assertStringContainsString('https://github.com/Ragowit/psn100/issues?q=label%3Acheater+Bad%20User+OR+Account%2F123', $message);
+        $this->assertStringContainsString('https://github.com/Ragowit/psn100/issues?q=label%3Acheater%20Bad%20User%20OR%20Account%2F123', $message);
 
         $this->assertSame(
             [
                 'Bad User',
                 '/player/Bad%20User',
-                'https://github.com/Ragowit/psn100/issues?q=label%3Acheater+Bad%20User+OR+Account%2F123',
+                'https://github.com/Ragowit/psn100/issues?q=label%3Acheater%20Bad%20User%20OR%20Account%2F123',
             ],
             $service->getEscapedValues()
         );
