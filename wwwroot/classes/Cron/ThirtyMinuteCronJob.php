@@ -91,6 +91,18 @@ class ThirtyMinuteCronJob implements CronJobInterface
     }
 
     /**
+     * @param list<string> $scannedGames
+     */
+    private function shouldDeleteMissingZeroPercentGames(int $psnGameCount, int $ourGameCount, array $scannedGames): bool
+    {
+        if ($psnGameCount <= 0 || $scannedGames === []) {
+            return false;
+        }
+
+        return $psnGameCount !== $ourGameCount;
+    }
+
+    /**
      * @param array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null $progress
      */
     private function setWorkerScanProgress(int $workerId, ?array $progress): void
@@ -1314,7 +1326,13 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $query->execute();
                     $ourGameCount = $query->fetchColumn();
 
-                    if ($psnGameCount != $ourGameCount) {
+                    $shouldDeleteMissingGames = $this->shouldDeleteMissingZeroPercentGames(
+                        (int) $psnGameCount,
+                        (int) $ourGameCount,
+                        $scannedGames
+                    );
+
+                    if ($shouldDeleteMissingGames) {
                         $query = $this->database->prepare("SELECT ttp.np_communication_id
                             FROM   trophy_title_player ttp
                             WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
@@ -1392,6 +1410,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $query->execute();
                             }
                         }
+                    } elseif ($psnGameCount === 0 && $ourGameCount > 0) {
+                        $this->logger->log(sprintf(
+                            'Skipped deleting missing games for %s (%d) because no trophy titles were returned.',
+                            (string) $player['online_id'],
+                            (int) $user->accountId()
+                        ));
                     }
 
                     // Recalculate trophy count, level & progress for the player
