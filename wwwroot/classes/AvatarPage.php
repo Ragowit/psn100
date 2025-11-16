@@ -25,13 +25,13 @@ class AvatarPage
     {
         $this->avatarService = $avatarService;
         $this->limit = max($limit, 1);
-        $this->currentPage = max($currentPage, 1);
+
+        $requestedPage = max($currentPage, 1);
 
         $this->totalAvatarCount = $this->avatarService->getTotalUniqueAvatarCount();
-        $this->totalPages = $this->totalAvatarCount > 0
-            ? (int) ceil($this->totalAvatarCount / $this->limit)
-            : 0;
+        $this->totalPages = $this->calculateTotalPages();
 
+        $this->currentPage = $this->normalizePageNumber($requestedPage);
         $this->avatars = $this->avatarService->getAvatars($this->currentPage, $this->limit);
     }
 
@@ -160,5 +160,21 @@ class AvatarPage
     public function getLastPage(): int
     {
         return $this->totalPages > 0 ? $this->totalPages : 1;
+    }
+
+    private function calculateTotalPages(): int
+    {
+        if ($this->totalAvatarCount === 0) {
+            return 0;
+        }
+
+        return (int) ceil($this->totalAvatarCount / $this->limit);
+    }
+
+    private function normalizePageNumber(int $requestedPage): int
+    {
+        $maximumPage = $this->totalPages > 0 ? $this->totalPages : 1;
+
+        return min($requestedPage, $maximumPage);
     }
 }
