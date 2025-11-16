@@ -10,6 +10,7 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameTrophyGroup.php';
+require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Utility.php';
@@ -38,7 +39,7 @@ class GamePage
     private array $trophyGroups = [];
 
     /**
-     * @var array<string, array<string, mixed>|null>
+     * @var array<string, GameTrophyGroupPlayer|null>
      */
     private array $trophyGroupPlayers = [];
 
@@ -144,10 +145,7 @@ class GamePage
         return $this->trophyGroups;
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function getTrophyGroupPlayer(string $groupId): ?array
+    public function getTrophyGroupPlayer(string $groupId): ?GameTrophyGroupPlayer
     {
         if ($this->playerAccountId === null) {
             return null;

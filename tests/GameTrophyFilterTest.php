@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/GameTrophyFilter.php';
+require_once __DIR__ . '/../wwwroot/classes/Game/GameTrophyGroupPlayer.php';
 
 final class GameTrophyFilterTest extends TestCase
 {
@@ -39,11 +40,11 @@ final class GameTrophyFilterTest extends TestCase
         $filter = GameTrophyFilter::fromQueryParameters(['unearned' => true], true);
 
         $this->assertTrue($filter->shouldDisplayGroup(null));
-        $this->assertTrue($filter->shouldDisplayGroup([]));
-        $this->assertTrue($filter->shouldDisplayGroup(['progress' => 50]));
-        $this->assertTrue($filter->shouldDisplayGroup(['progress' => '75']));
-        $this->assertFalse($filter->shouldDisplayGroup(['progress' => 100]));
-        $this->assertFalse($filter->shouldDisplayGroup(['progress' => '100']));
+        $this->assertTrue($filter->shouldDisplayGroup($this->createGroupPlayer()));
+        $this->assertTrue($filter->shouldDisplayGroup($this->createGroupPlayer(['progress' => 50])));
+        $this->assertTrue($filter->shouldDisplayGroup($this->createGroupPlayer(['progress' => '75'])));
+        $this->assertFalse($filter->shouldDisplayGroup($this->createGroupPlayer(['progress' => 100])));
+        $this->assertFalse($filter->shouldDisplayGroup($this->createGroupPlayer(['progress' => '100'])));
     }
 
     public function testShouldDisplayGroupAlwaysReturnsTrueWhenUnearnedFilterDisabled(): void
@@ -51,8 +52,8 @@ final class GameTrophyFilterTest extends TestCase
         $filter = GameTrophyFilter::fromQueryParameters([], false);
 
         $this->assertTrue($filter->shouldDisplayGroup(null));
-        $this->assertTrue($filter->shouldDisplayGroup(['progress' => 0]));
-        $this->assertTrue($filter->shouldDisplayGroup(['progress' => 100]));
+        $this->assertTrue($filter->shouldDisplayGroup($this->createGroupPlayer(['progress' => 0])));
+        $this->assertTrue($filter->shouldDisplayGroup($this->createGroupPlayer(['progress' => 100])));
     }
 
     public function testShouldDisplayTrophyRequiresUnearnedFlag(): void
@@ -120,5 +121,21 @@ final class GameTrophyFilterTest extends TestCase
         $filter = GameTrophyFilter::fromQueryParameters(['unearned' => ['unexpected']], true);
 
         $this->assertTrue($filter->shouldShowUnearnedOnly());
+    }
+
+    private function createGroupPlayer(array $overrides = []): GameTrophyGroupPlayer
+    {
+        $defaults = [
+            'np_communication_id' => 'NPWRTEST',
+            'group_id' => 'default',
+            'account_id' => 1,
+            'bronze' => 0,
+            'silver' => 0,
+            'gold' => 0,
+            'platinum' => 0,
+            'progress' => 0,
+        ];
+
+        return GameTrophyGroupPlayer::fromArray($overrides + $defaults);
     }
 }
