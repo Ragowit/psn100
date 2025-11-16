@@ -192,26 +192,54 @@ require_once("header.php");
                         }
                     </style>
                     <script>
-                        (() => {
-                            const scanLogData = <?= json_encode($scanLogPlayersData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-                            const configuredDisplayCount = Math.max(0, <?= $initialDisplayCount; ?>);
-                            const fallbackDisplayCount = Math.max(1, <?= $maxScanLogDisplayCount; ?>);
-
-                            const tableBody = document.getElementById('scanLogTableBody');
-                            const summaryScannedElement = document.getElementById('scanSummaryScanned');
-                            const summaryNewElement = document.getElementById('scanSummaryNew');
-
-                            if (!tableBody || !summaryScannedElement || !summaryNewElement) {
-                                return;
+                        class ScanLogRenderer {
+                            constructor(options) {
+                                this.tableBody = options.tableBody ?? null;
+                                this.summaryScannedElement = options.summaryScannedElement ?? null;
+                                this.summaryNewElement = options.summaryNewElement ?? null;
+                                this.initialData = Array.isArray(options.initialData) ? options.initialData : [];
+                                this.baseScannedPlayers = typeof options.baseScannedPlayers === 'number' ? options.baseScannedPlayers : 0;
+                                this.baseNewPlayers = typeof options.baseNewPlayers === 'number' ? options.baseNewPlayers : 0;
+                                this.configuredDisplayCount = Math.max(0, options.configuredDisplayCount ?? 0);
+                                this.fallbackDisplayCount = Math.max(1, options.fallbackDisplayCount ?? 1);
+                                this.numberFormatter = options.numberFormatter ?? new Intl.NumberFormat('en-US');
+                                this.pollIntervalMs = Math.max(0, options.pollIntervalMs ?? 0);
+                                this.fetchLimit = Math.max(
+                                    this.configuredDisplayCount,
+                                    this.initialData.length,
+                                    this.fallbackDisplayCount
+                                );
+                                this.intervalId = null;
                             }
 
-                            const baseScannedPlayers = <?= (int) $scanSummary->getScannedPlayers(); ?>;
-                            const baseNewPlayers = <?= (int) $scanSummary->getNewPlayers(); ?>;
-                            const numberFormatter = new Intl.NumberFormat('en-US');
-                            const fetchLimit = Math.max(configuredDisplayCount, Array.isArray(scanLogData) ? scanLogData.length : 0, fallbackDisplayCount);
-                            const pollIntervalMs = 5000;
+                            initialize() {
+                                if (!this.tableBody || !this.summaryScannedElement || !this.summaryNewElement) {
+                                    return;
+                                }
 
-                            const parseLastUpdatedDate = (value) => {
+                                this.renderData(this.initialData);
+                                this.updateSummary(this.baseScannedPlayers, this.baseNewPlayers);
+                                this.fetchLatestScanLog();
+                                this.startPolling();
+                            }
+
+                            startPolling() {
+                                if (this.pollIntervalMs <= 0) {
+                                    return;
+                                }
+
+                                this.stopPolling();
+                                this.intervalId = window.setInterval(() => this.fetchLatestScanLog(), this.pollIntervalMs);
+                            }
+
+                            stopPolling() {
+                                if (this.intervalId !== null) {
+                                    window.clearInterval(this.intervalId);
+                                    this.intervalId = null;
+                                }
+                            }
+
+                            parseLastUpdatedDate(value) {
                                 if (!value) {
                                     return null;
                                 }
@@ -219,21 +247,21 @@ require_once("header.php");
                                 const parsedDate = new Date(`${value} UTC`);
 
                                 return Number.isNaN(parsedDate.valueOf()) ? null : parsedDate;
-                            };
+                            }
 
-                            const sortScanLogData = (data) => {
+                            sortScanLogData(data) {
                                 return [...data].sort((playerA, playerB) => {
-                                    const dateA = parseLastUpdatedDate(playerA.lastUpdatedDate);
-                                    const dateB = parseLastUpdatedDate(playerB.lastUpdatedDate);
+                                    const dateA = this.parseLastUpdatedDate(playerA.lastUpdatedDate);
+                                    const dateB = this.parseLastUpdatedDate(playerB.lastUpdatedDate);
 
                                     const timeA = dateA ? dateA.getTime() : Number.NEGATIVE_INFINITY;
                                     const timeB = dateB ? dateB.getTime() : Number.NEGATIVE_INFINITY;
 
                                     return timeB - timeA;
                                 });
-                            };
+                            }
 
-                            const createRankCell = (player) => {
+                            createRankCell(player) {
                                 const rankCell = document.createElement('th');
                                 rankCell.scope = 'row';
                                 rankCell.className = 'align-middle text-center';
@@ -268,14 +296,14 @@ require_once("header.php");
                                 }
 
                                 return rankCell;
-                            };
+                            }
 
-                            const createUpdatedCell = (player) => {
+                            createUpdatedCell(player) {
                                 const updatedCell = document.createElement('td');
                                 updatedCell.className = 'align-middle text-center';
 
                                 if (player.lastUpdatedDate) {
-                                    const parsedDate = parseLastUpdatedDate(player.lastUpdatedDate);
+                                    const parsedDate = this.parseLastUpdatedDate(player.lastUpdatedDate);
 
                                     if (parsedDate) {
                                         updatedCell.textContent = parsedDate.toLocaleString('sv-SE', { timeStyle: 'medium' });
@@ -283,9 +311,9 @@ require_once("header.php");
                                 }
 
                                 return updatedCell;
-                            };
+                            }
 
-                            const createUserCell = (player) => {
+                            createUserCell(player) {
                                 const userCell = document.createElement('td');
                                 userCell.className = 'align-middle';
 
@@ -336,9 +364,9 @@ require_once("header.php");
                                 userCell.append(hstack);
 
                                 return userCell;
-                            };
+                            }
 
-                            const createLevelCell = (player) => {
+                            createLevelCell(player) {
                                 const levelCell = document.createElement('td');
                                 levelCell.className = 'align-middle text-center';
 
@@ -382,9 +410,9 @@ require_once("header.php");
                                 }
 
                                 return levelCell;
-                            };
+                            }
 
-                            const applyRowEntryAnimation = (row) => {
+                            applyRowEntryAnimation(row) {
                                 row.classList.add('scan-log-row--enter');
                                 row.addEventListener(
                                     'animationend',
@@ -393,9 +421,9 @@ require_once("header.php");
                                     },
                                     { once: true }
                                 );
-                            };
+                            }
 
-                            const buildRow = (player) => {
+                            buildRow(player) {
                                 const row = document.createElement('tr');
                                 const onlineId = typeof player.onlineId === 'string' ? player.onlineId : '';
                                 const lastUpdated = typeof player.lastUpdatedDate === 'string' ? player.lastUpdatedDate : '';
@@ -404,19 +432,19 @@ require_once("header.php");
                                 row.dataset.lastUpdatedDate = lastUpdated;
 
                                 row.append(
-                                    createRankCell(player),
-                                    createUpdatedCell(player),
-                                    createUserCell(player),
-                                    createLevelCell(player)
+                                    this.createRankCell(player),
+                                    this.createUpdatedCell(player),
+                                    this.createUserCell(player),
+                                    this.createLevelCell(player)
                                 );
 
                                 return row;
-                            };
+                            }
 
-                            const synchronizeTableRows = (playersToDisplay) => {
+                            synchronizeTableRows(playersToDisplay) {
                                 const existingRows = new Map();
 
-                                Array.from(tableBody.querySelectorAll('tr')).forEach((row) => {
+                                Array.from(this.tableBody.querySelectorAll('tr')).forEach((row) => {
                                     const key = row.dataset.onlineId ?? '';
 
                                     if (key !== '') {
@@ -428,7 +456,7 @@ require_once("header.php");
                                 const rowsToAnimate = [];
 
                                 playersToDisplay.forEach((player) => {
-                                    const row = buildRow(player);
+                                    const row = this.buildRow(player);
                                     const existingRow = existingRows.get(row.dataset.onlineId ?? '');
                                     const previousTimestamp = existingRow ? existingRow.dataset.lastUpdatedDate ?? '' : '';
                                     const currentTimestamp = row.dataset.lastUpdatedDate ?? '';
@@ -440,41 +468,47 @@ require_once("header.php");
                                     rows.push(row);
                                 });
 
-                                tableBody.replaceChildren(...rows);
+                                this.tableBody.replaceChildren(...rows);
 
                                 rowsToAnimate.forEach((row) => {
-                                    window.requestAnimationFrame(() => applyRowEntryAnimation(row));
+                                    window.requestAnimationFrame(() => this.applyRowEntryAnimation(row));
                                 });
-                            };
+                            }
 
-                            const updateSummary = (scannedPlayers, newPlayers) => {
+                            updateSummary(scannedPlayers, newPlayers) {
                                 if (typeof scannedPlayers === 'number' && Number.isFinite(scannedPlayers)) {
-                                    summaryScannedElement.textContent = numberFormatter.format(scannedPlayers);
+                                    this.summaryScannedElement.textContent = this.numberFormatter.format(scannedPlayers);
                                 }
 
                                 if (typeof newPlayers === 'number' && Number.isFinite(newPlayers)) {
-                                    summaryNewElement.textContent = numberFormatter.format(newPlayers);
+                                    this.summaryNewElement.textContent = this.numberFormatter.format(newPlayers);
                                 }
-                            };
+                            }
 
-                            const renderData = (data) => {
+                            getDisplayCount(dataLength) {
+                                if (this.configuredDisplayCount > 0) {
+                                    return this.configuredDisplayCount;
+                                }
+
+                                return Math.min(this.fallbackDisplayCount, dataLength);
+                            }
+
+                            renderData(data) {
                                 if (!Array.isArray(data) || data.length === 0) {
-                                    tableBody.replaceChildren();
+                                    this.tableBody.replaceChildren();
                                     return;
                                 }
 
-                                const sortedData = sortScanLogData(data);
-                                const displayCount = configuredDisplayCount > 0
-                                    ? configuredDisplayCount
-                                    : Math.min(fallbackDisplayCount, sortedData.length);
+                                const sortedData = this.sortScanLogData(data);
+                                const displayCount = this.getDisplayCount(sortedData.length);
                                 const playersToDisplay = sortedData.slice(0, displayCount);
 
-                                synchronizeTableRows(playersToDisplay);
-                            };
+                                this.synchronizeTableRows(playersToDisplay);
+                            }
 
-                            const fetchLatestScanLog = () => {
+                            fetchLatestScanLog() {
                                 const url = new URL('scan_log_poll.php', window.location.href);
-                                url.searchParams.set('limit', String(fetchLimit));
+                                url.searchParams.set('limit', String(this.fetchLimit));
 
                                 fetch(url.toString(), {
                                     headers: {
@@ -494,14 +528,14 @@ require_once("header.php");
                                         }
 
                                         if (Array.isArray(payload.players)) {
-                                            renderData(payload.players);
+                                            this.renderData(payload.players);
                                         }
 
                                         if (payload.summary && typeof payload.summary === 'object') {
                                             const scannedValue = Number(payload.summary.scannedPlayers);
                                             const newValue = Number(payload.summary.newPlayers);
 
-                                            updateSummary(
+                                            this.updateSummary(
                                                 Number.isNaN(scannedValue) ? undefined : scannedValue,
                                                 Number.isNaN(newValue) ? undefined : newValue
                                             );
@@ -510,13 +544,30 @@ require_once("header.php");
                                     .catch(() => {
                                         // Ignore polling errors to avoid interrupting the page.
                                     });
-                            };
+                            }
+                        }
 
-                            renderData(scanLogData);
-                            updateSummary(baseScannedPlayers, baseNewPlayers);
-                            fetchLatestScanLog();
+                        (() => {
+                            const scanLogData = <?= json_encode($scanLogPlayersData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+                            const configuredDisplayCount = Math.max(0, <?= $initialDisplayCount; ?>);
+                            const fallbackDisplayCount = Math.max(1, <?= $maxScanLogDisplayCount; ?>);
+                            const baseScannedPlayers = <?= (int) $scanSummary->getScannedPlayers(); ?>;
+                            const baseNewPlayers = <?= (int) $scanSummary->getNewPlayers(); ?>;
 
-                            window.setInterval(fetchLatestScanLog, pollIntervalMs);
+                            const renderer = new ScanLogRenderer({
+                                tableBody: document.getElementById('scanLogTableBody'),
+                                summaryScannedElement: document.getElementById('scanSummaryScanned'),
+                                summaryNewElement: document.getElementById('scanSummaryNew'),
+                                initialData: Array.isArray(scanLogData) ? scanLogData : [],
+                                baseScannedPlayers,
+                                baseNewPlayers,
+                                configuredDisplayCount,
+                                fallbackDisplayCount,
+                                pollIntervalMs: 5000,
+                            });
+
+                            renderer.initialize();
+                            window.scanLogRenderer = renderer;
                         })();
                     </script>
                 <?php endif; ?>
