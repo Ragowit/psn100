@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/Psn100Logger.php';
-require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyHistoryRecorder.php';
 
 final class TrophyHistorySnapshotTest extends TestCase

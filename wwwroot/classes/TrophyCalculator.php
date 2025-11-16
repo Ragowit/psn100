@@ -340,22 +340,3 @@ class TrophyCalculator
         $query->execute();
     }
 }
-
-class Psn100Logger
-{
-    private PDO $database;
-
-    public function __construct(PDO $database)
-    {
-        $this->database = $database;
-    }
-
-    public function log(string $message): void
-    {
-        $query = $this->database->prepare(
-            "INSERT INTO log (message) VALUES (:message)"
-        );
-        $query->bindValue(":message", $message, PDO::PARAM_STR);
-        $query->execute();
-    }
-}
