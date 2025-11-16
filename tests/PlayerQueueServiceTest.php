@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueService.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerScanProgress.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerScanStatus.php';
 
 final class PlayerQueueServiceTest extends TestCase
 {
@@ -156,16 +158,15 @@ final class PlayerQueueServiceTest extends TestCase
 
         $status = $this->service->getActiveScanStatus('ScanningPlayer');
 
-        $this->assertTrue(is_array($status));
-        $this->assertSame(
-            [
-                'current' => 5,
-                'total' => 34,
-                'title' => 'Example Game',
-                'npCommunicationId' => 'NPWR12345',
-            ],
-            $status['progress']
-        );
+        $this->assertTrue($status instanceof PlayerScanStatus, 'Scan status should be a PlayerScanStatus instance.');
+        $progress = $status->getProgress();
+        if (!$progress instanceof PlayerScanProgress) {
+            $this->fail('Expected a PlayerScanProgress instance.');
+        }
+        $this->assertSame(5, $progress->getCurrent());
+        $this->assertSame(34, $progress->getTotal());
+        $this->assertSame('Example Game', $progress->getTitle());
+        $this->assertSame('NPWR12345', $progress->getNpCommunicationId());
     }
 
     public function testGetActiveScanProgressReturnsNullWhenPayloadInvalid(): void

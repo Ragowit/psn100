@@ -8,6 +8,8 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueRequest.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponseFactory.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueService.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerScanProgress.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerScanStatus.php';
 
 final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
 {
@@ -25,8 +27,9 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
     /** @var list<array{playerName: string, ipAddress: string}> */
     private array $queuedPlayers = [];
 
-    /** @var array{progress: array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null}|null */
-    private ?array $scanStatus = null;
+    private bool $playerBeingScanned = false;
+
+    private ?PlayerScanProgress $scanProgress = null;
 
     public function __construct()
     {
@@ -81,7 +84,11 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
 
     public function setPlayerBeingScanned(bool $playerBeingScanned): void
     {
-        $this->scanStatus = $playerBeingScanned ? ['progress' => null] : null;
+        $this->playerBeingScanned = $playerBeingScanned;
+
+        if (!$playerBeingScanned) {
+            $this->scanProgress = null;
+        }
     }
 
     /**
@@ -90,27 +97,33 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
     public function setScanProgress(?array $progress): void
     {
         if ($progress === null) {
-            $this->scanStatus = null;
+            $this->playerBeingScanned = false;
+            $this->scanProgress = null;
 
             return;
         }
 
-        $this->scanStatus = ['progress' => $progress];
+        $this->playerBeingScanned = true;
+        $this->scanProgress = PlayerScanProgress::fromArray($progress);
     }
 
     public function isPlayerBeingScanned(string $playerName): bool
     {
-        return $this->scanStatus !== null;
+        return $this->playerBeingScanned;
     }
 
-    public function getActiveScanStatus(string $playerName): ?array
+    public function getActiveScanStatus(string $playerName): ?PlayerScanStatus
     {
-        return $this->scanStatus;
+        if (!$this->playerBeingScanned) {
+            return null;
+        }
+
+        return PlayerScanStatus::withProgress($this->scanProgress);
     }
 
-    public function getActiveScanProgress(string $playerName): ?array
+    public function getActiveScanProgress(string $playerName): ?PlayerScanProgress
     {
-        return $this->scanStatus['progress'] ?? null;
+        return $this->scanProgress;
     }
 
     public function setQueuePosition(?int $queuePosition): void
