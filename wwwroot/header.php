@@ -128,6 +128,8 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
             }
         </style>
 
+        <script src="/js/localized-date-formatter.js" defer></script>
+
         <title><?= $title; ?></title>
     </head>
     <body>

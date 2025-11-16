@@ -109,10 +109,10 @@ require_once("header.php");
                                     </td>
 
                                     <td class="align-middle text-center" style="white-space: nowrap; width: 5rem;">
-                                        <span id="date<?= $rank; ?>"></span>
-                                        <script>
-                                            document.getElementById("date<?= $rank; ?>").innerHTML = new Date(<?= json_encode($row->getLastKnownDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
-                                        </script>
+                                        <span
+                                            class="js-leaderboard-date"
+                                            data-timestamp="<?= htmlspecialchars($row->getLastKnownDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                        ></span>
                                     </td>
 
                                     <td class="align-middle text-center" style="white-space: nowrap; width: 10rem;">
@@ -157,6 +157,13 @@ require_once("header.php");
         </div>
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const formatter = new LocalizedDateFormatter('.js-leaderboard-date');
+    formatter.initialize();
+});
+</script>
 
 <?php
 require_once("footer.php");
