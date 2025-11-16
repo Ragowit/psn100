@@ -133,19 +133,24 @@ require_once("header.php");
                                             <div class="ms-auto">
                                                 <?php
                                                 if ($trophyGroupPlayer !== null) {
+                                                    $bronzeEarned = $trophyGroupPlayer->getBronzeCount();
+                                                    $silverEarned = $trophyGroupPlayer->getSilverCount();
+                                                    $goldEarned = $trophyGroupPlayer->getGoldCount();
+                                                    $platinumEarned = $trophyGroupPlayer->getPlatinumCount();
+                                                    $progress = $trophyGroupPlayer->getProgress();
                                                     if ($trophyGroup->isDefaultGroup()) {
                                                         ?>
-                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $trophyGroupPlayer["platinum"] ?? "0"; ?>/<?= $trophyGroup->getPlatinumCount(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup->getBronzeCount(); ?></span>
+                                                        <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $platinumEarned; ?>/<?= $trophyGroup->getPlatinumCount(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $goldEarned; ?>/<?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $silverEarned; ?>/<?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $bronzeEarned; ?>/<?= $trophyGroup->getBronzeCount(); ?></span>
                                                         <?php
                                                     } else {
                                                         ?>
-                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $trophyGroupPlayer["gold"] ?? "0"; ?>/<?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $trophyGroupPlayer["silver"] ?? "0"; ?>/<?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $trophyGroupPlayer["bronze"] ?? "0"; ?>/<?= $trophyGroup->getBronzeCount(); ?></span>
+                                                        <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $goldEarned; ?>/<?= $trophyGroup->getGoldCount(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $silverEarned; ?>/<?= $trophyGroup->getSilverCount(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $bronzeEarned; ?>/<?= $trophyGroup->getBronzeCount(); ?></span>
                                                         <?php
                                                     }
                                                     ?>
                                                     <div>
-                                                        <div class="progress mt-1" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $trophyGroupPlayer["progress"] ?? "0"; ?>" aria-valuemin="0" aria-valuemax="100">
-                                                            <div class="progress-bar" style="width: <?= $trophyGroupPlayer["progress"] ?? "0"; ?>%"><?= $trophyGroupPlayer["progress"] ?? "0"; ?>%</div>
+                                                        <div class="progress mt-1" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $progress; ?>" aria-valuemin="0" aria-valuemax="100">
+                                                            <div class="progress-bar" style="width: <?= $progress; ?>%"><?= $progress; ?>%</div>
                                                         </div>
                                                     </div>
                                                     <?php

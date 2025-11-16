@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 
 class GameTrophyFilter
@@ -32,18 +33,13 @@ class GameTrophyFilter
         return $this->unearnedOnly;
     }
 
-    /**
-     * @param array<string, mixed>|null $trophyGroupPlayer
-     */
-    public function shouldDisplayGroup(?array $trophyGroupPlayer): bool
+    public function shouldDisplayGroup(?GameTrophyGroupPlayer $trophyGroupPlayer): bool
     {
         if (!$this->unearnedOnly || $trophyGroupPlayer === null) {
             return true;
         }
 
-        $progress = isset($trophyGroupPlayer['progress']) ? (int) $trophyGroupPlayer['progress'] : 0;
-
-        return $progress < 100;
+        return !$trophyGroupPlayer->isComplete();
     }
 
     /**
