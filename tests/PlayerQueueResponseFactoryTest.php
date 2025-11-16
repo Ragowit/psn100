@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponseFactory.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueService.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerScanProgress.php';
 
 /**
  * @extends PlayerQueueService
@@ -163,11 +164,14 @@ final class PlayerQueueResponseFactoryTest extends TestCase
         $service = new RecordingPlayerQueueServiceStub();
         $factory = new PlayerQueueResponseFactory($service);
 
-        $response = $factory->createQueuedForScanResponse('Player <Name>', [
+        $progress = PlayerScanProgress::fromArray([
             'current' => 5,
             'total' => 34,
             'title' => 'Game <Title>',
         ]);
+        $this->assertTrue($progress instanceof PlayerScanProgress, 'Expected PlayerScanProgress instance.');
+
+        $response = $factory->createQueuedForScanResponse('Player <Name>', $progress);
 
         $this->assertSame('queued', $response->getStatus());
         $this->assertTrue($response->shouldPoll());

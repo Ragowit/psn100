@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerScanProgress.php';
+require_once __DIR__ . '/PlayerScanStatus.php';
+
 class PlayerQueueService
 {
     public const MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
@@ -98,9 +101,9 @@ class PlayerQueueService
     }
 
     /**
-     * @return array{progress: array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null}|null
+     * Returns information about the current scan for the provided player, if any.
      */
-    public function getActiveScanStatus(string $playerName): ?array
+    public function getActiveScanStatus(string $playerName): ?PlayerScanStatus
     {
         if ($playerName === '') {
             return null;
@@ -125,25 +128,16 @@ class PlayerQueueService
             return null;
         }
 
-        $progress = $this->decodeScanProgress($row['scan_progress'] ?? null);
-
-        return [
-            'progress' => $progress,
-        ];
+        return PlayerScanStatus::withProgress(
+            $this->decodeScanProgress($row['scan_progress'] ?? null)
+        );
     }
 
-    /**
-     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
-     */
-    public function getActiveScanProgress(string $playerName): ?array
+    public function getActiveScanProgress(string $playerName): ?PlayerScanProgress
     {
         $status = $this->getActiveScanStatus($playerName);
 
-        if ($status === null) {
-            return null;
-        }
-
-        return $status['progress'] ?? null;
+        return $status?->getProgress();
     }
 
     public function getQueuePosition(string $playerName): ?int
@@ -225,40 +219,13 @@ class PlayerQueueService
         ];
     }
 
-    /**
-     * @return array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null
-     */
-    private function decodeScanProgress(?string $value): ?array
+    private function decodeScanProgress(?string $value): ?PlayerScanProgress
     {
         if ($value === null || $value === '') {
             return null;
         }
 
-        $decoded = json_decode($value, true);
-
-        if (!is_array($decoded)) {
-            return null;
-        }
-
-        $progress = [];
-
-        if (array_key_exists('current', $decoded) && is_numeric($decoded['current'])) {
-            $progress['current'] = max(0, (int) $decoded['current']);
-        }
-
-        if (array_key_exists('total', $decoded) && is_numeric($decoded['total'])) {
-            $progress['total'] = max(0, (int) $decoded['total']);
-        }
-
-        if (array_key_exists('title', $decoded) && is_string($decoded['title'])) {
-            $progress['title'] = $decoded['title'];
-        }
-
-        if (array_key_exists('npCommunicationId', $decoded) && is_string($decoded['npCommunicationId'])) {
-            $progress['npCommunicationId'] = $decoded['npCommunicationId'];
-        }
-
-        return $progress === [] ? null : $progress;
+        return PlayerScanProgress::fromJson($value);
     }
 
     public function isCheaterStatus(?int $status): bool

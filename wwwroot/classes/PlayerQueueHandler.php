@@ -66,7 +66,7 @@ class PlayerQueueHandler
         if ($scanStatus !== null) {
             return $this->responseFactory->createQueuedForScanResponse(
                 $playerName,
-                $scanStatus['progress'] ?? null
+                $scanStatus->getProgress()
             );
         }
 

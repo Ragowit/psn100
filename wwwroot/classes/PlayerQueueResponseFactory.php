@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerQueueService.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
+require_once __DIR__ . '/PlayerScanProgress.php';
 
 final class PlayerQueueResponseFactory
 {
@@ -46,11 +47,10 @@ final class PlayerQueueResponseFactory
         return $this->createQueuedResponse($message);
     }
 
-    /**
-     * @param array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null $scanProgress
-     */
-    public function createQueuedForScanResponse(string $playerName, ?array $scanProgress = null): PlayerQueueResponse
-    {
+    public function createQueuedForScanResponse(
+        string $playerName,
+        ?PlayerScanProgress $scanProgress = null
+    ): PlayerQueueResponse {
         $message = $this->createPlayerLink($playerName) . ' is currently being scanned.';
 
         if ($scanProgress !== null) {
@@ -105,31 +105,18 @@ final class PlayerQueueResponseFactory
             . "\n<div class=\"spinner-border\" role=\"status\">\n    <span class=\"visually-hidden\">Loading...</span>\n</div>";
     }
 
-    /**
-     * @param array{current?: int, total?: int, title?: string, npCommunicationId?: string} $progress
-     */
-    private function createScanProgressMessage(array $progress): string
+    private function createScanProgressMessage(PlayerScanProgress $progress): string
     {
-        $current = null;
-        $total = null;
-
-        if (array_key_exists('current', $progress) && is_numeric($progress['current'])) {
-            $current = max(0, (int) $progress['current']);
-        }
-
-        if (array_key_exists('total', $progress) && is_numeric($progress['total'])) {
-            $total = max(0, (int) $progress['total']);
-        }
-
         $parts = [];
 
-        if (array_key_exists('title', $progress) && is_string($progress['title']) && $progress['title'] !== '') {
-            $parts[] = 'Currently scanning <strong>' . $this->service->escapeHtml($progress['title']) . '</strong>';
+        $title = $progress->getTitle();
+        if ($title !== null) {
+            $parts[] = 'Currently scanning <strong>' . $this->service->escapeHtml($title) . '</strong>';
         }
 
-        if ($current !== null && $total !== null && $total > 0) {
-            $clampedCurrent = min($current, $total);
-            $parts[] = sprintf('(%d/%d)', $clampedCurrent, $total);
+        $summary = $progress->getProgressSummary();
+        if ($summary !== null) {
+            $parts[] = $summary;
         }
 
         if ($parts === []) {
@@ -138,11 +125,9 @@ final class PlayerQueueResponseFactory
 
         $message = ' ' . implode(' ', $parts) . '.';
 
-        if ($current !== null && $total !== null && $total > 0) {
-            $clampedCurrent = min($current, $total);
-            $percentage = $total === 0 ? 0 : (int) round(($clampedCurrent / $total) * 100);
-            $percentage = max(0, min(100, $percentage));
+        $percentage = $progress->getPercentage();
 
+        if ($percentage !== null) {
             $message .= sprintf(
                 '<div class="progress mt-2" role="progressbar" aria-valuenow="%d" aria-valuemin="0" aria-valuemax="100">'
                 . '<div class="progress-bar bg-primary" style="width: %d%%;"></div>'
