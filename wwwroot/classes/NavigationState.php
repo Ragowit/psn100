@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/NavigationSectionState.php';
+
 final class NavigationState
 {
-    private const ACTIVE_SUFFIX = ' active';
     private const NAVIGATION_KEYS = ['home', 'leaderboard', 'game', 'trophy', 'avatar', 'about'];
 
     private string $sort;
@@ -12,8 +13,8 @@ final class NavigationState
     private string $filter;
     private string $search;
 
-    /** @var array<string, string> */
-    private array $activeClasses;
+    /** @var array<string, NavigationSectionState> */
+    private array $sectionStates;
 
     private function __construct(string $requestUri, array $queryParameters)
     {
@@ -22,7 +23,7 @@ final class NavigationState
         $this->filter = $this->sanitizeQueryValue($queryParameters['filter'] ?? '');
         $this->search = $this->sanitizeQueryValue($queryParameters['search'] ?? '');
 
-        $this->activeClasses = $this->determineActiveClasses($requestUri);
+        $this->sectionStates = $this->determineSectionStates($requestUri);
     }
 
     public static function fromGlobals(array $server, array $queryParameters): self
@@ -84,37 +85,32 @@ final class NavigationState
 
     public function isSectionActive(string $section): bool
     {
-        return $this->getActiveClass($section) === self::ACTIVE_SUFFIX;
+        return $this->getSectionState($section)?->isActive() ?? false;
     }
 
     private function getActiveClass(string $section): string
     {
-        return $this->activeClasses[$section] ?? '';
+        $state = $this->getSectionState($section);
+
+        return $state?->getCssClass() ?? '';
     }
 
     /**
      * @param string $requestUri
-     * @return array<string, string>
+     * @return array<string, NavigationSectionState>
      */
-    private function determineActiveClasses(string $requestUri): array
+    private function determineSectionStates(string $requestUri): array
     {
-        $classes = array_fill_keys(self::NAVIGATION_KEYS, '');
+        $states = [];
 
-        if (str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')) {
-            $classes['leaderboard'] = self::ACTIVE_SUFFIX;
-        } elseif (str_starts_with($requestUri, '/game')) {
-            $classes['game'] = self::ACTIVE_SUFFIX;
-        } elseif (str_starts_with($requestUri, '/trophy')) {
-            $classes['trophy'] = self::ACTIVE_SUFFIX;
-        } elseif (str_starts_with($requestUri, '/avatar')) {
-            $classes['avatar'] = self::ACTIVE_SUFFIX;
-        } elseif (str_starts_with($requestUri, '/about')) {
-            $classes['about'] = self::ACTIVE_SUFFIX;
-        } else {
-            $classes['home'] = self::ACTIVE_SUFFIX;
+        foreach (self::NAVIGATION_KEYS as $section) {
+            $states[$section] = new NavigationSectionState($section, false);
         }
 
-        return $classes;
+        $activeSection = $this->resolveActiveSection($requestUri);
+        $states[$activeSection] = new NavigationSectionState($activeSection, true);
+
+        return $states;
     }
 
     private function sanitizeQueryValue(mixed $value): string
@@ -127,5 +123,35 @@ final class NavigationState
         }
 
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private function resolveActiveSection(string $requestUri): string
+    {
+        if (str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')) {
+            return 'leaderboard';
+        }
+
+        if (str_starts_with($requestUri, '/game')) {
+            return 'game';
+        }
+
+        if (str_starts_with($requestUri, '/trophy')) {
+            return 'trophy';
+        }
+
+        if (str_starts_with($requestUri, '/avatar')) {
+            return 'avatar';
+        }
+
+        if (str_starts_with($requestUri, '/about')) {
+            return 'about';
+        }
+
+        return 'home';
+    }
+
+    private function getSectionState(string $section): ?NavigationSectionState
+    {
+        return $this->sectionStates[$section] ?? null;
     }
 }
