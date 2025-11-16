@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/LogService.php';
 require_once __DIR__ . '/LogPageResult.php';
+require_once __DIR__ . '/LogDeletionRequest.php';
 
 final class LogPage
 {
@@ -27,12 +28,14 @@ final class LogPage
         $errorMessage = null;
 
         if (strtoupper($method) === 'POST') {
-            if (array_key_exists('delete_id', $postData)) {
-                $deleteId = $this->parsePositiveInt($postData['delete_id'] ?? null);
+            $deletionRequest = LogDeletionRequest::fromPostData($postData);
 
-                if ($deleteId === null) {
-                    $errorMessage = 'Please provide a valid log entry ID to delete.';
-                } else {
+            if ($deletionRequest->hasError()) {
+                $errorMessage = $deletionRequest->getErrorMessage();
+            } elseif ($deletionRequest->isSingleDeletion()) {
+                $deleteId = $deletionRequest->getSingleDeletionId();
+
+                if ($deleteId !== null) {
                     $deleted = $this->logService->deleteLogById($deleteId);
 
                     if ($deleted) {
@@ -41,33 +44,29 @@ final class LogPage
                         $errorMessage = sprintf('Log entry %d could not be found.', $deleteId);
                     }
                 }
-            } elseif (array_key_exists('delete_selected', $postData) || array_key_exists('delete_ids', $postData)) {
-                $deleteIds = $this->parsePositiveIntList($postData['delete_ids'] ?? []);
+            } elseif ($deletionRequest->isBulkDeletion()) {
+                $deleteIds = $deletionRequest->getBulkDeletionIds();
 
-                if ($deleteIds === []) {
-                    $errorMessage = 'Please select at least one log entry to delete.';
+                $deletedCount = $this->logService->deleteLogsByIds($deleteIds);
+
+                if ($deletedCount === 0) {
+                    $errorMessage = 'No matching log entries were found for the selected IDs.';
                 } else {
-                    $deletedCount = $this->logService->deleteLogsByIds($deleteIds);
+                    $entryLabel = $deletedCount === 1 ? 'log entry' : 'log entries';
 
-                    if ($deletedCount === 0) {
-                        $errorMessage = 'No matching log entries were found for the selected IDs.';
+                    if ($deletedCount === count($deleteIds)) {
+                        $successMessage = sprintf(
+                            'Deleted %d %s (IDs: %s).',
+                            $deletedCount,
+                            $entryLabel,
+                            implode(', ', $deleteIds)
+                        );
                     } else {
-                        $entryLabel = $deletedCount === 1 ? 'log entry' : 'log entries';
-
-                        if ($deletedCount === count($deleteIds)) {
-                            $successMessage = sprintf(
-                                'Deleted %d %s (IDs: %s).',
-                                $deletedCount,
-                                $entryLabel,
-                                implode(', ', $deleteIds)
-                            );
-                        } else {
-                            $successMessage = sprintf(
-                                'Deleted %d %s. Some selected entries may no longer exist.',
-                                $deletedCount,
-                                $entryLabel
-                            );
-                        }
+                        $successMessage = sprintf(
+                            'Deleted %d %s. Some selected entries may no longer exist.',
+                            $deletedCount,
+                            $entryLabel
+                        );
                     }
                 }
             }
@@ -111,30 +110,5 @@ final class LogPage
         $intValue = (int) $trimmed;
 
         return $intValue > 0 ? $intValue : null;
-    }
-
-    /**
-     * @param mixed $values
-     * @return list<int>
-     */
-    private function parsePositiveIntList(mixed $values): array
-    {
-        if (!is_iterable($values)) {
-            return [];
-        }
-
-        $uniqueValues = [];
-
-        foreach ($values as $value) {
-            $parsed = $this->parsePositiveInt($value);
-
-            if ($parsed === null) {
-                continue;
-            }
-
-            $uniqueValues[$parsed] = $parsed;
-        }
-
-        return array_values($uniqueValues);
     }
 }
