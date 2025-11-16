@@ -102,10 +102,10 @@ require_once("header.php");
                                     </td>
 
                                     <td class="align-middle text-center" style="white-space: nowrap; width: 5rem;">
-                                        <span id="date<?= $rank; ?>"></span>
-                                        <script>
-                                            document.getElementById("date<?= $rank; ?>").innerHTML = new Date(<?= json_encode($recentPlayer->getLastKnownDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
-                                        </script>
+                                        <span
+                                            class="js-recent-player-date"
+                                            data-timestamp="<?= htmlspecialchars($recentPlayer->getLastKnownDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                        ></span>
                                     </td>
 
                                     <td class="align-middle text-center" style="white-space: nowrap; width: 10rem;">
@@ -132,6 +132,47 @@ require_once("header.php");
         </div>
     </div>
 </main>
+
+<script>
+class RecentPlayersDateFormatter {
+    constructor(selector, locale = 'sv-SE') {
+        this.selector = selector;
+        this.locale = locale;
+    }
+
+    initialize() {
+        const elements = document.querySelectorAll(this.selector);
+
+        elements.forEach((element) => {
+            const timestamp = element.getAttribute('data-timestamp');
+            const formattedValue = this.formatTimestamp(timestamp);
+
+            if (formattedValue !== null) {
+                element.innerHTML = formattedValue;
+            }
+        });
+    }
+
+    formatTimestamp(timestamp) {
+        if (!timestamp) {
+            return null;
+        }
+
+        const date = new Date(`${timestamp} UTC`);
+
+        if (Number.isNaN(date.getTime())) {
+            return null;
+        }
+
+        return date.toLocaleString(this.locale).replace(' ', '<br>');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const formatter = new RecentPlayersDateFormatter('.js-recent-player-date');
+    formatter.initialize();
+});
+</script>
 
 <?php
 require_once("footer.php");
