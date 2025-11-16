@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CronJobInterface.php';
 require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
+require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';

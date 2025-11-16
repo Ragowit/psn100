@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CronJobEntryPoint.php';
 require_once __DIR__ . '/CronJobCliArguments.php';
 require_once __DIR__ . '/../TrophyCalculator.php';
+require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/ThirtyMinuteCronJob.php';
 
 final class ThirtyMinuteCronJobApplication
