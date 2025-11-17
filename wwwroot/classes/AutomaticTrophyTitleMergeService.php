@@ -175,7 +175,7 @@ final class AutomaticTrophyTitleMergeService
             'SELECT tt.id, tt.np_communication_id, tt.platform, COALESCE(ttm.status, 0) AS status
             FROM trophy_title tt
             LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
-            WHERE tt.name = :name AND tt.np_communication_id != :np_communication_id AND ttm.status != 2'
+            WHERE tt.name = :name AND tt.np_communication_id != :np_communication_id AND COALESCE(ttm.status, 0) != 2'
         );
         $query->bindValue(':name', $newTitle['name'], PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $newTitle['np_communication_id'], PDO::PARAM_STR);
