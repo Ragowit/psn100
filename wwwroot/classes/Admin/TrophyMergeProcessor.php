@@ -53,6 +53,7 @@ class TrophyMergeProcessor
             return;
         }
 
+        http_response_code(200);
         $this->prepareStreamResponse();
 
         $this->sendEvent([
@@ -86,8 +87,6 @@ class TrophyMergeProcessor
                 'message' => $resultMessage,
             ]);
         } catch (\InvalidArgumentException | \RuntimeException $exception) {
-            http_response_code(200);
-
             $this->sendEvent([
                 'type' => 'error',
                 'success' => false,
@@ -95,7 +94,6 @@ class TrophyMergeProcessor
                 'error' => $exception->getMessage(),
             ]);
         } catch (\Throwable $exception) {
-            http_response_code(200);
             error_log($exception->getMessage());
 
             $this->sendEvent([
