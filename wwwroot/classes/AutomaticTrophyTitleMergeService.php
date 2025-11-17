@@ -184,6 +184,12 @@ final class AutomaticTrophyTitleMergeService
         $matches = [];
 
         while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $status = (int) ($row['status'] ?? 0);
+
+            if ($status === 2) {
+                continue;
+            }
+
             $comparison = $this->compareTrophies(
                 $newTitle['np_communication_id'],
                 (string) $row['np_communication_id']
@@ -203,7 +209,7 @@ final class AutomaticTrophyTitleMergeService
                 'platforms' => $this->parsePlatforms($platform),
                 'is_clone' => str_starts_with($npCommunicationId, 'MERGE'),
                 'matches_by_order' => $comparison['orderMatches'],
-                'status' => (int) ($row['status'] ?? 0),
+                'status' => $status,
             ];
         }
 

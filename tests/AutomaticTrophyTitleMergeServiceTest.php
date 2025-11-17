@@ -198,10 +198,36 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 
         $this->service->handleNewTitle('NP_NEW');
 
-        $this->assertSame([1], $this->mergeService->clonedGames);
-        $this->assertSame([
-            [1, 99, 'order'],
-        ], $this->mergeService->mergedGames);
+        $this->assertSame([], $this->mergeService->clonedGames);
+        $this->assertSame([], $this->mergeService->mergedGames);
+        $this->assertSame([], $this->mergeService->copiedGames);
+    }
+
+    public function testIgnoresAlreadyMergedMatches(): void
+    {
+        $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
+        $this->insertTitle(2, 'NP_OLD', 'Example Game', 'PS4', 2);
+
+        $this->insertTrophies('NP_NEW', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->insertTrophies('NP_OLD', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->mergeService->cloneInfoQueue[] = [
+            'clone_game_id' => 99,
+            'clone_np_communication_id' => 'MERGE_000099',
+        ];
+
+        $this->service->handleNewTitle('NP_NEW');
+
+        $this->assertSame([], $this->mergeService->clonedGames);
+        $this->assertSame([], $this->mergeService->mergedGames);
+        $this->assertSame([], $this->mergeService->copiedGames);
     }
 
     public function testDoesNothingWhenNoMatchingTrophies(): void
