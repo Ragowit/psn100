@@ -257,16 +257,44 @@ final class GameHistoryRenderer
                 return;
             }
 
-            $html .= '<mark class="history-highlight history-highlight--' . $highlightState . '">';
-            foreach ($highlightTokens as $token) {
+            $firstNonWhitespaceIndex = null;
+            $lastNonWhitespaceIndex = null;
+
+            foreach ($highlightTokens as $index => $token) {
                 if ($token['isWhitespace']) {
-                    $html .= $token['value'];
                     continue;
                 }
 
-                $html .= $token['value'];
+                if ($firstNonWhitespaceIndex === null) {
+                    $firstNonWhitespaceIndex = $index;
+                }
+
+                $lastNonWhitespaceIndex = $index;
+            }
+
+            if ($firstNonWhitespaceIndex === null || $lastNonWhitespaceIndex === null) {
+                foreach ($highlightTokens as $token) {
+                    $html .= $token['value'];
+                }
+                $highlightTokens = [];
+                $highlightState = null;
+
+                return;
+            }
+
+            for ($i = 0; $i < $firstNonWhitespaceIndex; $i++) {
+                $html .= $highlightTokens[$i]['value'];
+            }
+
+            $html .= '<mark class="history-highlight history-highlight--' . $highlightState . '">';
+            for ($i = $firstNonWhitespaceIndex; $i <= $lastNonWhitespaceIndex; $i++) {
+                $html .= $highlightTokens[$i]['value'];
             }
             $html .= '</mark>';
+
+            for ($i = $lastNonWhitespaceIndex + 1, $count = count($highlightTokens); $i < $count; $i++) {
+                $html .= $highlightTokens[$i]['value'];
+            }
 
             $highlightTokens = [];
             $highlightState = null;
