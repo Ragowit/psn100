@@ -13,7 +13,7 @@ final class TrophyRarityFormatterTest extends TestCase
 
         $rarity = $formatter->format(42, 1);
 
-        $this->assertSame('42', $rarity->getPercentage());
+        $this->assertSame('42.00', $rarity->getPercentage());
         $this->assertSame('Unobtainable', $rarity->getLabel());
         $this->assertSame(null, $rarity->getCssClass());
         $this->assertTrue($rarity->isUnobtainable());
@@ -25,7 +25,7 @@ final class TrophyRarityFormatterTest extends TestCase
 
         $rarity = $formatter->format(' 0.015 ');
 
-        $this->assertSame('0.015', $rarity->getPercentage());
+        $this->assertSame('0.02', $rarity->getPercentage());
         $this->assertSame('Legendary', $rarity->getLabel());
         $this->assertSame('trophy-legendary', $rarity->getCssClass());
         $this->assertFalse($rarity->isUnobtainable());
@@ -37,7 +37,7 @@ final class TrophyRarityFormatterTest extends TestCase
 
         $rarity = $formatter->format(0.5);
 
-        $this->assertSame('0.5', $rarity->getPercentage());
+        $this->assertSame('0.50', $rarity->getPercentage());
         $this->assertSame('Rare', $rarity->getLabel());
         $this->assertSame('trophy-rare', $rarity->getCssClass());
         $this->assertFalse($rarity->isUnobtainable());
@@ -52,6 +52,18 @@ final class TrophyRarityFormatterTest extends TestCase
         $this->assertSame('N/A', $rarity->getPercentage());
         $this->assertSame('Common', $rarity->getLabel());
         $this->assertSame('trophy-common', $rarity->getCssClass());
+        $this->assertFalse($rarity->isUnobtainable());
+    }
+
+    public function testFormatAddsTrailingZeroesForNumericStrings(): void
+    {
+        $formatter = new TrophyRarityFormatter();
+
+        $rarity = $formatter->format('1.1');
+
+        $this->assertSame('1.10', $rarity->getPercentage());
+        $this->assertSame('Rare', $rarity->getLabel());
+        $this->assertSame('trophy-rare', $rarity->getCssClass());
         $this->assertFalse($rarity->isUnobtainable());
     }
 }

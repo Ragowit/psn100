@@ -11,13 +11,12 @@ class TrophyRarityFormatter
      */
     public function format($rarityPercent, int $status = 0): TrophyRarity
     {
-        $percentageString = $this->normalizePercentage($rarityPercent);
+        $value = $this->toFloat($rarityPercent);
+        $percentageString = $this->normalizePercentage($rarityPercent, $value);
 
         if ($status === 1) {
             return new TrophyRarity($percentageString, 'Unobtainable', null, true);
         }
-
-        $value = $this->toFloat($rarityPercent);
 
         if ($value !== null) {
             if ($value <= 0.02) {
@@ -43,18 +42,28 @@ class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
-    private function normalizePercentage($rarityPercent): ?string
+    private function normalizePercentage($rarityPercent, ?float $normalizedValue): ?string
     {
         if ($rarityPercent === null) {
             return null;
         }
 
+        if ($normalizedValue !== null) {
+            return number_format($normalizedValue, 2, '.', '');
+        }
+
         if (is_string($rarityPercent)) {
-            return trim($rarityPercent);
+            $rarityPercent = trim($rarityPercent);
+
+            if ($rarityPercent === '') {
+                return null;
+            }
+
+            return $rarityPercent;
         }
 
         if (is_int($rarityPercent) || is_float($rarityPercent)) {
-            return (string) $rarityPercent;
+            return number_format((float) $rarityPercent, 2, '.', '');
         }
 
         return null;
