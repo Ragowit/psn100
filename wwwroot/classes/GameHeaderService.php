@@ -186,7 +186,7 @@ class GameHeaderService
         if ($psnprofilesId !== null) {
             $note = $this->getPsnpPlusNote($psnprofilesId);
             if ($note !== null) {
-                return $note;
+                return $this->formatPsnpPlusNote($note);
             }
         }
 
@@ -196,7 +196,7 @@ class GameHeaderService
             if ($parentPsnprofilesId !== null && $parentPsnprofilesId !== $psnprofilesId) {
                 $note = $this->getPsnpPlusNote($parentPsnprofilesId);
                 if ($note !== null) {
-                    return $note;
+                    return $this->formatPsnpPlusNote($note);
                 }
             }
         }
@@ -207,7 +207,7 @@ class GameHeaderService
             foreach ($childPsnprofilesIds as $childPsnprofilesId) {
                 $note = $this->getPsnpPlusNote($childPsnprofilesId);
                 if ($note !== null) {
-                    return $note;
+                    return $this->formatPsnpPlusNote($note);
                 }
             }
         }
@@ -297,5 +297,40 @@ class GameHeaderService
         } catch (RuntimeException) {
             return null;
         }
+    }
+
+    private function formatPsnpPlusNote(string $note): string
+    {
+        $pattern = '/\[(?<text>[^\]]+)]\((?<url>[^)]+)\)/';
+
+        $offset = 0;
+        $formatted = '';
+
+        while (preg_match($pattern, $note, $matches, PREG_OFFSET_CAPTURE, $offset) === 1) {
+            $matchText = $matches[0][0];
+            $matchPosition = $matches[0][1];
+
+            $formatted .= htmlentities(substr($note, $offset, $matchPosition - $offset), ENT_QUOTES, 'UTF-8');
+
+            $url = trim($matches['url'][0]);
+            $linkText = $matches['text'][0];
+            $validatedUrl = filter_var($url, FILTER_VALIDATE_URL);
+
+            if ($validatedUrl !== false && preg_match('/^https?:\/\//i', $validatedUrl) === 1) {
+                $formatted .= sprintf(
+                    '<a href="%s" target="_blank" rel="noopener">%s</a>',
+                    htmlentities($validatedUrl, ENT_QUOTES, 'UTF-8'),
+                    htmlentities($linkText, ENT_QUOTES, 'UTF-8')
+                );
+            } else {
+                $formatted .= htmlentities($matchText, ENT_QUOTES, 'UTF-8');
+            }
+
+            $offset = $matchPosition + strlen($matchText);
+        }
+
+        $formatted .= htmlentities(substr($note, $offset), ENT_QUOTES, 'UTF-8');
+
+        return $formatted;
     }
 }

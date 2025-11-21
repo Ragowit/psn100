@@ -41,7 +41,7 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         ?>
         <div class="col-12">
             <div class="alert alert-info" role="alert">
-                <strong>PSNP+ note:</strong> <?= htmlentities($gameHeaderData->getPsnpPlusNote(), ENT_QUOTES, 'UTF-8'); ?>
+                <strong>PSNP+ note:</strong> <?= $gameHeaderData->getPsnpPlusNote(); ?>
             </div>
         </div>
         <?php

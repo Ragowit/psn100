@@ -217,6 +217,24 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertSame('Servers were shutdown.', $headerData->getPsnpPlusNote());
     }
 
+    public function testBuildHeaderDataConvertsPsnpPlusNoteMarkdownLinks(): void
+    {
+        $this->psnpPlusClient->withNotes([
+            555 => 'Server fix in progress. [More info](https://example.com/fix).',
+        ]);
+
+        $game = $this->createGameDetails([
+            'psnprofiles_id' => 555,
+        ]);
+
+        $headerData = $this->service->buildHeaderData($game);
+
+        $this->assertSame(
+            'Server fix in progress. <a href="https://example.com/fix" target="_blank" rel="noopener">More info</a>.',
+            $headerData->getPsnpPlusNote()
+        );
+    }
+
     public function testBuildHeaderDataFallsBackToParentPsnprofilesNote(): void
     {
         $this->insertTrophyTitle([
