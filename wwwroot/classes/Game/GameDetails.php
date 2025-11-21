@@ -12,6 +12,8 @@ class GameDetails
 
     private ?string $parentNpCommunicationId;
 
+    private ?int $psnprofilesId;
+
     private string $platform;
 
     private string $iconUrl;
@@ -62,6 +64,7 @@ class GameDetails
         $game->parentNpCommunicationId = isset($row['parent_np_communication_id'])
             ? self::toNullableString($row['parent_np_communication_id'])
             : null;
+        $game->psnprofilesId = self::toNullableInt($row['psnprofiles_id'] ?? null);
         $game->platform = (string) ($row['platform'] ?? '');
         $game->iconUrl = (string) ($row['icon_url'] ?? '');
         $game->setVersion = (string) ($row['set_version'] ?? '');
@@ -90,6 +93,21 @@ class GameDetails
         $stringValue = (string) $value;
 
         return $stringValue === '' ? null : $stringValue;
+    }
+
+    private static function toNullableInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        $stringValue = (string) $value;
+
+        return ctype_digit($stringValue) ? (int) $stringValue : null;
     }
 
     /**
@@ -136,6 +154,16 @@ class GameDetails
     public function getParentNpCommunicationId(): ?string
     {
         return $this->parentNpCommunicationId;
+    }
+
+    public function getPsnprofilesId(): ?int
+    {
+        return $this->psnprofilesId;
+    }
+
+    public function hasPsnprofilesId(): bool
+    {
+        return $this->psnprofilesId !== null;
     }
 
     public function getPlatform(): string

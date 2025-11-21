@@ -7,14 +7,18 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
 require_once __DIR__ . '/Game/GameHeaderStack.php';
+require_once __DIR__ . '/PsnpPlusClient.php';
 
 class GameHeaderService
 {
     private PDO $database;
 
-    public function __construct(PDO $database)
+    private PsnpPlusClient $psnpPlusClient;
+
+    public function __construct(PDO $database, ?PsnpPlusClient $psnpPlusClient = null)
     {
         $this->database = $database;
+        $this->psnpPlusClient = $psnpPlusClient ?? new PsnpPlusClient();
     }
 
     public function buildHeaderData(GameDetails $game): GameHeaderData
@@ -43,7 +47,9 @@ class GameHeaderService
             $obsoleteReplacements = $this->fetchObsoleteReplacements($game->getObsoleteGameIds());
         }
 
-        return new GameHeaderData($parentGame, $stacks, $unobtainableTrophyCount, $obsoleteReplacements);
+        $psnpPlusNote = $this->findPsnpPlusNote($game);
+
+        return new GameHeaderData($parentGame, $stacks, $unobtainableTrophyCount, $obsoleteReplacements, $psnpPlusNote);
     }
 
     private function fetchParentGame(string $npCommunicationId): ?GameHeaderParent
@@ -172,5 +178,62 @@ class GameHeaderService
         }
 
         return $ordered;
+    }
+
+    private function findPsnpPlusNote(GameDetails $game): ?string
+    {
+        $psnprofilesId = $game->getPsnprofilesId();
+        if ($psnprofilesId !== null) {
+            try {
+                $note = $this->psnpPlusClient->getNote($psnprofilesId);
+                if ($note !== null) {
+                    return $note;
+                }
+            } catch (RuntimeException) {
+                return null;
+            }
+        }
+
+        $parentNpCommunicationId = $game->getParentNpCommunicationId();
+        if ($parentNpCommunicationId === null || $parentNpCommunicationId === '') {
+            return null;
+        }
+
+        $parentPsnprofilesId = $this->findPsnprofilesId($parentNpCommunicationId);
+        if ($parentPsnprofilesId === null || $parentPsnprofilesId === $psnprofilesId) {
+            return null;
+        }
+
+        try {
+            return $this->psnpPlusClient->getNote($parentPsnprofilesId);
+        } catch (RuntimeException) {
+            return null;
+        }
+    }
+
+    private function findPsnprofilesId(string $npCommunicationId): ?int
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                psnprofiles_id
+            FROM
+                trophy_title_meta
+            WHERE
+                np_communication_id = :np_communication_id
+            SQL
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $psnprofilesId = $query->fetchColumn();
+
+        if ($psnprofilesId === false) {
+            return null;
+        }
+
+        $stringValue = (string) $psnprofilesId;
+
+        return ctype_digit($stringValue) ? (int) $stringValue : null;
     }
 }

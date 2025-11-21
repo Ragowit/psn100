@@ -35,7 +35,8 @@ final class PlayerGamesServiceTest extends TestCase
                 np_communication_id TEXT PRIMARY KEY,
                 status INTEGER,
                 rarity_points INTEGER,
-                obsolete_ids TEXT
+                obsolete_ids TEXT,
+                psnprofiles_id TEXT NULL
             )
             SQL
         );

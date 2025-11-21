@@ -29,7 +29,8 @@ final class PlayerSummaryServiceTest extends TestCase
             'CREATE TABLE trophy_title_meta (
                 np_communication_id TEXT PRIMARY KEY,
                 status INTEGER NOT NULL,
-                obsolete_ids TEXT NULL
+                obsolete_ids TEXT NULL,
+                psnprofiles_id TEXT NULL
             )'
         );
 

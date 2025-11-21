@@ -86,7 +86,8 @@ final class TrophyMergeServiceMetaUsageTest extends TestCase
                 np_communication_id TEXT PRIMARY KEY,
                 parent_np_communication_id TEXT NULL,
                 status INTEGER NOT NULL DEFAULT 0,
-                obsolete_ids TEXT NULL
+                obsolete_ids TEXT NULL,
+                psnprofiles_id TEXT NULL
             )'
         );
     }

@@ -6,11 +6,46 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/GameHeaderService.php';
 require_once __DIR__ . '/../wwwroot/classes/Game/GameDetails.php';
 
+final class TestPsnpPlusClient extends PsnpPlusClient
+{
+    /**
+     * @var array<int, string>
+     */
+    private array $notes = [];
+
+    public function __construct()
+    {
+    }
+
+    /**
+     * @param array<int, string> $notes
+     */
+    public function withNotes(array $notes): void
+    {
+        $this->notes = $notes;
+    }
+
+    public function getNote(int $psnprofilesId): ?string
+    {
+        return $this->notes[$psnprofilesId] ?? null;
+    }
+
+    /**
+     * @return array<int, int[]>
+     */
+    public function getTrophiesByPsnprofilesId(): array
+    {
+        return [];
+    }
+}
+
 final class GameHeaderServiceTest extends TestCase
 {
     private PDO $database;
 
     private GameHeaderService $service;
+
+    private TestPsnpPlusClient $psnpPlusClient;
 
     protected function setUp(): void
     {
@@ -30,7 +65,8 @@ final class GameHeaderServiceTest extends TestCase
             'np_communication_id TEXT PRIMARY KEY, ' .
             'parent_np_communication_id TEXT NULL, ' .
             'region TEXT NULL, ' .
-            'obsolete_ids TEXT NULL)'
+            'obsolete_ids TEXT NULL, ' .
+            'psnprofiles_id TEXT NULL)'
         );
 
         $this->database->exec(
@@ -46,7 +82,8 @@ final class GameHeaderServiceTest extends TestCase
             'FOREIGN KEY(trophy_id) REFERENCES trophy(id))'
         );
 
-        $this->service = new GameHeaderService($this->database);
+        $this->psnpPlusClient = new TestPsnpPlusClient();
+        $this->service = new GameHeaderService($this->database, $this->psnpPlusClient);
     }
 
     public function testBuildHeaderDataIncludesParentStacksAndUnobtainableCount(): void
@@ -161,6 +198,51 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertFalse($headerData->hasUnobtainableTrophies());
         $this->assertFalse($headerData->hasObsoleteReplacements());
         $this->assertSame([], $headerData->getObsoleteReplacements());
+        $this->assertFalse($headerData->hasPsnpPlusNote());
+    }
+
+    public function testBuildHeaderDataIncludesPsnpPlusNote(): void
+    {
+        $this->psnpPlusClient->withNotes([
+            321 => 'Servers were shutdown.',
+        ]);
+
+        $game = $this->createGameDetails([
+            'psnprofiles_id' => 321,
+        ]);
+
+        $headerData = $this->service->buildHeaderData($game);
+
+        $this->assertTrue($headerData->hasPsnpPlusNote());
+        $this->assertSame('Servers were shutdown.', $headerData->getPsnpPlusNote());
+    }
+
+    public function testBuildHeaderDataFallsBackToParentPsnprofilesNote(): void
+    {
+        $this->insertTrophyTitle([
+            'id' => 999,
+            'np_communication_id' => 'PARENT-GAME',
+            'parent_np_communication_id' => null,
+            'name' => 'Parent Game',
+            'platform' => 'PS4',
+            'region' => null,
+            'psnprofiles_id' => '654',
+        ]);
+
+        $this->psnpPlusClient->withNotes([
+            654 => 'See parent entry for details.',
+        ]);
+
+        $game = $this->createGameDetails([
+            'np_communication_id' => 'CHILD-GAME',
+            'parent_np_communication_id' => 'PARENT-GAME',
+            'psnprofiles_id' => null,
+        ]);
+
+        $headerData = $this->service->buildHeaderData($game);
+
+        $this->assertTrue($headerData->hasPsnpPlusNote());
+        $this->assertSame('See parent entry for details.', $headerData->getPsnpPlusNote());
     }
 
     /**
@@ -199,7 +281,7 @@ final class GameHeaderServiceTest extends TestCase
         $statement->execute();
 
         $meta = $this->database->prepare(
-            'INSERT INTO trophy_title_meta (np_communication_id, parent_np_communication_id, region, obsolete_ids) VALUES (:np, :parent, :region, :obsolete_ids)'
+            'INSERT INTO trophy_title_meta (np_communication_id, parent_np_communication_id, region, obsolete_ids, psnprofiles_id) VALUES (:np, :parent, :region, :obsolete_ids, :psnprofiles_id)'
         );
         $meta->bindValue(':np', $row['np_communication_id'], PDO::PARAM_STR);
         if ($row['parent_np_communication_id'] === null) {
@@ -216,6 +298,11 @@ final class GameHeaderServiceTest extends TestCase
             $meta->bindValue(':obsolete_ids', $row['obsolete_ids'], PDO::PARAM_STR);
         } else {
             $meta->bindValue(':obsolete_ids', null, PDO::PARAM_NULL);
+        }
+        if (isset($row['psnprofiles_id']) && $row['psnprofiles_id'] !== null && $row['psnprofiles_id'] !== '') {
+            $meta->bindValue(':psnprofiles_id', $row['psnprofiles_id'], PDO::PARAM_STR);
+        } else {
+            $meta->bindValue(':psnprofiles_id', null, PDO::PARAM_NULL);
         }
         $meta->execute();
     }
@@ -245,6 +332,7 @@ final class GameHeaderServiceTest extends TestCase
             'status' => 0,
             'rarity_points' => 0,
             'obsolete_ids' => null,
+            'psnprofiles_id' => null,
         ];
 
         return GameDetails::fromArray(array_merge($defaults, $overrides));

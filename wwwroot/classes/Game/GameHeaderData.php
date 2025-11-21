@@ -18,6 +18,8 @@ class GameHeaderData
      */
     private array $obsoleteReplacements;
 
+    private ?string $psnpPlusNote;
+
     /**
      * @param GameHeaderStack[] $stacks
      * @param GameObsoleteReplacement[] $obsoleteReplacements
@@ -26,12 +28,14 @@ class GameHeaderData
         ?GameHeaderParent $parentGame,
         array $stacks,
         int $unobtainableTrophyCount,
-        array $obsoleteReplacements
+        array $obsoleteReplacements,
+        ?string $psnpPlusNote
     ) {
         $this->parentGame = $parentGame;
         $this->stacks = $stacks;
         $this->unobtainableTrophyCount = $unobtainableTrophyCount;
         $this->obsoleteReplacements = $obsoleteReplacements;
+        $this->psnpPlusNote = $psnpPlusNote;
     }
 
     public function hasMergedParent(): bool
@@ -78,5 +82,15 @@ class GameHeaderData
     public function hasObsoleteReplacements(): bool
     {
         return $this->obsoleteReplacements !== [];
+    }
+
+    public function getPsnpPlusNote(): ?string
+    {
+        return $this->psnpPlusNote;
+    }
+
+    public function hasPsnpPlusNote(): bool
+    {
+        return $this->psnpPlusNote !== null;
     }
 }

@@ -15,7 +15,7 @@ final class GameStatusServiceTest extends TestCase
         $this->database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT NOT NULL)');
-        $this->database->exec('CREATE TABLE trophy_title_meta (np_communication_id TEXT PRIMARY KEY, status INTEGER NOT NULL, obsolete_ids TEXT NULL)');
+        $this->database->exec('CREATE TABLE trophy_title_meta (np_communication_id TEXT PRIMARY KEY, status INTEGER NOT NULL, obsolete_ids TEXT NULL, psnprofiles_id TEXT NULL)');
         $this->database->exec('CREATE TABLE psn100_change (change_type TEXT NOT NULL, param_1 INTEGER NOT NULL)');
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id) VALUES (1, 'NPWR-1')");
         $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, status) VALUES ('NPWR-1', 0)");
