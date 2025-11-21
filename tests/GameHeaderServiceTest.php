@@ -282,6 +282,66 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertSame('Child stack note.', $headerData->getPsnpPlusNote());
     }
 
+    public function testBuildHeaderDataPrefersRegionalOrderForMergePsnpPlusNotes(): void
+    {
+        $this->insertTrophyTitle([
+            'id' => 601,
+            'np_communication_id' => 'STACK-EU',
+            'parent_np_communication_id' => 'MERGE-600',
+            'name' => 'Stack EU',
+            'platform' => 'PS5',
+            'region' => 'EU',
+            'psnprofiles_id' => '3001',
+        ]);
+
+        $this->insertTrophyTitle([
+            'id' => 602,
+            'np_communication_id' => 'STACK-NA',
+            'parent_np_communication_id' => 'MERGE-600',
+            'name' => 'Stack NA',
+            'platform' => 'PS5',
+            'region' => 'NA',
+            'psnprofiles_id' => '3002',
+        ]);
+
+        $this->insertTrophyTitle([
+            'id' => 603,
+            'np_communication_id' => 'STACK-NO-REGION',
+            'parent_np_communication_id' => 'MERGE-600',
+            'name' => 'Stack Without Region',
+            'platform' => 'PS5',
+            'region' => null,
+            'psnprofiles_id' => '3003',
+        ]);
+
+        $this->insertTrophyTitle([
+            'id' => 604,
+            'np_communication_id' => 'STACK-HK',
+            'parent_np_communication_id' => 'MERGE-600',
+            'name' => 'Stack HK',
+            'platform' => 'PS5',
+            'region' => 'HK',
+            'psnprofiles_id' => '3004',
+        ]);
+
+        $this->psnpPlusClient->withNotes([
+            3001 => 'EU note.',
+            3002 => 'NA note.',
+            3003 => 'No region note.',
+            3004 => 'HK note.',
+        ]);
+
+        $game = $this->createGameDetails([
+            'np_communication_id' => 'MERGE-600',
+            'psnprofiles_id' => null,
+        ]);
+
+        $headerData = $this->service->buildHeaderData($game);
+
+        $this->assertTrue($headerData->hasPsnpPlusNote());
+        $this->assertSame('NA note.', $headerData->getPsnpPlusNote());
+    }
+
     /**
      * @param array{status:int,np_communication_id:string} $trophy
      */
