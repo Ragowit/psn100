@@ -28,8 +28,8 @@ class PsnpPlusClient
     {
         $this->cacheFilePath = $this->normalizeCachePath(
             $cacheFilePath
-            ?? $this->loadConfiguredCachePath()
             ?? ($_ENV['PSNP_PLUS_CACHE_PATH'] ?? null)
+            ?? $this->loadConfiguredCachePath()
         );
     }
 
@@ -185,7 +185,7 @@ class PsnpPlusClient
 
         $cachePath = $configuration['cache_path'] ?? null;
         if (is_string($cachePath)) {
-            self::$configuredCachePath = $cachePath;
+            self::$configuredCachePath = $this->normalizeCachePath($cachePath);
         }
 
         return self::$configuredCachePath;
