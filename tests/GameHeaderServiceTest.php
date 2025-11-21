@@ -245,6 +245,43 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertSame('See parent entry for details.', $headerData->getPsnpPlusNote());
     }
 
+    public function testBuildHeaderDataUsesChildNoteForMergeTitles(): void
+    {
+        $this->insertTrophyTitle([
+            'id' => 555,
+            'np_communication_id' => 'STACK-WITH-NOTE',
+            'parent_np_communication_id' => 'MERGE-555',
+            'name' => 'Stack With Note',
+            'platform' => 'PS5',
+            'region' => 'US',
+            'psnprofiles_id' => '888',
+        ]);
+
+        $this->insertTrophyTitle([
+            'id' => 556,
+            'np_communication_id' => 'STACK-WITHOUT-NOTE',
+            'parent_np_communication_id' => 'MERGE-555',
+            'name' => 'Stack Without Note',
+            'platform' => 'PS4',
+            'region' => null,
+            'psnprofiles_id' => null,
+        ]);
+
+        $this->psnpPlusClient->withNotes([
+            888 => 'Child stack note.',
+        ]);
+
+        $game = $this->createGameDetails([
+            'np_communication_id' => 'MERGE-555',
+            'psnprofiles_id' => null,
+        ]);
+
+        $headerData = $this->service->buildHeaderData($game);
+
+        $this->assertTrue($headerData->hasPsnpPlusNote());
+        $this->assertSame('Child stack note.', $headerData->getPsnpPlusNote());
+    }
+
     /**
      * @param array{status:int,np_communication_id:string} $trophy
      */

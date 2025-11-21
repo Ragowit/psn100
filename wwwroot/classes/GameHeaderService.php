@@ -184,31 +184,35 @@ class GameHeaderService
     {
         $psnprofilesId = $game->getPsnprofilesId();
         if ($psnprofilesId !== null) {
-            try {
-                $note = $this->psnpPlusClient->getNote($psnprofilesId);
-                if ($note !== null) {
-                    return $note;
-                }
-            } catch (RuntimeException) {
-                return null;
+            $note = $this->getPsnpPlusNote($psnprofilesId);
+            if ($note !== null) {
+                return $note;
             }
         }
 
         $parentNpCommunicationId = $game->getParentNpCommunicationId();
-        if ($parentNpCommunicationId === null || $parentNpCommunicationId === '') {
-            return null;
+        if ($parentNpCommunicationId !== null && $parentNpCommunicationId !== '') {
+            $parentPsnprofilesId = $this->findPsnprofilesId($parentNpCommunicationId);
+            if ($parentPsnprofilesId !== null && $parentPsnprofilesId !== $psnprofilesId) {
+                $note = $this->getPsnpPlusNote($parentPsnprofilesId);
+                if ($note !== null) {
+                    return $note;
+                }
+            }
         }
 
-        $parentPsnprofilesId = $this->findPsnprofilesId($parentNpCommunicationId);
-        if ($parentPsnprofilesId === null || $parentPsnprofilesId === $psnprofilesId) {
-            return null;
+        $npCommunicationId = $game->getNpCommunicationId();
+        if ($npCommunicationId !== '' && str_starts_with($npCommunicationId, 'MERGE')) {
+            $childPsnprofilesIds = $this->findChildPsnprofilesIds($npCommunicationId);
+            foreach ($childPsnprofilesIds as $childPsnprofilesId) {
+                $note = $this->getPsnpPlusNote($childPsnprofilesId);
+                if ($note !== null) {
+                    return $note;
+                }
+            }
         }
 
-        try {
-            return $this->psnpPlusClient->getNote($parentPsnprofilesId);
-        } catch (RuntimeException) {
-            return null;
-        }
+        return null;
     }
 
     private function findPsnprofilesId(string $npCommunicationId): ?int
@@ -235,5 +239,51 @@ class GameHeaderService
         $stringValue = (string) $psnprofilesId;
 
         return ctype_digit($stringValue) ? (int) $stringValue : null;
+    }
+
+    /**
+     * @return int[]
+     */
+    private function findChildPsnprofilesIds(string $parentNpCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                psnprofiles_id
+            FROM
+                trophy_title_meta
+            WHERE
+                parent_np_communication_id = :parent_np_communication_id
+                AND psnprofiles_id IS NOT NULL
+            SQL
+        );
+        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $rows = $query->fetchAll(PDO::FETCH_COLUMN);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $psnprofilesIds = [];
+        foreach ($rows as $psnprofilesId) {
+            $stringValue = (string) $psnprofilesId;
+            if ($stringValue === '' || !ctype_digit($stringValue)) {
+                continue;
+            }
+
+            $psnprofilesIds[] = (int) $stringValue;
+        }
+
+        return array_values(array_unique($psnprofilesIds));
+    }
+
+    private function getPsnpPlusNote(int $psnprofilesId): ?string
+    {
+        try {
+            return $this->psnpPlusClient->getNote($psnprofilesId);
+        } catch (RuntimeException) {
+            return null;
+        }
     }
 }
