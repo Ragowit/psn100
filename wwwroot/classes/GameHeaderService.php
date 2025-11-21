@@ -255,6 +255,18 @@ class GameHeaderService
             WHERE
                 parent_np_communication_id = :parent_np_communication_id
                 AND psnprofiles_id IS NOT NULL
+            ORDER BY
+                CASE
+                    WHEN region = 'NA' THEN 0
+                    WHEN region = 'EU' THEN 1
+                    WHEN region IS NULL THEN 2
+                    WHEN region = 'HK' THEN 3
+                    WHEN region = 'JP' THEN 4
+                    WHEN region = 'AS' THEN 5
+                    ELSE 6
+                END,
+                region,
+                psnprofiles_id
             SQL
         );
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
