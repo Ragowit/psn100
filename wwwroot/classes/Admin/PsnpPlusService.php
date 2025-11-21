@@ -7,11 +7,10 @@ require_once __DIR__ . '/PsnpPlusGameDifference.php';
 require_once __DIR__ . '/PsnpPlusFixedGame.php';
 require_once __DIR__ . '/PsnpPlusMissingGame.php';
 require_once __DIR__ . '/PsnpPlusGame.php';
+require_once __DIR__ . '/../PsnpPlusClient.php';
 
 class PsnpPlusService
 {
-    private const DATA_URL = 'https://psnp-plus.netlify.app/list.min.json';
-
     /**
      * @var int[]
      */
@@ -26,9 +25,12 @@ class PsnpPlusService
 
     private PDO $database;
 
-    public function __construct(PDO $database)
+    private PsnpPlusClient $psnpPlusClient;
+
+    public function __construct(PDO $database, ?PsnpPlusClient $psnpPlusClient = null)
     {
         $this->database = $database;
+        $this->psnpPlusClient = $psnpPlusClient ?? new PsnpPlusClient();
     }
 
     public function buildReport(): PsnpPlusReport
@@ -86,27 +88,7 @@ class PsnpPlusService
      */
     private function fetchPsnpPlusList(): array
     {
-        $json = @file_get_contents(self::DATA_URL);
-
-        if ($json === false) {
-            throw new RuntimeException('Unable to download PSNP+ data.');
-        }
-
-        $decoded = json_decode($json, true);
-        if (!is_array($decoded) || !isset($decoded['list']) || !is_array($decoded['list'])) {
-            throw new RuntimeException('Invalid PSNP+ data received.');
-        }
-
-        $result = [];
-        foreach ($decoded['list'] as $psnprofilesId => $trophies) {
-            if (!is_array($trophies)) {
-                $trophies = [];
-            }
-
-            $result[(int) $psnprofilesId] = array_map('intval', $trophies);
-        }
-
-        return $result;
+        return $this->psnpPlusClient->getTrophiesByPsnprofilesId();
     }
 
     private function isUnreleasedGame(int $psnprofilesId): bool

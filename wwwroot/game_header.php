@@ -37,6 +37,16 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         <?php
     }
 
+    if ($gameHeaderData->hasPsnpPlusNote()) {
+        ?>
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                <strong>PSNP+ note:</strong> <?= htmlentities($gameHeaderData->getPsnpPlusNote(), ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        </div>
+        <?php
+    }
+
     if ($gameHeaderData->hasObsoleteReplacements()) {
         $replacementLinks = [];
         foreach ($gameHeaderData->getObsoleteReplacements() as $replacement) {
