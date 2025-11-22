@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 07, 2025 at 09:07 PM
+-- Generation Time: Nov 22, 2025 at 12:30 PM
 -- Server version: 8.4.7
 -- PHP Version: 8.4.14
 
@@ -49,26 +49,26 @@ CREATE TABLE `player` (
   `progress` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `points` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_rarity_rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `common` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `uncommon` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `status` tinyint UNSIGNED NOT NULL DEFAULT '99',
+  `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `trophy_count_sony` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_common` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_uncommon` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `status` tinyint UNSIGNED NOT NULL DEFAULT '99',
-  `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `trophy_count_sony` mediumint UNSIGNED NOT NULL DEFAULT '0'
+  `in_game_legendary` mediumint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -447,7 +447,9 @@ ALTER TABLE `player_ranking`
   ADD KEY `rarity_ranking_country` (`rarity_ranking_country`),
   ADD KEY `idx_pr_account_id_ranking` (`account_id`,`ranking`),
   ADD KEY `idx_pr_ranking_account` (`ranking`,`account_id`),
-  ADD KEY `idx_pr_rarity_ranking_account` (`rarity_ranking`,`account_id`);
+  ADD KEY `idx_pr_rarity_ranking_account` (`rarity_ranking`,`account_id`),
+  ADD KEY `in_game_rarity_ranking` (`in_game_rarity_ranking`),
+  ADD KEY `in_game_rarity_ranking_country` (`in_game_rarity_ranking_country`);
 
 --
 -- Indexes for table `player_report`
@@ -533,7 +535,8 @@ ALTER TABLE `trophy_merge`
 --
 ALTER TABLE `trophy_meta`
   ADD PRIMARY KEY (`trophy_id`),
-  ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`);
+  ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`),
+  ADD KEY `idx_tm_status_igrp` (`status`,`in_game_rarity_percent`);
 
 --
 -- Indexes for table `trophy_title`
@@ -578,7 +581,7 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1581022;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1582344;
 
 --
 -- AUTO_INCREMENT for table `player_report`
@@ -590,13 +593,13 @@ ALTER TABLE `player_report`
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17122;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20385;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49055;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50524;
 
 --
 -- AUTO_INCREMENT for table `setting`
@@ -608,25 +611,25 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2699977;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2714072;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84581;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85395;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59894;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60286;
 
 --
 -- AUTO_INCREMENT for table `trophy_title_history`
 --
 ALTER TABLE `trophy_title_history`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69190;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69765;
 
 --
 -- Constraints for dumped tables
