@@ -203,8 +203,13 @@ require_once("header.php");
                                                 }
 
                                                 echo '<div class="text-body-secondary small">In-Game: '
-                                                    . number_format($playerGame->getInGameRarityPoints())
-                                                    . '</div>';
+                                                    . number_format($playerGame->getInGameRarityPoints());
+
+                                                if (!$playerGame->isCompleted()) {
+                                                    echo '/' . number_format($playerGame->getMaxInGameRarityPoints());
+                                                }
+
+                                                echo '</div>';
                                             } elseif ($playerGame->getStatus() == 1) {
                                                 echo "<span class=\"badge rounded-pill text-bg-warning\">Delisted</span>";
                                             } elseif ($playerGame->getStatus() == 3) {
