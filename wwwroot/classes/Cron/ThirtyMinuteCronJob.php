@@ -1603,7 +1603,13 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                     IFNULL(SUM(uncommon), 0) AS uncommon,
                                     IFNULL(SUM(rare), 0) AS rare,
                                     IFNULL(SUM(epic), 0) AS epic,
-                                    IFNULL(SUM(legendary), 0) AS legendary
+                                    IFNULL(SUM(legendary), 0) AS legendary,
+                                    IFNULL(SUM(in_game_rarity_points), 0) AS in_game_rarity_points,
+                                    IFNULL(SUM(in_game_common), 0) AS in_game_common,
+                                    IFNULL(SUM(in_game_uncommon), 0) AS in_game_uncommon,
+                                    IFNULL(SUM(in_game_rare), 0) AS in_game_rare,
+                                    IFNULL(SUM(in_game_epic), 0) AS in_game_epic,
+                                    IFNULL(SUM(in_game_legendary), 0) AS in_game_legendary
                                 FROM
                                     trophy_title_player
                                 WHERE
@@ -1619,36 +1625,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 p.uncommon = rarity.uncommon,
                                 p.rare = rarity.rare,
                                 p.epic = rarity.epic,
-                                p.legendary = rarity.legendary
-                            WHERE
-                                p.account_id = :account_id AND p.status = 0");
-                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                        $query->execute();
-
-                        // Update user total in-game rarity points
-                        $query = $this->database->prepare("WITH
-                                rarity AS(
-                                SELECT
-                                    IFNULL(SUM(tm.in_game_rarity_point), 0) AS rarity_points,
-                                    IFNULL(SUM(tm.in_game_rarity_name = 'COMMON'), 0) AS in_game_common,
-                                    IFNULL(SUM(tm.in_game_rarity_name = 'UNCOMMON'), 0) AS in_game_uncommon,
-                                    IFNULL(SUM(tm.in_game_rarity_name = 'RARE'), 0) AS in_game_rare,
-                                    IFNULL(SUM(tm.in_game_rarity_name = 'EPIC'), 0) AS in_game_epic,
-                                    IFNULL(SUM(tm.in_game_rarity_name = 'LEGENDARY'), 0) AS in_game_legendary
-                                FROM
-                                    trophy_earned
-                                JOIN trophy t ON t.np_communication_id = trophy_earned.np_communication_id
-                                    AND t.order_id = trophy_earned.order_id
-                                JOIN trophy_meta tm ON tm.trophy_id = t.id
-                                WHERE
-                                    trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
-                                ORDER BY NULL
-                            )
-                            UPDATE
-                                player p,
-                                rarity
-                            SET
-                                p.in_game_rarity_points = rarity.rarity_points,
+                                p.legendary = rarity.legendary,
+                                p.in_game_rarity_points = rarity.in_game_rarity_points,
                                 p.in_game_common = rarity.in_game_common,
                                 p.in_game_uncommon = rarity.in_game_uncommon,
                                 p.in_game_rare = rarity.in_game_rare,
