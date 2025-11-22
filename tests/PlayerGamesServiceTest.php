@@ -52,7 +52,13 @@ final class PlayerGamesServiceTest extends TestCase
                 platinum INTEGER,
                 progress INTEGER,
                 last_updated_date TEXT,
-                rarity_points INTEGER
+                rarity_points INTEGER,
+                in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
+                in_game_common INTEGER NOT NULL DEFAULT 0,
+                in_game_uncommon INTEGER NOT NULL DEFAULT 0,
+                in_game_rare INTEGER NOT NULL DEFAULT 0,
+                in_game_epic INTEGER NOT NULL DEFAULT 0,
+                in_game_legendary INTEGER NOT NULL DEFAULT 0
             )
             SQL
         );

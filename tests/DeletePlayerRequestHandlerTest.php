@@ -166,7 +166,15 @@ final class DeletePlayerRequestHandlerTest extends TestCase
         )');
         $this->database->exec('CREATE TABLE trophy_title_player (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            account_id TEXT NOT NULL
+            account_id TEXT NOT NULL,
+            np_communication_id TEXT,
+            rarity_points INTEGER NOT NULL DEFAULT 0,
+            in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
+            in_game_common INTEGER NOT NULL DEFAULT 0,
+            in_game_uncommon INTEGER NOT NULL DEFAULT 0,
+            in_game_rare INTEGER NOT NULL DEFAULT 0,
+            in_game_epic INTEGER NOT NULL DEFAULT 0,
+            in_game_legendary INTEGER NOT NULL DEFAULT 0
         )');
         $this->database->exec('CREATE TABLE player (
             account_id TEXT PRIMARY KEY,

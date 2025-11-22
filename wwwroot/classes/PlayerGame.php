@@ -22,6 +22,7 @@ class PlayerGame
     private int $progress;
     private string $lastUpdatedDate;
     private int $rarityPoints;
+    private int $inGameRarityPoints;
     private ?string $completionDurationLabel;
 
     private function __construct()
@@ -40,6 +41,7 @@ class PlayerGame
         $this->progress = 0;
         $this->lastUpdatedDate = '';
         $this->rarityPoints = 0;
+        $this->inGameRarityPoints = 0;
         $this->completionDurationLabel = null;
     }
 
@@ -63,6 +65,7 @@ class PlayerGame
         $game->progress = (int) ($row['progress'] ?? 0);
         $game->lastUpdatedDate = (string) ($row['last_updated_date'] ?? '');
         $game->rarityPoints = (int) ($row['rarity_points'] ?? 0);
+        $game->inGameRarityPoints = (int) ($row['in_game_rarity_points'] ?? 0);
         $game->completionDurationLabel = $completionDurationLabel;
 
         return $game;
@@ -178,6 +181,11 @@ class PlayerGame
     public function getRarityPoints(): int
     {
         return $this->rarityPoints;
+    }
+
+    public function getInGameRarityPoints(): int
+    {
+        return $this->inGameRarityPoints;
     }
 
     public function getMaxRarityPoints(): int

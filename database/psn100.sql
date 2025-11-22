@@ -399,7 +399,13 @@ CREATE TABLE `trophy_title_player` (
   `uncommon` smallint UNSIGNED NOT NULL DEFAULT '0',
   `rare` smallint UNSIGNED NOT NULL DEFAULT '0',
   `epic` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
+  `legendary` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_common` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_uncommon` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rare` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_epic` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

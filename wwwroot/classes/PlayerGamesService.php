@@ -69,6 +69,7 @@ class PlayerGamesService
             'ttp.progress',
             'ttp.last_updated_date',
             'ttp.rarity_points',
+            'ttp.in_game_rarity_points',
         ];
 
         $columns = $this->searchQueryHelper->addFulltextSelectColumns(
