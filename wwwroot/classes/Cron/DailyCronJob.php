@@ -49,7 +49,7 @@ class DailyCronJob implements CronJobInterface
                     (COUNT(p.account_id) / 10000.0) * 100 AS rarity_percent,
                     CASE
                         WHEN ttm.owners = 0 THEN 0
-                        ELSE (COUNT(p.account_id) / ttm.owners) * 100
+                        ELSE LEAST((COUNT(p.account_id) / ttm.owners) * 100, 100.0)
                     END AS in_game_rarity_percent
                 FROM trophy t
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
