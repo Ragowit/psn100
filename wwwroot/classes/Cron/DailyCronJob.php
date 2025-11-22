@@ -61,7 +61,7 @@ class DailyCronJob implements CronJobInterface
                     ON p.account_id = te.account_id
                         AND p.ranking <= 10000
                 WHERE t.np_communication_id = :np_communication_id
-                GROUP BY t.id, ttm.owners
+                GROUP BY t.id
                 ORDER BY NULL
             )
             UPDATE trophy_meta tm
