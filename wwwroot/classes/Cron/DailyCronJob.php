@@ -46,8 +46,13 @@ class DailyCronJob implements CronJobInterface
                 SELECT
                     t.id AS trophy_id,
                     COUNT(p.account_id) AS trophy_owners,
-                    (COUNT(p.account_id) / 10000.0) * 100 AS rarity_percent
+                    (COUNT(p.account_id) / 10000.0) * 100 AS rarity_percent,
+                    CASE
+                        WHEN ttm.owners = 0 THEN 0
+                        ELSE (COUNT(p.account_id) / ttm.owners) * 100
+                    END AS in_game_rarity_percent
                 FROM trophy t
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
                 LEFT JOIN trophy_earned te
                     ON te.np_communication_id = t.np_communication_id
                         AND te.order_id = t.order_id
@@ -79,21 +84,18 @@ class DailyCronJob implements CronJobInterface
                     WHEN r.rarity_percent > 0.02 THEN 'EPIC'
                     ELSE 'LEGENDARY'
                 END,
-                tm.in_game_rarity_percent = CASE
-                    WHEN ttm.owners = 0 THEN 0
-                    ELSE (r.trophy_owners / ttm.owners) * 100
-                END,
+                tm.in_game_rarity_percent = r.in_game_rarity_percent,
                 tm.in_game_rarity_point = IF(
                     tm.status = 0 AND ttm.status = 0 AND ttm.owners > 0,
-                    IF(tm.in_game_rarity_percent = 0, 99999, FLOOR(1 / (tm.in_game_rarity_percent / 100) - 1)),
+                    IF(r.in_game_rarity_percent = 0, 99999, FLOOR(1 / (r.in_game_rarity_percent / 100) - 1)),
                     0
                 ),
                 tm.in_game_rarity_name = CASE
                     WHEN tm.status != 0 OR ttm.status != 0 THEN 'NONE'
-                    WHEN tm.in_game_rarity_percent <= 1 THEN 'LEGENDARY'
-                    WHEN tm.in_game_rarity_percent <= 5 THEN 'EPIC'
-                    WHEN tm.in_game_rarity_percent <= 20 THEN 'RARE'
-                    WHEN tm.in_game_rarity_percent <= 60 THEN 'UNCOMMON'
+                    WHEN r.in_game_rarity_percent <= 1 THEN 'LEGENDARY'
+                    WHEN r.in_game_rarity_percent <= 5 THEN 'EPIC'
+                    WHEN r.in_game_rarity_percent <= 20 THEN 'RARE'
+                    WHEN r.in_game_rarity_percent <= 60 THEN 'UNCOMMON'
                     ELSE 'COMMON'
                 END
             WHERE t.np_communication_id = :np_communication_id"
