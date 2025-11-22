@@ -42,7 +42,19 @@ final class PlayerSummaryServiceTest extends TestCase
                 bronze INTEGER NOT NULL,
                 silver INTEGER NOT NULL,
                 gold INTEGER NOT NULL,
-                platinum INTEGER NOT NULL
+                platinum INTEGER NOT NULL,
+                rarity_points INTEGER NOT NULL DEFAULT 0,
+                common INTEGER NOT NULL DEFAULT 0,
+                uncommon INTEGER NOT NULL DEFAULT 0,
+                rare INTEGER NOT NULL DEFAULT 0,
+                epic INTEGER NOT NULL DEFAULT 0,
+                legendary INTEGER NOT NULL DEFAULT 0,
+                in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
+                in_game_common INTEGER NOT NULL DEFAULT 0,
+                in_game_uncommon INTEGER NOT NULL DEFAULT 0,
+                in_game_rare INTEGER NOT NULL DEFAULT 0,
+                in_game_epic INTEGER NOT NULL DEFAULT 0,
+                in_game_legendary INTEGER NOT NULL DEFAULT 0
             )'
         );
 

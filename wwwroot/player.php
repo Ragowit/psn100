@@ -201,6 +201,10 @@ require_once("header.php");
                                                 if (!$playerGame->isCompleted()) {
                                                     echo '/'. number_format($playerGame->getMaxRarityPoints());
                                                 }
+
+                                                echo '<div class="text-body-secondary small">In-Game: '
+                                                    . number_format($playerGame->getInGameRarityPoints())
+                                                    . '</div>';
                                             } elseif ($playerGame->getStatus() == 1) {
                                                 echo "<span class=\"badge rounded-pill text-bg-warning\">Delisted</span>";
                                             } elseif ($playerGame->getStatus() == 3) {

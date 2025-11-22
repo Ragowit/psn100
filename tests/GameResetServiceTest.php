@@ -207,7 +207,17 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec('CREATE TABLE trophy_merge (parent_np_communication_id TEXT)');
         $this->database->exec('CREATE TABLE trophy_earned (np_communication_id TEXT)');
         $this->database->exec('CREATE TABLE trophy_group_player (np_communication_id TEXT)');
-        $this->database->exec('CREATE TABLE trophy_title_player (np_communication_id TEXT)');
+        $this->database->exec('CREATE TABLE trophy_title_player (
+            np_communication_id TEXT,
+            account_id INTEGER,
+            rarity_points INTEGER NOT NULL DEFAULT 0,
+            in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
+            in_game_common INTEGER NOT NULL DEFAULT 0,
+            in_game_uncommon INTEGER NOT NULL DEFAULT 0,
+            in_game_rare INTEGER NOT NULL DEFAULT 0,
+            in_game_epic INTEGER NOT NULL DEFAULT 0,
+            in_game_legendary INTEGER NOT NULL DEFAULT 0
+        )');
         $this->database->exec('CREATE TABLE trophy (np_communication_id TEXT)');
         $this->database->exec('CREATE TABLE trophy_group (np_communication_id TEXT)');
         $this->database->exec('CREATE TABLE psn100_change (change_type TEXT, param_1 INTEGER, extra TEXT)');

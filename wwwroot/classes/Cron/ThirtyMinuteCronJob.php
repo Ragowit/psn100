@@ -1551,11 +1551,17 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 SELECT
                                     trophy_earned.np_communication_id,
                                     SUM(tm.rarity_point) AS points,
+                                    SUM(tm.in_game_rarity_point) AS in_game_points,
                                     SUM(tm.rarity_name = 'COMMON') common,
                                     SUM(tm.rarity_name = 'UNCOMMON') uncommon,
                                     SUM(tm.rarity_name = 'RARE') rare,
                                     SUM(tm.rarity_name = 'EPIC') epic,
-                                    SUM(tm.rarity_name = 'LEGENDARY') legendary
+                                    SUM(tm.rarity_name = 'LEGENDARY') legendary,
+                                    SUM(tm.in_game_rarity_name = 'COMMON') in_game_common,
+                                    SUM(tm.in_game_rarity_name = 'UNCOMMON') in_game_uncommon,
+                                    SUM(tm.in_game_rarity_name = 'RARE') in_game_rare,
+                                    SUM(tm.in_game_rarity_name = 'EPIC') in_game_epic,
+                                    SUM(tm.in_game_rarity_name = 'LEGENDARY') in_game_legendary
                                 FROM
                                     trophy_earned
                                 JOIN trophy t ON t.np_communication_id = trophy_earned.np_communication_id
@@ -1572,11 +1578,17 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 rarity
                             SET
                                 ttp.rarity_points = rarity.points,
+                                ttp.in_game_rarity_points = rarity.in_game_points,
                                 ttp.common = rarity.common,
                                 ttp.uncommon = rarity.uncommon,
                                 ttp.rare = rarity.rare,
                                 ttp.epic = rarity.epic,
-                                ttp.legendary = rarity.legendary
+                                ttp.legendary = rarity.legendary,
+                                ttp.in_game_common = rarity.in_game_common,
+                                ttp.in_game_uncommon = rarity.in_game_uncommon,
+                                ttp.in_game_rare = rarity.in_game_rare,
+                                ttp.in_game_epic = rarity.in_game_epic,
+                                ttp.in_game_legendary = rarity.in_game_legendary
                             WHERE
                                 ttp.account_id = :account_id AND ttp.np_communication_id = rarity.np_communication_id");
                         $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
