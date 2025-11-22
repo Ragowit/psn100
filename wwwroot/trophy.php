@@ -34,7 +34,8 @@ $firstAchievers = $trophyPage->getFirstAchievers();
 $latestAchievers = $trophyPage->getLatestAchievers();
 $metaData = $trophyPage->getMetaData();
 $title = $trophyPage->getPageTitle();
-$trophyRarity = $trophyPage->getTrophyRarity();
+$metaRarity = $trophyPage->getMetaRarity();
+$inGameRarity = $trophyPage->getInGameRarity();
 $playerOnlineId = $trophyPage->getPlayerOnlineId();
 
 require_once("header.php");
@@ -133,11 +134,25 @@ require_once("header.php");
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">
-                                    <?php if ($trophyRarity->isUnobtainable()) { ?>
-                                        <?= $trophyRarity->getLabel(); ?>
-                                    <?php } else { ?>
-                                        <?= $trophyRarity->renderSpan(); ?>
-                                    <?php } ?>
+                                    <div class="vstack gap-2">
+                                        <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                        <div>
+                                            <?php if ($metaRarity->isUnobtainable()) { ?>
+                                                <?= $metaRarity->getLabel(); ?>
+                                            <?php } else { ?>
+                                                <?= $metaRarity->renderSpan(); ?>
+                                            <?php } ?>
+                                        </div>
+
+                                        <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                        <div>
+                                            <?php if ($inGameRarity->isUnobtainable()) { ?>
+                                                <?= $inGameRarity->getLabel(); ?>
+                                            <?php } else { ?>
+                                                <?= $inGameRarity->renderSpan(); ?>
+                                            <?php } ?>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">

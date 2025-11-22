@@ -93,9 +93,15 @@ require_once('header.php');
                                     </td>
                                     <td class="text-center align-middle">
                                         <?php
-                                        $trophyRarity = $trophyRarityFormatter->format($trophy->getRarityPercent());
-                                        echo $trophyRarity->renderSpan();
+                                        $metaRarity = $trophyRarityFormatter->formatMeta($trophy->getRarityPercent());
+                                        $inGameRarity = $trophyRarityFormatter->formatInGame($trophy->getInGameRarityPercent());
                                         ?>
+                                        <div class="vstack gap-2">
+                                            <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                            <div><?= $metaRarity->renderSpan(); ?></div>
+                                            <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                            <div><?= $inGameRarity->renderSpan(); ?></div>
+                                        </div>
                                     </td>
                                     <td class="text-center align-middle">
                                         <img src="/img/trophy-<?= $trophy->getTrophyType(); ?>.svg" alt="<?= ucfirst($trophy->getTrophyType()); ?>" title="<?= ucfirst($trophy->getTrophyType()); ?>" height="50" />

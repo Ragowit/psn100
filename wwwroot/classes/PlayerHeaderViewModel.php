@@ -176,6 +176,30 @@ class PlayerHeaderViewModel
         ];
     }
 
+    /**
+     * @return PlayerLeaderboardRank[]
+     */
+    public function getInGameRarityLeaderboardRanks(): array
+    {
+        return [
+            PlayerLeaderboardRank::createWorldRank(
+                '/leaderboard/in-game-rarity',
+                $this->getOnlineId(),
+                (int) ($this->player['in_game_rarity_ranking'] ?? 0),
+                (int) ($this->player['in_game_rarity_rank_last_week'] ?? 0),
+                $this->isLeaderboardRankAvailable()
+            ),
+            PlayerLeaderboardRank::createCountryRank(
+                '/leaderboard/in-game-rarity',
+                $this->getOnlineId(),
+                $this->getCountryCode(),
+                (int) ($this->player['in_game_rarity_ranking_country'] ?? 0),
+                (int) ($this->player['in_game_rarity_rank_country_last_week'] ?? 0),
+                $this->isLeaderboardRankAvailable()
+            ),
+        ];
+    }
+
     public function hasLastUpdatedDate(): bool
     {
         $lastUpdated = $this->player['last_updated_date'] ?? null;

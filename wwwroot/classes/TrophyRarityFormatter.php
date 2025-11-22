@@ -11,6 +11,14 @@ class TrophyRarityFormatter
      */
     public function format($rarityPercent, int $status = 0): TrophyRarity
     {
+        return $this->formatMeta($rarityPercent, $status);
+    }
+
+    /**
+     * @param float|int|string|null $rarityPercent
+     */
+    public function formatMeta($rarityPercent, int $status = 0): TrophyRarity
+    {
         $value = $this->toFloat($rarityPercent);
         $percentageString = $this->normalizePercentage($rarityPercent, $value);
 
@@ -32,6 +40,39 @@ class TrophyRarityFormatter
             }
 
             if ($value <= 10) {
+                return new TrophyRarity($percentageString, 'Uncommon', 'trophy-uncommon', false);
+            }
+        }
+
+        return new TrophyRarity($percentageString, 'Common', 'trophy-common', false);
+    }
+
+    /**
+     * @param float|int|string|null $rarityPercent
+     */
+    public function formatInGame($rarityPercent, int $status = 0): TrophyRarity
+    {
+        $value = $this->toFloat($rarityPercent);
+        $percentageString = $this->normalizePercentage($rarityPercent, $value);
+
+        if ($status === 1) {
+            return new TrophyRarity($percentageString, 'Unobtainable', null, true);
+        }
+
+        if ($value !== null) {
+            if ($value <= 1) {
+                return new TrophyRarity($percentageString, 'Legendary', 'trophy-legendary', false);
+            }
+
+            if ($value <= 5) {
+                return new TrophyRarity($percentageString, 'Epic', 'trophy-epic', false);
+            }
+
+            if ($value <= 20) {
+                return new TrophyRarity($percentageString, 'Rare', 'trophy-rare', false);
+            }
+
+            if ($value <= 60) {
                 return new TrophyRarity($percentageString, 'Uncommon', 'trophy-uncommon', false);
             }
         }

@@ -36,7 +36,9 @@ class TrophyPage
 
     private string $pageTitle;
 
-    private TrophyRarity $trophyRarity;
+    private TrophyRarity $metaRarity;
+
+    private TrophyRarity $inGameRarity;
 
     /**
      * @param list<TrophyAchiever> $firstAchievers
@@ -51,7 +53,8 @@ class TrophyPage
         ?string $playerOnlineId,
         PageMetaData $metaData,
         string $pageTitle,
-        TrophyRarity $trophyRarity
+        TrophyRarity $metaRarity,
+        TrophyRarity $inGameRarity
     ) {
         $this->trophy = $trophy;
         $this->playerTrophy = $playerTrophy;
@@ -61,7 +64,8 @@ class TrophyPage
         $this->playerOnlineId = $playerOnlineId;
         $this->metaData = $metaData;
         $this->pageTitle = $pageTitle;
-        $this->trophyRarity = $trophyRarity;
+        $this->metaRarity = $metaRarity;
+        $this->inGameRarity = $inGameRarity;
     }
 
     public static function create(
@@ -84,7 +88,8 @@ class TrophyPage
             ->setUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
 
         $pageTitle = $trophyName . ' Trophy ~ PSN 100%';
-        $trophyRarity = $rarityFormatter->format($trophy->getRarityPercent(), $trophy->getStatus());
+        $metaRarity = $rarityFormatter->formatMeta($trophy->getRarityPercent(), $trophy->getStatus());
+        $inGameRarity = $rarityFormatter->formatInGame($trophy->getInGameRarityPercent(), $trophy->getStatus());
 
         $playerAccountId = null;
         $playerOnlineId = null;
@@ -122,7 +127,8 @@ class TrophyPage
             $playerOnlineId,
             $metaData,
             $pageTitle,
-            $trophyRarity
+            $metaRarity,
+            $inGameRarity
         );
     }
 
@@ -172,9 +178,14 @@ class TrophyPage
         return $this->pageTitle;
     }
 
-    public function getTrophyRarity(): TrophyRarity
+    public function getMetaRarity(): TrophyRarity
     {
-        return $this->trophyRarity;
+        return $this->metaRarity;
+    }
+
+    public function getInGameRarity(): TrophyRarity
+    {
+        return $this->inGameRarity;
     }
 
     private static function sanitizePlayer(?string $player): ?string

@@ -8,7 +8,15 @@ class PlayerRankingUpdater
     private const PRIMARY_TABLE = 'player_ranking';
     private const PREVIOUS_TABLE = 'player_ranking_old';
     private const INSERT_TEMPLATE = <<<'SQL'
-INSERT INTO %s (account_id, ranking, ranking_country, rarity_ranking, rarity_ranking_country)
+INSERT INTO %s (
+    account_id,
+    ranking,
+    ranking_country,
+    rarity_ranking,
+    rarity_ranking_country,
+    in_game_rarity_ranking,
+    in_game_rarity_ranking_country
+)
 SELECT
     account_id,
     RANK() OVER (
@@ -24,7 +32,14 @@ SELECT
     RANK() OVER (
         PARTITION BY country
         ORDER BY `rarity_points` DESC
-    ) AS rarity_ranking_country
+    ) AS rarity_ranking_country,
+    RANK() OVER (
+        ORDER BY `in_game_rarity_points` DESC
+    ) AS in_game_rarity_ranking,
+    RANK() OVER (
+        PARTITION BY country
+        ORDER BY `in_game_rarity_points` DESC
+    ) AS in_game_rarity_ranking_country
 FROM player
 WHERE `status` = 0
 SQL;

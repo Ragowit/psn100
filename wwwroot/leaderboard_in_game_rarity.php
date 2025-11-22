@@ -1,25 +1,26 @@
 <?php
-require_once 'classes/Leaderboard/TrophyLeaderboardPageContext.php';
+require_once 'classes/Leaderboard/InGameRarityLeaderboardPageContext.php';
 
-$trophyLeaderboardPageContext = TrophyLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
-$title = $trophyLeaderboardPageContext->getTitle();
+$leaderboardPageContext = InGameRarityLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
+$title = $leaderboardPageContext->getTitle();
 require_once("header.php");
 
-$playerLeaderboardPage = $trophyLeaderboardPageContext->getLeaderboardPage();
-$rows = $trophyLeaderboardPageContext->getRows();
-$filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
+$playerLeaderboardPage = $leaderboardPageContext->getLeaderboardPage();
+$rows = $leaderboardPageContext->getRows();
+$filterParameters = $leaderboardPageContext->getFilterQueryParameters();
+$shouldShowCountryRank = $leaderboardPageContext->shouldShowCountryRank();
 ?>
 
 <main class="container">
     <div class="row">
         <div class="col-12">
             <div class="hstack gap-3">
-                <h1>PSN Trophy Leaderboard</h1>
+                <h1>PSN Rarity (In-Game) Leaderboard</h1>
                 <div class="bg-body-tertiary p-3 rounded">
                     <div class="btn-group">
-                        <a class="btn btn-primary active" href="/leaderboard/trophy">Trophy</a>
+                        <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($filterParameters); ?>">Trophy</a>
                         <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity (Meta)</a>
-                        <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (In-Game)</a>
+                        <a class="btn btn-primary active" href="/leaderboard/in-game-rarity">Rarity (In-Game)</a>
                     </div>
                 </div>
             </div>
@@ -33,25 +34,19 @@ $filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
                     <table class="table">
                         <thead>
                             <tr class="text-uppercase">
-                                <?php
-                                if ($trophyLeaderboardPageContext->shouldShowCountryRank()) {
-                                    ?>
+                                <?php if ($shouldShowCountryRank) { ?>
                                     <th scope="col" class="text-center">Country<br>Rank</th>
-                                    <?php
-                                } else {
-                                    ?>
+                                <?php } else { ?>
                                     <th scope="col" class="text-center">Rank</th>
-                                    <?php
-                                }
-                                ?>
+                                <?php } ?>
                                 <th scope="col">User</th>
                                 <th scope="col" class="text-center">Level</th>
-                                <th scope="col" class="text-center">Platinum</th>
-                                <th scope="col" class="text-center">Gold</th>
-                                <th scope="col" class="text-center">Silver</th>
-                                <th scope="col" class="text-center">Bronze</th>
-                                <th scope="col" class="text-center">Trophies</th>
-                                <th scope="col" class="text-center">Points</th>
+                                <th scope="col" class="text-center">Legendary</th>
+                                <th scope="col" class="text-center">Epic</th>
+                                <th scope="col" class="text-center">Rare</th>
+                                <th scope="col" class="text-center">Uncommon</th>
+                                <th scope="col" class="text-center">Common</th>
+                                <th scope="col" class="text-center">In-Game Points</th>
                             </tr>
                         </thead>
 
@@ -87,12 +82,12 @@ $filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
                                             <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $row->getProgress(); ?>%" aria-valuenow="<?= $row->getProgress(); ?>" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
                                     </td>
-                                    <td class="text-center align-middle"><img src="/img/trophy-platinum.svg" alt="Platinum" height="18" /> <span class="trophy-platinum"><?= number_format($row->getPlatinumCount()); ?></span></td>
-                                    <td class="text-center align-middle"><img src="/img/trophy-gold.svg" alt="Gold" height="18" /> <span class="trophy-gold"><?= number_format($row->getGoldCount()); ?></span></td>
-                                    <td class="text-center align-middle"><img src="/img/trophy-silver.svg" alt="Silver" height="18" /> <span class="trophy-silver"><?= number_format($row->getSilverCount()); ?></span></td>
-                                    <td class="text-center align-middle"><img src="/img/trophy-bronze.svg" alt="Bronze" height="18" /> <span class="trophy-bronze"><?= number_format($row->getBronzeCount()); ?></span></td>
-                                    <td class="text-center align-middle"><?= number_format($row->getTotalTrophies()); ?></td>
-                                    <td class="text-center align-middle"><?= number_format($row->getPoints()); ?></td>
+                                    <td class="text-center align-middle"><span class="trophy-legendary"><?= number_format($row->getLegendaryCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-epic"><?= number_format($row->getEpicCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-rare"><?= number_format($row->getRareCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-uncommon"><?= number_format($row->getUncommonCount()); ?></span></td>
+                                    <td class="text-center align-middle"><span class="trophy-common"><?= number_format($row->getCommonCount()); ?></span></td>
+                                    <td class="text-center align-middle"><?= number_format($row->getRarityPoints()); ?></td>
                                 </tr>
                             <?php } ?>
                         </tbody>

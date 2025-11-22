@@ -16,6 +16,7 @@ final class GameTrophyRowTest extends TestCase
             'detail' => 'Complete the tutorial.',
             'icon_url' => 'icon.png',
             'rarity_percent' => 12.5,
+            'in_game_rarity_percent' => 0.0,
             'status' => 0,
         ];
 
@@ -70,5 +71,23 @@ final class GameTrophyRowTest extends TestCase
         $row = $this->createRow(['progress_target_value' => 15, 'earned' => 1]);
 
         $this->assertSame('15/15', $row->getProgressDisplay());
+    }
+
+    public function testInGameRarityPercentUsesStoredValue(): void
+    {
+        $row = $this->createRow([
+            'in_game_rarity_percent' => 12.5,
+        ]);
+
+        $this->assertSame(12.5, $row->getInGameRarityPercent());
+    }
+
+    public function testInGameRarityPercentReturnsZeroWhenMissing(): void
+    {
+        $row = $this->createRow([
+            'in_game_rarity_percent' => 0.0,
+        ]);
+
+        $this->assertSame(0.0, $row->getInGameRarityPercent());
     }
 }

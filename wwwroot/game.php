@@ -279,14 +279,29 @@ require_once("header.php");
 
                                         <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
                                             <?php
-                                            $trophyRarity = $trophyRarityFormatter->format($trophyRow->getRarityPercent(), $trophyRow->getStatus());
+                                            $metaRarity = $trophyRarityFormatter->formatMeta(
+                                                $trophyRow->getRarityPercent(),
+                                                $trophyRow->getStatus()
+                                            );
+                                            $inGameRarity = $trophyRarityFormatter->formatInGame(
+                                                $trophyRow->getInGameRarityPercent(),
+                                                $trophyRow->getStatus()
+                                            );
 
-                                            if ($trophyRarity->isUnobtainable()) {
-                                                echo $trophyRarity->renderSpan('<br>', true);
-                                            } else {
-                                                echo $trophyRarity->renderSpan();
-                                            }
+                                            $metaContent = $metaRarity->isUnobtainable()
+                                                ? $metaRarity->renderSpan('<br>', true)
+                                                : $metaRarity->renderSpan();
+
+                                            $inGameContent = $inGameRarity->isUnobtainable()
+                                                ? $inGameRarity->renderSpan('<br>', true)
+                                                : $inGameRarity->renderSpan();
                                             ?>
+                                            <div class="vstack gap-2">
+                                                <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                                <div><?= $metaContent; ?></div>
+                                                <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                                <div><?= $inGameContent; ?></div>
+                                            </div>
                                         </td>
                                     </tr>
                                     <?php

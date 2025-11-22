@@ -25,8 +25,10 @@ class CheaterService
                 SET `status` = 1,
                     rank_last_week = 0,
                     rarity_rank_last_week = 0,
+                    in_game_rarity_rank_last_week = 0,
                     rank_country_last_week = 0,
-                    rarity_rank_country_last_week = 0
+                    rarity_rank_country_last_week = 0,
+                    in_game_rarity_rank_country_last_week = 0
                 WHERE online_id = :online_id'
             );
             $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);

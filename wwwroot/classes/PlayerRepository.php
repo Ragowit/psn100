@@ -33,7 +33,9 @@ class PlayerRepository
                 r.ranking,
                 r.rarity_ranking,
                 r.ranking_country,
-                r.rarity_ranking_country
+                r.rarity_ranking_country,
+                r.in_game_rarity_ranking,
+                r.in_game_rarity_ranking_country
             FROM
                 player p
             LEFT JOIN player_ranking r ON p.account_id = r.account_id

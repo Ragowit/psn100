@@ -28,6 +28,7 @@ class TrophyService
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
                 tm.rarity_percent,
+                tm.in_game_rarity_percent,
                 tm.status,
                 t.progress_target_value,
                 t.reward_name,

@@ -5,6 +5,7 @@ $playerHeaderViewModel = new PlayerHeaderViewModel($player, $playerSummary, $uti
 $alerts = $playerHeaderViewModel->getAlerts();
 $trophyLeaderboardRanks = $playerHeaderViewModel->getTrophyLeaderboardRanks();
 $rarityLeaderboardRanks = $playerHeaderViewModel->getRarityLeaderboardRanks();
+$inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboardRanks();
 ?>
 
 <div class="row">
@@ -82,8 +83,15 @@ $rarityLeaderboardRanks = $playerHeaderViewModel->getRarityLeaderboardRanks();
                 } else {
                     ?>
                     <?= number_format($playerHeaderViewModel->getTotalTrophies()); ?> Trophies<br>
-                    <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= number_format($player["platinum"]); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= number_format($player["gold"]); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= number_format($player["silver"]); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= number_format($player["bronze"]); ?></span><br>
-                    <span class="trophy-legendary" title="Legendary"><?= number_format($player["legendary"]); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["epic"]); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["rare"]); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["uncommon"]); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["common"]); ?></span>
+                    <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= number_format($player["platinum"]); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= number_format($player["gold"]); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= number_format($player["silver"]); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= number_format($player["bronze"]); ?></span>
+                    <div class="mt-2">
+                        <small>Rarity (Meta)</small><br>
+                        <span class="trophy-legendary" title="Legendary"><?= number_format($player["legendary"]); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["epic"]); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["rare"]); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["uncommon"]); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["common"]); ?></span>
+                    </div>
+                    <div class="mt-2">
+                        <small>Rarity (In-Game)</small><br>
+                        <span class="trophy-legendary" title="Legendary"><?= number_format($player["in_game_legendary"] ?? 0); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["in_game_epic"] ?? 0); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["in_game_rare"] ?? 0); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["in_game_uncommon"] ?? 0); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["in_game_common"] ?? 0); ?></span>
+                    </div>
                     <?php
                 }
                 ?>
@@ -219,6 +227,55 @@ $rarityLeaderboardRanks = $playerHeaderViewModel->getRarityLeaderboardRanks();
 
                     <div class="hstack gap-3">
                         <?php foreach ($rarityLeaderboardRanks as $index => $rank) { ?>
+                            <?php if ($index > 0) { ?>
+                                <div class="vr"></div>
+                            <?php } ?>
+
+                            <div class="w-50">
+                                <?= htmlspecialchars($rank->getLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                                <?php if ($rank->isAvailable()) { ?>
+                                    <h3>
+                                        <?php $rankUrl = $rank->getUrl(); ?>
+                                        <?php if ($rankUrl !== null) { ?>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($rankUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= $rank->getRank(); ?></a>
+                                        <?php } else { ?>
+                                            <?= $rank->getRank(); ?>
+                                        <?php } ?>
+                                        <?php $change = $rank->getChange(); ?>
+                                        <?php if ($change !== null && $change->shouldDisplay()) { ?>
+                                            <?php $displayText = $change->getDisplayText(); ?>
+                                            <?php if ($change->isNew()) { ?>
+                                                <span class="fs-6"><?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <?php } else { ?>
+                                                <?php $color = $change->getColor(); ?>
+                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;"<?php } ?>>
+                                                    <?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?>
+                                                </span>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </h3>
+                                <?php } else { ?>
+                                    <h3>N/A</h3>
+                                <?php } ?>
+                            </div>
+                        <?php } ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rarity (In-Game) Leaderboard -->
+            <div class="bg-body-tertiary p-3 rounded w-100">
+                <div class="vstack">
+                    <div>
+                        Rarity (In-Game) Leaderboard
+                    </div>
+
+                    <div>
+                        <hr class="m-2">
+                    </div>
+
+                    <div class="hstack gap-3">
+                        <?php foreach ($inGameRarityLeaderboardRanks as $index => $rank) { ?>
                             <?php if ($index > 0) { ?>
                                 <div class="vr"></div>
                             <?php } ?>

@@ -49,15 +49,23 @@ CREATE TABLE `player` (
   `progress` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `points` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_rank_country_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `common` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `uncommon` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_common` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_uncommon` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '99',
   `trophy_count_npwr` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `trophy_count_sony` mediumint UNSIGNED NOT NULL DEFAULT '0'
@@ -87,7 +95,9 @@ CREATE TABLE `player_ranking` (
   `ranking` mediumint UNSIGNED NOT NULL,
   `ranking_country` mediumint UNSIGNED NOT NULL,
   `rarity_ranking` mediumint UNSIGNED NOT NULL,
-  `rarity_ranking_country` mediumint UNSIGNED NOT NULL
+  `rarity_ranking_country` mediumint UNSIGNED NOT NULL,
+  `in_game_rarity_ranking` mediumint UNSIGNED NOT NULL,
+  `in_game_rarity_ranking_country` mediumint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -307,7 +317,10 @@ CREATE TABLE `trophy_meta` (
   `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `in_game_rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
+  `in_game_rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `in_game_rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'NONE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

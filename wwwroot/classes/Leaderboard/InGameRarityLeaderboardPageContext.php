@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AbstractLeaderboardPageContext.php';
-require_once __DIR__ . '/../PlayerRarityLeaderboardService.php';
-require_once __DIR__ . '/RarityLeaderboardRow.php';
+require_once __DIR__ . '/../PlayerInGameRarityLeaderboardService.php';
+require_once __DIR__ . '/InGameRarityLeaderboardRow.php';
 
-class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
+class InGameRarityLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
-    private const TITLE = 'PSN Rarity (Meta) Leaderboard ~ PSN 100%';
+    private const TITLE = 'PSN Rarity (In-Game) Leaderboard ~ PSN 100%';
 
     public function getTitle(): string
     {
@@ -17,7 +17,7 @@ class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
 
     protected static function createDataProvider(PDO $database): PlayerLeaderboardDataProvider
     {
-        return new PlayerRarityLeaderboardService($database);
+        return new PlayerInGameRarityLeaderboardService($database);
     }
 
     /**
@@ -30,7 +30,7 @@ class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
         ?string $highlightedPlayerId,
         array $filterParameters
     ): AbstractLeaderboardRow {
-        return new RarityLeaderboardRow(
+        return new InGameRarityLeaderboardRow(
             $player,
             $filter,
             $utility,
