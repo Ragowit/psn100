@@ -35,6 +35,7 @@ final class PlayerGamesServiceTest extends TestCase
                 np_communication_id TEXT PRIMARY KEY,
                 status INTEGER,
                 rarity_points INTEGER,
+                in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
                 obsolete_ids TEXT,
                 psnprofiles_id TEXT NULL
             )
@@ -151,7 +152,9 @@ final class PlayerGamesServiceTest extends TestCase
             platinum: 1,
             lastUpdatedDate: '2024-03-10 12:34:56',
             rarityPoints: 321,
-            maxRarityPoints: 654
+            maxRarityPoints: 654,
+            inGameRarityPoints: 111,
+            maxInGameRarityPoints: 222
         );
 
         $this->pdo->exec(
@@ -176,7 +179,9 @@ final class PlayerGamesServiceTest extends TestCase
         $this->assertSame(100, $game->getProgress());
         $this->assertSame('2024-03-10 12:34:56', $game->getLastUpdatedDate());
         $this->assertSame(321, $game->getRarityPoints());
+        $this->assertSame(111, $game->getInGameRarityPoints());
         $this->assertSame(654, $game->getMaxRarityPoints());
+        $this->assertSame(222, $game->getMaxInGameRarityPoints());
         $this->assertSame('Completed in 4 days, 1 hours', $game->getCompletionDurationLabel());
     }
 
@@ -195,7 +200,9 @@ final class PlayerGamesServiceTest extends TestCase
         int $platinum = 0,
         string $lastUpdatedDate = '2024-01-01 00:00:00',
         int $rarityPoints = 0,
-        int $maxRarityPoints = 0
+        int $maxRarityPoints = 0,
+        int $inGameRarityPoints = 0,
+        int $maxInGameRarityPoints = 0
     ): void {
         $statement = $this->pdo->prepare(
             'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform) '
@@ -210,18 +217,19 @@ final class PlayerGamesServiceTest extends TestCase
         ]);
 
         $statement = $this->pdo->prepare(
-            'INSERT INTO trophy_title_meta (np_communication_id, status, rarity_points) '
-            . 'VALUES (:np, :status, :rarity)'
+            'INSERT INTO trophy_title_meta (np_communication_id, status, rarity_points, in_game_rarity_points) '
+            . 'VALUES (:np, :status, :rarity, :in_game_rarity_points)'
         );
         $statement->execute([
             ':np' => $npCommunicationId,
             ':status' => $status,
             ':rarity' => $maxRarityPoints,
+            ':in_game_rarity_points' => $maxInGameRarityPoints,
         ]);
 
         $statement = $this->pdo->prepare(
-            'INSERT INTO trophy_title_player (account_id, np_communication_id, bronze, silver, gold, platinum, progress, last_updated_date, rarity_points) '
-            . 'VALUES (:account_id, :np, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date, :rarity_points)'
+            'INSERT INTO trophy_title_player (account_id, np_communication_id, bronze, silver, gold, platinum, progress, last_updated_date, rarity_points, in_game_rarity_points) '
+            . 'VALUES (:account_id, :np, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date, :rarity_points, :in_game_rarity_points)'
         );
         $statement->execute([
             ':account_id' => $accountId,
@@ -233,6 +241,7 @@ final class PlayerGamesServiceTest extends TestCase
             ':progress' => $progress,
             ':last_updated_date' => $lastUpdatedDate,
             ':rarity_points' => $rarityPoints,
+            ':in_game_rarity_points' => $inGameRarityPoints,
         ]);
 
         $statement = $this->pdo->prepare(

@@ -112,11 +112,12 @@ class DailyCronJob implements CronJobInterface
 
     private function updateTrophyTitleRarityPoints(): void
     {
-        $query = $this->database->prepare(
-            "WITH rarity AS (
-                SELECT
-                    t.np_communication_id,
-                    IFNULL(SUM(tm.rarity_point), 0) AS rarity_sum
+            $query = $this->database->prepare(
+                "WITH rarity AS (
+                    SELECT
+                        t.np_communication_id,
+                    IFNULL(SUM(tm.rarity_point), 0) AS rarity_sum,
+                    IFNULL(SUM(tm.in_game_rarity_point), 0) AS in_game_rarity_sum
                 FROM trophy t
                 JOIN trophy_meta tm ON tm.trophy_id = t.id
                 WHERE tm.status = 0
@@ -124,7 +125,9 @@ class DailyCronJob implements CronJobInterface
             )
             UPDATE trophy_title_meta ttm
             JOIN rarity r USING(np_communication_id)
-            SET ttm.rarity_points = r.rarity_sum"
+            SET
+                ttm.rarity_points = r.rarity_sum,
+                ttm.in_game_rarity_points = r.in_game_rarity_sum"
         );
 
         $query->execute();

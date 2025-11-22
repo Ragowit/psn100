@@ -62,6 +62,7 @@ class PlayerGamesService
             'tt.platform',
             'ttm.status AS status',
             'ttm.rarity_points AS max_rarity_points',
+            'ttm.in_game_rarity_points AS max_in_game_rarity_points',
             'ttp.bronze',
             'ttp.silver',
             'ttp.gold',

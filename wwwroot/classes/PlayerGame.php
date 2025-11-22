@@ -15,6 +15,7 @@ class PlayerGame
     private string $platform;
     private int $status;
     private int $maxRarityPoints;
+    private int $maxInGameRarityPoints;
     private int $bronze;
     private int $silver;
     private int $gold;
@@ -34,6 +35,7 @@ class PlayerGame
         $this->platform = '';
         $this->status = 0;
         $this->maxRarityPoints = 0;
+        $this->maxInGameRarityPoints = 0;
         $this->bronze = 0;
         $this->silver = 0;
         $this->gold = 0;
@@ -58,6 +60,7 @@ class PlayerGame
         $game->platform = (string) ($row['platform'] ?? '');
         $game->status = (int) ($row['status'] ?? 0);
         $game->maxRarityPoints = (int) ($row['max_rarity_points'] ?? 0);
+        $game->maxInGameRarityPoints = (int) ($row['max_in_game_rarity_points'] ?? 0);
         $game->bronze = (int) ($row['bronze'] ?? 0);
         $game->silver = (int) ($row['silver'] ?? 0);
         $game->gold = (int) ($row['gold'] ?? 0);
@@ -191,6 +194,11 @@ class PlayerGame
     public function getMaxRarityPoints(): int
     {
         return $this->maxRarityPoints;
+    }
+
+    public function getMaxInGameRarityPoints(): int
+    {
+        return $this->maxInGameRarityPoints;
     }
 
     public function getCompletionDurationLabel(): ?string
