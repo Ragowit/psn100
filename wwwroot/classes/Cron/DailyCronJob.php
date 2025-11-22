@@ -89,7 +89,7 @@ class DailyCronJob implements CronJobInterface
                     0
                 ),
                 tm.in_game_rarity_name = CASE
-                    WHEN tm.status != 0 OR ttm.status != 0 OR ttm.owners = 0 THEN 'NONE'
+                    WHEN tm.status != 0 OR ttm.status != 0 THEN 'NONE'
                     WHEN tm.in_game_rarity_percent <= 1 THEN 'LEGENDARY'
                     WHEN tm.in_game_rarity_percent <= 5 THEN 'EPIC'
                     WHEN tm.in_game_rarity_percent <= 20 THEN 'RARE'
