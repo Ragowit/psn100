@@ -11,7 +11,7 @@ final class TrophyRarityFormatterTest extends TestCase
     {
         $formatter = new TrophyRarityFormatter();
 
-        $rarity = $formatter->format(42, 1);
+        $rarity = $formatter->formatMeta(42, 1);
 
         $this->assertSame('42.00', $rarity->getPercentage());
         $this->assertSame('Unobtainable', $rarity->getLabel());
@@ -23,7 +23,7 @@ final class TrophyRarityFormatterTest extends TestCase
     {
         $formatter = new TrophyRarityFormatter();
 
-        $rarity = $formatter->format(' 0.015 ');
+        $rarity = $formatter->formatMeta(' 0.015 ');
 
         $this->assertSame('0.02', $rarity->getPercentage());
         $this->assertSame('Legendary', $rarity->getLabel());
@@ -35,7 +35,7 @@ final class TrophyRarityFormatterTest extends TestCase
     {
         $formatter = new TrophyRarityFormatter();
 
-        $rarity = $formatter->format(0.5);
+        $rarity = $formatter->formatMeta(0.5);
 
         $this->assertSame('0.50', $rarity->getPercentage());
         $this->assertSame('Rare', $rarity->getLabel());
@@ -47,7 +47,7 @@ final class TrophyRarityFormatterTest extends TestCase
     {
         $formatter = new TrophyRarityFormatter();
 
-        $rarity = $formatter->format('N/A');
+        $rarity = $formatter->formatMeta('N/A');
 
         $this->assertSame('N/A', $rarity->getPercentage());
         $this->assertSame('Common', $rarity->getLabel());
@@ -59,11 +59,28 @@ final class TrophyRarityFormatterTest extends TestCase
     {
         $formatter = new TrophyRarityFormatter();
 
-        $rarity = $formatter->format('1.1');
+        $rarity = $formatter->formatMeta('1.1');
 
         $this->assertSame('1.10', $rarity->getPercentage());
         $this->assertSame('Rare', $rarity->getLabel());
         $this->assertSame('trophy-rare', $rarity->getCssClass());
         $this->assertFalse($rarity->isUnobtainable());
+    }
+
+    public function testFormatInGameUsesInGameThresholds(): void
+    {
+        $formatter = new TrophyRarityFormatter();
+
+        $legendary = $formatter->formatInGame(0.5);
+        $epic = $formatter->formatInGame(2);
+        $rare = $formatter->formatInGame(10);
+        $uncommon = $formatter->formatInGame(40);
+        $common = $formatter->formatInGame(80);
+
+        $this->assertSame('Legendary', $legendary->getLabel());
+        $this->assertSame('Epic', $epic->getLabel());
+        $this->assertSame('Rare', $rare->getLabel());
+        $this->assertSame('Uncommon', $uncommon->getLabel());
+        $this->assertSame('Common', $common->getLabel());
     }
 }

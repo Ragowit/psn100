@@ -624,7 +624,7 @@ require_once("header.php");
                     Thanks to <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/dmland12">dmland12</a> for bringing this formula to our attention (<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://forum.psnprofiles.com/topic/46506-rarity-leaderboard/?page=8#comment-1852921" target="_blank">source</a>).
                 </p>
                 <p>
-                    Our rarity naming uses the following numbers:
+                    Our Rarity (Meta) naming uses the following numbers and is calculated from player data within the top 10,000 players:
                 </p>
                 <ul>
                     <li><span class="trophy-legendary">0-0.02% ~ Legendary</span></li>
@@ -632,6 +632,17 @@ require_once("header.php");
                     <li><span class="trophy-rare">0.21-2% ~ Rare</span></li>
                     <li><span class="trophy-uncommon">2.01-10% ~ Uncommon</span></li>
                     <li>10.01-100% ~ Common</li>
+                </ul>
+                <p>
+                    For Rarity (In-Game), the percentage comes from the share of trophy owners within its game, again only counting
+                    owners within the top 10,000 players. The naming uses these thresholds:
+                </p>
+                <ul>
+                    <li><span class="trophy-legendary">0-1% ~ Legendary</span></li>
+                    <li><span class="trophy-epic">1.01-5% ~ Epic</span></li>
+                    <li><span class="trophy-rare">5.01-20% ~ Rare</span></li>
+                    <li><span class="trophy-uncommon">20.01-60% ~ Uncommon</span></li>
+                    <li>60.01-100% ~ Common</li>
                 </ul>
             </div>
         </div>

@@ -23,6 +23,7 @@ final class GameTrophyRow
     private string $detail;
     private string $iconUrl;
     private float $rarityPercent;
+    private ?float $inGameRarityPercent;
     private int $status;
     private ?int $progressTargetValue;
     private ?int $progress;
@@ -55,6 +56,9 @@ final class GameTrophyRow
         $this->detail = (string) ($data['detail'] ?? '');
         $this->iconUrl = (string) ($data['icon_url'] ?? '');
         $this->rarityPercent = isset($data['rarity_percent']) ? (float) $data['rarity_percent'] : 0.0;
+        $this->inGameRarityPercent = isset($data['in_game_rarity_percent'])
+            ? (float) $data['in_game_rarity_percent']
+            : 0.0;
         $this->status = isset($data['status']) ? (int) $data['status'] : 0;
         $this->progressTargetValue = isset($data['progress_target_value'])
             ? (int) $data['progress_target_value']
@@ -172,6 +176,11 @@ final class GameTrophyRow
     public function getRarityPercent(): float
     {
         return $this->rarityPercent;
+    }
+
+    public function getInGameRarityPercent(): ?float
+    {
+        return $this->inGameRarityPercent;
     }
 
     public function getStatus(): int

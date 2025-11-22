@@ -29,6 +29,8 @@ final class TrophyDetails
 
     private float $rarityPercent;
 
+    private ?float $inGameRarityPercent;
+
     private int $status;
 
     private ?string $progressTargetValue;
@@ -55,6 +57,7 @@ final class TrophyDetails
         string $detail,
         string $iconFileName,
         float $rarityPercent,
+        ?float $inGameRarityPercent,
         int $status,
         ?string $progressTargetValue,
         ?string $rewardName,
@@ -73,6 +76,7 @@ final class TrophyDetails
         $this->detail = $detail;
         $this->iconFileName = $iconFileName;
         $this->rarityPercent = $rarityPercent;
+        $this->inGameRarityPercent = $inGameRarityPercent;
         $this->status = $status;
         $this->progressTargetValue = $progressTargetValue;
         $this->rewardName = $rewardName;
@@ -98,6 +102,7 @@ final class TrophyDetails
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
             isset($data['rarity_percent']) ? (float) $data['rarity_percent'] : 0.0,
+            isset($data['in_game_rarity_percent']) ? (float) $data['in_game_rarity_percent'] : 0.0,
             (int) ($data['status'] ?? 0),
             isset($data['progress_target_value']) ? (string) $data['progress_target_value'] : null,
             isset($data['reward_name']) ? (string) $data['reward_name'] : null,
@@ -152,6 +157,11 @@ final class TrophyDetails
     public function getRarityPercent(): float
     {
         return $this->rarityPercent;
+    }
+
+    public function getInGameRarityPercent(): ?float
+    {
+        return $this->inGameRarityPercent;
     }
 
     public function getStatus(): int

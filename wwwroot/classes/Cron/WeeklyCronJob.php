@@ -12,8 +12,10 @@ class WeeklyCronJob implements CronJobInterface
         SET
             p.rank_last_week = r.ranking,
             p.rarity_rank_last_week = r.rarity_ranking,
+            p.in_game_rarity_rank_last_week = r.in_game_rarity_ranking,
             p.rank_country_last_week = r.ranking_country,
-            p.rarity_rank_country_last_week = r.rarity_ranking_country
+            p.rarity_rank_country_last_week = r.rarity_ranking_country,
+            p.in_game_rarity_rank_country_last_week = r.in_game_rarity_ranking_country
         WHERE p.status = 0
         SQL;
 
@@ -24,7 +26,9 @@ class WeeklyCronJob implements CronJobInterface
             p.rank_last_week = 0,
             p.rank_country_last_week = 0,
             p.rarity_rank_last_week = 0,
-            p.rarity_rank_country_last_week = 0
+            p.rarity_rank_country_last_week = 0,
+            p.in_game_rarity_rank_last_week = 0,
+            p.in_game_rarity_rank_country_last_week = 0
         WHERE
             p.status != 0
         SQL;
