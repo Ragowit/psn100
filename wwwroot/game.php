@@ -202,26 +202,19 @@ require_once("header.php");
                                     $trophyTypeColor = $trophyRow->getTypeColor();
 
                                     $earnedCellStyles = [];
+                                    $earnedCellClasses = [];
 
                                     if ($accountId !== null && $trophyRow->isEarned()) {
-                                        $maskImagePath = '/img/trophy-platinum.svg';
-
                                         if (preg_match('/^#([0-9a-fA-F]{6})$/', $trophyTypeColor, $matches)) {
                                             $trophyTypeColor = '#' . $matches[1] . '80';
                                         }
 
-                                        $earnedCellStyles[] = 'background-color: ' . $trophyTypeColor;
-                                        $earnedCellStyles[] = "mask-image: url('" . $maskImagePath . "')";
-                                        $earnedCellStyles[] = "-webkit-mask-image: url('" . $maskImagePath . "')";
-                                        $earnedCellStyles[] = 'mask-repeat: no-repeat';
-                                        $earnedCellStyles[] = '-webkit-mask-repeat: no-repeat';
-                                        $earnedCellStyles[] = 'mask-position: center';
-                                        $earnedCellStyles[] = '-webkit-mask-position: center';
-                                        $earnedCellStyles[] = 'mask-size: 3rem';
-                                        $earnedCellStyles[] = '-webkit-mask-size: 3rem';
+                                        $earnedCellClasses[] = 'trophy-earned-cell';
+                                        $earnedCellStyles[] = '--trophy-earned-color: ' . $trophyTypeColor;
                                     }
 
                                     $earnedCellStyle = implode('; ', $earnedCellStyles);
+                                    $earnedCellClass = implode(' ', $earnedCellClasses);
                                     ?>
                                     <tr scope="row"<?= $rowAttributes; ?>>
                                         <td style="width: 5rem;">
@@ -263,7 +256,7 @@ require_once("header.php");
                                             </div>
                                         </td>
 
-                                        <td class="w-auto text-end align-middle"<?= $earnedCellStyle !== '' ? ' style="' . htmlspecialchars($earnedCellStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
+                                        <td class="w-auto text-end align-middle<?= $earnedCellClass !== '' ? ' ' . $earnedCellClass : ''; ?>"<?= $earnedCellStyle !== '' ? ' style="' . htmlspecialchars($earnedCellStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
                                             <?php
                                             if ($accountId !== null && $trophyRow->isEarned()) {
                                                 $earnedElementId = $trophyRow->getEarnedElementId();
