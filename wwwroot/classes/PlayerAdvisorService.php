@@ -72,6 +72,7 @@ class PlayerAdvisorService
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
                 tm.rarity_percent,
+                tm.in_game_rarity_percent,
                 t.progress_target_value,
                 t.reward_name,
                 t.reward_image_url,
@@ -148,6 +149,10 @@ class PlayerAdvisorService
 
     private function buildOrderByClause(PlayerAdvisorFilter $filter): string
     {
+        if ($filter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) {
+            return ' ORDER BY tm.in_game_rarity_percent DESC, ttp.last_updated_date DESC';
+        }
+
         return ' ORDER BY tm.rarity_percent DESC, ttp.last_updated_date DESC';
     }
 }
