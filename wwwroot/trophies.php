@@ -33,7 +33,8 @@ require_once('header.php');
                                 <th scope="col" class="text-center">Game</th>
                                 <th scope="col">Trophy</th>
                                 <th scope="col" class="text-center">Platform</th>
-                                <th scope="col" class="text-center">Rarity</th>
+                                <th scope="col" class="text-center">Rarity (Meta)</th>
+                                <th scope="col" class="text-center">Rarity (In-Game)</th>
                                 <th scope="col" class="text-center">Type</th>
                             </tr>
                         </thead>
@@ -94,14 +95,14 @@ require_once('header.php');
                                     <td class="text-center align-middle">
                                         <?php
                                         $metaRarity = $trophyRarityFormatter->formatMeta($trophy->getRarityPercent());
+                                        ?>
+                                        <div><?= $metaRarity->renderSpan(); ?></div>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <?php
                                         $inGameRarity = $trophyRarityFormatter->formatInGame($trophy->getInGameRarityPercent());
                                         ?>
-                                        <div class="vstack gap-2">
-                                            <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
-                                            <div><?= $metaRarity->renderSpan(); ?></div>
-                                            <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
-                                            <div><?= $inGameRarity->renderSpan(); ?></div>
-                                        </div>
+                                        <div><?= $inGameRarity->renderSpan(); ?></div>
                                     </td>
                                     <td class="text-center align-middle">
                                         <img src="/img/trophy-<?= $trophy->getTrophyType(); ?>.svg" alt="<?= ucfirst($trophy->getTrophyType()); ?>" title="<?= ucfirst($trophy->getTrophyType()); ?>" height="50" />
