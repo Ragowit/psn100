@@ -486,6 +486,26 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     )
                 );
 
+                $query = $this->database->prepare("DELETE FROM player_queue
+                    WHERE  online_id = :online_id ");
+                $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
+
+                $query = $this->database->prepare("SELECT account_id
+                    FROM   player
+                    WHERE  online_id = :online_id ");
+                $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
+                $query->execute();
+                $accountId = $query->fetchColumn();
+
+                if ($accountId) {
+                    $query = $this->database->prepare("UPDATE player
+                        SET `status` = 5, last_updated_date = NOW()
+                        WHERE  account_id = :account_id ");
+                    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+                    $query->execute();
+                }
+
                 $this->releaseWorkerFromCurrentScan((int) $worker['id']);
 
                 continue;
