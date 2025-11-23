@@ -174,7 +174,7 @@ require_once("header.php");
                                 <tr>
                                     <th scope="col" class="align-middle">Trophy</th>
                                     <th scope="col" class="w-auto align-middle">Details</th>
-                                    <th scope="col" class="text-end align-middle" style="width: 8rem;">
+                                    <th scope="col" class="text-center align-middle" style="width: 6rem;">
                                         <?php
                                         if ($accountId !== null && isset($player)) {
                                             ?>
@@ -204,14 +204,16 @@ require_once("header.php");
                                     $earnedCellStyles = [];
                                     $earnedCellClasses = [];
 
-                                    if ($accountId !== null && $trophyRow->isEarned()) {
-                                        if (preg_match('/^#([0-9a-fA-F]{6})$/', $trophyTypeColor, $matches)) {
-                                            $trophyTypeColor = '#' . $matches[1] . '80';
-                                        }
+                                    if (preg_match('/^#([0-9a-fA-F]{6})$/', $trophyTypeColor, $matches)) {
+                                        $trophyTypeColor = '#' . $matches[1];
 
-                                        $earnedCellClasses[] = 'trophy-earned-cell';
-                                        $earnedCellStyles[] = '--trophy-earned-color: ' . $trophyTypeColor;
+                                        if ($accountId !== null && $trophyRow->isEarned()) {
+                                            $trophyTypeColor .= '60';
+                                        }
                                     }
+
+                                    $earnedCellClasses[] = 'trophy-earned-cell';
+                                    $earnedCellStyles[] = '--trophy-earned-color: ' . $trophyTypeColor;
 
                                     $earnedCellStyle = implode('; ', $earnedCellStyles);
                                     $earnedCellClass = implode(' ', $earnedCellClasses);
@@ -256,7 +258,7 @@ require_once("header.php");
                                             </div>
                                         </td>
 
-                                        <td class="w-auto text-end align-middle<?= $earnedCellClass !== '' ? ' ' . $earnedCellClass : ''; ?>"<?= $earnedCellStyle !== '' ? ' style="' . htmlspecialchars($earnedCellStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
+                                        <td class="w-auto text-center align-middle<?= $earnedCellClass !== '' ? ' ' . $earnedCellClass : ''; ?>"<?= $earnedCellStyle !== '' ? ' style="' . htmlspecialchars($earnedCellStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
                                             <?php
                                             if ($accountId !== null && $trophyRow->isEarned()) {
                                                 $earnedElementId = $trophyRow->getEarnedElementId();
