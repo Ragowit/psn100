@@ -25,6 +25,8 @@ class LeaderboardRouteHandler implements RouteHandlerInterface
                 return RouteResult::include('leaderboard_main.php');
             case 'rarity':
                 return RouteResult::include('leaderboard_rarity.php');
+            case 'in-game-rarity':
+                return RouteResult::include('leaderboard_in_game_rarity.php');
             default:
                 return RouteResult::redirect(self::DEFAULT_REDIRECT);
         }
