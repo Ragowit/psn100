@@ -32,27 +32,27 @@ class InGameRarityLeaderboardRow extends AbstractLeaderboardRow
 
     public function getLegendaryCount(): int
     {
-        return $this->getInt('legendary');
+        return $this->getInt('in_game_legendary');
     }
 
     public function getEpicCount(): int
     {
-        return $this->getInt('epic');
+        return $this->getInt('in_game_epic');
     }
 
     public function getRareCount(): int
     {
-        return $this->getInt('rare');
+        return $this->getInt('in_game_rare');
     }
 
     public function getUncommonCount(): int
     {
-        return $this->getInt('uncommon');
+        return $this->getInt('in_game_uncommon');
     }
 
     public function getCommonCount(): int
     {
-        return $this->getInt('common');
+        return $this->getInt('in_game_common');
     }
 
     public function getRarityPoints(): int
