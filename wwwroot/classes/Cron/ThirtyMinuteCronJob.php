@@ -138,6 +138,42 @@ class ThirtyMinuteCronJob implements CronJobInterface
     }
 
     /**
+     * @param array<string, mixed> $player
+     */
+    private function handleInvalidApiResponse(array $player, int $workerId, Throwable $exception): void
+    {
+        $this->logger->log(
+            sprintf(
+                'Failed to scan %s because the PlayStation API returned an invalid response: %s',
+                (string) ($player['online_id'] ?? ''),
+                $exception->getMessage()
+            )
+        );
+
+        $query = $this->database->prepare('DELETE FROM player_queue
+            WHERE  online_id = :online_id ');
+        $query->bindValue(':online_id', $player['online_id'], PDO::PARAM_STR);
+        $query->execute();
+
+        $query = $this->database->prepare('SELECT account_id
+            FROM   player
+            WHERE  online_id = :online_id ');
+        $query->bindValue(':online_id', $player['online_id'], PDO::PARAM_STR);
+        $query->execute();
+        $accountId = $query->fetchColumn();
+
+        if ($accountId) {
+            $query = $this->database->prepare('UPDATE player
+                SET `status` = 5, last_updated_date = NOW()
+                WHERE  account_id = :account_id ');
+            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->execute();
+        }
+
+        $this->releaseWorkerFromCurrentScan($workerId);
+    }
+
+    /**
      * @template T
      * @param callable():T $operation
      * @return T
@@ -478,35 +514,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $player['online_id'] = $user->onlineId();
                 }
             } catch (TypeError $exception) {
-                $this->logger->log(
-                    sprintf(
-                        'Failed to scan %s because the PlayStation API returned an invalid response: %s',
-                        (string) ($player['online_id'] ?? ''),
-                        $exception->getMessage()
-                    )
-                );
-
-                $query = $this->database->prepare("DELETE FROM player_queue
-                    WHERE  online_id = :online_id ");
-                $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
-
-                $query = $this->database->prepare("SELECT account_id
-                    FROM   player
-                    WHERE  online_id = :online_id ");
-                $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
-                $accountId = $query->fetchColumn();
-
-                if ($accountId) {
-                    $query = $this->database->prepare("UPDATE player
-                        SET `status` = 5, last_updated_date = NOW()
-                        WHERE  account_id = :account_id ");
-                    $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
-                    $query->execute();
-                }
-
-                $this->releaseWorkerFromCurrentScan((int) $worker['id']);
+                $this->handleInvalidApiResponse($player, (int) $worker['id'], $exception);
 
                 continue;
             } catch (Exception $e) {
@@ -535,6 +543,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query->execute();
                     }
                 }
+
+                continue;
+            } catch (Throwable $exception) {
+                $this->handleInvalidApiResponse($player, (int) $worker['id'], $exception);
 
                 continue;
             }
