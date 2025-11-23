@@ -81,7 +81,8 @@ require_once("header.php");
                                 <th scope="col" class="text-center">Game</th>
                                 <th scope="col">Trophy</th>
                                 <th scope="col" class="text-center">Platform</th>
-                                <th scope="col" class="text-center">Rarity</th>
+                                <th scope="col" class="text-center">Rarity (Meta)</th>
+                                <th scope="col" class="text-center">Rarity (In-Game)</th>
                                 <th scope="col" class="text-center">Type</th>
                             </tr>
                         </thead>
@@ -91,7 +92,7 @@ require_once("header.php");
                             if ($playerStatusNotice !== null && !$pageContext->shouldDisplayLog()) {
                                 ?>
                                 <tr>
-                                    <td colspan="5" class="text-center"><h3><?= $playerStatusNotice->getMessage(); ?></h3></td>
+                                    <td colspan="6" class="text-center"><h3><?= $playerStatusNotice->getMessage(); ?></h3></td>
                                 </tr>
                                 <?php
                             } elseif ($pageContext->shouldDisplayLog()) {
@@ -159,12 +160,9 @@ require_once("header.php");
                                             </div>
                                         </td>
                                         <td class="text-center align-middle">
-                                        <?php
-                                        $trophyRarity = $trophyRarityFormatter->format($trophy->getRarityPercent(), $trophy->getTrophyStatus());
-                                        $inGameRarity = $trophyRarityFormatter->formatInGame($trophy->getInGameRarityPercent(), $trophy->getTrophyStatus());
-                                        ?>
-                                        <div class="vstack gap-2">
-                                            <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                            <?php
+                                            $trophyRarity = $trophyRarityFormatter->format($trophy->getRarityPercent(), $trophy->getTrophyStatus());
+                                            ?>
                                             <div>
                                                 <?php
                                                 if ($trophyRarity->isUnobtainable()) {
@@ -174,7 +172,11 @@ require_once("header.php");
                                                 }
                                                 ?>
                                             </div>
-                                            <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <?php
+                                            $inGameRarity = $trophyRarityFormatter->formatInGame($trophy->getInGameRarityPercent(), $trophy->getTrophyStatus());
+                                            ?>
                                             <div>
                                                 <?php
                                                 if ($inGameRarity->isUnobtainable()) {
@@ -184,7 +186,6 @@ require_once("header.php");
                                                 }
                                                 ?>
                                             </div>
-                                        </div>
                                         </td>
                                         <td class="text-center align-middle">
                                             <img src="/img/trophy-<?= htmlspecialchars($trophy->getTrophyType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= htmlentities(ucfirst($trophy->getTrophyType()), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities(ucfirst($trophy->getTrophyType()), ENT_QUOTES, 'UTF-8'); ?>" height="50" />
