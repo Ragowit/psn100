@@ -198,8 +198,19 @@ require_once("header.php");
                                     }
 
                                     $rowAttributes = $trophyRow->getRowAttributes($accountId);
-                                    $trophyColor = $trophyRow->getTypeColor();
                                     $trophyLink = $trophyRow->getTrophyLink(isset($player) ? (string) $player : null);
+                                    $trophyTypeIcon = $trophyRow->getTypeIconPath();
+
+                                    $earnedCellStyles = [];
+
+                                    if ($accountId !== null && $trophyRow->isEarned()) {
+                                        $earnedCellStyles[] = "background-image: url('" . $trophyTypeIcon . "')";
+                                        $earnedCellStyles[] = 'background-repeat: no-repeat';
+                                        $earnedCellStyles[] = 'background-position: center';
+                                        $earnedCellStyles[] = 'background-size: 3rem';
+                                    }
+
+                                    $earnedCellStyle = implode('; ', $earnedCellStyles);
                                     ?>
                                     <tr scope="row"<?= $rowAttributes; ?>>
                                         <td style="width: 5rem;">
@@ -241,7 +252,7 @@ require_once("header.php");
                                             </div>
                                         </td>
 
-                                        <td class="w-auto text-end align-middle">
+                                        <td class="w-auto text-end align-middle"<?= $earnedCellStyle !== '' ? ' style="' . htmlspecialchars($earnedCellStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
                                             <?php
                                             if ($accountId !== null && $trophyRow->isEarned()) {
                                                 $earnedElementId = $trophyRow->getEarnedElementId();
@@ -309,7 +320,7 @@ require_once("header.php");
                                             </div>
                                         </td>
 
-                                        <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
+                                        <td style="width: 5rem;" class="text-center align-middle">
                                             <?php
                                             $inGameRarity = $trophyRarityFormatter->formatInGame(
                                                 $trophyRow->getInGameRarityPercent(),
