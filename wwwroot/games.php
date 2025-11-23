@@ -122,8 +122,8 @@ require_once("header.php");
                         ?>
                         <option value="completion"<?= ($filter->isSort(GameListFilter::SORT_COMPLETION) ? ' selected' : ''); ?>>Completion Rate</option>
                         <option value="owners"<?= ($filter->isSort(GameListFilter::SORT_OWNERS) ? ' selected' : ''); ?>>Owners</option>
-                        <option value="rarity"<?= ($filter->isSort(GameListFilter::SORT_RARITY) ? ' selected' : ''); ?>>Rarity Points</option>
                         <option value="in-game-rarity"<?= ($filter->isSort(GameListFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''); ?>>Rarity (In-Game) Points</option>
+                        <option value="rarity"<?= ($filter->isSort(GameListFilter::SORT_RARITY) ? ' selected' : ''); ?>>Rarity (Meta) Points</option>
                     </select>
                 </div>
             </form>
@@ -190,7 +190,7 @@ require_once("header.php");
                         <div>
                             <?php
                             if ($game->shouldShowRarityPoints() && $filter->isSort(GameListFilter::SORT_RARITY)) {
-                                echo number_format($rarityPoints) . ' Rarity Points';
+                                echo number_format($rarityPoints) . ' Rarity (Meta) Points';
                             } elseif ($game->shouldShowRarityPoints() && $filter->isSort(GameListFilter::SORT_IN_GAME_RARITY)) {
                                 echo number_format($inGameRarityPoints) . ' Rarity (In-Game) Points';
                             } elseif ($statusBadge !== null) {
