@@ -5,6 +5,8 @@ declare(strict_types=1);
 class PlayerGamesFilter
 {
     public const SORT_DATE = 'date';
+    public const SORT_IN_GAME_MAX_RARITY = 'max-in-game-rarity';
+    public const SORT_IN_GAME_RARITY = 'in-game-rarity';
     public const SORT_MAX_RARITY = 'max-rarity';
     public const SORT_NAME = 'name';
     public const SORT_RARITY = 'rarity';
@@ -20,6 +22,8 @@ class PlayerGamesFilter
 
     private const ALLOWED_SORTS = [
         self::SORT_DATE,
+        self::SORT_IN_GAME_MAX_RARITY,
+        self::SORT_IN_GAME_RARITY,
         self::SORT_MAX_RARITY,
         self::SORT_NAME,
         self::SORT_RARITY,
