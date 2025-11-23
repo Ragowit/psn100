@@ -126,6 +126,30 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
             .table-warning a:hover {
                 text-decoration-color: var(--bs-warning-text-emphasis) !important;
             }
+
+            .trophy-earned-cell {
+                position: relative;
+                isolation: isolate;
+            }
+
+            .trophy-earned-cell::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                margin: auto;
+                width: 3rem;
+                height: 3rem;
+                background-color: var(--trophy-earned-color, transparent);
+                mask-image: url('/img/trophy-platinum.svg');
+                -webkit-mask-image: url('/img/trophy-platinum.svg');
+                mask-repeat: no-repeat;
+                -webkit-mask-repeat: no-repeat;
+                mask-position: center;
+                -webkit-mask-position: center;
+                mask-size: 3rem;
+                -webkit-mask-size: 3rem;
+                pointer-events: none;
+            }
         </style>
 
         <script src="/js/localized-date-formatter.js" defer></script>
