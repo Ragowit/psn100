@@ -183,8 +183,8 @@ require_once("header.php");
                                         }
                                         ?>
                                     </th>
-                                    <th scope="col" class="text-center align-middle" style="width: 5rem;">Rarity<br>(Meta)</th>
-                                    <th scope="col" class="text-center align-middle" style="width: 5rem;">Rarity<br>(In-Game)</th>
+                                    <th scope="col" class="text-center align-middle" style="width: 6rem;">Rarity<br>(Meta)</th>
+                                    <th scope="col" class="text-center align-middle" style="width: 6rem;">Rarity<br>(In-Game)</th>
                                 </tr>
                             </thead>
 
