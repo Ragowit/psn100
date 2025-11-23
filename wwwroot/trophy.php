@@ -64,7 +64,7 @@ require_once("header.php");
                     <div class="card-img-overlay d-flex align-items-end">
                         <div class="bg-body-tertiary p-3 rounded w-100">
                             <div class="row">
-                                <div class="col-8">
+                                <div class="col-7">
                                     <div class="hstack gap-3">
                                         <div>
                                             <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
@@ -134,28 +134,28 @@ require_once("header.php");
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">
-                                    <div class="vstack gap-2">
-                                        <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
-                                        <div>
-                                            <?php if ($metaRarity->isUnobtainable()) { ?>
-                                                <?= $metaRarity->getLabel(); ?>
-                                            <?php } else { ?>
-                                                <?= $metaRarity->renderSpan(); ?>
-                                            <?php } ?>
-                                        </div>
-
-                                        <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
-                                        <div>
-                                            <?php if ($inGameRarity->isUnobtainable()) { ?>
-                                                <?= $inGameRarity->getLabel(); ?>
-                                            <?php } else { ?>
-                                                <?= $inGameRarity->renderSpan(); ?>
-                                            <?php } ?>
-                                        </div>
+                                    <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                    <div>
+                                        <?php if ($metaRarity->isUnobtainable()) { ?>
+                                            <?= $metaRarity->getLabel(); ?>
+                                        <?php } else { ?>
+                                            <?= $metaRarity->renderSpan(); ?>
+                                        <?php } ?>
                                     </div>
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">
+                                    <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                    <div>
+                                        <?php if ($inGameRarity->isUnobtainable()) { ?>
+                                            <?= $inGameRarity->getLabel(); ?>
+                                        <?php } else { ?>
+                                            <?= $inGameRarity->renderSpan(); ?>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+
+                                <div class="col-1 text-center align-self-center">
                                     <img src="/img/trophy-<?= htmlspecialchars($trophy->getType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= ucfirst($trophy->getType()); ?>" title="<?= ucfirst($trophy->getType()); ?>" height="50" />
                                 </div>
                             </div>
