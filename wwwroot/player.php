@@ -92,8 +92,10 @@ require_once("header.php");
                             <option disabled>Sort by...</option>
                             <option value="search"<?= ($sort == "search" ? " selected" : ""); ?>>Best Match</option>
                             <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
+                            <option value="max-in-game-rarity"<?= ($sort == "max-in-game-rarity" ? " selected" : ""); ?>>Max Rarity (In-Game)</option>
                             <option value="max-rarity"<?= ($sort == "max-rarity" ? " selected" : ""); ?>>Max Rarity (Meta)</option>
                             <option value="name"<?= ($sort == "name" ? " selected" : ""); ?>>Name</option>
+                            <option value="in-game-rarity"<?= ($sort == "in-game-rarity" ? " selected" : ""); ?>>Rarity (In-Game)</option>
                             <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity (Meta)</option>
                         </select>
                     </div>
