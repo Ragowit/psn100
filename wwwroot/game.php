@@ -119,7 +119,7 @@ require_once("header.php");
                         <table class="table" id="<?= htmlspecialchars($trophyGroupId, ENT_QUOTES, 'UTF-8'); ?>">
                             <thead>
                                 <tr>
-                                    <th scope="col" colspan="4" class="bg-dark-subtle">
+                                    <th scope="col" colspan="5" class="bg-dark-subtle">
                                         <div class="hstack gap-3">
                                             <div>
                                                 <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= htmlspecialchars($trophyGroup->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophyGroup->getName()); ?>">
@@ -169,6 +169,22 @@ require_once("header.php");
                                             </div>
                                         </div>
                                     </th>
+                                </tr>
+
+                                <tr>
+                                    <th scope="col" class="align-middle">Trophy</th>
+                                    <th scope="col" class="w-auto align-middle">Details</th>
+                                    <th scope="col" class="text-end align-middle" style="width: 8rem;">
+                                        <?php
+                                        if ($accountId !== null && isset($player)) {
+                                            ?>
+                                            Earned On
+                                            <?php
+                                        }
+                                        ?>
+                                    </th>
+                                    <th scope="col" class="text-center align-middle" style="width: 5rem;">Rarity<br>(Meta)</th>
+                                    <th scope="col" class="text-center align-middle" style="width: 5rem;">Rarity<br>(In-Game)</th>
                                 </tr>
                             </thead>
 
@@ -277,29 +293,34 @@ require_once("header.php");
                                             ?>
                                         </td>
 
-                                        <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
+                                        <td style="width: 5rem;" class="text-center align-middle">
                                             <?php
                                             $metaRarity = $trophyRarityFormatter->formatMeta(
                                                 $trophyRow->getRarityPercent(),
-                                                $trophyRow->getStatus()
-                                            );
-                                            $inGameRarity = $trophyRarityFormatter->formatInGame(
-                                                $trophyRow->getInGameRarityPercent(),
                                                 $trophyRow->getStatus()
                                             );
 
                                             $metaContent = $metaRarity->isUnobtainable()
                                                 ? $metaRarity->renderSpan('<br>', true)
                                                 : $metaRarity->renderSpan();
+                                            ?>
+                                            <div class="vstack gap-2">
+                                                <div><?= $metaContent; ?></div>
+                                            </div>
+                                        </td>
+
+                                        <td style="width: 5rem; background: linear-gradient(to top right, var(--bs-table-bg), var(--bs-table-bg), var(--bs-table-bg), <?= $trophyColor; ?>);" class="text-center align-middle">
+                                            <?php
+                                            $inGameRarity = $trophyRarityFormatter->formatInGame(
+                                                $trophyRow->getInGameRarityPercent(),
+                                                $trophyRow->getStatus()
+                                            );
 
                                             $inGameContent = $inGameRarity->isUnobtainable()
                                                 ? $inGameRarity->renderSpan('<br>', true)
                                                 : $inGameRarity->renderSpan();
                                             ?>
                                             <div class="vstack gap-2">
-                                                <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
-                                                <div><?= $metaContent; ?></div>
-                                                <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
                                                 <div><?= $inGameContent; ?></div>
                                             </div>
                                         </td>
