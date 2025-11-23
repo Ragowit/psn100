@@ -32,9 +32,6 @@ $platformFilterOptions = $playerAdvisorPageContext->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerStatusNotice = $playerAdvisorPageContext->getPlayerStatusNotice();
 $playerOnlineId = $playerAdvisorPageContext->getPlayerOnlineId();
-$platformFilterHiddenInputs = ['sort' => $playerAdvisorFilter->getSort()];
-$selectedPlatformParameters = $playerAdvisorFilter->getFilterParameters();
-unset($selectedPlatformParameters['sort']);
 $rarityColumnLabel = $playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY
     ? 'Rarity (In-Game)'
     : 'Rarity (Meta)';
@@ -59,20 +56,17 @@ require_once("header.php");
             </div>
 
             <div class="col-12 col-lg-3 mb-3">
-                <div class="d-flex flex-column gap-2 align-items-lg-end">
-                    <form method="get" class="w-100 w-lg-auto">
-                        <?php foreach ($selectedPlatformParameters as $name => $value) { ?>
-                            <input type="hidden" name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php } ?>
-                        <label for="advisor-sort" class="form-label mb-1">Sort by</label>
-                        <select id="advisor-sort" name="sort" class="form-select" onChange="this.form.submit()">
-                            <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo 'selected'; } ?>>Rarity (In-Game)</option>
-                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo 'selected'; } ?>>Rarity (Meta)</option>
-                        </select>
-                    </form>
+                <form>
+                    <div class="input-group d-flex justify-content-end">
+                        <?= $platformFilterRenderer->renderDropdownControls($platformFilterOptions); ?>
 
-                    <?= $platformFilterRenderer->render($platformFilterOptions, $platformFilterHiddenInputs); ?>
-                </div>
+                        <select class="form-select" name="sort" onChange="this.form.submit()">
+                            <option disabled>Sort by...</option>
+                            <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo ' selected'; } ?>>Rarity (In-Game)</option>
+                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo ' selected'; } ?>>Rarity (Meta)</option>
+                        </select>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
