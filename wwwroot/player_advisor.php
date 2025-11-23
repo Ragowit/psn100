@@ -66,8 +66,8 @@ require_once("header.php");
                         <?php } ?>
                         <label for="advisor-sort" class="form-label mb-1">Sort by</label>
                         <select id="advisor-sort" name="sort" class="form-select" onChange="this.form.submit()">
-                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo 'selected'; } ?>>Rarity (Meta)</option>
                             <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo 'selected'; } ?>>Rarity (In-Game)</option>
+                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo 'selected'; } ?>>Rarity (Meta)</option>
                         </select>
                     </form>
 
