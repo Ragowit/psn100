@@ -28,6 +28,8 @@ class PlayerRandomGame
 
     private int $rarityPoints;
 
+    private int $inGameRarityPoints;
+
     private ?string $progress;
 
     private Utility $utility;
@@ -46,6 +48,7 @@ class PlayerRandomGame
         $this->silver = isset($data['silver']) ? (int) $data['silver'] : 0;
         $this->bronze = isset($data['bronze']) ? (int) $data['bronze'] : 0;
         $this->rarityPoints = isset($data['rarity_points']) ? (int) $data['rarity_points'] : 0;
+        $this->inGameRarityPoints = isset($data['in_game_rarity_points']) ? (int) $data['in_game_rarity_points'] : 0;
         $this->progress = array_key_exists('progress', $data) ? (string) $data['progress'] : null;
         $this->utility = $utility;
     }
@@ -93,6 +96,11 @@ class PlayerRandomGame
     public function getRarityPoints(): int
     {
         return $this->rarityPoints;
+    }
+
+    public function getInGameRarityPoints(): int
+    {
+        return $this->inGameRarityPoints;
     }
 
     public function getProgress(): ?string

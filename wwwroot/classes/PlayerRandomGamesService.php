@@ -115,6 +115,7 @@ class PlayerRandomGamesService
                 tt.silver,
                 tt.bronze,
                 ttm.rarity_points,
+                ttm.in_game_rarity_points,
                 ttp.progress
             SQL
             . $this->buildBaseQuery($filter);

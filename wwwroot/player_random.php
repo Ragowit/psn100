@@ -113,10 +113,17 @@ require_once("header.php");
                                 <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= $game->getPlatinum(); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= $game->getGold(); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= $game->getSilver(); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= $game->getBronze(); ?></span>
                             </div>
 
-                            <!-- rarity points -->
+                            <!-- rarity (meta) points -->
                             <div>
                                 <?php
-                                echo number_format($game->getRarityPoints()) . " Rarity Points";
+                                echo number_format($game->getRarityPoints()) . " Rarity (Meta) Points";
+                                ?>
+                            </div>
+
+                            <!-- rarity (in-game) points -->
+                            <div>
+                                <?php
+                                echo number_format($game->getInGameRarityPoints()) . " Rarity (In-Game) Points";
                                 ?>
                             </div>
                         </div>
