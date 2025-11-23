@@ -128,6 +128,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $query->execute();
     }
 
+    private function releaseWorkerFromCurrentScan(int $workerId): void
+    {
+        $query = $this->database->prepare(
+            'UPDATE setting SET scanning = :id, scan_progress = NULL WHERE id = :id'
+        );
+        $query->bindValue(':id', $workerId, PDO::PARAM_INT);
+        $query->execute();
+    }
+
     /**
      * @template T
      * @param callable():T $operation
@@ -238,9 +247,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $this->logger->log("Can't login with worker ". $worker["id"]);
 
                     // Something went wrong, 'release' the current scanning profile so other workers can pick it up.
-                    $query = $this->database->prepare("UPDATE setting SET scanning = :id, scan_progress = NULL WHERE id = :id");
-                    $query->bindValue(":id", $worker["id"], PDO::PARAM_INT);
-                    $query->execute();
+                    $this->releaseWorkerFromCurrentScan((int) $worker['id']);
 
                     // Wait 30 minutes to not hammer login
                     sleep(60 * 30);
@@ -470,6 +477,18 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $this->updateQueuedOnlineId((int) $worker['id'], (string) $player['online_id'], $user->onlineId());
                     $player['online_id'] = $user->onlineId();
                 }
+            } catch (TypeError $exception) {
+                $this->logger->log(
+                    sprintf(
+                        'Failed to scan %s because the PlayStation API returned an invalid response: %s',
+                        (string) ($player['online_id'] ?? ''),
+                        $exception->getMessage()
+                    )
+                );
+
+                $this->releaseWorkerFromCurrentScan((int) $worker['id']);
+
+                continue;
             } catch (Exception $e) {
                 // $e->getMessage() == "User not found", and another "Resource not found" error
                 $query = $this->database->prepare("DELETE FROM player_queue
