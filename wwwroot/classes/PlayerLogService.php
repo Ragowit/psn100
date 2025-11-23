@@ -60,6 +60,7 @@ class PlayerLogService
                 t.detail AS trophy_detail,
                 t.icon_url AS trophy_icon,
                 tm.rarity_percent,
+                tm.in_game_rarity_percent,
                 tm.status AS trophy_status,
                 t.progress_target_value,
                 t.reward_name,
@@ -126,6 +127,10 @@ class PlayerLogService
     {
         if ($filter->isSort(PlayerLogFilter::SORT_RARITY)) {
             return PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date';
+        }
+
+        if ($filter->isSort(PlayerLogFilter::SORT_IN_GAME_RARITY)) {
+            return PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date';
         }
 
         return PHP_EOL . '            ORDER BY te.earned_date DESC';

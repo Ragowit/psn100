@@ -6,6 +6,7 @@ class PlayerLogFilter
 {
     public const SORT_DATE = 'date';
     public const SORT_RARITY = 'rarity';
+    public const SORT_IN_GAME_RARITY = 'in-game-rarity';
 
     /** @var array<int, string> */
     private const ALLOWED_PLATFORMS = [
@@ -133,6 +134,10 @@ class PlayerLogFilter
     {
         if ($sort === self::SORT_RARITY) {
             return self::SORT_RARITY;
+        }
+
+        if ($sort === self::SORT_IN_GAME_RARITY) {
+            return self::SORT_IN_GAME_RARITY;
         }
 
         return self::SORT_DATE;

@@ -63,6 +63,7 @@ require_once("header.php");
                             <option disabled>Sort by...</option>
                             <option value="date"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_DATE) ? ' selected' : ''; ?>>Date</option>
                             <option value="rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_RARITY) ? ' selected' : ''; ?>>Rarity</option>
+                            <option value="in-game-rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''; ?>>In-Game Rarity</option>
                         </select>
                     </div>
                 </form>
@@ -160,13 +161,30 @@ require_once("header.php");
                                         <td class="text-center align-middle">
                                         <?php
                                         $trophyRarity = $trophyRarityFormatter->format($trophy->getRarityPercent(), $trophy->getTrophyStatus());
-
-                                        if ($trophyRarity->isUnobtainable()) {
-                                            echo "<span class='badge rounded-pill text-bg-warning p-2'>" . $trophyRarity->getLabel() . '</span>';
-                                        } else {
-                                            echo $trophyRarity->renderSpan();
-                                        }
+                                        $inGameRarity = $trophyRarityFormatter->formatInGame($trophy->getInGameRarityPercent(), $trophy->getTrophyStatus());
                                         ?>
+                                        <div class="vstack gap-2">
+                                            <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                            <div>
+                                                <?php
+                                                if ($trophyRarity->isUnobtainable()) {
+                                                    echo "<span class='badge rounded-pill text-bg-warning p-2'>" . $trophyRarity->getLabel() . '</span>';
+                                                } else {
+                                                    echo $trophyRarity->renderSpan();
+                                                }
+                                                ?>
+                                            </div>
+                                            <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                            <div>
+                                                <?php
+                                                if ($inGameRarity->isUnobtainable()) {
+                                                    echo "<span class='badge rounded-pill text-bg-warning p-2'>" . $inGameRarity->getLabel() . '</span>';
+                                                } else {
+                                                    echo $inGameRarity->renderSpan();
+                                                }
+                                                ?>
+                                            </div>
+                                        </div>
                                         </td>
                                         <td class="text-center align-middle">
                                             <img src="/img/trophy-<?= htmlspecialchars($trophy->getTrophyType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= htmlentities(ucfirst($trophy->getTrophyType()), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities(ucfirst($trophy->getTrophyType()), ENT_QUOTES, 'UTF-8'); ?>" height="50" />
