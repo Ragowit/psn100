@@ -30,7 +30,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                     <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="100" width="100" />
                 </div>
 
-                <div class="vstack gap-1">
+                <div class="vstack gap-2">
                     <div class="hstack">
                         <div class="vstack">
                             <?php
@@ -49,7 +49,13 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                                         <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                 </div>
-                                <?php
+
+                                <div class="w-75 text-center">
+                                    <!-- Total Trophies -->
+                                    <?php $totalTrophies = $playerHeaderViewModel->getTotalTrophies(); ?>
+                                    <?= number_format($totalTrophies); ?> Trophies
+                                </div>
+                            <?php
                             }
                             ?>
                         </div>
@@ -60,7 +66,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                         </div>
                     </div>
 
-                    <div>
+                    <div class="text-end">
                         <small>Last Updated: <span id="lastUpdate"></span></small>
                         <?php
                         if ($playerHeaderViewModel->hasLastUpdatedDate()) {
@@ -75,67 +81,94 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                     </div>
                 </div>
             </div>
-
-            <div class="text-center bg-dark-subtle p-3 rounded">
-                <?php
-                if (!$playerHeaderViewModel->canShowPlayerStats()) {
-                    echo "N/A";
-                } else {
-                    ?>
-                    <?= number_format($playerHeaderViewModel->getTotalTrophies()); ?> Trophies<br>
-                    <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= number_format($player["platinum"]); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= number_format($player["gold"]); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= number_format($player["silver"]); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= number_format($player["bronze"]); ?></span>
-                    <div class="mt-2">
-                        <small>Rarity (Meta)</small><br>
-                        <span class="trophy-legendary" title="Legendary"><?= number_format($player["legendary"]); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["epic"]); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["rare"]); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["uncommon"]); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["common"]); ?></span>
-                    </div>
-                    <div class="mt-2">
-                        <small>Rarity (In-Game)</small><br>
-                        <span class="trophy-legendary" title="Legendary"><?= number_format($player["in_game_legendary"] ?? 0); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["in_game_epic"] ?? 0); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["in_game_rare"] ?? 0); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["in_game_uncommon"] ?? 0); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["in_game_common"] ?? 0); ?></span>
-                    </div>
-                    <?php
-                }
-                ?>
-            </div>
         </div>
     </div>
 
+    <div class="col-6 col-lg-2 mb-3">
+        <div class="bg-body-tertiary p-3 rounded text-center h-100 d-flex flex-column justify-content-center">
+            Games
+            <hr class="m-2">
+            <?php
+            if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                echo "N/A";
+            } else {
+                ?>
+                <h2><?= number_format($playerHeaderViewModel->getNumberOfGames()); ?></h2>
+                <?php
+            }
+            ?>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-2 mb-3">
+        <div class="bg-body-tertiary p-3 rounded text-center h-100 d-flex flex-column justify-content-center">
+            100% Completion
+            <hr class="m-2">
+            <?php
+            if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                echo "N/A";
+            } else {
+                ?>
+                <h2><?= number_format($playerHeaderViewModel->getNumberOfCompletedGames()); ?></h2>
+                <?php
+            }
+            ?>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-2 mb-3">
+        <div class="bg-body-tertiary p-3 rounded text-center h-100 d-flex flex-column justify-content-center">
+            Average Progress
+            <hr class="m-2">
+            <?php
+            if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                echo "N/A";
+            } else {
+                ?>
+                <h2><?= number_format($playerHeaderViewModel->getAverageProgress() ?? 0.0, 2); ?>%</h2>
+                <?php
+            }
+            ?>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-2 mb-3">
+        <div class="bg-body-tertiary p-3 rounded text-center h-100 d-flex flex-column justify-content-center">
+            Unearned Trophies
+            <hr class="m-2">
+            <?php
+            if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                echo "N/A";
+            } else {
+                ?>
+                <h2><?= number_format($playerHeaderViewModel->getUnearnedTrophies()); ?></h2>
+                <?php
+            }
+            ?>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-12 col-lg-4 mb-3">
-        <div class="vstack gap-3 h-100 text-center">
-            <div class="hstack gap-3">
-                <div class="bg-body-tertiary p-3 rounded w-50">
-                    Games
-                    <hr class="m-2">
-                    <?php
-                    if (!$playerHeaderViewModel->canShowPlayerStats()) {
-                        echo "N/A";
-                    } else {
-                        ?>
-                        <h2><?= number_format($playerHeaderViewModel->getNumberOfGames()); ?></h2>
-                        <?php
-                    }
-                    ?>
-                </div>
-
-                <div class="bg-body-tertiary p-3 rounded w-50">
-                    100% Completion
-                    <hr class="m-2">
-                    <?php
-                    if (!$playerHeaderViewModel->canShowPlayerStats()) {
-                        echo "N/A";
-                    } else {
-                        ?>
-                        <h2><?= number_format($playerHeaderViewModel->getNumberOfCompletedGames()); ?></h2>
-                        <?php
-                    }
-                    ?>
-                </div>
-            </div>
-
+        <div class="vstack gap-3 text-center h-100">
             <!-- Main Leaderboard -->
-            <div class="bg-body-tertiary p-3 rounded w-100 mt-auto">
+            <div class="bg-body-tertiary p-3 rounded w-100 h-100">
                 <div class="vstack">
                     <div>
                         Trophy Leaderboard
+                    </div>
+
+                    <div class="text-center bg-dark-subtle p-1 rounded">
+                        <?php
+                        if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                            echo "N/A";
+                        } else {
+                            ?>
+                            <img src="/img/trophy-platinum.svg" alt="Platinum" height="18"> <span class="trophy-platinum"><?= number_format($player["platinum"]); ?></span> &bull; <img src="/img/trophy-gold.svg" alt="Gold" height="18"> <span class="trophy-gold"><?= number_format($player["gold"]); ?></span> &bull; <img src="/img/trophy-silver.svg" alt="Silver" height="18"> <span class="trophy-silver"><?= number_format($player["silver"]); ?></span> &bull; <img src="/img/trophy-bronze.svg" alt="Bronze" height="18"> <span class="trophy-bronze"><?= number_format($player["bronze"]); ?></span>
+                            <?php
+                        }
+                        ?>
                     </div>
 
                     <div>
@@ -184,41 +217,23 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
 
     <div class="col-12 col-lg-4 mb-3">
         <div class="vstack gap-3 text-center h-100">
-            <div class="hstack gap-3">
-                <div class="bg-body-tertiary p-3 rounded w-50">
-                    Average Progress
-                    <hr class="m-2">
-                    <?php
-                    if (!$playerHeaderViewModel->canShowPlayerStats()) {
-                        echo "N/A";
-                    } else {
-                        ?>
-                        <h2><?= number_format($playerHeaderViewModel->getAverageProgress() ?? 0.0, 2); ?>%</h2>
-                        <?php
-                    }
-                    ?>
-                </div>
-
-                <div class="bg-body-tertiary p-3 rounded w-50">
-                    Unearned Trophies
-                    <hr class="m-2">
-                    <?php
-                    if (!$playerHeaderViewModel->canShowPlayerStats()) {
-                        echo "N/A";
-                    } else {
-                        ?>
-                        <h2><?= number_format($playerHeaderViewModel->getUnearnedTrophies()); ?></h2>
-                        <?php
-                    }
-                    ?>
-                </div>
-            </div>
-
             <!-- Rarity Leaderboard -->
-            <div class="bg-body-tertiary p-3 rounded w-100 mt-auto">
+            <div class="bg-body-tertiary p-3 rounded w-100 h-100">
                 <div class="vstack">
                     <div>
-                        Rarity Leaderboard
+                        Rarity (Meta) Leaderboard
+                    </div>
+
+                    <div class="text-center bg-dark-subtle p1 rounded">
+                        <?php
+                        if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                            echo "N/A";
+                        } else {
+                            ?>
+                            <span class="trophy-legendary" title="Legendary"><?= number_format($player["legendary"]); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["epic"]); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["rare"]); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["uncommon"]); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["common"]); ?></span>
+                            <?php
+                        }
+                        ?>
                     </div>
 
                     <div>
@@ -262,12 +277,28 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <div class="col-12 col-lg-4 mb-3">
+        <div class="vstack gap-3 text-center h-100">
             <!-- Rarity (In-Game) Leaderboard -->
-            <div class="bg-body-tertiary p-3 rounded w-100">
+            <div class="bg-body-tertiary p-3 rounded w-100 h-100">
                 <div class="vstack">
                     <div>
                         Rarity (In-Game) Leaderboard
+                    </div>
+
+                    <div class="text-center bg-dark-subtle p-1 rounded">
+                        <?php
+                        if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                            echo "N/A";
+                        } else {
+                            ?>
+                            <span class="trophy-legendary" title="Legendary"><?= number_format($player["in_game_legendary"] ?? 0); ?></span> &bull; <span class="trophy-epic" title="Epic"><?= number_format($player["in_game_epic"] ?? 0); ?></span> &bull; <span class="trophy-rare" title="Rare"><?= number_format($player["in_game_rare"] ?? 0); ?></span> &bull; <span class="trophy-uncommon" title="Uncommon"><?= number_format($player["in_game_uncommon"] ?? 0); ?></span> &bull; <span class="trophy-common" title="Common"><?= number_format($player["in_game_common"] ?? 0); ?></span>
+                            <?php
+                        }
+                        ?>
                     </div>
 
                     <div>
