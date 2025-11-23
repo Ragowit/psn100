@@ -5,6 +5,15 @@ declare(strict_types=1);
 class PlayerAdvisorFilter
 {
     public const SORT_RARITY = 'rarity';
+    public const SORT_IN_GAME_RARITY = 'in_game_rarity';
+
+    /**
+     * @var array<int, string>
+     */
+    private const ALLOWED_SORTS = [
+        self::SORT_RARITY,
+        self::SORT_IN_GAME_RARITY,
+    ];
 
     private const SUPPORTED_PLATFORMS = [
         'pc',
@@ -43,6 +52,9 @@ class PlayerAdvisorFilter
         }
 
         $sort = self::SORT_RARITY;
+        if (isset($parameters['sort']) && in_array($parameters['sort'], self::ALLOWED_SORTS, true)) {
+            $sort = (string) $parameters['sort'];
+        }
 
         $platforms = [];
         foreach (self::SUPPORTED_PLATFORMS as $platform) {

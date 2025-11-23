@@ -65,6 +65,7 @@ final class PlayerAdvisorServiceTest extends TestCase
             'CREATE TABLE trophy_meta (
                 trophy_id INTEGER PRIMARY KEY,
                 rarity_percent REAL NOT NULL,
+                in_game_rarity_percent REAL NOT NULL DEFAULT 0,
                 rarity_point INTEGER NOT NULL DEFAULT 0,
                 status INTEGER NOT NULL,
                 owners INTEGER NOT NULL DEFAULT 0,
@@ -208,5 +209,57 @@ final class PlayerAdvisorServiceTest extends TestCase
         );
 
         $this->assertSame('25/100', $trophies[1]->getProgressTargetLabel());
+    }
+
+    public function testGetAdvisableTrophiesSortsByInGameRarityWhenRequested(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES\n" .
+            "('NPWR-1', 'First Game', 'game-1.png', 'PS4'),\n" .
+            "('NPWR-2', 'Second Game', 'game-2.png', 'PS4'),\n" .
+            "('NPWR-3', 'Third Game', 'game-3.png', 'PS4')"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
+            "('NPWR-1', 0),\n" .
+            "('NPWR-2', 0),\n" .
+            "('NPWR-3', 0)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url) VALUES\n" .
+            "(1, 'NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png'),\n" .
+            "(2, 'NPWR-2', 1, 'bronze', 'Second Trophy', 'Description 2', 'trophy-2.png'),\n" .
+            "(3, 'NPWR-3', 1, 'bronze', 'Third Trophy', 'Description 3', 'trophy-3.png')"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_meta (trophy_id, rarity_percent, in_game_rarity_percent, status) VALUES\n" .
+            "(1, 30.0, 5.0, 0),\n" .
+            "(2, 10.0, 25.0, 0),\n" .
+            "(3, 5.0, 15.0, 0)"
+        );
+
+        $this->database->exec(
+            "INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES\n" .
+            "('NPWR-1', 22, '2024-01-01 08:00:00'),\n" .
+            "('NPWR-2', 22, '2024-01-01 09:00:00'),\n" .
+            "('NPWR-3', 22, '2024-01-01 10:00:00')"
+        );
+
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY]);
+
+        $trophies = $this->service->getAdvisableTrophies(22, $filter, 0, 50);
+
+        $this->assertSame(
+            [2, 3, 1],
+            [
+                $trophies[0]->getTrophyId(),
+                $trophies[1]->getTrophyId(),
+                $trophies[2]->getTrophyId(),
+            ]
+        );
+        $this->assertSame(25.0, $trophies[0]->getInGameRarityPercent());
     }
 }

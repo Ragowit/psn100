@@ -18,12 +18,17 @@ final class PlayerPlatformFilterRenderer
         return new self('Filter');
     }
 
-    public function render(PlayerPlatformFilterOptions $options): string
+    /**
+     * @param array<string, string> $hiddenInputs
+     */
+    public function render(PlayerPlatformFilterOptions $options, array $hiddenInputs = []): string
     {
         $dropdownControls = $this->renderDropdownControls($options);
+        $hiddenInputsHtml = $this->renderHiddenInputs($hiddenInputs);
 
         return <<<HTML
-<form>
+<form method="get">
+    {$hiddenInputsHtml}
     <div class="input-group d-flex justify-content-end">
         {$dropdownControls}
     </div>
@@ -80,5 +85,23 @@ HTML;
                 </div>
             </li>
 HTML;
+    }
+
+    /**
+     * @param array<string, string> $hiddenInputs
+     */
+    private function renderHiddenInputs(array $hiddenInputs): string
+    {
+        $inputs = [];
+
+        foreach ($hiddenInputs as $name => $value) {
+            $inputs[] = sprintf(
+                '<input type="hidden" name="%s" value="%s">',
+                htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
+            );
+        }
+
+        return implode(PHP_EOL, $inputs);
     }
 }
