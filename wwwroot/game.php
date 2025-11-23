@@ -174,7 +174,7 @@ require_once("header.php");
                                 <tr>
                                     <th scope="col" class="align-middle">Trophy</th>
                                     <th scope="col" class="w-auto align-middle">Details</th>
-                                    <th scope="col" class="text-center align-middle" style="width: 7rem;">
+                                    <th scope="col" class="text-center align-middle" style="width: 8rem;">
                                         <?php
                                         if ($accountId !== null && isset($player)) {
                                             ?>
