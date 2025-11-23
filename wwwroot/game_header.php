@@ -218,19 +218,25 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
                 <div>
                     <?php
                     $status = $game->getStatus();
+                    $details = [];
+
                     if ($status === 0) {
-                        echo number_format($game->getRarityPoints()) . ' Rarity Points';
+                        $details[] = number_format($game->getRarityPoints()) . ' Rarity Points';
                     } elseif ($status === 1) {
-                        echo "<span class='badge rounded-pill text-bg-warning' title='This game is delisted, no trophies will be accounted for on any leaderboard.'>Delisted</span>";
+                        $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted, no trophies will be accounted for on any leaderboard.'>Delisted</span>";
                     } elseif ($status === 3) {
-                        echo "<span class='badge rounded-pill text-bg-warning' title='This game is obsolete, no trophies will be accounted for on any leaderboard.'>Obsolete</span>";
+                        $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is obsolete, no trophies will be accounted for on any leaderboard.'>Obsolete</span>";
                     } elseif ($status === 4) {
-                        echo "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
+                        $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
                     }
 
+                    $details[] = number_format($game->getInGameRarityPoints()) . ' Rarity (In-Game) Points';
+
                     if (isset($gamePlayer) && $gamePlayer instanceof GamePlayerProgress && $gamePlayer->isCompleted()) {
-                        echo " <span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>";
+                        $details[] = "<span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>";
                     }
+
+                    echo implode(' • ', $details);
                     ?>
                 </div>
             </div>

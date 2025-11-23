@@ -33,6 +33,7 @@ final class GameDetailServiceTest extends TestCase
             'message TEXT NOT NULL, ' .
             'region TEXT NULL, ' .
             'psnprofiles_id TEXT NULL, ' .
+            'in_game_rarity_points INTEGER NOT NULL DEFAULT 0, ' .
             'status INTEGER NOT NULL DEFAULT 0, ' .
             'obsolete_ids TEXT NULL)'
         );

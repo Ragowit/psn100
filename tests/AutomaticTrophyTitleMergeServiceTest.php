@@ -264,7 +264,8 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             'CREATE TABLE trophy_title_meta (
                 np_communication_id TEXT PRIMARY KEY,
                 status INTEGER NOT NULL DEFAULT 0,
-                psnprofiles_id TEXT NULL
+                psnprofiles_id TEXT NULL,
+                in_game_rarity_points INTEGER NOT NULL DEFAULT 0
             )'
         );
 

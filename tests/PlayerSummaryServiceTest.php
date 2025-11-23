@@ -30,7 +30,8 @@ final class PlayerSummaryServiceTest extends TestCase
                 np_communication_id TEXT PRIMARY KEY,
                 status INTEGER NOT NULL,
                 obsolete_ids TEXT NULL,
-                psnprofiles_id TEXT NULL
+                psnprofiles_id TEXT NULL,
+                in_game_rarity_points INTEGER NOT NULL DEFAULT 0
             )'
         );
 

@@ -200,6 +200,8 @@ final class GameResetServiceTest extends TestCase
             np_communication_id TEXT PRIMARY KEY,
             owners INTEGER DEFAULT 0,
             owners_completed INTEGER DEFAULT 0,
+            rarity_points INTEGER NOT NULL DEFAULT 0,
+            in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
             parent_np_communication_id TEXT,
             obsolete_ids TEXT NULL,
             psnprofiles_id TEXT NULL

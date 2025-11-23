@@ -42,6 +42,8 @@ class GameDetails
 
     private int $rarityPoints;
 
+    private int $inGameRarityPoints;
+
     /**
      * @var int[]
      */
@@ -79,6 +81,7 @@ class GameDetails
         $game->difficulty = (string) ($row['difficulty'] ?? '0');
         $game->status = (int) ($row['status'] ?? 0);
         $game->rarityPoints = (int) ($row['rarity_points'] ?? 0);
+        $game->inGameRarityPoints = (int) ($row['in_game_rarity_points'] ?? 0);
         $game->obsoleteGameIds = self::parseObsoleteIds($row['obsolete_ids'] ?? null);
 
         return $game;
@@ -239,6 +242,11 @@ class GameDetails
     public function getRarityPoints(): int
     {
         return $this->rarityPoints;
+    }
+
+    public function getInGameRarityPoints(): int
+    {
+        return $this->inGameRarityPoints;
     }
 
     /**

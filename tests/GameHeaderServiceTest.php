@@ -66,7 +66,8 @@ final class GameHeaderServiceTest extends TestCase
             'parent_np_communication_id TEXT NULL, ' .
             'region TEXT NULL, ' .
             'obsolete_ids TEXT NULL, ' .
-            'psnprofiles_id TEXT NULL)'
+            'psnprofiles_id TEXT NULL, ' .
+            'in_game_rarity_points INTEGER NOT NULL DEFAULT 0)'
         );
 
         $this->database->exec(

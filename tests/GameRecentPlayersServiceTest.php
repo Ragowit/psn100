@@ -282,6 +282,7 @@ final class GameRecentPlayersServiceTest extends TestCase
                 status INTEGER,
                 psnprofiles_id INTEGER,
                 rarity_points INTEGER,
+                in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
                 obsolete_ids TEXT
             )
             SQL
