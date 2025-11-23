@@ -39,6 +39,7 @@ final class ChangelogServiceTest extends TestCase
             'CREATE TABLE trophy_title_meta (' .
             'np_communication_id TEXT PRIMARY KEY, ' .
             'region TEXT NULL, ' .
+            'in_game_rarity_points INTEGER NOT NULL DEFAULT 0, ' .
             'obsolete_ids TEXT NULL, ' .
             'psnprofiles_id TEXT NULL)'
         );
