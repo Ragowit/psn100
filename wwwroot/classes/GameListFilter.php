@@ -8,6 +8,7 @@ class GameListFilter
     public const SORT_COMPLETION = 'completion';
     public const SORT_OWNERS = 'owners';
     public const SORT_RARITY = 'rarity';
+    public const SORT_IN_GAME_RARITY = 'in-game-rarity';
     public const SORT_SEARCH = 'search';
 
     public const PLATFORM_PC = 'pc';
@@ -320,7 +321,8 @@ class GameListFilter
             self::SORT_ADDED,
             self::SORT_COMPLETION,
             self::SORT_OWNERS,
-            self::SORT_RARITY => $sort,
+            self::SORT_RARITY,
+            self::SORT_IN_GAME_RARITY => $sort,
             self::SORT_SEARCH => ($search !== '' || $sortSpecified) ? self::SORT_SEARCH : self::SORT_ADDED,
             default => $search !== '' ? self::SORT_SEARCH : self::SORT_ADDED,
         };

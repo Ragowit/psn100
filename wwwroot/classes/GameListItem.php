@@ -29,6 +29,8 @@ final class GameListItem
 
     private int $rarityPoints;
 
+    private int $inGameRarityPoints;
+
     private string $difficulty;
 
     private int $platinum;
@@ -49,6 +51,7 @@ final class GameListItem
         string $platformValue,
         int $owners,
         int $rarityPoints,
+        int $inGameRarityPoints,
         string $difficulty,
         int $platinum,
         int $gold,
@@ -63,6 +66,7 @@ final class GameListItem
         $this->platformValue = $platformValue;
         $this->owners = $owners;
         $this->rarityPoints = $rarityPoints;
+        $this->inGameRarityPoints = $inGameRarityPoints;
         $this->difficulty = $difficulty;
         $this->platinum = $platinum;
         $this->gold = $gold;
@@ -84,6 +88,7 @@ final class GameListItem
             (string) ($row['platform'] ?? ''),
             isset($row['owners']) ? (int) $row['owners'] : 0,
             isset($row['rarity_points']) ? (int) $row['rarity_points'] : 0,
+            isset($row['in_game_rarity_points']) ? (int) $row['in_game_rarity_points'] : 0,
             (string) ($row['difficulty'] ?? '0'),
             isset($row['platinum']) ? (int) $row['platinum'] : 0,
             isset($row['gold']) ? (int) $row['gold'] : 0,
@@ -190,6 +195,11 @@ final class GameListItem
     public function getRarityPoints(): int
     {
         return $this->rarityPoints;
+    }
+
+    public function getInGameRarityPoints(): int
+    {
+        return $this->inGameRarityPoints;
     }
 
     public function getProgress(): int
