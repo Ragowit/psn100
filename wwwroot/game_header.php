@@ -206,22 +206,33 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
                         <div class="progress" role="progressbar" aria-label="Player trophy progress" aria-valuenow="<?= $gamePlayer->getProgress(); ?>" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar" style="width: <?= $gamePlayer->getProgress(); ?>%"><?= $gamePlayer->getProgress(); ?>%</div>
                         </div>
+
+                        <?php
+                        if (isset($gamePlayer) && $gamePlayer instanceof GamePlayerProgress && $gamePlayer->isCompleted()) {
+                            ?>
+                            <div class="text-center mt-2">
+                                <span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>
+                            </div>
+                            <?php
+                        }
+                        ?>
                     </div>
                     <?php
                 }
                 ?>
 
-                <div>
+                <div class="text-center">
                     <?= number_format($game->getOwnersCompleted()); ?> of <?= number_format($game->getOwners()); ?> players (<?= $game->getDifficulty(); ?>%) have 100% this game.
                 </div>
 
-                <div>
+                <div class="text-center">
                     <?php
                     $status = $game->getStatus();
                     $details = [];
 
                     if ($status === 0) {
-                        $details[] = number_format($game->getRarityPoints()) . ' Rarity Points';
+                        $details[] = number_format($game->getRarityPoints()) . ' Rarity (Meta) Points';
+                        $details[] = number_format($game->getInGameRarityPoints()) . ' Rarity (In-Game) Points';
                     } elseif ($status === 1) {
                         $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted, no trophies will be accounted for on any leaderboard.'>Delisted</span>";
                     } elseif ($status === 3) {
@@ -230,13 +241,7 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
                         $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
                     }
 
-                    $details[] = number_format($game->getInGameRarityPoints()) . ' Rarity (In-Game) Points';
-
-                    if (isset($gamePlayer) && $gamePlayer instanceof GamePlayerProgress && $gamePlayer->isCompleted()) {
-                        $details[] = "<span class='badge rounded-pill text-bg-success' title='Player has completed this game to 100%!'>Completed!</span>";
-                    }
-
-                    echo implode(' • ', $details);
+                    echo implode('<br>', $details);
                     ?>
                 </div>
             </div>
