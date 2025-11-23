@@ -30,7 +30,7 @@ class PlayerLogService
         $sql = <<<'SQL'
             SELECT COUNT(*)
             FROM trophy_earned te
-            LEFT JOIN trophy t USING (np_communication_id, order_id)
+            LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
             JOIN trophy_title tt USING (np_communication_id)
             LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title_meta ttm USING (np_communication_id)
@@ -74,7 +74,7 @@ class PlayerLogService
                 tt.icon_url AS game_icon,
                 tt.platform
             FROM trophy_earned te
-            LEFT JOIN trophy t USING (np_communication_id, order_id)
+            LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
             LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             LEFT JOIN trophy_title tt USING (np_communication_id)
             LEFT JOIN trophy_title_meta ttm USING (np_communication_id)
