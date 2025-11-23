@@ -155,6 +155,7 @@ class GameListService
             'tt.silver',
             'tt.bronze',
             'ttm.rarity_points AS rarity_points',
+            'ttm.in_game_rarity_points AS in_game_rarity_points',
             'ttp.progress',
         ];
 
@@ -203,6 +204,9 @@ class GameListService
             case GameListFilter::SORT_RARITY:
                 $conditions[] = 'ttm.status = 0';
                 break;
+            case GameListFilter::SORT_IN_GAME_RARITY:
+                $conditions[] = 'ttm.status = 0';
+                break;
             default:
                 $conditions[] = 'ttm.status != 2';
                 break;
@@ -233,6 +237,7 @@ class GameListService
             GameListFilter::SORT_COMPLETION => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListFilter::SORT_OWNERS => 'ORDER BY owners DESC, `name`',
             GameListFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, owners DESC, `name`',
+            GameListFilter::SORT_IN_GAME_RARITY => 'ORDER BY in_game_rarity_points DESC, owners DESC, `name`',
             GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
             default => 'ORDER BY id DESC',
         };

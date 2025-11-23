@@ -123,6 +123,7 @@ require_once("header.php");
                         <option value="completion"<?= ($filter->isSort(GameListFilter::SORT_COMPLETION) ? ' selected' : ''); ?>>Completion Rate</option>
                         <option value="owners"<?= ($filter->isSort(GameListFilter::SORT_OWNERS) ? ' selected' : ''); ?>>Owners</option>
                         <option value="rarity"<?= ($filter->isSort(GameListFilter::SORT_RARITY) ? ' selected' : ''); ?>>Rarity Points</option>
+                        <option value="in-game-rarity"<?= ($filter->isSort(GameListFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''); ?>>Rarity (In-Game) Points</option>
                     </select>
                 </div>
             </form>
@@ -139,6 +140,7 @@ require_once("header.php");
             $platforms = $game->getPlatforms();
             $owners = $game->getOwners();
             $rarityPoints = $game->getRarityPoints();
+            $inGameRarityPoints = $game->getInGameRarityPoints();
             $difficulty = $game->getDifficulty();
             $statusBadge = $game->getStatusBadge();
             ?>
@@ -187,8 +189,10 @@ require_once("header.php");
                         <!-- rarity points / status -->
                         <div>
                             <?php
-                            if ($game->shouldShowRarityPoints()) {
+                            if ($game->shouldShowRarityPoints() && $filter->isSort(GameListFilter::SORT_RARITY)) {
                                 echo number_format($rarityPoints) . ' Rarity Points';
+                            } elseif ($game->shouldShowRarityPoints() && $filter->isSort(GameListFilter::SORT_IN_GAME_RARITY)) {
+                                echo number_format($inGameRarityPoints) . ' Rarity (In-Game) Points';
                             } elseif ($statusBadge !== null) {
                                 ?>
                                 <span class="<?= $statusBadge->getCssClass(); ?>" title="<?= $statusBadge->getTooltip(); ?>"><?= $statusBadge->getLabel(); ?></span>
