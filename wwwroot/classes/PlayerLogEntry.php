@@ -16,6 +16,8 @@ final class PlayerLogEntry
 
     private ?string $rarityPercent;
 
+    private ?string $inGameRarityPercent;
+
     private int $trophyStatus;
 
     private ?int $progressTargetValue;
@@ -54,6 +56,7 @@ final class PlayerLogEntry
         $entry->trophyDetail = (string) ($row['trophy_detail'] ?? '');
         $entry->trophyIcon = (string) ($row['trophy_icon'] ?? '');
         $entry->rarityPercent = self::toNullableString($row['rarity_percent'] ?? null);
+        $entry->inGameRarityPercent = self::toNullableString($row['in_game_rarity_percent'] ?? null);
         $entry->trophyStatus = isset($row['trophy_status']) ? (int) $row['trophy_status'] : 0;
         $entry->progressTargetValue = self::toNullableInt($row['progress_target_value'] ?? null);
         $entry->progress = self::toNullableInt($row['progress'] ?? null);
@@ -108,6 +111,11 @@ final class PlayerLogEntry
     public function getRarityPercent(): ?string
     {
         return $this->rarityPercent;
+    }
+
+    public function getInGameRarityPercent(): ?string
+    {
+        return $this->inGameRarityPercent;
     }
 
     public function getTrophyStatus(): int
