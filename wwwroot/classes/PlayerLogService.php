@@ -30,11 +30,14 @@ class PlayerLogService
         $sql = <<<'SQL'
             SELECT COUNT(*)
             FROM trophy_earned te
+            LEFT JOIN trophy t USING (np_communication_id, order_id)
             JOIN trophy_title tt USING (np_communication_id)
+            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE ttm.status != 2
                 AND te.account_id = :account_id
                 AND te.earned = 1
+                AND (tm.status IS NULL OR tm.status != 1)
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -78,6 +81,7 @@ class PlayerLogService
             WHERE ttm.status != 2
                 AND te.account_id = :account_id
                 AND te.earned = 1
+                AND (tm.status IS NULL OR tm.status != 1)
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
