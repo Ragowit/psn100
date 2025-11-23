@@ -77,4 +77,14 @@ final class PlayerPlatformFilterRendererTest extends TestCase
             );
         }
     }
+
+    public function testRenderIncludesHiddenInputsWhenProvided(): void
+    {
+        $options = PlayerPlatformFilterOptions::fromSelectionCallback(static fn (): bool => false);
+        $renderer = PlayerPlatformFilterRenderer::createDefault();
+
+        $html = $renderer->render($options, ['sort' => 'rarity']);
+
+        $this->assertStringContainsString('type="hidden" name="sort" value="rarity"', $html);
+    }
 }

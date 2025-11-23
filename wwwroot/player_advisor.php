@@ -32,6 +32,12 @@ $platformFilterOptions = $playerAdvisorPageContext->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerStatusNotice = $playerAdvisorPageContext->getPlayerStatusNotice();
 $playerOnlineId = $playerAdvisorPageContext->getPlayerOnlineId();
+$platformFilterHiddenInputs = ['sort' => $playerAdvisorFilter->getSort()];
+$selectedPlatformParameters = $playerAdvisorFilter->getFilterParameters();
+unset($selectedPlatformParameters['sort']);
+$rarityColumnLabel = $playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY
+    ? 'Rarity (In-Game)'
+    : 'Rarity (Meta)';
 
 $title = $playerAdvisorPageContext->getTitle();
 require_once("header.php");
@@ -53,7 +59,20 @@ require_once("header.php");
             </div>
 
             <div class="col-12 col-lg-3 mb-3">
-                <?= $platformFilterRenderer->render($platformFilterOptions); ?>
+                <div class="d-flex flex-column gap-2 align-items-lg-end">
+                    <form method="get" class="w-100 w-lg-auto">
+                        <?php foreach ($selectedPlatformParameters as $name => $value) { ?>
+                            <input type="hidden" name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php } ?>
+                        <label for="advisor-sort" class="form-label mb-1">Sort by</label>
+                        <select id="advisor-sort" name="sort" class="form-select" onChange="this.form.submit()">
+                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo 'selected'; } ?>>Rarity (Meta)</option>
+                            <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>" <?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo 'selected'; } ?>>Rarity (In-Game)</option>
+                        </select>
+                    </form>
+
+                    <?= $platformFilterRenderer->render($platformFilterOptions, $platformFilterHiddenInputs); ?>
+                </div>
             </div>
         </div>
     </div>
@@ -68,7 +87,7 @@ require_once("header.php");
                                 <th scope="col" class="text-center">Game</th>
                                 <th scope="col">Trophy</th>
                                 <th scope="col" class="text-center">Platform</th>
-                                <th scope="col" class="text-center">Rarity</th>
+                                <th scope="col" class="text-center"><?= htmlspecialchars($rarityColumnLabel, ENT_QUOTES, 'UTF-8'); ?></th>
                                 <th scope="col" class="text-center">Type</th>
                             </tr>
                         </thead>
@@ -137,7 +156,10 @@ require_once("header.php");
                                         </td>
                                         <td class="text-center align-middle">
                                         <?php
-                                        $trophyRarity = $trophyRarityFormatter->format($trophy->getRarityPercent());
+                                        $rarityPercent = $playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY
+                                            ? $trophy->getInGameRarityPercent()
+                                            : $trophy->getRarityPercent();
+                                        $trophyRarity = $trophyRarityFormatter->format($rarityPercent);
                                         echo $trophyRarity->renderSpan();
                                         ?>
                                         </td>

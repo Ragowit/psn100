@@ -16,6 +16,8 @@ class PlayerAdvisableTrophy
 
     private float $rarityPercent;
 
+    private float $inGameRarityPercent;
+
     private ?int $progressTargetValue;
 
     private ?string $rewardName;
@@ -44,6 +46,7 @@ class PlayerAdvisableTrophy
         string $trophyDetail,
         string $trophyIcon,
         float $rarityPercent,
+        float $inGameRarityPercent,
         ?int $progressTargetValue,
         ?string $rewardName,
         ?string $rewardImageUrl,
@@ -60,6 +63,7 @@ class PlayerAdvisableTrophy
         $this->trophyDetail = $trophyDetail;
         $this->trophyIcon = $trophyIcon;
         $this->rarityPercent = $rarityPercent;
+        $this->inGameRarityPercent = $inGameRarityPercent;
         $this->progressTargetValue = $progressTargetValue;
         $this->rewardName = $rewardName;
         $this->rewardImageUrl = $rewardImageUrl;
@@ -80,6 +84,7 @@ class PlayerAdvisableTrophy
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
             isset($data['rarity_percent']) ? (float) $data['rarity_percent'] : 0.0,
+            isset($data['in_game_rarity_percent']) ? (float) $data['in_game_rarity_percent'] : 0.0,
             isset($data['progress_target_value']) ? (int) $data['progress_target_value'] : null,
             array_key_exists('reward_name', $data) ? ($data['reward_name'] !== null ? (string) $data['reward_name'] : null) : null,
             array_key_exists('reward_image_url', $data) ? ($data['reward_image_url'] !== null ? (string) $data['reward_image_url'] : null) : null,
@@ -128,6 +133,11 @@ class PlayerAdvisableTrophy
     public function getRarityPercent(): float
     {
         return $this->rarityPercent;
+    }
+
+    public function getInGameRarityPercent(): float
+    {
+        return $this->inGameRarityPercent;
     }
 
     public function hasProgressTarget(): bool

@@ -38,6 +38,20 @@ final class PlayerAdvisorFilterTest extends TestCase
         $this->assertFalse($filter->isPlatformSelected('unknown'));
     }
 
+    public function testFromArrayParsesSortWhenValid(): void
+    {
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY]);
+
+        $this->assertSame(PlayerAdvisorFilter::SORT_IN_GAME_RARITY, $filter->getSort());
+    }
+
+    public function testFromArrayFallsBackToDefaultSortWhenUnknown(): void
+    {
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => 'unknown']);
+
+        $this->assertSame(PlayerAdvisorFilter::SORT_RARITY, $filter->getSort());
+    }
+
     public function testPageIsNeverBelowOne(): void
     {
         $filter = PlayerAdvisorFilter::fromArray(['page' => '0']);
@@ -57,12 +71,13 @@ final class PlayerAdvisorFilterTest extends TestCase
         $filter = PlayerAdvisorFilter::fromArray([
             'psvr' => '1',
             'psvita' => 'yes',
+            'sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY,
         ]);
 
         $this->assertSame([
             'psvita' => 'true',
             'psvr' => 'true',
-            'sort' => PlayerAdvisorFilter::SORT_RARITY,
+            'sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY,
         ], $filter->getFilterParameters());
     }
 }
