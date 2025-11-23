@@ -199,15 +199,26 @@ require_once("header.php");
 
                                     $rowAttributes = $trophyRow->getRowAttributes($accountId);
                                     $trophyLink = $trophyRow->getTrophyLink(isset($player) ? (string) $player : null);
-                                    $trophyTypeIcon = $trophyRow->getTypeIconPath();
+                                    $trophyTypeColor = $trophyRow->getTypeColor();
 
                                     $earnedCellStyles = [];
 
                                     if ($accountId !== null && $trophyRow->isEarned()) {
-                                        $earnedCellStyles[] = "background-image: url('" . $trophyTypeIcon . "')";
-                                        $earnedCellStyles[] = 'background-repeat: no-repeat';
-                                        $earnedCellStyles[] = 'background-position: center';
-                                        $earnedCellStyles[] = 'background-size: 3rem';
+                                        $maskImagePath = '/img/trophy-platinum.svg';
+
+                                        if (preg_match('/^#([0-9a-fA-F]{6})$/', $trophyTypeColor, $matches)) {
+                                            $trophyTypeColor = '#' . $matches[1] . '80';
+                                        }
+
+                                        $earnedCellStyles[] = 'background-color: ' . $trophyTypeColor;
+                                        $earnedCellStyles[] = "mask-image: url('" . $maskImagePath . "')";
+                                        $earnedCellStyles[] = "-webkit-mask-image: url('" . $maskImagePath . "')";
+                                        $earnedCellStyles[] = 'mask-repeat: no-repeat';
+                                        $earnedCellStyles[] = '-webkit-mask-repeat: no-repeat';
+                                        $earnedCellStyles[] = 'mask-position: center';
+                                        $earnedCellStyles[] = '-webkit-mask-position: center';
+                                        $earnedCellStyles[] = 'mask-size: 3rem';
+                                        $earnedCellStyles[] = '-webkit-mask-size: 3rem';
                                     }
 
                                     $earnedCellStyle = implode('; ', $earnedCellStyles);
