@@ -13,6 +13,13 @@ final class GameTrophyRow
         'platinum' => '#667fb2',
     ];
 
+    private const TROPHY_TYPE_ICONS = [
+        'bronze' => '/img/trophy-bronze.svg',
+        'silver' => '/img/trophy-silver.svg',
+        'gold' => '/img/trophy-gold.svg',
+        'platinum' => '/img/trophy-platinum.svg',
+    ];
+
     private const UNOBTAINABLE_STATUS = 1;
     private const UNOBTAINABLE_TITLE = 'This trophy is unobtainable and not accounted for on any leaderboard.';
 
@@ -93,6 +100,11 @@ final class GameTrophyRow
     public function getType(): string
     {
         return $this->type;
+    }
+
+    public function getTypeIconPath(): string
+    {
+        return self::TROPHY_TYPE_ICONS[$this->type] ?? self::TROPHY_TYPE_ICONS['bronze'];
     }
 
     public function getName(): string
