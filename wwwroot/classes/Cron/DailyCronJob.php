@@ -120,7 +120,6 @@ class DailyCronJob implements CronJobInterface
                     IFNULL(SUM(tm.in_game_rarity_point), 0) AS in_game_rarity_sum
                 FROM trophy t
                 JOIN trophy_meta tm ON tm.trophy_id = t.id
-                WHERE tm.status = 0
                 GROUP BY t.np_communication_id
             )
             UPDATE trophy_title_meta ttm
