@@ -38,19 +38,19 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                                 echo "N/A";
                             } else {
                                 ?>
-                                <div class="w-75 text-center">
+                                <div class="text-center" style="width: 90%;">
                                 <!--  Level -->
                                     <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= $player["level"]; ?>
                                 </div>
 
-                                <div class="w-75">
+                                <div style="width: 90%;">
                                     <!-- Progress -->
                                     <div class="progress" title="<?= $player["progress"]; ?>%">
                                         <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                 </div>
 
-                                <div class="w-75 text-center">
+                                <div class="text-center" style="width: 90%;">
                                     <!-- Total Trophies -->
                                     <?php $totalTrophies = $playerHeaderViewModel->getTotalTrophies(); ?>
                                     <?= number_format($totalTrophies); ?> Trophies
