@@ -9,7 +9,7 @@ class HourlyCronJob implements CronJobInterface
     private const BATCH_SIZE = 500;
 
     private const STATISTICS_UPDATE_QUERY = <<<'SQL'
-        WITH game AS (
+        game AS (
             SELECT
                 ttp.np_communication_id,
                 COUNT(*) AS owners,
@@ -49,11 +49,7 @@ class HourlyCronJob implements CronJobInterface
 
     private function updateTrophyTitleStatistics(): void
     {
-        $totalTitles = $this->countTrophyTitles();
-        $processed = 0;
         $lastId = null;
-
-        $this->logProgress(sprintf('Starting trophy title statistics update in batches of %d titles.', self::BATCH_SIZE));
 
         while (true) {
             $batchIds = $this->getBatchNpCommunicationIds($lastId, self::BATCH_SIZE);
@@ -73,18 +69,8 @@ class HourlyCronJob implements CronJobInterface
                 throw $exception;
             }
 
-            $processed += count($batchIds);
             $lastId = end($batchIds);
-
-            $this->logProgress(sprintf(
-                'Updated statistics for batch ending at "%s" (%d/%d).',
-                $lastId,
-                $processed,
-                $totalTitles
-            ));
         }
-
-        $this->logProgress('Finished updating trophy title statistics.');
     }
 
     private function getBatchNpCommunicationIds(?string $lastId, int $limit): array
@@ -108,7 +94,7 @@ class HourlyCronJob implements CronJobInterface
     {
         $batchQuery = $this->buildBatchUnionQuery(count($batchIds));
         $sql = sprintf(
-            "WITH batch AS (%s)\n%s WHERE b.np_communication_id = ttm.np_communication_id",
+            "WITH batch AS (%s),\n%s WHERE b.np_communication_id = ttm.np_communication_id",
             $batchQuery,
             self::STATISTICS_UPDATE_QUERY
         );
@@ -120,18 +106,6 @@ class HourlyCronJob implements CronJobInterface
     private function buildBatchUnionQuery(int $size): string
     {
         return implode("\nUNION ALL\n", array_fill(0, $size, 'SELECT ? AS np_communication_id'));
-    }
-
-    private function countTrophyTitles(): int
-    {
-        $query = $this->database->query('SELECT COUNT(*) FROM trophy_title_meta');
-
-        return (int) $query->fetchColumn();
-    }
-
-    private function logProgress(string $message): void
-    {
-        error_log($message);
     }
 
     private function executeWithRetry(callable $operation): void
