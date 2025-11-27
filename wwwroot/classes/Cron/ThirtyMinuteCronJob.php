@@ -331,7 +331,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             JOIN player_ranking pr ON pr.account_id = p.account_id
                             JOIN now_values nv
                         WHERE
-                            (pr.ranking <= 100 OR pr.rarity_ranking <= 100)
+                            (pr.ranking <= 100 OR pr.rarity_ranking <= 100 OR pr.in_game_rarity_ranking <= 100)
                             AND p.last_updated_date < nv.cutoff_1h
 
                         UNION ALL
@@ -349,8 +349,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             (
                                 pr.ranking <= 1000 OR
                                 pr.rarity_ranking <= 1000 OR
+                                pr.in_game_rarity_ranking <= 1000 OR
                                 (pr.ranking BETWEEN 9750 AND 10250) OR
-                                (pr.rarity_ranking BETWEEN 9750 AND 10250)
+                                (pr.rarity_ranking BETWEEN 9750 AND 10250) OR
+                                (pr.in_game_rarity_ranking BETWEEN 9750 AND 10250)
                             )
                             AND p.last_updated_date < nv.cutoff_1d
 
@@ -366,7 +368,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             JOIN player_ranking pr ON pr.account_id = p.account_id
                             JOIN now_values nv
                         WHERE
-                            (pr.ranking <= 10000 OR pr.rarity_ranking <= 10000)
+                            (pr.ranking <= 10000 OR pr.rarity_ranking <= 10000 OR pr.in_game_rarity_ranking <= 10000)
                             AND p.last_updated_date < nv.cutoff_1w
 
                         UNION ALL
