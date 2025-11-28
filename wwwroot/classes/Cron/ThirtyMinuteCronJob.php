@@ -253,6 +253,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
     public function run(): void
     {
         $recheck = "";
+        $missingGameDeletionCheck = [];
 
         while (true) {
             // Login with a token
@@ -412,6 +413,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
             } else {
                 $recheck = $player["online_id"];
             }
+
+            $onlineId = (string) $player['online_id'];
 
             // Initialize the current player
             try {
@@ -1387,6 +1390,19 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         );
 
                         if ($shouldDeleteMissingGames) {
+                            if (!($missingGameDeletionCheck[$onlineId] ?? false)) {
+                                $this->logger->log(sprintf(
+                                    'Detected missing games for %s. Waiting 5 minutes before restarting the scan.',
+                                    $onlineId
+                                ));
+
+                                $missingGameDeletionCheck[$onlineId] = true;
+                                sleep(300);
+                                $recheck = '';
+
+                                continue;
+                            }
+
                             $query = $this->database->prepare("SELECT ttp.np_communication_id
                                 FROM   trophy_title_player ttp
                                 WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
@@ -1704,15 +1720,19 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
                     $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
                     $query->execute();
+
+                    unset($missingGameDeletionCheck[$onlineId]);
                 }
             } catch (NotFoundHttpException $exception) {
                 sleep(2);
                 $recheck = '';
+                unset($missingGameDeletionCheck[$onlineId]);
 
                 continue;
             } catch (UnauthorizedHttpException $exception) {
                 sleep(2);
                 $recheck = '';
+                unset($missingGameDeletionCheck[$onlineId]);
 
                 continue;
             } finally {
