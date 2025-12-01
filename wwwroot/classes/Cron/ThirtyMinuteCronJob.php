@@ -59,6 +59,16 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
     }
 
+    private function setWaitingScanProgress(int $workerId, string $message): void
+    {
+        $this->setWorkerScanProgress(
+            $workerId,
+            [
+                'title' => $message,
+            ]
+        );
+    }
+
     /**
      * @param array<int, object> $trophyTitles
      * @param array<string, string> $gameLastUpdatedDate
@@ -674,6 +684,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $level = $user->trophySummary();
             } catch (Exception $e) {
                 // Wait 5 minutes to not hammer Sony
+                $this->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'Encountered a problem while scanning. Waiting 5 minutes before retrying.'
+                );
                 sleep(60 * 5);
 
                 // Something is odd with PSN, break out and try again later.
@@ -686,6 +700,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $level = $user->trophySummary()->level();
             } catch (TypeError $e) {
                 // Rare error, wait 1 minute to not hammer Sony and try again.
+                $this->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'Encountered a problem while scanning. Waiting 1 minute before retrying.'
+                );
                 sleep(60 * 1);
                 break;
             } catch (Exception $e) {
