@@ -1410,6 +1410,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         if ($shouldDeleteMissingGames) {
                             if (!($missingGameDeletionCheck[$onlineId] ?? false)) {
                                 $missingGameDeletionCheck[$onlineId] = true;
+                                $this->setWaitingScanProgress(
+                                    (int) $worker['id'],
+                                    'Waiting 5 minutes before retrying because of game deletion check.'
+                                );
                                 sleep(300);
                                 $recheck = '';
 
