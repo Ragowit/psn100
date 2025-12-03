@@ -43,80 +43,80 @@ class ChangelogEntryPresenter
         $extra = $this->escape($this->entry->getExtra());
 
         switch ($this->entry->getChangeType()) {
-            case ChangelogEntry::TYPE_GAME_CLONE:
+            case ChangelogEntryType::GAME_CLONE:
                 return sprintf(
                     '%s was cloned: %s',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges),
                     $this->formatGameReference($param2Link, '', $param2PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_COPY:
+            case ChangelogEntryType::GAME_COPY:
                 return sprintf(
                     'Copied trophy data from %s into %s.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges),
                     $this->formatGameReference($param2Link, '', $param2PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_DELETE:
+            case ChangelogEntryType::GAME_DELETE:
                 return sprintf(
                     "The merged game entry for '%s' have been deleted.",
                     $extra
                 );
-            case ChangelogEntry::TYPE_GAME_DELISTED:
+            case ChangelogEntryType::GAME_DELISTED:
                 return sprintf(
                     '%s status was set to delisted.',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_DELISTED_AND_OBSOLETE:
+            case ChangelogEntryType::GAME_DELISTED_AND_OBSOLETE:
                 return sprintf(
                     '%s status was set to delisted &amp; obsolete.',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_HISTORY_SNAPSHOT:
+            case ChangelogEntryType::GAME_HISTORY_SNAPSHOT:
                 return sprintf(
                     'A new trophy history snapshot was recorded for %s.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_MERGE:
+            case ChangelogEntryType::GAME_MERGE:
                 return sprintf(
                     '%s was merged into %s',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges),
                     $this->formatGameReference($param2Link, '', $param2PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_NORMAL:
+            case ChangelogEntryType::GAME_NORMAL:
                 return sprintf(
                     '%s status was set to normal.',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_OBSOLETE:
+            case ChangelogEntryType::GAME_OBSOLETE:
                 return sprintf(
                     '%s status was set to obsolete.',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_OBTAINABLE:
+            case ChangelogEntryType::GAME_OBTAINABLE:
                 return sprintf(
                     'Trophies have been tagged as obtainable for %s.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_RESCAN:
+            case ChangelogEntryType::GAME_RESCAN:
                 return sprintf(
                     'The game %s have been rescanned for updated/new trophy data and game details.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_RESET:
+            case ChangelogEntryType::GAME_RESET:
                 return sprintf(
                     'Merged trophies have been reset for %s.',
                     $this->formatGameReference($param1Link, '', $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_UNOBTAINABLE:
+            case ChangelogEntryType::GAME_UNOBTAINABLE:
                 return sprintf(
                     'Trophies have been tagged as unobtainable for %s.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_UPDATE:
+            case ChangelogEntryType::GAME_UPDATE:
                 return sprintf(
                     '%s was updated.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
                 );
-            case ChangelogEntry::TYPE_GAME_VERSION:
+            case ChangelogEntryType::GAME_VERSION:
                 return sprintf(
                     '%s has a new version.',
                     $this->formatGameReference($param1Link, $param1RegionBadge, $param1PlatformBadges)
@@ -124,7 +124,7 @@ class ChangelogEntryPresenter
             default:
                 return sprintf(
                     'Unknown type: %s',
-                    $this->escape($this->entry->getChangeType())
+                    $this->escape($this->entry->getChangeTypeValue())
                 );
         }
     }
