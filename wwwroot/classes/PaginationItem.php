@@ -2,22 +2,15 @@
 
 declare(strict_types=1);
 
-final class PaginationItem
+final readonly class PaginationItem
 {
-    private ?int $page;
-
-    private string $label;
-
-    private bool $active = false;
-
-    private bool $disabled = false;
-
-    private ?string $ariaLabel = null;
-
-    private function __construct(?int $page, string $label)
-    {
-        $this->page = $page;
-        $this->label = $label;
+    private function __construct(
+        private ?int $page,
+        private string $label,
+        private bool $active = false,
+        private bool $disabled = false,
+        private ?string $ariaLabel = null,
+    ) {
     }
 
     public static function forPage(int $page, string $label): self
@@ -27,28 +20,40 @@ final class PaginationItem
 
     public static function ellipsis(): self
     {
-        return (new self(null, '...'))->markAsDisabled();
+        return new self(null, '...', disabled: true);
     }
 
     public function markAsActive(): self
     {
-        $this->active = true;
-
-        return $this;
+        return new self(
+            page: $this->page,
+            label: $this->label,
+            active: true,
+            disabled: $this->disabled,
+            ariaLabel: $this->ariaLabel,
+        );
     }
 
     public function markAsDisabled(): self
     {
-        $this->disabled = true;
-
-        return $this;
+        return new self(
+            page: $this->page,
+            label: $this->label,
+            active: $this->active,
+            disabled: true,
+            ariaLabel: $this->ariaLabel,
+        );
     }
 
     public function setAriaLabel(?string $ariaLabel): self
     {
-        $this->ariaLabel = $ariaLabel;
-
-        return $this;
+        return new self(
+            page: $this->page,
+            label: $this->label,
+            active: $this->active,
+            disabled: $this->disabled,
+            ariaLabel: $ariaLabel,
+        );
     }
 
     /**
