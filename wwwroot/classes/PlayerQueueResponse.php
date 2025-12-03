@@ -2,21 +2,16 @@
 
 declare(strict_types=1);
 
-class PlayerQueueResponse implements \JsonSerializable
+readonly class PlayerQueueResponse implements \JsonSerializable
 {
     private const STATUS_QUEUED = 'queued';
     private const STATUS_COMPLETE = 'complete';
     private const STATUS_ERROR = 'error';
 
-    private string $status;
-
-    private string $message;
-
-    private function __construct(string $status, string $message)
-    {
-        $this->status = $status;
-        $this->message = $message;
-    }
+    private function __construct(
+        private string $status,
+        private string $message,
+    ) {}
 
     public static function queued(string $message): self
     {
