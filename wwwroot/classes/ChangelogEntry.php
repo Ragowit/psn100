@@ -2,27 +2,31 @@
 
 declare(strict_types=1);
 
+enum ChangelogEntryType: string
+{
+    case GAME_CLONE = 'GAME_CLONE';
+    case GAME_COPY = 'GAME_COPY';
+    case GAME_DELETE = 'GAME_DELETE';
+    case GAME_DELISTED = 'GAME_DELISTED';
+    case GAME_DELISTED_AND_OBSOLETE = 'GAME_DELISTED_AND_OBSOLETE';
+    case GAME_HISTORY_SNAPSHOT = 'GAME_HISTORY_SNAPSHOT';
+    case GAME_MERGE = 'GAME_MERGE';
+    case GAME_NORMAL = 'GAME_NORMAL';
+    case GAME_OBSOLETE = 'GAME_OBSOLETE';
+    case GAME_OBTAINABLE = 'GAME_OBTAINABLE';
+    case GAME_RESCAN = 'GAME_RESCAN';
+    case GAME_RESET = 'GAME_RESET';
+    case GAME_UNOBTAINABLE = 'GAME_UNOBTAINABLE';
+    case GAME_UPDATE = 'GAME_UPDATE';
+    case GAME_VERSION = 'GAME_VERSION';
+    case UNKNOWN = 'UNKNOWN';
+}
 
 class ChangelogEntry
 {
-    public const TYPE_GAME_CLONE = 'GAME_CLONE';
-    public const TYPE_GAME_COPY = 'GAME_COPY';
-    public const TYPE_GAME_DELETE = 'GAME_DELETE';
-    public const TYPE_GAME_DELISTED = 'GAME_DELISTED';
-    public const TYPE_GAME_DELISTED_AND_OBSOLETE = 'GAME_DELISTED_AND_OBSOLETE';
-    public const TYPE_GAME_HISTORY_SNAPSHOT = 'GAME_HISTORY_SNAPSHOT';
-    public const TYPE_GAME_MERGE = 'GAME_MERGE';
-    public const TYPE_GAME_NORMAL = 'GAME_NORMAL';
-    public const TYPE_GAME_OBSOLETE = 'GAME_OBSOLETE';
-    public const TYPE_GAME_OBTAINABLE = 'GAME_OBTAINABLE';
-    public const TYPE_GAME_RESCAN = 'GAME_RESCAN';
-    public const TYPE_GAME_RESET = 'GAME_RESET';
-    public const TYPE_GAME_UNOBTAINABLE = 'GAME_UNOBTAINABLE';
-    public const TYPE_GAME_UPDATE = 'GAME_UPDATE';
-    public const TYPE_GAME_VERSION = 'GAME_VERSION';
-
     private DateTimeImmutable $time;
-    private string $changeType;
+    private ChangelogEntryType $changeType;
+    private string $changeTypeValue;
     private ?int $param1Id;
     private ?string $param1Name;
     /**
@@ -57,7 +61,8 @@ class ChangelogEntry
         ?string $extra
     ) {
         $this->time = $time;
-        $this->changeType = $changeType;
+        $this->changeTypeValue = $changeType;
+        $this->changeType = self::normalizeChangeType($changeType);
         $this->param1Id = $param1Id;
         $this->param1Name = $param1Name;
         $this->param1Platforms = $param1Platforms;
@@ -98,6 +103,11 @@ class ChangelogEntry
         }
     }
 
+    private static function normalizeChangeType(string $changeType): ChangelogEntryType
+    {
+        return ChangelogEntryType::tryFrom($changeType) ?? ChangelogEntryType::UNKNOWN;
+    }
+
     /**
      * @return array<int, string>
      */
@@ -121,9 +131,14 @@ class ChangelogEntry
         return $this->time;
     }
 
-    public function getChangeType(): string
+    public function getChangeType(): ChangelogEntryType
     {
         return $this->changeType;
+    }
+
+    public function getChangeTypeValue(): string
+    {
+        return $this->changeTypeValue;
     }
 
     public function getParam1Id(): ?int
