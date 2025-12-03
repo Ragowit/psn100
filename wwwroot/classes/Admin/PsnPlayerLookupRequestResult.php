@@ -2,36 +2,18 @@
 
 declare(strict_types=1);
 
-final class PsnPlayerLookupRequestResult
+final readonly class PsnPlayerLookupRequestResult
 {
-    private string $normalizedOnlineId;
-
-    /**
-     * @var array<string, mixed>|null
-     */
-    private ?array $result;
-
-    private ?string $errorMessage;
-
-    private ?string $decodedNpId;
-
-    private ?string $npCountry;
-
     /**
      * @param array<string, mixed>|null $result
      */
     public function __construct(
-        string $normalizedOnlineId,
-        ?array $result,
-        ?string $errorMessage,
-        ?string $decodedNpId,
-        ?string $npCountry
+        private string $normalizedOnlineId,
+        private ?array $result,
+        private ?string $errorMessage,
+        private ?string $decodedNpId,
+        private ?string $npCountry
     ) {
-        $this->normalizedOnlineId = $normalizedOnlineId;
-        $this->result = $result;
-        $this->errorMessage = $errorMessage;
-        $this->decodedNpId = $decodedNpId;
-        $this->npCountry = $npCountry;
     }
 
     public function getNormalizedOnlineId(): string

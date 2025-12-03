@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/WorkerPageSortLink.php';
 
-final class WorkerPageResult
+final readonly class WorkerPageResult
 {
     /**
      * @var list<Worker>

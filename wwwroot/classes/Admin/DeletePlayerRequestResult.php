@@ -4,19 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/DeletePlayerConfirmation.php';
 
-final class DeletePlayerRequestResult
+final readonly class DeletePlayerRequestResult
 {
-    private ?string $successMessage;
-
-    private ?string $errorMessage;
-
-    private ?DeletePlayerConfirmation $confirmation;
-
-    private function __construct(?string $successMessage, ?string $errorMessage, ?DeletePlayerConfirmation $confirmation)
-    {
-        $this->successMessage = $successMessage;
-        $this->errorMessage = $errorMessage;
-        $this->confirmation = $confirmation;
+    private function __construct(
+        private ?string $successMessage,
+        private ?string $errorMessage,
+        private ?DeletePlayerConfirmation $confirmation
+    ) {
     }
 
     public static function empty(): self

@@ -12,16 +12,12 @@ require_once __DIR__ . '/TemplateRenderer.php';
  * unit test and reuse response emitting logic while keeping the
  * {@see Application} class focused on routing concerns.
  */
-final class RouteResultResponder
+final readonly class RouteResultResponder
 {
-    private TemplateRenderer $templateRenderer;
-
-    private string $notFoundTemplate;
-
-    public function __construct(TemplateRenderer $templateRenderer, string $notFoundTemplate = '404.php')
-    {
-        $this->templateRenderer = $templateRenderer;
-        $this->notFoundTemplate = $notFoundTemplate;
+    public function __construct(
+        private TemplateRenderer $templateRenderer,
+        private string $notFoundTemplate = '404.php'
+    ) {
     }
 
     public function respond(RouteResult $routeResult): void
