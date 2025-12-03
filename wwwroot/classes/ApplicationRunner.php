@@ -6,21 +6,15 @@ require_once __DIR__ . '/ApplicationContainer.php';
 require_once __DIR__ . '/MaintenanceMode.php';
 require_once __DIR__ . '/MaintenanceResponder.php';
 
-final class ApplicationRunner
+final readonly class ApplicationRunner
 {
-    private ApplicationContainer $applicationContainer;
-
-    private MaintenanceMode $maintenanceMode;
-
     private MaintenanceResponder $maintenanceResponder;
 
     public function __construct(
-        ApplicationContainer $applicationContainer,
-        MaintenanceMode $maintenanceMode,
+        private ApplicationContainer $applicationContainer,
+        private MaintenanceMode $maintenanceMode,
         ?MaintenanceResponder $maintenanceResponder = null
     ) {
-        $this->applicationContainer = $applicationContainer;
-        $this->maintenanceMode = $maintenanceMode;
         $this->maintenanceResponder = $maintenanceResponder ?? new MaintenanceResponder();
     }
 

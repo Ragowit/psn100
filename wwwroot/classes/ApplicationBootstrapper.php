@@ -6,13 +6,10 @@ require_once __DIR__ . '/ApplicationContainer.php';
 require_once __DIR__ . '/ApplicationRunner.php';
 require_once __DIR__ . '/MaintenanceResponder.php';
 
-final class ApplicationBootstrapper
+final readonly class ApplicationBootstrapper
 {
-    private ApplicationContainer $applicationContainer;
-
-    private function __construct(ApplicationContainer $applicationContainer)
+    private function __construct(private ApplicationContainer $applicationContainer)
     {
-        $this->applicationContainer = $applicationContainer;
     }
 
     public static function bootstrap(?ApplicationContainer $applicationContainer = null): self

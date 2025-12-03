@@ -2,46 +2,19 @@
 
 declare(strict_types=1);
 
-final class FooterViewModel
+final readonly class FooterViewModel
 {
-    private int $startYear;
-
-    private int $currentYear;
-
-    private string $versionLabel;
-
-    private string $releaseUrl;
-
-    private string $changelogUrl;
-
-    private string $issuesUrl;
-
-    private string $creatorName;
-
-    private string $creatorProfileUrl;
-
-    private string $contributorsUrl;
-
     public function __construct(
-        int $startYear,
-        int $currentYear,
-        string $versionLabel,
-        string $releaseUrl,
-        string $changelogUrl,
-        string $issuesUrl,
-        string $creatorName,
-        string $creatorProfileUrl,
-        string $contributorsUrl
+        private int $startYear,
+        private int $currentYear,
+        private string $versionLabel,
+        private string $releaseUrl,
+        private string $changelogUrl,
+        private string $issuesUrl,
+        private string $creatorName,
+        private string $creatorProfileUrl,
+        private string $contributorsUrl
     ) {
-        $this->startYear = $startYear;
-        $this->currentYear = $currentYear;
-        $this->versionLabel = $versionLabel;
-        $this->releaseUrl = $releaseUrl;
-        $this->changelogUrl = $changelogUrl;
-        $this->issuesUrl = $issuesUrl;
-        $this->creatorName = $creatorName;
-        $this->creatorProfileUrl = $creatorProfileUrl;
-        $this->contributorsUrl = $contributorsUrl;
     }
 
     public static function createDefault(): self

@@ -5,58 +5,22 @@ declare(strict_types=1);
 require_once __DIR__ . '/GamePlayerFilter.php';
 require_once __DIR__ . '/Utility.php';
 
-class GameLeaderboardRow
+readonly class GameLeaderboardRow
 {
-    private string $accountId;
-
-    private string $avatarUrl;
-
-    private string $countryCode;
-
-    private string $onlineId;
-
-    private int $trophyCountNpwr;
-
-    private int $trophyCountSony;
-
-    private int $bronzeCount;
-
-    private int $silverCount;
-
-    private int $goldCount;
-
-    private int $platinumCount;
-
-    private int $progress;
-
-    private string $lastKnownDate;
-
     private function __construct(
-        string $accountId,
-        string $avatarUrl,
-        string $countryCode,
-        string $onlineId,
-        int $trophyCountNpwr,
-        int $trophyCountSony,
-        int $bronzeCount,
-        int $silverCount,
-        int $goldCount,
-        int $platinumCount,
-        int $progress,
-        string $lastKnownDate
+        private string $accountId,
+        private string $avatarUrl,
+        private string $countryCode,
+        private string $onlineId,
+        private int $trophyCountNpwr,
+        private int $trophyCountSony,
+        private int $bronzeCount,
+        private int $silverCount,
+        private int $goldCount,
+        private int $platinumCount,
+        private int $progress,
+        private string $lastKnownDate
     ) {
-        $this->accountId = $accountId;
-        $this->avatarUrl = $avatarUrl;
-        $this->countryCode = $countryCode;
-        $this->onlineId = $onlineId;
-        $this->trophyCountNpwr = $trophyCountNpwr;
-        $this->trophyCountSony = $trophyCountSony;
-        $this->bronzeCount = $bronzeCount;
-        $this->silverCount = $silverCount;
-        $this->goldCount = $goldCount;
-        $this->platinumCount = $platinumCount;
-        $this->progress = $progress;
-        $this->lastKnownDate = $lastKnownDate;
     }
 
     /**
