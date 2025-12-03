@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class PlayerRandomGame
+final readonly class PlayerRandomGame
 {
     private int $id;
 
@@ -108,6 +108,9 @@ class PlayerRandomGame
         return $this->progress;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getPlatforms(): array
     {
         if ($this->platform === '') {

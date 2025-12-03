@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-class PlayerRandomGamesFilter
+final readonly class PlayerRandomGamesFilter
 {
-    public const PLATFORM_PC = 'pc';
-    public const PLATFORM_PS3 = 'ps3';
-    public const PLATFORM_PS4 = 'ps4';
-    public const PLATFORM_PS5 = 'ps5';
-    public const PLATFORM_PSVITA = 'psvita';
-    public const PLATFORM_PSVR = 'psvr';
-    public const PLATFORM_PSVR2 = 'psvr2';
+    public const string PLATFORM_PC = 'pc';
+    public const string PLATFORM_PS3 = 'ps3';
+    public const string PLATFORM_PS4 = 'ps4';
+    public const string PLATFORM_PS5 = 'ps5';
+    public const string PLATFORM_PSVITA = 'psvita';
+    public const string PLATFORM_PSVR = 'psvr';
+    public const string PLATFORM_PSVR2 = 'psvr2';
 
     /**
      * @var array<string, bool>
