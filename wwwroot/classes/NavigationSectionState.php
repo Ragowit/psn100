@@ -2,16 +2,10 @@
 
 declare(strict_types=1);
 
-final class NavigationSectionState
+final readonly class NavigationSectionState
 {
-    private string $section;
-
-    private bool $active;
-
-    public function __construct(string $section, bool $active)
+    public function __construct(private string $section, private bool $active)
     {
-        $this->section = $section;
-        $this->active = $active;
     }
 
     public function getSection(): string
