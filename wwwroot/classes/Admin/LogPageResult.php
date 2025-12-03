@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/LogEntry.php';
 
-final class LogPageResult
+final readonly class LogPageResult
 {
     /**
      * @var list<LogEntry>

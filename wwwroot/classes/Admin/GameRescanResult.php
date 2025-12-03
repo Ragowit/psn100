@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-final class GameRescanResult
+final readonly class GameRescanResult
 {
-    private string $message;
-
     /**
      * @var array<int, array<string, mixed>>
      */
@@ -14,9 +12,10 @@ final class GameRescanResult
     /**
      * @param array<int, array<string, mixed>> $differences
      */
-    public function __construct(string $message, array $differences)
-    {
-        $this->message = $message;
+    public function __construct(
+        private string $message,
+        array $differences
+    ) {
         $this->differences = array_values($differences);
     }
 
