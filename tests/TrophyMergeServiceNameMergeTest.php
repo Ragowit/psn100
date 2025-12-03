@@ -13,7 +13,7 @@ final class TrophyMergeServiceNameMergeTest extends TestCase
                 'np_communication_id' => 'NP_CHILD',
                 'group_id' => 'default',
                 'order_id' => 5,
-                'name' => "\t Trophy A \n",
+                'name' => "\t trophy a \n",
             ],
         ];
 
@@ -21,7 +21,7 @@ final class TrophyMergeServiceNameMergeTest extends TestCase
             'np_communication_id' => 'MERGE_000001',
             'group_id' => 'default',
             'order_id' => 7,
-            'name' => "Trophy A\t\n",
+            'name' => "TrOpHy A\t\n",
         ];
 
         $database = new NameMappingPDO($childTrophies, $parentTrophy);

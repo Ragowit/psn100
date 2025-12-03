@@ -1149,6 +1149,17 @@ SQL
         $query->execute();
     }
 
+    private function normalizeTrophyName(string $name): string
+    {
+        $name = trim($name);
+
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($name, 'UTF-8');
+        }
+
+        return strtolower($name);
+    }
+
     private function insertMappingsByName(int $childGameId, int $parentGameId): string
     {
         $message = '';
@@ -1186,12 +1197,12 @@ SQL
         $parentTrophyByName = [];
 
         while ($parentTrophy = $parentTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $name = trim((string) $parentTrophy['name']);
+            $name = $this->normalizeTrophyName((string) $parentTrophy['name']);
             $parentTrophyByName[$name][] = $parentTrophy;
         }
 
         while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $childName = trim((string) $childTrophy['name']);
+            $childName = $this->normalizeTrophyName((string) $childTrophy['name']);
             $parentTrophy = $parentTrophyByName[$childName] ?? [];
 
             if (count($parentTrophy) === 1) {
