@@ -2,23 +2,14 @@
 
 declare(strict_types=1);
 
-final class PlayerScanProgress
+final readonly class PlayerScanProgress
 {
-    private ?int $current;
-
-    private ?int $total;
-
-    private ?string $title;
-
-    private ?string $npCommunicationId;
-
-    private function __construct(?int $current, ?int $total, ?string $title, ?string $npCommunicationId)
-    {
-        $this->current = $current;
-        $this->total = $total;
-        $this->title = $title;
-        $this->npCommunicationId = $npCommunicationId;
-    }
+    private function __construct(
+        private ?int $current,
+        private ?int $total,
+        private ?string $title,
+        private ?string $npCommunicationId,
+    ) {}
 
     /**
      * @param array<string, mixed>|null $data
