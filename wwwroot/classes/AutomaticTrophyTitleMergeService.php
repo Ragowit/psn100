@@ -458,8 +458,8 @@ final class AutomaticTrophyTitleMergeService
             $trophies[] = [
                 'group_id' => (string) $row['group_id'],
                 'order_id' => (int) $row['order_id'],
-                'name' => (string) $row['name'],
-                'detail' => (string) ($row['detail'] ?? ''),
+                'name' => trim((string) $row['name']),
+                'detail' => trim((string) ($row['detail'] ?? '')),
             ];
         }
 
