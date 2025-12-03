@@ -289,6 +289,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $loggedIn = true;
                 } catch (TypeError $e) {
                     // Something odd, let's wait three minutes
+                    $this->setWaitingScanProgress(
+                        (int) $worker['id'],
+                        'Encountered a login problem. Waiting 3 minutes before retrying.'
+                    );
                     sleep(60 * 3);
                 } catch (Exception $e) {
                     $this->logger->log("Can't login with worker ". $worker["id"]);
@@ -425,6 +429,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
             }
 
             $onlineId = (string) $player['online_id'];
+
+            $this->setWaitingScanProgress(
+                (int) $worker['id'],
+                sprintf('Updating profile data for %s.', $onlineId)
+            );
 
             // Initialize the current player
             try {
@@ -566,9 +575,14 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 continue;
             }
 
+            $this->setWaitingScanProgress(
+                (int) $worker['id'],
+                sprintf('Updating avatar for %s.', $onlineId)
+            );
+
             // Get the avatar url we want to save
             $avatarUrls = $user->avatarUrls();
-            for ($i = 0; $i < 4; $i++) { 
+            for ($i = 0; $i < 4; $i++) {
                 switch ($i) {
                     case 0:
                         $size = "xl";
@@ -741,6 +755,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
                         $query->execute();
                         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
+
+                        $this->setWaitingScanProgress(
+                            (int) $worker['id'],
+                            sprintf('Fetching game list for %s.', $onlineId)
+                        );
 
                         try {
                             $trophyTitleCollection = $user->trophyTitles();
