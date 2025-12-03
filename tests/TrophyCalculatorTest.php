@@ -127,7 +127,6 @@ final class FakePDO extends PDO
     {
     }
 
-    #[\ReturnTypeWillChange]
     public function prepare(string $query, array $options = []): FakePDOStatement
     {
         return new FakePDOStatement($this, $query);
@@ -237,7 +236,7 @@ final class FakePDO extends PDO
     }
 }
 
-final class FakePDOStatement
+final class FakePDOStatement extends PDOStatement
 {
     private FakePDO $database;
 
@@ -255,9 +254,11 @@ final class FakePDOStatement
         $this->query = $query;
     }
 
-    public function bindValue(string $param, mixed $value, ?int $type = null): void
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
         $this->parameters[$param] = $value;
+
+        return true;
     }
 
     /**
@@ -300,7 +301,7 @@ final class FakePDOStatement
     /**
      * @return array<mixed>
      */
-    public function fetchAll(int $mode = PDO::FETCH_DEFAULT): array
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
     {
         if ($mode === PDO::FETCH_KEY_PAIR) {
             return $this->result;
@@ -309,7 +310,7 @@ final class FakePDOStatement
         return $this->result;
     }
 
-    public function fetch(int $mode = PDO::FETCH_DEFAULT): array|false
+    public function fetch(int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): array|false
     {
         if ($this->result === []) {
             return false;

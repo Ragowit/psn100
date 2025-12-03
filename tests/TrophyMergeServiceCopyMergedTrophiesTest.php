@@ -72,8 +72,7 @@ final class RecordingPDO extends PDO
         $this->mergeRowCount = $mergeRowCount;
     }
 
-    #[\ReturnTypeWillChange]
-    public function prepare($statement, $options = []): object
+    public function prepare(string $statement, array $options = []): PDOStatement
     {
         $trimmed = trim((string) $statement);
         $normalized = preg_replace('/\s+/', ' ', $trimmed) ?? '';
@@ -109,7 +108,7 @@ final class RecordingPDO extends PDO
     }
 }
 
-final class RecordingCountStatement
+final class RecordingCountStatement extends PDOStatement
 {
     private int $count;
 
@@ -118,24 +117,25 @@ final class RecordingCountStatement
         $this->count = $count;
     }
 
-    public function bindValue($param, $value, $type = null): void
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
         // No-op for testing purposes.
+
+        return true;
     }
 
-    public function execute(): bool
+    public function execute(?array $params = null): bool
     {
         return true;
     }
 
-    #[\ReturnTypeWillChange]
-    public function fetchColumn(): int
+    public function fetchColumn(int $column = 0): int
     {
         return $this->count;
     }
 }
 
-final class RecordingInsertStatement
+final class RecordingInsertStatement extends PDOStatement
 {
     private RecordingPDO $pdo;
     /** @var array<string, scalar|null> */
@@ -146,12 +146,14 @@ final class RecordingInsertStatement
         $this->pdo = $pdo;
     }
 
-    public function bindValue($param, $value, $type = null): void
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
         $this->parameters[$param] = $value;
+
+        return true;
     }
 
-    public function execute(): bool
+    public function execute(?array $params = null): bool
     {
         $this->pdo->recordInsert($this->parameters);
 
@@ -159,7 +161,7 @@ final class RecordingInsertStatement
     }
 }
 
-final class RecordingUpdateStatement
+final class RecordingUpdateStatement extends PDOStatement
 {
     private RecordingPDO $pdo;
     /** @var array<string, scalar|null> */
@@ -170,12 +172,14 @@ final class RecordingUpdateStatement
         $this->pdo = $pdo;
     }
 
-    public function bindValue($param, $value, $type = null): void
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
         $this->parameters[$param] = $value;
+
+        return true;
     }
 
-    public function execute(): bool
+    public function execute(?array $params = null): bool
     {
         $this->pdo->recordUpdate($this->parameters);
 
