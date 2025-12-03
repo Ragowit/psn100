@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationSectionState.php';
 
 final class NavigationState
 {
-    private const NAVIGATION_KEYS = ['home', 'leaderboard', 'game', 'trophy', 'avatar', 'about'];
-
     /**
      * @param array<string, NavigationSectionState> $sectionStates
      */
@@ -60,42 +59,54 @@ final class NavigationState
 
     public function getHomeClass(): string
     {
-        return $this->getActiveClass('home');
+        return $this->getActiveClass(NavigationSection::Home);
     }
 
     public function getLeaderboardClass(): string
     {
-        return $this->getActiveClass('leaderboard');
+        return $this->getActiveClass(NavigationSection::Leaderboard);
     }
 
     public function getGameClass(): string
     {
-        return $this->getActiveClass('game');
+        return $this->getActiveClass(NavigationSection::Game);
     }
 
     public function getTrophyClass(): string
     {
-        return $this->getActiveClass('trophy');
+        return $this->getActiveClass(NavigationSection::Trophy);
     }
 
     public function getAvatarClass(): string
     {
-        return $this->getActiveClass('avatar');
+        return $this->getActiveClass(NavigationSection::Avatar);
     }
 
     public function getAboutClass(): string
     {
-        return $this->getActiveClass('about');
+        return $this->getActiveClass(NavigationSection::About);
     }
 
-    public function isSectionActive(string $section): bool
+    public function isSectionActive(NavigationSection|string $section): bool
     {
-        return $this->getSectionState($section)?->isActive() ?? false;
+        $resolvedSection = self::toNavigationSection($section);
+
+        if ($resolvedSection === null) {
+            return false;
+        }
+
+        return $this->getSectionState($resolvedSection)?->isActive() ?? false;
     }
 
-    private function getActiveClass(string $section): string
+    private function getActiveClass(NavigationSection|string $section): string
     {
-        $state = $this->getSectionState($section);
+        $resolvedSection = self::toNavigationSection($section);
+
+        if ($resolvedSection === null) {
+            return '';
+        }
+
+        $state = $this->getSectionState($resolvedSection);
 
         return $state?->getCssClass() ?? '';
     }
@@ -108,12 +119,12 @@ final class NavigationState
     {
         $states = [];
 
-        foreach (self::NAVIGATION_KEYS as $section) {
-            $states[$section] = new NavigationSectionState($section, false);
+        foreach (NavigationSection::cases() as $section) {
+            $states[$section->value] = new NavigationSectionState($section, false);
         }
 
         $activeSection = self::resolveActiveSection($requestUri);
-        $states[$activeSection] = new NavigationSectionState($activeSection, true);
+        $states[$activeSection->value] = new NavigationSectionState($activeSection, true);
 
         return $states;
     }
@@ -130,33 +141,42 @@ final class NavigationState
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
 
-    private static function resolveActiveSection(string $requestUri): string
+    private static function resolveActiveSection(string $requestUri): NavigationSection
     {
         if (str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')) {
-            return 'leaderboard';
+            return NavigationSection::Leaderboard;
         }
 
         if (str_starts_with($requestUri, '/game')) {
-            return 'game';
+            return NavigationSection::Game;
         }
 
         if (str_starts_with($requestUri, '/trophy')) {
-            return 'trophy';
+            return NavigationSection::Trophy;
         }
 
         if (str_starts_with($requestUri, '/avatar')) {
-            return 'avatar';
+            return NavigationSection::Avatar;
         }
 
         if (str_starts_with($requestUri, '/about')) {
-            return 'about';
+            return NavigationSection::About;
         }
 
-        return 'home';
+        return NavigationSection::Home;
     }
 
-    private function getSectionState(string $section): ?NavigationSectionState
+    private function getSectionState(NavigationSection $section): ?NavigationSectionState
     {
-        return $this->sectionStates[$section] ?? null;
+        return $this->sectionStates[$section->value] ?? null;
+    }
+
+    private static function toNavigationSection(NavigationSection|string $section): ?NavigationSection
+    {
+        if ($section instanceof NavigationSection) {
+            return $section;
+        }
+
+        return NavigationSection::fromName($section);
     }
 }
