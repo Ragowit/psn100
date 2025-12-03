@@ -1158,7 +1158,7 @@ SQL
             SELECT np_communication_id,
                    group_id,
                    order_id,
-                   `name`
+                   TRIM(`name`) AS name
             FROM   trophy
             WHERE  np_communication_id = (SELECT np_communication_id
                                           FROM   trophy_title
@@ -1178,11 +1178,11 @@ SQL
                 WHERE  np_communication_id = (SELECT np_communication_id
                                               FROM   trophy_title
                                               WHERE  id = :parent_game_id)
-                       AND `name` = :name
+                       AND TRIM(`name`) = :name
 SQL
             );
             $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
-            $parentTrophies->bindValue(':name', $childTrophy['name'], PDO::PARAM_STR);
+            $parentTrophies->bindValue(':name', trim((string) $childTrophy['name']), PDO::PARAM_STR);
             $parentTrophies->execute();
 
             $parentTrophy = $parentTrophies->fetchAll(PDO::FETCH_ASSOC);
