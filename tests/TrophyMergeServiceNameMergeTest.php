@@ -13,7 +13,7 @@ final class TrophyMergeServiceNameMergeTest extends TestCase
                 'np_communication_id' => 'NP_CHILD',
                 'group_id' => 'default',
                 'order_id' => 5,
-                'name' => ' Trophy A ',
+                'name' => "\t Trophy A \n",
             ],
         ];
 
@@ -21,7 +21,7 @@ final class TrophyMergeServiceNameMergeTest extends TestCase
             'np_communication_id' => 'MERGE_000001',
             'group_id' => 'default',
             'order_id' => 7,
-            'name' => 'Trophy A',
+            'name' => "Trophy A\t\n",
         ];
 
         $database = new NameMappingPDO($childTrophies, $parentTrophy);
@@ -76,8 +76,8 @@ final class NameMappingPDO extends PDO
             return new ChildTrophyStatement($this->childTrophies);
         }
 
-        if (str_contains($normalized, 'FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :parent_game_id)') && str_contains($normalized, 'TRIM(`name`) = :name')) {
-            return new ParentTrophyStatement($this->parentTrophy);
+        if (str_contains($normalized, 'FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :parent_game_id)')) {
+            return new ParentTrophyStatement([$this->parentTrophy]);
         }
 
         if (str_starts_with($normalized, 'INSERT IGNORE into trophy_merge')) {
@@ -133,37 +133,38 @@ final class ChildTrophyStatement extends PDOStatement
 
 final class ParentTrophyStatement extends PDOStatement
 {
-    /** @var array{np_communication_id:string, group_id:string, order_id:int, name:string} */
-    private array $parentTrophy;
+    /** @var list<array{np_communication_id:string, group_id:string, order_id:int, name:string}> */
+    private array $parentTrophies;
 
-    /** @var array<string, scalar> */
-    private array $parameters = [];
+    private int $index = 0;
 
-    /** @param array{np_communication_id:string, group_id:string, order_id:int, name:string} $parentTrophy */
-    public function __construct(array $parentTrophy)
+    /** @param list<array{np_communication_id:string, group_id:string, order_id:int, name:string}> $parentTrophies */
+    public function __construct(array $parentTrophies)
     {
-        $this->parentTrophy = $parentTrophy;
+        $this->parentTrophies = $parentTrophies;
     }
 
     public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
-        $this->parameters[(string) $param] = $value;
+        // No-op for testing purposes.
 
         return true;
     }
 
     public function execute(?array $params = null): bool
     {
+        $this->index = 0;
+
         return true;
     }
 
-    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    public function fetch(int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): array|false
     {
-        if (($this->parameters[':name'] ?? null) !== $this->parentTrophy['name']) {
-            return [];
+        if (!isset($this->parentTrophies[$this->index])) {
+            return false;
         }
 
-        return [$this->parentTrophy];
+        return $this->parentTrophies[$this->index++];
     }
 }
 
