@@ -2,17 +2,12 @@
 
 declare(strict_types=1);
 
-class PlayerQueueRequest
+readonly class PlayerQueueRequest
 {
-    private string $playerName;
-
-    private string $ipAddress;
-
-    private function __construct(string $playerName, string $ipAddress)
-    {
-        $this->playerName = $playerName;
-        $this->ipAddress = $ipAddress;
-    }
+    private function __construct(
+        private string $playerName,
+        private string $ipAddress,
+    ) {}
 
     public static function fromArrays(array $requestData, array $serverData): self
     {

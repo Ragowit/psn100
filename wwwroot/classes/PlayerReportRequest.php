@@ -2,20 +2,13 @@
 
 declare(strict_types=1);
 
-final class PlayerReportRequest
+final readonly class PlayerReportRequest
 {
-    private string $explanation;
-
-    private bool $explanationSubmitted;
-
-    private string $ipAddress;
-
-    private function __construct(string $explanation, bool $explanationSubmitted, string $ipAddress)
-    {
-        $this->explanation = $explanation;
-        $this->explanationSubmitted = $explanationSubmitted;
-        $this->ipAddress = $ipAddress;
-    }
+    private function __construct(
+        private string $explanation,
+        private bool $explanationSubmitted,
+        private string $ipAddress,
+    ) {}
 
     /**
      * @param array<string, mixed> $queryParameters
