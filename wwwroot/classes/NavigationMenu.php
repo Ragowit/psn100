@@ -2,32 +2,27 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationState.php';
 
 final class NavigationMenu
 {
     /**
-     * @var NavigationMenuItem[]
-     */
-    private array $items;
-
-    /**
      * @param NavigationMenuItem[] $items
      */
-    private function __construct(array $items)
+    private function __construct(private readonly array $items)
     {
-        $this->items = $items;
     }
 
     public static function createDefault(NavigationState $state): self
     {
         $items = [
-            new NavigationMenuItem('Home', '/', $state->isSectionActive('home')),
-            new NavigationMenuItem('Leaderboards', '/leaderboard/trophy', $state->isSectionActive('leaderboard')),
-            new NavigationMenuItem('Games', '/game', $state->isSectionActive('game')),
-            new NavigationMenuItem('Trophies', '/trophy', $state->isSectionActive('trophy')),
-            new NavigationMenuItem('Avatars', '/avatar', $state->isSectionActive('avatar')),
-            new NavigationMenuItem('About', '/about', $state->isSectionActive('about')),
+            new NavigationMenuItem('Home', '/', $state->isSectionActive(NavigationSection::Home)),
+            new NavigationMenuItem('Leaderboards', '/leaderboard/trophy', $state->isSectionActive(NavigationSection::Leaderboard)),
+            new NavigationMenuItem('Games', '/game', $state->isSectionActive(NavigationSection::Game)),
+            new NavigationMenuItem('Trophies', '/trophy', $state->isSectionActive(NavigationSection::Trophy)),
+            new NavigationMenuItem('Avatars', '/avatar', $state->isSectionActive(NavigationSection::Avatar)),
+            new NavigationMenuItem('About', '/about', $state->isSectionActive(NavigationSection::About)),
         ];
 
         return new self($items);
@@ -42,19 +37,10 @@ final class NavigationMenu
     }
 }
 
-final class NavigationMenuItem
+final readonly class NavigationMenuItem
 {
-    private string $label;
-
-    private string $href;
-
-    private bool $active;
-
-    public function __construct(string $label, string $href, bool $active)
+    public function __construct(private string $label, private string $href, private bool $active)
     {
-        $this->label = $label;
-        $this->href = $href;
-        $this->active = $active;
     }
 
     public function getLabel(): string
