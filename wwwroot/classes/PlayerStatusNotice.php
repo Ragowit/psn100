@@ -2,22 +2,17 @@
 
 declare(strict_types=1);
 
-final class PlayerStatusNotice
+readonly class PlayerStatusNotice
 {
     private const TYPE_FLAGGED = 'flagged';
     private const TYPE_PRIVATE = 'private';
     private const DISPUTE_BASE_URL = 'https://github.com/Ragowit/psn100/issues';
     private const PRIVATE_PROFILE_URL = 'https://www.playstation.com/en-us/support/account/privacy-settings-psn/';
 
-    private string $type;
-
-    private string $message;
-
-    private function __construct(string $type, string $message)
-    {
-        $this->type = $type;
-        $this->message = $message;
-    }
+    private function __construct(
+        private string $type,
+        private string $message,
+    ) {}
 
     public static function flagged(string $onlineId, ?string $accountId): self
     {
