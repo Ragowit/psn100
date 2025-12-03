@@ -1631,97 +1631,99 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $playerStatus = $query->fetchColumn();
 
                     if ($playerStatus == 0) {
-                        // Update user rarity points for each game
-                        $query = $this->database->prepare("WITH
-                                rarity AS(
-                                SELECT
-                                    trophy_earned.np_communication_id,
-                                    SUM(tm.rarity_point) AS points,
-                                    SUM(tm.in_game_rarity_point) AS in_game_points,
-                                    SUM(tm.rarity_name = 'COMMON') common,
-                                    SUM(tm.rarity_name = 'UNCOMMON') uncommon,
-                                    SUM(tm.rarity_name = 'RARE') rare,
-                                    SUM(tm.rarity_name = 'EPIC') epic,
-                                    SUM(tm.rarity_name = 'LEGENDARY') legendary,
-                                    SUM(tm.in_game_rarity_name = 'COMMON') in_game_common,
-                                    SUM(tm.in_game_rarity_name = 'UNCOMMON') in_game_uncommon,
-                                    SUM(tm.in_game_rarity_name = 'RARE') in_game_rare,
-                                    SUM(tm.in_game_rarity_name = 'EPIC') in_game_epic,
-                                    SUM(tm.in_game_rarity_name = 'LEGENDARY') in_game_legendary
-                                FROM
-                                    trophy_earned
-                                JOIN trophy t ON t.np_communication_id = trophy_earned.np_communication_id
-                                    AND t.order_id = trophy_earned.order_id
-                                JOIN trophy_meta tm ON tm.trophy_id = t.id
+                        $this->executeWithDeadlockRetry(function () use ($user): void {
+                            // Update user rarity points for each game
+                            $query = $this->database->prepare("WITH
+                                    rarity AS(
+                                    SELECT
+                                        trophy_earned.np_communication_id,
+                                        SUM(tm.rarity_point) AS points,
+                                        SUM(tm.in_game_rarity_point) AS in_game_points,
+                                        SUM(tm.rarity_name = 'COMMON') common,
+                                        SUM(tm.rarity_name = 'UNCOMMON') uncommon,
+                                        SUM(tm.rarity_name = 'RARE') rare,
+                                        SUM(tm.rarity_name = 'EPIC') epic,
+                                        SUM(tm.rarity_name = 'LEGENDARY') legendary,
+                                        SUM(tm.in_game_rarity_name = 'COMMON') in_game_common,
+                                        SUM(tm.in_game_rarity_name = 'UNCOMMON') in_game_uncommon,
+                                        SUM(tm.in_game_rarity_name = 'RARE') in_game_rare,
+                                        SUM(tm.in_game_rarity_name = 'EPIC') in_game_epic,
+                                        SUM(tm.in_game_rarity_name = 'LEGENDARY') in_game_legendary
+                                    FROM
+                                        trophy_earned
+                                    JOIN trophy t ON t.np_communication_id = trophy_earned.np_communication_id
+                                        AND t.order_id = trophy_earned.order_id
+                                    JOIN trophy_meta tm ON tm.trophy_id = t.id
+                                    WHERE
+                                        trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
+                                    GROUP BY
+                                        trophy_earned.np_communication_id
+                                    ORDER BY NULL
+                                )
+                                UPDATE
+                                    trophy_title_player ttp,
+                                    rarity
+                                SET
+                                    ttp.rarity_points = rarity.points,
+                                    ttp.in_game_rarity_points = rarity.in_game_points,
+                                    ttp.common = rarity.common,
+                                    ttp.uncommon = rarity.uncommon,
+                                    ttp.rare = rarity.rare,
+                                    ttp.epic = rarity.epic,
+                                    ttp.legendary = rarity.legendary,
+                                    ttp.in_game_common = rarity.in_game_common,
+                                    ttp.in_game_uncommon = rarity.in_game_uncommon,
+                                    ttp.in_game_rare = rarity.in_game_rare,
+                                    ttp.in_game_epic = rarity.in_game_epic,
+                                    ttp.in_game_legendary = rarity.in_game_legendary
                                 WHERE
-                                    trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
-                                GROUP BY
-                                    trophy_earned.np_communication_id
-                                ORDER BY NULL
-                            )
-                            UPDATE
-                                trophy_title_player ttp,
-                                rarity
-                            SET
-                                ttp.rarity_points = rarity.points,
-                                ttp.in_game_rarity_points = rarity.in_game_points,
-                                ttp.common = rarity.common,
-                                ttp.uncommon = rarity.uncommon,
-                                ttp.rare = rarity.rare,
-                                ttp.epic = rarity.epic,
-                                ttp.legendary = rarity.legendary,
-                                ttp.in_game_common = rarity.in_game_common,
-                                ttp.in_game_uncommon = rarity.in_game_uncommon,
-                                ttp.in_game_rare = rarity.in_game_rare,
-                                ttp.in_game_epic = rarity.in_game_epic,
-                                ttp.in_game_legendary = rarity.in_game_legendary
-                            WHERE
-                                ttp.account_id = :account_id AND ttp.np_communication_id = rarity.np_communication_id");
-                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                        $query->execute();
+                                    ttp.account_id = :account_id AND ttp.np_communication_id = rarity.np_communication_id");
+                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                            $query->execute();
 
-                        // Update user total rarity points
-                        $query = $this->database->prepare("WITH
-                                rarity AS(
-                                SELECT
-                                    IFNULL(SUM(rarity_points), 0) AS rarity_points,
-                                    IFNULL(SUM(common), 0) AS common,
-                                    IFNULL(SUM(uncommon), 0) AS uncommon,
-                                    IFNULL(SUM(rare), 0) AS rare,
-                                    IFNULL(SUM(epic), 0) AS epic,
-                                    IFNULL(SUM(legendary), 0) AS legendary,
-                                    IFNULL(SUM(in_game_rarity_points), 0) AS in_game_rarity_points,
-                                    IFNULL(SUM(in_game_common), 0) AS in_game_common,
-                                    IFNULL(SUM(in_game_uncommon), 0) AS in_game_uncommon,
-                                    IFNULL(SUM(in_game_rare), 0) AS in_game_rare,
-                                    IFNULL(SUM(in_game_epic), 0) AS in_game_epic,
-                                    IFNULL(SUM(in_game_legendary), 0) AS in_game_legendary
-                                FROM
-                                    trophy_title_player
+                            // Update user total rarity points
+                            $query = $this->database->prepare("WITH
+                                    rarity AS(
+                                    SELECT
+                                        IFNULL(SUM(rarity_points), 0) AS rarity_points,
+                                        IFNULL(SUM(common), 0) AS common,
+                                        IFNULL(SUM(uncommon), 0) AS uncommon,
+                                        IFNULL(SUM(rare), 0) AS rare,
+                                        IFNULL(SUM(epic), 0) AS epic,
+                                        IFNULL(SUM(legendary), 0) AS legendary,
+                                        IFNULL(SUM(in_game_rarity_points), 0) AS in_game_rarity_points,
+                                        IFNULL(SUM(in_game_common), 0) AS in_game_common,
+                                        IFNULL(SUM(in_game_uncommon), 0) AS in_game_uncommon,
+                                        IFNULL(SUM(in_game_rare), 0) AS in_game_rare,
+                                        IFNULL(SUM(in_game_epic), 0) AS in_game_epic,
+                                        IFNULL(SUM(in_game_legendary), 0) AS in_game_legendary
+                                    FROM
+                                        trophy_title_player
+                                    WHERE
+                                        account_id = :account_id
+                                    ORDER BY NULL
+                                )
+                                UPDATE
+                                    player p,
+                                    rarity
+                                SET
+                                    p.rarity_points = rarity.rarity_points,
+                                    p.common = rarity.common,
+                                    p.uncommon = rarity.uncommon,
+                                    p.rare = rarity.rare,
+                                    p.epic = rarity.epic,
+                                    p.legendary = rarity.legendary,
+                                    p.in_game_rarity_points = rarity.in_game_rarity_points,
+                                    p.in_game_common = rarity.in_game_common,
+                                    p.in_game_uncommon = rarity.in_game_uncommon,
+                                    p.in_game_rare = rarity.in_game_rare,
+                                    p.in_game_epic = rarity.in_game_epic,
+                                    p.in_game_legendary = rarity.in_game_legendary
                                 WHERE
-                                    account_id = :account_id
-                                ORDER BY NULL
-                            )
-                            UPDATE
-                                player p,
-                                rarity
-                            SET
-                                p.rarity_points = rarity.rarity_points,
-                                p.common = rarity.common,
-                                p.uncommon = rarity.uncommon,
-                                p.rare = rarity.rare,
-                                p.epic = rarity.epic,
-                                p.legendary = rarity.legendary,
-                                p.in_game_rarity_points = rarity.in_game_rarity_points,
-                                p.in_game_common = rarity.in_game_common,
-                                p.in_game_uncommon = rarity.in_game_uncommon,
-                                p.in_game_rare = rarity.in_game_rare,
-                                p.in_game_epic = rarity.in_game_epic,
-                                p.in_game_legendary = rarity.in_game_legendary
-                            WHERE
-                                p.account_id = :account_id AND p.status = 0");
-                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                        $query->execute();
+                                    p.account_id = :account_id AND p.status = 0");
+                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                            $query->execute();
+                        });
                     }
 
                     // Done with the user, update the date
@@ -1756,6 +1758,34 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
+    }
+
+    /**
+     * @param callable(): void $operation
+     */
+    private function executeWithDeadlockRetry(callable $operation, int $maxAttempts = 3): void
+    {
+        $attempt = 0;
+
+        while (true) {
+            try {
+                $operation();
+                return;
+            } catch (PDOException $exception) {
+                if (!$this->isDeadlockException($exception) || $attempt >= $maxAttempts) {
+                    throw $exception;
+                }
+
+                $attempt++;
+                usleep(200000);
+            }
+        }
+    }
+
+    private function isDeadlockException(PDOException $exception): bool
+    {
+        return $exception->getCode() === '40001'
+            || (($exception->errorInfo[1] ?? null) === 1213);
     }
 
     private function lookupPlayerProfile(Client $client, string $onlineId): ?array
