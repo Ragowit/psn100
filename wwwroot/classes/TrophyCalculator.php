@@ -11,6 +11,19 @@ class TrophyCalculator
         $this->database = $database;
     }
 
+    private function clampProgress(int $progress): int
+    {
+        if ($progress < 0) {
+            return 0;
+        }
+
+        if ($progress > 100) {
+            return 100;
+        }
+
+        return $progress;
+    }
+
     public function recalculateTrophyGroup(string $npCommunicationId, string $groupId, int $accountId): void
     {
         $titleHavePlatinum = false;
@@ -96,6 +109,8 @@ class TrophyCalculator
                 $progress = 99;
             }
         }
+
+        $progress = $this->clampProgress($progress);
 
         $query = $this->database->prepare(
             "INSERT INTO trophy_group_player (
@@ -217,6 +232,8 @@ class TrophyCalculator
                     }
                 }
 
+                $progress = $this->clampProgress($progress);
+
                 $query = $this->database->prepare(
                     "UPDATE trophy_title_player
                     SET progress = :progress
@@ -259,6 +276,8 @@ class TrophyCalculator
                 $progress = 99;
             }
         }
+
+        $progress = $this->clampProgress($progress);
 
         $dateTimeObject = DateTime::createFromFormat("Y-m-d\\TH:i:s\\Z", $lastUpdateDate);
         $dtAsTextForInsert = $dateTimeObject->format("Y-m-d H:i:s");
