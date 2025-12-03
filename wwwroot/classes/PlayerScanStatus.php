@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-final class PlayerScanStatus
+readonly class PlayerScanStatus
 {
-    private ?PlayerScanProgress $progress;
-
-    public function __construct(?PlayerScanProgress $progress)
+    public function __construct(private ?PlayerScanProgress $progress)
     {
-        $this->progress = $progress;
     }
 
     public static function withProgress(?PlayerScanProgress $progress): self
