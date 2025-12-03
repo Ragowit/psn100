@@ -8,29 +8,34 @@ final class NavigationState
 {
     private const NAVIGATION_KEYS = ['home', 'leaderboard', 'game', 'trophy', 'avatar', 'about'];
 
-    private string $sort;
-    private string $player;
-    private string $filter;
-    private string $search;
-
-    /** @var array<string, NavigationSectionState> */
-    private array $sectionStates;
-
-    private function __construct(string $requestUri, array $queryParameters)
-    {
-        $this->sort = $this->sanitizeQueryValue($queryParameters['sort'] ?? '');
-        $this->player = $this->sanitizeQueryValue($queryParameters['player'] ?? '');
-        $this->filter = $this->sanitizeQueryValue($queryParameters['filter'] ?? '');
-        $this->search = $this->sanitizeQueryValue($queryParameters['search'] ?? '');
-
-        $this->sectionStates = $this->determineSectionStates($requestUri);
+    /**
+     * @param array<string, NavigationSectionState> $sectionStates
+     */
+    private function __construct(
+        private readonly string $sort,
+        private readonly string $player,
+        private readonly string $filter,
+        private readonly string $search,
+        private readonly array $sectionStates,
+    ) {
     }
 
     public static function fromGlobals(array $server, array $queryParameters): self
     {
         $requestUri = (string) ($server['REQUEST_URI'] ?? '/');
 
-        return new self($requestUri, $queryParameters);
+        $sort = self::sanitizeQueryValue($queryParameters['sort'] ?? '');
+        $player = self::sanitizeQueryValue($queryParameters['player'] ?? '');
+        $filter = self::sanitizeQueryValue($queryParameters['filter'] ?? '');
+        $search = self::sanitizeQueryValue($queryParameters['search'] ?? '');
+
+        return new self(
+            $sort,
+            $player,
+            $filter,
+            $search,
+            self::determineSectionStates($requestUri)
+        );
     }
 
     public function getSort(): string
@@ -99,7 +104,7 @@ final class NavigationState
      * @param string $requestUri
      * @return array<string, NavigationSectionState>
      */
-    private function determineSectionStates(string $requestUri): array
+    private static function determineSectionStates(string $requestUri): array
     {
         $states = [];
 
@@ -107,13 +112,13 @@ final class NavigationState
             $states[$section] = new NavigationSectionState($section, false);
         }
 
-        $activeSection = $this->resolveActiveSection($requestUri);
+        $activeSection = self::resolveActiveSection($requestUri);
         $states[$activeSection] = new NavigationSectionState($activeSection, true);
 
         return $states;
     }
 
-    private function sanitizeQueryValue(mixed $value): string
+    private static function sanitizeQueryValue(mixed $value): string
     {
         if (is_array($value)) {
             $value = reset($value);
@@ -125,7 +130,7 @@ final class NavigationState
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
 
-    private function resolveActiveSection(string $requestUri): string
+    private static function resolveActiveSection(string $requestUri): string
     {
         if (str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')) {
             return 'leaderboard';

@@ -2,22 +2,14 @@
 
 declare(strict_types=1);
 
-final class DatabaseConfig
+final readonly class DatabaseConfig
 {
-    private string $host;
-
-    private string $database;
-
-    private string $user;
-
-    private string $password;
-
-    public function __construct(string $host, string $database, string $user, string $password)
-    {
-        $this->host = $host;
-        $this->database = $database;
-        $this->user = $user;
-        $this->password = $password;
+    public function __construct(
+        private string $host,
+        private string $database,
+        private string $user,
+        private string $password,
+    ) {
     }
 
     public static function createDefault(): self
@@ -77,12 +69,12 @@ final class DatabaseConnectionException extends RuntimeException
 
 class Database extends PDO
 {
-    private DatabaseConfig $config;
+    private readonly DatabaseConfig $config;
 
     /**
      * @var array<int, mixed>
      */
-    private array $options;
+    private readonly array $options;
 
     public function __construct(?DatabaseConfig $config = null, array $options = [])
     {
