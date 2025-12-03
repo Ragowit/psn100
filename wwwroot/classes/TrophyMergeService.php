@@ -1149,6 +1149,17 @@ SQL
         $query->execute();
     }
 
+    private function normalizeTrophyName(string $name): string
+    {
+        $name = trim($name);
+
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($name, 'UTF-8');
+        }
+
+        return strtolower($name);
+    }
+
     private function insertMappingsByName(int $childGameId, int $parentGameId): string
     {
         $message = '';
@@ -1158,7 +1169,7 @@ SQL
             SELECT np_communication_id,
                    group_id,
                    order_id,
-                   `name`
+                   name
             FROM   trophy
             WHERE  np_communication_id = (SELECT np_communication_id
                                           FROM   trophy_title
@@ -1168,24 +1179,31 @@ SQL
         $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
         $childTrophies->execute();
 
-        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $parentTrophies = $this->database->prepare(
-                <<<'SQL'
-                SELECT np_communication_id,
-                       group_id,
-                       order_id
-                FROM   trophy
-                WHERE  np_communication_id = (SELECT np_communication_id
-                                              FROM   trophy_title
-                                              WHERE  id = :parent_game_id)
-                       AND `name` = :name
+        $parentTrophies = $this->database->prepare(
+            <<<'SQL'
+            SELECT np_communication_id,
+                   group_id,
+                   order_id,
+                   name
+            FROM   trophy
+            WHERE  np_communication_id = (SELECT np_communication_id
+                                          FROM   trophy_title
+                                          WHERE  id = :parent_game_id)
 SQL
-            );
-            $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
-            $parentTrophies->bindValue(':name', $childTrophy['name'], PDO::PARAM_STR);
-            $parentTrophies->execute();
+        );
+        $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
+        $parentTrophies->execute();
 
-            $parentTrophy = $parentTrophies->fetchAll(PDO::FETCH_ASSOC);
+        $parentTrophyByName = [];
+
+        while ($parentTrophy = $parentTrophies->fetch(PDO::FETCH_ASSOC)) {
+            $name = $this->normalizeTrophyName((string) $parentTrophy['name']);
+            $parentTrophyByName[$name][] = $parentTrophy;
+        }
+
+        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
+            $childName = $this->normalizeTrophyName((string) $childTrophy['name']);
+            $parentTrophy = $parentTrophyByName[$childName] ?? [];
 
             if (count($parentTrophy) === 1) {
                 $this->insertDirectMapping($childTrophy, $parentTrophy[0]);

@@ -92,6 +92,28 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->mergedGames);
     }
 
+    public function testTrimsWhitespaceWhenComparingTrophies(): void
+    {
+        $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS4');
+        $this->insertTitle(2, 'MERGE_000001', 'Example Game', 'PS4');
+
+        $this->insertTrophies('NP_NEW', 'default', [
+            [0, ' Trophy A ', ' Detail A '],
+            [1, "Trophy B\t", 'Detail B '],
+        ]);
+
+        $this->insertTrophies('MERGE_000001', 'default', [
+            [0, 'Trophy A', 'Detail A'],
+            [1, 'Trophy B', 'Detail B'],
+        ]);
+
+        $this->service->handleNewTitle('NP_NEW');
+
+        $this->assertSame([
+            [1, 2, 'order'],
+        ], $this->mergeService->mergedGames);
+    }
+
     public function testClearsTrophyCacheAfterCopy(): void
     {
         $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
