@@ -1,4 +1,7 @@
 {
+    "require": {
+        "php": "^8.5"
+    },
     "config": {
         "platform": {
             "php": "8.5.0"

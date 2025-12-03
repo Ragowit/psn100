@@ -2,24 +2,18 @@
 
 declare(strict_types=1);
 
-class RouteResult
+readonly class RouteResult
 {
-    private ?string $include;
-    private ?string $redirect;
-    private bool $notFound;
     /**
-     * @var array<string, mixed>
+     * @param array<string, mixed> $variables
      */
-    private array $variables;
-    private ?int $statusCode;
-
-    private function __construct(?string $include, ?string $redirect, bool $notFound, array $variables = [], ?int $statusCode = null)
-    {
-        $this->include = $include;
-        $this->redirect = $redirect;
-        $this->notFound = $notFound;
-        $this->variables = $variables;
-        $this->statusCode = $statusCode;
+    private function __construct(
+        private ?string $include,
+        private ?string $redirect,
+        private bool $notFound,
+        private array $variables = [],
+        private ?int $statusCode = null,
+    ) {
     }
 
     public static function include(string $file, array $variables = []): self

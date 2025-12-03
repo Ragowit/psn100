@@ -2,15 +2,10 @@
 
 declare(strict_types=1);
 
-class AboutPageScanSummary
+readonly class AboutPageScanSummary
 {
-    private int $scannedPlayers;
-    private int $newPlayers;
-
-    public function __construct(int $scannedPlayers, int $newPlayers)
+    public function __construct(private int $scannedPlayers, private int $newPlayers)
     {
-        $this->scannedPlayers = $scannedPlayers;
-        $this->newPlayers = $newPlayers;
     }
 
     public function getScannedPlayers(): int

@@ -2,19 +2,10 @@
 
 declare(strict_types=1);
 
-class PlayerReportResult
+readonly class PlayerReportResult
 {
-    private bool $hasMessage;
-
-    private bool $success;
-
-    private string $message;
-
-    private function __construct(bool $hasMessage, bool $success, string $message)
+    private function __construct(private bool $hasMessage, private bool $success, private string $message)
     {
-        $this->hasMessage = $hasMessage;
-        $this->success = $success;
-        $this->message = $message;
     }
 
     public static function success(string $message): self
