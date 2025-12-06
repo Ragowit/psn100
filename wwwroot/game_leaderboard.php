@@ -47,7 +47,7 @@ require_once("header.php");
                     <a class="btn btn-outline-primary" href="/game/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
                     <a class="btn btn-primary active" href="/game-leaderboard/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
                     <a class="btn btn-outline-primary" href="/game-recent-players/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
-                    <a class="btn btn-outline-primary" href="/game-history/<?= $gameSlug; ?>">History</a>
+                    <a class="btn btn-outline-primary" href="/game-history/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">History</a>
                 </div>
             </div>
 
