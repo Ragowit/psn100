@@ -721,26 +721,46 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 sleep(60 * 1);
                 break;
             } catch (Exception $e) {
-                // Profile seem to be private, set status to 3 to hide all trophies.
-                $query = $this->database->prepare("UPDATE
-                        player
-                    SET
-                        status = 3,
-                        last_updated_date = NOW()
-                    WHERE
-                        account_id = :account_id
-                        AND status != 1
-                ");
-                $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                $query->execute();
+                // Potentially private profile, wait 1 minute and retry before updating the status.
+                $this->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'Profile scan failed, waiting 1 minute before confirming privacy.'
+                );
+                sleep(60 * 1);
 
-                // Delete user from the queue
-                $query = $this->database->prepare("DELETE FROM player_queue
-                    WHERE  online_id = :online_id ");
-                $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
-                $query->execute();
+                try {
+                    $level = 0;
+                    $level = $user->trophySummary()->level();
+                } catch (TypeError $retryException) {
+                    // Rare error, wait 1 minute to not hammer Sony and try again.
+                    $this->setWaitingScanProgress(
+                        (int) $worker['id'],
+                        'Encountered a problem while scanning. Waiting 1 minute before retrying.'
+                    );
+                    sleep(60 * 1);
+                    break;
+                } catch (Exception $retryException) {
+                    // Profile seem to be private, set status to 3 to hide all trophies.
+                    $query = $this->database->prepare("UPDATE
+                            player
+                        SET
+                            status = 3,
+                            last_updated_date = NOW()
+                        WHERE
+                            account_id = :account_id
+                            AND status != 1
+                    ");
+                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                    $query->execute();
 
-                $privateUser = true;
+                    // Delete user from the queue
+                    $query = $this->database->prepare("DELETE FROM player_queue
+                        WHERE  online_id = :online_id ");
+                    $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
+                    $query->execute();
+
+                    $privateUser = true;
+                }
             }
 
             try {
