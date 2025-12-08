@@ -110,12 +110,8 @@ class PlayerHeaderViewModel
                 break;
         }
 
-        if ($status === 1) {
+        if ($status === 1 || $status === 3) {
             return $alerts;
-        }
-
-        if ($this->isUnranked()) {
-            $alerts[] = "This player isn't ranked within the top 10000 and will not have their trophies contributed to the site statistics.";
         }
 
         if ($this->hasHiddenTrophies()) {
@@ -123,6 +119,14 @@ class PlayerHeaderViewModel
                 'This player has <a href="https://www.playstation.com/en-us/support/games/hide-games-playstation-library/">hidden %s of their trophies</a>.',
                 number_format($this->getHiddenTrophyCount())
             );
+        }
+
+        if ($status === 4) {
+            return $alerts;
+        }
+
+        if ($this->isUnranked()) {
+            $alerts[] = "This player isn't ranked within the top 10000 and will not have their trophies contributed to the site statistics.";
         }
 
         return $alerts;
