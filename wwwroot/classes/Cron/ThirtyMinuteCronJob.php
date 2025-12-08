@@ -2323,8 +2323,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
             'or',
             'nor',
             'for',
-            'so',
-            'yet',
             // Short prepositions (three letters or fewer)
             'as',
             'at',
@@ -2337,7 +2335,6 @@ class ThirtyMinuteCronJob implements CronJobInterface
             'via',
             'up',
             'off',
-            'out',
             // Other permitted lowercase forms
             'vs',
             'vs.',
