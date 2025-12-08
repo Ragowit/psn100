@@ -110,7 +110,7 @@ class PlayerHeaderViewModel
                 break;
         }
 
-        if ($status === 1 || $status === 3) {
+        if ($status === 1 || $status === 3 || $status === 99) {
             return $alerts;
         }
 
