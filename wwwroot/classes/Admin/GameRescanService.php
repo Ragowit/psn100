@@ -193,7 +193,7 @@ class GameRescanService
             'SELECT account_id
             FROM trophy_title_player ttp
             JOIN player p USING(account_id)
-            WHERE ttp.np_communication_id = :np_communication_id AND p.status != 3
+            WHERE ttp.np_communication_id = :np_communication_id
             ORDER BY ttp.last_updated_date DESC'
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
