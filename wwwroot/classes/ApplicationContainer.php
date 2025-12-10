@@ -10,11 +10,11 @@ require_once __DIR__ . '/Application.php';
 
 class ApplicationContainer
 {
-    private Database $database;
+    private readonly Database $database;
 
-    private Utility $utility;
+    private readonly Utility $utility;
 
-    private PaginationRenderer $paginationRenderer;
+    private readonly PaginationRenderer $paginationRenderer;
 
     private ?GameRepository $gameRepository = null;
 

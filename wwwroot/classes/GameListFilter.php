@@ -32,39 +32,22 @@ class GameListFilter
         self::PLATFORM_PSVR2,
     ];
 
-    private ?string $player;
-    private string $sort;
-    private bool $sortSpecified;
-    private string $search;
-    private int $page;
-    private bool $uncompletedOnly;
-    /**
-     * @var array<string, bool>
-     */
-    private array $platformFilters;
-    /**
-     * @var array<string, string>
-     */
-    private array $originalParameters;
-
     private function __construct(
-        ?string $player,
-        string $sort,
-        bool $sortSpecified,
-        string $search,
-        int $page,
-        bool $uncompletedOnly,
-        array $platformFilters,
-        array $originalParameters
+        private ?string $player,
+        private string $sort,
+        private bool $sortSpecified,
+        private string $search,
+        private int $page,
+        private bool $uncompletedOnly,
+        /**
+         * @var array<string, bool>
+         */
+        private array $platformFilters,
+        /**
+         * @var array<string, string>
+         */
+        private array $originalParameters
     ) {
-        $this->player = $player;
-        $this->sort = $sort;
-        $this->sortSpecified = $sortSpecified;
-        $this->search = $search;
-        $this->page = $page;
-        $this->uncompletedOnly = $uncompletedOnly;
-        $this->platformFilters = $platformFilters;
-        $this->originalParameters = $originalParameters;
     }
 
     /**
