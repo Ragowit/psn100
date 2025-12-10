@@ -9,9 +9,9 @@ require_once __DIR__ . '/PlayerScanProgress.php';
 
 final class PlayerQueueResponseFactory
 {
-    private const EMPTY_NAME_MESSAGE = "PSN name can't be empty.";
+    private const string EMPTY_NAME_MESSAGE = "PSN name can't be empty.";
 
-    private const INVALID_NAME_MESSAGE = "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
+    private const string INVALID_NAME_MESSAGE = "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
 
     private PlayerQueueService $service;
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerQueueStatus.php';
 
 final class PlayerQueueResponseTest extends TestCase
 {
@@ -11,6 +12,7 @@ final class PlayerQueueResponseTest extends TestCase
         $response = PlayerQueueResponse::queued('Queued for processing');
 
         $this->assertSame('queued', $response->getStatus());
+        $this->assertSame(PlayerQueueStatus::QUEUED, $response->getStatusEnum());
         $this->assertSame('Queued for processing', $response->getMessage());
         $this->assertTrue($response->shouldPoll());
         $this->assertSame(
@@ -29,6 +31,7 @@ final class PlayerQueueResponseTest extends TestCase
         $response = PlayerQueueResponse::complete('Processing complete');
 
         $this->assertSame('complete', $response->getStatus());
+        $this->assertSame(PlayerQueueStatus::COMPLETE, $response->getStatusEnum());
         $this->assertSame('Processing complete', $response->getMessage());
         $this->assertFalse($response->shouldPoll());
         $this->assertSame(
@@ -47,6 +50,7 @@ final class PlayerQueueResponseTest extends TestCase
         $response = PlayerQueueResponse::error('An error occurred');
 
         $this->assertSame('error', $response->getStatus());
+        $this->assertSame(PlayerQueueStatus::ERROR, $response->getStatusEnum());
         $this->assertSame('An error occurred', $response->getMessage());
         $this->assertFalse($response->shouldPoll());
         $this->assertSame(

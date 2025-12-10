@@ -2,35 +2,38 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerQueueStatus.php';
+
 readonly class PlayerQueueResponse implements \JsonSerializable
 {
-    private const STATUS_QUEUED = 'queued';
-    private const STATUS_COMPLETE = 'complete';
-    private const STATUS_ERROR = 'error';
-
     private function __construct(
-        private string $status,
+        private PlayerQueueStatus $status,
         private string $message,
     ) {}
 
     public static function queued(string $message): self
     {
-        return new self(self::STATUS_QUEUED, $message);
+        return new self(PlayerQueueStatus::QUEUED, $message);
     }
 
     public static function complete(string $message): self
     {
-        return new self(self::STATUS_COMPLETE, $message);
+        return new self(PlayerQueueStatus::COMPLETE, $message);
     }
 
     public static function error(string $message): self
     {
-        return new self(self::STATUS_ERROR, $message);
+        return new self(PlayerQueueStatus::ERROR, $message);
+    }
+
+    public function getStatusEnum(): PlayerQueueStatus
+    {
+        return $this->status;
     }
 
     public function getStatus(): string
     {
-        return $this->status;
+        return $this->status->value;
     }
 
     public function getMessage(): string
@@ -40,7 +43,7 @@ readonly class PlayerQueueResponse implements \JsonSerializable
 
     public function shouldPoll(): bool
     {
-        return $this->status === self::STATUS_QUEUED;
+        return $this->status === PlayerQueueStatus::QUEUED;
     }
 
     /**
