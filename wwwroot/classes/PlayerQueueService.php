@@ -7,8 +7,8 @@ require_once __DIR__ . '/PlayerScanStatus.php';
 
 class PlayerQueueService
 {
-    public const MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
-    public const CHEATER_STATUS = 1;
+    public const int MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
+    public const int CHEATER_STATUS = 1;
 
     private PDO $database;
 
