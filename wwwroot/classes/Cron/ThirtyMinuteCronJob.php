@@ -288,12 +288,12 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                     $loggedIn = true;
                 } catch (TypeError $e) {
-                    // Something odd, let's wait three minutes
+                    // Something odd, let's wait a minute
                     $this->setWaitingScanProgress(
                         (int) $worker['id'],
-                        'Encountered a login problem. Waiting 3 minutes before retrying.'
+                        'Encountered a login problem. Waiting 1 minute before retrying.'
                     );
-                    sleep(60 * 3);
+                    sleep(60 * 1);
                 } catch (Exception $e) {
                     $this->logger->log("Can't login with worker ". $worker["id"]);
 
@@ -700,9 +700,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 // Wait 5 minutes to not hammer Sony
                 $this->setWaitingScanProgress(
                     (int) $worker['id'],
-                    'Encountered a problem while scanning. Waiting 5 minutes before retrying.'
+                    'Encountered a problem while scanning. Waiting 1 minute before retrying.'
                 );
-                sleep(60 * 5);
+                sleep(60 * 1);
 
                 // Something is odd with PSN, break out and try again later.
                 break;
@@ -1431,9 +1431,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 $missingGameDeletionCheck[$onlineId] = true;
                                 $this->setWaitingScanProgress(
                                     (int) $worker['id'],
-                                    'Waiting 5 minutes before retrying because of game deletion check.'
+                                    'Waiting 1 minute before retrying because of game deletion check.'
                                 );
-                                sleep(300);
+                                sleep(60 * 1);
                                 $recheck = '';
 
                                 continue;
