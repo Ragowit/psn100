@@ -183,6 +183,19 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $this->releaseWorkerFromCurrentScan($workerId);
     }
 
+    private function pauseBeforeRetryingInvalidApiResponse(int $workerId, string $onlineId): void
+    {
+        $this->setWaitingScanProgress(
+            $workerId,
+            sprintf(
+                'Encountered an invalid response from the PlayStation API while scanning %s. Waiting 1 minute before retrying.',
+                $onlineId
+            )
+        );
+
+        sleep(60);
+    }
+
     /**
      * @template T
      * @param callable():T $operation
@@ -435,50 +448,88 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 sprintf('Updating profile data for %s.', $onlineId)
             );
 
+            $maxInvalidApiResponseAttempts = 2;
+
             // Initialize the current player
-            try {
-                $originalOnlineId = (string) $player['online_id'];
-                $existingAccountId = $this->normalizeAccountIdValue($player['account_id'] ?? null);
-                $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
-                $country = 'zz';
+            for ($attempt = 1; $attempt <= $maxInvalidApiResponseAttempts; $attempt++) {
+                try {
+                    $originalOnlineId = (string) $player['online_id'];
+                    $existingAccountId = $this->normalizeAccountIdValue($player['account_id'] ?? null);
+                    $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
+                    $country = 'zz';
 
-                if ($profileLookup !== null) {
-                    $profile = $profileLookup['profile'] ?? null;
+                    if ($profileLookup !== null) {
+                        $profile = $profileLookup['profile'] ?? null;
 
-                    if (!is_array($profile)) {
-                        $this->markPlayerAsPrivate($originalOnlineId);
-                        continue;
-                    }
+                        if (!is_array($profile)) {
+                            $this->markPlayerAsPrivate($originalOnlineId);
+                            continue 2;
+                        }
 
-                    $profileAccountId = $profile['accountId'] ?? null;
+                        $profileAccountId = $profile['accountId'] ?? null;
 
-                    if (!is_string($profileAccountId) || $profileAccountId === '') {
-                        $this->markPlayerAsPrivate($originalOnlineId);
-                        continue;
-                    }
+                        if (!is_string($profileAccountId) || $profileAccountId === '') {
+                            $this->markPlayerAsPrivate($originalOnlineId);
+                            continue 2;
+                        }
 
-                    $resolvedOnlineId = $this->determineResolvedOnlineId($profile, $originalOnlineId);
+                        $resolvedOnlineId = $this->determineResolvedOnlineId($profile, $originalOnlineId);
 
-                    if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
-                        $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
-                        $player['online_id'] = $resolvedOnlineId;
+                        if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
+                            $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
+                            $player['online_id'] = $resolvedOnlineId;
+                        } else {
+                            $player['online_id'] = $originalOnlineId;
+                        }
+
+                        $player['account_id'] = $profileAccountId;
+                        $user = $client->users()->find($profileAccountId);
+
+                        $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
+                        $country = $countryFromProfile;
+
+                        if ($country === null || strtolower($country) === 'zz') {
+                            $storedCountry = $this->fetchStoredCountryByAccountId((int) $profileAccountId);
+
+                            if (is_string($storedCountry) && $storedCountry !== '') {
+                                $country = $storedCountry;
+                            } else {
+                                $country = 'zz';
+                            }
+
+                            if (strtolower($country) === 'zz') {
+                                $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
+
+                                if ($resolvedCountry !== null) {
+                                    $country = $resolvedCountry;
+                                    $this->updatePlayerCountry((int) $profileAccountId, $resolvedCountry);
+                                }
+                            }
+                        } else {
+                            $this->updatePlayerCountry((int) $profileAccountId, $country);
+                        }
                     } else {
-                        $player['online_id'] = $originalOnlineId;
-                    }
+                        if ($existingAccountId === null) {
+                            $this->markPlayerAsPrivate($originalOnlineId);
+                            continue 2;
+                        }
 
-                    $player['account_id'] = $profileAccountId;
-                    $user = $client->users()->find($profileAccountId);
+                        $player['account_id'] = $existingAccountId;
+                        $user = $client->users()->find($existingAccountId);
 
-                    $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
-                    $country = $countryFromProfile;
+                        $resolvedOnlineId = (string) $user->onlineId();
 
-                    if ($country === null || strtolower($country) === 'zz') {
-                        $storedCountry = $this->fetchStoredCountryByAccountId((int) $profileAccountId);
+                        if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
+                            $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
+                            $player['online_id'] = $resolvedOnlineId;
+                        } else {
+                            $player['online_id'] = $originalOnlineId;
+                        }
+
+                        $storedCountry = $this->fetchStoredCountryByAccountId((int) $existingAccountId);
 
                         if (is_string($storedCountry) && $storedCountry !== '') {
                             $country = $storedCountry;
-                        } else {
-                            $country = 'zz';
                         }
 
                         if (strtolower($country) === 'zz') {
@@ -486,95 +537,74 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                             if ($resolvedCountry !== null) {
                                 $country = $resolvedCountry;
-                                $this->updatePlayerCountry((int) $profileAccountId, $resolvedCountry);
+                                $this->updatePlayerCountry((int) $existingAccountId, $resolvedCountry);
                             }
                         }
-                    } else {
-                        $this->updatePlayerCountry((int) $profileAccountId, $country);
                     }
-                } else {
-                    if ($existingAccountId === null) {
-                        $this->markPlayerAsPrivate($originalOnlineId);
+
+                    if (!is_string($country) || $country === '') {
+                        $country = 'zz';
+                    }
+
+                    // To test for exception (and apparently collects/updates to new onlineId if changed).
+                    $user->aboutMe();
+
+                    if (strcasecmp($player['online_id'], $user->onlineId()) !== 0) {
+                        $this->updateQueuedOnlineId((int) $worker['id'], (string) $player['online_id'], $user->onlineId());
+                        $player['online_id'] = $user->onlineId();
+                    }
+
+                    break;
+                } catch (TypeError $exception) {
+                    if ($attempt < $maxInvalidApiResponseAttempts) {
+                        $this->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
+
                         continue;
                     }
 
-                    $player['account_id'] = $existingAccountId;
-                    $user = $client->users()->find($existingAccountId);
+                    $this->handleInvalidApiResponse($player, (int) $worker['id'], $exception);
 
-                    $resolvedOnlineId = (string) $user->onlineId();
-
-                    if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
-                        $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
-                        $player['online_id'] = $resolvedOnlineId;
-                    } else {
-                        $player['online_id'] = $originalOnlineId;
-                    }
-
-                    $storedCountry = $this->fetchStoredCountryByAccountId((int) $existingAccountId);
-
-                    if (is_string($storedCountry) && $storedCountry !== '') {
-                        $country = $storedCountry;
-                    }
-
-                    if (strtolower($country) === 'zz') {
-                        $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
-
-                        if ($resolvedCountry !== null) {
-                            $country = $resolvedCountry;
-                            $this->updatePlayerCountry((int) $existingAccountId, $resolvedCountry);
-                        }
-                    }
-                }
-
-                if (!is_string($country) || $country === '') {
-                    $country = 'zz';
-                }
-
-                // To test for exception (and apparently collects/updates to new onlineId if changed).
-                $user->aboutMe();
-
-                if (strcasecmp($player['online_id'], $user->onlineId()) !== 0) {
-                    $this->updateQueuedOnlineId((int) $worker['id'], (string) $player['online_id'], $user->onlineId());
-                    $player['online_id'] = $user->onlineId();
-                }
-            } catch (TypeError $exception) {
-                $this->handleInvalidApiResponse($player, (int) $worker['id'], $exception);
-
-                continue;
-            } catch (Exception $e) {
-                // $e->getMessage() == "User not found", and another "Resource not found" error
-                $query = $this->database->prepare("DELETE FROM player_queue
-                    WHERE  online_id = :online_id ");
-                $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
-                $query->execute();
-
-                if (get_class($e) == "Tustin\Haste\Exception\NotFoundHttpException") {
-                    $query = $this->database->prepare("SELECT account_id
-                        FROM   player
+                    continue 2;
+                } catch (Exception $e) {
+                    // $e->getMessage() == "User not found", and another "Resource not found" error
+                    $query = $this->database->prepare("DELETE FROM player_queue
                         WHERE  online_id = :online_id ");
                     $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
                     $query->execute();
-                    $accountId = $query->fetchColumn();
 
-                    if ($accountId) {
-                        // Doesn't seem to exist on Sonys end anymore. Set to status = 5 and let an admin delete the player from our system later.
-                        $this->logger->log("Sony issues with ". $player["online_id"] ." (". $accountId .").");
-
-                        $query = $this->database->prepare("UPDATE player
-                            SET `status` = 5, last_updated_date = NOW()
-                            WHERE  account_id = :account_id ");
-                        $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+                    if (get_class($e) == "Tustin\Haste\Exception\NotFoundHttpException") {
+                        $query = $this->database->prepare("SELECT account_id
+                            FROM   player
+                            WHERE  online_id = :online_id ");
+                        $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
                         $query->execute();
+                        $accountId = $query->fetchColumn();
+
+                        if ($accountId) {
+                            // Doesn't seem to exist on Sonys end anymore. Set to status = 5 and let an admin delete the player from our system later.
+                            $this->logger->log("Sony issues with ". $player["online_id"] ." (". $accountId .").");
+
+                            $query = $this->database->prepare("UPDATE player
+                                SET `status` = 5, last_updated_date = NOW()
+                                WHERE  account_id = :account_id ");
+                            $query->bindValue(":account_id", $accountId, PDO::PARAM_INT);
+                            $query->execute();
+                        }
                     }
+
+                    continue 2;
+                } catch (Throwable $exception) {
+                    if ($attempt < $maxInvalidApiResponseAttempts) {
+                        $this->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
+
+                        continue;
+                    }
+
+                    $this->handleInvalidApiResponse($player, (int) $worker['id'], $exception);
+
+                    continue 2;
                 }
-
-                continue;
-            } catch (Throwable $exception) {
-                $this->handleInvalidApiResponse($player, (int) $worker['id'], $exception);
-
-                continue;
             }
-
             $this->setWaitingScanProgress(
                 (int) $worker['id'],
                 sprintf('Updating avatar for %s.', $onlineId)
