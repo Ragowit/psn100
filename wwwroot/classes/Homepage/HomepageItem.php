@@ -2,21 +2,18 @@
 
 declare(strict_types=1);
 
-abstract class HomepageItem
+abstract readonly class HomepageItem
 {
     private const MISSING_PS5_ICON = '/img/missing-ps5-game-and-trophy.png';
     private const MISSING_PS4_ICON = '/img/missing-ps4-game.png';
 
-    private string $iconUrl;
-
-    private string $platform;
-
     private string $iconDirectory;
 
-    protected function __construct(string $iconUrl, string $platform, string $iconDirectory)
-    {
-        $this->iconUrl = $iconUrl;
-        $this->platform = $platform;
+    protected function __construct(
+        private string $iconUrl,
+        private string $platform,
+        string $iconDirectory,
+    ) {
         $this->iconDirectory = trim($iconDirectory, '/');
     }
 

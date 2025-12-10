@@ -2,35 +2,20 @@
 
 declare(strict_types=1);
 
-class HomepageDlc extends HomepageTitle
+readonly class HomepageDlc extends HomepageTitle
 {
-    private string $groupId;
-
-    private string $groupName;
-
-    private int $gold;
-
-    private int $silver;
-
-    private int $bronze;
-
     private function __construct(
         int $id,
         string $gameName,
-        string $groupId,
-        string $groupName,
+        private string $groupId,
+        private string $groupName,
         string $iconUrl,
         string $platform,
-        int $gold,
-        int $silver,
-        int $bronze
+        private int $gold,
+        private int $silver,
+        private int $bronze,
     ) {
         parent::__construct($id, $gameName, $iconUrl, $platform, 'group');
-        $this->groupId = $groupId;
-        $this->groupName = $groupName;
-        $this->gold = $gold;
-        $this->silver = $silver;
-        $this->bronze = $bronze;
     }
 
     /**

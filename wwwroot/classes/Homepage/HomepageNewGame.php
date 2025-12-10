@@ -2,31 +2,19 @@
 
 declare(strict_types=1);
 
-class HomepageNewGame extends HomepageTitle
+readonly class HomepageNewGame extends HomepageTitle
 {
-    private int $platinum;
-
-    private int $gold;
-
-    private int $silver;
-
-    private int $bronze;
-
     private function __construct(
         int $id,
         string $name,
         string $iconUrl,
         string $platform,
-        int $platinum,
-        int $gold,
-        int $silver,
-        int $bronze
+        private int $platinum,
+        private int $gold,
+        private int $silver,
+        private int $bronze,
     ) {
         parent::__construct($id, $name, $iconUrl, $platform, 'title');
-        $this->platinum = $platinum;
-        $this->gold = $gold;
-        $this->silver = $silver;
-        $this->bronze = $bronze;
     }
 
     /**
