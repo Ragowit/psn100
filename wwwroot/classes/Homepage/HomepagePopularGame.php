@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-class HomepagePopularGame extends HomepageTitle
+readonly class HomepagePopularGame extends HomepageTitle
 {
-    private int $recentPlayers;
-
-    private function __construct(int $id, string $name, string $iconUrl, string $platform, int $recentPlayers)
-    {
+    private function __construct(
+        int $id,
+        string $name,
+        string $iconUrl,
+        string $platform,
+        private int $recentPlayers,
+    ) {
         parent::__construct($id, $name, $iconUrl, $platform, 'title');
-        $this->recentPlayers = $recentPlayers;
     }
 
     /**

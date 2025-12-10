@@ -2,17 +2,16 @@
 
 declare(strict_types=1);
 
-class HomepageTitle extends HomepageItem
+readonly class HomepageTitle extends HomepageItem
 {
-    private int $id;
-
-    private string $name;
-
-    protected function __construct(int $id, string $name, string $iconUrl, string $platform, string $iconDirectory)
-    {
+    protected function __construct(
+        private int $id,
+        private string $name,
+        string $iconUrl,
+        string $platform,
+        string $iconDirectory,
+    ) {
         parent::__construct($iconUrl, $platform, $iconDirectory);
-        $this->id = $id;
-        $this->name = $name;
     }
 
     public function getId(): int
