@@ -7,6 +7,7 @@ final class SystemCommandExecutor implements CommandExecutorInterface
     /**
      * @param array<int, string> $command
      */
+    #[\Override]
     public function run(array $command): CommandExecutionResult
     {
         if ($command === []) {

@@ -19,6 +19,7 @@ class SimpleRouteHandler implements RouteHandlerInterface
     /**
      * @param list<string> $segments
      */
+    #[\Override]
     public function handle(array $segments): RouteResult
     {
         if ($this->hasAdditionalSegments($segments)) {

@@ -15,6 +15,7 @@ class PlayerInGameRarityLeaderboardService implements PlayerLeaderboardDataProvi
         $this->database = $database;
     }
 
+    #[\Override]
     public function countPlayers(PlayerLeaderboardFilter $filter): int
     {
         $sql = <<<'SQL'
@@ -39,6 +40,7 @@ class PlayerInGameRarityLeaderboardService implements PlayerLeaderboardDataProvi
     /**
      * @return array<int, array<string, mixed>>
      */
+    #[\Override]
     public function getPlayers(PlayerLeaderboardFilter $filter, int $limit = self::PAGE_SIZE): array
     {
         $sql = <<<'SQL'
@@ -76,6 +78,7 @@ class PlayerInGameRarityLeaderboardService implements PlayerLeaderboardDataProvi
         return $players;
     }
 
+    #[\Override]
     public function getPageSize(): int
     {
         return self::PAGE_SIZE;

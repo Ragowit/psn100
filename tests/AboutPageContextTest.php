@@ -26,11 +26,13 @@ final class AboutPageDataProviderStub implements AboutPageDataProviderInterface
         $this->players = $players;
     }
 
+    #[\Override]
     public function getScanSummary(): AboutPageScanSummary
     {
         return $this->summary;
     }
 
+    #[\Override]
     public function getScanLogPlayers(int $limit): array
     {
         return array_slice($this->players, 0, $limit);

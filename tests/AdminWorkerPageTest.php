@@ -108,6 +108,7 @@ final class FakeCommandExecutor implements CommandExecutorInterface
         $this->result = $result;
     }
 
+    #[\Override]
     public function run(array $command): CommandExecutionResult
     {
         return $this->result;

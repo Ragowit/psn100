@@ -16,6 +16,7 @@ class HomeRouteHandler implements RouteHandlerInterface
     /**
      * @param list<string> $segments
      */
+    #[\Override]
     public function handle(array $segments): RouteResult
     {
         return RouteResult::include($this->includeFile);
