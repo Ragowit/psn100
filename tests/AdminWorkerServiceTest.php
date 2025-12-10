@@ -108,6 +108,7 @@ SQL
                 $this->result = $result;
             }
 
+            #[\Override]
             public function run(array $command): CommandExecutionResult
             {
                 $this->commands[] = $command;
@@ -141,6 +142,7 @@ SQL
                 $this->result = $result;
             }
 
+            #[\Override]
             public function run(array $command): CommandExecutionResult
             {
                 $this->commands[] = $command;

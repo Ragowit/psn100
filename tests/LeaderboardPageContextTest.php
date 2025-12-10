@@ -229,6 +229,7 @@ final class FakePlayerLeaderboardDataProvider implements PlayerLeaderboardDataPr
         $this->pageSize = $pageSize;
     }
 
+    #[\Override]
     public function countPlayers(PlayerLeaderboardFilter $filter): int
     {
         $this->countPlayersFilters[] = $filter;
@@ -236,6 +237,7 @@ final class FakePlayerLeaderboardDataProvider implements PlayerLeaderboardDataPr
         return $this->totalPlayers;
     }
 
+    #[\Override]
     public function getPlayers(PlayerLeaderboardFilter $filter, int $limit): array
     {
         $this->getPlayersCalls[] = [
@@ -246,6 +248,7 @@ final class FakePlayerLeaderboardDataProvider implements PlayerLeaderboardDataPr
         return $this->players;
     }
 
+    #[\Override]
     public function getPageSize(): int
     {
         return $this->pageSize;

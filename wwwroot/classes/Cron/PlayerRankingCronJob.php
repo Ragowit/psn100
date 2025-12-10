@@ -14,6 +14,7 @@ final class PlayerRankingCronJob implements CronJobInterface
         $this->playerRankingUpdater = $playerRankingUpdater;
     }
 
+    #[\Override]
     public function run(): void
     {
         $this->playerRankingUpdater->recalculate();

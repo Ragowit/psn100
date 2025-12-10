@@ -42,6 +42,7 @@ class HourlyCronJob implements CronJobInterface
         $this->retryDelaySeconds = $retryDelaySeconds;
     }
 
+    #[\Override]
     public function run(): void
     {
         $this->executeWithRetry([$this, 'updateTrophyTitleStatistics']);

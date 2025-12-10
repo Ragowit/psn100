@@ -273,6 +273,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
         return null;
     }
 
+    #[\Override]
     public function run(): void
     {
         $recheck = "";

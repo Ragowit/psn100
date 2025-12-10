@@ -15,6 +15,7 @@ final class TestSuiteStub implements TestSuiteInterface
         $this->result = $result;
     }
 
+    #[\Override]
     public function run(): TestSuiteResult
     {
         return $this->result;

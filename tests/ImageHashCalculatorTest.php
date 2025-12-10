@@ -118,11 +118,13 @@ final class FakeImageProcessor implements ImageProcessorInterface
         }
     }
 
+    #[\Override]
     public function isSupported(): bool
     {
         return $this->supported;
     }
 
+    #[\Override]
     public function createImageFromString(string $contents): mixed
     {
         if (!$this->createSucceeds) {
@@ -132,36 +134,43 @@ final class FakeImageProcessor implements ImageProcessorInterface
         return $this->imageHandle;
     }
 
+    #[\Override]
     public function destroyImage(mixed $image): void
     {
         // Nothing to clean up in the fake processor.
     }
 
+    #[\Override]
     public function getWidth(mixed $image): int
     {
         return $this->width;
     }
 
+    #[\Override]
     public function getHeight(mixed $image): int
     {
         return $this->height;
     }
 
+    #[\Override]
     public function isTrueColor(mixed $image): bool
     {
         return $this->trueColor;
     }
 
+    #[\Override]
     public function convertPaletteToTrueColor(mixed $image): void
     {
         $this->trueColor = true;
     }
 
+    #[\Override]
     public function getColorAt(mixed $image, int $x, int $y): int
     {
         return $y * max(1, $this->width) + $x;
     }
 
+    #[\Override]
     public function getColorComponents(mixed $image, int $color): array
     {
         if ($this->pixels === []) {

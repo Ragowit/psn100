@@ -19,6 +19,7 @@ class AboutPageService implements AboutPageDataProviderInterface
         $this->utility = $utility;
     }
 
+    #[\Override]
     public function getScanSummary(): AboutPageScanSummary
     {
         $scannedQuery = $this->database->prepare(
@@ -40,6 +41,7 @@ class AboutPageService implements AboutPageDataProviderInterface
     /**
      * @return list<AboutPagePlayer>
      */
+    #[\Override]
     public function getScanLogPlayers(int $limit = self::DEFAULT_SCAN_LOG_LIMIT): array
     {
         $query = $this->database->prepare(

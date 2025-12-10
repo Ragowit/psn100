@@ -30,6 +30,7 @@ class GameRouteHandler implements RouteHandlerInterface
     /**
      * @param list<string> $segments
      */
+    #[\Override]
     public function handle(array $segments): RouteResult
     {
         if (!isset($segments[0]) || $segments[0] === '') {

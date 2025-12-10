@@ -63,6 +63,7 @@ final class TestSuite implements TestSuiteInterface
         return new self($resolvedDirectory, $testClasses);
     }
 
+    #[\Override]
     public function run(): TestSuiteResult
     {
         $results = [];
