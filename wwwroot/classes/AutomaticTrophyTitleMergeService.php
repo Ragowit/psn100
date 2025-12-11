@@ -364,8 +364,8 @@ final class AutomaticTrophyTitleMergeService
      */
     private function trophiesMatchByName(array $left, array $right): bool
     {
-        $leftNames = array_map(static fn(array $trophy): string => $trophy['name'], $left);
-        $rightNames = array_map(static fn(array $trophy): string => $trophy['name'], $right);
+        $leftNames = array_map(fn(array $trophy): string => $this->normalizeString($trophy['name']), $left);
+        $rightNames = array_map(fn(array $trophy): string => $this->normalizeString($trophy['name']), $right);
 
         sort($leftNames);
         sort($rightNames);
@@ -379,12 +379,17 @@ final class AutomaticTrophyTitleMergeService
 
     private function createTrophyKey(string $name, string $detail): string
     {
-        return $name . "\0" . $detail;
+        return $this->normalizeString($name) . "\0" . $this->normalizeString($detail);
     }
 
     private function createOrderKey(string $groupId, int $orderId): string
     {
         return $groupId . '|' . $orderId;
+    }
+
+    private function normalizeString(string $value): string
+    {
+        return mb_strtolower($value, 'UTF-8');
     }
 
     /**
