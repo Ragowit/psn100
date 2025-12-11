@@ -73,6 +73,17 @@ final class GameTrophyRowTest extends TestCase
         $this->assertSame('15/15', $row->getProgressDisplay());
     }
 
+    public function testProgressDisplayUsesTargetWhenEarnedWithPartialProgress(): void
+    {
+        $row = $this->createRow([
+            'progress_target_value' => 10,
+            'progress' => 9,
+            'earned' => 1,
+        ]);
+
+        $this->assertSame('10/10', $row->getProgressDisplay());
+    }
+
     public function testInGameRarityPercentUsesStoredValue(): void
     {
         $row = $this->createRow([
