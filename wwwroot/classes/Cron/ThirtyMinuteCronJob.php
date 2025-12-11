@@ -240,14 +240,16 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $iconUrl = trim((string) $trophyTitle->iconUrl());
+            $titleName = trim((string) $trophyTitle->name());
+            $titleNameForLog = $titleName === '' ? $npCommunicationId : $titleName;
 
             if ($iconUrl !== '') {
                 return $trophyTitle;
             }
 
             $this->logger->log(sprintf(
-                'Trophy title "%s" (%s) missing icon for %s (attempt %d/%d).',
-                $trophyTitle->name(),
+                'Trophy title "%s" (%s) is missing an icon while processing user %s (attempt %d/%d).',
+                $titleNameForLog,
                 $npCommunicationId,
                 $onlineId,
                 $attempt,
