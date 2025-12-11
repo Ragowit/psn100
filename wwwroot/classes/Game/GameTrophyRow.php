@@ -134,13 +134,9 @@ final class GameTrophyRow
             return null;
         }
 
-        $progress = $this->progress;
-
-        if ($progress === null && $this->isEarned) {
-            $progress = $this->progressTargetValue;
-        }
-
-        $progressValue = $progress ?? 0;
+        $progressValue = $this->isEarned
+            ? $this->progressTargetValue
+            : ($this->progress ?? 0);
 
         return $progressValue . '/' . $this->progressTargetValue;
     }
