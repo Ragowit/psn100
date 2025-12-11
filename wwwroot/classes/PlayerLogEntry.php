@@ -24,6 +24,8 @@ final class PlayerLogEntry
 
     private ?int $progress;
 
+    private bool $isEarned;
+
     private ?string $rewardName;
 
     private ?string $rewardImageUrl;
@@ -60,6 +62,7 @@ final class PlayerLogEntry
         $entry->trophyStatus = isset($row['trophy_status']) ? (int) $row['trophy_status'] : 0;
         $entry->progressTargetValue = self::toNullableInt($row['progress_target_value'] ?? null);
         $entry->progress = self::toNullableInt($row['progress'] ?? null);
+        $entry->isEarned = isset($row['earned']) ? ((int) $row['earned'] === 1) : false;
         $entry->rewardName = self::toNullableString($row['reward_name'] ?? null);
         $entry->rewardImageUrl = self::toNullableString($row['reward_image_url'] ?? null);
         $entry->gameId = isset($row['game_id']) ? (int) $row['game_id'] : 0;
@@ -140,6 +143,10 @@ final class PlayerLogEntry
         }
 
         $progress = $this->progress ?? 0;
+
+        if ($this->isEarned) {
+            $progress = $this->progressTargetValue;
+        }
 
         return $progress . '/' . $this->progressTargetValue;
     }
