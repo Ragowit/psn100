@@ -6,18 +6,17 @@ require_once __DIR__ . '/TestSuiteInterface.php';
 require_once __DIR__ . '/TestSuite.php';
 require_once __DIR__ . '/TestRunReporter.php';
 
-final class TestRunner
+final readonly class TestRunner
 {
-    private TestSuiteInterface $suite;
-
     private TestRunReporter $reporter;
 
     /**
      * @param callable(string): void|null $outputWriter
      */
-    public function __construct(TestSuiteInterface $suite, ?callable $outputWriter = null)
-    {
-        $this->suite = $suite;
+    public function __construct(
+        private TestSuiteInterface $suite,
+        ?callable $outputWriter = null,
+    ) {
         $this->reporter = new TestRunReporter($outputWriter);
     }
 
