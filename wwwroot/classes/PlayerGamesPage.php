@@ -8,8 +8,8 @@ require_once __DIR__ . '/PlayerGamesService.php';
 
 class PlayerGamesPage
 {
-    private const STATUS_FLAGGED = 1;
-    private const STATUS_PRIVATE = 3;
+    private const int STATUS_FLAGGED = 1;
+    private const int STATUS_PRIVATE = 3;
 
     private PlayerGamesFilter $requestedFilter;
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 class PlayerGame
 {
-    private const STATUS_DELISTED = 1;
-    private const STATUS_OBSOLETE = 3;
-    private const STATUS_DELISTED_AND_OBSOLETE = 4;
+    private const int STATUS_DELISTED = 1;
+    private const int STATUS_OBSOLETE = 3;
+    private const int STATUS_DELISTED_AND_OBSOLETE = 4;
 
     private int $id;
     private string $npCommunicationId;

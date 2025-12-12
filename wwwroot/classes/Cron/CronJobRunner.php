@@ -6,8 +6,8 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final class CronJobRunner
 {
-    private const MINIMUM_MEMORY_LIMIT = '512M';
-    private const MINIMUM_MEMORY_LIMIT_BYTES = 536870912; // 512 MiB
+    private const string MINIMUM_MEMORY_LIMIT = '512M';
+    private const int MINIMUM_MEMORY_LIMIT_BYTES = 536870912; // 512 MiB
 
     private bool $environmentConfigured = false;
 
