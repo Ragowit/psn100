@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 require_once __DIR__ . '/classes/PlayerHeaderViewModel.php';
 
 $playerHeaderViewModel = new PlayerHeaderViewModel($player, $playerSummary, $utility);
