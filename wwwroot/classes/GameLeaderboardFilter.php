@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class GameLeaderboardFilter extends GamePlayerFilter
+readonly class GameLeaderboardFilter extends GamePlayerFilter
 {
     private int $page;
 
