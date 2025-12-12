@@ -41,15 +41,15 @@ final class PlayerGamesPageContextTest extends TestCase
 
     public function testContextReflectsPlayerStatus(): void
     {
-        $flagged = $this->createContext([], 1);
+        $flagged = $this->createContext([], PlayerStatus::FLAGGED);
         $this->assertTrue($flagged->isPlayerFlagged());
         $this->assertFalse($flagged->shouldDisplayGames());
 
-        $private = $this->createContext([], 3);
+        $private = $this->createContext([], PlayerStatus::PRIVATE);
         $this->assertTrue($private->isPlayerPrivate());
         $this->assertFalse($private->shouldDisplayGames());
 
-        $public = $this->createContext([], 0);
+        $public = $this->createContext([], PlayerStatus::NORMAL);
         $this->assertFalse($public->isPlayerFlagged());
         $this->assertFalse($public->isPlayerPrivate());
         $this->assertTrue($public->shouldDisplayGames());
@@ -58,7 +58,7 @@ final class PlayerGamesPageContextTest extends TestCase
     /**
      * @param array<string, mixed> $overrides
      */
-    private function createContext(array $overrides = [], int $status = 0): PlayerGamesPageContext
+    private function createContext(array $overrides = [], PlayerStatus $status = PlayerStatus::NORMAL): PlayerGamesPageContext
     {
         $playerData = array_merge(
             [

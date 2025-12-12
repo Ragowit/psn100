@@ -9,13 +9,12 @@ require_once __DIR__ . '/PlayerGamesService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 
 final class PlayerGamesPageContext
 {
-    private const STATUS_FLAGGED = 1;
-    private const STATUS_PRIVATE = 3;
 
     private PlayerGamesPage $playerGamesPage;
 
@@ -39,7 +38,7 @@ final class PlayerGamesPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -50,7 +49,7 @@ final class PlayerGamesPageContext
         PlayerGamesFilter $filter,
         array $playerData,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerGamesPage = $playerGamesPage;
         $this->playerSummary = $playerSummary;
@@ -87,11 +86,12 @@ final class PlayerGamesPageContext
         $filter = PlayerGamesFilter::fromArray($queryParameters);
         $searchQueryHelper = new SearchQueryHelper();
         $playerGamesService = new PlayerGamesService($database, $searchQueryHelper);
+        $playerStatus = PlayerStatus::fromPlayerData($playerData);
         $playerGamesPage = new PlayerGamesPage(
             $playerGamesService,
             $filter,
             $accountId,
-            self::extractPlayerStatus($playerData)
+            $playerStatus
         );
 
         return new self(
@@ -100,7 +100,7 @@ final class PlayerGamesPageContext
             $filter,
             $playerData,
             $accountId,
-            self::extractPlayerStatus($playerData)
+            $playerStatus
         );
     }
 
@@ -113,10 +113,10 @@ final class PlayerGamesPageContext
         PlayerGamesFilter $filter,
         array $playerData,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ): self {
         $normalizedPlayerData = $playerData;
-        $normalizedPlayerData['status'] = $playerStatus;
+        $normalizedPlayerData['status'] = $playerStatus->value;
 
         return new self(
             $playerGamesPage,
@@ -198,17 +198,17 @@ final class PlayerGamesPageContext
 
     public function isPlayerFlagged(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function isPlayerPrivate(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivate();
     }
 
     public function shouldDisplayGames(): bool
     {
-        return !$this->isPlayerFlagged() && !$this->isPlayerPrivate();
+        return $this->playerStatus->isVisible();
     }
 
     /**
@@ -221,13 +221,13 @@ final class PlayerGamesPageContext
             ->setImage('https://psn100.net/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
             ->setUrl('https://psn100.net/player/' . $this->extractString($playerData['online_id'] ?? ''));
 
-        $status = self::extractPlayerStatus($playerData);
+        $status = PlayerStatus::fromPlayerData($playerData);
 
-        if ($status === 1) {
+        if ($status->isFlagged()) {
             return $metaData->setDescription('The player is flagged as a cheater.');
         }
 
-        if ($status === 3) {
+        if ($status->isPrivate()) {
             return $metaData->setDescription('The player is private.');
         }
 
@@ -255,14 +255,6 @@ final class PlayerGamesPageContext
         $onlineId = $this->extractString($playerData['online_id'] ?? '');
 
         return $onlineId . "'s Trophy Progress ~ PSN 100%";
-    }
-
-    /**
-     * @param array<string, mixed> $playerData
-     */
-    private static function extractPlayerStatus(array $playerData): int
-    {
-        return (int) ($playerData['status'] ?? 0);
     }
 
     private function extractString(mixed $value): string

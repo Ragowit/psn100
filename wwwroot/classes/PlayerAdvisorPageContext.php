@@ -7,6 +7,7 @@ require_once __DIR__ . '/PlayerAdvisorPage.php';
 require_once __DIR__ . '/PlayerAdvisorService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
@@ -15,9 +16,6 @@ require_once __DIR__ . '/Utility.php';
 
 final class PlayerAdvisorPageContext
 {
-    private const STATUS_FLAGGED = 1;
-    private const STATUS_PRIVATE = 3;
-
     private PlayerAdvisorPage $playerAdvisorPage;
 
     private PlayerSummary $playerSummary;
@@ -36,7 +34,7 @@ final class PlayerAdvisorPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     private ?string $playerAccountIdValue;
 
@@ -54,7 +52,7 @@ final class PlayerAdvisorPageContext
         array $queryParameters
     ): self {
         $filter = PlayerAdvisorFilter::fromArray($queryParameters);
-        $playerStatus = self::extractPlayerStatus($playerData);
+        $playerStatus = PlayerStatus::fromPlayerData($playerData);
         $playerOnlineId = self::extractPlayerOnlineId($playerData);
         $playerAccountIdValue = self::extractPlayerAccountId($playerData);
 
@@ -84,7 +82,7 @@ final class PlayerAdvisorPageContext
         PlayerAdvisorFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus,
+        PlayerStatus $playerStatus,
         ?string $playerAccountIdValue = null
     ): self {
         return new self(
@@ -104,7 +102,7 @@ final class PlayerAdvisorPageContext
         PlayerAdvisorFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus,
+        PlayerStatus $playerStatus,
         ?string $playerAccountIdValue
     ) {
         $this->playerAdvisorPage = $playerAdvisorPage;
@@ -188,11 +186,11 @@ final class PlayerAdvisorPageContext
         }
 
         return match ($this->playerStatus) {
-            self::STATUS_FLAGGED => PlayerStatusNotice::flagged(
+            PlayerStatus::FLAGGED => PlayerStatusNotice::flagged(
                 $this->playerOnlineId,
                 $this->playerAccountIdValue
             ),
-            self::STATUS_PRIVATE => PlayerStatusNotice::privateProfile(),
+            PlayerStatus::PRIVATE => PlayerStatusNotice::privateProfile(),
             default => null,
         };
     }
@@ -208,11 +206,6 @@ final class PlayerAdvisorPageContext
     /**
      * @param array<string, mixed> $playerData
      */
-    private static function extractPlayerStatus(array $playerData): int
-    {
-        return (int) ($playerData['status'] ?? 0);
-    }
-
     /**
      * @param array<string, mixed> $playerData
      */
