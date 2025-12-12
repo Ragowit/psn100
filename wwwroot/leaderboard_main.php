@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 require_once 'classes/Leaderboard/TrophyLeaderboardPageContext.php';
 
 $trophyLeaderboardPageContext = TrophyLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
