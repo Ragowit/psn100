@@ -5,13 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/../TrophyRepository.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
-class TrophyRouteHandler implements RouteHandlerInterface
+final readonly class TrophyRouteHandler implements RouteHandlerInterface
 {
-    private TrophyRepository $trophyRepository;
-
-    public function __construct(TrophyRepository $trophyRepository)
+    public function __construct(private TrophyRepository $trophyRepository)
     {
-        $this->trophyRepository = $trophyRepository;
     }
 
     /**

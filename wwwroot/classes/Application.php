@@ -9,18 +9,18 @@ require_once __DIR__ . '/RouteResultResponder.php';
 
 class Application
 {
-    private RouteResultResponder $routeResultResponder;
+    private readonly RouteResultResponder $routeResultResponder;
 
     public function __construct(
-        private Router $router,
-        private HttpRequest $request,
-        TemplateRenderer $templateRenderer,
-        string $notFoundTemplate = '404.php',
-        ?RouteResultResponder $routeResultResponder = null
+        private readonly Router $router,
+        private readonly HttpRequest $request,
+        private readonly TemplateRenderer $templateRenderer,
+        private readonly string $notFoundTemplate = '404.php',
+        ?RouteResultResponder $routeResultResponder = null,
     ) {
         $this->routeResultResponder = $routeResultResponder ?? new RouteResultResponder(
-            $templateRenderer,
-            $notFoundTemplate
+            $this->templateRenderer,
+            $this->notFoundTemplate
         );
     }
 

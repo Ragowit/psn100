@@ -16,12 +16,12 @@ require_once __DIR__ . '/Routing/TrophyRouteHandler.php';
 
 class Router
 {
-    private RouteHandlerInterface $defaultHandler;
+    private readonly RouteHandlerInterface $defaultHandler;
 
     /**
      * @var array<string, RouteHandlerInterface>
      */
-    private array $routeHandlers;
+    private readonly array $routeHandlers;
 
     public function __construct(
         GameRepository $gameRepository,

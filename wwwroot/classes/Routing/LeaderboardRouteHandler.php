@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
-class LeaderboardRouteHandler implements RouteHandlerInterface
+final readonly class LeaderboardRouteHandler implements RouteHandlerInterface
 {
     private const DEFAULT_REDIRECT = '/leaderboard/trophy';
 
