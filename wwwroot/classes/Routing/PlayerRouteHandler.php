@@ -5,13 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/../PlayerRepository.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
-class PlayerRouteHandler implements RouteHandlerInterface
+final readonly class PlayerRouteHandler implements RouteHandlerInterface
 {
-    private PlayerRepository $playerRepository;
-
-    public function __construct(PlayerRepository $playerRepository)
+    public function __construct(private PlayerRepository $playerRepository)
     {
-        $this->playerRepository = $playerRepository;
     }
 
     /**

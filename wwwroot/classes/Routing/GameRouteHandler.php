@@ -5,26 +5,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/../GameRepository.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
-class GameRouteHandler implements RouteHandlerInterface
+final readonly class GameRouteHandler implements RouteHandlerInterface
 {
-    private GameRepository $gameRepository;
-
-    private string $includeFile;
-
-    private string $redirectPath;
-
-    private ?string $missingSegmentInclude;
-
     public function __construct(
-        GameRepository $gameRepository,
-        string $includeFile,
-        string $redirectPath,
-        ?string $missingSegmentInclude = null
+        private GameRepository $gameRepository,
+        private string $includeFile,
+        private string $redirectPath,
+        private ?string $missingSegmentInclude = null,
     ) {
-        $this->gameRepository = $gameRepository;
-        $this->includeFile = $includeFile;
-        $this->redirectPath = $redirectPath;
-        $this->missingSegmentInclude = $missingSegmentInclude;
     }
 
     /**
