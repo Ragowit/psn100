@@ -5,16 +5,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/Utility.php';
 
-class ChangelogEntryPresenter
+readonly class ChangelogEntryPresenter
 {
-    private ChangelogEntry $entry;
-    private Utility $utility;
-
-    public function __construct(ChangelogEntry $entry, Utility $utility)
-    {
-        $this->entry = $entry;
-        $this->utility = $utility;
-    }
+    public function __construct(
+        private ChangelogEntry $entry,
+        private Utility $utility
+    ) {}
 
     public function getDateLabel(): string
     {
