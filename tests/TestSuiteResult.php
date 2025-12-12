@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestResult.php';
 
-final class TestSuiteResult
+final readonly class TestSuiteResult
 {
     /**
      * @var list<TestResult>
@@ -34,12 +34,12 @@ final class TestSuiteResult
 
     public function getFailureCount(): int
     {
-        return $this->countByStatus('failed');
+        return $this->countByStatus(TestStatus::FAILED);
     }
 
     public function getErrorCount(): int
     {
-        return $this->countByStatus('error');
+        return $this->countByStatus(TestStatus::ERROR);
     }
 
     public function isSuccessful(): bool
@@ -47,7 +47,7 @@ final class TestSuiteResult
         return $this->getFailureCount() === 0 && $this->getErrorCount() === 0;
     }
 
-    private function countByStatus(string $status): int
+    private function countByStatus(TestStatus $status): int
     {
         $count = 0;
 

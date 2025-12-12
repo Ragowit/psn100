@@ -2,22 +2,16 @@
 
 declare(strict_types=1);
 
-final class TestResult
+require_once __DIR__ . '/TestStatus.php';
+
+final readonly class TestResult
 {
-    private string $className;
-
-    private string $methodName;
-
-    private string $status;
-
-    private ?string $message;
-
-    public function __construct(string $className, string $methodName, string $status, ?string $message = null)
-    {
-        $this->className = $className;
-        $this->methodName = $methodName;
-        $this->status = $status;
-        $this->message = $message;
+    public function __construct(
+        private string $className,
+        private string $methodName,
+        private TestStatus $status,
+        private ?string $message = null,
+    ) {
     }
 
     public function getClassName(): string
@@ -30,7 +24,7 @@ final class TestResult
         return $this->methodName;
     }
 
-    public function getStatus(): string
+    public function getStatus(): TestStatus
     {
         return $this->status;
     }
@@ -42,16 +36,16 @@ final class TestResult
 
     public function isPassed(): bool
     {
-        return $this->status === 'passed';
+        return $this->status === TestStatus::PASSED;
     }
 
     public function isFailed(): bool
     {
-        return $this->status === 'failed';
+        return $this->status === TestStatus::FAILED;
     }
 
     public function isError(): bool
     {
-        return $this->status === 'error';
+        return $this->status === TestStatus::ERROR;
     }
 }

@@ -17,7 +17,7 @@ final class TestRunReporterTest extends TestCase
         });
 
         $result = new TestSuiteResult([
-            new TestResult('ExampleTest', 'testExample', 'passed'),
+            new TestResult('ExampleTest', 'testExample', TestStatus::PASSED),
         ]);
 
         $exitCode = $reporter->report($result);
@@ -38,8 +38,8 @@ final class TestRunReporterTest extends TestCase
         });
 
         $result = new TestSuiteResult([
-            new TestResult('ExampleTest', 'testSuccess', 'passed'),
-            new TestResult('ExampleTest', 'testFailure', 'failed', 'Something went wrong'),
+            new TestResult('ExampleTest', 'testSuccess', TestStatus::PASSED),
+            new TestResult('ExampleTest', 'testFailure', TestStatus::FAILED, 'Something went wrong'),
         ]);
 
         $exitCode = $reporter->report($result);

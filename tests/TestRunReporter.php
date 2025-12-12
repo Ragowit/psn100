@@ -4,33 +4,30 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestSuiteResult.php';
 
-final class TestRunReporter
+final readonly class TestRunReporter
 {
-    /**
-     * @var callable(string): void
-     */
-    private $outputWriter;
+    private \Closure $outputWriter;
 
     /**
      * @param callable(string): void|null $outputWriter
      */
     public function __construct(?callable $outputWriter = null)
     {
-        $this->outputWriter = $outputWriter ?? static function (string $line): void {
-            echo $line . PHP_EOL;
-        };
+        $this->outputWriter = $outputWriter === null
+            ? static function (string $line): void {
+                echo $line . PHP_EOL;
+            }
+            : \Closure::fromCallable($outputWriter);
     }
 
     public function report(TestSuiteResult $result): int
     {
-        $statusMap = [
-            'passed' => 'PASS',
-            'failed' => 'FAIL',
-            'error' => 'ERROR',
-        ];
-
         foreach ($result->getResults() as $testResult) {
-            $status = $statusMap[$testResult->getStatus()] ?? strtoupper($testResult->getStatus());
+            $status = match ($testResult->getStatus()) {
+                TestStatus::PASSED => 'PASS',
+                TestStatus::FAILED => 'FAIL',
+                TestStatus::ERROR => 'ERROR',
+            };
             $className = $testResult->getClassName();
             $methodName = $testResult->getMethodName();
             $message = $testResult->getMessage() ?? '';

@@ -7,22 +7,15 @@ require_once __DIR__ . '/TestResult.php';
 require_once __DIR__ . '/TestSuiteResult.php';
 require_once __DIR__ . '/TestSuiteInterface.php';
 
-final class TestSuite implements TestSuiteInterface
+final readonly class TestSuite implements TestSuiteInterface
 {
-    private string $directory;
-
-    /**
-     * @var list<class-string<TestCase>>
-     */
-    private array $testClasses;
-
     /**
      * @param list<class-string<TestCase>> $testClasses
      */
-    private function __construct(string $directory, array $testClasses)
-    {
-        $this->directory = $directory;
-        $this->testClasses = $testClasses;
+    private function __construct(
+        private string $directory,
+        private array $testClasses,
+    ) {
     }
 
     public static function fromDirectory(string $directory): self

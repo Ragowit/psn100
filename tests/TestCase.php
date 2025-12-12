@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestResult.php';
+require_once __DIR__ . '/TestStatus.php';
 
 abstract class TestCase
 {
@@ -19,19 +20,19 @@ abstract class TestCase
 
             try {
                 $this->$method();
-                $results[] = new TestResult($className, $method, 'passed');
+                $results[] = new TestResult($className, $method, TestStatus::PASSED);
             } catch (AssertionError $assertionError) {
                 $results[] = new TestResult(
                     $className,
                     $method,
-                    'failed',
+                    TestStatus::FAILED,
                     $assertionError->getMessage()
                 );
             } catch (Throwable $throwable) {
                 $results[] = new TestResult(
                     $className,
                     $method,
-                    'error',
+                    TestStatus::ERROR,
                     $throwable->getMessage()
                 );
             } finally {

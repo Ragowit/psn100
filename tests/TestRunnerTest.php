@@ -27,7 +27,7 @@ final class TestRunnerTest extends TestCase
     public function testRunOutputsSummaryForSuccessfulRun(): void
     {
         $suite = new TestSuiteStub(new TestSuiteResult([
-            new TestResult('ExampleTest', 'testExample', 'passed'),
+            new TestResult('ExampleTest', 'testExample', TestStatus::PASSED),
         ]));
 
         $output = [];
@@ -48,8 +48,8 @@ final class TestRunnerTest extends TestCase
     public function testRunOutputsSummaryForFailedRun(): void
     {
         $suite = new TestSuiteStub(new TestSuiteResult([
-            new TestResult('ExampleTest', 'testSuccess', 'passed'),
-            new TestResult('ExampleTest', 'testFailure', 'failed', 'Something went wrong'),
+            new TestResult('ExampleTest', 'testSuccess', TestStatus::PASSED),
+            new TestResult('ExampleTest', 'testFailure', TestStatus::FAILED, 'Something went wrong'),
         ]));
 
         $output = [];
