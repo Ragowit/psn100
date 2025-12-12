@@ -2,16 +2,10 @@
 
 declare(strict_types=1);
 
-final class MaintenanceMode
+final readonly class MaintenanceMode
 {
-    private bool $enabled;
-
-    private string $templatePath;
-
-    private function __construct(bool $enabled, string $templatePath)
+    private function __construct(private bool $enabled, private string $templatePath)
     {
-        $this->enabled = $enabled;
-        $this->templatePath = $templatePath;
     }
 
     public static function disabled(string $templatePath): self
