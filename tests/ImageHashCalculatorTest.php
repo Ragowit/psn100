@@ -92,7 +92,7 @@ final class FakeImageProcessor implements ImageProcessorInterface
 
     private bool $trueColor;
 
-    private object $imageHandle;
+    private \GdImage $imageHandle;
 
     public function __construct(
         bool $supported = true,
@@ -105,7 +105,6 @@ final class FakeImageProcessor implements ImageProcessorInterface
         $this->supported = $supported;
         $this->createSucceeds = $createSucceeds;
         $this->trueColor = $trueColor;
-        $this->imageHandle = new stdClass();
 
         if ($pixels !== []) {
             $this->pixels = $pixels;
@@ -116,6 +115,8 @@ final class FakeImageProcessor implements ImageProcessorInterface
             $this->width = $width;
             $this->height = $height;
         }
+
+        $this->imageHandle = imagecreatetruecolor(max(1, $this->width), max(1, $this->height));
     }
 
     #[\Override]
@@ -125,7 +126,7 @@ final class FakeImageProcessor implements ImageProcessorInterface
     }
 
     #[\Override]
-    public function createImageFromString(string $contents): mixed
+    public function createImageFromString(string $contents): ?\GdImage
     {
         if (!$this->createSucceeds) {
             return null;
@@ -135,43 +136,43 @@ final class FakeImageProcessor implements ImageProcessorInterface
     }
 
     #[\Override]
-    public function destroyImage(mixed $image): void
+    public function destroyImage(\GdImage $image): void
     {
-        // Nothing to clean up in the fake processor.
+        imagedestroy($image);
     }
 
     #[\Override]
-    public function getWidth(mixed $image): int
+    public function getWidth(\GdImage $image): int
     {
         return $this->width;
     }
 
     #[\Override]
-    public function getHeight(mixed $image): int
+    public function getHeight(\GdImage $image): int
     {
         return $this->height;
     }
 
     #[\Override]
-    public function isTrueColor(mixed $image): bool
+    public function isTrueColor(\GdImage $image): bool
     {
         return $this->trueColor;
     }
 
     #[\Override]
-    public function convertPaletteToTrueColor(mixed $image): void
+    public function convertPaletteToTrueColor(\GdImage $image): void
     {
         $this->trueColor = true;
     }
 
     #[\Override]
-    public function getColorAt(mixed $image, int $x, int $y): int
+    public function getColorAt(\GdImage $image, int $x, int $y): int
     {
         return $y * max(1, $this->width) + $x;
     }
 
     #[\Override]
-    public function getColorComponents(mixed $image, int $color): array
+    public function getColorComponents(\GdImage $image, int $color): array
     {
         if ($this->pixels === []) {
             return ['red' => 0, 'green' => 0, 'blue' => 0, 'alpha' => 0];

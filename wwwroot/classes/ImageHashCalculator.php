@@ -54,7 +54,7 @@ final class ImageHashCalculator
         }
     }
 
-    private function hasTransparency(mixed $image, int $width, int $height): bool
+    private function hasTransparency(\GdImage $image, int $width, int $height): bool
     {
         for ($y = 0; $y < $height; $y++) {
             for ($x = 0; $x < $width; $x++) {
@@ -71,7 +71,7 @@ final class ImageHashCalculator
     }
 
     private function buildPixelBuffer(
-        mixed $image,
+        \GdImage $image,
         int $width,
         int $height,
         bool $hasTransparency
