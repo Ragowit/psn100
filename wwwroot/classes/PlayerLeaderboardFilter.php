@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class PlayerLeaderboardFilter
+readonly class PlayerLeaderboardFilter
 {
     private ?string $country;
     private ?string $avatar;
