@@ -4,32 +4,17 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/MaintenanceMode.php';
 
-final class MaintenanceResponder
+final readonly class MaintenanceResponder
 {
-    /**
-     * @var callable(int): void
-     */
-    private $statusEmitter;
+    private \Closure $statusEmitter;
 
-    /**
-     * @var callable(string): void
-     */
-    private $headerEmitter;
+    private \Closure $headerEmitter;
 
-    /**
-     * @var callable(string): void
-     */
-    private $templateIncluder;
+    private \Closure $templateIncluder;
 
-    /**
-     * @var callable(): void
-     */
-    private $terminator;
+    private \Closure $terminator;
 
-    /**
-     * @var callable(): bool
-     */
-    private $headersSentDetector;
+    private \Closure $headersSentDetector;
 
     public function __construct(
         ?callable $statusEmitter = null,
@@ -38,21 +23,40 @@ final class MaintenanceResponder
         ?callable $terminator = null,
         ?callable $headersSentDetector = null
     ) {
-        $this->statusEmitter = $statusEmitter ?? static function (int $status): void {
-            http_response_code($status);
-        };
-        $this->headerEmitter = $headerEmitter ?? static function (string $header): void {
-            header($header);
-        };
-        $this->templateIncluder = $templateIncluder ?? static function (string $template): void {
-            require_once $template;
-        };
-        $this->terminator = $terminator ?? static function (): void {
-            exit();
-        };
-        $this->headersSentDetector = $headersSentDetector ?? static function (): bool {
-            return headers_sent();
-        };
+        $this->statusEmitter = $this->toClosure(
+            $statusEmitter,
+            static function (int $status): void {
+                http_response_code($status);
+            }
+        );
+
+        $this->headerEmitter = $this->toClosure(
+            $headerEmitter,
+            static function (string $header): void {
+                header($header);
+            }
+        );
+
+        $this->templateIncluder = $this->toClosure(
+            $templateIncluder,
+            static function (string $template): void {
+                require_once $template;
+            }
+        );
+
+        $this->terminator = $this->toClosure(
+            $terminator,
+            static function (): void {
+                exit();
+            }
+        );
+
+        $this->headersSentDetector = $this->toClosure(
+            $headersSentDetector,
+            static function (): bool {
+                return headers_sent();
+            }
+        );
     }
 
     public function respond(MaintenanceMode $maintenanceMode): void
@@ -66,5 +70,12 @@ final class MaintenanceResponder
         ($this->templateIncluder)($maintenanceMode->getTemplatePath());
 
         ($this->terminator)();
+    }
+
+    private function toClosure(?callable $callable, callable $fallback): \Closure
+    {
+        return $callable instanceof \Closure
+            ? $callable
+            : \Closure::fromCallable($callable ?? $fallback);
     }
 }
