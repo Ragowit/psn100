@@ -5,16 +5,10 @@ declare(strict_types=1);
 class HttpRequest
 {
     /**
-     * @var array<string, mixed>
-     */
-    private array $server;
-
-    /**
      * @param array<string, mixed> $server
      */
-    public function __construct(array $server)
+    public function __construct(private array $server = [])
     {
-        $this->server = $server;
     }
 
     public static function fromGlobals(): self

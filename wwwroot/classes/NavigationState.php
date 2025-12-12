@@ -143,27 +143,15 @@ final class NavigationState
 
     private static function resolveActiveSection(string $requestUri): NavigationSection
     {
-        if (str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')) {
-            return NavigationSection::Leaderboard;
-        }
-
-        if (str_starts_with($requestUri, '/game')) {
-            return NavigationSection::Game;
-        }
-
-        if (str_starts_with($requestUri, '/trophy')) {
-            return NavigationSection::Trophy;
-        }
-
-        if (str_starts_with($requestUri, '/avatar')) {
-            return NavigationSection::Avatar;
-        }
-
-        if (str_starts_with($requestUri, '/about')) {
-            return NavigationSection::About;
-        }
-
-        return NavigationSection::Home;
+        return match (true) {
+            str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')
+                => NavigationSection::Leaderboard,
+            str_starts_with($requestUri, '/game') => NavigationSection::Game,
+            str_starts_with($requestUri, '/trophy') => NavigationSection::Trophy,
+            str_starts_with($requestUri, '/avatar') => NavigationSection::Avatar,
+            str_starts_with($requestUri, '/about') => NavigationSection::About,
+            default => NavigationSection::Home,
+        };
     }
 
     private function getSectionState(NavigationSection $section): ?NavigationSectionState
