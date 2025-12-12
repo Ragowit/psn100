@@ -7,13 +7,13 @@ require_once __DIR__ . '/Utility.php';
 
 final class GameListItem
 {
-    private const STATUS_NORMAL = 0;
-    private const STATUS_DELISTED = 1;
-    private const STATUS_OBSOLETE = 3;
-    private const STATUS_DELISTED_AND_OBSOLETE = 4;
-    private const COMPLETION_PERCENTAGE = 100;
-    private const MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
-    private const MISSING_PS4_ICON = '../missing-ps4-game.png';
+    private const int STATUS_NORMAL = 0;
+    private const int STATUS_DELISTED = 1;
+    private const int STATUS_OBSOLETE = 3;
+    private const int STATUS_DELISTED_AND_OBSOLETE = 4;
+    private const int COMPLETION_PERCENTAGE = 100;
+    private const string MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
+    private const string MISSING_PS4_ICON = '../missing-ps4-game.png';
 
     private int $id;
 
