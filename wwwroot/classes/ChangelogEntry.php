@@ -22,57 +22,26 @@ enum ChangelogEntryType: string
     case UNKNOWN = 'UNKNOWN';
 }
 
-class ChangelogEntry
+readonly class ChangelogEntry
 {
-    private DateTimeImmutable $time;
-    private ChangelogEntryType $changeType;
-    private string $changeTypeValue;
-    private ?int $param1Id;
-    private ?string $param1Name;
-    /**
-     * @var array<int, string>
-     */
-    private array $param1Platforms;
-    private ?string $param1Region;
-    private ?int $param2Id;
-    private ?string $param2Name;
-    /**
-     * @var array<int, string>
-     */
-    private array $param2Platforms;
-    private ?string $param2Region;
-    private ?string $extra;
-
     /**
      * @param array<int, string> $param1Platforms
      * @param array<int, string> $param2Platforms
      */
     private function __construct(
-        DateTimeImmutable $time,
-        string $changeType,
-        ?int $param1Id,
-        ?string $param1Name,
-        array $param1Platforms,
-        ?string $param1Region,
-        ?int $param2Id,
-        ?string $param2Name,
-        array $param2Platforms,
-        ?string $param2Region,
-        ?string $extra
-    ) {
-        $this->time = $time;
-        $this->changeTypeValue = $changeType;
-        $this->changeType = self::normalizeChangeType($changeType);
-        $this->param1Id = $param1Id;
-        $this->param1Name = $param1Name;
-        $this->param1Platforms = $param1Platforms;
-        $this->param1Region = $param1Region;
-        $this->param2Id = $param2Id;
-        $this->param2Name = $param2Name;
-        $this->param2Platforms = $param2Platforms;
-        $this->param2Region = $param2Region;
-        $this->extra = $extra;
-    }
+        private DateTimeImmutable $time,
+        private string $changeTypeValue,
+        private ChangelogEntryType $changeType,
+        private ?int $param1Id,
+        private ?string $param1Name,
+        private array $param1Platforms,
+        private ?string $param1Region,
+        private ?int $param2Id,
+        private ?string $param2Name,
+        private array $param2Platforms,
+        private ?string $param2Region,
+        private ?string $extra
+    ) {}
 
     /**
      * @param array<string, mixed> $row
@@ -81,7 +50,8 @@ class ChangelogEntry
     {
         return new self(
             self::createDateTime(isset($row['time']) ? (string) $row['time'] : 'now'),
-            isset($row['change_type']) ? (string) $row['change_type'] : '',
+            $changeTypeValue = isset($row['change_type']) ? (string) $row['change_type'] : '',
+            self::normalizeChangeType($changeTypeValue),
             isset($row['param_1']) ? (int) $row['param_1'] : null,
             isset($row['param_1_name']) ? (string) $row['param_1_name'] : null,
             self::normalizePlatforms($row['param_1_platform'] ?? null),
