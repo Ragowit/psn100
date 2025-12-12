@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Random\Randomizer;
+
 class PlayerRandomGamesService
 {
     private const PLATFORM_FILTERS = [
@@ -14,14 +16,17 @@ class PlayerRandomGamesService
         'psvr2' => "tt.platform LIKE '%PSVR2%'",
     ];
 
-    private PDO $database;
+    private readonly PDO $database;
 
-    private Utility $utility;
+    private readonly Utility $utility;
 
-    public function __construct(PDO $database, Utility $utility)
+    private readonly Randomizer $randomizer;
+
+    public function __construct(PDO $database, Utility $utility, ?Randomizer $randomizer = null)
     {
         $this->database = $database;
         $this->utility = $utility;
+        $this->randomizer = $randomizer ?? new Randomizer();
     }
 
     /**
@@ -197,9 +202,7 @@ class PlayerRandomGamesService
 
         if ($available <= $count * 2) {
             $pool = range($minId, $maxId);
-            if (count($pool) > 1) {
-                shuffle($pool);
-            }
+            $pool = $this->randomizer->shuffleArray($pool);
 
             return array_slice($pool, 0, $count);
         }
@@ -208,7 +211,7 @@ class PlayerRandomGamesService
         $selected = [];
 
         while (count($ids) < $count) {
-            $candidate = random_int($minId, $maxId);
+            $candidate = $this->randomizer->getInt($minId, $maxId);
 
             if (isset($selected[$candidate])) {
                 continue;
@@ -256,9 +259,7 @@ class PlayerRandomGamesService
 
         $rows = array_values(array_filter($rows, 'is_array'));
 
-        if (count($rows) > 1) {
-            shuffle($rows);
-        }
+        $rows = $this->randomizer->shuffleArray($rows);
 
         return $rows;
     }
