@@ -7,15 +7,13 @@ require_once __DIR__ . '/PlayerLogPage.php';
 require_once __DIR__ . '/PlayerLogService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/TrophyRarityFormatter.php';
 
 final class PlayerLogPageContext
 {
-    private const STATUS_FLAGGED = 1;
-    private const STATUS_PRIVATE = 3;
-
     private PlayerLogPage $playerLogPage;
 
     private PlayerSummary $playerSummary;
@@ -34,7 +32,7 @@ final class PlayerLogPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -52,7 +50,7 @@ final class PlayerLogPageContext
             $playerLogService,
             $filter,
             self::extractPlayerAccountId($playerData),
-            self::extractPlayerStatus($playerData)
+            PlayerStatus::fromPlayerData($playerData)
         );
 
         $playerSummaryService = new PlayerSummaryService($database);
@@ -64,7 +62,7 @@ final class PlayerLogPageContext
             $filter,
             self::extractOnlineId($playerData),
             self::extractPlayerAccountId($playerData),
-            self::extractPlayerStatus($playerData)
+            PlayerStatus::fromPlayerData($playerData)
         );
     }
 
@@ -74,7 +72,7 @@ final class PlayerLogPageContext
         PlayerLogFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ): self {
         return new self(
             $playerLogPage,
@@ -92,7 +90,7 @@ final class PlayerLogPageContext
         PlayerLogFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerLogPage = $playerLogPage;
         $this->playerSummary = $playerSummary;
@@ -155,17 +153,17 @@ final class PlayerLogPageContext
 
     public function isPlayerFlagged(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function isPlayerPrivate(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivate();
     }
 
     public function shouldDisplayLog(): bool
     {
-        return !$this->isPlayerFlagged() && !$this->isPlayerPrivate();
+        return $this->playerStatus->isVisible();
     }
 
     /**
@@ -186,8 +184,4 @@ final class PlayerLogPageContext
         return (int) ($playerData['account_id'] ?? 0);
     }
 
-    private static function extractPlayerStatus(array $playerData): int
-    {
-        return (int) ($playerData['status'] ?? 0);
-    }
 }

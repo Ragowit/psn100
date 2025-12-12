@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerRandomGame.php';
 require_once __DIR__ . '/PlayerRandomGamesFilter.php';
 require_once __DIR__ . '/PlayerRandomGamesPage.php';
 require_once __DIR__ . '/PlayerRandomGamesService.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
@@ -14,9 +15,6 @@ require_once __DIR__ . '/Utility.php';
 
 final class PlayerRandomGamesPageContext
 {
-    private const STATUS_FLAGGED = 1;
-    private const STATUS_PRIVATE = 3;
-
     private PlayerRandomGamesPage $playerRandomGamesPage;
 
     private PlayerSummary $playerSummary;
@@ -33,7 +31,7 @@ final class PlayerRandomGamesPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -47,7 +45,7 @@ final class PlayerRandomGamesPageContext
         array $queryParameters
     ): self {
         $filter = PlayerRandomGamesFilter::fromArray($queryParameters);
-        $playerStatus = self::extractPlayerStatus($playerData);
+        $playerStatus = PlayerStatus::fromPlayerData($playerData);
 
         $randomGamesService = new PlayerRandomGamesService($database, $utility);
         $summaryService = new PlayerSummaryService($database);
@@ -76,7 +74,7 @@ final class PlayerRandomGamesPageContext
         PlayerRandomGamesFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ): self {
         return new self(
             $playerRandomGamesPage,
@@ -94,7 +92,7 @@ final class PlayerRandomGamesPageContext
         PlayerRandomGamesFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerRandomGamesPage = $playerRandomGamesPage;
         $this->playerSummary = $playerSummary;
@@ -151,12 +149,12 @@ final class PlayerRandomGamesPageContext
 
     public function isPlayerFlagged(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function isPlayerPrivate(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivate();
     }
 
     public function shouldShowFlaggedMessage(): bool
@@ -193,8 +191,4 @@ final class PlayerRandomGamesPageContext
     /**
      * @param array<string, mixed> $playerData
      */
-    private static function extractPlayerStatus(array $playerData): int
-    {
-        return (int) ($playerData['status'] ?? 0);
-    }
 }

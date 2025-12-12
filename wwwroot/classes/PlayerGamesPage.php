@@ -5,12 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/ChangelogPaginator.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesService.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 class PlayerGamesPage
 {
-    private const STATUS_FLAGGED = 1;
-    private const STATUS_PRIVATE = 3;
-
     private PlayerGamesFilter $requestedFilter;
 
     private ChangelogPaginator $paginator;
@@ -24,7 +22,7 @@ class PlayerGamesPage
         PlayerGamesService $service,
         PlayerGamesFilter $filter,
         int $accountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->requestedFilter = $filter;
 
@@ -174,9 +172,9 @@ class PlayerGamesPage
         return $this->requestedFilter->withPage($page);
     }
 
-    private function shouldLoadPlayerGames(int $playerStatus): bool
+    private function shouldLoadPlayerGames(PlayerStatus $playerStatus): bool
     {
-        return !in_array($playerStatus, [self::STATUS_FLAGGED, self::STATUS_PRIVATE], true);
+        return $playerStatus->isVisible();
     }
 
     private function createFilterForPage(int $page): PlayerGamesFilter

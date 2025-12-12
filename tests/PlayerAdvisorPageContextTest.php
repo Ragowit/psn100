@@ -18,7 +18,7 @@ final class PlayerAdvisorPageContextTest extends TestCase
             $filter,
             'ExampleUser',
             123,
-            0,
+            PlayerStatus::NORMAL,
             '456789'
         );
 
@@ -63,7 +63,7 @@ final class PlayerAdvisorPageContextTest extends TestCase
             $filter,
             'FlaggedUser',
             99,
-            1,
+            PlayerStatus::FLAGGED,
             '123456'
         );
 
@@ -83,7 +83,7 @@ final class PlayerAdvisorPageContextTest extends TestCase
             $filter,
             'PrivateUser',
             88,
-            3,
+            PlayerStatus::PRIVATE,
             null
         );
 
