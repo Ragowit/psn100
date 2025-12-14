@@ -54,7 +54,7 @@ final class FooterViewModelTest extends TestCase
         $expectedYearRangeLabel = $currentYear <= 2019 ? '2019' : '2019-' . $currentYear;
 
         $this->assertSame($expectedYearRangeLabel, $viewModel->getYearRangeLabel());
-        $this->assertSame('v7.44', $viewModel->getVersionLabel());
+        $this->assertSame('v7.45', $viewModel->getVersionLabel());
         $this->assertSame('https://github.com/Ragowit/psn100/releases', $viewModel->getReleaseUrl());
         $this->assertSame('/changelog', $viewModel->getChangelogUrl());
         $this->assertSame('https://github.com/Ragowit/psn100/issues', $viewModel->getIssuesUrl());
