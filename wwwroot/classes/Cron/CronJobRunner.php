@@ -37,34 +37,28 @@ final class CronJobRunner
         $this->applyIniSetting('max_execution_time', '0');
         $this->applyIniSetting('mysql.connect_timeout', '0');
 
-        if (function_exists('set_time_limit')) {
-            @set_time_limit(0);
-        }
+        @set_time_limit(0);
 
         $this->environmentConfigured = true;
     }
 
     private function applyIniSetting(string $option, string $value): void
     {
-        if (function_exists('ini_set')) {
-            @ini_set($option, $value);
-        }
+        @ini_set($option, $value);
     }
 
     private function increaseMemoryLimitIfNeeded(): void
     {
-        if (function_exists('ini_get')) {
-            $currentLimit = ini_get('memory_limit');
+        $currentLimit = ini_get('memory_limit');
 
-            if ($currentLimit === false || $currentLimit === '' || $currentLimit === '-1') {
-                return;
-            }
+        if ($currentLimit === false || $currentLimit === '' || $currentLimit === '-1') {
+            return;
+        }
 
-            $currentBytes = $this->parseIniSizeToBytes($currentLimit);
+        $currentBytes = $this->parseIniSizeToBytes($currentLimit);
 
-            if ($currentBytes !== null && $currentBytes >= self::MINIMUM_MEMORY_LIMIT_BYTES) {
-                return;
-            }
+        if ($currentBytes !== null && $currentBytes >= self::MINIMUM_MEMORY_LIMIT_BYTES) {
+            return;
         }
 
         $this->applyIniSetting('memory_limit', self::MINIMUM_MEMORY_LIMIT);

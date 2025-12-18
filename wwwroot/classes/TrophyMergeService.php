@@ -1153,11 +1153,7 @@ SQL
     {
         $name = trim($name);
 
-        if (function_exists('mb_strtolower')) {
-            return mb_strtolower($name, 'UTF-8');
-        }
-
-        return strtolower($name);
+        return mb_strtolower($name, 'UTF-8');
     }
 
     private function insertMappingsByName(int $childGameId, int $parentGameId): string

@@ -54,10 +54,6 @@ final class ExecutionEnvironmentConfigurator
 
     private function applyIniSettings(): void
     {
-        if (!function_exists('ini_set')) {
-            return;
-        }
-
         foreach ($this->iniSettings as $option => $value) {
             @ini_set($option, $value);
         }
@@ -65,15 +61,11 @@ final class ExecutionEnvironmentConfigurator
 
     private function removeExecutionTimeLimit(): void
     {
-        if (function_exists('set_time_limit')) {
-            @set_time_limit(0);
-        }
+        @set_time_limit(0);
     }
 
     private function configureIgnoreUserAbort(): void
     {
-        if (function_exists('ignore_user_abort')) {
-            @ignore_user_abort(true);
-        }
+        @ignore_user_abort(true);
     }
 }
