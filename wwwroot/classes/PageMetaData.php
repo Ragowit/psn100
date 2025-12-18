@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 class PageMetaData
 {
-    private ?string $title;
-    private ?string $description;
-    private ?string $image;
-    private ?string $url;
-
-    public function __construct(?string $title = null, ?string $description = null, ?string $image = null, ?string $url = null)
-    {
-        $this->title = $this->normalize($title);
-        $this->description = $this->normalize($description);
-        $this->image = $this->normalize($image);
-        $this->url = $this->normalize($url);
+    public function __construct(
+        private ?string $title = null,
+        private ?string $description = null,
+        private ?string $image = null,
+        private ?string $url = null,
+    ) {
+        $this->title = $this->normalize($this->title);
+        $this->description = $this->normalize($this->description);
+        $this->image = $this->normalize($this->image);
+        $this->url = $this->normalize($this->url);
     }
 
     public function setTitle(?string $title): self
     {
-        $this->title = $this->normalize($title);
-        return $this;
+        return $this->setNormalizedValue('title', $title);
     }
 
     public function getTitle(): ?string
@@ -30,8 +28,7 @@ class PageMetaData
 
     public function setDescription(?string $description): self
     {
-        $this->description = $this->normalize($description);
-        return $this;
+        return $this->setNormalizedValue('description', $description);
     }
 
     public function getDescription(): ?string
@@ -41,8 +38,7 @@ class PageMetaData
 
     public function setImage(?string $image): self
     {
-        $this->image = $this->normalize($image);
-        return $this;
+        return $this->setNormalizedValue('image', $image);
     }
 
     public function getImage(): ?string
@@ -52,8 +48,7 @@ class PageMetaData
 
     public function setUrl(?string $url): self
     {
-        $this->url = $this->normalize($url);
-        return $this;
+        return $this->setNormalizedValue('url', $url);
     }
 
     public function getUrl(): ?string
@@ -67,6 +62,13 @@ class PageMetaData
             && $this->description === null
             && $this->image === null
             && $this->url === null;
+    }
+
+    private function setNormalizedValue(string $property, ?string $value): self
+    {
+        $this->$property = $this->normalize($value);
+
+        return $this;
     }
 
     private function normalize(?string $value): ?string

@@ -9,19 +9,13 @@ class HomepagePage
 {
     private const DEFAULT_TITLE = 'PSN 100% ~ PlayStation Leaderboards & Trophies';
 
-    private HomepageContentService $contentService;
-
-    private string $title = self::DEFAULT_TITLE;
-
-    private ?int $newGamesLimit = null;
-
-    private ?int $newDlcsLimit = null;
-
-    private ?int $popularGamesLimit = null;
-
-    public function __construct(HomepageContentService $contentService)
-    {
-        $this->contentService = $contentService;
+    public function __construct(
+        private readonly HomepageContentService $contentService,
+        private string $title = self::DEFAULT_TITLE,
+        private ?int $newGamesLimit = null,
+        private ?int $newDlcsLimit = null,
+        private ?int $popularGamesLimit = null,
+    ) {
     }
 
     public function setTitle(string $title): self
