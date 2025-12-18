@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class AboutPagePlayer
 {
-    private const STATUS_LABELS = [
+    private const array STATUS_LABELS = [
         1 => 'Cheater',
         3 => 'Private',
         4 => 'Inactive',

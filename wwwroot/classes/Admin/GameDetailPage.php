@@ -8,7 +8,7 @@ require_once __DIR__ . '/../GameStatusService.php';
 
 class GameDetailPage
 {
-    private const STATUS_OPTIONS = [
+    private const array STATUS_OPTIONS = [
         0 => 'Normal',
         1 => 'Delisted',
         2 => 'Merged',
@@ -16,7 +16,7 @@ class GameDetailPage
         4 => 'Delisted & Obsolete',
     ];
 
-    private const PLATFORM_OPTIONS = [
+    private const array PLATFORM_OPTIONS = [
         'PS3',
         'PSVITA',
         'PS4',
