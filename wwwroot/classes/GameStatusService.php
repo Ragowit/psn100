@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+
 class GameStatusService
 {
     private PDO $database;
@@ -11,19 +13,17 @@ class GameStatusService
         $this->database = $database;
     }
 
-    public function updateGameStatus(int $gameId, int $status): string
+    public function updateGameStatus(int $gameId, GameAvailabilityStatus $status): string
     {
         if ($gameId < 0) {
             throw new InvalidArgumentException('Game ID must be a non-negative integer.');
         }
 
-        $statusDetails = $this->getStatusDetails($status);
-
         $this->database->beginTransaction();
 
         try {
             $this->updateStatus($gameId, $status);
-            $this->logStatusChange($gameId, $statusDetails['changeType']);
+            $this->logStatusChange($gameId, $status->changeType());
             $this->database->commit();
         } catch (Throwable $exception) {
             $this->database->rollBack();
@@ -31,10 +31,10 @@ class GameStatusService
             throw $exception;
         }
 
-        return $statusDetails['statusText'];
+        return $status->statusText();
     }
 
-    private function updateStatus(int $gameId, int $status): void
+    private function updateStatus(int $gameId, GameAvailabilityStatus $status): void
     {
         $npCommunicationIdQuery = $this->database->prepare(
             'SELECT np_communication_id FROM trophy_title WHERE id = :game_id'
@@ -51,7 +51,7 @@ class GameStatusService
         $query = $this->database->prepare(
             'UPDATE trophy_title_meta SET status = :status WHERE np_communication_id = :np_communication_id'
         );
-        $query->bindValue(':status', $status, PDO::PARAM_INT);
+        $query->bindValue(':status', $status->value, PDO::PARAM_INT);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }
@@ -64,18 +64,5 @@ class GameStatusService
         $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
         $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         $query->execute();
-    }
-
-    /**
-     * @return array{changeType: string, statusText: string}
-     */
-    private function getStatusDetails(int $status): array
-    {
-        return match ($status) {
-            1 => ['changeType' => 'GAME_DELISTED', 'statusText' => 'delisted'],
-            3 => ['changeType' => 'GAME_OBSOLETE', 'statusText' => 'obsolete'],
-            4 => ['changeType' => 'GAME_DELISTED_AND_OBSOLETE', 'statusText' => 'delisted & obsolete'],
-            default => ['changeType' => 'GAME_NORMAL', 'statusText' => 'normal'],
-        };
     }
 }

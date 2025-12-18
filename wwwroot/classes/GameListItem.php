@@ -2,77 +2,32 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
 require_once __DIR__ . '/Utility.php';
 
 final class GameListItem
 {
-    private const int STATUS_NORMAL = 0;
-    private const int STATUS_DELISTED = 1;
-    private const int STATUS_OBSOLETE = 3;
-    private const int STATUS_DELISTED_AND_OBSOLETE = 4;
     private const int COMPLETION_PERCENTAGE = 100;
     private const string MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
     private const string MISSING_PS4_ICON = '../missing-ps4-game.png';
 
-    private int $id;
-
-    private string $name;
-
-    private int $status;
-
-    private string $iconUrl;
-
-    private string $platformValue;
-
-    private int $owners;
-
-    private int $rarityPoints;
-
-    private int $inGameRarityPoints;
-
-    private string $difficulty;
-
-    private int $platinum;
-
-    private int $gold;
-
-    private int $silver;
-
-    private int $bronze;
-
-    private int $progress;
-
     private function __construct(
-        int $id,
-        string $name,
-        int $status,
-        string $iconUrl,
-        string $platformValue,
-        int $owners,
-        int $rarityPoints,
-        int $inGameRarityPoints,
-        string $difficulty,
-        int $platinum,
-        int $gold,
-        int $silver,
-        int $bronze,
-        int $progress
+        private readonly int $id,
+        private readonly string $name,
+        private readonly GameAvailabilityStatus $status,
+        private readonly string $iconUrl,
+        private readonly string $platformValue,
+        private readonly int $owners,
+        private readonly int $rarityPoints,
+        private readonly int $inGameRarityPoints,
+        private readonly string $difficulty,
+        private readonly int $platinum,
+        private readonly int $gold,
+        private readonly int $silver,
+        private readonly int $bronze,
+        private readonly int $progress,
     ) {
-        $this->id = $id;
-        $this->name = $name;
-        $this->status = $status;
-        $this->iconUrl = $iconUrl;
-        $this->platformValue = $platformValue;
-        $this->owners = $owners;
-        $this->rarityPoints = $rarityPoints;
-        $this->inGameRarityPoints = $inGameRarityPoints;
-        $this->difficulty = $difficulty;
-        $this->platinum = $platinum;
-        $this->gold = $gold;
-        $this->silver = $silver;
-        $this->bronze = $bronze;
-        $this->progress = $progress;
     }
 
     /**
@@ -83,7 +38,7 @@ final class GameListItem
         return new self(
             isset($row['id']) ? (int) $row['id'] : 0,
             (string) ($row['name'] ?? ''),
-            isset($row['status']) ? (int) $row['status'] : self::STATUS_NORMAL,
+            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
             (string) ($row['icon_url'] ?? ''),
             (string) ($row['platform'] ?? ''),
             isset($row['owners']) ? (int) $row['owners'] : 0,
@@ -114,7 +69,7 @@ final class GameListItem
             return 'bg-success-subtle';
         }
 
-        if ($this->status === self::STATUS_DELISTED || $this->status === self::STATUS_OBSOLETE || $this->status === self::STATUS_DELISTED_AND_OBSOLETE) {
+        if ($this->status->isUnavailable()) {
             return 'bg-warning-subtle';
         }
 
@@ -214,26 +169,19 @@ final class GameListItem
 
     public function shouldShowRarityPoints(): bool
     {
-        return $this->status === self::STATUS_NORMAL;
+        return $this->status === GameAvailabilityStatus::NORMAL;
     }
 
     public function getStatusBadge(): ?GameStatusBadge
     {
-        return match ($this->status) {
-            self::STATUS_DELISTED => new GameStatusBadge(
-                'Delisted',
-                "This game is delisted, no trophies will be accounted for on any leaderboard."
-            ),
-            self::STATUS_OBSOLETE => new GameStatusBadge(
-                'Obsolete',
-                "This game is obsolete, no trophies will be accounted for on any leaderboard."
-            ),
-            self::STATUS_DELISTED_AND_OBSOLETE => new GameStatusBadge(
-                'Delisted & Obsolete',
-                "This game is delisted & obsolete, no trophies will be accounted for on any leaderboard."
-            ),
-            default => null,
-        };
+        $label = $this->status->badgeLabel();
+        $message = $this->status->warningMessage();
+
+        if ($label === null || $message === null) {
+            return null;
+        }
+
+        return new GameStatusBadge($label, $message);
     }
 
     private function isPlayStation5Title(): bool

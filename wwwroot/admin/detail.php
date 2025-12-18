@@ -111,7 +111,7 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <label for="status">Status:</label><br>
                     <select id="status" name="status" class="form-select" style="max-width: 300px;">
                         <?php foreach ($statusOptions as $value => $label) { ?>
-                            <?php $selected = $gameDetail->getStatus() === $value ? 'selected' : ''; ?>
+                            <?php $selected = $gameDetail->getStatus()->value === $value ? 'selected' : ''; ?>
                             <option value="<?= htmlentities((string) $value, ENT_QUOTES, 'UTF-8'); ?>" <?= $selected; ?>>
                                 <?= htmlentities($label, ENT_QUOTES, 'UTF-8'); ?>
                             </option>

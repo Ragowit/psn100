@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/GameStatusService.php';
+require_once __DIR__ . '/../wwwroot/classes/GameAvailabilityStatus.php';
 
 final class GameStatusServiceTest extends TestCase
 {
@@ -25,7 +26,7 @@ final class GameStatusServiceTest extends TestCase
 
     public function testUpdateGameStatusUpdatesDatabaseAndReturnsStatusText(): void
     {
-        $statusText = $this->service->updateGameStatus(1, 1);
+        $statusText = $this->service->updateGameStatus(1, GameAvailabilityStatus::DELISTED);
 
         $this->assertSame('delisted', $statusText);
 
@@ -52,12 +53,41 @@ final class GameStatusServiceTest extends TestCase
         );
     }
 
+    public function testUpdateGameStatusSupportsMergedStatus(): void
+    {
+        $statusText = $this->service->updateGameStatus(1, GameAvailabilityStatus::MERGED);
+
+        $this->assertSame('merged', $statusText);
+
+        $status = $this->database
+            ->query('SELECT status FROM trophy_title_meta WHERE np_communication_id = "NPWR-1"')
+            ->fetchColumn();
+        $this->assertSame(GameAvailabilityStatus::MERGED->value, (int) $status);
+
+        $changes = $this->database
+            ->query('SELECT change_type, param_1 FROM psn100_change')
+            ->fetchAll(PDO::FETCH_ASSOC);
+
+        $this->assertSame(
+            [
+                ['change_type' => 'GAME_MERGED', 'param_1' => 1],
+            ],
+            array_map(
+                static fn (array $row): array => [
+                    'change_type' => $row['change_type'],
+                    'param_1' => (int) $row['param_1'],
+                ],
+                $changes
+            )
+        );
+    }
+
     public function testUpdateGameStatusRollsBackWhenLoggingFails(): void
     {
         $this->database->exec('CREATE TRIGGER fail_insert BEFORE INSERT ON psn100_change BEGIN SELECT RAISE(ABORT, "log failure"); END;');
 
         try {
-            $this->service->updateGameStatus(1, 3);
+            $this->service->updateGameStatus(1, GameAvailabilityStatus::OBSOLETE);
             $this->fail('Expected exception was not thrown.');
         } catch (Throwable $exception) {
             $this->assertStringContainsString('log failure', $exception->getMessage());
@@ -77,7 +107,7 @@ final class GameStatusServiceTest extends TestCase
     public function testUpdateGameStatusRejectsNegativeGameId(): void
     {
         try {
-            $this->service->updateGameStatus(-5, 1);
+            $this->service->updateGameStatus(-5, GameAvailabilityStatus::DELISTED);
             $this->fail('Expected InvalidArgumentException was not thrown.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Game ID must be a non-negative integer.', $exception->getMessage());

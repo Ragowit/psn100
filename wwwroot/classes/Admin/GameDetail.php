@@ -2,54 +2,23 @@
 
 declare(strict_types=1);
 
-class GameDetail
+require_once __DIR__ . '/../GameAvailabilityStatus.php';
+
+final readonly class GameDetail
 {
-    private int $id;
-
-    private ?string $npCommunicationId;
-
-    private string $name;
-
-    private string $iconUrl;
-
-    private string $platform;
-
-    private string $message;
-
-    private string $setVersion;
-
-    private ?string $region;
-
-    private ?string $psnprofilesId;
-
-    private int $status;
-
-    private ?string $obsoleteIds;
-
     public function __construct(
-        int $id,
-        ?string $npCommunicationId,
-        string $name,
-        string $iconUrl,
-        string $platform,
-        string $message,
-        string $setVersion,
-        ?string $region,
-        ?string $psnprofilesId,
-        int $status,
-        ?string $obsoleteIds
+        private int $id,
+        private ?string $npCommunicationId,
+        private string $name,
+        private string $iconUrl,
+        private string $platform,
+        private string $message,
+        private string $setVersion,
+        private ?string $region,
+        private ?string $psnprofilesId,
+        private GameAvailabilityStatus $status,
+        private ?string $obsoleteIds,
     ) {
-        $this->id = $id;
-        $this->npCommunicationId = $npCommunicationId;
-        $this->name = $name;
-        $this->iconUrl = $iconUrl;
-        $this->platform = $platform;
-        $this->message = $message;
-        $this->setVersion = $setVersion;
-        $this->region = $region;
-        $this->psnprofilesId = $psnprofilesId;
-        $this->status = $status;
-        $this->obsoleteIds = $obsoleteIds;
     }
 
     public static function fromArray(int $id, array $row): self
@@ -64,7 +33,7 @@ class GameDetail
         $psnprofilesId = array_key_exists('psnprofiles_id', $row)
             ? ($row['psnprofiles_id'] !== null ? (string) $row['psnprofiles_id'] : null)
             : null;
-        $status = array_key_exists('status', $row) ? (int) $row['status'] : 0;
+        $status = GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0));
         $obsoleteIds = array_key_exists('obsolete_ids', $row)
             ? ($row['obsolete_ids'] !== null ? (string) $row['obsolete_ids'] : null)
             : null;
@@ -129,7 +98,7 @@ class GameDetail
         return $this->psnprofilesId;
     }
 
-    public function getStatus(): int
+    public function getStatus(): GameAvailabilityStatus
     {
         return $this->status;
     }
