@@ -75,7 +75,7 @@ class PlayerRandomGamesService
                 }
 
                 $seenIds[$id] = true;
-                $games[] = new PlayerRandomGame($gameData, $this->utility);
+                $games[] = PlayerRandomGame::fromArray($gameData, $this->utility);
 
                 if (count($games) >= $limit) {
                     break;
@@ -93,7 +93,7 @@ class PlayerRandomGamesService
                 }
 
                 $seenIds[$id] = true;
-                $games[] = new PlayerRandomGame($gameData, $this->utility);
+                $games[] = PlayerRandomGame::fromArray($gameData, $this->utility);
 
                 if (count($games) >= $limit) {
                     break;

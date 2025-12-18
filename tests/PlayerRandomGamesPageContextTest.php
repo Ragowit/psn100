@@ -11,24 +11,21 @@ final class PlayerRandomGamesPageContextTest extends TestCase
     {
         $filter = PlayerRandomGamesFilter::fromArray(['ps5' => 'true']);
         $utility = new Utility();
-        $randomGame = new PlayerRandomGame(
-            [
-                'id' => 123,
-                'np_communication_id' => 'NPWR12345_00',
-                'name' => 'Random Game',
-                'icon_url' => 'random.png',
-                'platform' => 'PS5',
-                'owners' => 1000,
-                'difficulty' => '12.5',
-                'platinum' => 1,
-                'gold' => 2,
-                'silver' => 3,
-                'bronze' => 4,
-                'rarity_points' => 500,
-                'progress' => '50',
-            ],
-            $utility
-        );
+        $randomGame = PlayerRandomGame::fromArray([
+            'id' => 123,
+            'np_communication_id' => 'NPWR12345_00',
+            'name' => 'Random Game',
+            'icon_url' => 'random.png',
+            'platform' => 'PS5',
+            'owners' => 1000,
+            'difficulty' => '12.5',
+            'platinum' => 1,
+            'gold' => 2,
+            'silver' => 3,
+            'bronze' => 4,
+            'rarity_points' => 500,
+            'progress' => '50',
+        ], $utility);
         $randomGames = [$randomGame];
 
         $playerSummary = new PlayerSummary(10, 4, 75.0, 12);

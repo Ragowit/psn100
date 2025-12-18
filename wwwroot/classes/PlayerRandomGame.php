@@ -4,53 +4,47 @@ declare(strict_types=1);
 
 final readonly class PlayerRandomGame
 {
-    private int $id;
+    private function __construct(
+        private int $id,
+        private string $npCommunicationId,
+        private string $name,
+        private string $iconUrl,
+        private string $platform,
+        private int $owners,
+        private string $difficulty,
+        private int $platinum,
+        private int $gold,
+        private int $silver,
+        private int $bronze,
+        private int $rarityPoints,
+        private int $inGameRarityPoints,
+        private ?string $progress,
+        private Utility $utility,
+    ) {
+    }
 
-    private string $npCommunicationId;
-
-    private string $name;
-
-    private string $iconUrl;
-
-    private string $platform;
-
-    private int $owners;
-
-    private string $difficulty;
-
-    private int $platinum;
-
-    private int $gold;
-
-    private int $silver;
-
-    private int $bronze;
-
-    private int $rarityPoints;
-
-    private int $inGameRarityPoints;
-
-    private ?string $progress;
-
-    private Utility $utility;
-
-    public function __construct(array $data, Utility $utility)
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data, Utility $utility): self
     {
-        $this->id = isset($data['id']) ? (int) $data['id'] : 0;
-        $this->npCommunicationId = (string) ($data['np_communication_id'] ?? '');
-        $this->name = (string) ($data['name'] ?? '');
-        $this->iconUrl = (string) ($data['icon_url'] ?? '');
-        $this->platform = (string) ($data['platform'] ?? '');
-        $this->owners = isset($data['owners']) ? (int) $data['owners'] : 0;
-        $this->difficulty = (string) ($data['difficulty'] ?? '0');
-        $this->platinum = isset($data['platinum']) ? (int) $data['platinum'] : 0;
-        $this->gold = isset($data['gold']) ? (int) $data['gold'] : 0;
-        $this->silver = isset($data['silver']) ? (int) $data['silver'] : 0;
-        $this->bronze = isset($data['bronze']) ? (int) $data['bronze'] : 0;
-        $this->rarityPoints = isset($data['rarity_points']) ? (int) $data['rarity_points'] : 0;
-        $this->inGameRarityPoints = isset($data['in_game_rarity_points']) ? (int) $data['in_game_rarity_points'] : 0;
-        $this->progress = array_key_exists('progress', $data) ? (string) $data['progress'] : null;
-        $this->utility = $utility;
+        return new self(
+            id: (int) ($data['id'] ?? 0),
+            npCommunicationId: (string) ($data['np_communication_id'] ?? ''),
+            name: (string) ($data['name'] ?? ''),
+            iconUrl: (string) ($data['icon_url'] ?? ''),
+            platform: (string) ($data['platform'] ?? ''),
+            owners: (int) ($data['owners'] ?? 0),
+            difficulty: (string) ($data['difficulty'] ?? '0'),
+            platinum: (int) ($data['platinum'] ?? 0),
+            gold: (int) ($data['gold'] ?? 0),
+            silver: (int) ($data['silver'] ?? 0),
+            bronze: (int) ($data['bronze'] ?? 0),
+            rarityPoints: (int) ($data['rarity_points'] ?? 0),
+            inGameRarityPoints: (int) ($data['in_game_rarity_points'] ?? 0),
+            progress: array_key_exists('progress', $data) ? (string) $data['progress'] : null,
+            utility: $utility,
+        );
     }
 
     public function getId(): int
