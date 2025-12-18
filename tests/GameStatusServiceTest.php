@@ -70,7 +70,7 @@ final class GameStatusServiceTest extends TestCase
 
         $this->assertSame(
             [
-                ['change_type' => 'GAME_MERGED', 'param_1' => 1],
+                ['change_type' => 'GAME_MERGE', 'param_1' => 1],
             ],
             array_map(
                 static fn (array $row): array => [

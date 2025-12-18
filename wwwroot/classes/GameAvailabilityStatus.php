@@ -30,7 +30,7 @@ enum GameAvailabilityStatus: int
     {
         return match ($this) {
             self::DELISTED => 'GAME_DELISTED',
-            self::MERGED => 'GAME_MERGED',
+            self::MERGED => 'GAME_MERGE',
             self::OBSOLETE => 'GAME_OBSOLETE',
             self::DELISTED_AND_OBSOLETE => 'GAME_DELISTED_AND_OBSOLETE',
             self::NORMAL => 'GAME_NORMAL',
