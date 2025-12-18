@@ -5,17 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/GameDetailService.php';
 require_once __DIR__ . '/GameDetailPageResult.php';
 require_once __DIR__ . '/../GameStatusService.php';
+require_once __DIR__ . '/../GameAvailabilityStatus.php';
 
 class GameDetailPage
 {
-    private const array STATUS_OPTIONS = [
-        0 => 'Normal',
-        1 => 'Delisted',
-        2 => 'Merged',
-        3 => 'Obsolete',
-        4 => 'Delisted & Obsolete',
-    ];
-
     private const array PLATFORM_OPTIONS = [
         'PS3',
         'PSVITA',
@@ -41,7 +34,13 @@ class GameDetailPage
      */
     public function getStatusOptions(): array
     {
-        return self::STATUS_OPTIONS;
+        $options = [];
+
+        foreach (GameAvailabilityStatus::cases() as $status) {
+            $options[$status->value] = $status->label();
+        }
+
+        return $options;
     }
 
     /**
@@ -245,10 +244,10 @@ class GameDetailPage
         return $trimmed === '' ? '' : strtolower($trimmed);
     }
 
-    private function parseStatus(mixed $value): ?int
+    private function parseStatus(mixed $value): ?GameAvailabilityStatus
     {
         if (is_int($value)) {
-            return array_key_exists($value, self::STATUS_OPTIONS) ? $value : null;
+            return GameAvailabilityStatus::tryFrom($value);
         }
 
         if (!is_string($value)) {
@@ -264,15 +263,13 @@ class GameDetailPage
             return null;
         }
 
-        $parsed = (int) $trimmed;
-
-        return array_key_exists($parsed, self::STATUS_OPTIONS) ? $parsed : null;
+        return GameAvailabilityStatus::tryFrom((int) $trimmed);
     }
 
     /**
      * @param array<string, mixed> $postData
      */
-    private function createGameDetailFromPost(int $gameId, array $postData, int $status): GameDetail
+    private function createGameDetailFromPost(int $gameId, array $postData, GameAvailabilityStatus $status): GameDetail
     {
         $npCommunicationId = $this->normalizeOptionalString($postData['np_communication_id'] ?? null);
         $region = $this->normalizeOptionalString($postData['region'] ?? null);

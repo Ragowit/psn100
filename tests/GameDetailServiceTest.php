@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameDetail.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameDetailService.php';
+require_once __DIR__ . '/../wwwroot/classes/GameAvailabilityStatus.php';
 
 final class GameDetailServiceTest extends TestCase
 {
@@ -72,7 +73,7 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame('hello world', $detail->getMessage());
         $this->assertSame('US', $detail->getRegion());
         $this->assertSame('12345', $detail->getPsnprofilesId());
-        $this->assertSame(3, $detail->getStatus());
+        $this->assertSame(GameAvailabilityStatus::OBSOLETE, $detail->getStatus());
         $this->assertSame('42,84', $detail->getObsoleteIds());
     }
 
@@ -102,7 +103,7 @@ final class GameDetailServiceTest extends TestCase
             '02.00',
             null,
             null,
-            0,
+            GameAvailabilityStatus::NORMAL,
             '55,66'
         );
 
@@ -114,7 +115,7 @@ final class GameDetailServiceTest extends TestCase
         $this->assertSame('updated message', $updatedDetail->getMessage());
         $this->assertSame(null, $updatedDetail->getRegion());
         $this->assertSame(null, $updatedDetail->getPsnprofilesId());
-        $this->assertSame(0, $updatedDetail->getStatus());
+        $this->assertSame(GameAvailabilityStatus::NORMAL, $updatedDetail->getStatus());
         $this->assertSame('55,66', $updatedDetail->getObsoleteIds());
 
         $metaRow = $this->database->query(

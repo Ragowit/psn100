@@ -2,49 +2,29 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+
 class PlayerGame
 {
-    private const int STATUS_DELISTED = 1;
-    private const int STATUS_OBSOLETE = 3;
-    private const int STATUS_DELISTED_AND_OBSOLETE = 4;
-
-    private int $id;
-    private string $npCommunicationId;
-    private string $name;
-    private string $iconUrl;
-    private string $platform;
-    private int $status;
-    private int $maxRarityPoints;
-    private int $maxInGameRarityPoints;
-    private int $bronze;
-    private int $silver;
-    private int $gold;
-    private int $platinum;
-    private int $progress;
-    private string $lastUpdatedDate;
-    private int $rarityPoints;
-    private int $inGameRarityPoints;
-    private ?string $completionDurationLabel;
-
-    private function __construct()
-    {
-        $this->id = 0;
-        $this->npCommunicationId = '';
-        $this->name = '';
-        $this->iconUrl = '';
-        $this->platform = '';
-        $this->status = 0;
-        $this->maxRarityPoints = 0;
-        $this->maxInGameRarityPoints = 0;
-        $this->bronze = 0;
-        $this->silver = 0;
-        $this->gold = 0;
-        $this->platinum = 0;
-        $this->progress = 0;
-        $this->lastUpdatedDate = '';
-        $this->rarityPoints = 0;
-        $this->inGameRarityPoints = 0;
-        $this->completionDurationLabel = null;
+    private function __construct(
+        private readonly int $id,
+        private readonly string $npCommunicationId,
+        private readonly string $name,
+        private readonly string $iconUrl,
+        private readonly string $platform,
+        private readonly GameAvailabilityStatus $status,
+        private readonly int $maxRarityPoints,
+        private readonly int $maxInGameRarityPoints,
+        private readonly int $bronze,
+        private readonly int $silver,
+        private readonly int $gold,
+        private readonly int $platinum,
+        private readonly int $progress,
+        private readonly string $lastUpdatedDate,
+        private readonly int $rarityPoints,
+        private readonly int $inGameRarityPoints,
+        private readonly ?string $completionDurationLabel,
+    ) {
     }
 
     /**
@@ -52,26 +32,25 @@ class PlayerGame
      */
     public static function fromArray(array $row, ?string $completionDurationLabel = null): self
     {
-        $game = new self();
-        $game->id = (int) ($row['id'] ?? 0);
-        $game->npCommunicationId = (string) ($row['np_communication_id'] ?? '');
-        $game->name = (string) ($row['name'] ?? '');
-        $game->iconUrl = (string) ($row['icon_url'] ?? '');
-        $game->platform = (string) ($row['platform'] ?? '');
-        $game->status = (int) ($row['status'] ?? 0);
-        $game->maxRarityPoints = (int) ($row['max_rarity_points'] ?? 0);
-        $game->maxInGameRarityPoints = (int) ($row['max_in_game_rarity_points'] ?? 0);
-        $game->bronze = (int) ($row['bronze'] ?? 0);
-        $game->silver = (int) ($row['silver'] ?? 0);
-        $game->gold = (int) ($row['gold'] ?? 0);
-        $game->platinum = (int) ($row['platinum'] ?? 0);
-        $game->progress = (int) ($row['progress'] ?? 0);
-        $game->lastUpdatedDate = (string) ($row['last_updated_date'] ?? '');
-        $game->rarityPoints = (int) ($row['rarity_points'] ?? 0);
-        $game->inGameRarityPoints = (int) ($row['in_game_rarity_points'] ?? 0);
-        $game->completionDurationLabel = $completionDurationLabel;
-
-        return $game;
+        return new self(
+            (int) ($row['id'] ?? 0),
+            (string) ($row['np_communication_id'] ?? ''),
+            (string) ($row['name'] ?? ''),
+            (string) ($row['icon_url'] ?? ''),
+            (string) ($row['platform'] ?? ''),
+            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0)),
+            (int) ($row['max_rarity_points'] ?? 0),
+            (int) ($row['max_in_game_rarity_points'] ?? 0),
+            (int) ($row['bronze'] ?? 0),
+            (int) ($row['silver'] ?? 0),
+            (int) ($row['gold'] ?? 0),
+            (int) ($row['platinum'] ?? 0),
+            (int) ($row['progress'] ?? 0),
+            (string) ($row['last_updated_date'] ?? ''),
+            (int) ($row['rarity_points'] ?? 0),
+            (int) ($row['in_game_rarity_points'] ?? 0),
+            $completionDurationLabel,
+        );
     }
 
     public function getId(): int
@@ -115,12 +94,17 @@ class PlayerGame
 
     public function getStatus(): int
     {
+        return $this->status->value;
+    }
+
+    public function getAvailabilityStatus(): GameAvailabilityStatus
+    {
         return $this->status;
     }
 
     public function isActive(): bool
     {
-        return $this->status === 0;
+        return $this->status === GameAvailabilityStatus::NORMAL;
     }
 
     public function isCompleted(): bool
@@ -130,7 +114,7 @@ class PlayerGame
 
     public function getRowClass(): ?string
     {
-        if ($this->status === self::STATUS_DELISTED || $this->status === self::STATUS_OBSOLETE || $this->status === self::STATUS_DELISTED_AND_OBSOLETE) {
+        if ($this->status->isUnavailable()) {
             return 'table-warning';
         }
 
@@ -143,12 +127,7 @@ class PlayerGame
 
     public function getRowTitle(): ?string
     {
-        return match ($this->status) {
-            self::STATUS_DELISTED => 'This game is delisted, no trophies will be accounted for on any leaderboard.',
-            self::STATUS_OBSOLETE => 'This game is obsolete, no trophies will be accounted for on any leaderboard.',
-            self::STATUS_DELISTED_AND_OBSOLETE => 'This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.',
-            default => null,
-        };
+        return $this->status->warningMessage();
     }
 
     public function getBronze(): int
