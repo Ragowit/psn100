@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerStatus.php';
+
 class PlayerAdvisorPage
 {
     private PlayerAdvisorService $playerAdvisorService;
@@ -12,7 +14,7 @@ class PlayerAdvisorPage
 
     private int $accountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     private ?PlayerSummary $playerSummary = null;
 
@@ -28,7 +30,7 @@ class PlayerAdvisorPage
         PlayerSummaryService $playerSummaryService,
         PlayerAdvisorFilter $filter,
         int $accountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerAdvisorService = $playerAdvisorService;
         $this->playerSummaryService = $playerSummaryService;
@@ -68,7 +70,7 @@ class PlayerAdvisorPage
 
     public function shouldDisplayAdvisor(): bool
     {
-        return !in_array($this->playerStatus, [1, 3], true);
+        return !$this->playerStatus->isRestricted();
     }
 
     public function getTotalTrophies(): int

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/PlayerRandomGamesPageContext.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerStatus.php';
 
 final class PlayerRandomGamesPageContextTest extends TestCase
 {
@@ -31,7 +32,7 @@ final class PlayerRandomGamesPageContextTest extends TestCase
         $randomGames = [$randomGame];
 
         $playerSummary = new PlayerSummary(10, 4, 75.0, 12);
-        $page = $this->createPage($filter, $randomGames, $playerSummary, 0, 99);
+        $page = $this->createPage($filter, $randomGames, $playerSummary, PlayerStatus::NORMAL, 99);
 
         $context = PlayerRandomGamesPageContext::fromComponents(
             $page,
@@ -39,7 +40,7 @@ final class PlayerRandomGamesPageContextTest extends TestCase
             $page->getFilter(),
             'ExampleUser',
             99,
-            0
+            PlayerStatus::NORMAL
         );
 
         $this->assertSame("ExampleUser's Random Games ~ PSN 100%", $context->getTitle());
@@ -77,27 +78,27 @@ final class PlayerRandomGamesPageContextTest extends TestCase
         $playerSummary = new PlayerSummary(0, 0, null, 0);
         $randomGames = [];
 
-        $flaggedPage = $this->createPage($filter, $randomGames, $playerSummary, 1, 50);
+        $flaggedPage = $this->createPage($filter, $randomGames, $playerSummary, PlayerStatus::FLAGGED, 50);
         $flaggedContext = PlayerRandomGamesPageContext::fromComponents(
             $flaggedPage,
             $flaggedPage->getPlayerSummary(),
             $flaggedPage->getFilter(),
             'FlaggedUser',
             50,
-            1
+            PlayerStatus::FLAGGED
         );
 
         $this->assertTrue($flaggedContext->shouldShowFlaggedMessage());
         $this->assertFalse($flaggedContext->shouldShowRandomGames());
 
-        $privatePage = $this->createPage($filter, $randomGames, $playerSummary, 3, 75);
+        $privatePage = $this->createPage($filter, $randomGames, $playerSummary, PlayerStatus::PRIVATE_PROFILE, 75);
         $privateContext = PlayerRandomGamesPageContext::fromComponents(
             $privatePage,
             $privatePage->getPlayerSummary(),
             $privatePage->getFilter(),
             'PrivateUser',
             75,
-            3
+            PlayerStatus::PRIVATE_PROFILE
         );
 
         $this->assertTrue($privateContext->shouldShowPrivateMessage());
@@ -111,7 +112,7 @@ final class PlayerRandomGamesPageContextTest extends TestCase
         PlayerRandomGamesFilter $filter,
         array $randomGames,
         PlayerSummary $playerSummary,
-        int $playerStatus,
+        PlayerStatus $playerStatus,
         int $accountId
     ): PlayerRandomGamesPage {
         $randomGamesService = new class($randomGames) extends PlayerRandomGamesService {

@@ -11,6 +11,7 @@ require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/Utility.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 final class PlayerRandomGamesPageContext
 {
@@ -33,7 +34,7 @@ final class PlayerRandomGamesPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -76,7 +77,7 @@ final class PlayerRandomGamesPageContext
         PlayerRandomGamesFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ): self {
         return new self(
             $playerRandomGamesPage,
@@ -94,7 +95,7 @@ final class PlayerRandomGamesPageContext
         PlayerRandomGamesFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerRandomGamesPage = $playerRandomGamesPage;
         $this->playerSummary = $playerSummary;
@@ -151,12 +152,12 @@ final class PlayerRandomGamesPageContext
 
     public function isPlayerFlagged(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function isPlayerPrivate(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivateProfile();
     }
 
     public function shouldShowFlaggedMessage(): bool
@@ -193,8 +194,8 @@ final class PlayerRandomGamesPageContext
     /**
      * @param array<string, mixed> $playerData
      */
-    private static function extractPlayerStatus(array $playerData): int
+    private static function extractPlayerStatus(array $playerData): PlayerStatus
     {
-        return (int) ($playerData['status'] ?? 0);
+        return PlayerStatus::fromValue((int) ($playerData['status'] ?? 0));
     }
 }

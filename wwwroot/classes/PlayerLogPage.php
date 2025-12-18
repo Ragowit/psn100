@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLogFilter.php';
 require_once __DIR__ . '/PlayerLogService.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 class PlayerLogPage
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
-
     private PlayerLogFilter $requestedFilter;
 
     /**
@@ -23,7 +21,7 @@ class PlayerLogPage
         PlayerLogService $service,
         PlayerLogFilter $filter,
         int $accountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->requestedFilter = $filter->withPageNumber(1);
 
@@ -160,8 +158,8 @@ class PlayerLogPage
         return $this->requestedFilter->getFilterParameters();
     }
 
-    private function shouldLoadPlayerLog(int $playerStatus): bool
+    private function shouldLoadPlayerLog(PlayerStatus $playerStatus): bool
     {
-        return !in_array($playerStatus, [self::STATUS_FLAGGED, self::STATUS_PRIVATE], true);
+        return !$playerStatus->isRestricted();
     }
 }

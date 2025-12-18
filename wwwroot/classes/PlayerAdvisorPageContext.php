@@ -12,12 +12,10 @@ require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/TrophyRarityFormatter.php';
 require_once __DIR__ . '/Utility.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 final class PlayerAdvisorPageContext
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
-
     private PlayerAdvisorPage $playerAdvisorPage;
 
     private PlayerSummary $playerSummary;
@@ -36,7 +34,7 @@ final class PlayerAdvisorPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     private ?string $playerAccountIdValue;
 
@@ -84,7 +82,7 @@ final class PlayerAdvisorPageContext
         PlayerAdvisorFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus,
+        PlayerStatus $playerStatus,
         ?string $playerAccountIdValue = null
     ): self {
         return new self(
@@ -104,7 +102,7 @@ final class PlayerAdvisorPageContext
         PlayerAdvisorFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus,
+        PlayerStatus $playerStatus,
         ?string $playerAccountIdValue
     ) {
         $this->playerAdvisorPage = $playerAdvisorPage;
@@ -187,12 +185,12 @@ final class PlayerAdvisorPageContext
             return null;
         }
 
-        return match ($this->playerStatus) {
-            self::STATUS_FLAGGED => PlayerStatusNotice::flagged(
+        return match (true) {
+            $this->playerStatus->isFlagged() => PlayerStatusNotice::flagged(
                 $this->playerOnlineId,
                 $this->playerAccountIdValue
             ),
-            self::STATUS_PRIVATE => PlayerStatusNotice::privateProfile(),
+            $this->playerStatus->isPrivateProfile() => PlayerStatusNotice::privateProfile(),
             default => null,
         };
     }
@@ -208,9 +206,9 @@ final class PlayerAdvisorPageContext
     /**
      * @param array<string, mixed> $playerData
      */
-    private static function extractPlayerStatus(array $playerData): int
+    private static function extractPlayerStatus(array $playerData): PlayerStatus
     {
-        return (int) ($playerData['status'] ?? 0);
+        return PlayerStatus::fromValue((int) ($playerData['status'] ?? 0));
     }
 
     /**
