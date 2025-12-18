@@ -9,12 +9,26 @@ require_once __DIR__ . '/../wwwroot/classes/Application.php';
 require_once __DIR__ . '/../wwwroot/classes/HttpRequest.php';
 require_once __DIR__ . '/../wwwroot/classes/MaintenanceMode.php';
 require_once __DIR__ . '/../wwwroot/classes/MaintenanceResponder.php';
+require_once __DIR__ . '/../wwwroot/classes/Utility.php';
+require_once __DIR__ . '/../wwwroot/classes/PaginationRenderer.php';
+
+final class ApplicationRunnerTestDatabase extends Database
+{
+    public function __construct()
+    {
+        // Intentionally bypass parent constructor to avoid connecting to the database.
+    }
+}
 
 final class ThrowingApplicationContainerStub extends ApplicationContainer
 {
     public function __construct()
     {
-        // Parent constructor intentionally not called; overrides provide behaviour.
+        parent::__construct(
+            new ApplicationRunnerTestDatabase(),
+            new Utility(),
+            new PaginationRenderer()
+        );
     }
 
     public function createRequestFromGlobals(): HttpRequest
@@ -53,6 +67,12 @@ final class ApplicationContainerSpy extends ApplicationContainer
 
     public function __construct(HttpRequest $request, ApplicationSpy $application)
     {
+        parent::__construct(
+            new ApplicationRunnerTestDatabase(),
+            new Utility(),
+            new PaginationRenderer()
+        );
+
         $this->request = $request;
         $this->application = $application;
     }

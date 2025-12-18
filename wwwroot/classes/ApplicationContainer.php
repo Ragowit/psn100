@@ -10,11 +10,12 @@ require_once __DIR__ . '/Application.php';
 
 class ApplicationContainer
 {
-    private readonly Database $database;
-
-    private readonly Utility $utility;
-
-    private readonly PaginationRenderer $paginationRenderer;
+    public function __construct(
+        private readonly Database $database,
+        private readonly Utility $utility,
+        private readonly PaginationRenderer $paginationRenderer,
+    ) {
+    }
 
     private ?GameRepository $gameRepository = null;
 
@@ -26,19 +27,13 @@ class ApplicationContainer
 
     private ?TemplateRenderer $templateRenderer = null;
 
-    public function __construct(
-        ?Database $database = null,
-        ?Utility $utility = null,
-        ?PaginationRenderer $paginationRenderer = null
-    ) {
-        $this->database = $database ?? Database::fromEnvironment($_ENV ?? []);
-        $this->utility = $utility ?? new Utility();
-        $this->paginationRenderer = $paginationRenderer ?? new PaginationRenderer();
-    }
-
     public static function create(): self
     {
-        return new self();
+        return new self(
+            Database::fromEnvironment($_ENV ?? []),
+            new Utility(),
+            new PaginationRenderer()
+        );
     }
 
     public function getDatabase(): Database
