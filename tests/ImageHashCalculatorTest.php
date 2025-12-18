@@ -138,7 +138,7 @@ final class FakeImageProcessor implements ImageProcessorInterface
     #[\Override]
     public function destroyImage(\GdImage $image): void
     {
-        imagedestroy($image);
+        // No-op
     }
 
     #[\Override]

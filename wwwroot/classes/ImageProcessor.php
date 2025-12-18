@@ -53,7 +53,7 @@ final class GdImageProcessor implements ImageProcessorInterface
     #[\Override]
     public function destroyImage(\GdImage $image): void
     {
-        imagedestroy($image);
+        // No-op: GdImage objects are automatically cleaned up in PHP 8.0+
     }
 
     #[\Override]
