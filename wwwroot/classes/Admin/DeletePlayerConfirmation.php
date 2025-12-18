@@ -2,16 +2,10 @@
 
 declare(strict_types=1);
 
-final class DeletePlayerConfirmation
+final readonly class DeletePlayerConfirmation
 {
-    private string $accountId;
-
-    private ?string $onlineId;
-
-    public function __construct(string $accountId, ?string $onlineId)
+    public function __construct(private string $accountId, private ?string $onlineId)
     {
-        $this->accountId = $accountId;
-        $this->onlineId = $onlineId;
     }
 
     public function getAccountId(): string
