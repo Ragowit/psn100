@@ -5,13 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/CronJobInterface.php';
 require_once __DIR__ . '/PlayerRankingUpdater.php';
 
-final class PlayerRankingCronJob implements CronJobInterface
+final readonly class PlayerRankingCronJob implements CronJobInterface
 {
-    private PlayerRankingUpdater $playerRankingUpdater;
-
-    public function __construct(PlayerRankingUpdater $playerRankingUpdater)
+    public function __construct(private PlayerRankingUpdater $playerRankingUpdater)
     {
-        $this->playerRankingUpdater = $playerRankingUpdater;
     }
 
     #[\Override]

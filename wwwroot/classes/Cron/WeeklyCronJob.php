@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 
-class WeeklyCronJob implements CronJobInterface
+use Throwable;
+
+final readonly class WeeklyCronJob implements CronJobInterface
 {
     private const UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
         UPDATE player p
@@ -33,14 +35,8 @@ class WeeklyCronJob implements CronJobInterface
             p.status != 0
         SQL;
 
-    private PDO $database;
-
-    private int $retryDelaySeconds;
-
-    public function __construct(PDO $database, int $retryDelaySeconds = 3)
+    public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
     {
-        $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
     }
 
     #[\Override]
@@ -69,7 +65,7 @@ class WeeklyCronJob implements CronJobInterface
                 $operation();
 
                 return;
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 sleep($this->retryDelaySeconds);
             }
         }

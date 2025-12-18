@@ -77,8 +77,7 @@ final class CronJobRunner
         }
 
         if (str_ends_with($trimmed, 'B') || str_ends_with($trimmed, 'b')) {
-            $trimmed = substr($trimmed, 0, -1);
-            $trimmed = trim($trimmed);
+            $trimmed = trim(substr($trimmed, 0, -1));
         }
 
         if ($trimmed === '') {
@@ -92,20 +91,17 @@ final class CronJobRunner
             return null;
         }
 
-        $number = (float) $numberPart;
+        $multiplier = match ($unit) {
+            'g' => 1024 ** 3,
+            'm' => 1024 ** 2,
+            'k' => 1024,
+            default => null,
+        };
 
-        switch ($unit) {
-            case 'g':
-                $number *= 1024;
-                // no break intentionally
-            case 'm':
-                $number *= 1024;
-                // no break intentionally
-            case 'k':
-                $number *= 1024;
-                return (int) round($number);
+        if ($multiplier === null) {
+            return null;
         }
 
-        return null;
+        return (int) round(((float) $numberPart) * $multiplier);
     }
 }

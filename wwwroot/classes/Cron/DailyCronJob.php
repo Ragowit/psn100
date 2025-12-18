@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 
-class DailyCronJob implements CronJobInterface
+use Throwable;
+
+final readonly class DailyCronJob implements CronJobInterface
 {
-    private PDO $database;
-
-    private int $retryDelaySeconds;
-
-    public function __construct(PDO $database, int $retryDelaySeconds = 3)
+    public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
     {
-        $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
     }
 
     #[\Override]
@@ -133,13 +129,13 @@ class DailyCronJob implements CronJobInterface
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation, ...$arguments): void
+    private function executeWithRetry(callable $operation, mixed ...$arguments): void
     {
         while (true) {
             try {
                 $operation(...$arguments);
                 return;
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 sleep($this->retryDelaySeconds);
             }
         }

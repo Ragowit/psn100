@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 
-class HourlyCronJob implements CronJobInterface
+use Throwable;
+
+final readonly class HourlyCronJob implements CronJobInterface
 {
     private const BATCH_SIZE = 500;
 
@@ -32,14 +34,8 @@ class HourlyCronJob implements CronJobInterface
             ttm.difficulty = IF(g.owners = 0, 0, (g.owners_completed / g.owners) * 100)
         SQL;
 
-    private PDO $database;
-
-    private int $retryDelaySeconds;
-
-    public function __construct(PDO $database, int $retryDelaySeconds = 3)
+    public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
     {
-        $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
     }
 
     #[\Override]
@@ -116,7 +112,7 @@ class HourlyCronJob implements CronJobInterface
                 $operation();
 
                 return;
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 sleep($this->retryDelaySeconds);
             }
         }
