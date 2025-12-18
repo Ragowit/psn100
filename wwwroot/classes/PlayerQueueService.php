@@ -10,11 +10,17 @@ class PlayerQueueService
     public const int MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
     public const int CHEATER_STATUS = 1;
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly ?PDO $database = null)
     {
-        $this->database = $database;
+    }
+
+    private function requireDatabase(): PDO
+    {
+        if ($this->database === null) {
+            throw new LogicException('PlayerQueueService requires a database connection.');
+        }
+
+        return $this->database;
     }
 
     public function getIpSubmissionCount(string $ipAddress): int
@@ -23,7 +29,7 @@ class PlayerQueueService
             return 0;
         }
 
-        $query = $this->database->prepare(
+        $query = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
                 COUNT(*)
@@ -50,7 +56,7 @@ class PlayerQueueService
             return null;
         }
 
-        $query = $this->database->prepare(
+        $query = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
                 account_id
@@ -72,7 +78,7 @@ class PlayerQueueService
 
     public function addPlayerToQueue(string $playerName, string $ipAddress): void
     {
-        $query = $this->database->prepare(
+        $query = $this->requireDatabase()->prepare(
             <<<'SQL'
             INSERT IGNORE INTO
                 player_queue (online_id, ip_address)
@@ -109,7 +115,7 @@ class PlayerQueueService
             return null;
         }
 
-        $query = $this->database->prepare(
+        $query = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
                 scan_progress
@@ -142,7 +148,7 @@ class PlayerQueueService
 
     public function getQueuePosition(string $playerName): ?int
     {
-        $requestTimeQuery = $this->database->prepare(
+        $requestTimeQuery = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
                 request_time
@@ -161,7 +167,7 @@ class PlayerQueueService
             return null;
         }
 
-        $positionQuery = $this->database->prepare(
+        $positionQuery = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
                 COUNT(*)
@@ -189,7 +195,7 @@ class PlayerQueueService
      */
     public function getPlayerStatusData(string $playerName): ?array
     {
-        $query = $this->database->prepare(
+        $query = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
                 account_id,

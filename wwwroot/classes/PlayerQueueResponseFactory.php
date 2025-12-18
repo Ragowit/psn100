@@ -13,11 +13,8 @@ final class PlayerQueueResponseFactory
 
     private const string INVALID_NAME_MESSAGE = "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
 
-    private PlayerQueueService $service;
-
-    public function __construct(PlayerQueueService $service)
+    public function __construct(private readonly PlayerQueueService $service)
     {
-        $this->service = $service;
     }
 
     public function createEmptyNameResponse(): PlayerQueueResponse

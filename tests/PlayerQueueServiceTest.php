@@ -49,6 +49,16 @@ final class PlayerQueueServiceTest extends TestCase
         $this->service = new PlayerQueueService($this->pdo);
     }
 
+    public function testThrowsMeaningfulExceptionWhenDatabaseNotConfigured(): void
+    {
+        try {
+            (new PlayerQueueService())->getIpSubmissionCount('127.0.0.1');
+            $this->fail('Expected an exception to be thrown.');
+        } catch (LogicException $exception) {
+            $this->assertStringContainsString('database connection', $exception->getMessage());
+        }
+    }
+
     public function testGetIpSubmissionCountReturnsZeroWhenIpEmpty(): void
     {
         $this->assertSame(0, $this->service->getIpSubmissionCount(''));
