@@ -19,6 +19,7 @@ final class CallableGameRescanProgressListener implements GameRescanProgressList
         $this->callback = $callback;
     }
 
+    #[\Override]
     public function onProgress(int $percent, string $message): void
     {
         ($this->callback)($percent, $message);

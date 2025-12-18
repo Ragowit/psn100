@@ -19,6 +19,7 @@ final class CallableTrophyMergeProgressListener implements TrophyMergeProgressLi
         $this->callback = $callback;
     }
 
+    #[\Override]
     public function onProgress(int $percent, string $message): void
     {
         ($this->callback)($percent, $message);
