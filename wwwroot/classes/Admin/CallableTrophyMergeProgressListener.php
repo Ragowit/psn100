@@ -7,16 +7,16 @@ require_once __DIR__ . '/TrophyMergeProgressListener.php';
 final class CallableTrophyMergeProgressListener implements TrophyMergeProgressListener
 {
     /**
-     * @var callable(int, string):void
+     * @var \Closure(int, string):void
      */
-    private $callback;
+    private readonly \Closure $callback;
 
     /**
      * @param callable(int, string):void $callback
      */
     public function __construct(callable $callback)
     {
-        $this->callback = $callback;
+        $this->callback = \Closure::fromCallable($callback);
     }
 
     #[\Override]

@@ -11,14 +11,14 @@ use Tustin\PlayStation\Client;
 final class PsnPlayerLookupService
 {
     /**
-     * @var callable(): iterable<Worker>
+     * @var \Closure(): iterable<Worker>
      */
-    private $workerFetcher;
+    private readonly \Closure $workerFetcher;
 
     /**
-     * @var callable(): object
+     * @var \Closure(): object
      */
-    private $clientFactory;
+    private readonly \Closure $clientFactory;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher
@@ -26,10 +26,12 @@ final class PsnPlayerLookupService
      */
     public function __construct(callable $workerFetcher, ?callable $clientFactory = null)
     {
-        $this->workerFetcher = $workerFetcher;
-        $this->clientFactory = $clientFactory ?? static function (): object {
-            return new Client();
-        };
+        $this->workerFetcher = \Closure::fromCallable($workerFetcher);
+        $this->clientFactory = \Closure::fromCallable(
+            $clientFactory ?? static function (): object {
+                return new Client();
+            }
+        );
     }
 
     public static function fromDatabase(PDO $database): self

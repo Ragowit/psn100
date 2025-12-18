@@ -30,9 +30,9 @@ class GameRescanService
     private ImageHashCalculator $imageHashCalculator;
 
     /**
-     * @var callable(string):void|null
+     * @var \Closure(string):void|null
      */
-    private $logListener = null;
+    private ?\Closure $logListener = null;
 
     public function __construct(
         PDO $database,
@@ -57,7 +57,9 @@ class GameRescanService
         ?callable $logListener = null
     ): GameRescanResult {
         $previousLogListener = $this->logListener;
-        $this->logListener = $logListener;
+        $this->logListener = $logListener !== null
+            ? \Closure::fromCallable($logListener)
+            : null;
 
         try {
             $differenceTracker = new GameRescanDifferenceTracker();
