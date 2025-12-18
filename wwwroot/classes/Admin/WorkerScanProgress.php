@@ -2,26 +2,14 @@
 
 declare(strict_types=1);
 
-final class WorkerScanProgress
+final readonly class WorkerScanProgress
 {
-    private ?int $current;
-
-    private ?int $total;
-
-    private ?string $title;
-
-    private ?string $npCommunicationId;
-
     private function __construct(
-        ?int $current,
-        ?int $total,
-        ?string $title,
-        ?string $npCommunicationId
+        private ?int $current,
+        private ?int $total,
+        private ?string $title,
+        private ?string $npCommunicationId,
     ) {
-        $this->current = $current;
-        $this->total = $total;
-        $this->title = $title;
-        $this->npCommunicationId = $npCommunicationId;
     }
 
     public static function fromJson(?string $value): ?self

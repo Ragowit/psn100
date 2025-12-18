@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-class CheaterRequestResult
+final readonly class CheaterRequestResult
 {
-    private ?string $successMessage;
-
-    private ?string $errorMessage;
-
-    private function __construct(?string $successMessage, ?string $errorMessage)
-    {
-        $this->successMessage = $successMessage;
-        $this->errorMessage = $errorMessage;
+    private function __construct(
+        private ?string $successMessage,
+        private ?string $errorMessage,
+    ) {
     }
 
     public static function success(string $message): self

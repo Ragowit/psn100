@@ -2,23 +2,19 @@
 
 declare(strict_types=1);
 
-final class AdminRequest
+final readonly class AdminRequest
 {
     private string $method;
 
     /**
-     * @var array<string, mixed>
-     */
-    private array $postData;
-
-    /**
      * @param array<string, mixed> $postData
      */
-    public function __construct(string $method, array $postData)
-    {
+    public function __construct(
+        string $method,
+        private array $postData,
+    ) {
         $normalizedMethod = strtoupper(trim($method));
         $this->method = $normalizedMethod === '' ? 'GET' : $normalizedMethod;
-        $this->postData = $postData;
     }
 
     /**
