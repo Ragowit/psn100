@@ -6,12 +6,10 @@ require_once __DIR__ . '/PlayerRandomGamesService.php';
 require_once __DIR__ . '/PlayerRandomGamesFilter.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 class PlayerRandomGamesPage
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
-
     private PlayerRandomGamesFilter $filter;
 
     private PlayerSummary $playerSummary;
@@ -21,14 +19,14 @@ class PlayerRandomGamesPage
      */
     private array $randomGames;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     public function __construct(
         PlayerRandomGamesService $randomGamesService,
         PlayerSummaryService $summaryService,
         PlayerRandomGamesFilter $filter,
         int $accountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->filter = $filter;
         $this->playerSummary = $summaryService->getSummary($accountId);
@@ -61,12 +59,12 @@ class PlayerRandomGamesPage
 
     public function shouldShowFlaggedMessage(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function shouldShowPrivateMessage(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivateProfile();
     }
 
     public function shouldShowRandomGames(): bool

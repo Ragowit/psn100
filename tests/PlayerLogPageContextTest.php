@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/PlayerLogPageContext.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerStatus.php';
 
 final class PlayerLogPageContextTest extends TestCase
 {
@@ -27,7 +28,7 @@ final class PlayerLogPageContextTest extends TestCase
             ]),
         ];
 
-        $playerLogPage = $this->createPlayerLogPage($filter, $entries, 0, 99);
+        $playerLogPage = $this->createPlayerLogPage($filter, $entries, PlayerStatus::NORMAL, 99);
         $playerSummary = new PlayerSummary(10, 4, 75.0, 12);
 
         $context = PlayerLogPageContext::fromComponents(
@@ -36,7 +37,7 @@ final class PlayerLogPageContextTest extends TestCase
             $filter,
             'ExampleUser',
             99,
-            0
+            PlayerStatus::NORMAL
         );
 
         $this->assertSame($playerLogPage, $context->getPlayerLogPage());
@@ -73,27 +74,27 @@ final class PlayerLogPageContextTest extends TestCase
         $filter = PlayerLogFilter::fromArray([]);
         $playerSummary = new PlayerSummary(0, 0, null, 0);
 
-        $flaggedPage = $this->createPlayerLogPage($filter, [], 1, 50);
+        $flaggedPage = $this->createPlayerLogPage($filter, [], PlayerStatus::FLAGGED, 50);
         $flaggedContext = PlayerLogPageContext::fromComponents(
             $flaggedPage,
             $playerSummary,
             $filter,
             'FlaggedUser',
             50,
-            1
+            PlayerStatus::FLAGGED
         );
 
         $this->assertTrue($flaggedContext->isPlayerFlagged());
         $this->assertFalse($flaggedContext->shouldDisplayLog());
 
-        $privatePage = $this->createPlayerLogPage($filter, [], 3, 75);
+        $privatePage = $this->createPlayerLogPage($filter, [], PlayerStatus::PRIVATE_PROFILE, 75);
         $privateContext = PlayerLogPageContext::fromComponents(
             $privatePage,
             $playerSummary,
             $filter,
             'PrivateUser',
             75,
-            3
+            PlayerStatus::PRIVATE_PROFILE
         );
 
         $this->assertTrue($privateContext->isPlayerPrivate());
@@ -106,7 +107,7 @@ final class PlayerLogPageContextTest extends TestCase
     private function createPlayerLogPage(
         PlayerLogFilter $filter,
         array $entries,
-        int $playerStatus,
+        PlayerStatus $playerStatus,
         int $accountId
     ): PlayerLogPage {
         $service = new class($entries) extends PlayerLogService {

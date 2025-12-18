@@ -11,12 +11,10 @@ require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 final class PlayerGamesPageContext
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
-
     private PlayerGamesPage $playerGamesPage;
 
     private PlayerSummary $playerSummary;
@@ -39,7 +37,7 @@ final class PlayerGamesPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -50,7 +48,7 @@ final class PlayerGamesPageContext
         PlayerGamesFilter $filter,
         array $playerData,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerGamesPage = $playerGamesPage;
         $this->playerSummary = $playerSummary;
@@ -113,10 +111,10 @@ final class PlayerGamesPageContext
         PlayerGamesFilter $filter,
         array $playerData,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ): self {
         $normalizedPlayerData = $playerData;
-        $normalizedPlayerData['status'] = $playerStatus;
+        $normalizedPlayerData['status'] = $playerStatus->value;
 
         return new self(
             $playerGamesPage,
@@ -198,17 +196,17 @@ final class PlayerGamesPageContext
 
     public function isPlayerFlagged(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function isPlayerPrivate(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivateProfile();
     }
 
     public function shouldDisplayGames(): bool
     {
-        return !$this->isPlayerFlagged() && !$this->isPlayerPrivate();
+        return !$this->playerStatus->isRestricted();
     }
 
     /**
@@ -223,11 +221,11 @@ final class PlayerGamesPageContext
 
         $status = self::extractPlayerStatus($playerData);
 
-        if ($status === 1) {
+        if ($status->isFlagged()) {
             return $metaData->setDescription('The player is flagged as a cheater.');
         }
 
-        if ($status === 3) {
+        if ($status->isPrivateProfile()) {
             return $metaData->setDescription('The player is private.');
         }
 
@@ -260,9 +258,9 @@ final class PlayerGamesPageContext
     /**
      * @param array<string, mixed> $playerData
      */
-    private static function extractPlayerStatus(array $playerData): int
+    private static function extractPlayerStatus(array $playerData): PlayerStatus
     {
-        return (int) ($playerData['status'] ?? 0);
+        return PlayerStatus::fromValue((int) ($playerData['status'] ?? 0));
     }
 
     private function extractString(mixed $value): string

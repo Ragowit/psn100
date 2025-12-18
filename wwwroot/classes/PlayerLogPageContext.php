@@ -10,11 +10,10 @@ require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/TrophyRarityFormatter.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 final class PlayerLogPageContext
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
 
     private PlayerLogPage $playerLogPage;
 
@@ -34,7 +33,7 @@ final class PlayerLogPageContext
 
     private int $playerAccountId;
 
-    private int $playerStatus;
+    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -74,7 +73,7 @@ final class PlayerLogPageContext
         PlayerLogFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ): self {
         return new self(
             $playerLogPage,
@@ -92,7 +91,7 @@ final class PlayerLogPageContext
         PlayerLogFilter $filter,
         string $playerOnlineId,
         int $playerAccountId,
-        int $playerStatus
+        PlayerStatus $playerStatus
     ) {
         $this->playerLogPage = $playerLogPage;
         $this->playerSummary = $playerSummary;
@@ -155,12 +154,12 @@ final class PlayerLogPageContext
 
     public function isPlayerFlagged(): bool
     {
-        return $this->playerStatus === self::STATUS_FLAGGED;
+        return $this->playerStatus->isFlagged();
     }
 
     public function isPlayerPrivate(): bool
     {
-        return $this->playerStatus === self::STATUS_PRIVATE;
+        return $this->playerStatus->isPrivateProfile();
     }
 
     public function shouldDisplayLog(): bool
@@ -186,8 +185,8 @@ final class PlayerLogPageContext
         return (int) ($playerData['account_id'] ?? 0);
     }
 
-    private static function extractPlayerStatus(array $playerData): int
+    private static function extractPlayerStatus(array $playerData): PlayerStatus
     {
-        return (int) ($playerData['status'] ?? 0);
+        return PlayerStatus::fromValue((int) ($playerData['status'] ?? 0));
     }
 }
