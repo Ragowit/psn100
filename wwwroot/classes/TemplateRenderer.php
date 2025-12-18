@@ -8,17 +8,11 @@ require_once __DIR__ . '/PaginationRenderer.php';
 
 class TemplateRenderer
 {
-    private Database $database;
-
-    private Utility $utility;
-
-    private PaginationRenderer $paginationRenderer;
-
-    public function __construct(Database $database, Utility $utility, PaginationRenderer $paginationRenderer)
-    {
-        $this->database = $database;
-        $this->utility = $utility;
-        $this->paginationRenderer = $paginationRenderer;
+    public function __construct(
+        private readonly Database $database,
+        private readonly Utility $utility,
+        private readonly PaginationRenderer $paginationRenderer,
+    ) {
     }
 
     /**
