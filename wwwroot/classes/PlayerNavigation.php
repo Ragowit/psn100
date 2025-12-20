@@ -2,25 +2,17 @@
 
 declare(strict_types=1);
 
-final class PlayerNavigation
+require_once __DIR__ . '/PlayerNavigationSection.php';
+
+final readonly class PlayerNavigation
 {
-    public const SECTION_GAMES = 'games';
-    public const SECTION_LOG = 'log';
-    public const SECTION_TROPHY_ADVISOR = 'trophy-advisor';
-    public const SECTION_GAME_ADVISOR = 'game-advisor';
-    public const SECTION_RANDOM = 'random';
-
-    private string $onlineId;
-
-    private ?string $activeSection;
-
-    private function __construct(string $onlineId, ?string $activeSection)
-    {
-        $this->onlineId = $onlineId;
-        $this->activeSection = $activeSection;
+    private function __construct(
+        private string $onlineId,
+        private ?PlayerNavigationSection $activeSection,
+    ) {
     }
 
-    public static function forSection(string $onlineId, ?string $activeSection = null): self
+    public static function forSection(string $onlineId, ?PlayerNavigationSection $activeSection = null): self
     {
         return new self($onlineId, $activeSection);
     }
@@ -36,50 +28,44 @@ final class PlayerNavigation
             new PlayerNavigationLink(
                 'Games',
                 '/player/' . $encodedOnlineId,
-                $this->isActive(self::SECTION_GAMES)
+                $this->isActive(PlayerNavigationSection::GAMES)
             ),
             new PlayerNavigationLink(
                 'Log',
                 '/player/' . $encodedOnlineId . '/log',
-                $this->isActive(self::SECTION_LOG)
+                $this->isActive(PlayerNavigationSection::LOG)
             ),
             new PlayerNavigationLink(
                 'Trophy Advisor',
                 '/player/' . $encodedOnlineId . '/advisor',
-                $this->isActive(self::SECTION_TROPHY_ADVISOR)
+                $this->isActive(PlayerNavigationSection::TROPHY_ADVISOR)
             ),
             new PlayerNavigationLink(
                 'Game Advisor',
                 '/game?sort=completion&filter=true&player=' . $encodedOnlineId,
-                $this->isActive(self::SECTION_GAME_ADVISOR)
+                $this->isActive(PlayerNavigationSection::GAME_ADVISOR)
             ),
             new PlayerNavigationLink(
                 'Random Games',
                 '/player/' . $encodedOnlineId . '/random',
-                $this->isActive(self::SECTION_RANDOM)
+                $this->isActive(PlayerNavigationSection::RANDOM)
             ),
         ];
     }
 
-    private function isActive(string $section): bool
+    private function isActive(PlayerNavigationSection $section): bool
     {
         return $this->activeSection === $section;
     }
 }
 
-final class PlayerNavigationLink
+final readonly class PlayerNavigationLink
 {
-    private string $label;
-
-    private string $url;
-
-    private bool $active;
-
-    public function __construct(string $label, string $url, bool $active)
-    {
-        $this->label = $label;
-        $this->url = $url;
-        $this->active = $active;
+    public function __construct(
+        private string $label,
+        private string $url,
+        private bool $active,
+    ) {
     }
 
     public function getLabel(): string

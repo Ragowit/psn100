@@ -33,7 +33,7 @@ final class PlayerNavigationTest extends TestCase
 
     public function testActiveSectionProducesActiveLinkStylingAndAriaAttributes(): void
     {
-        $navigation = PlayerNavigation::forSection('player+one', PlayerNavigation::SECTION_GAME_ADVISOR);
+        $navigation = PlayerNavigation::forSection('player+one', PlayerNavigationSection::GAME_ADVISOR);
 
         $links = $navigation->getLinks();
 

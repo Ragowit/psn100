@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerAdvisorFilter.php';
 require_once __DIR__ . '/PlayerAdvisorPage.php';
 require_once __DIR__ . '/PlayerAdvisorService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
+require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
 require_once __DIR__ . '/PlayerSummary.php';
@@ -114,7 +115,7 @@ final class PlayerAdvisorPageContext
         $this->playerAccountIdValue = $playerAccountIdValue;
         $this->playerNavigation = PlayerNavigation::forSection(
             $playerOnlineId,
-            PlayerNavigation::SECTION_TROPHY_ADVISOR
+            PlayerNavigationSection::TROPHY_ADVISOR
         );
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
             fn (string $platform): bool => $this->filter->isPlatformSelected($platform)

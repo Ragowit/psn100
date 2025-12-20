@@ -7,6 +7,7 @@ require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesPage.php';
 require_once __DIR__ . '/PlayerGamesService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
+require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PlayerSummary.php';
@@ -62,7 +63,7 @@ final class PlayerGamesPageContext
         $this->playerOnlineId = $this->extractString($playerData['online_id'] ?? '');
         $this->playerNavigation = PlayerNavigation::forSection(
             $this->playerOnlineId,
-            PlayerNavigation::SECTION_GAMES
+            PlayerNavigationSection::GAMES
         );
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
             fn (string $platform): bool => $this->filter->isPlatformSelected($platform)

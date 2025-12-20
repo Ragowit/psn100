@@ -9,7 +9,7 @@ final class PlayerNavigationRendererTest extends TestCase
 {
     public function testRenderOutputsAllNavigationLinks(): void
     {
-        $navigation = PlayerNavigation::forSection('Example User', PlayerNavigation::SECTION_LOG);
+        $navigation = PlayerNavigation::forSection('Example User', PlayerNavigationSection::LOG);
         $renderer = new PlayerNavigationRenderer();
 
         $html = $renderer->render($navigation);
@@ -24,7 +24,7 @@ final class PlayerNavigationRendererTest extends TestCase
 
     public function testRenderEscapesAttributes(): void
     {
-        $navigation = PlayerNavigation::forSection('user & user', PlayerNavigation::SECTION_RANDOM);
+        $navigation = PlayerNavigation::forSection('user & user', PlayerNavigationSection::RANDOM);
         $renderer = new PlayerNavigationRenderer();
 
         $html = $renderer->render($navigation);

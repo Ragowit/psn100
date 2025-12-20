@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerLogFilter.php';
 require_once __DIR__ . '/PlayerLogPage.php';
 require_once __DIR__ . '/PlayerLogService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
+require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
@@ -58,17 +59,17 @@ final class PlayerLogPageContext
         $playerSummary = $playerSummaryService->getSummary($accountId);
 
         return new self(
-            $playerLogPage,
-            $playerSummary,
-            $filter,
-            self::extractOnlineId($playerData),
-            self::extractPlayerAccountId($playerData),
-            self::extractPlayerStatus($playerData)
-        );
-    }
+        $playerLogPage,
+        $playerSummary,
+        $filter,
+        self::extractOnlineId($playerData),
+        self::extractPlayerAccountId($playerData),
+        self::extractPlayerStatus($playerData)
+    );
+}
 
-    public static function fromComponents(
-        PlayerLogPage $playerLogPage,
+public static function fromComponents(
+    PlayerLogPage $playerLogPage,
         PlayerSummary $playerSummary,
         PlayerLogFilter $filter,
         string $playerOnlineId,
@@ -99,7 +100,7 @@ final class PlayerLogPageContext
         $this->playerOnlineId = $playerOnlineId;
         $this->playerAccountId = $playerAccountId;
         $this->playerStatus = $playerStatus;
-        $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigation::SECTION_LOG);
+        $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::LOG);
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
             fn (string $platform): bool => $this->filter->isPlatformSelected($platform)
         );
