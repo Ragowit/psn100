@@ -319,7 +319,7 @@ final class PlayerQueueHandlerTest extends TestCase
         $this->assertSame('queued', $response->getStatus());
         $this->assertTrue($response->shouldPoll());
         $this->assertStringContainsString('is currently being scanned.', $response->getMessage());
-        $this->assertStringContainsString('Currently scanning <strong>Game &lt;Title&gt;</strong> (3/10).', $response->getMessage());
+        $this->assertStringContainsString('Working on <strong>Game &lt;Title&gt;</strong> (3/10).', $response->getMessage());
         $this->assertStringContainsString('class="progress mt-2"', $response->getMessage());
     }
 
