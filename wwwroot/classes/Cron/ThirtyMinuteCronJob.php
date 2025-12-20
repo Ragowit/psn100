@@ -281,6 +281,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
     {
         $recheck = "";
         $missingGameDeletionCheck = [];
+        $missingTrophyTitleRetry = [];
 
         while (true) {
             // Login with a token
@@ -1571,6 +1572,20 @@ class ThirtyMinuteCronJob implements CronJobInterface
                                 }
                             }
                         } elseif ($psnGameCount === 0 && $ourGameCount > 0) {
+                            if (!($missingTrophyTitleRetry[$onlineId] ?? false)) {
+                                $missingTrophyTitleRetry[$onlineId] = true;
+
+                                $this->setWaitingScanProgress(
+                                    (int) $worker['id'],
+                                    'No trophy titles returned. Waiting 1 minute before retrying.'
+                                );
+
+                                sleep(60 * 1);
+                                $recheck = '';
+
+                                continue;
+                            }
+
                             $this->logger->log(sprintf(
                                 'Skipped deleting missing games for %s (%d) because no trophy titles were returned.',
                                 (string) $player['online_id'],
@@ -1814,17 +1829,20 @@ class ThirtyMinuteCronJob implements CronJobInterface
                     $query->execute();
 
                     unset($missingGameDeletionCheck[$onlineId]);
+                    unset($missingTrophyTitleRetry[$onlineId]);
                 }
             } catch (NotFoundHttpException $exception) {
                 sleep(2);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
+                unset($missingTrophyTitleRetry[$onlineId]);
 
                 continue;
             } catch (UnauthorizedHttpException $exception) {
                 sleep(2);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
+                unset($missingTrophyTitleRetry[$onlineId]);
 
                 continue;
             } finally {
