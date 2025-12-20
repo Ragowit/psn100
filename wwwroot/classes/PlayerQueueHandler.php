@@ -8,13 +8,12 @@ require_once __DIR__ . '/PlayerQueueResponseFactory.php';
 
 class PlayerQueueHandler
 {
-    private PlayerQueueService $service;
+    private readonly PlayerQueueResponseFactory $responseFactory;
 
-    private PlayerQueueResponseFactory $responseFactory;
-
-    public function __construct(PlayerQueueService $service, ?PlayerQueueResponseFactory $responseFactory = null)
-    {
-        $this->service = $service;
+    public function __construct(
+        private readonly PlayerQueueService $service,
+        ?PlayerQueueResponseFactory $responseFactory = null,
+    ) {
         $this->responseFactory = $responseFactory ?? new PlayerQueueResponseFactory($service);
     }
 

@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 class GameCopyHandler
 {
-    private GameCopyService $gameCopyService;
-
-    public function __construct(GameCopyService $gameCopyService)
+    public function __construct(private readonly GameCopyService $gameCopyService)
     {
-        $this->gameCopyService = $gameCopyService;
     }
 
     public function handle(array $postData): string

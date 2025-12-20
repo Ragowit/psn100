@@ -172,6 +172,22 @@ final class PlayerQueueHandlerTest extends TestCase
         $this->assertSame("PSN name can't be empty.", $response->getMessage());
     }
 
+    public function testHandleAddToQueueRequestUsesDefaultResponseFactory(): void
+    {
+        $service = new ConfigurablePlayerQueueServiceStub();
+        $handler = new PlayerQueueHandler($service);
+        $request = PlayerQueueRequest::fromArrays(['q' => 'QueuedUser'], ['REMOTE_ADDR' => '203.0.113.5']);
+
+        $response = $handler->handleAddToQueueRequest($request);
+
+        $this->assertSame('queued', $response->getStatus());
+        $this->assertStringContainsString('QueuedUser', $response->getMessage());
+        $queuedPlayers = $service->getQueuedPlayers();
+        $this->assertCount(1, $queuedPlayers);
+        $this->assertSame('QueuedUser', $queuedPlayers[0]['playerName']);
+        $this->assertSame('203.0.113.5', $queuedPlayers[0]['ipAddress']);
+    }
+
     public function testHandleAddToQueueRequestReturnsCheaterResponseWhenCheaterAccountFound(): void
     {
         $service = new ConfigurablePlayerQueueServiceStub();
