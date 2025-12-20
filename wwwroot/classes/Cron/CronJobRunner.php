@@ -51,11 +51,11 @@ final class CronJobRunner
     {
         $currentLimit = ini_get('memory_limit');
 
-        if ($currentLimit === false || $currentLimit === '' || $currentLimit === '-1') {
+        if ($currentLimit === false || trim($currentLimit) === '' || trim($currentLimit) === '-1') {
             return;
         }
 
-        $currentBytes = $this->parseIniSizeToBytes($currentLimit);
+        $currentBytes = $this->parseMemoryLimit($currentLimit);
 
         if ($currentBytes !== null && $currentBytes >= self::MINIMUM_MEMORY_LIMIT_BYTES) {
             return;
@@ -64,44 +64,16 @@ final class CronJobRunner
         $this->applyIniSetting('memory_limit', self::MINIMUM_MEMORY_LIMIT);
     }
 
-    private function parseIniSizeToBytes(string $value): ?int
+    private function parseMemoryLimit(string $value): ?int
     {
         $trimmed = trim($value);
 
-        if ($trimmed === '') {
+        if ($trimmed === '' || $trimmed === '-1') {
             return null;
         }
 
-        if (is_numeric($trimmed)) {
-            return (int) $trimmed;
-        }
+        $parsed = @ini_parse_quantity($trimmed);
 
-        if (str_ends_with($trimmed, 'B') || str_ends_with($trimmed, 'b')) {
-            $trimmed = trim(substr($trimmed, 0, -1));
-        }
-
-        if ($trimmed === '') {
-            return null;
-        }
-
-        $unit = strtolower(substr($trimmed, -1));
-        $numberPart = substr($trimmed, 0, -1);
-
-        if ($numberPart === '' || !is_numeric($numberPart)) {
-            return null;
-        }
-
-        $multiplier = match ($unit) {
-            'g' => 1024 ** 3,
-            'm' => 1024 ** 2,
-            'k' => 1024,
-            default => null,
-        };
-
-        if ($multiplier === null) {
-            return null;
-        }
-
-        return (int) round(((float) $numberPart) * $multiplier);
+        return is_int($parsed) && $parsed >= 0 ? $parsed : null;
     }
 }
