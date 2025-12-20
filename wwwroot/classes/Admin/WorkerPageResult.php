@@ -10,20 +10,20 @@ final readonly class WorkerPageResult
     /**
      * @var list<Worker>
      */
-    private array $workers;
+    private readonly array $workers;
 
-    private ?string $successMessage;
+    private readonly ?string $successMessage;
 
-    private ?string $errorMessage;
+    private readonly ?string $errorMessage;
 
     /**
      * @var array<string, WorkerPageSortLink>
      */
-    private array $sortLinks;
+    private readonly array $sortLinks;
 
-    private string $sortField;
+    private readonly string $sortField;
 
-    private string $sortDirection;
+    private readonly string $sortDirection;
 
     /**
      * @param list<Worker> $workers

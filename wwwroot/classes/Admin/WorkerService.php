@@ -9,17 +9,16 @@ require_once __DIR__ . '/SystemCommandExecutor.php';
 
 final class WorkerService
 {
-    private PDO $database;
+    private readonly CommandExecutorInterface $commandExecutor;
 
-    private CommandExecutorInterface $commandExecutor;
+    private const string WORKER_USERNAME = 'psn100';
 
-    private const WORKER_USERNAME = 'psn100';
+    private const string WORKER_SCRIPT = '30th_minute.php';
 
-    private const WORKER_SCRIPT = '30th_minute.php';
-
-    public function __construct(PDO $database, ?CommandExecutorInterface $commandExecutor = null)
-    {
-        $this->database = $database;
+    public function __construct(
+        private readonly PDO $database,
+        ?CommandExecutorInterface $commandExecutor = null,
+    ) {
         $this->commandExecutor = $commandExecutor ?? new SystemCommandExecutor();
     }
 

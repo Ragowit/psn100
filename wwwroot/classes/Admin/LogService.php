@@ -7,16 +7,12 @@ require_once __DIR__ . '/LogEntryFormatter.php';
 
 final class LogService
 {
-    private PDO $database;
-
-    private LogEntryFormatter $formatter;
-
     private ?string $logTable = null;
 
-    public function __construct(PDO $database, LogEntryFormatter $formatter)
-    {
-        $this->database = $database;
-        $this->formatter = $formatter;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly LogEntryFormatter $formatter,
+    ) {
     }
 
     /**
@@ -172,11 +168,7 @@ final class LogService
 
     private function getLogTable(): string
     {
-        if ($this->logTable === null) {
-            $this->logTable = 'log';
-        }
-
-        return $this->logTable;
+        return $this->logTable ??= 'log';
     }
 
     private function quoteIdentifier(string $identifier): string
