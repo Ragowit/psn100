@@ -187,4 +187,31 @@ final class PlayerQueueResponseFactoryTest extends TestCase
             $service->getEscapedValues()
         );
     }
+
+    public function testCreateQueuedForScanResponseUsesActionVerbsForProgressTitle(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $progress = PlayerScanProgress::fromArray([
+            'current' => null,
+            'total' => null,
+            'title' => 'Updating avatar for Ragowit.',
+        ]);
+        $this->assertTrue($progress instanceof PlayerScanProgress, 'Expected PlayerScanProgress instance.');
+
+        $response = $factory->createQueuedForScanResponse('Ragowit', $progress);
+
+        $this->assertSame('queued', $response->getStatus());
+        $this->assertTrue($response->shouldPoll());
+
+        $message = $response->getMessage();
+        $this->assertStringContainsString('is currently being scanned.', $message);
+        $this->assertStringContainsString('Currently updating avatar.', $message);
+
+        $this->assertSame(
+            ['Ragowit', '/player/Ragowit', 'updating avatar'],
+            $service->getEscapedValues()
+        );
+    }
 }

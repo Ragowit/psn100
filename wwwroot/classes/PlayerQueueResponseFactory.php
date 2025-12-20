@@ -108,7 +108,11 @@ final class PlayerQueueResponseFactory
 
         $title = $progress->getTitle();
         if ($title !== null) {
-            $parts[] = 'Currently scanning <strong>' . $this->service->escapeHtml($title) . '</strong>';
+            $progressTitle = $this->formatProgressTitle($title);
+
+            if ($progressTitle !== '') {
+                $parts[] = $progressTitle;
+            }
         }
 
         $summary = $progress->getProgressSummary();
@@ -135,6 +139,24 @@ final class PlayerQueueResponseFactory
         }
 
         return $message;
+    }
+
+    private function formatProgressTitle(string $title): string
+    {
+        $normalizedTitle = preg_replace('/\s+for\s+[^.]+\.?$/i', '', trim($title)) ?? '';
+        $normalizedTitle = rtrim($normalizedTitle, " .\t\n\r\0\v");
+
+        if ($normalizedTitle === '') {
+            return '';
+        }
+
+        if (preg_match('/^(Updating|Fetching)\b/i', $normalizedTitle) === 1) {
+            $actionText = lcfirst($normalizedTitle);
+
+            return 'Currently ' . $this->service->escapeHtml($actionText);
+        }
+
+        return 'Currently scanning <strong>' . $this->service->escapeHtml($normalizedTitle) . '</strong>';
     }
 
     private function createCheaterMessage(string $playerName, ?string $accountId): string
