@@ -2,22 +2,14 @@
 
 declare(strict_types=1);
 
-class TrophyRarity
+final readonly class TrophyRarity
 {
-    private ?string $percentage;
-
-    private string $label;
-
-    private ?string $cssClass;
-
-    private bool $unobtainable;
-
-    public function __construct(?string $percentage, string $label, ?string $cssClass, bool $unobtainable)
-    {
-        $this->percentage = $percentage;
-        $this->label = $label;
-        $this->cssClass = $cssClass;
-        $this->unobtainable = $unobtainable;
+    public function __construct(
+        private ?string $percentage,
+        private string $label,
+        private ?string $cssClass,
+        private bool $unobtainable,
+    ) {
     }
 
     public function getPercentage(): ?string

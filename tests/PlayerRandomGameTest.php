@@ -15,9 +15,33 @@ final class PlayerRandomGameTest extends TestCase
         $this->utility = new Utility();
     }
 
+    public function testFromArrayNormalizesTypesAndDefaults(): void
+    {
+        $game = PlayerRandomGame::fromArray([
+            'id' => '7',
+            'name' => 'Example Game',
+            'owners' => '15',
+            'gold' => '2',
+            'progress' => 0,
+        ], $this->utility);
+
+        $this->assertSame(7, $game->getId());
+        $this->assertSame('Example Game', $game->getName());
+        $this->assertSame(15, $game->getOwners());
+        $this->assertSame(2, $game->getGold());
+        $this->assertSame('0', $game->getProgress());
+
+        $gameWithoutProgress = PlayerRandomGame::fromArray([
+            'id' => 9,
+            'name' => 'Another Game',
+        ], $this->utility);
+
+        $this->assertSame(null, $gameWithoutProgress->getProgress());
+    }
+
     public function testGetPlatformsSplitsAndTrimsPlatformList(): void
     {
-        $game = new PlayerRandomGame([
+        $game = PlayerRandomGame::fromArray([
             'id' => 42,
             'name' => 'Example Game',
             'platform' => 'PS4, PS5 , , PSVITA ,,PSVR2,',
@@ -31,7 +55,7 @@ final class PlayerRandomGameTest extends TestCase
 
     public function testGetPlatformsReturnsEmptyArrayWhenPlatformMissing(): void
     {
-        $game = new PlayerRandomGame([
+        $game = PlayerRandomGame::fromArray([
             'id' => 42,
             'name' => 'Example Game',
             'platform' => '',
@@ -39,7 +63,7 @@ final class PlayerRandomGameTest extends TestCase
 
         $this->assertSame([], $game->getPlatforms());
 
-        $gameWithoutPlatformKey = new PlayerRandomGame([
+        $gameWithoutPlatformKey = PlayerRandomGame::fromArray([
             'id' => 42,
             'name' => 'Example Game',
         ], $this->utility);
@@ -49,7 +73,7 @@ final class PlayerRandomGameTest extends TestCase
 
     public function testGetIconUrlReturnsPlaceholderWhenIconMissingForPlayStation5Families(): void
     {
-        $gamePs5 = new PlayerRandomGame([
+        $gamePs5 = PlayerRandomGame::fromArray([
             'id' => 1,
             'name' => 'Game',
             'icon_url' => '.png',
@@ -58,7 +82,7 @@ final class PlayerRandomGameTest extends TestCase
 
         $this->assertSame('../missing-ps5-game-and-trophy.png', $gamePs5->getIconUrl());
 
-        $gamePsvr2 = new PlayerRandomGame([
+        $gamePsvr2 = PlayerRandomGame::fromArray([
             'id' => 2,
             'name' => 'Game',
             'icon_url' => '.png',
@@ -67,7 +91,7 @@ final class PlayerRandomGameTest extends TestCase
 
         $this->assertSame('../missing-ps5-game-and-trophy.png', $gamePsvr2->getIconUrl());
 
-        $gamePs4 = new PlayerRandomGame([
+        $gamePs4 = PlayerRandomGame::fromArray([
             'id' => 3,
             'name' => 'Game',
             'icon_url' => '.png',
@@ -76,7 +100,7 @@ final class PlayerRandomGameTest extends TestCase
 
         $this->assertSame('../missing-ps4-game.png', $gamePs4->getIconUrl());
 
-        $gameWithIcon = new PlayerRandomGame([
+        $gameWithIcon = PlayerRandomGame::fromArray([
             'id' => 4,
             'name' => 'Game',
             'icon_url' => 'https://example.com/icon.png',
@@ -88,7 +112,7 @@ final class PlayerRandomGameTest extends TestCase
 
     public function testGetGameLinkIncludesSlugifiedNameAndUrlEncodedPlayerId(): void
     {
-        $game = new PlayerRandomGame([
+        $game = PlayerRandomGame::fromArray([
             'id' => 321,
             'name' => 'Ratchet & Clank: Rift Apart',
         ], $this->utility);
