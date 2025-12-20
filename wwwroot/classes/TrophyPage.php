@@ -82,10 +82,10 @@ class TrophyPage
 
         $trophyName = $trophy->getName();
         $metaData = (new PageMetaData())
-            ->setTitle($trophyName . ' Trophy')
-            ->setDescription(htmlentities($trophy->getDetail(), ENT_QUOTES, 'UTF-8'))
-            ->setImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())
-            ->setUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
+            ->withTitle($trophyName . ' Trophy')
+            ->withDescription(htmlentities($trophy->getDetail(), ENT_QUOTES, 'UTF-8'))
+            ->withImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())
+            ->withUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
 
         $pageTitle = $trophyName . ' Trophy ~ PSN 100%';
         $metaRarity = $rarityFormatter->formatMeta($trophy->getRarityPercent(), $trophy->getStatus());

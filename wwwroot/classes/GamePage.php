@@ -199,15 +199,15 @@ class GamePage
     public function createMetaData(): PageMetaData
     {
         return (new PageMetaData())
-            ->setTitle($this->game->getName() . ' Trophies')
-            ->setDescription(
+            ->withTitle($this->game->getName() . ' Trophies')
+            ->withDescription(
                 $this->game->getBronze() . ' Bronze ~ '
                 . $this->game->getSilver() . ' Silver ~ '
                 . $this->game->getGold() . ' Gold ~ '
                 . $this->game->getPlatinum() . ' Platinum'
             )
-            ->setImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
-            ->setUrl('https://psn100.net/game/' . $this->game->getId() . '-' . $this->getGameSlug());
+            ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
+            ->withUrl('https://psn100.net/game/' . $this->game->getId() . '-' . $this->getGameSlug());
     }
 
     public function getPageTitle(): string

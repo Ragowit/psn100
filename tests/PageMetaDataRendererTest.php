@@ -24,10 +24,10 @@ final class PageMetaDataRendererTest extends TestCase
     public function testRenderProducesExpectedTagsWithEscapedValues(): void
     {
         $metaData = (new PageMetaData())
-            ->setTitle('Title "special" & more')
-            ->setDescription("Description with 'quote' & <tag>")
-            ->setImage('https://example.com/image.png?foo=1&bar=2')
-            ->setUrl('https://example.com/page?foo=bar&baz=<baz>');
+            ->withTitle('Title "special" & more')
+            ->withDescription("Description with 'quote' & <tag>")
+            ->withImage('https://example.com/image.png?foo=1&bar=2')
+            ->withUrl('https://example.com/page?foo=bar&baz=<baz>');
 
         $result = $this->renderer->render($metaData);
 
