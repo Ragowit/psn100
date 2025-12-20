@@ -66,4 +66,20 @@ final class CronJobRunnerTest extends TestCase
 
         $this->assertSame('1024M', ini_get('memory_limit'));
     }
+
+    public function testConfigureEnvironmentHandlesWhitespaceAndUnlimitedValues(): void
+    {
+        ini_set('memory_limit', ' 256M ');
+
+        $runner = CronJobRunner::create();
+        $runner->configureEnvironment();
+
+        $this->assertSame('512M', ini_get('memory_limit'));
+
+        ini_set('memory_limit', '-1');
+
+        $runner->configureEnvironment();
+
+        $this->assertSame('-1', ini_get('memory_limit'));
+    }
 }
