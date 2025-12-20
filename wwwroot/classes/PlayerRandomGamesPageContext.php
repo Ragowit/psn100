@@ -9,6 +9,7 @@ require_once __DIR__ . '/PlayerRandomGamesService.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerNavigation.php';
+require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PlayerStatus.php';
@@ -103,7 +104,7 @@ final class PlayerRandomGamesPageContext
         $this->playerOnlineId = $playerOnlineId;
         $this->playerAccountId = $playerAccountId;
         $this->playerStatus = $playerStatus;
-        $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigation::SECTION_RANDOM);
+        $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::RANDOM);
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
             fn (string $platform): bool => $this->filter->isPlatformSelected($platform)
         );
