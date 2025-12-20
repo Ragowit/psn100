@@ -178,12 +178,40 @@ final class PlayerQueueResponseFactoryTest extends TestCase
 
         $message = $response->getMessage();
         $this->assertStringContainsString('href="/player/Player%20%3CName%3E"', $message);
-        $this->assertStringContainsString('Currently scanning <strong>Game &lt;Title&gt;</strong> (5/34).', $message);
+        $this->assertStringContainsString('Working on <strong>Game &lt;Title&gt;</strong> (5/34).', $message);
         $this->assertStringContainsString('class="progress mt-2"', $message);
         $this->assertStringContainsString('spinner-border', $message);
 
         $this->assertSame(
             ['Player <Name>', '/player/Player%20%3CName%3E', 'Game <Title>'],
+            $service->getEscapedValues()
+        );
+    }
+
+    public function testCreateQueuedForScanResponseOmitsScanningPrefixForErrors(): void
+    {
+        $service = new RecordingPlayerQueueServiceStub();
+        $factory = new PlayerQueueResponseFactory($service);
+
+        $progress = PlayerScanProgress::fromArray([
+            'current' => null,
+            'total' => null,
+            'title' => 'Profile scan failed, waiting 1 minute before confirming privacy.',
+        ]);
+        $this->assertTrue($progress instanceof PlayerScanProgress, 'Expected PlayerScanProgress instance.');
+
+        $response = $factory->createQueuedForScanResponse('dragonrider', $progress);
+
+        $this->assertSame('queued', $response->getStatus());
+        $this->assertTrue($response->shouldPoll());
+
+        $message = $response->getMessage();
+        $this->assertStringContainsString('dragonrider</a> is currently being scanned.', $message);
+        $this->assertFalse(str_contains($message, 'Currently scanning Profile scan failed'), 'Should not prefix error messages with "Currently scanning".');
+        $this->assertStringContainsString('Profile scan failed, waiting 1 minute before confirming privacy.', $message);
+
+        $this->assertSame(
+            ['dragonrider', '/player/dragonrider', 'Profile scan failed, waiting 1 minute before confirming privacy'],
             $service->getEscapedValues()
         );
     }

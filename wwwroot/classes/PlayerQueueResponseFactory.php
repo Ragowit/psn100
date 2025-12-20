@@ -156,7 +156,16 @@ final class PlayerQueueResponseFactory
             return 'Currently ' . $this->service->escapeHtml($actionText);
         }
 
-        return 'Currently scanning <strong>' . $this->service->escapeHtml($normalizedTitle) . '</strong>';
+        if ($this->isErrorProgressTitle($normalizedTitle)) {
+            return $this->service->escapeHtml($normalizedTitle);
+        }
+
+        return 'Working on <strong>' . $this->service->escapeHtml($normalizedTitle) . '</strong>';
+    }
+
+    private function isErrorProgressTitle(string $title): bool
+    {
+        return preg_match('/\\b(failed|error|problem|unable|denied|unavailable|timeout)\\b/i', $title) === 1;
     }
 
     private function createCheaterMessage(string $playerName, ?string $accountId): string
