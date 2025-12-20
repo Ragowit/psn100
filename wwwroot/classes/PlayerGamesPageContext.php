@@ -216,18 +216,18 @@ final class PlayerGamesPageContext
     private function buildMetaData(array $playerData, PlayerSummary $playerSummary): PageMetaData
     {
         $metaData = (new PageMetaData())
-            ->setTitle($this->buildTitle($playerData))
-            ->setImage('https://psn100.net/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
-            ->setUrl('https://psn100.net/player/' . $this->extractString($playerData['online_id'] ?? ''));
+            ->withTitle($this->buildTitle($playerData))
+            ->withImage('https://psn100.net/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
+            ->withUrl('https://psn100.net/player/' . $this->extractString($playerData['online_id'] ?? ''));
 
         $status = self::extractPlayerStatus($playerData);
 
         if ($status->isFlagged()) {
-            return $metaData->setDescription('The player is flagged as a cheater.');
+            return $metaData->withDescription('The player is flagged as a cheater.');
         }
 
         if ($status->isPrivateProfile()) {
-            return $metaData->setDescription('The player is private.');
+            return $metaData->withDescription('The player is private.');
         }
 
         $numberOfGames = $playerSummary->getNumberOfGames();
@@ -243,7 +243,7 @@ final class PlayerGamesPageContext
             $platinums
         );
 
-        return $metaData->setDescription($description);
+        return $metaData->withDescription($description);
     }
 
     /**

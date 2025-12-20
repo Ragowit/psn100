@@ -16,21 +16,23 @@ final class PageMetaDataTest extends TestCase
         $this->assertSame('https://example.com/page', $pageMetaData->getUrl());
     }
 
-    public function testSettersNormalizeValuesAndAreChainable(): void
+    public function testWithersNormalizeValuesAndCreateNewInstances(): void
     {
         $pageMetaData = new PageMetaData();
 
         $result = $pageMetaData
-            ->setTitle('  Example Title  ')
-            ->setDescription("\nExample Description\n")
-            ->setImage('  https://example.com/image.png  ')
-            ->setUrl('  https://example.com  ');
+            ->withTitle('  Example Title  ')
+            ->withDescription("\nExample Description\n")
+            ->withImage('  https://example.com/image.png  ')
+            ->withUrl('  https://example.com  ');
 
-        $this->assertSame($pageMetaData, $result);
-        $this->assertSame('Example Title', $pageMetaData->getTitle());
-        $this->assertSame('Example Description', $pageMetaData->getDescription());
-        $this->assertSame('https://example.com/image.png', $pageMetaData->getImage());
-        $this->assertSame('https://example.com', $pageMetaData->getUrl());
+        $this->assertTrue($pageMetaData !== $result);
+        $this->assertTrue($pageMetaData->isEmpty());
+
+        $this->assertSame('Example Title', $result->getTitle());
+        $this->assertSame('Example Description', $result->getDescription());
+        $this->assertSame('https://example.com/image.png', $result->getImage());
+        $this->assertSame('https://example.com', $result->getUrl());
     }
 
     public function testIsEmptyIndicatesWhetherAnyMetadataIsPresent(): void
@@ -38,10 +40,10 @@ final class PageMetaDataTest extends TestCase
         $pageMetaData = new PageMetaData();
         $this->assertTrue($pageMetaData->isEmpty());
 
-        $pageMetaData->setDescription('Description');
-        $this->assertFalse($pageMetaData->isEmpty());
+        $pageMetaDataWithDescription = $pageMetaData->withDescription('Description');
+        $this->assertFalse($pageMetaDataWithDescription->isEmpty());
 
-        $pageMetaData->setDescription('   ');
-        $this->assertTrue($pageMetaData->isEmpty());
+        $pageMetaDataCleared = $pageMetaDataWithDescription->withDescription('   ');
+        $this->assertTrue($pageMetaDataCleared->isEmpty());
     }
 }

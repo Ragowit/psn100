@@ -396,10 +396,10 @@ final class GameHistoryPage
     public function createMetaData(): PageMetaData
     {
         return (new PageMetaData())
-            ->setTitle($this->game->getName() . ' Trophy Data History')
-            ->setDescription('Version history and trophy data changes for ' . $this->game->getName())
-            ->setImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
-            ->setUrl('https://psn100.net/game-history/' . $this->game->getId() . '-' . $this->getGameSlug());
+            ->withTitle($this->game->getName() . ' Trophy Data History')
+            ->withDescription('Version history and trophy data changes for ' . $this->game->getName())
+            ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
+            ->withUrl('https://psn100.net/game-history/' . $this->game->getId() . '-' . $this->getGameSlug());
     }
 
     public function getPageTitle(): string
