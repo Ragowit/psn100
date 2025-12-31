@@ -22,67 +22,84 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
 </div>
 
 <div class="row">
-    <div class="col-12 col-lg-4 mb-3">
-        <div class="vstack gap-1 bg-body-tertiary p-3 rounded">
+    <div class="col-12 mb-3">
+        <div class="hstack gap-3 bg-body-tertiary p-3 rounded">
+            <!-- Avatar -->
             <div>
-                <h1 title="<?= $playerHeaderViewModel->getAboutMe(); ?>"><?= $player["online_id"] ?></h1>
+                <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="100" width="100" />
             </div>
 
-            <div class="hstack gap-3">
-                <div>
-                    <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="100" width="100" />
-                </div>
-
-                <div class="vstack gap-2">
-                    <div class="hstack">
-                        <div class="vstack">
-                            <?php
-                            if (!$playerHeaderViewModel->canShowPlayerStats()) {
-                                echo "N/A";
-                            } else {
-                                ?>
-                                <div class="text-center" style="width: 90%;">
-                                <!--  Level -->
-                                    <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= $player["level"]; ?>
-                                </div>
-
-                                <div style="width: 90%;">
-                                    <!-- Progress -->
-                                    <div class="progress" title="<?= $player["progress"]; ?>%">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-
-                                <div class="text-center" style="width: 90%;">
-                                    <!-- Total Trophies -->
-                                    <?php $totalTrophies = $playerHeaderViewModel->getTotalTrophies(); ?>
-                                    <?= number_format($totalTrophies); ?> Trophies
-                                </div>
-                            <?php
-                            }
-                            ?>
-                        </div>
-
-                        <div class="ms-auto">
-                            <?php $countryName = htmlentities($playerHeaderViewModel->getCountryName(), ENT_QUOTES, 'UTF-8'); ?>
-                            <img src="/img/country/<?= $playerHeaderViewModel->getCountryCode(); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
-                        </div>
-                    </div>
-
-                    <div class="text-end">
-                        <small>Last Updated: <span id="lastUpdate"></span></small>
-                        <?php
-                        if ($playerHeaderViewModel->hasLastUpdatedDate()) {
-                            $lastUpdatedDate = $playerHeaderViewModel->getLastUpdatedDate();
-                            ?>
-                            <script>
-                                document.getElementById("lastUpdate").innerHTML = new Date('<?= $lastUpdatedDate; ?> UTC').toLocaleString('sv-SE');
-                            </script>
-                            <?php
-                        }
+            <!-- Online ID and About Me -->
+            <div>
+                <figure>
+                    <blockquote class="blockquote">
+                        <h1><?= $player["online_id"] ?></h1>
+                    </blockquote>
+                    <?php
+                    $aboutMe = $playerHeaderViewModel->getAboutMe();
+                    if (!empty($aboutMe)) {
                         ?>
+                        <figcaption class="blockquote-footer">
+                            <?= $aboutMe; ?>
+                        </figcaption>
+                        <?php
+                    }
+                    ?>
+                </figure>
+            </div>
+
+            <!-- Country -->
+            <div class="ms-auto">
+                <?php $countryName = htmlentities($playerHeaderViewModel->getCountryName(), ENT_QUOTES, 'UTF-8'); ?>
+                <img src="/img/country/<?= $playerHeaderViewModel->getCountryCode(); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-lg-4 mb-3">
+        <div class="gap-1 bg-body-tertiary p-3 rounded">
+            <div class="vstack">
+                <?php
+                if (!$playerHeaderViewModel->canShowPlayerStats()) {
+                    echo "N/A";
+                } else {
+                    ?>
+                    <div class="text-center">
+                    <!--  Level -->
+                        <img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18" /> <?= $player["level"]; ?>
                     </div>
-                </div>
+
+                    <div>
+                        <!-- Progress -->
+                        <div class="progress" title="<?= $player["progress"]; ?>%">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $player["progress"]; ?>%" aria-valuenow="<?= $player["progress"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <!-- Total Trophies -->
+                        <?php $totalTrophies = $playerHeaderViewModel->getTotalTrophies(); ?>
+                        <?= number_format($totalTrophies); ?> Trophies
+                    </div>
+                <?php
+                }
+                ?>
+            </div>
+
+            <div class="text-end text-secondary">
+                <small>Last Updated: <span id="lastUpdate"></span></small>
+                <?php
+                if ($playerHeaderViewModel->hasLastUpdatedDate()) {
+                    $lastUpdatedDate = $playerHeaderViewModel->getLastUpdatedDate();
+                    ?>
+                    <script>
+                        document.getElementById("lastUpdate").innerHTML = new Date('<?= $lastUpdatedDate; ?> UTC').toLocaleString('sv-SE');
+                    </script>
+                    <?php
+                }
+                ?>
             </div>
         </div>
     </div>
