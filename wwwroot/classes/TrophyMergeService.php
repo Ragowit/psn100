@@ -719,23 +719,41 @@ SQL
                 platinum,
                 progress,
                 last_updated_date
-            ) WITH player AS(
+            ) WITH child_players AS(
                 SELECT
-                    account_id,
+                    ttp.account_id,
+                    MAX(ttp.last_updated_date) AS last_updated_date
+                FROM
+                    trophy_title_player ttp
+                WHERE
+                    ttp.np_communication_id IN(
+                    SELECT DISTINCT
+                        child_np_communication_id
+                    FROM
+                        trophy_merge
+                    WHERE
+                        parent_np_communication_id = :np_communication_id
+                )
+                GROUP BY
+                    ttp.account_id
+            ),
+            player AS(
+                SELECT
+                    tgp.account_id,
                     SUM(tgp.bronze) AS bronze,
                     SUM(tgp.silver) AS silver,
                     SUM(tgp.gold) AS gold,
                     SUM(tgp.platinum) AS platinum,
                     SUM(tgp.bronze) * 15 + SUM(tgp.silver) * 30 + SUM(tgp.gold) * 90 AS score,
-                    ttp.last_updated_date
+                    child_players.last_updated_date
                 FROM
                     trophy_group_player tgp
-                JOIN trophy_title_player ttp USING(account_id)
+                JOIN child_players ON child_players.account_id = tgp.account_id
                 WHERE
-                    tgp.np_communication_id = :np_communication_id AND ttp.np_communication_id = :child_np_communication_id
-            GROUP BY
-                account_id,
-                last_updated_date
+                    tgp.np_communication_id = :np_communication_id
+                GROUP BY
+                    tgp.account_id,
+                    child_players.last_updated_date
             )
             SELECT
                 *
@@ -784,7 +802,6 @@ SQL
 SQL
         );
         $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
-        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':max_score', $trophyTitle['max_score'], PDO::PARAM_INT);
         $query->bindValue(':platinum', $trophyTitle['platinum'], PDO::PARAM_INT);
         $query->execute();
@@ -803,13 +820,24 @@ SQL
                 last_updated_date
             ) WITH player AS(
                 SELECT
-                    account_id,
-                    progress,
-                    last_updated_date
+                    ttp.account_id,
+                    MAX(ttp.last_updated_date) AS last_updated_date,
+                    SUM(ttp.bronze + ttp.silver + ttp.gold + ttp.platinum) AS trophy_total
                 FROM
                     trophy_title_player ttp
                 WHERE
-                    ttp.bronze = 0 AND ttp.silver = 0 AND ttp.gold = 0 AND ttp.platinum = 0 AND ttp.np_communication_id = :child_np_communication_id
+                    ttp.np_communication_id IN(
+                    SELECT DISTINCT
+                        child_np_communication_id
+                    FROM
+                        trophy_merge
+                    WHERE
+                        parent_np_communication_id = :np_communication_id
+                )
+                GROUP BY
+                    ttp.account_id
+                HAVING
+                    trophy_total = 0
             )
             SELECT
                 :np_communication_id,
@@ -818,13 +846,12 @@ SQL
                 0,
                 0,
                 0,
-                player.progress,
+                0,
                 player.last_updated_date
             FROM
                 player
 SQL
         );
-        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
         $query->execute();
     }
