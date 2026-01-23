@@ -1,6 +1,16 @@
 -- Recalculate trophy_title_player progress for merged titles.
 -- Run during a maintenance window.
 
+INSERT INTO trophy_title_player AS new_ttp (
+    np_communication_id,
+    account_id,
+    bronze,
+    silver,
+    gold,
+    platinum,
+    progress,
+    last_updated_date
+)
 WITH merged_parents AS (
     SELECT DISTINCT parent_np_communication_id
     FROM trophy_merge
@@ -34,16 +44,6 @@ title_info AS (
         platinum,
         bronze * 15 + silver * 30 + gold * 90 AS max_score
     FROM trophy_title
-)
-INSERT INTO trophy_title_player (
-    np_communication_id,
-    account_id,
-    bronze,
-    silver,
-    gold,
-    platinum,
-    progress,
-    last_updated_date
 )
 SELECT
     parent_scores.parent_np_communication_id,
@@ -79,17 +79,27 @@ JOIN child_updates
 JOIN title_info
     ON title_info.np_communication_id = parent_scores.parent_np_communication_id
 ON DUPLICATE KEY UPDATE
-    bronze = VALUES(bronze),
-    silver = VALUES(silver),
-    gold = VALUES(gold),
-    platinum = VALUES(platinum),
-    progress = VALUES(progress),
+    bronze = new_ttp.bronze,
+    silver = new_ttp.silver,
+    gold = new_ttp.gold,
+    platinum = new_ttp.platinum,
+    progress = new_ttp.progress,
     last_updated_date = IF(
-        VALUES(last_updated_date) > trophy_title_player.last_updated_date,
-        VALUES(last_updated_date),
+        new_ttp.last_updated_date > trophy_title_player.last_updated_date,
+        new_ttp.last_updated_date,
         trophy_title_player.last_updated_date
     );
 
+INSERT IGNORE INTO trophy_title_player (
+    np_communication_id,
+    account_id,
+    bronze,
+    silver,
+    gold,
+    platinum,
+    progress,
+    last_updated_date
+)
 WITH empty_players AS (
     SELECT
         tm.parent_np_communication_id,
@@ -101,16 +111,6 @@ WITH empty_players AS (
         ON ttp.np_communication_id = tm.child_np_communication_id
     GROUP BY tm.parent_np_communication_id, ttp.account_id
     HAVING trophy_total = 0
-)
-INSERT IGNORE INTO trophy_title_player (
-    np_communication_id,
-    account_id,
-    bronze,
-    silver,
-    gold,
-    platinum,
-    progress,
-    last_updated_date
 )
 SELECT
     empty_players.parent_np_communication_id,
