@@ -1321,6 +1321,32 @@ class PossibleCheaterService
             SQL,
             'linkPattern' => '/game/3243-code-vein/%s?sort=date',
         ],
+        [
+            'title' => 'Final Fantasy X-2 HD Remaster (Giant Tower <-> Almost There)',
+            'query' => <<<'SQL'
+                SELECT
+                    p.account_id,
+                    p.online_id,
+                    TIMESTAMPDIFF(SECOND, trophy_start.earned_date, trophy_end.earned_date) AS time_difference
+                FROM
+                    player p
+                JOIN trophy_earned trophy_start ON
+                    trophy_start.account_id = p.account_id
+                    AND trophy_start.np_communication_id = 'NPWR05019_00'
+                    AND trophy_start.order_id = 34
+                JOIN trophy_earned trophy_end ON
+                    trophy_end.account_id = p.account_id
+                    AND trophy_end.np_communication_id = 'NPWR05019_00'
+                    AND trophy_end.order_id = 32
+                WHERE
+                    p.status != 1
+                HAVING
+                    time_difference >= 10
+                ORDER BY
+                    p.online_id
+            SQL,
+            'linkPattern' => '/game/2424-final-fantasy-x2-hd-remaster/%s?sort=date',
+        ],
     ];
 
     public function __construct(PDO $database)
