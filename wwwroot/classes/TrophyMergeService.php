@@ -249,7 +249,6 @@ SQL
                     status,
                     recent_players,
                     owners_completed,
-                    psnprofiles_id,
                     parent_np_communication_id,
                     region,
                     rarity_points
@@ -262,7 +261,6 @@ SQL
                     status,
                     recent_players,
                     owners_completed,
-                    psnprofiles_id,
                     NULL,
                     region,
                     rarity_points
