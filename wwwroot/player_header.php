@@ -88,7 +88,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                 ?>
             </div>
 
-            <div class="text-end text-secondary">
+            <div class="text-center text-secondary">
                 <small>Last Updated: <span id="lastUpdate"></span></small>
                 <?php
                 if ($playerHeaderViewModel->hasLastUpdatedDate()) {
