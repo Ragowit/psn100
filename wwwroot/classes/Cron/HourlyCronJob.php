@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 
-use Throwable;
-
 final readonly class HourlyCronJob implements CronJobInterface
 {
     private const BATCH_SIZE = 500;
