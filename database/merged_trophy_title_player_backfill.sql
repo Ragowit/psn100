@@ -1,7 +1,7 @@
 -- Recalculate trophy_title_player progress for merged titles.
 -- Run during a maintenance window.
 
-INSERT INTO trophy_title_player AS new_ttp (
+INSERT INTO trophy_title_player (
     np_communication_id,
     account_id,
     bronze,
@@ -46,49 +46,57 @@ title_info AS (
     FROM trophy_title
 )
 SELECT
-    parent_scores.parent_np_communication_id,
-    parent_scores.account_id,
-    parent_scores.bronze,
-    parent_scores.silver,
-    parent_scores.gold,
-    parent_scores.platinum,
-    CASE
-        WHEN title_info.max_score = 0 THEN 0
-        WHEN parent_scores.score = 0 THEN 0
-        ELSE IFNULL(
-            GREATEST(
-                FLOOR(
-                    IF(
-                        (parent_scores.score / title_info.max_score) * 100 = 100
-                            AND title_info.platinum = 1
-                            AND parent_scores.platinum = 0,
-                        99,
-                        (parent_scores.score / title_info.max_score) * 100
-                    )
+    src.np_communication_id,
+    src.account_id,
+    src.bronze,
+    src.silver,
+    src.gold,
+    src.platinum,
+    src.progress,
+    src.last_updated_date
+FROM (
+    SELECT
+        ps.parent_np_communication_id AS np_communication_id,
+        ps.account_id,
+        ps.bronze,
+        ps.silver,
+        ps.gold,
+        ps.platinum,
+        CASE
+            WHEN ti.max_score = 0 THEN 0
+            WHEN ps.score = 0 THEN 0
+            ELSE IFNULL(
+                GREATEST(
+                    FLOOR(
+                        IF(
+                            (ps.score / ti.max_score) * 100 = 100
+                                AND ti.platinum = 1
+                                AND ps.platinum = 0,
+                            99,
+                            (ps.score / ti.max_score) * 100
+                        )
+                    ),
+                    1
                 ),
-                1
-            ),
-            0
-        )
-    END AS progress,
-    child_updates.last_updated_date
-FROM parent_scores
-JOIN child_updates
-    ON child_updates.parent_np_communication_id = parent_scores.parent_np_communication_id
-    AND child_updates.account_id = parent_scores.account_id
-JOIN title_info
-    ON title_info.np_communication_id = parent_scores.parent_np_communication_id
+                0
+            )
+        END AS progress,
+        cu.last_updated_date
+    FROM parent_scores ps
+    JOIN child_updates cu
+        ON cu.parent_np_communication_id = ps.parent_np_communication_id
+        AND cu.account_id = ps.account_id
+    JOIN title_info ti
+        ON ti.np_communication_id = ps.parent_np_communication_id
+) AS src
 ON DUPLICATE KEY UPDATE
-    bronze = new_ttp.bronze,
-    silver = new_ttp.silver,
-    gold = new_ttp.gold,
-    platinum = new_ttp.platinum,
-    progress = new_ttp.progress,
-    last_updated_date = IF(
-        new_ttp.last_updated_date > trophy_title_player.last_updated_date,
-        new_ttp.last_updated_date,
-        trophy_title_player.last_updated_date
-    );
+    bronze = src.bronze,
+    silver = src.silver,
+    gold = src.gold,
+    platinum = src.platinum,
+    progress = src.progress,
+    last_updated_date = GREATEST(trophy_title_player.last_updated_date, src.last_updated_date);
+
 
 INSERT IGNORE INTO trophy_title_player (
     np_communication_id,
