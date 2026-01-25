@@ -477,14 +477,15 @@ class GameCopyService
         $upsert = $this->database->prepare(
             'INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url, bronze, silver, gold, platinum)
              VALUES (:np_communication_id, :group_id, :name, :detail, :icon_url, :bronze, :silver, :gold, :platinum)
+             AS new
              ON DUPLICATE KEY UPDATE
-                 name = VALUES(name),
-                 detail = VALUES(detail),
-                 icon_url = VALUES(icon_url),
-                 bronze = VALUES(bronze),
-                 silver = VALUES(silver),
-                 gold = VALUES(gold),
-                 platinum = VALUES(platinum)'
+                 name = new.name,
+                 detail = new.detail,
+                 icon_url = new.icon_url,
+                 bronze = new.bronze,
+                 silver = new.silver,
+                 gold = new.gold,
+                 platinum = new.platinum'
         );
 
         foreach ($conflictingGroupIds as $groupId) {
@@ -661,8 +662,9 @@ class GameCopyService
                 :trophy_id,
                 :status
             )
+            AS new
             ON DUPLICATE KEY UPDATE
-                status = VALUES(status)'
+                status = new.status'
         );
         $exists = $this->database->prepare(
             'SELECT 1
@@ -695,10 +697,11 @@ class GameCopyService
                 :parent_group_id,
                 :parent_order_id
             )
+            AS new
             ON DUPLICATE KEY UPDATE
-                parent_np_communication_id = VALUES(parent_np_communication_id),
-                parent_group_id = VALUES(parent_group_id),
-                parent_order_id = VALUES(parent_order_id)'
+                parent_np_communication_id = new.parent_np_communication_id,
+                parent_group_id = new.parent_group_id,
+                parent_order_id = new.parent_order_id'
         );
 
         foreach ($trophies as $trophy) {

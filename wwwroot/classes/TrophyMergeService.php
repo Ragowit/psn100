@@ -509,11 +509,12 @@ SQL
             WHERE
                 child.np_communication_id = :child_np_communication_id
                 AND child.order_id = :child_order_id
+            AS new
             ON DUPLICATE KEY
             UPDATE
-                earned_date = VALUES(earned_date),
-                progress = VALUES(progress),
-                earned = VALUES(earned)
+                earned_date = new.earned_date,
+                progress = new.progress,
+                earned = new.earned
 SQL
         );
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
