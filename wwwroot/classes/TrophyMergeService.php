@@ -667,24 +667,19 @@ SQL
     {
         $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
 
-        $query = $this->database->prepare(
-            <<<'SQL'
-            SELECT DISTINCT
-                parent_np_communication_id
-            FROM
-                trophy_merge
-            WHERE
-                child_np_communication_id = :child_np_communication_id
-SQL
-        );
-        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-        $query->execute();
+        $mergeData = $this->getMergeParentAndChildren($childNpCommunicationId);
+        $parentNpCommunicationId = $mergeData['parent_np_communication_id'];
+        $childNpCommunicationIds = array_values($mergeData['child_np_communication_ids']);
 
-        $title = $query->fetch(PDO::FETCH_ASSOC);
-
-        if ($title === false) {
-            throw new RuntimeException('Unable to locate parent trophy title.');
+        if ($childNpCommunicationIds === []) {
+            throw new RuntimeException('Unable to locate child trophy titles.');
         }
+
+        $childPlaceholders = [];
+        foreach (array_keys($childNpCommunicationIds) as $index) {
+            $childPlaceholders[] = ':child_np_' . $index;
+        }
+        $childListSql = implode(', ', $childPlaceholders);
 
         $query = $this->database->prepare(
             <<<'SQL'
@@ -697,7 +692,7 @@ SQL
                 np_communication_id = :np_communication_id
 SQL
         );
-        $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
         $trophyTitle = $query->fetch(PDO::FETCH_ASSOC);
@@ -706,7 +701,7 @@ SQL
             throw new RuntimeException('Unable to load trophy title data.');
         }
 
-        $query = $this->database->prepare(
+        $playerInsertSql = sprintf(
             <<<'SQL'
             INSERT INTO trophy_title_player(
                 np_communication_id,
@@ -724,14 +719,7 @@ SQL
                 FROM
                     trophy_title_player ttp
                 WHERE
-                    ttp.np_communication_id IN(
-                    SELECT DISTINCT
-                        child_np_communication_id
-                    FROM
-                        trophy_merge
-                    WHERE
-                        parent_np_communication_id = :np_communication_id
-                )
+                    ttp.np_communication_id IN (%s)
                 GROUP BY
                     ttp.account_id
             ),
@@ -798,13 +786,19 @@ SQL
                     trophy_title_player.last_updated_date
                 )
 SQL
+        ,
+            $childListSql
         );
-        $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $query = $this->database->prepare($playerInsertSql);
+        $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':max_score', $trophyTitle['max_score'], PDO::PARAM_INT);
         $query->bindValue(':platinum', $trophyTitle['platinum'], PDO::PARAM_INT);
+        foreach ($childNpCommunicationIds as $index => $childNpCommunicationId) {
+            $query->bindValue(':child_np_' . $index, $childNpCommunicationId, PDO::PARAM_STR);
+        }
         $query->execute();
 
-        $query = $this->database->prepare(
+        $playerZeroSql = sprintf(
             <<<'SQL'
             INSERT IGNORE
             INTO trophy_title_player(
@@ -824,14 +818,7 @@ SQL
                 FROM
                     trophy_title_player ttp
                 WHERE
-                    ttp.np_communication_id IN(
-                    SELECT DISTINCT
-                        child_np_communication_id
-                    FROM
-                        trophy_merge
-                    WHERE
-                        parent_np_communication_id = :np_communication_id
-                )
+                    ttp.np_communication_id IN (%s)
                 GROUP BY
                     ttp.account_id
                 HAVING
@@ -849,9 +836,63 @@ SQL
             FROM
                 player
 SQL
+        ,
+            $childListSql
         );
-        $query->bindValue(':np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $query = $this->database->prepare($playerZeroSql);
+        $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        foreach ($childNpCommunicationIds as $index => $childNpCommunicationId) {
+            $query->bindValue(':child_np_' . $index, $childNpCommunicationId, PDO::PARAM_STR);
+        }
         $query->execute();
+    }
+
+    /**
+     * @return array{parent_np_communication_id:string, child_np_communication_ids:list<string>}
+     */
+    private function getMergeParentAndChildren(string $childNpCommunicationId): array
+    {
+        $query = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT
+                parent_np_communication_id
+            FROM
+                trophy_merge
+            WHERE
+                child_np_communication_id = :child_np_communication_id
+SQL
+        );
+        $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $title = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($title === false) {
+            throw new RuntimeException('Unable to locate parent trophy title.');
+        }
+
+        $childQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT
+                child_np_communication_id
+            FROM
+                trophy_merge
+            WHERE
+                parent_np_communication_id = :parent_np_communication_id
+            ORDER BY
+                child_np_communication_id
+SQL
+        );
+        $childQuery->bindValue(':parent_np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $childQuery->execute();
+
+        /** @var list<string> $childNpCommunicationIds */
+        $childNpCommunicationIds = $childQuery->fetchAll(PDO::FETCH_COLUMN);
+
+        return [
+            'parent_np_communication_id' => $title['parent_np_communication_id'],
+            'child_np_communication_ids' => $childNpCommunicationIds,
+        ];
     }
 
     private function insertTrophyMergeMappingFromIds(int $childTrophyId, int $parentTrophyId): void
