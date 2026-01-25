@@ -884,11 +884,11 @@ SQL
             throw new RuntimeException('Unable to locate parent trophy title.');
         }
 
-        if (count($parentIds) > 1) {
-            throw new RuntimeException('Child trophy title maps to multiple merge parents.');
+        if (count($parentIds) === 1) {
+            $parentNpCommunicationId = $parentIds[0];
+        } else {
+            $parentNpCommunicationId = $this->resolveMergeParent($childNpCommunicationId, $parentIds);
         }
-
-        $parentNpCommunicationId = $parentIds[0];
 
         $childQuery = $this->database->prepare(
             <<<'SQL'
@@ -912,6 +912,37 @@ SQL
             'parent_np_communication_id' => $parentNpCommunicationId,
             'child_np_communication_ids' => $childNpCommunicationIds,
         ];
+    }
+
+    /**
+     * @param list<string> $parentIds
+     */
+    private function resolveMergeParent(string $childNpCommunicationId, array $parentIds): string
+    {
+        $parentFromMeta = $this->getParentFromMeta($childNpCommunicationId);
+        if ($parentFromMeta !== null && in_array($parentFromMeta, $parentIds, true)) {
+            return $parentFromMeta;
+        }
+
+        sort($parentIds, SORT_STRING);
+
+        return $parentIds[0];
+    }
+
+    private function getParentFromMeta(string $childNpCommunicationId): ?string
+    {
+        $query = $this->database->prepare(
+            'SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $parent = $query->fetchColumn();
+        if ($parent === false || $parent === null || $parent === '') {
+            return null;
+        }
+
+        return (string) $parent;
     }
 
     private function insertTrophyMergeMappingFromIds(int $childTrophyId, int $parentTrophyId): void
