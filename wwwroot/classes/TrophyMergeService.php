@@ -510,25 +510,33 @@ SQL
 
     private function updateTrophyGroupPlayer(int $childGameId): void
     {
+        $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
+
+        $mergeData = $this->getMergeParentAndChildren($childNpCommunicationId);
+        $parentNpCommunicationId = $mergeData['parent_np_communication_id'];
+        $childNpCommunicationIds = array_values($mergeData['child_np_communication_ids']);
+
+        if ($childNpCommunicationIds === []) {
+            throw new RuntimeException('Unable to locate child trophy titles.');
+        }
+
+        $childPlaceholders = [];
+        foreach (array_keys($childNpCommunicationIds) as $index) {
+            $childPlaceholders[] = ':child_np_' . $index;
+        }
+        $childListSql = implode(', ', $childPlaceholders);
+
         $groups = $this->database->prepare(
             <<<'SQL'
             SELECT DISTINCT
-                parent_np_communication_id,
                 parent_group_id
             FROM
                 trophy_merge
             WHERE
-                child_np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :game_id
-            )
+                parent_np_communication_id = :parent_np_communication_id
 SQL
         );
-        $groups->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
+        $groups->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $groups->execute();
 
         while ($group = $groups->fetch(PDO::FETCH_ASSOC)) {
@@ -612,11 +620,11 @@ SQL
                     progress = NEW.progress
 SQL
             );
-            $query->bindValue(':np_communication_id', $group['parent_np_communication_id'], PDO::PARAM_STR);
+            $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
             $query->bindValue(':group_id', $group['parent_group_id'], PDO::PARAM_STR);
             $query->execute();
 
-            $query = $this->database->prepare(
+            $zeroProgressSql = sprintf(
                 <<<'SQL'
                 INSERT IGNORE
                 INTO trophy_group_player(
@@ -634,14 +642,13 @@ SQL
                     FROM
                         trophy_group_player tgp
                     WHERE
-                        tgp.bronze = 0 AND tgp.silver = 0 AND tgp.gold = 0 AND tgp.platinum = 0 AND tgp.progress = 0 AND tgp.np_communication_id =(
-                        SELECT
-                            np_communication_id
-                        FROM
-                            trophy_title
-                        WHERE
-                            id = :game_id
-                    ) AND tgp.group_id = :group_id
+                        tgp.bronze = 0
+                        AND tgp.silver = 0
+                        AND tgp.gold = 0
+                        AND tgp.platinum = 0
+                        AND tgp.progress = 0
+                        AND tgp.np_communication_id IN (%s)
+                        AND tgp.group_id = :group_id
                 )
                 SELECT
                     :np_communication_id,
@@ -655,10 +662,15 @@ SQL
                 FROM
                     player
 SQL
+            ,
+                $childListSql
             );
-            $query->bindValue(':game_id', $childGameId, PDO::PARAM_INT);
-            $query->bindValue(':np_communication_id', $group['parent_np_communication_id'], PDO::PARAM_STR);
+            $query = $this->database->prepare($zeroProgressSql);
+            $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
             $query->bindValue(':group_id', $group['parent_group_id'], PDO::PARAM_STR);
+            foreach ($childNpCommunicationIds as $index => $childNpCommunicationId) {
+                $query->bindValue(':child_np_' . $index, $childNpCommunicationId, PDO::PARAM_STR);
+            }
             $query->execute();
         }
     }
