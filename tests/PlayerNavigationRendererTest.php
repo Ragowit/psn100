@@ -15,10 +15,13 @@ final class PlayerNavigationRendererTest extends TestCase
         $html = $renderer->render($navigation);
         $trimmedHtml = trim($html);
 
-        $this->assertTrue(str_starts_with($trimmedHtml, '<div class="btn-group">'));
+        $this->assertTrue(str_starts_with($trimmedHtml, '<div class="btn-group d-flex align-items-stretch">'));
         $this->assertSame(5, substr_count($html, '<a class="'));
         $this->assertStringContainsString('href="/player/Example%20User/log"', $html);
-        $this->assertStringContainsString('class="btn btn-primary active"', $html);
+        $this->assertStringContainsString(
+            'class="btn btn-primary active d-flex align-items-center justify-content-center"',
+            $html
+        );
         $this->assertStringContainsString('aria-current="page"', $html);
     }
 

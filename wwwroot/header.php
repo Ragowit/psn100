@@ -153,6 +153,7 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
                 -webkit-mask-size: 3rem;
                 pointer-events: none;
             }
+
         </style>
 
         <script src="/js/localized-date-formatter.js" defer></script>
