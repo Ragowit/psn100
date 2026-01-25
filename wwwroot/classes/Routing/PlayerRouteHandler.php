@@ -55,6 +55,8 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
                 return RouteResult::include('player_random.php', $variables);
             case 'report':
                 return RouteResult::include('player_report.php', $variables);
+            case 'timeline':
+                return RouteResult::include('player_timeline.php', $variables);
             default:
                 return RouteResult::redirect('/player/' . rawurlencode($onlineId));
         }

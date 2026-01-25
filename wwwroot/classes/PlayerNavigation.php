@@ -31,6 +31,11 @@ final readonly class PlayerNavigation
                 $this->isActive(PlayerNavigationSection::GAMES)
             ),
             new PlayerNavigationLink(
+                'Timeline',
+                '/player/' . $encodedOnlineId . '/timeline',
+                $this->isActive(PlayerNavigationSection::TIMELINE)
+            ),
+            new PlayerNavigationLink(
                 'Log',
                 '/player/' . $encodedOnlineId . '/log',
                 $this->isActive(PlayerNavigationSection::LOG)
