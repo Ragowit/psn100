@@ -169,6 +169,42 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->mergedGames);
     }
 
+    public function testRecomputesMergeProgressWhenAmbiguousMappingIsSkipped(): void
+    {
+        $this->insertTitle(1, 'NP_NEW', 'Example Game', 'PS5');
+        $this->insertTitle(2, 'NP_MATCH', 'Example Game', 'PS4');
+        $this->insertTitle(3, 'NP_AMBIG', 'Example Game', 'PS4');
+
+        $this->insertTrophies('NP_NEW', 'default', [
+            [0, 'Hidden Trophy', 'Alpha'],
+            [1, 'Hidden Trophy', 'Beta'],
+        ]);
+
+        $this->insertTrophies('NP_MATCH', 'default', [
+            [0, 'Hidden Trophy', 'Alpha'],
+            [1, 'Hidden Trophy', 'Beta'],
+        ]);
+
+        $this->insertTrophies('NP_AMBIG', 'default', [
+            [0, 'Hidden Trophy', 'Beta'],
+            [1, 'Hidden Trophy', 'Alpha'],
+        ]);
+
+        $this->mergeService->cloneInfoQueue[] = [
+            'clone_game_id' => 99,
+            'clone_np_communication_id' => 'MERGE_000099',
+        ];
+
+        $this->service->handleNewTitle('NP_NEW');
+
+        $this->assertSame([1], $this->mergeService->clonedGames);
+        $this->assertSame([
+            [1, 99, 'order'],
+            [2, 99, 'order'],
+        ], $this->mergeService->mergedGames);
+        $this->assertSame(['MERGE_000099'], $this->mergeService->recomputedParents);
+    }
+
     public function testMergeTitleRecalculationUsesAllChildrenAfterSecondMerge(): void
     {
         $this->insertTitle(1, 'NP_CHILD_ONE', 'Example Game', 'PS4');
@@ -442,6 +478,9 @@ final class RecordingTrophyMergeService extends TrophyMergeService
     /** @var list<array{clone_game_id:int, clone_np_communication_id:string}> */
     public array $cloneInfoQueue = [];
 
+    /** @var list<string> */
+    public array $recomputedParents = [];
+
     public function __construct(PDO $database)
     {
         parent::__construct($database);
@@ -468,5 +507,10 @@ final class RecordingTrophyMergeService extends TrophyMergeService
         }
 
         return array_shift($this->cloneInfoQueue);
+    }
+
+    public function recomputeMergeProgressByParent(string $parentNpCommunicationId): void
+    {
+        $this->recomputedParents[] = $parentNpCommunicationId;
     }
 }

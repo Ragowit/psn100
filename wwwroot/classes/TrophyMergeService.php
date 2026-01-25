@@ -159,6 +159,22 @@ class TrophyMergeService
         $gameCopyService->copyChildToParent($sourceGameId, $targetGameId);
     }
 
+    public function recomputeMergeProgressByParent(string $parentNpCommunicationId): void
+    {
+        if (!str_starts_with($parentNpCommunicationId, 'MERGE')) {
+            throw new InvalidArgumentException('Parent must be a merge title.');
+        }
+
+        $childNpCommunicationIds = $this->getMergeChildrenByParent($parentNpCommunicationId);
+
+        if ($childNpCommunicationIds === []) {
+            throw new RuntimeException('Unable to locate child trophy titles.');
+        }
+
+        $this->updateTrophyGroupPlayerForMerge($parentNpCommunicationId, $childNpCommunicationIds);
+        $this->updateTrophyTitlePlayerForMerge($parentNpCommunicationId, $childNpCommunicationIds);
+    }
+
     /**
      * @return array{clone_game_id:int, clone_np_communication_id:string}
      */
@@ -516,6 +532,14 @@ SQL
         $parentNpCommunicationId = $mergeData['parent_np_communication_id'];
         $childNpCommunicationIds = array_values($mergeData['child_np_communication_ids']);
 
+        $this->updateTrophyGroupPlayerForMerge($parentNpCommunicationId, $childNpCommunicationIds);
+    }
+
+    /**
+     * @param list<string> $childNpCommunicationIds
+     */
+    private function updateTrophyGroupPlayerForMerge(string $parentNpCommunicationId, array $childNpCommunicationIds): void
+    {
         if ($childNpCommunicationIds === []) {
             throw new RuntimeException('Unable to locate child trophy titles.');
         }
@@ -683,6 +707,14 @@ SQL
         $parentNpCommunicationId = $mergeData['parent_np_communication_id'];
         $childNpCommunicationIds = array_values($mergeData['child_np_communication_ids']);
 
+        $this->updateTrophyTitlePlayerForMerge($parentNpCommunicationId, $childNpCommunicationIds);
+    }
+
+    /**
+     * @param list<string> $childNpCommunicationIds
+     */
+    private function updateTrophyTitlePlayerForMerge(string $parentNpCommunicationId, array $childNpCommunicationIds): void
+    {
         if ($childNpCommunicationIds === []) {
             throw new RuntimeException('Unable to locate child trophy titles.');
         }
@@ -857,6 +889,32 @@ SQL
             $query->bindValue(':child_np_' . $index, $childNpCommunicationId, PDO::PARAM_STR);
         }
         $query->execute();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getMergeChildrenByParent(string $parentNpCommunicationId): array
+    {
+        $childQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT
+                child_np_communication_id
+            FROM
+                trophy_merge
+            WHERE
+                parent_np_communication_id = :parent_np_communication_id
+            ORDER BY
+                child_np_communication_id
+SQL
+        );
+        $childQuery->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $childQuery->execute();
+
+        /** @var list<string> $childNpCommunicationIds */
+        $childNpCommunicationIds = $childQuery->fetchAll(PDO::FETCH_COLUMN);
+
+        return $childNpCommunicationIds;
     }
 
     /**
