@@ -11,10 +11,10 @@ class PlayerTimelinePage
 {
     private PlayerSummary $playerSummary;
 
-    // /**
-    //  * @var PlayerTimeline[]
-    //  */
-    // private array $timelines;
+    /**
+     * @var PlayerTimeline[]
+     */
+    private array $timelines = [];
 
     private PlayerStatus $playerStatus;
 
