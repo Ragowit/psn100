@@ -155,6 +155,22 @@ final class RecordingAssocStatement extends PDOStatement
 
         return $row === [] ? false : $row;
     }
+
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    {
+        $row = $this->row;
+        $this->row = [];
+
+        if ($row === []) {
+            return [];
+        }
+
+        if ($mode === PDO::FETCH_COLUMN) {
+            return array_values($row);
+        }
+
+        return [$row];
+    }
 }
 
 final class RecordingColumnStatement extends PDOStatement
