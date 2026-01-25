@@ -169,6 +169,27 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->mergedGames);
     }
 
+    public function testMergeTitleRecalculationUsesAllChildrenAfterSecondMerge(): void
+    {
+        $this->insertTitle(1, 'NP_CHILD_ONE', 'Example Game', 'PS4');
+        $this->insertTitle(2, 'NP_CHILD_TWO', 'Example Game', 'PS5');
+        $this->insertTitle(3, 'MERGE_000003', 'Example Game', 'PS4');
+
+        $this->insertTrophyMerge('NP_CHILD_ONE', 'MERGE_000003');
+        $this->insertTrophyTitlePlayer('NP_CHILD_ONE', 100, 1, 0, 0, 0, 10, 1000);
+
+        $this->insertTrophyMerge('NP_CHILD_TWO', 'MERGE_000003');
+
+        $method = new ReflectionMethod(TrophyMergeService::class, 'getMergeParentAndChildren');
+        $method->setAccessible(true);
+
+        /** @var array{parent_np_communication_id:string, child_np_communication_ids:list<string>} $result */
+        $result = $method->invoke($this->mergeService, 'NP_CHILD_TWO');
+
+        $this->assertSame('MERGE_000003', $result['parent_np_communication_id']);
+        $this->assertSame(['NP_CHILD_ONE', 'NP_CHILD_TWO'], $result['child_np_communication_ids']);
+    }
+
     public function testSkipsCloningMergeNpCommunicationId(): void
     {
         $this->insertTitle(1, 'MERGE_000010', 'Example Game', 'PS5');
@@ -301,6 +322,30 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
                 detail TEXT NULL
             )'
         );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_merge (
+                child_np_communication_id TEXT NOT NULL,
+                child_group_id TEXT NULL,
+                child_order_id INTEGER NULL,
+                parent_np_communication_id TEXT NOT NULL,
+                parent_group_id TEXT NULL,
+                parent_order_id INTEGER NULL
+            )'
+        );
+
+        $this->database->exec(
+            'CREATE TABLE trophy_title_player (
+                np_communication_id TEXT NOT NULL,
+                account_id INTEGER NOT NULL,
+                bronze INTEGER NOT NULL DEFAULT 0,
+                silver INTEGER NOT NULL DEFAULT 0,
+                gold INTEGER NOT NULL DEFAULT 0,
+                platinum INTEGER NOT NULL DEFAULT 0,
+                progress INTEGER NOT NULL DEFAULT 0,
+                last_updated_date INTEGER NOT NULL DEFAULT 0
+            )'
+        );
     }
 
     private function insertTitle(int $id, string $npCommunicationId, string $name, string $platform, int $status = 0): void
@@ -339,6 +384,32 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             $query->bindValue(':detail', $detail, PDO::PARAM_STR);
             $query->execute();
         }
+    }
+
+    private function insertTrophyMerge(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $query = $this->database->prepare(
+            'INSERT INTO trophy_merge (child_np_communication_id, parent_np_communication_id) VALUES (:child, :parent)'
+        );
+        $query->bindValue(':child', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':parent', $parentNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function insertTrophyTitlePlayer(string $npCommunicationId, int $accountId, int $bronze, int $silver, int $gold, int $platinum, int $progress, int $lastUpdatedDate): void
+    {
+        $query = $this->database->prepare(
+            'INSERT INTO trophy_title_player (np_communication_id, account_id, bronze, silver, gold, platinum, progress, last_updated_date) VALUES (:np, :account, :bronze, :silver, :gold, :platinum, :progress, :last_updated_date)'
+        );
+        $query->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':account', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':bronze', $bronze, PDO::PARAM_INT);
+        $query->bindValue(':silver', $silver, PDO::PARAM_INT);
+        $query->bindValue(':gold', $gold, PDO::PARAM_INT);
+        $query->bindValue(':platinum', $platinum, PDO::PARAM_INT);
+        $query->bindValue(':progress', $progress, PDO::PARAM_INT);
+        $query->bindValue(':last_updated_date', $lastUpdatedDate, PDO::PARAM_INT);
+        $query->execute();
     }
 
     /**
