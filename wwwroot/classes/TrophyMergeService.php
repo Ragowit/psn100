@@ -877,11 +877,18 @@ SQL
         $query->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
-        $title = $query->fetch(PDO::FETCH_ASSOC);
+        /** @var list<string> $parentIds */
+        $parentIds = $query->fetchAll(PDO::FETCH_COLUMN);
 
-        if ($title === false) {
+        if ($parentIds === []) {
             throw new RuntimeException('Unable to locate parent trophy title.');
         }
+
+        if (count($parentIds) > 1) {
+            throw new RuntimeException('Child trophy title maps to multiple merge parents.');
+        }
+
+        $parentNpCommunicationId = $parentIds[0];
 
         $childQuery = $this->database->prepare(
             <<<'SQL'
@@ -895,14 +902,14 @@ SQL
                 child_np_communication_id
 SQL
         );
-        $childQuery->bindValue(':parent_np_communication_id', $title['parent_np_communication_id'], PDO::PARAM_STR);
+        $childQuery->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $childQuery->execute();
 
         /** @var list<string> $childNpCommunicationIds */
         $childNpCommunicationIds = $childQuery->fetchAll(PDO::FETCH_COLUMN);
 
         return [
-            'parent_np_communication_id' => $title['parent_np_communication_id'],
+            'parent_np_communication_id' => $parentNpCommunicationId,
             'child_np_communication_ids' => $childNpCommunicationIds,
         ];
     }

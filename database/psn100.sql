@@ -535,7 +535,7 @@ ALTER TABLE `trophy_history`
 -- Indexes for table `trophy_merge`
 --
 ALTER TABLE `trophy_merge`
-  ADD PRIMARY KEY (`child_np_communication_id`,`child_group_id`,`child_order_id`);
+  ADD PRIMARY KEY (`child_np_communication_id`,`child_group_id`,`child_order_id`,`parent_np_communication_id`,`parent_group_id`,`parent_order_id`);
 
 --
 -- Indexes for table `trophy_meta`
