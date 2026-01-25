@@ -131,6 +131,8 @@ final class AutomaticTrophyTitleMergeService
                 $gameToClone['np_communication_id']
             );
         }
+
+        $this->trophyMergeService->recomputeMergeProgressByParent($cloneInfo['clone_np_communication_id']);
     }
 
     /**
