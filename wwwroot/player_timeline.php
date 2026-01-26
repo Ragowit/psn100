@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
+require_once __DIR__ . '/classes/PlayerTimelineLayout.php';
 require_once __DIR__ . '/classes/PlayerTimelinePageContext.php';
 require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 
@@ -127,34 +128,20 @@ require_once("header.php");
                     </style>
 
                     <?php
-                    $query = $database->prepare("SELECT Date(Min(earned_date)) AS first_trophy, 
-                                Date(Max(earned_date)) AS last_trophy 
-                        FROM   trophy_earned 
-                        WHERE  account_id = :account_id ");
-                    $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                    $query->execute();
-                    $result = $query->fetch();
-                    $startDate = $result["first_trophy"];
-                    $endDate = $result["last_trophy"];
-                    
-                    $start    = null;
-                    if (isset($startDate)) {
-                        $start    = (new DateTime($startDate))->modify('first day of this month');
-                    }
-                    $end      = null;
-                    if (isset($endDate)) {
-                        $end      = (new DateTime($endDate))->modify('first day of next month');
-                    }
-
-                    if (is_null($start) || is_null($end)) {
+                    $timelineData = $context->getTimelineData();
+                    if ($timelineData === null) {
                         echo "No trophies, thus no timeline to show.";
                     } else {
+                        $start = $timelineData->getStartDate();
+                        $end = $timelineData->getEndDate();
+                        $today = new DateTimeImmutable('today');
+                        $rows = PlayerTimelineLayout::buildRows($start, $timelineData->getEntries());
+                        $playerOnlineId = (string) ($player['online_id'] ?? '');
                         ?>
                         <div class="timeline overflow-auto">
                             <ul class="legend">
                                 <?php
-                                $interval = DateInterval::createFromDateString('1 month');
-                                $period   = new DatePeriod($start, $interval, $end);
+                                $period = new DatePeriod($start, new DateInterval('P1M'), $end);
 
                                 foreach ($period as $dt)
                                 {
@@ -165,115 +152,26 @@ require_once("header.php");
                             </ul>
                             
                             <?php
-                            $query = $database->prepare("SELECT
-                                    tt.id AS game_id,
-                                    tt.name,
-                                    ttp.progress,
-                                    DATE(MIN(te.earned_date)) AS first_trophy,
-                                    DATE(MAX(te.earned_date)) AS last_trophy
-                                FROM
-                                    trophy_title_player ttp
-                                JOIN trophy_earned te USING(
-                                        np_communication_id,
-                                        account_id
-                                    )
-                                JOIN trophy_title tt USING(np_communication_id)
-                                JOIN trophy_title_meta ttm USING(np_communication_id)
-                                WHERE
-                                    account_id = :account_id AND ttm.status = 0
-                                GROUP BY
-                                    np_communication_id
-                                ORDER BY
-                                    first_trophy");
-                            
-                            // $query = $database->prepare("SELECT
-                            //         tt.id AS game_id,
-                            //         tt.name,
-                            //         tg.group_id,
-                            //         tg.name AS dlc_name,
-                            //         tgp.progress,
-                            //         DATE(MIN(te.earned_date)) AS first_trophy,
-                            //         DATE(MAX(te.earned_date)) AS last_trophy
-                            //     FROM
-                            //         trophy_group_player tgp
-                            //     JOIN trophy_earned te USING(
-                            //             np_communication_id,
-                            //             group_id,
-                            //             account_id
-                            //         )
-                            //     JOIN trophy_title tt USING(np_communication_id)
-                            //     JOIN trophy_title_meta ttm USING(np_communication_id)
-                            //     JOIN trophy_group tg USING(np_communication_id, group_id)
-                            //     WHERE
-                            //         account_id = :account_id AND ttm.status != 2
-                            //     GROUP BY
-                            //         np_communication_id, group_id
-                            //     ORDER BY
-                            //         first_trophy");
-                            $query->bindParam(":account_id", $accountId, PDO::PARAM_INT);
-                            $query->execute();
-                            
-                            $games = array();
-                            while ($row = $query->fetch())
-                            {
-                                $game = new stdClass();
-                                $game->name = $row["name"];
-                                $game->url = $row["game_id"] ."-". $utility->slugify($row["name"]) ."/". $player["online_id"];
-                                $game->completed = $row["progress"];
-                                $game->firstTrophy = $row["first_trophy"];
-                                $game->lastTrophy = $row["last_trophy"];
-                                
-                                // if ($row["group_id"] !== "default")
-                                // {
-                                //     $game->name .= " ~ ". $row["dlc_name"];
-                                //     $game->url .= "#". $row["group_id"];
-                                // }
-
-                                array_push($games, $game);
-                            }
-                            
-                            $done = array();
-                            
-                            while (count($games) != count($done))
-                            {
+                            foreach ($rows as $row) {
                                 echo "<ul class='timelinerow'>";
-                                $lastGameDate = clone $start;
-                                $lastGameDate->modify('-1 day');
-                                foreach ($games as $game)
-                                {
-                                    if (!isset($game->firstTrophy) || !isset($game->lastTrophy)) {
-                                        $done[$game->url] = true;
-                                        continue;
+                                foreach ($row as $item) {
+                                    $entry = $item->getEntry();
+                                    $gameSlug = $entry->getGameId() . '-' . $utility->slugify($entry->getName());
+                                    $gameUrl = $gameSlug;
+                                    if ($playerOnlineId !== '') {
+                                        $gameUrl .= '/' . rawurlencode($playerOnlineId);
                                     }
 
-                                    $firstTrophy = new DateTime($game->firstTrophy);
-                                    $lastTrophy = new DateTime($game->lastTrophy);
-                                    
-                                    if (!isset($done[$game->url]) && $firstTrophy > $lastGameDate)
-                                    {
-                                        $today = new DateTime();
-                                        
-                                        $class = "";
-                                        if ($game->completed == 100)
-                                        {
-                                            $class = "completed";
-                                        }
-                                        elseif (date_diff($lastTrophy, $today)->days > 90)
-                                        {
-                                            $class = "stalled";
-                                        }
-                                        else
-                                        {
-                                            $class = "playing";
-                                        }
-                                        
-                                        echo "<li style='margin-left: ". (date_diff($lastGameDate, $firstTrophy)->days - 1) * 5 ."px; width: ". (date_diff($firstTrophy, $lastTrophy)->days + 1) * 5 ."px;'>";
-                                        echo "<a class='". $class ."' href='https://psn100.net/game/". $game->url ."' title=\"". $game->name ." (". $game->firstTrophy ." - ". $game->lastTrophy .")\">". htmlentities($game->name) ."</a>";
-                                        echo "</li>";
-                                        
-                                        $lastGameDate = $lastTrophy;
-                                        $done[$game->url] = true;
-                                    }
+                                    $firstTrophy = $entry->getFirstTrophyDate()->format('Y-m-d');
+                                    $lastTrophy = $entry->getLastTrophyDate()->format('Y-m-d');
+                                    $title = sprintf('%s (%s - %s)', $entry->getName(), $firstTrophy, $lastTrophy);
+                                    $class = $entry->getStatusClass($today);
+                                    $marginLeft = $item->getOffsetDays() * 5;
+                                    $width = $item->getDurationDays() * 5;
+
+                                    echo "<li style='margin-left: ". $marginLeft ."px; width: ". $width ."px;'>";
+                                    echo "<a class='". $class ."' href='https://psn100.net/game/". $gameUrl ."' title=\"". htmlspecialchars($title, ENT_QUOTES) ."\">". htmlspecialchars($entry->getName(), ENT_QUOTES) ."</a>";
+                                    echo "</li>";
                                 }
                                 echo "</ul>";
                             }

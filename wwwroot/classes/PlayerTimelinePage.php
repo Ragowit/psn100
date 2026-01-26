@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerTimelineData.php';
 require_once __DIR__ . '/PlayerTimelineService.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
@@ -11,12 +12,9 @@ class PlayerTimelinePage
 {
     private PlayerSummary $playerSummary;
 
-    /**
-     * @var PlayerTimeline[]
-     */
-    private array $timelines = [];
-
     private PlayerStatus $playerStatus;
+
+    private ?PlayerTimelineData $timelineData = null;
 
     public function __construct(
         PlayerTimelineService $timelineService,
@@ -28,15 +26,18 @@ class PlayerTimelinePage
         $this->playerStatus = $playerStatus;
 
         if ($this->shouldLoadTimeline()) {
-            $this->timelines = $timelineService->getTimelines($accountId);
-        } else {
-            $this->timelines = [];
+            $this->timelineData = $timelineService->getTimelineData($accountId);
         }
     }
 
     public function getPlayerSummary(): PlayerSummary
     {
         return $this->playerSummary;
+    }
+
+    public function getTimelineData(): ?PlayerTimelineData
+    {
+        return $this->timelineData;
     }
 
     // /**
@@ -64,7 +65,6 @@ class PlayerTimelinePage
 
     private function shouldLoadTimeline(): bool
     {
-        return false;
-        //return $this->shouldShowTimeline();
+        return $this->shouldShowTimeline();
     }
 }

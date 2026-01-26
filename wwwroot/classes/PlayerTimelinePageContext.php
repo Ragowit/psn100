@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 //require_once __DIR__ . '/PlayerTimeline.php';
+require_once __DIR__ . '/PlayerTimelineData.php';
 require_once __DIR__ . '/PlayerTimelinePage.php';
 require_once __DIR__ . '/PlayerTimelineService.php';
 require_once __DIR__ . '/PlayerSummary.php';
@@ -14,9 +15,6 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final class PlayerTimelinePageContext
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
-
     private PlayerTimelinePage $playerTimelinePage;
 
     private PlayerSummary $playerSummary;
@@ -44,7 +42,7 @@ final class PlayerTimelinePageContext
     ): self {
         $playerStatus = self::extractPlayerStatus($playerData);
 
-        $timelineService = new PlayerTimelineService($database, $utility);
+        $timelineService = new PlayerTimelineService($database);
         $summaryService = new PlayerSummaryService($database);
 
         $playerTimelinePage = new PlayerTimelinePage(
@@ -148,6 +146,11 @@ final class PlayerTimelinePageContext
     public function shouldShowTimeline(): bool
     {
         return $this->playerTimelinePage->shouldShowTimeline();
+    }
+
+    public function getTimelineData(): ?PlayerTimelineData
+    {
+        return $this->playerTimelinePage->getTimelineData();
     }
 
     // /**
