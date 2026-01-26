@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 
-use Throwable;
-
 final readonly class DailyCronJob implements CronJobInterface
 {
     public function __construct(private PDO $database, private int $retryDelaySeconds = 3)

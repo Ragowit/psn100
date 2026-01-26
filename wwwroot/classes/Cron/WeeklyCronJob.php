@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 
-use Throwable;
-
 final readonly class WeeklyCronJob implements CronJobInterface
 {
     private const UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
