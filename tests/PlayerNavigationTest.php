@@ -12,10 +12,11 @@ final class PlayerNavigationTest extends TestCase
 
         $links = $navigation->getLinks();
 
-        $this->assertCount(5, $links);
+        $this->assertCount(6, $links);
 
         $expected = [
             ['label' => 'Games', 'url' => '/player/Test%20User'],
+            ['label' => 'Timeline', 'url' => '/player/Test%20User/timeline'],
             ['label' => 'Log', 'url' => '/player/Test%20User/log'],
             ['label' => 'Trophy Advisor', 'url' => '/player/Test%20User/advisor'],
             ['label' => 'Game Advisor', 'url' => '/game?sort=completion&filter=true&player=Test%20User'],
@@ -37,7 +38,7 @@ final class PlayerNavigationTest extends TestCase
 
         $links = $navigation->getLinks();
 
-        $this->assertCount(5, $links);
+        $this->assertCount(6, $links);
 
         foreach ($links as $link) {
             if ($link->getLabel() === 'Game Advisor') {

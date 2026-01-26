@@ -34,8 +34,8 @@ final class PlayerAdvisorPageContextTest extends TestCase
 
         $navigation = $context->getPlayerNavigation();
         $links = $navigation->getLinks();
-        $this->assertSame('/player/ExampleUser/advisor', $links[2]->getUrl());
-        $this->assertTrue($links[2]->isActive());
+        $this->assertSame('/player/ExampleUser/advisor', $links[3]->getUrl());
+        $this->assertTrue($links[3]->isActive());
 
         $platformOptions = $context->getPlatformFilterOptions()->getOptions();
         $ps5Option = null;
