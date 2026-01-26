@@ -52,8 +52,8 @@ final class PlayerLogPageContextTest extends TestCase
 
         $navigation = $context->getPlayerNavigation();
         $links = $navigation->getLinks();
-        $this->assertSame('/player/ExampleUser/log', $links[1]->getUrl());
-        $this->assertTrue($links[1]->isActive());
+        $this->assertSame('/player/ExampleUser/log', $links[2]->getUrl());
+        $this->assertTrue($links[2]->isActive());
 
         $platformOptions = $context->getPlatformFilterOptions()->getOptions();
         $ps5Option = null;
