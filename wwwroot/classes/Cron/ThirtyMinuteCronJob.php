@@ -2326,6 +2326,8 @@ class ThirtyMinuteCronJob implements CronJobInterface
         // Normalize en dash to hyphen-minus to keep downstream handling consistent.
         $name = str_replace('–', '-', $name);
 
+        $name = preg_replace('/\s*:\s*/', ': ', $name) ?? $name;
+
         if ($name === '') {
             return $name;
         }

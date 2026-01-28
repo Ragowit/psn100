@@ -80,6 +80,13 @@ final class TrophyTitleNamingTest extends TestCase
         $this->assertSame("Journey: Collector's Edition", $formatted);
     }
 
+    public function testExtraSpacingAroundColonsIsNormalized(): void
+    {
+        $formatted = $this->formatTitle('Bus Simulator : World Tour');
+
+        $this->assertSame('Bus Simulator: World Tour', $formatted);
+    }
+
     public function testApaTitleCaseLeavesSmallWordsLowercase(): void
     {
         $formatted = $this->formatTitle('return of the jedi and the sith');
