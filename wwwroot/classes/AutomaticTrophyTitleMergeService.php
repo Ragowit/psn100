@@ -19,18 +19,21 @@ final class AutomaticTrophyTitleMergeService
         $this->trophyMergeService = $trophyMergeService;
     }
 
-    public function handleNewTitle(string $npCommunicationId): void
+    /**
+     * @return list<string> Merge parent NP communication IDs to recompute.
+     */
+    public function handleNewTitle(string $npCommunicationId): array
     {
         $newTitle = $this->getTitleByNpCommunicationId($npCommunicationId);
 
         if ($newTitle === null) {
-            return;
+            return [];
         }
 
         $matchingTitles = $this->findMatchingTitles($newTitle);
 
         if ($matchingTitles === []) {
-            return;
+            return [];
         }
 
         $cloneCandidate = $this->selectCloneCandidate($matchingTitles);
@@ -42,7 +45,7 @@ final class AutomaticTrophyTitleMergeService
             );
 
             if (!$comparison['matches']) {
-                return;
+                return [];
             }
 
             $mergeMethod = $this->selectMergeMethod($comparison);
@@ -53,7 +56,7 @@ final class AutomaticTrophyTitleMergeService
                     $cloneCandidate['np_communication_id']
                 );
 
-                return;
+                return [];
             }
 
             if ($this->shouldCopyPlatforms($cloneCandidate['platforms'], $newTitle['platforms'])) {
@@ -76,14 +79,14 @@ final class AutomaticTrophyTitleMergeService
                 $cloneCandidate['np_communication_id']
             );
 
-            return;
+            return [$cloneCandidate['np_communication_id']];
         }
 
         $gamesToMerge = $this->createUniqueGameList($newTitle, $matchingTitles);
         $gameToClone = $this->selectGameToClone($gamesToMerge);
 
         if ($gameToClone === null) {
-            return;
+            return [];
         }
 
         $mergeMethods = [];
@@ -112,7 +115,7 @@ final class AutomaticTrophyTitleMergeService
         }
 
         if ($mergeMethods === []) {
-            return;
+            return [];
         }
 
         $cloneInfo = $this->trophyMergeService->cloneGameWithInfo($gameToClone['id']);
@@ -132,7 +135,12 @@ final class AutomaticTrophyTitleMergeService
             );
         }
 
-        $this->trophyMergeService->recomputeMergeProgressByParent($cloneInfo['clone_np_communication_id']);
+        return [$cloneInfo['clone_np_communication_id']];
+    }
+
+    public function recomputeMergeProgressByParent(string $parentNpCommunicationId): void
+    {
+        $this->trophyMergeService->recomputeMergeProgressByParent($parentNpCommunicationId);
     }
 
     /**

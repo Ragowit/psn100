@@ -38,7 +38,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             [1, 'Trophy B', 'Detail B'],
         ]);
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([
             ['NP_NEW', 'MERGE_000001'],
@@ -67,7 +67,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             [0, 'Hidden Trophy', 'Secret'],
         ]);
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([], $this->mergeService->mergedGames);
     }
@@ -84,7 +84,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             [0, 'Trophy A', 'Detail A'],
         ]);
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([], $this->mergeService->copiedGames);
         $this->assertSame([
@@ -107,7 +107,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             [1, 'Trophy B', 'Detail B'],
         ]);
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([
             [1, 2, 'order'],
@@ -129,7 +129,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             [1, 'Trophy B', 'Detail B'],
         ]);
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([
             ['NP_NEW', 'MERGE_000001'],
@@ -160,7 +160,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             'clone_np_communication_id' => 'MERGE_000099',
         ];
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([1], $this->mergeService->clonedGames);
         $this->assertSame([
@@ -195,14 +195,14 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
             'clone_np_communication_id' => 'MERGE_000099',
         ];
 
-        $this->service->handleNewTitle('NP_NEW');
+        $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([1], $this->mergeService->clonedGames);
         $this->assertSame([
             [1, 99, 'order'],
             [2, 99, 'order'],
         ], $this->mergeService->mergedGames);
-        $this->assertSame(['MERGE_000099'], $this->mergeService->recomputedParents);
+        $this->assertSame(['MERGE_000099'], $parentsToRecompute);
     }
 
     public function testMergeTitleRecalculationUsesAllChildrenAfterSecondMerge(): void

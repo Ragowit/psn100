@@ -1300,7 +1300,10 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             }
 
                             if ($isNewTitle) {
-                                $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
+                                $mergeParents = $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
+                                foreach ($mergeParents as $mergeParent) {
+                                    $this->automaticTrophyTitleMergeService->recomputeMergeProgressByParent($mergeParent);
+                                }
                             }
 
                             if ($newTrophies) {
