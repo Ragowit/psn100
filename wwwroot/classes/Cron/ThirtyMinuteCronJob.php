@@ -807,7 +807,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query = $this->database->prepare("SELECT np_communication_id,
                                 last_updated_date
                             FROM   trophy_title_player
-                            WHERE  account_id = :account_id ");
+                            WHERE  account_id = :account_id AND np_communication_id LIKE 'N%'");
                         $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
                         $query->execute();
                         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
