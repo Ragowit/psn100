@@ -122,6 +122,7 @@ class Database extends PDO
         $defaultOptions = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_PERSISTENT => false,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ];
 
         return $options + $defaultOptions;
@@ -134,6 +135,7 @@ class Database extends PDO
         }
 
         try {
+            $this->exec("SET NAMES utf8mb4 COLLATE utf8mb4_0900_ai_ci");
             $this->exec("SET SESSION optimizer_switch = 'with_clause=merged'");
         } catch (PDOException $exception) {
             // The optimizer switch is an optional hint; ignore failures so connections still succeed.
