@@ -282,6 +282,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $recheck = "";
         $missingGameDeletionCheck = [];
         $missingTrophyTitleRetry = [];
+        $trophyTitleCountRetry = [];
 
         while (true) {
             // Login with a token
@@ -816,6 +817,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             sprintf('Fetching game list for %s.', $onlineId)
                         );
 
+                        $trophyTitleFetchCompleted = false;
                         try {
                             $trophyTitleCollection = $user->trophyTitles();
                             $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
@@ -826,7 +828,25 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             continue;
                         }
 
+                        $trophyTitleFetchCompleted = true;
                         $psnGameCount = count($trophyTitles);
+                        $localGameCount = count($gameLastUpdatedDate);
+
+                        if ($psnGameCount < $localGameCount) {
+                            if (!($trophyTitleCountRetry[$onlineId] ?? false)) {
+                                $trophyTitleCountRetry[$onlineId] = true;
+
+                                $this->setWaitingScanProgress(
+                                    (int) $worker['id'],
+                                    'Trophy title count lower than expected. Waiting 1 minute before retrying.'
+                                );
+
+                                sleep(60 * 1);
+                                $recheck = '';
+
+                                continue;
+                            }
+                        }
                         usort(
                             $trophyTitles,
                             function ($left, $right): int {
@@ -1478,11 +1498,32 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $query->execute();
                         $ourGameCount = $query->fetchColumn();
 
+                        $scanReachedEnd = $currentScanPosition === $totalGamesToProcess;
+                        $scanCompletedCleanly = $trophyTitleFetchCompleted
+                            && $scanReachedEnd
+                            && !$restartScan
+                            && $recheck === '';
+
                         $shouldDeleteMissingGames = $this->shouldDeleteMissingZeroPercentGames(
                             (int) $psnGameCount,
                             (int) $ourGameCount,
                             $scannedGames
                         );
+
+                        if (
+                            $shouldDeleteMissingGames
+                            && $psnGameCount < $ourGameCount
+                            && !$scanCompletedCleanly
+                        ) {
+                            $this->logger->log(sprintf(
+                                'Skipping deletion for %s (%d) because the scan did not complete cleanly (psn=%d, local=%d).',
+                                (string) $player['online_id'],
+                                (int) $user->accountId(),
+                                (int) $psnGameCount,
+                                (int) $ourGameCount
+                            ));
+                            $shouldDeleteMissingGames = false;
+                        }
 
                         if ($shouldDeleteMissingGames) {
                             if (!($missingGameDeletionCheck[$onlineId] ?? false)) {
@@ -1833,12 +1874,14 @@ class ThirtyMinuteCronJob implements CronJobInterface
 
                     unset($missingGameDeletionCheck[$onlineId]);
                     unset($missingTrophyTitleRetry[$onlineId]);
+                    unset($trophyTitleCountRetry[$onlineId]);
                 }
             } catch (NotFoundHttpException $exception) {
                 sleep(2);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
+                unset($trophyTitleCountRetry[$onlineId]);
 
                 continue;
             } catch (UnauthorizedHttpException $exception) {
@@ -1846,6 +1889,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
+                unset($trophyTitleCountRetry[$onlineId]);
 
                 continue;
             } finally {
