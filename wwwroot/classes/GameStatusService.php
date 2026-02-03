@@ -6,11 +6,8 @@ require_once __DIR__ . '/GameAvailabilityStatus.php';
 
 class GameStatusService
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function updateGameStatus(int $gameId, GameAvailabilityStatus $status): string

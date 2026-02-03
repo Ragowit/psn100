@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 final class Psn100Logger
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function log(string $message): void

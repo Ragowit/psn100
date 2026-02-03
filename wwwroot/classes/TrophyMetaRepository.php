@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 class TrophyMetaRepository
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function ensureExists(string $npCommunicationId, string $groupId, int $orderId): void

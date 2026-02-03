@@ -9,11 +9,8 @@ class GameLeaderboardService
 {
     public const PAGE_SIZE = 50;
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function getGame(int $gameId): ?GameDetails

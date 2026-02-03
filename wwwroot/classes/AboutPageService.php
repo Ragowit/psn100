@@ -10,13 +10,10 @@ class AboutPageService implements AboutPageDataProviderInterface
 {
     private const DEFAULT_SCAN_LOG_LIMIT = 10;
 
-    private PDO $database;
-    private Utility $utility;
-
-    public function __construct(PDO $database, Utility $utility)
-    {
-        $this->database = $database;
-        $this->utility = $utility;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly Utility $utility
+    ) {
     }
 
     #[\Override]

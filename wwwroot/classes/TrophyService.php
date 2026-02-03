@@ -8,11 +8,8 @@ require_once __DIR__ . '/TrophyAchiever.php';
 
 class TrophyService
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function getTrophyById(int $trophyId): ?TrophyDetails

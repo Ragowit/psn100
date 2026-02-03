@@ -9,14 +9,10 @@ class GameListService
 {
     private const PAGE_LIMIT = 40;
 
-    private PDO $database;
-
-    private SearchQueryHelper $searchQueryHelper;
-
-    public function __construct(PDO $database, SearchQueryHelper $searchQueryHelper)
-    {
-        $this->database = $database;
-        $this->searchQueryHelper = $searchQueryHelper;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly SearchQueryHelper $searchQueryHelper
+    ) {
     }
 
     public function resolvePlayer(?string $onlineId): ?string

@@ -18,11 +18,8 @@ class PlayerLogService
         'psvr2' => "tt.platform LIKE '%PSVR2%'",
     ];
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function countTrophies(int $accountId, PlayerLogFilter $filter): int
