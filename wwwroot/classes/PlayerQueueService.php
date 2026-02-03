@@ -148,40 +148,25 @@ class PlayerQueueService
 
     public function getQueuePosition(string $playerName): ?int
     {
-        $requestTimeQuery = $this->requireDatabase()->prepare(
-            <<<'SQL'
-            SELECT
-                request_time
-            FROM
-                player_queue
-            WHERE
-                online_id = :online_id
-            SQL
-        );
-        $requestTimeQuery->bindValue(':online_id', $playerName, PDO::PARAM_STR);
-        $requestTimeQuery->execute();
-
-        $requestTime = $requestTimeQuery->fetchColumn();
-
-        if ($requestTime === false) {
+        if ($playerName === '') {
             return null;
         }
 
         $positionQuery = $this->requireDatabase()->prepare(
             <<<'SQL'
             SELECT
-                COUNT(*)
-            FROM
-                player_queue pq
+                position
+            FROM (
+                SELECT
+                    online_id,
+                    ROW_NUMBER() OVER (ORDER BY request_time, online_id) AS position
+                FROM
+                    player_queue
+            ) ranked
             WHERE
-                pq.request_time < :request_time
-                OR (
-                    pq.request_time = :request_time
-                    AND pq.online_id <= :online_id
-                )
+                ranked.online_id = :online_id
             SQL
         );
-        $positionQuery->bindValue(':request_time', $requestTime, PDO::PARAM_STR);
         $positionQuery->bindValue(':online_id', $playerName, PDO::PARAM_STR);
         $positionQuery->execute();
 
