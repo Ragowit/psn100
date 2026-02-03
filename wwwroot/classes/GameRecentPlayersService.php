@@ -11,11 +11,8 @@ class GameRecentPlayersService
 {
     public const RECENT_PLAYERS_LIMIT = 10;
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function getGame(int $gameId): ?GameDetails

@@ -14,11 +14,8 @@ class HomepageContentService
     private const DEFAULT_NEW_DLCS_LIMIT = 8;
     private const DEFAULT_POPULAR_GAME_LIMIT = 10;
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     /**

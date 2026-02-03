@@ -8,11 +8,8 @@ class PlayerReportService
 {
     private const MAX_PENDING_REPORTS_PER_IP = 10;
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function submitReport(int $accountId, string $ipAddress, string $explanation): PlayerReportResult

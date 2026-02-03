@@ -11,14 +11,10 @@ require_once __DIR__ . '/PsnpPlusClient.php';
 
 class GameHeaderService
 {
-    private PDO $database;
-
-    private PsnpPlusClient $psnpPlusClient;
-
-    public function __construct(PDO $database, ?PsnpPlusClient $psnpPlusClient = null)
-    {
-        $this->database = $database;
-        $this->psnpPlusClient = $psnpPlusClient ?? new PsnpPlusClient();
+    public function __construct(
+        private readonly PDO $database,
+        private readonly PsnpPlusClient $psnpPlusClient = new PsnpPlusClient()
+    ) {
     }
 
     public function buildHeaderData(GameDetails $game): GameHeaderData
