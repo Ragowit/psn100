@@ -1511,9 +1511,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             $scannedGames
                         );
 
+                        $gameCountDelta = $psnGameCount - $ourGameCount;
+
                         if (
                             $shouldDeleteMissingGames
-                            && $psnGameCount < $ourGameCount
+                            && $gameCountDelta <= -50
                             && !$scanCompletedCleanly
                         ) {
                             $this->logger->log(sprintf(
