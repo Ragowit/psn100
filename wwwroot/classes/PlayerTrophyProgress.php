@@ -2,20 +2,13 @@
 
 declare(strict_types=1);
 
-final class PlayerTrophyProgress
+readonly class PlayerTrophyProgress
 {
-    private ?string $earnedDate;
-
-    private ?string $progress;
-
-    private bool $earned;
-
-    public function __construct(?string $earnedDate, ?string $progress, bool $earned)
-    {
-        $this->earnedDate = $earnedDate;
-        $this->progress = $progress;
-        $this->earned = $earned;
-    }
+    public function __construct(
+        private ?string $earnedDate,
+        private ?string $progress,
+        private bool $earned
+    ) {}
 
     /**
      * @param array<string, mixed> $data

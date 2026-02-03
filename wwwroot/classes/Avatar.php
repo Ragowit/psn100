@@ -2,17 +2,12 @@
 
 declare(strict_types=1);
 
-class Avatar
+readonly class Avatar
 {
-    private string $url;
-
-    private int $count;
-
-    public function __construct(string $url, int $count)
-    {
-        $this->url = $url;
-        $this->count = $count;
-    }
+    public function __construct(
+        private string $url,
+        private int $count
+    ) {}
 
     public function getUrl(): string
     {

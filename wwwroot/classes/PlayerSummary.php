@@ -2,23 +2,14 @@
 
 declare(strict_types=1);
 
-class PlayerSummary
+readonly class PlayerSummary
 {
-    private int $numberOfGames;
-
-    private int $numberOfCompletedGames;
-
-    private ?float $averageProgress;
-
-    private int $unearnedTrophies;
-
-    public function __construct(int $numberOfGames, int $numberOfCompletedGames, ?float $averageProgress, int $unearnedTrophies)
-    {
-        $this->numberOfGames = $numberOfGames;
-        $this->numberOfCompletedGames = $numberOfCompletedGames;
-        $this->averageProgress = $averageProgress;
-        $this->unearnedTrophies = $unearnedTrophies;
-    }
+    public function __construct(
+        private int $numberOfGames,
+        private int $numberOfCompletedGames,
+        private ?float $averageProgress,
+        private int $unearnedTrophies
+    ) {}
 
     public function getNumberOfGames(): int
     {
@@ -40,4 +31,3 @@ class PlayerSummary
         return $this->unearnedTrophies;
     }
 }
-
