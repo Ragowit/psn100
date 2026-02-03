@@ -831,8 +831,9 @@ class ThirtyMinuteCronJob implements CronJobInterface
                         $trophyTitleFetchCompleted = true;
                         $psnGameCount = count($trophyTitles);
                         $localGameCount = count($gameLastUpdatedDate);
+                        $gameCountDelta = $psnGameCount - $localGameCount;
 
-                        if ($psnGameCount < $localGameCount) {
+                        if ($gameCountDelta <= -50) {
                             if (!($trophyTitleCountRetry[$onlineId] ?? false)) {
                                 $trophyTitleCountRetry[$onlineId] = true;
 
