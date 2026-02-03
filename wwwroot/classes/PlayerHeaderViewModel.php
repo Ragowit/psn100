@@ -8,26 +8,16 @@ require_once __DIR__ . '/PlayerLeaderboardRank.php';
 require_once __DIR__ . '/PlayerLeaderboardRankChange.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
 
-class PlayerHeaderViewModel
+final readonly class PlayerHeaderViewModel
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private array $player;
-
-    private PlayerSummary $playerSummary;
-
-    private Utility $utility;
-
     /**
      * @param array<string, mixed> $player
      */
-    public function __construct(array $player, PlayerSummary $playerSummary, Utility $utility)
-    {
-        $this->player = $player;
-        $this->playerSummary = $playerSummary;
-        $this->utility = $utility;
-    }
+    public function __construct(
+        private array $player,
+        private PlayerSummary $playerSummary,
+        private Utility $utility
+    ) {}
 
     public function getAboutMe(): string
     {
@@ -85,30 +75,29 @@ class PlayerHeaderViewModel
      */
     public function getAlerts(): array
     {
-        $alerts = [];
         $status = $this->getStatus();
         $onlineId = $this->getOnlineId();
         $accountId = $this->getAccountId();
 
-        switch ($status) {
-            case 1:
-                $notice = PlayerStatusNotice::flagged($onlineId, (string) $accountId);
-                $alerts[] = $notice->getMessage();
-                break;
-            case 3:
-                $notice = PlayerStatusNotice::privateProfile();
-                $alerts[] = $notice->getMessage() . ' Make sure this player is no longer private, and then issue a new scan of the profile on the front page.';
-                break;
-            case 4:
-                $alerts[] = 'This player has not played a game in over a year and is considered inactive by this site. All data from this player will be excluded from site statistics and leaderboards.';
-                break;
-            case 5:
-                $alerts[] = 'This player seems to no longer be available from Sony, maybe removed for some reason. We will recheck after 24h and if this player is still not available it will be removed from here as well.';
-                break;
-            case 99:
-                $alerts[] = 'This is a new player currently being scanned for the first time. Rank and stats will be done once the scan is complete.';
-                break;
-        }
+        $alerts = match ($status) {
+            1 => [
+                PlayerStatusNotice::flagged($onlineId, (string) $accountId)->getMessage(),
+            ],
+            3 => [
+                PlayerStatusNotice::privateProfile()->getMessage()
+                . ' Make sure this player is no longer private, and then issue a new scan of the profile on the front page.',
+            ],
+            4 => [
+                'This player has not played a game in over a year and is considered inactive by this site. All data from this player will be excluded from site statistics and leaderboards.',
+            ],
+            5 => [
+                'This player seems to no longer be available from Sony, maybe removed for some reason. We will recheck after 24h and if this player is still not available it will be removed from here as well.',
+            ],
+            99 => [
+                'This is a new player currently being scanned for the first time. Rank and stats will be done once the scan is complete.',
+            ],
+            default => [],
+        };
 
         if ($status === 1 || $status === 3 || $status === 99) {
             return $alerts;
@@ -269,4 +258,3 @@ class PlayerHeaderViewModel
         return (int) ($this->player['status'] ?? 0) === 0;
     }
 }
-
