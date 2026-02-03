@@ -10,12 +10,7 @@ require_once __DIR__ . '/PlayerQueueResponseFactory.php';
 
 class PlayerQueueController
 {
-    private PlayerQueueHandler $handler;
-
-    public function __construct(PlayerQueueHandler $handler)
-    {
-        $this->handler = $handler;
-    }
+    public function __construct(private readonly PlayerQueueHandler $handler) {}
 
     public static function create(Database $database): self
     {

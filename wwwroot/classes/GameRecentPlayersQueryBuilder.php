@@ -37,21 +37,16 @@ final class GameRecentPlayersQueryBuilder
         LIMIT :limit
     SQL;
 
-    private GamePlayerFilter $filter;
-
-    private int $limit;
-
-    public function __construct(GamePlayerFilter $filter, int $limit)
-    {
-        $this->filter = $filter;
-        $this->limit = $limit;
-    }
+    public function __construct(
+        private readonly GamePlayerFilter $filter,
+        private readonly int $limit
+    ) {}
 
     public function prepare(\PDO $database, string $npCommunicationId): \PDOStatement
     {
         $query = $database->prepare($this->buildSql());
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':limit', $this->limit, PDO::PARAM_INT);
+        $query->bindValue(':np_communication_id', $npCommunicationId, \PDO::PARAM_STR);
+        $query->bindValue(':limit', $this->limit, \PDO::PARAM_INT);
         $this->bindFilterParameters($query);
 
         return $query;
@@ -86,11 +81,11 @@ final class GameRecentPlayersQueryBuilder
     private function bindFilterParameters(\PDOStatement $query): void
     {
         if ($this->filter->hasCountry()) {
-            $query->bindValue(':country', (string) $this->filter->getCountry(), PDO::PARAM_STR);
+            $query->bindValue(':country', (string) $this->filter->getCountry(), \PDO::PARAM_STR);
         }
 
         if ($this->filter->hasAvatar()) {
-            $query->bindValue(':avatar', (string) $this->filter->getAvatar(), PDO::PARAM_STR);
+            $query->bindValue(':avatar', (string) $this->filter->getAvatar(), \PDO::PARAM_STR);
         }
     }
 }

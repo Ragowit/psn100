@@ -4,88 +4,33 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Utility.php';
 
-final class TrophyDetails
+readonly class TrophyDetails
 {
     private const PLATFORM_SEPARATOR = ',';
     private const MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
     private const MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
     private const MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
 
-    private int $id;
-
-    private string $npCommunicationId;
-
-    private int $groupId;
-
-    private int $orderId;
-
-    private string $type;
-
-    private string $name;
-
-    private string $detail;
-
-    private string $iconFileName;
-
-    private float $rarityPercent;
-
-    private ?float $inGameRarityPercent;
-
-    private int $status;
-
-    private ?string $progressTargetValue;
-
-    private ?string $rewardName;
-
-    private ?string $rewardImageUrl;
-
-    private int $gameId;
-
-    private string $gameName;
-
-    private string $gameIconFileName;
-
-    private string $platform;
-
     public function __construct(
-        int $id,
-        string $npCommunicationId,
-        int $groupId,
-        int $orderId,
-        string $type,
-        string $name,
-        string $detail,
-        string $iconFileName,
-        float $rarityPercent,
-        ?float $inGameRarityPercent,
-        int $status,
-        ?string $progressTargetValue,
-        ?string $rewardName,
-        ?string $rewardImageUrl,
-        int $gameId,
-        string $gameName,
-        string $gameIconFileName,
-        string $platform
-    ) {
-        $this->id = $id;
-        $this->npCommunicationId = $npCommunicationId;
-        $this->groupId = $groupId;
-        $this->orderId = $orderId;
-        $this->type = $type;
-        $this->name = $name;
-        $this->detail = $detail;
-        $this->iconFileName = $iconFileName;
-        $this->rarityPercent = $rarityPercent;
-        $this->inGameRarityPercent = $inGameRarityPercent;
-        $this->status = $status;
-        $this->progressTargetValue = $progressTargetValue;
-        $this->rewardName = $rewardName;
-        $this->rewardImageUrl = $rewardImageUrl;
-        $this->gameId = $gameId;
-        $this->gameName = $gameName;
-        $this->gameIconFileName = $gameIconFileName;
-        $this->platform = $platform;
-    }
+        private int $id,
+        private string $npCommunicationId,
+        private int $groupId,
+        private int $orderId,
+        private string $type,
+        private string $name,
+        private string $detail,
+        private string $iconFileName,
+        private float $rarityPercent,
+        private ?float $inGameRarityPercent,
+        private int $status,
+        private ?string $progressTargetValue,
+        private ?string $rewardName,
+        private ?string $rewardImageUrl,
+        private int $gameId,
+        private string $gameName,
+        private string $gameIconFileName,
+        private string $platform
+    ) {}
 
     /**
      * @param array<string, mixed> $data

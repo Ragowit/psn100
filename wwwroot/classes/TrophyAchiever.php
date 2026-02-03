@@ -2,31 +2,15 @@
 
 declare(strict_types=1);
 
-final class TrophyAchiever
+readonly class TrophyAchiever
 {
-    private string $avatarUrl;
-
-    private string $onlineId;
-
-    private int $trophyCountNpwr;
-
-    private int $trophyCountSony;
-
-    private string $earnedDate;
-
     public function __construct(
-        string $avatarUrl,
-        string $onlineId,
-        int $trophyCountNpwr,
-        int $trophyCountSony,
-        string $earnedDate
-    ) {
-        $this->avatarUrl = $avatarUrl;
-        $this->onlineId = $onlineId;
-        $this->trophyCountNpwr = $trophyCountNpwr;
-        $this->trophyCountSony = $trophyCountSony;
-        $this->earnedDate = $earnedDate;
-    }
+        private string $avatarUrl,
+        private string $onlineId,
+        private int $trophyCountNpwr,
+        private int $trophyCountSony,
+        private string $earnedDate
+    ) {}
 
     /**
      * @param array<string, mixed> $data
