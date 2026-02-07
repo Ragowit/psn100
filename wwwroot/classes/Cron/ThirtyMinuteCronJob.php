@@ -1518,13 +1518,13 @@ class ThirtyMinuteCronJob implements CronJobInterface
                             && $gameCountDelta <= -50
                             && !$scanCompletedCleanly
                         ) {
-                            $this->logger->log(sprintf(
-                                'Skipping deletion for %s (%d) because the scan did not complete cleanly (psn=%d, local=%d).',
-                                (string) $player['online_id'],
-                                (int) $user->accountId(),
-                                (int) $psnGameCount,
-                                (int) $ourGameCount
-                            ));
+                            // $this->logger->log(sprintf(
+                            //     'Skipping deletion for %s (%d) because the scan did not complete cleanly (psn=%d, local=%d).',
+                            //     (string) $player['online_id'],
+                            //     (int) $user->accountId(),
+                            //     (int) $psnGameCount,
+                            //     (int) $ourGameCount
+                            // ));
                             $shouldDeleteMissingGames = false;
                         }
 
