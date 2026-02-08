@@ -119,11 +119,6 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     </select><br><br>
                     <input type="submit" value="Submit">
                 </form>
-
-                <p>
-                    Standard messages:<br>
-                    <?= htmlentities("This game is delisted (<a href=\"https://github.com/Ragowit/psn100/issues/\">source</a>). No trophies will be accounted for on any leaderboard."); ?><br>
-                </p>
             <?php } ?>
 
             <?php
