@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Utility.php';
 
-final class GameTrophyRow
+final readonly class GameTrophyRow
 {
     private const TROPHY_TYPE_COLORS = [
         'bronze' => '#c46438',

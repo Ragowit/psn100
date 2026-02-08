@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GamePlayerFilter.php';
 
-final class GameRecentPlayersQueryBuilder
+final readonly class GameRecentPlayersQueryBuilder
 {
     private const BASE_QUERY = <<<'SQL'
         SELECT
