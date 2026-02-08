@@ -12,7 +12,7 @@ class TrophyMetaRepository
     {
         $insertMeta = $this->database->prepare(
             <<<'SQL'
-                INSERT INTO trophy_meta (
+                INSERT IGNORE INTO trophy_meta (
                     trophy_id,
                     rarity_percent,
                     rarity_point,
@@ -31,11 +31,6 @@ class TrophyMetaRepository
                 WHERE trophy.np_communication_id = :np_communication_id
                   AND trophy.group_id = :group_id
                   AND trophy.order_id = :order_id
-                  AND NOT EXISTS (
-                    SELECT 1
-                    FROM trophy_meta
-                    WHERE trophy_meta.trophy_id = trophy.id
-                )
             SQL
         );
 
