@@ -47,6 +47,9 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         <?php
     }
 
+    $status = $game->getStatus();
+
+    $replacementText = null;
     if ($gameHeaderData->hasObsoleteReplacements()) {
         $replacementLinks = [];
         foreach ($gameHeaderData->getObsoleteReplacements() as $replacement) {
@@ -70,6 +73,32 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         } else {
             $replacementText = $replacementLinks[0];
         }
+    }
+
+    if ($status === 4) {
+        ?>
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.
+                <?php
+                if ($replacementText !== null) {
+                    ?>
+                    Please play <?= $replacementText; ?> instead.
+                    <?php
+                }
+                ?>
+            </div>
+        </div>
+        <?php
+    } elseif ($status === 1) {
+        ?>
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                This game is delisted, no trophies will be accounted for on any leaderboard.
+            </div>
+        </div>
+        <?php
+    } elseif ($gameHeaderData->hasObsoleteReplacements()) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
@@ -227,7 +256,6 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
 
                 <div class="text-center">
                     <?php
-                    $status = $game->getStatus();
                     $details = [];
 
                     if ($status === 0) {
