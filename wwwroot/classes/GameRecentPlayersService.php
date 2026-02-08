@@ -41,7 +41,8 @@ class GameRecentPlayersService
                 ttm.parent_np_communication_id,
                 ttm.region,
                 ttm.rarity_points,
-                ttm.in_game_rarity_points
+                ttm.in_game_rarity_points,
+                ttm.obsolete_ids
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
