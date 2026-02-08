@@ -274,11 +274,11 @@ SQL
                     owners,
                     difficulty,
                     message,
-                    status,
+                    CASE WHEN status = 2 THEN 0 ELSE status END,
                     recent_players,
                     owners_completed,
                     NULL,
-                    region,
+                    '',
                     rarity_points
                 FROM trophy_title_meta
                 WHERE np_communication_id = :child_np_communication_id
