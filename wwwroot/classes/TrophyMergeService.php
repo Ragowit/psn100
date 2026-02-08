@@ -479,37 +479,46 @@ SQL
                 earned
             )
             SELECT
-                :parent_np_communication_id,
-                :parent_group_id,
-                :parent_order_id,
-                child.account_id,
-                CASE
-                    WHEN existing.earned_date IS NULL THEN child.earned_date
-                    WHEN child.earned_date IS NULL THEN existing.earned_date
-                    WHEN child.earned_date < existing.earned_date THEN child.earned_date
-                    ELSE existing.earned_date
-                END AS earned_date,
-                CASE
-                    WHEN existing.progress IS NULL THEN child.progress
-                    WHEN child.progress IS NULL THEN existing.progress
-                    WHEN child.progress > existing.progress THEN child.progress
-                    ELSE existing.progress
-                END AS progress,
-                CASE
-                    WHEN child.earned = 1 THEN 1
-                    WHEN existing.earned = 1 THEN 1
-                    ELSE COALESCE(existing.earned, 0)
-                END AS earned
-            FROM
-                trophy_earned AS child
-            LEFT JOIN trophy_earned AS existing ON existing.np_communication_id = :parent_np_communication_id
-                AND existing.group_id = :parent_group_id
-                AND existing.order_id = :parent_order_id
-                AND existing.account_id = child.account_id
-            WHERE
-                child.np_communication_id = :child_np_communication_id
-                AND child.order_id = :child_order_id
-            AS new
+                new.np_communication_id,
+                new.group_id,
+                new.order_id,
+                new.account_id,
+                new.earned_date,
+                new.progress,
+                new.earned
+            FROM (
+                SELECT
+                    :parent_np_communication_id AS np_communication_id,
+                    :parent_group_id AS group_id,
+                    :parent_order_id AS order_id,
+                    child.account_id AS account_id,
+                    CASE
+                        WHEN existing.earned_date IS NULL THEN child.earned_date
+                        WHEN child.earned_date IS NULL THEN existing.earned_date
+                        WHEN child.earned_date < existing.earned_date THEN child.earned_date
+                        ELSE existing.earned_date
+                    END AS earned_date,
+                    CASE
+                        WHEN existing.progress IS NULL THEN child.progress
+                        WHEN child.progress IS NULL THEN existing.progress
+                        WHEN child.progress > existing.progress THEN child.progress
+                        ELSE existing.progress
+                    END AS progress,
+                    CASE
+                        WHEN child.earned = 1 THEN 1
+                        WHEN existing.earned = 1 THEN 1
+                        ELSE COALESCE(existing.earned, 0)
+                    END AS earned
+                FROM
+                    trophy_earned AS child
+                LEFT JOIN trophy_earned AS existing ON existing.np_communication_id = :parent_np_communication_id
+                    AND existing.group_id = :parent_group_id
+                    AND existing.order_id = :parent_order_id
+                    AND existing.account_id = child.account_id
+                WHERE
+                    child.np_communication_id = :child_np_communication_id
+                    AND child.order_id = :child_order_id
+            ) AS new
             ON DUPLICATE KEY
             UPDATE
                 earned_date = new.earned_date,
