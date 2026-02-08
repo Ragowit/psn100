@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 class PlayerRepository
 {
-    private \PDO $database;
-
-    public function __construct(\PDO $database)
-    {
-        $this->database = $database;
-    }
+    public function __construct(private readonly \PDO $database) {}
 
     public function findAccountIdByOnlineId(string $onlineId): ?int
     {
@@ -44,7 +39,7 @@ class PlayerRepository
         ');
         $query->bindValue(':account_id', $accountId, \PDO::PARAM_INT);
         $query->execute();
-        $player = $query->fetch();
+        $player = $query->fetch(\PDO::FETCH_ASSOC);
 
         return is_array($player) ? $player : null;
     }

@@ -23,19 +23,21 @@ final class SearchQueryHelper
         if ($variants === []) {
             $columns[] = '0 AS exact_match';
         } else {
-            $exactConditions = [];
-            foreach ($variants as $index => $_) {
-                $exactConditions[] = sprintf('%s = :search_fulltext_%d', $column, $index);
-            }
+            $exactConditions = $this->buildPlaceholderConditions(
+                $column,
+                $variants,
+                '%s = :search_fulltext_%d'
+            );
 
             $columns[] = sprintf('(%s) AS exact_match', implode(' OR ', $exactConditions));
         }
 
         if ($searchTerm !== '' && $variants !== []) {
-            $prefixConditions = [];
-            foreach ($variants as $index => $_) {
-                $prefixConditions[] = sprintf('%s LIKE :search_prefix_%d', $column, $index);
-            }
+            $prefixConditions = $this->buildPlaceholderConditions(
+                $column,
+                $variants,
+                '%s LIKE :search_prefix_%d'
+            );
 
             $columns[] = sprintf('(%s) AS prefix_match', implode(' OR ', $prefixConditions));
         } else {
@@ -45,10 +47,11 @@ final class SearchQueryHelper
         if ($variants === []) {
             $columns[] = sprintf('MATCH(%s) AGAINST (:search_fulltext_0) AS score', $column);
         } else {
-            $scoreExpressions = [];
-            foreach ($variants as $index => $_) {
-                $scoreExpressions[] = sprintf('MATCH(%s) AGAINST (:search_fulltext_%d)', $column, $index);
-            }
+            $scoreExpressions = $this->buildPlaceholderConditions(
+                $column,
+                $variants,
+                'MATCH(%s) AGAINST (:search_fulltext_%d)'
+            );
 
             if (count($scoreExpressions) === 1) {
                 $columns[] = sprintf('%s AS score', $scoreExpressions[0]);
@@ -80,18 +83,20 @@ final class SearchQueryHelper
             return $conditions;
         }
 
-        $matchConditions = [];
-        foreach ($variants as $index => $_) {
-            $matchConditions[] = sprintf('(MATCH(%s) AGAINST (:search_fulltext_%d)) > 0', $column, $index);
-        }
+        $matchConditions = $this->buildPlaceholderConditions(
+            $column,
+            $variants,
+            '(MATCH(%s) AGAINST (:search_fulltext_%d)) > 0'
+        );
 
         $matchClause = implode(' OR ', $matchConditions);
 
         if ($searchTerm !== '') {
-            $likeConditions = [];
-            foreach ($variants as $index => $_) {
-                $likeConditions[] = sprintf('%s LIKE :search_like_%d', $column, $index);
-            }
+            $likeConditions = $this->buildPlaceholderConditions(
+                $column,
+                $variants,
+                '%s LIKE :search_like_%d'
+            );
 
             $conditions[] = sprintf('((%s) OR (%s))', $matchClause, implode(' OR ', $likeConditions));
         } else {
@@ -140,6 +145,20 @@ final class SearchQueryHelper
     private function buildSearchPrefixParameter(string $search): string
     {
         return addcslashes($search, "\\%_") . '%';
+    }
+
+    /**
+     * @param list<string> $variants
+     * @return list<string>
+     */
+    private function buildPlaceholderConditions(string $column, array $variants, string $pattern): array
+    {
+        $indices = array_keys($variants);
+
+        return array_map(
+            static fn (int $index): string => sprintf($pattern, $column, $index),
+            $indices
+        );
     }
 
     /**
