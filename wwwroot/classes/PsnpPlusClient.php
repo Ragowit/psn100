@@ -196,7 +196,11 @@ class PsnpPlusClient
      */
     private function decodeList(string $json): array
     {
-        $decoded = json_decode($json, true);
+        try {
+            $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new RuntimeException('Invalid PSNP+ data received.', 0, $exception);
+        }
         if (!is_array($decoded) || !isset($decoded['list']) || !is_array($decoded['list'])) {
             throw new RuntimeException('Invalid PSNP+ data received.');
         }

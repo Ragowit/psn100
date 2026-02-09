@@ -18,7 +18,11 @@ final readonly class WorkerScanProgress
             return null;
         }
 
-        $decoded = json_decode($value, true);
+        try {
+            $decoded = json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return null;
+        }
 
         if (!is_array($decoded)) {
             return null;
@@ -32,23 +36,10 @@ final readonly class WorkerScanProgress
      */
     public static function fromArray(array $data): ?self
     {
-        $current = array_key_exists('current', $data) && is_numeric($data['current'])
-            ? max(0, (int) $data['current'])
-            : null;
-
-        $total = array_key_exists('total', $data) && is_numeric($data['total'])
-            ? max(0, (int) $data['total'])
-            : null;
-
-        $title = array_key_exists('title', $data) && is_string($data['title']) && $data['title'] !== ''
-            ? $data['title']
-            : null;
-
-        $npCommunicationId = array_key_exists('npCommunicationId', $data)
-            && is_string($data['npCommunicationId'])
-            && $data['npCommunicationId'] !== ''
-            ? $data['npCommunicationId']
-            : null;
+        $current = self::sanitizeInt($data['current'] ?? null);
+        $total = self::sanitizeInt($data['total'] ?? null);
+        $title = self::sanitizeString($data['title'] ?? null);
+        $npCommunicationId = self::sanitizeString($data['npCommunicationId'] ?? null);
 
         if ($current === null && $total === null && $title === null && $npCommunicationId === null) {
             return null;
@@ -105,5 +96,25 @@ final readonly class WorkerScanProgress
         }
 
         return round(($this->current / $this->total) * 100, 1);
+    }
+
+    private static function sanitizeInt(mixed $value): ?int
+    {
+        if (!is_numeric($value)) {
+            return null;
+        }
+
+        return max(0, (int) $value);
+    }
+
+    private static function sanitizeString(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }
