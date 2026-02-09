@@ -214,14 +214,14 @@ final class PsnPlayerLookupService
         }
 
         if (is_object($profile)) {
-            $encoded = json_encode($profile);
-
-            if ($encoded !== false) {
-                $decoded = json_decode($encoded, true);
+            try {
+                $encoded = json_encode($profile, JSON_THROW_ON_ERROR);
+                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
 
                 if (is_array($decoded)) {
                     return $decoded;
                 }
+            } catch (JsonException) {
             }
 
             return get_object_vars($profile);
