@@ -109,13 +109,11 @@ class PlayerLogService
             return '';
         }
 
-        $clauses = [];
-
-        foreach ($filter->getPlatforms() as $platform) {
-            if (isset(self::PLATFORM_FILTERS[$platform])) {
-                $clauses[] = self::PLATFORM_FILTERS[$platform];
-            }
-        }
+        $platforms = array_intersect($filter->getPlatforms(), array_keys(self::PLATFORM_FILTERS));
+        $clauses = array_map(
+            static fn(string $platform): string => self::PLATFORM_FILTERS[$platform],
+            $platforms
+        );
 
         if ($clauses === []) {
             return '';
@@ -126,14 +124,10 @@ class PlayerLogService
 
     private function buildOrderByClause(PlayerLogFilter $filter): string
     {
-        if ($filter->isSort(PlayerLogFilter::SORT_RARITY)) {
-            return PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date';
-        }
-
-        if ($filter->isSort(PlayerLogFilter::SORT_IN_GAME_RARITY)) {
-            return PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date';
-        }
-
-        return PHP_EOL . '            ORDER BY te.earned_date DESC';
+        return match ($filter->getSort()) {
+            PlayerLogFilter::SORT_RARITY => PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date',
+            PlayerLogFilter::SORT_IN_GAME_RARITY => PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date',
+            default => PHP_EOL . '            ORDER BY te.earned_date DESC',
+        };
     }
 }
