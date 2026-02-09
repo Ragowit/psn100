@@ -191,22 +191,13 @@ class GameListService
 
     private function buildConditions(GameListFilter $filter, bool $forCount): string
     {
-        $conditions = [];
-
-        switch ($filter->getSort()) {
-            case GameListFilter::SORT_COMPLETION:
-                $conditions[] = "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0";
-                break;
-            case GameListFilter::SORT_RARITY:
-                $conditions[] = 'ttm.status = 0';
-                break;
-            case GameListFilter::SORT_IN_GAME_RARITY:
-                $conditions[] = 'ttm.status = 0';
-                break;
-            default:
-                $conditions[] = 'ttm.status != 2';
-                break;
-        }
+        $conditions = [
+            match ($filter->getSort()) {
+                GameListFilter::SORT_COMPLETION => "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
+                GameListFilter::SORT_RARITY, GameListFilter::SORT_IN_GAME_RARITY => 'ttm.status = 0',
+                default => 'ttm.status != 2',
+            },
+        ];
 
         $conditions = $this->searchQueryHelper->appendFulltextCondition(
             $conditions,
@@ -245,17 +236,16 @@ class GameListService
             return null;
         }
 
-        $conditions = [];
+        $conditions = array_map(
+            static function (string $platform): string {
+                if ($platform === GameListFilter::PLATFORM_PSVR) {
+                    return "REGEXP_LIKE(tt.platform, '(^|,)PSVR(,|$)')";
+                }
 
-        foreach ($filter->getSelectedPlatforms() as $platform) {
-            if ($platform === GameListFilter::PLATFORM_PSVR) {
-                $conditions[] = "tt.platform LIKE '%PSVR'";
-                $conditions[] = "tt.platform LIKE '%PSVR,%'";
-                continue;
-            }
-
-            $conditions[] = sprintf("tt.platform LIKE '%%%s%%'", strtoupper($platform));
-        }
+                return sprintf("tt.platform LIKE '%%%s%%'", strtoupper($platform));
+            },
+            $filter->getSelectedPlatforms()
+        );
 
         if ($conditions === []) {
             return null;
