@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
-class PsnpPlusFixedGame
+readonly class PsnpPlusFixedGame
 {
-    private int $gameId;
-    private string $gameName;
     /**
      * @var int[]
      */
     private array $trophyIds;
 
-    public function __construct(int $gameId, string $gameName, array $trophyIds)
-    {
-        $this->gameId = $gameId;
-        $this->gameName = $gameName;
+    public function __construct(
+        private int $gameId,
+        private string $gameName,
+        array $trophyIds
+    ) {
         $this->trophyIds = array_map('intval', $trophyIds);
     }
 

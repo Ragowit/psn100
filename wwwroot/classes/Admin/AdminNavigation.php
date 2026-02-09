@@ -2,16 +2,10 @@
 
 declare(strict_types=1);
 
-class AdminNavigationItem
+readonly class AdminNavigationItem
 {
-    private string $label;
-
-    private string $href;
-
-    public function __construct(string $label, string $href)
+    public function __construct(private string $label, private string $href)
     {
-        $this->label = $label;
-        $this->href = $href;
     }
 
     public function getLabel(): string

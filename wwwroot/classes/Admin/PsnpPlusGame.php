@@ -2,18 +2,13 @@
 
 declare(strict_types=1);
 
-class PsnpPlusGame
+readonly class PsnpPlusGame
 {
-    private int $id;
-    private string $npCommunicationId;
-    private string $name;
-
-    public function __construct(int $id, string $npCommunicationId, string $name)
-    {
-        $this->id = $id;
-        $this->npCommunicationId = $npCommunicationId;
-        $this->name = $name;
-    }
+    public function __construct(
+        private int $id,
+        private string $npCommunicationId,
+        private string $name
+    ) {}
 
     public static function fromArray(array $row): self
     {

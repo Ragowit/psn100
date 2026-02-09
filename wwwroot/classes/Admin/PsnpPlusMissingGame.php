@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-class PsnpPlusMissingGame
+readonly class PsnpPlusMissingGame
 {
-    private int $psnprofilesId;
-
-    public function __construct(int $psnprofilesId)
+    public function __construct(private int $psnprofilesId)
     {
-        $this->psnprofilesId = $psnprofilesId;
     }
 
     public function getPsnprofilesId(): int

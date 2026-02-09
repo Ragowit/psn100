@@ -6,11 +6,8 @@ require_once __DIR__ . '/Avatar.php';
 
 class AvatarService
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function getTotalUniqueAvatarCount(): int
@@ -63,13 +60,12 @@ class AvatarService
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        $avatars = [];
-        foreach ($rows as $row) {
-            $avatarUrl = isset($row['avatar_url']) ? (string) $row['avatar_url'] : '';
-            $count = isset($row['count']) ? (int) $row['count'] : 0;
-            $avatars[] = new Avatar($avatarUrl, $count);
-        }
-
-        return $avatars;
+        return array_map(
+            static fn (array $row): Avatar => new Avatar(
+                (string) ($row['avatar_url'] ?? ''),
+                (int) ($row['count'] ?? 0)
+            ),
+            $rows
+        );
     }
 }

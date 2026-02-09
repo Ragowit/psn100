@@ -2,20 +2,13 @@
 
 declare(strict_types=1);
 
-final class PlayerPlatformFilterOption
+readonly final class PlayerPlatformFilterOption
 {
-    private string $key;
-
-    private string $label;
-
-    private bool $selected;
-
-    public function __construct(string $key, string $label, bool $selected)
-    {
-        $this->key = $key;
-        $this->label = $label;
-        $this->selected = $selected;
-    }
+    public function __construct(
+        private string $key,
+        private string $label,
+        private bool $selected
+    ) {}
 
     public function getInputName(): string
     {
@@ -38,12 +31,12 @@ final class PlayerPlatformFilterOption
     }
 }
 
-final class PlayerPlatformFilterOptions
+readonly final class PlayerPlatformFilterOptions
 {
     /**
      * @var array<string, string>
      */
-    private const PLATFORM_LABELS = [
+    private const array PLATFORM_LABELS = [
         'pc' => 'PC',
         'ps3' => 'PS3',
         'ps4' => 'PS4',
@@ -54,16 +47,10 @@ final class PlayerPlatformFilterOptions
     ];
 
     /**
-     * @var PlayerPlatformFilterOption[]
-     */
-    private array $options;
-
-    /**
      * @param PlayerPlatformFilterOption[] $options
      */
-    private function __construct(array $options)
+    private function __construct(private array $options)
     {
-        $this->options = $options;
     }
 
     /**
@@ -71,17 +58,16 @@ final class PlayerPlatformFilterOptions
      */
     public static function fromSelectionCallback(callable $selectionCallback): self
     {
-        $options = [];
-
-        foreach (self::PLATFORM_LABELS as $key => $label) {
-            $options[] = new PlayerPlatformFilterOption(
-                $key,
-                $label,
-                (bool) $selectionCallback($key)
-            );
-        }
-
-        return new self($options);
+        return new self(
+            array_map(
+                static fn (string $key): PlayerPlatformFilterOption => new PlayerPlatformFilterOption(
+                    $key,
+                    self::PLATFORM_LABELS[$key],
+                    (bool) $selectionCallback($key)
+                ),
+                array_keys(self::PLATFORM_LABELS)
+            )
+        );
     }
 
     /**
@@ -92,4 +78,3 @@ final class PlayerPlatformFilterOptions
         return $this->options;
     }
 }
-

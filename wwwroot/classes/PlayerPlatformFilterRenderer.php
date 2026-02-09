@@ -6,11 +6,8 @@ require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 
 final class PlayerPlatformFilterRenderer
 {
-    private string $buttonLabel;
-
-    public function __construct(string $buttonLabel = 'Filter')
+    public function __construct(private readonly string $buttonLabel = 'Filter')
     {
-        $this->buttonLabel = $buttonLabel;
     }
 
     public static function createDefault(): self
