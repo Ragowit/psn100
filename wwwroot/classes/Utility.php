@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 class Utility
 {
+    private const SLUG_TRANSLITERATOR_RULES = ':: Any-Latin;'
+        . ':: NFD;'
+        . ':: [:Nonspacing Mark:] Remove;'
+        . ':: NFC;'
+        . ':: [:Punctuation:] Remove;'
+        . ':: Lower();'
+        . '[:Separator:] > \'-\'';
+
     public function slugify(?string $text): string
     {
         $text = $text ?? '';
@@ -13,21 +21,9 @@ class Utility
             $normalizedWhitespace = $text;
         }
         $text = trim($normalizedWhitespace);
-        $text = str_replace('&', 'and', $text);
-        $text = str_replace('%', 'percent', $text);
-        $text = str_replace(' - ', ' ', $text);
+        $text = str_replace(['&', '%', ' - '], ['and', 'percent', ' '], $text);
 
-        $transliterator = class_exists('Transliterator')
-            ? \Transliterator::createFromRules(
-                ':: Any-Latin;'
-                . ':: NFD;'
-                . ':: [:Nonspacing Mark:] Remove;'
-                . ':: NFC;'
-                . ':: [:Punctuation:] Remove;'
-                . ':: Lower();'
-                . '[:Separator:] > \'-\''
-            )
-            : false;
+        $transliterator = self::getSlugTransliterator();
 
         if ($transliterator instanceof \Transliterator) {
             $slug = $transliterator->transliterate($text);
@@ -65,5 +61,25 @@ class Utility
         }
 
         return $countryCode;
+    }
+
+    private static function getSlugTransliterator(): ?\Transliterator
+    {
+        static $cached = null;
+        static $initialized = false;
+
+        if ($initialized) {
+            return $cached;
+        }
+
+        $initialized = true;
+
+        if (!class_exists('Transliterator')) {
+            return null;
+        }
+
+        $cached = \Transliterator::createFromRules(self::SLUG_TRANSLITERATOR_RULES);
+
+        return $cached instanceof \Transliterator ? $cached : null;
     }
 }

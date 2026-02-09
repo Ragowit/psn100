@@ -4,12 +4,26 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyRarity.php';
 
-class TrophyRarityFormatter
+final class TrophyRarityFormatter
 {
+    private const META_THRESHOLDS = [
+        ['max' => 0.02, 'label' => 'Legendary', 'class' => 'trophy-legendary'],
+        ['max' => 0.2, 'label' => 'Epic', 'class' => 'trophy-epic'],
+        ['max' => 2.0, 'label' => 'Rare', 'class' => 'trophy-rare'],
+        ['max' => 10.0, 'label' => 'Uncommon', 'class' => 'trophy-uncommon'],
+    ];
+
+    private const IN_GAME_THRESHOLDS = [
+        ['max' => 1.0, 'label' => 'Legendary', 'class' => 'trophy-legendary'],
+        ['max' => 5.0, 'label' => 'Epic', 'class' => 'trophy-epic'],
+        ['max' => 20.0, 'label' => 'Rare', 'class' => 'trophy-rare'],
+        ['max' => 60.0, 'label' => 'Uncommon', 'class' => 'trophy-uncommon'],
+    ];
+
     /**
      * @param float|int|string|null $rarityPercent
      */
-    public function format($rarityPercent, int $status = 0): TrophyRarity
+    public function format(float|int|string|null $rarityPercent, int $status = 0): TrophyRarity
     {
         return $this->formatMeta($rarityPercent, $status);
     }
@@ -17,73 +31,23 @@ class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
-    public function formatMeta($rarityPercent, int $status = 0): TrophyRarity
+    public function formatMeta(float|int|string|null $rarityPercent, int $status = 0): TrophyRarity
     {
-        $value = $this->toFloat($rarityPercent);
-        $percentageString = $this->normalizePercentage($rarityPercent, $value);
-
-        if ($status === 1) {
-            return new TrophyRarity($percentageString, 'Unobtainable', null, true);
-        }
-
-        if ($value !== null) {
-            if ($value <= 0.02) {
-                return new TrophyRarity($percentageString, 'Legendary', 'trophy-legendary', false);
-            }
-
-            if ($value <= 0.2) {
-                return new TrophyRarity($percentageString, 'Epic', 'trophy-epic', false);
-            }
-
-            if ($value <= 2) {
-                return new TrophyRarity($percentageString, 'Rare', 'trophy-rare', false);
-            }
-
-            if ($value <= 10) {
-                return new TrophyRarity($percentageString, 'Uncommon', 'trophy-uncommon', false);
-            }
-        }
-
-        return new TrophyRarity($percentageString, 'Common', 'trophy-common', false);
+        return $this->formatWithThresholds($rarityPercent, $status, self::META_THRESHOLDS);
     }
 
     /**
      * @param float|int|string|null $rarityPercent
      */
-    public function formatInGame($rarityPercent, int $status = 0): TrophyRarity
+    public function formatInGame(float|int|string|null $rarityPercent, int $status = 0): TrophyRarity
     {
-        $value = $this->toFloat($rarityPercent);
-        $percentageString = $this->normalizePercentage($rarityPercent, $value);
-
-        if ($status === 1) {
-            return new TrophyRarity($percentageString, 'Unobtainable', null, true);
-        }
-
-        if ($value !== null) {
-            if ($value <= 1) {
-                return new TrophyRarity($percentageString, 'Legendary', 'trophy-legendary', false);
-            }
-
-            if ($value <= 5) {
-                return new TrophyRarity($percentageString, 'Epic', 'trophy-epic', false);
-            }
-
-            if ($value <= 20) {
-                return new TrophyRarity($percentageString, 'Rare', 'trophy-rare', false);
-            }
-
-            if ($value <= 60) {
-                return new TrophyRarity($percentageString, 'Uncommon', 'trophy-uncommon', false);
-            }
-        }
-
-        return new TrophyRarity($percentageString, 'Common', 'trophy-common', false);
+        return $this->formatWithThresholds($rarityPercent, $status, self::IN_GAME_THRESHOLDS);
     }
 
     /**
      * @param float|int|string|null $rarityPercent
      */
-    private function normalizePercentage($rarityPercent, ?float $normalizedValue): ?string
+    private function normalizePercentage(float|int|string|null $rarityPercent, ?float $normalizedValue): ?string
     {
         if ($rarityPercent === null) {
             return null;
@@ -113,7 +77,7 @@ class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
-    private function toFloat($rarityPercent): ?float
+    private function toFloat(float|int|string|null $rarityPercent): ?float
     {
         if ($rarityPercent === null) {
             return null;
@@ -132,5 +96,37 @@ class TrophyRarityFormatter
         }
 
         return null;
+    }
+
+    /**
+     * @param float|int|string|null $rarityPercent
+     * @param array<int, array{max: float, label: string, class: string}> $thresholds
+     */
+    private function formatWithThresholds(
+        float|int|string|null $rarityPercent,
+        int $status,
+        array $thresholds
+    ): TrophyRarity {
+        $value = $this->toFloat($rarityPercent);
+        $percentageString = $this->normalizePercentage($rarityPercent, $value);
+
+        if ($status === 1) {
+            return new TrophyRarity($percentageString, 'Unobtainable', null, true);
+        }
+
+        if ($value !== null) {
+            foreach ($thresholds as $threshold) {
+                if ($value <= $threshold['max']) {
+                    return new TrophyRarity(
+                        $percentageString,
+                        $threshold['label'],
+                        $threshold['class'],
+                        false
+                    );
+                }
+            }
+        }
+
+        return new TrophyRarity($percentageString, 'Common', 'trophy-common', false);
     }
 }
