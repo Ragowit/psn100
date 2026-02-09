@@ -4,6 +4,32 @@ declare(strict_types=1);
 
 final class SearchQueryHelper
 {
+    private const ROMAN_MIN = 1;
+    private const ROMAN_MAX = 3999;
+    private const ROMAN_CONVERSION_MAP = [
+        'M' => 1000,
+        'CM' => 900,
+        'D' => 500,
+        'CD' => 400,
+        'C' => 100,
+        'XC' => 90,
+        'L' => 50,
+        'XL' => 40,
+        'X' => 10,
+        'IX' => 9,
+        'V' => 5,
+        'IV' => 4,
+        'I' => 1,
+    ];
+    private const ROMAN_VALUE_MAP = [
+        'M' => 1000,
+        'D' => 500,
+        'C' => 100,
+        'L' => 50,
+        'X' => 10,
+        'V' => 5,
+        'I' => 1,
+    ];
     /**
      * @param array<int, string> $columns
      * @return array<int, string>
@@ -178,7 +204,7 @@ final class SearchQueryHelper
             $variants[] = $numericVariant;
         }
 
-        return $variants;
+        return array_values(array_unique($variants));
     }
 
     private function replaceDigitsWithRomans(string $value): string
@@ -220,28 +246,12 @@ final class SearchQueryHelper
 
     private function convertIntToRoman(int $number): ?string
     {
-        if ($number <= 0 || $number >= 4000) {
+        if ($number < self::ROMAN_MIN || $number > self::ROMAN_MAX) {
             return null;
         }
 
-        $map = [
-            'M' => 1000,
-            'CM' => 900,
-            'D' => 500,
-            'CD' => 400,
-            'C' => 100,
-            'XC' => 90,
-            'L' => 50,
-            'XL' => 40,
-            'X' => 10,
-            'IX' => 9,
-            'V' => 5,
-            'IV' => 4,
-            'I' => 1,
-        ];
-
         $result = '';
-        foreach ($map as $roman => $value) {
+        foreach (self::ROMAN_CONVERSION_MAP as $roman => $value) {
             while ($number >= $value) {
                 $result .= $roman;
                 $number -= $value;
@@ -257,23 +267,13 @@ final class SearchQueryHelper
             return null;
         }
 
-        $map = [
-            'M' => 1000,
-            'D' => 500,
-            'C' => 100,
-            'L' => 50,
-            'X' => 10,
-            'V' => 5,
-            'I' => 1,
-        ];
-
         $length = strlen($roman);
         $total = 0;
         $previousValue = 0;
 
-        for ($i = $length - 1; $i >= 0; $i--) {
+        for ($i = $length - 1; $i >= 0; --$i) {
             $char = $roman[$i];
-            $value = $map[$char] ?? null;
+            $value = self::ROMAN_VALUE_MAP[$char] ?? null;
 
             if ($value === null) {
                 return null;
@@ -287,7 +287,7 @@ final class SearchQueryHelper
             }
         }
 
-        if ($total <= 0 || $total >= 4000) {
+        if ($total < self::ROMAN_MIN || $total > self::ROMAN_MAX) {
             return null;
         }
 
