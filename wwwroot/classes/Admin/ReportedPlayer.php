@@ -2,20 +2,13 @@
 
 declare(strict_types=1);
 
-class ReportedPlayer
+readonly class ReportedPlayer
 {
-    private int $reportId;
-
-    private string $onlineId;
-
-    private string $explanation;
-
-    public function __construct(int $reportId, string $onlineId, string $explanation)
-    {
-        $this->reportId = $reportId;
-        $this->onlineId = $onlineId;
-        $this->explanation = $explanation;
-    }
+    public function __construct(
+        private int $reportId,
+        private string $onlineId,
+        private string $explanation
+    ) {}
 
     public function getReportId(): int
     {
