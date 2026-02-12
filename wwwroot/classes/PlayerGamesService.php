@@ -8,7 +8,7 @@ require_once __DIR__ . '/SearchQueryHelper.php';
 
 class PlayerGamesService
 {
-    private const PLATFORM_CONDITIONS = [
+    private const array PLATFORM_CONDITIONS = [
         PlayerGamesFilter::PLATFORM_PC => "tt.platform LIKE '%PC%'",
         PlayerGamesFilter::PLATFORM_PS3 => "tt.platform LIKE '%PS3%'",
         PlayerGamesFilter::PLATFORM_PS4 => "tt.platform LIKE '%PS4%'",
@@ -18,15 +18,10 @@ class PlayerGamesService
         PlayerGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
     ];
 
-    private PDO $database;
-
-    private SearchQueryHelper $searchQueryHelper;
-
-    public function __construct(PDO $database, SearchQueryHelper $searchQueryHelper)
-    {
-        $this->database = $database;
-        $this->searchQueryHelper = $searchQueryHelper;
-    }
+    public function __construct(
+        private readonly PDO $database,
+        private readonly SearchQueryHelper $searchQueryHelper
+    ) {}
 
     public function countPlayerGames(int $accountId, PlayerGamesFilter $filter): int
     {
@@ -198,26 +193,24 @@ class PlayerGamesService
      */
     private function fetchCompletionLabels(int $accountId, array $rows): array
     {
-        $npCommunicationIds = [];
-        foreach ($rows as $row) {
-            if ((int) ($row['progress'] ?? 0) === 100) {
-                $npCommunicationId = (string) ($row['np_communication_id'] ?? '');
-                if ($npCommunicationId !== '') {
-                    $npCommunicationIds[$npCommunicationId] = $npCommunicationId;
-                }
-            }
-        }
+        $npCommunicationIds = array_values(array_unique(array_filter(
+            array_map(
+                static fn(array $row): ?string => (int) ($row['progress'] ?? 0) === 100
+                    ? (string) ($row['np_communication_id'] ?? '')
+                    : null,
+                $rows
+            ),
+            static fn(?string $value): bool => $value !== null && $value !== ''
+        )));
 
         if ($npCommunicationIds === []) {
             return [];
         }
 
-        $placeholders = [];
-        $index = 0;
-        foreach (array_values($npCommunicationIds) as $npCommunicationId) {
-            $placeholders[] = ':np_' . $index;
-            $index++;
-        }
+        $placeholders = array_map(
+            static fn(int $index): string => ':np_' . $index,
+            array_keys($npCommunicationIds)
+        );
 
         $sql = sprintf(
             'SELECT np_communication_id, MIN(earned_date) AS first_trophy, MAX(earned_date) AS last_trophy
@@ -232,10 +225,8 @@ class PlayerGamesService
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
 
-        $index = 0;
-        foreach (array_values($npCommunicationIds) as $npCommunicationId) {
+        foreach ($npCommunicationIds as $index => $npCommunicationId) {
             $statement->bindValue(':np_' . $index, $npCommunicationId, PDO::PARAM_STR);
-            $index++;
         }
 
         $statement->execute();
@@ -277,21 +268,17 @@ class PlayerGamesService
         $formatted = $interval->format('%y years, %m months, %d days, %h hours, %i minutes, %s seconds');
         $parts = explode(', ', $formatted);
 
-        $nonZeroParts = [];
-        foreach ($parts as $part) {
-            if ($part !== '' && $part[0] !== '0') {
-                $nonZeroParts[] = $part;
-            }
-        }
+        $nonZeroParts = array_values(array_filter(
+            $parts,
+            static fn(string $part): bool => $part !== '' && $part[0] !== '0'
+        ));
 
         if ($nonZeroParts === []) {
             return null;
         }
 
-        if (count($nonZeroParts) >= 2) {
-            return 'Completed in ' . $nonZeroParts[0] . ', ' . $nonZeroParts[1];
-        }
+        $summary = array_slice($nonZeroParts, 0, 2);
 
-        return 'Completed in ' . $nonZeroParts[0];
+        return 'Completed in ' . implode(', ', $summary);
     }
 }
