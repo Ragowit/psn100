@@ -88,10 +88,6 @@ class GameListService
 
         $games = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        if (!is_array($games)) {
-            return [];
-        }
-
         return array_map(
             static fn(array $row): GameListItem => GameListItem::fromArray($row),
             $games

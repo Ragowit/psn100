@@ -2,48 +2,29 @@
 
 declare(strict_types=1);
 
-final class PlayerLogEntry
+final readonly class PlayerLogEntry
 {
-    private int $trophyId;
-
-    private string $trophyType;
-
-    private string $trophyName;
-
-    private string $trophyDetail;
-
-    private string $trophyIcon;
-
-    private ?string $rarityPercent;
-
-    private ?string $inGameRarityPercent;
-
-    private int $trophyStatus;
-
-    private ?int $progressTargetValue;
-
-    private ?int $progress;
-
-    private bool $isEarned;
-
-    private ?string $rewardName;
-
-    private ?string $rewardImageUrl;
-
-    private int $gameId;
-
-    private string $gameName;
-
-    private int $gameStatus;
-
-    private string $gameIcon;
-
-    private string $platforms;
-
-    private string $earnedDate;
-
-    private function __construct()
-    {
+    public function __construct(
+        private int $trophyId,
+        private string $trophyType,
+        private string $trophyName,
+        private string $trophyDetail,
+        private string $trophyIcon,
+        private ?string $rarityPercent,
+        private ?string $inGameRarityPercent,
+        private int $trophyStatus,
+        private ?int $progressTargetValue,
+        private ?int $progress,
+        private bool $isEarned,
+        private ?string $rewardName,
+        private ?string $rewardImageUrl,
+        private int $gameId,
+        private string $gameName,
+        private int $gameStatus,
+        private string $gameIcon,
+        private string $platforms,
+        private string $earnedDate
+    ) {
     }
 
     /**
@@ -51,28 +32,27 @@ final class PlayerLogEntry
      */
     public static function fromArray(array $row): self
     {
-        $entry = new self();
-        $entry->trophyId = isset($row['trophy_id']) ? (int) $row['trophy_id'] : 0;
-        $entry->trophyType = (string) ($row['trophy_type'] ?? '');
-        $entry->trophyName = (string) ($row['trophy_name'] ?? '');
-        $entry->trophyDetail = (string) ($row['trophy_detail'] ?? '');
-        $entry->trophyIcon = (string) ($row['trophy_icon'] ?? '');
-        $entry->rarityPercent = self::toNullableString($row['rarity_percent'] ?? null);
-        $entry->inGameRarityPercent = self::toNullableString($row['in_game_rarity_percent'] ?? null);
-        $entry->trophyStatus = isset($row['trophy_status']) ? (int) $row['trophy_status'] : 0;
-        $entry->progressTargetValue = self::toNullableInt($row['progress_target_value'] ?? null);
-        $entry->progress = self::toNullableInt($row['progress'] ?? null);
-        $entry->isEarned = isset($row['earned']) ? ((int) $row['earned'] === 1) : false;
-        $entry->rewardName = self::toNullableString($row['reward_name'] ?? null);
-        $entry->rewardImageUrl = self::toNullableString($row['reward_image_url'] ?? null);
-        $entry->gameId = isset($row['game_id']) ? (int) $row['game_id'] : 0;
-        $entry->gameName = (string) ($row['game_name'] ?? '');
-        $entry->gameStatus = isset($row['game_status']) ? (int) $row['game_status'] : 0;
-        $entry->gameIcon = (string) ($row['game_icon'] ?? '');
-        $entry->platforms = (string) ($row['platform'] ?? '');
-        $entry->earnedDate = (string) ($row['earned_date'] ?? '');
-
-        return $entry;
+        return new self(
+            trophyId: isset($row['trophy_id']) ? (int) $row['trophy_id'] : 0,
+            trophyType: (string) ($row['trophy_type'] ?? ''),
+            trophyName: (string) ($row['trophy_name'] ?? ''),
+            trophyDetail: (string) ($row['trophy_detail'] ?? ''),
+            trophyIcon: (string) ($row['trophy_icon'] ?? ''),
+            rarityPercent: self::toNullableString($row['rarity_percent'] ?? null),
+            inGameRarityPercent: self::toNullableString($row['in_game_rarity_percent'] ?? null),
+            trophyStatus: isset($row['trophy_status']) ? (int) $row['trophy_status'] : 0,
+            progressTargetValue: self::toNullableInt($row['progress_target_value'] ?? null),
+            progress: self::toNullableInt($row['progress'] ?? null),
+            isEarned: isset($row['earned']) ? ((int) $row['earned'] === 1) : false,
+            rewardName: self::toNullableString($row['reward_name'] ?? null),
+            rewardImageUrl: self::toNullableString($row['reward_image_url'] ?? null),
+            gameId: isset($row['game_id']) ? (int) $row['game_id'] : 0,
+            gameName: (string) ($row['game_name'] ?? ''),
+            gameStatus: isset($row['game_status']) ? (int) $row['game_status'] : 0,
+            gameIcon: (string) ($row['game_icon'] ?? ''),
+            platforms: (string) ($row['platform'] ?? ''),
+            earnedDate: (string) ($row['earned_date'] ?? '')
+        );
     }
 
     public function getTrophyId(): int
