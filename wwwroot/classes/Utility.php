@@ -11,15 +11,14 @@ class Utility
         . ':: [:Punctuation:] Remove;'
         . ':: Lower();'
         . '[:Separator:] > \'-\'';
+    private static ?\Transliterator $slugTransliterator = null;
+    private static bool $slugTransliteratorInitialized = false;
 
     public function slugify(?string $text): string
     {
         $text = $text ?? '';
 
-        $normalizedWhitespace = preg_replace('/\s+/', ' ', $text);
-        if (!is_string($normalizedWhitespace)) {
-            $normalizedWhitespace = $text;
-        }
+        $normalizedWhitespace = preg_replace('/\s+/', ' ', $text) ?? $text;
         $text = trim($normalizedWhitespace);
         $text = str_replace(['&', '%', ' - '], ['and', 'percent', ' '], $text);
 
@@ -33,10 +32,7 @@ class Utility
         }
 
         $text = strtolower($text);
-        $slug = preg_replace('/[^a-z0-9]+/', '-', $text);
-        if (!is_string($slug)) {
-            $slug = $text;
-        }
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $text) ?? $text;
 
         return trim($slug, '-');
     }
@@ -65,21 +61,20 @@ class Utility
 
     private static function getSlugTransliterator(): ?\Transliterator
     {
-        static $cached = null;
-        static $initialized = false;
-
-        if ($initialized) {
-            return $cached;
+        if (self::$slugTransliteratorInitialized) {
+            return self::$slugTransliterator;
         }
 
-        $initialized = true;
+        self::$slugTransliteratorInitialized = true;
 
-        if (!class_exists('Transliterator')) {
+        if (!class_exists(\Transliterator::class)) {
             return null;
         }
 
-        $cached = \Transliterator::createFromRules(self::SLUG_TRANSLITERATOR_RULES);
+        $transliterator = \Transliterator::createFromRules(self::SLUG_TRANSLITERATOR_RULES);
 
-        return $cached instanceof \Transliterator ? $cached : null;
+        self::$slugTransliterator = $transliterator instanceof \Transliterator ? $transliterator : null;
+
+        return self::$slugTransliterator;
     }
 }

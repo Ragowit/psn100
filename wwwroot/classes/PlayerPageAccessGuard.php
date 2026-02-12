@@ -7,20 +7,12 @@ final class PlayerPageAccessGuard
     private const DEFAULT_REDIRECT_URL = '/player/';
     private const REDIRECT_STATUS_CODE = 303;
 
-    private ?int $accountId;
+    private function __construct(
+        private readonly ?int $accountId,
+        private readonly string $redirectUrl
+    ) {}
 
-    private string $redirectUrl;
-
-    private function __construct(?int $accountId, string $redirectUrl)
-    {
-        $this->accountId = $accountId;
-        $this->redirectUrl = $redirectUrl;
-    }
-
-    /**
-     * @param int|string|null $accountId
-     */
-    public static function fromAccountId($accountId, string $redirectUrl = self::DEFAULT_REDIRECT_URL): self
+    public static function fromAccountId(int|string|null $accountId, string $redirectUrl = self::DEFAULT_REDIRECT_URL): self
     {
         if ($accountId === null) {
             return new self(null, $redirectUrl);
