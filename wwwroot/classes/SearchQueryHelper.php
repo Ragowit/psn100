@@ -179,12 +179,13 @@ final class SearchQueryHelper
      */
     private function buildPlaceholderConditions(string $column, array $variants, string $pattern): array
     {
-        $indices = array_keys($variants);
+        $conditions = [];
 
-        return array_map(
-            static fn (int $index): string => sprintf($pattern, $column, $index),
-            $indices
-        );
+        foreach ($variants as $index => $_variant) {
+            $conditions[] = sprintf($pattern, $column, $index);
+        }
+
+        return $conditions;
     }
 
     /**
@@ -192,19 +193,19 @@ final class SearchQueryHelper
      */
     private function getSearchVariants(string $searchTerm): array
     {
-        $variants = [$searchTerm];
+        $variants = [$searchTerm => true];
 
         $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
         if ($romanVariant !== $searchTerm) {
-            $variants[] = $romanVariant;
+            $variants[$romanVariant] = true;
         }
 
         $numericVariant = $this->replaceRomansWithDigits($searchTerm);
-        if ($numericVariant !== $searchTerm && !in_array($numericVariant, $variants, true)) {
-            $variants[] = $numericVariant;
+        if ($numericVariant !== $searchTerm) {
+            $variants[$numericVariant] = true;
         }
 
-        return array_values(array_unique($variants));
+        return array_keys($variants);
     }
 
     private function replaceDigitsWithRomans(string $value): string
