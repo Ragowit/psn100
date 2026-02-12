@@ -92,8 +92,7 @@ class PlayerLogService
         $query->execute();
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
-
-        if (!is_array($rows) || $rows === []) {
+        if ($rows === []) {
             return [];
         }
 
