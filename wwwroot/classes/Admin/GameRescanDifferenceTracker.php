@@ -93,8 +93,10 @@ final class GameRescanDifferenceTracker
             return (string) $value;
         }
 
-        $encoded = json_encode($value, JSON_UNESCAPED_UNICODE);
-
-        return $encoded === false ? null : $encoded;
+        try {
+            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return null;
+        }
     }
 }

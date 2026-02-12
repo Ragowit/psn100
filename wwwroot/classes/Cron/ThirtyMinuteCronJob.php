@@ -14,48 +14,33 @@ use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
 use Tustin\PlayStation\Client;
 
-class ThirtyMinuteCronJob implements CronJobInterface
+final class ThirtyMinuteCronJob implements CronJobInterface
 {
-    private const TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
-    private const GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
-    private const TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
-    private const REWARD_ICON_DIRECTORY = '/home/psn100/public_html/img/reward/';
+    private const string TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
+    private const string GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
+    private const string TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
+    private const string REWARD_ICON_DIRECTORY = '/home/psn100/public_html/img/reward/';
 
-    private PDO $database;
+    private readonly TrophyMetaRepository $trophyMetaRepository;
 
-    private TrophyCalculator $trophyCalculator;
+    private readonly AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
 
-    private Psn100Logger $logger;
-
-    private TrophyHistoryRecorder $historyRecorder;
-
-    private int $workerId;
-
-    private TrophyMetaRepository $trophyMetaRepository;
-
-    private AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
-
-    private ImageHashCalculator $imageHashCalculator;
+    private readonly ImageHashCalculator $imageHashCalculator;
 
     public function __construct(
-        PDO $database,
-        TrophyCalculator $trophyCalculator,
-        Psn100Logger $logger,
-        TrophyHistoryRecorder $historyRecorder,
-        int $workerId,
+        private readonly PDO $database,
+        private readonly TrophyCalculator $trophyCalculator,
+        private readonly Psn100Logger $logger,
+        private readonly TrophyHistoryRecorder $historyRecorder,
+        private readonly int $workerId,
+        ?TrophyMetaRepository $trophyMetaRepository = null,
+        ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null
     )
     {
-        $this->database = $database;
-        $this->trophyCalculator = $trophyCalculator;
-        $this->logger = $logger;
-        $this->historyRecorder = $historyRecorder;
-        $this->workerId = $workerId;
-        $this->trophyMetaRepository = new TrophyMetaRepository($database);
-        $this->automaticTrophyTitleMergeService = new AutomaticTrophyTitleMergeService(
-            $database,
-            new TrophyMergeService($database)
-        );
+        $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
+        $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
+            ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
     }
 
@@ -77,15 +62,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
     {
         foreach ($trophyTitles as $index => $trophyTitle) {
             $npid = $trophyTitle->npCommunicationId();
-            $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
+            $sonyLastUpdatedDate = $this->parseDateTime($trophyTitle->lastUpdatedDateTime());
 
             if (!isset($gameLastUpdatedDate[$npid])) {
                 return (int) $index;
             }
 
-            $dbLastUpdatedDate = date_create($gameLastUpdatedDate[$npid]);
+            $dbLastUpdatedDate = $this->parseDateTime($gameLastUpdatedDate[$npid]);
 
-            if ($sonyLastUpdatedDate === false || $dbLastUpdatedDate === false) {
+            if ($sonyLastUpdatedDate === null || $dbLastUpdatedDate === null) {
                 if ($gameLastUpdatedDate[$npid] !== $trophyTitle->lastUpdatedDateTime()) {
                     return (int) $index;
                 }
@@ -125,12 +110,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
         if ($progress === null) {
             $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
         } else {
-            $encodedProgress = json_encode($progress, JSON_UNESCAPED_UNICODE);
-
-            if ($encodedProgress === false) {
-                $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
-            } else {
+            try {
+                $encodedProgress = json_encode($progress, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
                 $query->bindValue(':scan_progress', $encodedProgress, PDO::PARAM_STR);
+            } catch (JsonException) {
+                $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
             }
         }
 
@@ -172,11 +156,11 @@ class ThirtyMinuteCronJob implements CronJobInterface
         $query->execute();
         $accountId = $query->fetchColumn();
 
-        if ($accountId) {
+        if ($accountId !== false) {
             $query = $this->database->prepare('UPDATE player
                 SET `status` = 5, last_updated_date = NOW()
                 WHERE  account_id = :account_id ');
-            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', (int) $accountId, PDO::PARAM_INT);
             $query->execute();
         }
 
@@ -2163,14 +2147,15 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         if (is_object($profile)) {
-            $encoded = json_encode($profile);
-
-            if ($encoded !== false) {
-                $decoded = json_decode($encoded, true);
+            try {
+                $encoded = json_encode($profile, JSON_THROW_ON_ERROR);
+                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
 
                 if (is_array($decoded)) {
                     return $decoded;
                 }
+            } catch (JsonException) {
+                // Fall back to exposing public properties.
             }
 
             return get_object_vars($profile);
@@ -2408,7 +2393,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
             }
         }
 
-        if (substr($name, -2) === ' -') {
+        if (str_ends_with($name, ' -')) {
             $name = rtrim(substr($name, 0, -2));
         }
 
@@ -2417,7 +2402,7 @@ class ThirtyMinuteCronJob implements CronJobInterface
         if ($separatorPosition !== false) {
             $prefix = substr($name, 0, $separatorPosition);
 
-            if (strpos($prefix, ':') === false) {
+            if (!str_contains($prefix, ':')) {
                 $name = substr_replace($name, ': ', $separatorPosition, 3);
             }
         }
@@ -2429,6 +2414,19 @@ class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return trim($name);
+    }
+
+    private function parseDateTime(?string $value): ?DateTimeImmutable
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($value);
+        } catch (Exception) {
+            return null;
+        }
     }
 
     private function convertToApaTitleCase(string $title): string
