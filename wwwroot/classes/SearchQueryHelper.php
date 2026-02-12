@@ -193,19 +193,19 @@ final class SearchQueryHelper
      */
     private function getSearchVariants(string $searchTerm): array
     {
-        $variants = [$searchTerm => true];
+        $variants = [$searchTerm];
 
         $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
-        if ($romanVariant !== $searchTerm) {
-            $variants[$romanVariant] = true;
+        if ($romanVariant !== $searchTerm && !in_array($romanVariant, $variants, true)) {
+            $variants[] = $romanVariant;
         }
 
         $numericVariant = $this->replaceRomansWithDigits($searchTerm);
-        if ($numericVariant !== $searchTerm) {
-            $variants[$numericVariant] = true;
+        if ($numericVariant !== $searchTerm && !in_array($numericVariant, $variants, true)) {
+            $variants[] = $numericVariant;
         }
 
-        return array_keys($variants);
+        return $variants;
     }
 
     private function replaceDigitsWithRomans(string $value): string
