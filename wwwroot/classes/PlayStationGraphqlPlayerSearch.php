@@ -246,13 +246,11 @@ final class PlayStationGraphqlPlayerSearch
 
     private function encodeJson(array $value): string
     {
-        $encoded = json_encode($value);
-
-        if (!is_string($encoded)) {
+        try {
+            return json_encode($value, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
             throw new RuntimeException('Failed to encode GraphQL payload.');
         }
-
-        return $encoded;
     }
 
     /**
