@@ -1304,11 +1304,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 }
                             }
 
+                            $mergeParentsToRecompute = [];
                             if ($isNewTitle) {
-                                $mergeParents = $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
-                                foreach ($mergeParents as $mergeParent) {
-                                    $this->automaticTrophyTitleMergeService->recomputeMergeProgressByParent($mergeParent);
-                                }
+                                $mergeParentsToRecompute = $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
                             }
 
                             if ($newTrophies) {
@@ -1460,6 +1458,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             while ($row = $query->fetch()) {
                                 $this->trophyCalculator->recalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], (int) $user->accountId());
                                 $this->trophyCalculator->recalculateTrophyTitle($row["parent_np_communication_id"], $trophyTitle->lastUpdatedDateTime(), false, (int) $user->accountId(), true);
+                            }
+
+                            foreach ($mergeParentsToRecompute as $mergeParent) {
+                                $this->automaticTrophyTitleMergeService->recomputeMergeProgressByParent($mergeParent);
                             }
                         }
 
