@@ -6,7 +6,7 @@ require_once __DIR__ . '/PlayerGame.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 
-class PlayerGamesService
+final class PlayerGamesService
 {
     private const array PLATFORM_CONDITIONS = [
         PlayerGamesFilter::PLATFORM_PC => "tt.platform LIKE '%PC%'",
@@ -32,7 +32,7 @@ class PlayerGamesService
                 JOIN trophy_title_meta ttm USING (np_communication_id)
                 JOIN trophy_group_player tgp USING (account_id, np_communication_id)
             WHERE %s',
-            $this->buildWhereClause($filter, true)
+            $this->buildWhereClause($filter)
         );
 
         $statement = $this->database->prepare($sql);
@@ -85,7 +85,7 @@ class PlayerGamesService
             %s
             LIMIT :offset, :limit',
             implode(', ', $columns),
-            $this->buildWhereClause($filter, false),
+            $this->buildWhereClause($filter),
             $this->buildOrderByClause($filter)
         );
 
@@ -112,7 +112,7 @@ class PlayerGamesService
         return $games;
     }
 
-    private function buildWhereClause(PlayerGamesFilter $filter, bool $forCount): string
+    private function buildWhereClause(PlayerGamesFilter $filter): string
     {
         $conditions = [
             'ttm.status != 2',
@@ -193,15 +193,7 @@ class PlayerGamesService
      */
     private function fetchCompletionLabels(int $accountId, array $rows): array
     {
-        $npCommunicationIds = array_values(array_unique(array_filter(
-            array_map(
-                static fn(array $row): ?string => (int) ($row['progress'] ?? 0) === 100
-                    ? (string) ($row['np_communication_id'] ?? '')
-                    : null,
-                $rows
-            ),
-            static fn(?string $value): bool => $value !== null && $value !== ''
-        )));
+        $npCommunicationIds = $this->collectCompletedNpCommunicationIds($rows);
 
         if ($npCommunicationIds === []) {
             return [];
@@ -251,6 +243,30 @@ class PlayerGamesService
         return $labels;
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return list<string>
+     */
+    private function collectCompletedNpCommunicationIds(array $rows): array
+    {
+        $uniqueIds = [];
+
+        foreach ($rows as $row) {
+            if ((int) ($row['progress'] ?? 0) !== 100) {
+                continue;
+            }
+
+            $npCommunicationId = (string) ($row['np_communication_id'] ?? '');
+            if ($npCommunicationId === '') {
+                continue;
+            }
+
+            $uniqueIds[$npCommunicationId] = true;
+        }
+
+        return array_keys($uniqueIds);
+    }
+
     private function formatCompletionLabel(mixed $firstTrophy, mixed $lastTrophy): ?string
     {
         if (!is_string($firstTrophy) || $firstTrophy === '' || !is_string($lastTrophy) || $lastTrophy === '') {
@@ -260,7 +276,7 @@ class PlayerGamesService
         try {
             $start = new \DateTimeImmutable($firstTrophy);
             $end = new \DateTimeImmutable($lastTrophy);
-        } catch (\Exception) {
+        } catch (\DateMalformedStringException) {
             return null;
         }
 

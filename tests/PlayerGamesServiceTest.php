@@ -185,6 +185,33 @@ final class PlayerGamesServiceTest extends TestCase
         $this->assertSame('Completed in 4 days, 1 hours', $game->getCompletionDurationLabel());
     }
 
+    public function testGetPlayerGamesIgnoresInvalidCompletionDates(): void
+    {
+        $this->insertGame(
+            id: 11,
+            npCommunicationId: 'NPWR778',
+            name: 'Epsilon Game',
+            platform: 'PS5',
+            status: 0,
+            accountId: 8,
+            progress: 100,
+            baseProgress: 100
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_earned (account_id, np_communication_id, earned_date, earned) VALUES " .
+            " (8, 'NPWR778', 'not-a-date', 1)," .
+            " (8, 'NPWR778', 'still-not-a-date', 1)"
+        );
+
+        $filter = PlayerGamesFilter::fromArray([]);
+
+        $games = $this->service->getPlayerGames(8, $filter);
+
+        $this->assertCount(1, $games);
+        $this->assertSame(null, $games[0]->getCompletionDurationLabel());
+    }
+
     private function insertGame(
         int $id,
         string $npCommunicationId,
