@@ -21,8 +21,8 @@ class PlayerTimelineService
                     tt.id AS game_id,
                     tt.name,
                     ttp.progress,
-                    DATE(MIN(te.earned_date)) AS first_trophy,
-                    DATE(MAX(te.earned_date)) AS last_trophy
+                    DATE(COALESCE(MIN(te.earned_date), ttp.last_updated_date)) AS first_trophy,
+                    DATE(COALESCE(MAX(te.earned_date), ttp.last_updated_date)) AS last_trophy
                 FROM trophy_title_player ttp
                 JOIN trophy_earned te
                     ON te.np_communication_id = ttp.np_communication_id
