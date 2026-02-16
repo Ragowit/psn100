@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PaginationItem.php';
 
-final class Pagination
+final readonly class Pagination
 {
     private int $currentPage;
 
@@ -13,8 +13,7 @@ final class Pagination
     public function __construct(int $currentPage, int $totalPages)
     {
         $this->totalPages = max(1, $totalPages);
-        $normalizedCurrentPage = max(1, $currentPage);
-        $this->currentPage = min($normalizedCurrentPage, $this->totalPages);
+        $this->currentPage = min(max(1, $currentPage), $this->totalPages);
     }
 
     public static function create(int $currentPage, int $totalPages): self
@@ -71,4 +70,3 @@ final class Pagination
         return $items;
     }
 }
-
