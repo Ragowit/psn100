@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 class PlayerSummaryService
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function getSummary(int $accountId): PlayerSummary
@@ -31,15 +28,15 @@ class PlayerSummaryService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                COUNT(*)                                                   AS number_of_games,
-                SUM(CASE WHEN ttp.progress = 100 THEN 1 ELSE 0 END)       AS number_of_completed_games,
-                ROUND(AVG(ttp.progress), 2)                               AS average_progress,
-                SUM(
+                CAST(COUNT(*) AS UNSIGNED)                                  AS number_of_games,
+                CAST(SUM(ttp.progress = 100) AS UNSIGNED)                   AS number_of_completed_games,
+                ROUND(AVG(ttp.progress), 2)                                 AS average_progress,
+                CAST(SUM(
                     CASE WHEN tt.bronze > ttp.bronze THEN tt.bronze - ttp.bronze ELSE 0 END +
                     CASE WHEN tt.silver > ttp.silver THEN tt.silver - ttp.silver ELSE 0 END +
                     CASE WHEN tt.gold > ttp.gold THEN tt.gold - ttp.gold ELSE 0 END +
                     CASE WHEN tt.platinum > ttp.platinum THEN tt.platinum - ttp.platinum ELSE 0 END
-                )                                                         AS unearned_trophies
+                ) AS UNSIGNED)                                              AS unearned_trophies
             FROM
                 trophy_title_player ttp
                 INNER JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
@@ -53,8 +50,9 @@ class PlayerSummaryService
         $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
         $query->execute();
 
+        /** @var array{number_of_games?: int|string|null, number_of_completed_games?: int|string|null, average_progress?: float|string|null, unearned_trophies?: int|string|null}|false $row */
         $row = $query->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        if ($row === false) {
             return [
                 'number_of_games' => 0,
                 'number_of_completed_games' => 0,
@@ -64,28 +62,10 @@ class PlayerSummaryService
         }
 
         return [
-            'number_of_games' => $this->toInt($row['number_of_games'] ?? null),
-            'number_of_completed_games' => $this->toInt($row['number_of_completed_games'] ?? null),
-            'average_progress' => $this->toFloat($row['average_progress'] ?? null),
-            'unearned_trophies' => $this->toInt($row['unearned_trophies'] ?? null),
+            'number_of_games' => (int) ($row['number_of_games'] ?? 0),
+            'number_of_completed_games' => (int) ($row['number_of_completed_games'] ?? 0),
+            'average_progress' => isset($row['average_progress']) ? (float) $row['average_progress'] : null,
+            'unearned_trophies' => (int) ($row['unearned_trophies'] ?? 0),
         ];
-    }
-
-    private function toInt(mixed $value): int
-    {
-        if ($value === false || $value === null) {
-            return 0;
-        }
-
-        return (int) $value;
-    }
-
-    private function toFloat(mixed $value): ?float
-    {
-        if ($value === false || $value === null) {
-            return null;
-        }
-
-        return (float) $value;
     }
 }

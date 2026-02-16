@@ -7,11 +7,8 @@ class GameResetService
     private const ACTION_RESET = 0;
     private const ACTION_DELETE = 1;
 
-    private PDO $database;
-
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function process(int $gameId, int $action): string
@@ -127,7 +124,10 @@ class GameResetService
             $callback();
             $this->database->commit();
         } catch (Throwable $exception) {
-            $this->database->rollBack();
+            if ($this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+
             throw $exception;
         }
     }
