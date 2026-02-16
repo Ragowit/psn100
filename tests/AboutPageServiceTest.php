@@ -42,7 +42,7 @@ final class AboutPageServicePdoStub extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        if (str_contains($query, 'SUM(last_updated_date >= NOW() - INTERVAL 1 DAY)')) {
+        if (str_contains($query, 'SELECT COUNT(*)')) {
             return new class($this->scannedCount, $this->newCount) extends PDOStatement {
                 /** @var string|int */
                 private string|int $scannedCount;
