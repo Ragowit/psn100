@@ -19,19 +19,27 @@ class AboutPageService implements AboutPageDataProviderInterface
     #[\Override]
     public function getScanSummary(): AboutPageScanSummary
     {
-        $scannedQuery = $this->database->prepare(
-            'SELECT COUNT(*) FROM player WHERE last_updated_date >= NOW() - INTERVAL 1 DAY'
+        $summaryQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                (
+                    SELECT COUNT(*)
+                    FROM player
+                    WHERE last_updated_date >= NOW() - INTERVAL 1 DAY
+                ) AS scanned_players,
+                (
+                    SELECT COUNT(*)
+                    FROM player
+                    WHERE status = 0 AND rank_last_week = 0
+                ) AS new_players
+            SQL
         );
-        $scannedQuery->execute();
-
-        $newPlayersQuery = $this->database->prepare(
-            'SELECT COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0'
-        );
-        $newPlayersQuery->execute();
+        $summaryQuery->execute();
+        $summary = $summaryQuery->fetch(PDO::FETCH_ASSOC);
 
         return new AboutPageScanSummary(
-            $this->toInt($scannedQuery->fetchColumn()),
-            $this->toInt($newPlayersQuery->fetchColumn())
+            $this->toInt($summary['scanned_players'] ?? 0),
+            $this->toInt($summary['new_players'] ?? 0)
         );
     }
 
@@ -69,12 +77,13 @@ class AboutPageService implements AboutPageDataProviderInterface
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->execute();
 
-        $players = [];
-        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
-            $players[] = AboutPagePlayer::fromArray($row, $this->utility);
-        }
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return $players;
+        return array_map(
+            fn (array $row): AboutPagePlayer => AboutPagePlayer::fromArray($row, $this->utility),
+            $rows
+        );
     }
 
     private function toInt(mixed $value): int
