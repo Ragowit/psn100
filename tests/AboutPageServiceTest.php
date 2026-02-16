@@ -42,15 +42,22 @@ final class AboutPageServicePdoStub extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        if (str_contains($query, 'COUNT(*) FROM player WHERE last_updated_date >= NOW() - INTERVAL 1 DAY')) {
-            return new class($this->scannedCount) extends PDOStatement {
+        if (str_contains($query, 'SUM(last_updated_date >= NOW() - INTERVAL 1 DAY)')) {
+            return new class($this->scannedCount, $this->newCount) extends PDOStatement {
                 /** @var string|int */
-                private string|int $count;
+                private string|int $scannedCount;
 
-                /** @param string|int $count */
-                public function __construct(string|int $count)
+                /** @var string|int */
+                private string|int $newCount;
+
+                /**
+                 * @param string|int $scannedCount
+                 * @param string|int $newCount
+                 */
+                public function __construct(string|int $scannedCount, string|int $newCount)
                 {
-                    $this->count = $count;
+                    $this->scannedCount = $scannedCount;
+                    $this->newCount = $newCount;
                 }
 
                 public function execute(?array $params = null): bool
@@ -58,32 +65,15 @@ final class AboutPageServicePdoStub extends PDO
                     return true;
                 }
 
-                public function fetchColumn(int $column = 0): string|int|false
-                {
-                    return $this->count;
-                }
-            };
-        }
-
-        if (str_contains($query, 'COUNT(*) FROM player WHERE status = 0 AND rank_last_week = 0')) {
-            return new class($this->newCount) extends PDOStatement {
-                /** @var string|int */
-                private string|int $count;
-
-                /** @param string|int $count */
-                public function __construct(string|int $count)
-                {
-                    $this->count = $count;
-                }
-
-                public function execute(?array $params = null): bool
-                {
-                    return true;
-                }
-
-                public function fetchColumn(int $column = 0): string|int|false
-                {
-                    return $this->count;
+                public function fetch(
+                    int $mode = PDO::ATTR_DEFAULT_FETCH_MODE,
+                    int $cursorOrientation = PDO::FETCH_ORI_NEXT,
+                    int $cursorOffset = 0
+                ): mixed {
+                    return [
+                        'scanned_players' => $this->scannedCount,
+                        'new_players' => $this->newCount,
+                    ];
                 }
             };
         }
@@ -95,8 +85,6 @@ final class AboutPageServicePdoStub extends PDO
             private array $rows;
 
             private int $limit = PHP_INT_MAX;
-
-            private int $index = 0;
 
             /**
              * @param list<array<string, mixed>> $rows
@@ -119,24 +107,15 @@ final class AboutPageServicePdoStub extends PDO
 
             public function execute(?array $params = null): bool
             {
-                $this->index = 0;
-
                 return true;
             }
 
-            public function fetch(
-                int $mode = PDO::ATTR_DEFAULT_FETCH_MODE,
-                int $cursorOrientation = PDO::FETCH_ORI_NEXT,
-                int $cursorOffset = 0
-            ): mixed {
-                if ($this->index >= min($this->limit, count($this->rows))) {
-                    return false;
-                }
-
-                $row = $this->rows[$this->index];
-                $this->index++;
-
-                return $row;
+            /**
+             * @return list<array<string, mixed>>
+             */
+            public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+            {
+                return array_slice($this->rows, 0, $this->limit);
             }
         };
     }
