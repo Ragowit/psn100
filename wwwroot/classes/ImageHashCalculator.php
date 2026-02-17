@@ -37,16 +37,13 @@ final class ImageHashCalculator
                 return null;
             }
 
+            // Important: Make sure we are always working with TrueColor
             if (!$this->imageProcessor->isTrueColor($image)) {
                 $this->imageProcessor->convertPaletteToTrueColor($image);
             }
 
-            $hasTransparency = $this->hasTransparency($image, $width, $height);
-            $buffer = $this->buildPixelBuffer($image, $width, $height, $hasTransparency);
-
-            if ($buffer === '') {
-                return null;
-            }
+            // Always build the buffer with RGBA components to ensure consistent hashing
+            $buffer = $this->buildPixelBuffer($image, $width, $height);
 
             return md5($buffer);
         } finally {
@@ -54,27 +51,10 @@ final class ImageHashCalculator
         }
     }
 
-    private function hasTransparency(\GdImage $image, int $width, int $height): bool
-    {
-        for ($y = 0; $y < $height; $y++) {
-            for ($x = 0; $x < $width; $x++) {
-                $color = $this->imageProcessor->getColorAt($image, $x, $y);
-                $components = $this->imageProcessor->getColorComponents($image, $color);
-
-                if (($components['alpha'] ?? 0) > 0) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     private function buildPixelBuffer(
         \GdImage $image,
         int $width,
-        int $height,
-        bool $hasTransparency
+        int $height
     ): string {
         $buffer = '';
 
@@ -83,16 +63,20 @@ final class ImageHashCalculator
                 $color = $this->imageProcessor->getColorAt($image, $x, $y);
                 $components = $this->imageProcessor->getColorComponents($image, $color);
 
+                // R, G, B is added in sequence, and we always include the alpha component (even if it's 0) to maintain consistent buffer length
                 $buffer .= chr($components['red'] ?? 0);
                 $buffer .= chr($components['green'] ?? 0);
                 $buffer .= chr($components['blue'] ?? 0);
 
-                if ($hasTransparency) {
-                    $alpha = (int) round(($components['alpha'] ?? 0) * 255 / 127);
-                    $alpha = max(0, min(255, $alpha));
+                /**
+                 * Convert GD:s alpha (0-127, where 0 is invisible) to standard (0-255, where 255 is invisible).
+                 * We ALWAYS include this value to keep the same data length in the buffer.
+                 */
+                $alphaGD = $components['alpha'] ?? 0;
+                $alphaStandard = (int) round((127 - $alphaGD) * 255 / 127);
+                $alphaStandard = max(0, min(255, $alphaStandard));
 
-                    $buffer .= chr($alpha);
-                }
+                $buffer .= chr($alphaStandard);
             }
         }
 
