@@ -7,7 +7,7 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyMergeProgressListener.ph
 
 final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
 {
-    public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithoutCte(): void
+    public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithCtes(): void
     {
         $pdo = new RecordingPDO(2);
         $service = new TrophyMergeService($pdo);
@@ -22,24 +22,24 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
 
         $insertStatements = array_values(array_filter(
             $pdo->executedSql,
-            static fn (string $sql): bool => str_starts_with(ltrim($sql), 'INSERT INTO trophy_earned')
+            static fn (string $sql): bool => str_contains($sql, 'INSERT INTO trophy_earned')
         ));
 
         $this->assertCount(1, $insertStatements, 'Expected insert statement for merged trophies.');
 
         foreach ($insertStatements as $insertSql) {
-            $this->assertFalse(str_contains($insertSql, 'WITH'), 'Insert statement must not contain a CTE.');
+            $this->assertTrue(str_contains($insertSql, 'WITH merged_source AS'), 'Insert statement should use a CTE for shared merge source data.');
         }
 
         $updateStatements = array_values(array_filter(
             $pdo->executedSql,
-            static fn (string $sql): bool => str_starts_with(ltrim($sql), 'UPDATE trophy_earned')
+            static fn (string $sql): bool => str_contains($sql, 'UPDATE trophy_earned AS parent')
         ));
 
         $this->assertCount(1, $updateStatements, 'Expected update statement for merged trophies.');
 
         foreach ($updateStatements as $updateSql) {
-            $this->assertFalse(str_contains($updateSql, 'WITH'), 'Update statement must not contain a CTE.');
+            $this->assertTrue(str_contains($updateSql, 'WITH merged_source AS'), 'Update statement should use a CTE for shared merge source data.');
         }
 
         $expectedParameters = [':child_np_communication_id' => 'NP_CHILD'];
@@ -82,11 +82,11 @@ final class RecordingPDO extends PDO
             return new RecordingCountStatement($this->mergeRowCount);
         }
 
-        if (str_starts_with($normalized, 'INSERT INTO trophy_earned')) {
+        if (str_contains($normalized, 'INSERT INTO trophy_earned')) {
             return new RecordingInsertStatement($this);
         }
 
-        if (str_starts_with($normalized, 'UPDATE trophy_earned AS parent')) {
+        if (str_contains($normalized, 'UPDATE trophy_earned AS parent')) {
             return new RecordingUpdateStatement($this);
         }
 
