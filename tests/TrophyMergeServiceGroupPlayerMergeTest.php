@@ -39,6 +39,14 @@ final class TrophyMergeServiceGroupPlayerMergeTest extends TestCase
             str_contains($pdo->zeroProgressSql ?? '', 'IN (:child_np_0, :child_np_1)'),
             'Expected zero-progress insert to use all child placeholders.'
         );
+        $this->assertTrue(
+            str_contains($pdo->groupPlayerMergeSql ?? '', 'tg.max_score = 0'),
+            'Expected merge progress SQL to branch when a group has no obtainable points.'
+        );
+        $this->assertTrue(
+            str_contains($pdo->groupPlayerMergeSql ?? '', '100,'),
+            'Expected merge progress SQL to set 100% when a group has no obtainable points.'
+        );
     }
 }
 
@@ -51,6 +59,7 @@ final class RecordingGroupPlayerPDO extends PDO
     /** @var array<string, scalar|null> */
     public array $zeroProgressParameters = [];
     public ?string $zeroProgressSql = null;
+    public ?string $groupPlayerMergeSql = null;
 
     public function __construct(
         private string $childNpCommunicationId,
@@ -82,6 +91,8 @@ final class RecordingGroupPlayerPDO extends PDO
         }
 
         if (str_starts_with($normalized, 'INSERT INTO trophy_group_player')) {
+            $this->groupPlayerMergeSql = $trimmed;
+
             return new RecordingExecuteStatement();
         }
 

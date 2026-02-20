@@ -625,20 +625,24 @@ SQL
                         player.gold,
                         player.platinum,
                         IF(
-                            player.score = 0,
-                            0,
-                            IFNULL(
-                                GREATEST(
-                                    FLOOR(
-                                        IF(
-                                            (player.score / NULLIF(tg.max_score, 0)) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
-                                            99,
-                                            (player.score / NULLIF(tg.max_score, 0)) * 100
-                                        )
+                            tg.max_score = 0,
+                            100,
+                            IF(
+                                player.score = 0,
+                                0,
+                                IFNULL(
+                                    GREATEST(
+                                        FLOOR(
+                                            IF(
+                                                (player.score / tg.max_score) * 100 = 100 AND tg.platinum = 1 AND player.platinum = 0,
+                                                99,
+                                                (player.score / tg.max_score) * 100
+                                            )
+                                        ),
+                                        1
                                     ),
-                                    1
-                                ),
-                                0
+                                    0
+                                )
                             )
                         ) AS progress
                     FROM
@@ -807,7 +811,7 @@ SQL
                     player.gold,
                     player.platinum,
                     CASE
-                        WHEN :max_score = 0 THEN 0
+                        WHEN :max_score = 0 THEN 100
                         WHEN player.score = 0 THEN 0
                         ELSE IFNULL(
                             GREATEST(
