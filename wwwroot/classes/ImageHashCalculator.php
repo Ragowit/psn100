@@ -42,44 +42,20 @@ final class ImageHashCalculator
                 $this->imageProcessor->convertPaletteToTrueColor($image);
             }
 
-            // Always build the buffer with RGBA components to ensure consistent hashing
-            $buffer = $this->buildPixelBuffer($image, $width, $height);
+            $buffer = $this->getRawImageData($image);
 
-            return md5($buffer);
+            return $buffer ? md5($buffer) : null;
         } finally {
             $this->imageProcessor->destroyImage($image);
         }
     }
 
-    private function buildPixelBuffer(
-        \GdImage $image,
-        int $width,
-        int $height
-    ): string {
-        $buffer = '';
+    private function getRawImageData(\GdImage $image): ?string
+    {
+        ob_start();
+        $success = imagebmp($image, null, false);
+        $data = ob_get_clean();
 
-        for ($y = 0; $y < $height; $y++) {
-            for ($x = 0; $x < $width; $x++) {
-                $color = $this->imageProcessor->getColorAt($image, $x, $y);
-                $components = $this->imageProcessor->getColorComponents($image, $color);
-
-                // R, G, B is added in sequence, and we always include the alpha component (even if it's 0) to maintain consistent buffer length
-                $buffer .= chr($components['red'] ?? 0);
-                $buffer .= chr($components['green'] ?? 0);
-                $buffer .= chr($components['blue'] ?? 0);
-
-                /**
-                 * Convert GD:s alpha (0-127, where 0 is invisible) to standard (0-255, where 255 is invisible).
-                 * We ALWAYS include this value to keep the same data length in the buffer.
-                 */
-                $alphaGD = $components['alpha'] ?? 0;
-                $alphaStandard = (int) round((127 - $alphaGD) * 255 / 127);
-                $alphaStandard = max(0, min(255, $alphaStandard));
-
-                $buffer .= chr($alphaStandard);
-            }
-        }
-
-        return $buffer;
+        return $success ? $data : null;
     }
 }
