@@ -9,6 +9,7 @@ class PlayerQueueService
 {
     public const int MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
     public const int CHEATER_STATUS = 1;
+    private const string PLAYER_NAME_PATTERN = '/^[\\w\-]{3,16}$/';
 
     public function __construct(private readonly ?PDO $database = null)
     {
@@ -29,7 +30,7 @@ class PlayerQueueService
             return 0;
         }
 
-        $query = $this->requireDatabase()->prepare(
+        $count = $this->fetchSingleValue(
             <<<'SQL'
             SELECT
                 COUNT(*)
@@ -37,12 +38,11 @@ class PlayerQueueService
                 player_queue
             WHERE
                 ip_address = :ip_address
-            SQL
+            SQL,
+            [':ip_address' => [$ipAddress, PDO::PARAM_STR]]
         );
-        $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
-        $query->execute();
 
-        return (int) $query->fetchColumn();
+        return (int) ($count ?? 0);
     }
 
     public function hasReachedIpSubmissionLimit(string $ipAddress): bool
@@ -56,7 +56,7 @@ class PlayerQueueService
             return null;
         }
 
-        $query = $this->requireDatabase()->prepare(
+        $accountId = $this->fetchSingleValue(
             <<<'SQL'
             SELECT
                 account_id
@@ -65,40 +65,41 @@ class PlayerQueueService
             WHERE
                 online_id = :online_id
                 AND status = :status
-            SQL
+            SQL,
+            [
+                ':online_id' => [$playerName, PDO::PARAM_STR],
+                ':status' => [self::CHEATER_STATUS, PDO::PARAM_INT],
+            ]
         );
-        $query->bindValue(":online_id", $playerName, PDO::PARAM_STR);
-        $query->bindValue(":status", self::CHEATER_STATUS, PDO::PARAM_INT);
-        $query->execute();
-
-        $accountId = $query->fetchColumn();
 
         return $accountId === false ? null : (string) $accountId;
     }
 
     public function addPlayerToQueue(string $playerName, string $ipAddress): void
     {
-        $query = $this->requireDatabase()->prepare(
+        $query = $this->prepareAndBind(
             <<<'SQL'
             INSERT IGNORE INTO
                 player_queue (online_id, ip_address)
             VALUES
                 (:online_id, :ip_address)
-            SQL
+            SQL,
+            [
+                ':online_id' => [$playerName, PDO::PARAM_STR],
+                ':ip_address' => [$ipAddress, PDO::PARAM_STR],
+            ]
         );
-        $query->bindValue(":online_id", $playerName, PDO::PARAM_STR);
-        $query->bindValue(":ip_address", $ipAddress, PDO::PARAM_STR);
         $query->execute();
     }
 
     public function isValidPlayerName(string $playerName): bool
     {
-        return preg_match('/^[\\w\-]{3,16}$/', $playerName) === 1;
+        return preg_match(self::PLAYER_NAME_PATTERN, $playerName) === 1;
     }
 
     public function escapeHtml(string $value): string
     {
-        return htmlentities($value, ENT_QUOTES, 'UTF-8');
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     public function isPlayerBeingScanned(string $playerName): bool
@@ -115,7 +116,7 @@ class PlayerQueueService
             return null;
         }
 
-        $query = $this->requireDatabase()->prepare(
+        $row = $this->fetchAssoc(
             <<<'SQL'
             SELECT
                 scan_progress
@@ -123,12 +124,9 @@ class PlayerQueueService
                 setting
             WHERE
                 scanning = :online_id
-            SQL
+            SQL,
+            [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
-        $query->bindValue(":online_id", $playerName, PDO::PARAM_STR);
-        $query->execute();
-
-        $row = $query->fetch(PDO::FETCH_ASSOC);
 
         if (!is_array($row)) {
             return null;
@@ -152,25 +150,25 @@ class PlayerQueueService
             return null;
         }
 
-        $positionQuery = $this->requireDatabase()->prepare(
+        $position = $this->fetchSingleValue(
             <<<'SQL'
-            SELECT
-                position
-            FROM (
+            WITH ranked_queue AS (
                 SELECT
                     online_id,
                     ROW_NUMBER() OVER (ORDER BY request_time, online_id) AS position
                 FROM
                     player_queue
-            ) ranked
+            )
+            SELECT
+                position
+            FROM
+                ranked_queue
             WHERE
-                ranked.online_id = :online_id
-            SQL
+                online_id = :online_id
+            LIMIT 1
+            SQL,
+            [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
-        $positionQuery->bindValue(':online_id', $playerName, PDO::PARAM_STR);
-        $positionQuery->execute();
-
-        $position = $positionQuery->fetchColumn();
 
         return $position === false ? null : (int) $position;
     }
@@ -180,7 +178,7 @@ class PlayerQueueService
      */
     public function getPlayerStatusData(string $playerName): ?array
     {
-        $query = $this->requireDatabase()->prepare(
+        $result = $this->fetchAssoc(
             <<<'SQL'
             SELECT
                 account_id,
@@ -189,24 +187,17 @@ class PlayerQueueService
                 player
             WHERE
                 online_id = :online_id
-            SQL
+            SQL,
+            [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
-        $query->bindValue(":online_id", $playerName, PDO::PARAM_STR);
-        $query->execute();
-
-        $result = $query->fetch(PDO::FETCH_ASSOC);
 
         if (!is_array($result)) {
             return null;
         }
 
         return [
-            'account_id' => array_key_exists('account_id', $result) && $result['account_id'] !== null
-                ? (string) $result['account_id']
-                : null,
-            'status' => array_key_exists('status', $result) && $result['status'] !== null
-                ? (int) $result['status']
-                : null,
+            'account_id' => $this->toOptionalString($result, 'account_id'),
+            'status' => $this->toOptionalInt($result, 'status'),
         ];
     }
 
@@ -222,5 +213,67 @@ class PlayerQueueService
     public function isCheaterStatus(?int $status): bool
     {
         return $status === self::CHEATER_STATUS;
+    }
+
+    /**
+     * @param array<string, array{0: scalar|null, 1: int}> $bindings
+     */
+    private function prepareAndBind(string $sql, array $bindings): PDOStatement
+    {
+        $statement = $this->requireDatabase()->prepare($sql);
+
+        foreach ($bindings as $parameter => [$value, $type]) {
+            $statement->bindValue($parameter, $value, $type);
+        }
+
+        return $statement;
+    }
+
+    /**
+     * @param array<string, array{0: scalar|null, 1: int}> $bindings
+     * @return scalar|null|false
+     */
+    private function fetchSingleValue(string $sql, array $bindings): mixed
+    {
+        $statement = $this->prepareAndBind($sql, $bindings);
+        $statement->execute();
+
+        return $statement->fetchColumn();
+    }
+
+    /**
+     * @param array<string, array{0: scalar|null, 1: int}> $bindings
+     * @return array<string, mixed>|false
+     */
+    private function fetchAssoc(string $sql, array $bindings): array|false
+    {
+        $statement = $this->prepareAndBind($sql, $bindings);
+        $statement->execute();
+
+        return $statement->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function toOptionalString(array $row, string $key): ?string
+    {
+        if (!array_key_exists($key, $row) || $row[$key] === null) {
+            return null;
+        }
+
+        return (string) $row[$key];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function toOptionalInt(array $row, string $key): ?int
+    {
+        if (!array_key_exists($key, $row) || $row[$key] === null) {
+            return null;
+        }
+
+        return (int) $row[$key];
     }
 }
