@@ -1127,6 +1127,21 @@ SQL
 
         $insertMissingParentEarned = $this->database->prepare(
             <<<'SQL'
+            WITH merged_source AS (
+                SELECT
+                    tm.parent_np_communication_id,
+                    tm.parent_group_id,
+                    tm.parent_order_id,
+                    child.account_id,
+                    child.earned_date,
+                    child.progress,
+                    child.earned
+                FROM trophy_merge AS tm
+                JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                    AND child.group_id = tm.child_group_id
+                    AND child.order_id = tm.child_order_id
+                WHERE tm.child_np_communication_id = :child_np_communication_id
+            )
             INSERT INTO trophy_earned (
                 np_communication_id,
                 group_id,
@@ -1137,23 +1152,19 @@ SQL
                 earned
             )
             SELECT
-                tm.parent_np_communication_id,
-                tm.parent_group_id,
-                tm.parent_order_id,
-                child.account_id,
-                child.earned_date,
-                child.progress,
-                child.earned
-            FROM trophy_merge AS tm
-            JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
-                AND child.group_id = tm.child_group_id
-                AND child.order_id = tm.child_order_id
-            LEFT JOIN trophy_earned AS parent ON parent.np_communication_id = tm.parent_np_communication_id
-                AND parent.group_id = tm.parent_group_id
-                AND parent.order_id = tm.parent_order_id
-                AND parent.account_id = child.account_id
-            WHERE tm.child_np_communication_id = :child_np_communication_id
-              AND parent.account_id IS NULL
+                source.parent_np_communication_id,
+                source.parent_group_id,
+                source.parent_order_id,
+                source.account_id,
+                source.earned_date,
+                source.progress,
+                source.earned
+            FROM merged_source AS source
+            LEFT JOIN trophy_earned AS parent ON parent.np_communication_id = source.parent_np_communication_id
+                AND parent.group_id = source.parent_group_id
+                AND parent.order_id = source.parent_order_id
+                AND parent.account_id = source.account_id
+            WHERE parent.account_id IS NULL
 SQL
         );
         $insertMissingParentEarned->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
@@ -1161,32 +1172,43 @@ SQL
 
         $synchronizeExistingEarned = $this->database->prepare(
             <<<'SQL'
+            WITH merged_source AS (
+                SELECT
+                    tm.parent_np_communication_id,
+                    tm.parent_group_id,
+                    tm.parent_order_id,
+                    child.account_id,
+                    child.earned_date,
+                    child.progress,
+                    child.earned
+                FROM trophy_merge AS tm
+                JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                    AND child.group_id = tm.child_group_id
+                    AND child.order_id = tm.child_order_id
+                WHERE tm.child_np_communication_id = :child_np_communication_id
+            )
             UPDATE trophy_earned AS parent
-            JOIN trophy_merge AS tm ON tm.parent_np_communication_id = parent.np_communication_id
-                AND tm.parent_group_id = parent.group_id
-                AND tm.parent_order_id = parent.order_id
-            JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
-                AND child.group_id = tm.child_group_id
-                AND child.order_id = tm.child_order_id
-                AND child.account_id = parent.account_id
+            JOIN merged_source AS source ON source.parent_np_communication_id = parent.np_communication_id
+                AND source.parent_group_id = parent.group_id
+                AND source.parent_order_id = parent.order_id
+                AND source.account_id = parent.account_id
             SET
                 parent.earned_date = CASE
-                    WHEN parent.earned_date IS NULL THEN child.earned_date
-                    WHEN child.earned_date IS NULL THEN parent.earned_date
-                    WHEN child.earned_date < parent.earned_date THEN child.earned_date
+                    WHEN parent.earned_date IS NULL THEN source.earned_date
+                    WHEN source.earned_date IS NULL THEN parent.earned_date
+                    WHEN source.earned_date < parent.earned_date THEN source.earned_date
                     ELSE parent.earned_date
                 END,
                 parent.progress = CASE
-                    WHEN parent.progress IS NULL THEN child.progress
-                    WHEN child.progress IS NULL THEN parent.progress
-                    WHEN child.progress > parent.progress THEN child.progress
+                    WHEN parent.progress IS NULL THEN source.progress
+                    WHEN source.progress IS NULL THEN parent.progress
+                    WHEN source.progress > parent.progress THEN source.progress
                     ELSE parent.progress
                 END,
                 parent.earned = CASE
-                    WHEN child.earned = 1 THEN 1
+                    WHEN source.earned = 1 THEN 1
                     ELSE parent.earned
                 END
-            WHERE tm.child_np_communication_id = :child_np_communication_id
 SQL
         );
         $synchronizeExistingEarned->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
