@@ -203,14 +203,13 @@ final class TrophyCalculator
         if ($newTrophies) {
             $select = $this->database->prepare(
                 'SELECT account_id,
-                    SUM(bronze) AS bronze,
-                    SUM(silver) AS silver,
-                    SUM(gold) AS gold,
-                    SUM(platinum) AS platinum
-                FROM trophy_group_player
+                    bronze,
+                    silver,
+                    gold,
+                    platinum
+                FROM trophy_title_player
                 WHERE np_communication_id = :np_communication_id
-                    AND account_id != :account_id
-                GROUP BY account_id'
+                    AND account_id != :account_id'
             );
             $select->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
             $select->bindValue(':account_id', $accountId, PDO::PARAM_INT);
