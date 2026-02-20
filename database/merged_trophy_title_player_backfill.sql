@@ -63,7 +63,7 @@ FROM (
         ps.gold,
         ps.platinum,
         CASE
-            WHEN ti.max_score = 0 THEN 0
+            WHEN ti.max_score = 0 THEN 100
             WHEN ps.score = 0 THEN 0
             ELSE IFNULL(
                 GREATEST(
