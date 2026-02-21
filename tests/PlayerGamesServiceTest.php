@@ -185,16 +185,16 @@ final class PlayerGamesServiceTest extends TestCase
         $this->assertSame('Completed in 4 days, 1 hours', $game->getCompletionDurationLabel());
     }
 
-
-    public function testFormatCompletionLabelFromSecondsBuildsCompactSummary(): void
+    public function testFormatCompletionLabelIncludesCalendarUnits(): void
     {
-        $method = new ReflectionMethod(PlayerGamesService::class, 'formatCompletionLabelFromSeconds');
+        $method = new ReflectionMethod(PlayerGamesService::class, 'formatCompletionLabel');
         $method->setAccessible(true);
 
-        $label = $method->invoke($this->service, 90061);
+        $label = $method->invoke($this->service, '2024-01-01 00:00:00', '2025-03-05 06:07:08');
 
-        $this->assertSame('Completed in 1 days, 1 hours', $label);
+        $this->assertSame('Completed in 1 years, 2 months', $label);
     }
+
 
     public function testGetPlayerGamesIgnoresInvalidCompletionDates(): void
     {

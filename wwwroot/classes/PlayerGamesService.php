@@ -225,6 +225,8 @@ final class PlayerGamesService
             'WITH completion_window AS (
                 SELECT
                     np_communication_id,
+                    MIN(earned_date) AS first_trophy,
+                    MAX(earned_date) AS last_trophy,
                     TIMESTAMPDIFF(SECOND, MIN(earned_date), MAX(earned_date)) AS completion_seconds
                 FROM trophy_earned
                 WHERE account_id = :account_id
@@ -232,7 +234,7 @@ final class PlayerGamesService
                     AND np_communication_id IN (%s)
                 GROUP BY np_communication_id
             )
-            SELECT np_communication_id, completion_seconds
+            SELECT np_communication_id, first_trophy, last_trophy
             FROM completion_window
             WHERE completion_seconds > 0',
             implode(', ', $placeholders)
@@ -254,12 +256,10 @@ final class PlayerGamesService
         $labels = [];
         foreach ($completionRows as $completionRow) {
             $npCommunicationId = (string) ($completionRow['np_communication_id'] ?? '');
-            $seconds = $completionRow['completion_seconds'] ?? null;
-            if (!is_numeric($seconds)) {
-                continue;
-            }
-
-            $label = $this->formatCompletionLabelFromSeconds((int) $seconds);
+            $label = $this->formatCompletionLabel(
+                $completionRow['first_trophy'] ?? null,
+                $completionRow['last_trophy'] ?? null
+            );
             if ($npCommunicationId !== '' && $label !== null) {
                 $labels[$npCommunicationId] = $label;
             }
@@ -340,45 +340,6 @@ final class PlayerGamesService
         }
 
         return array_keys($uniqueIds);
-    }
-
-
-    private function formatCompletionLabelFromSeconds(int $seconds): ?string
-    {
-        if ($seconds <= 0) {
-            return null;
-        }
-
-        $units = [
-            'days' => 86400,
-            'hours' => 3600,
-            'minutes' => 60,
-            'seconds' => 1,
-        ];
-
-        $parts = [];
-        foreach ($units as $label => $unitSeconds) {
-            if ($seconds < $unitSeconds) {
-                continue;
-            }
-
-            $value = intdiv($seconds, $unitSeconds);
-            $seconds %= $unitSeconds;
-            if ($value <= 0) {
-                continue;
-            }
-
-            $parts[] = sprintf('%d %s', $value, $label);
-            if (count($parts) === 2) {
-                break;
-            }
-        }
-
-        if ($parts === []) {
-            return null;
-        }
-
-        return 'Completed in ' . implode(', ', $parts);
     }
 
 
