@@ -18,10 +18,14 @@ final class PlayerGamesService
         PlayerGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
     ];
 
+    private readonly string $databaseDriver;
+
     public function __construct(
         private readonly PDO $database,
         private readonly SearchQueryHelper $searchQueryHelper
-    ) {}
+    ) {
+        $this->databaseDriver = (string) $this->database->getAttribute(PDO::ATTR_DRIVER_NAME);
+    }
 
     public function countPlayerGames(int $accountId, PlayerGamesFilter $filter): int
     {
@@ -199,6 +203,77 @@ final class PlayerGamesService
             return [];
         }
 
+        if ($this->databaseDriver === 'mysql') {
+            return $this->fetchCompletionLabelsFromMySql($accountId, $npCommunicationIds);
+        }
+
+        return $this->fetchCompletionLabelsWithDateRange($accountId, $npCommunicationIds);
+    }
+
+    /**
+     * @param list<string> $npCommunicationIds
+     * @return array<string, string>
+     */
+    private function fetchCompletionLabelsFromMySql(int $accountId, array $npCommunicationIds): array
+    {
+        $placeholders = array_map(
+            static fn(int $index): string => ':np_' . $index,
+            array_keys($npCommunicationIds)
+        );
+
+        $sql = sprintf(
+            'WITH completion_window AS (
+                SELECT
+                    np_communication_id,
+                    MIN(earned_date) AS first_trophy,
+                    MAX(earned_date) AS last_trophy,
+                    TIMESTAMPDIFF(SECOND, MIN(earned_date), MAX(earned_date)) AS completion_seconds
+                FROM trophy_earned
+                WHERE account_id = :account_id
+                    AND earned = 1
+                    AND np_communication_id IN (%s)
+                GROUP BY np_communication_id
+            )
+            SELECT np_communication_id, first_trophy, last_trophy
+            FROM completion_window
+            WHERE completion_seconds > 0',
+            implode(', ', $placeholders)
+        );
+
+        $statement = $this->database->prepare($sql);
+        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+
+        foreach ($npCommunicationIds as $index => $npCommunicationId) {
+            $statement->bindValue(':np_' . $index, $npCommunicationId, PDO::PARAM_STR);
+        }
+
+        $statement->execute();
+        $completionRows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($completionRows)) {
+            return [];
+        }
+
+        $labels = [];
+        foreach ($completionRows as $completionRow) {
+            $npCommunicationId = (string) ($completionRow['np_communication_id'] ?? '');
+            $label = $this->formatCompletionLabel(
+                $completionRow['first_trophy'] ?? null,
+                $completionRow['last_trophy'] ?? null
+            );
+            if ($npCommunicationId !== '' && $label !== null) {
+                $labels[$npCommunicationId] = $label;
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * @param list<string> $npCommunicationIds
+     * @return array<string, string>
+     */
+    private function fetchCompletionLabelsWithDateRange(int $accountId, array $npCommunicationIds): array
+    {
         $placeholders = array_map(
             static fn(int $index): string => ':np_' . $index,
             array_keys($npCommunicationIds)
@@ -266,6 +341,7 @@ final class PlayerGamesService
 
         return array_keys($uniqueIds);
     }
+
 
     private function formatCompletionLabel(mixed $firstTrophy, mixed $lastTrophy): ?string
     {
