@@ -37,14 +37,14 @@ final class CronJobRunner
         $this->applyIniSetting('max_execution_time', '0');
         $this->applyIniSetting('mysql.connect_timeout', '0');
 
-        @set_time_limit(0);
+        set_time_limit(0);
 
         $this->environmentConfigured = true;
     }
 
     private function applyIniSetting(string $option, string $value): void
     {
-        @ini_set($option, $value);
+        ini_set($option, $value);
     }
 
     private function increaseMemoryLimitIfNeeded(): void
@@ -72,7 +72,7 @@ final class CronJobRunner
             return null;
         }
 
-        $parsed = @ini_parse_quantity($trimmed);
+        $parsed = ini_parse_quantity($trimmed);
 
         return is_int($parsed) && $parsed >= 0 ? $parsed : null;
     }
