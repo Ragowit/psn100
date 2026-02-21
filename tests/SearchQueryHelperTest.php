@@ -20,7 +20,7 @@ final class SearchQueryHelperTest extends TestCase
         $this->assertSame(
             [
                 '(games.name = :search_fulltext_0 OR games.name = :search_fulltext_1) AS exact_match',
-                '(games.name LIKE :search_prefix_0 OR games.name LIKE :search_prefix_1) AS prefix_match',
+                '((MATCH(games.name) AGAINST (:search_boolean_0 IN BOOLEAN MODE)) > 0 OR (MATCH(games.name) AGAINST (:search_boolean_1 IN BOOLEAN MODE)) > 0) AS prefix_match',
                 'GREATEST(MATCH(games.name) AGAINST (:search_fulltext_0), MATCH(games.name) AGAINST (:search_fulltext_1)) AS score',
             ],
             $columns
@@ -55,7 +55,7 @@ final class SearchQueryHelperTest extends TestCase
 
         $this->assertSame(
             [
-                '(games.name = :search_fulltext_0) AS exact_match',
+                '0 AS exact_match',
                 '0 AS prefix_match',
                 'MATCH(games.name) AGAINST (:search_fulltext_0) AS score',
             ],
@@ -77,7 +77,7 @@ final class SearchQueryHelperTest extends TestCase
         $this->assertSame(1, count($conditions));
 
         $this->assertSame(
-            '(((MATCH(games.name) AGAINST (:search_fulltext_0)) > 0 OR (MATCH(games.name) AGAINST (:search_fulltext_1)) > 0) OR (games.name LIKE :search_like_0 OR games.name LIKE :search_like_1))',
+            '(((MATCH(games.name) AGAINST (:search_fulltext_0)) > 0 OR (MATCH(games.name) AGAINST (:search_fulltext_1)) > 0) OR ((MATCH(games.name) AGAINST (:search_boolean_0 IN BOOLEAN MODE)) > 0 OR (MATCH(games.name) AGAINST (:search_boolean_1 IN BOOLEAN MODE)) > 0))',
             $conditions[0]
         );
     }

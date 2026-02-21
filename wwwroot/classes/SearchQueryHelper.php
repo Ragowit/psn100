@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 final class SearchQueryHelper
 {
+    private const string BOOLEAN_MODE_SUFFIX = '*';
     private const ROMAN_MIN = 1;
     private const ROMAN_MAX = 3999;
     private const ROMAN_CONVERSION_MAP = [
@@ -62,7 +63,7 @@ final class SearchQueryHelper
             $prefixConditions = $this->buildPlaceholderConditions(
                 $column,
                 $variants,
-                '%s LIKE :search_prefix_%d'
+                '(MATCH(%s) AGAINST (:search_boolean_%d IN BOOLEAN MODE)) > 0'
             );
 
             $columns[] = sprintf('(%s) AS prefix_match', implode(' OR ', $prefixConditions));
@@ -118,13 +119,13 @@ final class SearchQueryHelper
         $matchClause = implode(' OR ', $matchConditions);
 
         if ($searchTerm !== '') {
-            $likeConditions = $this->buildPlaceholderConditions(
+            $prefixConditions = $this->buildPlaceholderConditions(
                 $column,
                 $variants,
-                '%s LIKE :search_like_%d'
+                '(MATCH(%s) AGAINST (:search_boolean_%d IN BOOLEAN MODE)) > 0'
             );
 
-            $conditions[] = sprintf('((%s) OR (%s))', $matchClause, implode(' OR ', $likeConditions));
+            $conditions[] = sprintf('((%s) OR (%s))', $matchClause, implode(' OR ', $prefixConditions));
         } else {
             $conditions[] = sprintf('(%s)', $matchClause);
         }
@@ -146,14 +147,12 @@ final class SearchQueryHelper
 
         foreach ($variants as $index => $variant) {
             $statement->bindValue(
-                ':search_like_' . $index,
-                $this->buildSearchLikeParameter($variant),
+                ':search_boolean_' . $index,
+                $this->buildSearchBooleanParameter($variant),
                 \PDO::PARAM_STR
             );
-        }
 
-        if ($bindPrefix) {
-            foreach ($variants as $index => $variant) {
+            if ($bindPrefix) {
                 $statement->bindValue(
                     ':search_prefix_' . $index,
                     $this->buildSearchPrefixParameter($variant),
@@ -163,9 +162,9 @@ final class SearchQueryHelper
         }
     }
 
-    private function buildSearchLikeParameter(string $search): string
+    private function buildSearchBooleanParameter(string $search): string
     {
-        return '%' . addcslashes($search, "\\%_") . '%';
+        return addcslashes($search, "\"'\\") . self::BOOLEAN_MODE_SUFFIX;
     }
 
     private function buildSearchPrefixParameter(string $search): string
@@ -193,19 +192,28 @@ final class SearchQueryHelper
      */
     private function getSearchVariants(string $searchTerm): array
     {
-        $variants = [$searchTerm];
+        $variants = [];
+        $this->appendUniqueVariant($variants, $searchTerm);
 
         $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
-        if ($romanVariant !== $searchTerm && !in_array($romanVariant, $variants, true)) {
-            $variants[] = $romanVariant;
-        }
+        $this->appendUniqueVariant($variants, $romanVariant);
 
         $numericVariant = $this->replaceRomansWithDigits($searchTerm);
-        if ($numericVariant !== $searchTerm && !in_array($numericVariant, $variants, true)) {
-            $variants[] = $numericVariant;
+        $this->appendUniqueVariant($variants, $numericVariant);
+
+        return array_keys($variants);
+    }
+
+    /**
+     * @param array<string, true> $variants
+     */
+    private function appendUniqueVariant(array &$variants, string $variant): void
+    {
+        if ($variant === '' || isset($variants[$variant])) {
+            return;
         }
 
-        return $variants;
+        $variants[$variant] = true;
     }
 
     private function replaceDigitsWithRomans(string $value): string
