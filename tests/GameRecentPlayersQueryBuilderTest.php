@@ -32,6 +32,20 @@ final class GameRecentPlayersQueryBuilderTest extends TestCase
         $this->assertSame(['2024-01-03', '2024-01-02'], array_column($rows, 'last_known_date'));
     }
 
+
+    public function testPrepareNormalizesLimitToAtLeastOne(): void
+    {
+        $filter = new GamePlayerFilter(null, null);
+        $queryBuilder = new GameRecentPlayersQueryBuilder($filter, 0);
+        $statement = $queryBuilder->prepare($this->database, 'NPWR12345_001');
+        $statement->execute();
+
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        $this->assertCount(1, $rows);
+        $this->assertSame([1], array_map('intval', array_column($rows, 'account_id')));
+    }
+
     public function testPrepareAppliesCountryFilter(): void
     {
         $filter = new GamePlayerFilter('US', null);

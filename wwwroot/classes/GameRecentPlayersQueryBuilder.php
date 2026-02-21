@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GamePlayerFilter.php';
 
-final readonly class GameRecentPlayersQueryBuilder
+final class GameRecentPlayersQueryBuilder
 {
+    private readonly GamePlayerFilter $filter;
+
+    private readonly int $limit;
+
     private const BASE_QUERY = <<<'SQL'
         SELECT
             p.account_id,
@@ -37,10 +41,11 @@ final readonly class GameRecentPlayersQueryBuilder
         LIMIT :limit
     SQL;
 
-    public function __construct(
-        private readonly GamePlayerFilter $filter,
-        private readonly int $limit
-    ) {}
+    public function __construct(GamePlayerFilter $filter, int $limit)
+    {
+        $this->filter = $filter;
+        $this->limit = max(1, $limit);
+    }
 
     public function prepare(\PDO $database, string $npCommunicationId): \PDOStatement
     {

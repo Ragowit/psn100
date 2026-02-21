@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 final class GameHistoryService
 {
+    private const INVALID_HISTORY_ID = 0;
+
     public function __construct(private readonly PDO $database)
     {
     }
@@ -55,21 +57,21 @@ final class GameHistoryService
             return [];
         }
 
-        $historyIds = [];
-        foreach ($rows as $row) {
-            $historyIds[] = isset($row['id']) ? (int) $row['id'] : 0;
-        }
+        $historyIds = array_map(
+            static fn (array $row): int => self::toInt($row, 'id'),
+            $rows
+        );
 
         $groupChanges = $this->fetchGroupChanges($historyIds);
         $trophyChanges = $this->fetchTrophyChanges($historyIds);
 
         $history = [];
         foreach ($rows as $row) {
-            $historyId = isset($row['id']) ? (int) $row['id'] : 0;
+            $historyId = self::toInt($row, 'id');
             $title = [
-                'detail' => isset($row['detail']) ? (string) $row['detail'] : null,
-                'icon_url' => isset($row['icon_url']) ? (string) $row['icon_url'] : null,
-                'set_version' => isset($row['set_version']) ? (string) $row['set_version'] : null,
+                'detail' => self::toNullableString($row, 'detail'),
+                'icon_url' => self::toNullableString($row, 'icon_url'),
+                'set_version' => self::toNullableString($row, 'set_version'),
             ];
 
             if ($title['detail'] === null && $title['icon_url'] === null && $title['set_version'] === null) {
@@ -116,13 +118,13 @@ final class GameHistoryService
 
         $result = [];
         foreach ($rows as $row) {
-            $historyId = isset($row['title_history_id']) ? (int) $row['title_history_id'] : 0;
+            $historyId = self::toInt($row, 'title_history_id');
             $result[$historyId] ??= [];
             $result[$historyId][] = [
-                'group_id' => isset($row['group_id']) ? (string) $row['group_id'] : '',
-                'name' => isset($row['name']) ? (string) $row['name'] : null,
-                'detail' => isset($row['detail']) ? (string) $row['detail'] : null,
-                'icon_url' => isset($row['icon_url']) ? (string) $row['icon_url'] : null,
+                'group_id' => self::toString($row, 'group_id'),
+                'name' => self::toNullableString($row, 'name'),
+                'detail' => self::toNullableString($row, 'detail'),
+                'icon_url' => self::toNullableString($row, 'icon_url'),
             ];
         }
 
@@ -166,18 +168,16 @@ final class GameHistoryService
 
         $result = [];
         foreach ($rows as $row) {
-            $historyId = isset($row['title_history_id']) ? (int) $row['title_history_id'] : 0;
+            $historyId = self::toInt($row, 'title_history_id');
             $result[$historyId] ??= [];
             $result[$historyId][] = [
-                'group_id' => isset($row['group_id']) ? (string) $row['group_id'] : '',
-                'order_id' => isset($row['order_id']) ? (int) $row['order_id'] : 0,
-                'name' => isset($row['name']) ? (string) $row['name'] : null,
-                'detail' => isset($row['detail']) ? (string) $row['detail'] : null,
-                'icon_url' => isset($row['icon_url']) ? (string) $row['icon_url'] : null,
-                'progress_target_value' => isset($row['progress_target_value'])
-                    ? ($row['progress_target_value'] === null ? null : (int) $row['progress_target_value'])
-                    : null,
-                'is_unobtainable' => isset($row['trophy_status']) ? ((int) $row['trophy_status'] === 1) : false,
+                'group_id' => self::toString($row, 'group_id'),
+                'order_id' => self::toInt($row, 'order_id'),
+                'name' => self::toNullableString($row, 'name'),
+                'detail' => self::toNullableString($row, 'detail'),
+                'icon_url' => self::toNullableString($row, 'icon_url'),
+                'progress_target_value' => self::toNullableInt($row, 'progress_target_value'),
+                'is_unobtainable' => self::toInt($row, 'trophy_status') === 1,
             ];
         }
 
@@ -225,5 +225,41 @@ final class GameHistoryService
         } catch (Exception $exception) {
             return new DateTimeImmutable('@0');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function toInt(array $row, string $key): int
+    {
+        return isset($row[$key]) ? (int) $row[$key] : self::INVALID_HISTORY_ID;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function toNullableInt(array $row, string $key): ?int
+    {
+        if (!array_key_exists($key, $row) || $row[$key] === null) {
+            return null;
+        }
+
+        return (int) $row[$key];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function toString(array $row, string $key): string
+    {
+        return isset($row[$key]) ? (string) $row[$key] : '';
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function toNullableString(array $row, string $key): ?string
+    {
+        return isset($row[$key]) ? (string) $row[$key] : null;
     }
 }
