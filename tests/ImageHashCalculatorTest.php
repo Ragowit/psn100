@@ -45,6 +45,7 @@ final class ImageHashCalculatorTest extends TestCase
                 $buffer .= chr($pixel['red']);
                 $buffer .= chr($pixel['green']);
                 $buffer .= chr($pixel['blue']);
+                $buffer .= chr(255);
             }
         }
 
@@ -68,7 +69,7 @@ final class ImageHashCalculatorTest extends TestCase
                 $buffer .= chr($pixel['green']);
                 $buffer .= chr($pixel['blue']);
 
-                $alpha = (int) round(($pixel['alpha'] ?? 0) * 255 / 127);
+                $alpha = (int) round((127 - ($pixel['alpha'] ?? 0)) * 255 / 127);
                 $alpha = max(0, min(255, $alpha));
                 $buffer .= chr($alpha);
             }
@@ -117,6 +118,22 @@ final class FakeImageProcessor implements ImageProcessorInterface
         }
 
         $this->imageHandle = imagecreatetruecolor(max(1, $this->width), max(1, $this->height));
+
+        if ($this->pixels !== []) {
+            imagealphablending($this->imageHandle, false);
+            imagesavealpha($this->imageHandle, true);
+
+            foreach ($this->pixels as $y => $row) {
+                foreach ($row as $x => $pixel) {
+                    $color = (($pixel['alpha'] ?? 0) << 24)
+                        | (($pixel['red'] ?? 0) << 16)
+                        | (($pixel['green'] ?? 0) << 8)
+                        | ($pixel['blue'] ?? 0);
+
+                    imagesetpixel($this->imageHandle, $x, $y, $color);
+                }
+            }
+        }
     }
 
     #[\Override]
