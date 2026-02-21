@@ -7,7 +7,7 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyMergeProgressListener.ph
 
 final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
 {
-    public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithCtes(): void
+    public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithoutCtes(): void
     {
         $pdo = new RecordingPDO(2);
         $service = new TrophyMergeService($pdo);
@@ -27,9 +27,11 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
 
         $this->assertCount(1, $insertStatements, 'Expected insert statement for merged trophies.');
 
-        foreach ($insertStatements as $insertSql) {
-            $this->assertTrue(str_contains($insertSql, 'WITH merged_source AS'), 'Insert statement should use a CTE for shared merge source data.');
-        }
+        $this->assertTrue(
+            str_contains($insertStatements[0], 'FROM (')
+                && str_contains($insertStatements[0], ') AS source'),
+            'Insert statement should use a derived table alias for merge source data.'
+        );
 
         $updateStatements = array_values(array_filter(
             $pdo->executedSql,
@@ -38,9 +40,11 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
 
         $this->assertCount(1, $updateStatements, 'Expected update statement for merged trophies.');
 
-        foreach ($updateStatements as $updateSql) {
-            $this->assertTrue(str_contains($updateSql, 'WITH merged_source AS'), 'Update statement should use a CTE for shared merge source data.');
-        }
+        $this->assertTrue(
+            str_contains($updateStatements[0], 'JOIN (')
+                && str_contains($updateStatements[0], ') AS source ON'),
+            'Update statement should join a derived table alias for merge source data.'
+        );
 
         $expectedParameters = [':child_np_communication_id' => 'NP_CHILD'];
         $this->assertSame([$expectedParameters], $pdo->insertParameters, 'Unexpected insert parameters.');
