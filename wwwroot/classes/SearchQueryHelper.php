@@ -135,7 +135,15 @@ final class SearchQueryHelper
 
     public function bindSearchParameters(\PDOStatement $statement, string $searchTerm, bool $bindPrefix): void
     {
+        unset($bindPrefix);
+
         $variants = $this->getSearchVariants($searchTerm);
+
+        if ($searchTerm === '' && $variants === []) {
+            $statement->bindValue(':search_fulltext_0', '', \PDO::PARAM_STR);
+
+            return;
+        }
 
         foreach ($variants as $index => $variant) {
             $statement->bindValue(':search_fulltext_' . $index, $variant, \PDO::PARAM_STR);
@@ -151,25 +159,12 @@ final class SearchQueryHelper
                 $this->buildSearchBooleanParameter($variant),
                 \PDO::PARAM_STR
             );
-
-            if ($bindPrefix) {
-                $statement->bindValue(
-                    ':search_prefix_' . $index,
-                    $this->buildSearchPrefixParameter($variant),
-                    \PDO::PARAM_STR
-                );
-            }
         }
     }
 
     private function buildSearchBooleanParameter(string $search): string
     {
         return addcslashes($search, "\"'\\") . self::BOOLEAN_MODE_SUFFIX;
-    }
-
-    private function buildSearchPrefixParameter(string $search): string
-    {
-        return addcslashes($search, "\\%_") . '%';
     }
 
     /**

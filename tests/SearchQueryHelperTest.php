@@ -96,4 +96,50 @@ final class SearchQueryHelperTest extends TestCase
 
         $this->assertSame($originalConditions, $conditions);
     }
+
+    public function testBindSearchParametersDoesNotBindRemovedPrefixPlaceholders(): void
+    {
+        $helper = new SearchQueryHelper();
+        $statement = new RecordingSearchStatement();
+
+        $helper->bindSearchParameters($statement, 'Final Fantasy 7', true);
+
+        $this->assertSame(
+            [
+                ':search_fulltext_0' => 'Final Fantasy 7',
+                ':search_fulltext_1' => 'Final Fantasy VII',
+                ':search_boolean_0' => 'Final Fantasy 7*',
+                ':search_boolean_1' => 'Final Fantasy VII*',
+            ],
+            $statement->bindings
+        );
+    }
+
+    public function testBindSearchParametersBindsEmptyPlaceholderForEmptySearchTerm(): void
+    {
+        $helper = new SearchQueryHelper();
+        $statement = new RecordingSearchStatement();
+
+        $helper->bindSearchParameters($statement, '', false);
+
+        $this->assertSame(
+            [
+                ':search_fulltext_0' => '',
+            ],
+            $statement->bindings
+        );
+    }
+}
+
+final class RecordingSearchStatement extends PDOStatement
+{
+    /** @var array<string, string> */
+    public array $bindings = [];
+
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+    {
+        $this->bindings[(string) $param] = (string) $value;
+
+        return true;
+    }
 }
