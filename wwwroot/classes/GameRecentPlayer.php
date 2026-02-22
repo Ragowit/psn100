@@ -5,58 +5,22 @@ declare(strict_types=1);
 require_once __DIR__ . '/GamePlayerFilter.php';
 require_once __DIR__ . '/Utility.php';
 
-class GameRecentPlayer
+final readonly class GameRecentPlayer
 {
-    private string $accountId;
-
-    private string $avatarUrl;
-
-    private string $countryCode;
-
-    private string $onlineId;
-
-    private int $trophyCountNpwr;
-
-    private int $trophyCountSony;
-
-    private int $bronzeCount;
-
-    private int $silverCount;
-
-    private int $goldCount;
-
-    private int $platinumCount;
-
-    private int $progress;
-
-    private string $lastKnownDate;
-
-    private function __construct(
-        string $accountId,
-        string $avatarUrl,
-        string $countryCode,
-        string $onlineId,
-        int $trophyCountNpwr,
-        int $trophyCountSony,
-        int $bronzeCount,
-        int $silverCount,
-        int $goldCount,
-        int $platinumCount,
-        int $progress,
-        string $lastKnownDate
+    public function __construct(
+        private string $accountId,
+        private string $avatarUrl,
+        private string $countryCode,
+        private string $onlineId,
+        private int $trophyCountNpwr,
+        private int $trophyCountSony,
+        private int $bronzeCount,
+        private int $silverCount,
+        private int $goldCount,
+        private int $platinumCount,
+        private int $progress,
+        private string $lastKnownDate,
     ) {
-        $this->accountId = $accountId;
-        $this->avatarUrl = $avatarUrl;
-        $this->countryCode = $countryCode;
-        $this->onlineId = $onlineId;
-        $this->trophyCountNpwr = $trophyCountNpwr;
-        $this->trophyCountSony = $trophyCountSony;
-        $this->bronzeCount = $bronzeCount;
-        $this->silverCount = $silverCount;
-        $this->goldCount = $goldCount;
-        $this->platinumCount = $platinumCount;
-        $this->progress = $progress;
-        $this->lastKnownDate = $lastKnownDate;
     }
 
     /**
@@ -65,18 +29,18 @@ class GameRecentPlayer
     public static function fromArray(array $row): self
     {
         return new self(
-            isset($row['account_id']) ? (string) $row['account_id'] : '',
-            (string) ($row['avatar_url'] ?? ''),
-            (string) ($row['country'] ?? ''),
-            (string) ($row['name'] ?? ''),
-            isset($row['trophy_count_npwr']) ? (int) $row['trophy_count_npwr'] : 0,
-            isset($row['trophy_count_sony']) ? (int) $row['trophy_count_sony'] : 0,
-            isset($row['bronze']) ? (int) $row['bronze'] : 0,
-            isset($row['silver']) ? (int) $row['silver'] : 0,
-            isset($row['gold']) ? (int) $row['gold'] : 0,
-            isset($row['platinum']) ? (int) $row['platinum'] : 0,
-            isset($row['progress']) ? (int) $row['progress'] : 0,
-            (string) ($row['last_known_date'] ?? '')
+            accountId: (string) ($row['account_id'] ?? ''),
+            avatarUrl: (string) ($row['avatar_url'] ?? ''),
+            countryCode: (string) ($row['country'] ?? ''),
+            onlineId: (string) ($row['name'] ?? ''),
+            trophyCountNpwr: (int) ($row['trophy_count_npwr'] ?? 0),
+            trophyCountSony: (int) ($row['trophy_count_sony'] ?? 0),
+            bronzeCount: (int) ($row['bronze'] ?? 0),
+            silverCount: (int) ($row['silver'] ?? 0),
+            goldCount: (int) ($row['gold'] ?? 0),
+            platinumCount: (int) ($row['platinum'] ?? 0),
+            progress: (int) ($row['progress'] ?? 0),
+            lastKnownDate: (string) ($row['last_known_date'] ?? ''),
         );
     }
 
