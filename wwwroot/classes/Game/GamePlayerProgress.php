@@ -2,31 +2,17 @@
 
 declare(strict_types=1);
 
-class GamePlayerProgress
+final readonly class GamePlayerProgress
 {
-    private string $npCommunicationId;
-
-    private string $accountId;
-
-    private int $bronze;
-
-    private int $silver;
-
-    private int $gold;
-
-    private int $platinum;
-
-    private int $progress;
-
-    private function __construct()
-    {
-        $this->npCommunicationId = '';
-        $this->accountId = '';
-        $this->bronze = 0;
-        $this->silver = 0;
-        $this->gold = 0;
-        $this->platinum = 0;
-        $this->progress = 0;
+    public function __construct(
+        private string $npCommunicationId,
+        private string $accountId,
+        private int $bronze,
+        private int $silver,
+        private int $gold,
+        private int $platinum,
+        private int $progress,
+    ) {
     }
 
     /**
@@ -34,16 +20,15 @@ class GamePlayerProgress
      */
     public static function fromArray(array $row): self
     {
-        $player = new self();
-        $player->npCommunicationId = (string) ($row['np_communication_id'] ?? '');
-        $player->accountId = (string) ($row['account_id'] ?? '');
-        $player->bronze = (int) ($row['bronze'] ?? 0);
-        $player->silver = (int) ($row['silver'] ?? 0);
-        $player->gold = (int) ($row['gold'] ?? 0);
-        $player->platinum = (int) ($row['platinum'] ?? 0);
-        $player->progress = (int) ($row['progress'] ?? 0);
-
-        return $player;
+        return new self(
+            npCommunicationId: (string) ($row['np_communication_id'] ?? ''),
+            accountId: (string) ($row['account_id'] ?? ''),
+            bronze: (int) ($row['bronze'] ?? 0),
+            silver: (int) ($row['silver'] ?? 0),
+            gold: (int) ($row['gold'] ?? 0),
+            platinum: (int) ($row['platinum'] ?? 0),
+            progress: (int) ($row['progress'] ?? 0),
+        );
     }
 
     public function getNpCommunicationId(): string
