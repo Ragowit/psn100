@@ -21,13 +21,7 @@ class ChangelogService
         $query = $this->database->prepare('SELECT COUNT(*) FROM psn100_change');
         $query->execute();
 
-        $count = $query->fetchColumn();
-
-        if ($count === false) {
-            return 0;
-        }
-
-        return (int) $count;
+        return (int) ($query->fetchColumn() ?: 0);
     }
 
     /**
@@ -51,7 +45,7 @@ class ChangelogService
             LEFT JOIN trophy_title tt2 ON tt2.id = c.param_2
             LEFT JOIN trophy_title_meta ttm2 ON ttm2.np_communication_id = tt2.np_communication_id
             ORDER BY c.time DESC
-            LIMIT :offset, :limit
+            LIMIT :limit OFFSET :offset
             SQL
         );
         $query->bindValue(':offset', $paginator->getOffset(), PDO::PARAM_INT);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class ChangelogPaginator
+final readonly class ChangelogPaginator
 {
     private int $currentPage;
     private int $totalCount;
@@ -11,15 +11,18 @@ class ChangelogPaginator
 
     public function __construct(int $requestedPage, int $totalCount, int $limit)
     {
-        $this->totalCount = max($totalCount, 0);
-        $this->limit = max($limit, 1);
-        $this->totalPages = $this->totalCount > 0 ? (int) ceil($this->totalCount / $this->limit) : 0;
+        $normalizedTotalCount = max($totalCount, 0);
+        $normalizedLimit = max($limit, 1);
+        $computedTotalPages = $normalizedTotalCount > 0
+            ? (int) ceil($normalizedTotalCount / $normalizedLimit)
+            : 0;
 
-        if ($this->totalPages > 0) {
-            $this->currentPage = min(max($requestedPage, 1), $this->totalPages);
-        } else {
-            $this->currentPage = 1;
-        }
+        $this->totalCount = $normalizedTotalCount;
+        $this->limit = $normalizedLimit;
+        $this->totalPages = $computedTotalPages;
+        $this->currentPage = $computedTotalPages > 0
+            ? min(max($requestedPage, 1), $computedTotalPages)
+            : 1;
     }
 
     public function getCurrentPage(): int
