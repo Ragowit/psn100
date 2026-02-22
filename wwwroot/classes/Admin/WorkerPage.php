@@ -7,6 +7,8 @@ require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/CommandExecutionResult.php';
 require_once __DIR__ . '/WorkerPageSortLink.php';
 require_once __DIR__ . '/WorkerPageResult.php';
+require_once __DIR__ . '/WorkerSortField.php';
+require_once __DIR__ . '/WorkerSortDirection.php';
 
 final class WorkerPage
 {
@@ -22,18 +24,18 @@ final class WorkerPage
      */
     public function handle(array $queryParameters, AdminRequest $request): WorkerPageResult
     {
-        $sortField = $this->normalizeSortField($queryParameters['sort'] ?? null);
-        $sortDirection = $this->normalizeSortDirection($queryParameters['direction'] ?? null);
+        $sortField = WorkerSortField::fromMixed($queryParameters['sort'] ?? null);
+        $sortDirection = WorkerSortDirection::fromMixed($queryParameters['direction'] ?? null);
 
         [$successMessage, $errorMessage] = $request->isPost()
             ? $this->processAction($request)
             : [null, null];
 
-        $workers = $this->workerService->fetchWorkers($sortField, strtoupper($sortDirection));
+        $workers = $this->workerService->fetchWorkers($sortField->value, $sortDirection->value);
 
         $sortLinks = [
-            'id' => $this->createSortLink('id', $sortField, $sortDirection),
-            'scan_start' => $this->createSortLink('scan_start', $sortField, $sortDirection),
+            'id' => $this->createSortLink(WorkerSortField::Id, $sortField, $sortDirection),
+            'scan_start' => $this->createSortLink(WorkerSortField::ScanStart, $sortField, $sortDirection),
         ];
 
         return new WorkerPageResult(
@@ -41,8 +43,8 @@ final class WorkerPage
             $successMessage,
             $errorMessage,
             $sortLinks,
-            $sortField,
-            $sortDirection
+            $sortField->value,
+            $sortDirection->value
         );
     }
 
@@ -160,44 +162,22 @@ final class WorkerPage
         return $message . ' ' . $output;
     }
 
-    private function normalizeSortField(mixed $value): string
-    {
-        if (!is_string($value)) {
-            return 'scan_start';
-        }
 
-        $normalized = strtolower(trim($value));
-
-        return $normalized === 'id' ? 'id' : 'scan_start';
-    }
-
-    private function normalizeSortDirection(mixed $value): string
-    {
-        if (!is_string($value)) {
-            return 'asc';
-        }
-
-        $normalized = strtolower(trim($value));
-
-        return in_array($normalized, ['asc', 'desc'], true) ? $normalized : 'asc';
-    }
-
-    private function createSortLink(string $field, string $currentField, string $currentDirection): WorkerPageSortLink
+    private function createSortLink(
+        WorkerSortField $field,
+        WorkerSortField $currentField,
+        WorkerSortDirection $currentDirection
+    ): WorkerPageSortLink
     {
         $isActive = $field === $currentField;
-        $indicator = '';
-        $nextDirection = 'asc';
-
-        if ($isActive) {
-            $indicator = $currentDirection === 'asc' ? ' ▲' : ' ▼';
-            $nextDirection = $currentDirection === 'asc' ? 'desc' : 'asc';
-        }
+        $indicator = $isActive ? $currentDirection->indicator() : '';
+        $nextDirection = $isActive ? $currentDirection->toggled() : WorkerSortDirection::Asc;
 
         $query = [
-            'sort' => $field,
-            'direction' => $nextDirection,
+            'sort' => $field->value,
+            'direction' => $nextDirection->value,
         ];
 
-        return new WorkerPageSortLink($field, '?' . http_build_query($query), $indicator);
+        return new WorkerPageSortLink($field->value, '?' . http_build_query($query), $indicator);
     }
 }
