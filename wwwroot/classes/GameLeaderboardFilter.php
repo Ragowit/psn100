@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class GameLeaderboardFilter extends GamePlayerFilter
+final readonly class GameLeaderboardFilter extends GamePlayerFilter
 {
     private int $page;
 
@@ -17,8 +17,9 @@ readonly class GameLeaderboardFilter extends GamePlayerFilter
      */
     public static function fromArray(array $queryParameters): self
     {
-        $country = isset($queryParameters['country']) ? (string) $queryParameters['country'] : null;
-        $avatar = isset($queryParameters['avatar']) ? (string) $queryParameters['avatar'] : null;
+        $baseFilter = parent::fromArray($queryParameters);
+        $country = $baseFilter->getCountry();
+        $avatar = $baseFilter->getAvatar();
 
         $pageValue = $queryParameters['page'] ?? 1;
         $page = is_numeric($pageValue) ? (int) $pageValue : 1;
