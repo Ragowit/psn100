@@ -29,14 +29,14 @@ class PlayerSummaryService
             <<<'SQL'
             SELECT
                 CAST(COUNT(*) AS UNSIGNED)                                  AS number_of_games,
-                CAST(SUM(ttp.progress = 100) AS UNSIGNED)                   AS number_of_completed_games,
+                CAST(COALESCE(SUM(ttp.progress = 100), 0) AS UNSIGNED)      AS number_of_completed_games,
                 ROUND(AVG(ttp.progress), 2)                                 AS average_progress,
-                CAST(SUM(
+                CAST(COALESCE(SUM(
                     CASE WHEN tt.bronze > ttp.bronze THEN tt.bronze - ttp.bronze ELSE 0 END +
                     CASE WHEN tt.silver > ttp.silver THEN tt.silver - ttp.silver ELSE 0 END +
                     CASE WHEN tt.gold > ttp.gold THEN tt.gold - ttp.gold ELSE 0 END +
                     CASE WHEN tt.platinum > ttp.platinum THEN tt.platinum - ttp.platinum ELSE 0 END
-                ) AS UNSIGNED)                                              AS unearned_trophies
+                ), 0) AS UNSIGNED)                                          AS unearned_trophies
             FROM
                 trophy_title_player ttp
                 INNER JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
@@ -52,14 +52,7 @@ class PlayerSummaryService
 
         /** @var array{number_of_games?: int|string|null, number_of_completed_games?: int|string|null, average_progress?: float|string|null, unearned_trophies?: int|string|null}|false $row */
         $row = $query->fetch(PDO::FETCH_ASSOC);
-        if ($row === false) {
-            return [
-                'number_of_games' => 0,
-                'number_of_completed_games' => 0,
-                'average_progress' => null,
-                'unearned_trophies' => 0,
-            ];
-        }
+        $row = $row === false ? [] : $row;
 
         return [
             'number_of_games' => (int) ($row['number_of_games'] ?? 0),

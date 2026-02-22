@@ -38,7 +38,7 @@ class HomepageContentService
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                ttm.status != 2
+                ttm.status <> 2
             ORDER BY
                 tt.id DESC
             LIMIT
@@ -78,8 +78,8 @@ class HomepageContentService
                 JOIN trophy_title tt USING (np_communication_id)
                 JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE
-                ttm.status != 2
-                AND tg.group_id != 'default'
+                ttm.status <> 2
+                AND tg.group_id <> 'default'
             ORDER BY
                 tg.id DESC
             LIMIT
@@ -108,13 +108,13 @@ class HomepageContentService
                 tt.id,
                 tt.icon_url,
                 tt.platform,
-                tt.`name`,
+                tt.name,
                 ttm.recent_players
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                ttm.status != 2
+                ttm.status <> 2
             ORDER BY
                 ttm.recent_players DESC
             LIMIT
