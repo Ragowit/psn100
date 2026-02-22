@@ -8,6 +8,7 @@ require_once __DIR__ . '/LogEntryFormatter.php';
 final class LogService
 {
     private ?string $logTable = null;
+    private ?int $cachedEntryCount = null;
 
     public function __construct(
         private readonly PDO $database,
@@ -25,7 +26,7 @@ final class LogService
 
         $table = $this->getLogTable();
         $queryString = sprintf(
-            'SELECT id, time, message FROM %s ORDER BY id ASC LIMIT :limit OFFSET :offset',
+            'SELECT id, time, message, COUNT(*) OVER() AS total_rows FROM %s ORDER BY id ASC LIMIT :limit OFFSET :offset',
             $this->quoteIdentifier($table)
         );
 
@@ -49,6 +50,11 @@ final class LogService
             return [];
         }
 
+        $totalRows = $rows[0]['total_rows'] ?? null;
+        if (is_numeric($totalRows)) {
+            $this->cachedEntryCount = max(0, (int) $totalRows);
+        }
+
         $entries = [];
 
         foreach ($rows as $row) {
@@ -65,6 +71,10 @@ final class LogService
 
     public function countEntries(): int
     {
+        if ($this->cachedEntryCount !== null) {
+            return $this->cachedEntryCount;
+        }
+
         $table = $this->getLogTable();
         $queryString = sprintf('SELECT COUNT(*) FROM %s', $this->quoteIdentifier($table));
 
@@ -81,7 +91,9 @@ final class LogService
             return 0;
         }
 
-        return (int) $count;
+        $this->cachedEntryCount = max(0, (int) $count);
+
+        return $this->cachedEntryCount;
     }
 
     public function deleteLogById(int $logId): bool
@@ -146,6 +158,8 @@ final class LogService
         } catch (PDOException $exception) {
             return 0;
         }
+
+        $this->cachedEntryCount = null;
 
         return (int) $statement->rowCount();
     }
