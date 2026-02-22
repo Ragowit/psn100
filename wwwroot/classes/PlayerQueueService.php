@@ -79,10 +79,12 @@ class PlayerQueueService
     {
         $query = $this->prepareAndBind(
             <<<'SQL'
-            INSERT IGNORE INTO
+            INSERT INTO
                 player_queue (online_id, ip_address)
             VALUES
-                (:online_id, :ip_address)
+                (:online_id, :ip_address) AS new_submission
+            ON DUPLICATE KEY UPDATE
+                online_id = new_submission.online_id
             SQL,
             [
                 ':online_id' => [$playerName, PDO::PARAM_STR],

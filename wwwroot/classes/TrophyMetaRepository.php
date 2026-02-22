@@ -47,7 +47,7 @@ class TrophyMetaRepository
                 )
             SQL,
             'mysql' => <<<'SQL'
-                INSERT IGNORE INTO trophy_meta (
+                INSERT INTO trophy_meta (
                     trophy_id,
                     rarity_percent,
                     rarity_point,
@@ -61,7 +61,9 @@ class TrophyMetaRepository
                     0,
                     0,
                     'NONE'
-                )
+                ) AS new_meta
+                ON DUPLICATE KEY UPDATE
+                    trophy_id = new_meta.trophy_id
             SQL,
             default => throw new RuntimeException("Unsupported PDO driver: {$driver}"),
         };
