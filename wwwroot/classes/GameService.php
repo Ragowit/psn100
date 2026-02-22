@@ -8,12 +8,9 @@ require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 
 class GameService
 {
-    private PDO $database;
+    private const TROPHY_TYPE_ORDER_SQL = "FIELD(%s, 'bronze', 'silver', 'gold', 'platinum')";
 
-    public function __construct(PDO $database)
-    {
-        $this->database = $database;
-    }
+    public function __construct(private readonly PDO $database) {}
 
     public function getGame(int $gameId): ?GameDetails
     {
@@ -192,66 +189,45 @@ class GameService
     {
         if ($accountId !== null) {
             $sql = <<<'SQL'
-                SELECT
-                    x.id,
-                    x.order_id,
-                    x.type,
-                    x.name,
-                    x.detail,
-                    x.icon_url,
-                    x.rarity_percent,
-                    x.in_game_rarity_percent,
-                    x.status,
-                    x.progress_target_value,
-                    x.reward_name,
-                    x.reward_image_url,
-                    x.earned_date,
-                    x.progress,
-                    x.earned
-                FROM (
+                WITH account_trophy_earned AS (
                     SELECT
-                        t.id,
-                        t.order_id,
-                        t.type,
-                        t.name,
-                        t.detail,
-                        t.icon_url,
-                        tm.rarity_percent,
-                        tm.in_game_rarity_percent,
-                        tm.status,
-                        t.progress_target_value,
-                        t.reward_name,
-                        t.reward_image_url,
-                        te.earned_date,
-                        te.progress,
-                        te.earned
+                        np_communication_id,
+                        group_id,
+                        order_id,
+                        earned_date,
+                        progress,
+                        earned
                     FROM
-                        trophy t
-                    JOIN trophy_meta tm ON tm.trophy_id = t.id
-                    LEFT JOIN (
-                        SELECT
-                            np_communication_id,
-                            group_id,
-                            order_id,
-                            IFNULL(earned_date, 'No Timestamp') AS earned_date,
-                            progress,
-                            earned
-                        FROM
-                            trophy_earned
-                        WHERE
-                            account_id = :account_id
-                    ) AS te USING (np_communication_id, group_id, order_id)
+                        trophy_earned
                     WHERE
-                        t.np_communication_id = :np_communication_id
-                        AND t.group_id = :group_id
-                ) AS x
+                        account_id = :account_id
+                )
+                SELECT
+                    t.id,
+                    t.order_id,
+                    t.type,
+                    t.name,
+                    t.detail,
+                    t.icon_url,
+                    tm.rarity_percent,
+                    tm.in_game_rarity_percent,
+                    tm.status,
+                    t.progress_target_value,
+                    t.reward_name,
+                    t.reward_image_url,
+                    te.earned_date,
+                    te.progress,
+                    te.earned
+                FROM
+                    trophy t
+                JOIN trophy_meta tm ON tm.trophy_id = t.id
+                LEFT JOIN account_trophy_earned te USING (np_communication_id, group_id, order_id)
+                WHERE
+                    t.np_communication_id = :np_communication_id
+                    AND t.group_id = :group_id
             SQL;
 
-            $sql .= match ($sort) {
-                'date' => " ORDER BY x.earned_date IS NULL, x.earned_date, FIELD(x.type, 'bronze', 'silver', 'gold', 'platinum'), x.order_id",
-                'rarity' => " ORDER BY x.rarity_percent DESC, FIELD(x.type, 'bronze', 'silver', 'gold', 'platinum'), x.order_id",
-                default => " ORDER BY x.order_id",
-            };
+            $sql .= $this->buildAccountSortSql($sort);
 
             $query = $this->database->prepare($sql);
             $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
@@ -278,10 +254,7 @@ class GameService
                     AND t.group_id = :group_id
             SQL;
 
-            $sql .= match ($sort) {
-                'rarity' => " ORDER BY tm.rarity_percent DESC, FIELD(t.type, 'bronze', 'silver', 'gold', 'platinum'), t.order_id",
-                default => " ORDER BY t.order_id",
-            };
+            $sql .= $this->buildPublicSortSql($sort);
 
             $query = $this->database->prepare($sql);
         }
@@ -293,5 +266,27 @@ class GameService
         $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($trophies) ? $trophies : [];
+    }
+
+    private function buildAccountSortSql(string $sort): string
+    {
+        $trophyTypeSort = sprintf(self::TROPHY_TYPE_ORDER_SQL, 't.type');
+
+        return match ($sort) {
+            'date' => " ORDER BY te.earned_date IS NULL, te.earned_date, {$trophyTypeSort}, t.order_id",
+            'rarity' => " ORDER BY tm.rarity_percent DESC, {$trophyTypeSort}, t.order_id",
+            default => ' ORDER BY t.order_id',
+        };
+    }
+
+    private function buildPublicSortSql(string $sort): string
+    {
+        if ($sort !== 'rarity') {
+            return ' ORDER BY t.order_id';
+        }
+
+        $trophyTypeSort = sprintf(self::TROPHY_TYPE_ORDER_SQL, 't.type');
+
+        return " ORDER BY tm.rarity_percent DESC, {$trophyTypeSort}, t.order_id";
     }
 }
