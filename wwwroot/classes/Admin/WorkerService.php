@@ -6,6 +6,8 @@ require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/CommandExecutionResult.php';
 require_once __DIR__ . '/CommandExecutorInterface.php';
 require_once __DIR__ . '/SystemCommandExecutor.php';
+require_once __DIR__ . '/WorkerSortField.php';
+require_once __DIR__ . '/WorkerSortDirection.php';
 
 final class WorkerService
 {
@@ -27,17 +29,13 @@ final class WorkerService
      */
     public function fetchWorkers(string $orderBy = 'scan_start', string $direction = 'ASC'): array
     {
-        $orderColumn = match (strtolower($orderBy)) {
-            'id' => 'id',
-            default => 'scan_start',
-        };
-
-        $orderDirection = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        $sortField = WorkerSortField::fromMixed($orderBy);
+        $sortDirection = WorkerSortDirection::fromMixed($direction);
 
         $statement = $this->database->query(sprintf(
             'SELECT id, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
-            $orderColumn,
-            $orderDirection
+            $sortField->toSqlColumn(),
+            $sortDirection->toSqlKeyword()
         ));
 
         if ($statement === false) {
