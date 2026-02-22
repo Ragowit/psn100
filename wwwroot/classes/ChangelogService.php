@@ -5,23 +5,31 @@ declare(strict_types=1);
 require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/ChangelogPaginator.php';
 
-class ChangelogService
+final class ChangelogService
 {
     public const PAGE_SIZE = 50;
+    private const FILTERED_CHANGE_TYPES = "('GAME_RESCAN', 'GAME_VERSION')";
 
-    private PDO $database;
+    private ?int $cachedTotalChangeCount = null;
 
-    public function __construct(PDO $database)
+    public function __construct(private readonly PDO $database)
     {
-        $this->database = $database;
     }
 
     public function getTotalChangeCount(): int
     {
-        $query = $this->database->prepare("SELECT COUNT(*) FROM psn100_change WHERE change_type NOT IN ('GAME_RESCAN', 'GAME_VERSION')");
+        if ($this->cachedTotalChangeCount !== null) {
+            return $this->cachedTotalChangeCount;
+        }
+
+        $query = $this->database->prepare(
+            sprintf('SELECT COUNT(*) FROM psn100_change WHERE change_type NOT IN %s', self::FILTERED_CHANGE_TYPES)
+        );
         $query->execute();
 
-        return (int) ($query->fetchColumn() ?: 0);
+        $this->cachedTotalChangeCount = (int) ($query->fetchColumn() ?: 0);
+
+        return $this->cachedTotalChangeCount;
     }
 
     /**
@@ -33,6 +41,7 @@ class ChangelogService
             <<<'SQL'
             SELECT
                 c.*,
+                COUNT(*) OVER() AS total_rows,
                 tt1.name AS param_1_name,
                 tt1.platform AS param_1_platform,
                 ttm1.region AS param_1_region,
@@ -59,11 +68,13 @@ class ChangelogService
             return [];
         }
 
-        $entries = [];
-        foreach ($rows as $row) {
-            $entries[] = ChangelogEntry::fromArray($row);
+        if ($rows !== [] && is_numeric($rows[0]['total_rows'] ?? null)) {
+            $this->cachedTotalChangeCount = max(0, (int) $rows[0]['total_rows']);
         }
 
-        return $entries;
+        return array_map(
+            static fn(array $row): ChangelogEntry => ChangelogEntry::fromArray($row),
+            $rows
+        );
     }
 }
