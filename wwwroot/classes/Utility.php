@@ -12,7 +12,6 @@ class Utility
         . ':: Lower();'
         . '[:Separator:] > \'-\'';
     private static ?\Transliterator $slugTransliterator = null;
-    private static bool $slugTransliteratorInitialized = false;
 
     public function slugify(?string $text): string
     {
@@ -22,13 +21,9 @@ class Utility
         $text = trim($normalizedWhitespace);
         $text = str_replace(['&', '%', ' - '], ['and', 'percent', ' '], $text);
 
-        $transliterator = self::getSlugTransliterator();
-
-        if ($transliterator instanceof \Transliterator) {
-            $slug = $transliterator->transliterate($text);
-            if (is_string($slug) && $slug !== '') {
-                return $slug;
-            }
+        $slug = self::getSlugTransliterator()->transliterate($text);
+        if (is_string($slug) && $slug !== '') {
+            return $slug;
         }
 
         $text = strtolower($text);
@@ -45,36 +40,18 @@ class Utility
             return 'Unknown';
         }
 
-        if (class_exists('Locale')) {
-            try {
-                $name = \Locale::getDisplayRegion('-' . $countryCode, 'en');
-                if (is_string($name) && $name !== '') {
-                    return $name;
-                }
-            } catch (\Throwable $exception) {
-                // Ignore and fall back to returning the country code.
-            }
+        $name = \Locale::getDisplayRegion('-' . $countryCode, 'en');
+        if (is_string($name) && $name !== '') {
+            return $name;
         }
 
         return $countryCode;
     }
 
-    private static function getSlugTransliterator(): ?\Transliterator
+    private static function getSlugTransliterator(): \Transliterator
     {
-        if (self::$slugTransliteratorInitialized) {
-            return self::$slugTransliterator;
-        }
-
-        self::$slugTransliteratorInitialized = true;
-
-        if (!class_exists(\Transliterator::class)) {
-            return null;
-        }
-
-        $transliterator = \Transliterator::createFromRules(self::SLUG_TRANSLITERATOR_RULES);
-
-        self::$slugTransliterator = $transliterator instanceof \Transliterator ? $transliterator : null;
-
-        return self::$slugTransliterator;
+        return self::$slugTransliterator
+            ??= \Transliterator::createFromRules(self::SLUG_TRANSLITERATOR_RULES)
+                ?? throw new \RuntimeException('Unable to create slug transliterator.');
     }
 }
