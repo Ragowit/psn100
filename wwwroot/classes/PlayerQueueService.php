@@ -10,6 +10,56 @@ class PlayerQueueService
     public const int MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
     public const int CHEATER_STATUS = 1;
     private const string PLAYER_NAME_PATTERN = '/^[\\w\-]{3,16}$/';
+    private const string SQL_IP_SUBMISSION_COUNT = <<<'SQL'
+        SELECT
+            COUNT(*)
+        FROM
+            player_queue
+        WHERE
+            ip_address = :ip_address
+        SQL;
+    private const string SQL_CHEATER_ACCOUNT_ID = <<<'SQL'
+        SELECT
+            account_id
+        FROM
+            player
+        WHERE
+            online_id = :online_id
+            AND status = :status
+        SQL;
+    private const string SQL_ACTIVE_SCAN_STATUS = <<<'SQL'
+        SELECT
+            scan_progress
+        FROM
+            setting
+        WHERE
+            scanning = :online_id
+        SQL;
+    private const string SQL_QUEUE_POSITION = <<<'SQL'
+        WITH ordered_queue AS (
+            SELECT
+                online_id,
+                ROW_NUMBER() OVER (ORDER BY request_time, online_id) AS position
+            FROM
+                player_queue
+        )
+        SELECT
+            position
+        FROM
+            ordered_queue
+        WHERE
+            online_id = :online_id
+        LIMIT 1
+        SQL;
+    private const string SQL_PLAYER_STATUS_DATA = <<<'SQL'
+        SELECT
+            account_id,
+            `status`
+        FROM
+            player
+        WHERE
+            online_id = :online_id
+        SQL;
 
     public function __construct(private readonly ?PDO $database = null)
     {
@@ -31,14 +81,7 @@ class PlayerQueueService
         }
 
         $count = $this->fetchSingleValue(
-            <<<'SQL'
-            SELECT
-                COUNT(*)
-            FROM
-                player_queue
-            WHERE
-                ip_address = :ip_address
-            SQL,
+            self::SQL_IP_SUBMISSION_COUNT,
             [':ip_address' => [$ipAddress, PDO::PARAM_STR]]
         );
 
@@ -57,15 +100,7 @@ class PlayerQueueService
         }
 
         $accountId = $this->fetchSingleValue(
-            <<<'SQL'
-            SELECT
-                account_id
-            FROM
-                player
-            WHERE
-                online_id = :online_id
-                AND status = :status
-            SQL,
+            self::SQL_CHEATER_ACCOUNT_ID,
             [
                 ':online_id' => [$playerName, PDO::PARAM_STR],
                 ':status' => [self::CHEATER_STATUS, PDO::PARAM_INT],
@@ -119,14 +154,7 @@ class PlayerQueueService
         }
 
         $row = $this->fetchAssoc(
-            <<<'SQL'
-            SELECT
-                scan_progress
-            FROM
-                setting
-            WHERE
-                scanning = :online_id
-            SQL,
+            self::SQL_ACTIVE_SCAN_STATUS,
             [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
 
@@ -153,29 +181,7 @@ class PlayerQueueService
         }
 
         $position = $this->fetchSingleValue(
-            <<<'SQL'
-            WITH target AS (
-                SELECT
-                    request_time,
-                    online_id
-                FROM
-                    player_queue
-                WHERE
-                    online_id = :online_id
-                LIMIT 1
-            )
-            SELECT
-                (
-                    SELECT
-                        COUNT(*) + 1
-                    FROM
-                        player_queue queue_entry
-                    WHERE
-                        (queue_entry.request_time, queue_entry.online_id) < (target.request_time, target.online_id)
-                ) AS position
-            FROM
-                target
-            SQL,
+            self::SQL_QUEUE_POSITION,
             [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
 
@@ -188,15 +194,7 @@ class PlayerQueueService
     public function getPlayerStatusData(string $playerName): ?array
     {
         $result = $this->fetchAssoc(
-            <<<'SQL'
-            SELECT
-                account_id,
-                `status`
-            FROM
-                player
-            WHERE
-                online_id = :online_id
-            SQL,
+            self::SQL_PLAYER_STATUS_DATA,
             [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
 
