@@ -5,9 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/GamePlayerFilter.php';
 require_once __DIR__ . '/Utility.php';
 
-readonly class GameLeaderboardRow
+final readonly class GameLeaderboardRow
 {
-    private function __construct(
+    public function __construct(
         private string $accountId,
         private string $avatarUrl,
         private string $countryCode,
@@ -19,7 +19,7 @@ readonly class GameLeaderboardRow
         private int $goldCount,
         private int $platinumCount,
         private int $progress,
-        private string $lastKnownDate
+        private string $lastKnownDate,
     ) {
     }
 
@@ -29,28 +29,24 @@ readonly class GameLeaderboardRow
     public static function fromArray(array $row): self
     {
         return new self(
-            isset($row['account_id']) ? (string) $row['account_id'] : '',
-            (string) ($row['avatar_url'] ?? ''),
-            (string) ($row['country'] ?? ''),
-            (string) ($row['name'] ?? ''),
-            isset($row['trophy_count_npwr']) ? (int) $row['trophy_count_npwr'] : 0,
-            isset($row['trophy_count_sony']) ? (int) $row['trophy_count_sony'] : 0,
-            isset($row['bronze']) ? (int) $row['bronze'] : 0,
-            isset($row['silver']) ? (int) $row['silver'] : 0,
-            isset($row['gold']) ? (int) $row['gold'] : 0,
-            isset($row['platinum']) ? (int) $row['platinum'] : 0,
-            isset($row['progress']) ? (int) $row['progress'] : 0,
-            (string) ($row['last_known_date'] ?? '')
+            accountId: (string) ($row['account_id'] ?? ''),
+            avatarUrl: (string) ($row['avatar_url'] ?? ''),
+            countryCode: (string) ($row['country'] ?? ''),
+            onlineId: (string) ($row['name'] ?? ''),
+            trophyCountNpwr: (int) ($row['trophy_count_npwr'] ?? 0),
+            trophyCountSony: (int) ($row['trophy_count_sony'] ?? 0),
+            bronzeCount: (int) ($row['bronze'] ?? 0),
+            silverCount: (int) ($row['silver'] ?? 0),
+            goldCount: (int) ($row['gold'] ?? 0),
+            platinumCount: (int) ($row['platinum'] ?? 0),
+            progress: (int) ($row['progress'] ?? 0),
+            lastKnownDate: (string) ($row['last_known_date'] ?? ''),
         );
     }
 
     public function matchesAccountId(?string $accountId): bool
     {
-        if ($accountId === null || $accountId === '') {
-            return false;
-        }
-
-        return $this->accountId !== '' && $this->accountId === $accountId;
+        return $accountId !== null && $accountId !== '' && $this->accountId !== '' && $this->accountId === $accountId;
     }
 
     public function getAvatarUrl(): string
