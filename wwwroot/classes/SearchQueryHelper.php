@@ -208,23 +208,30 @@ final class SearchQueryHelper
             return $this->searchVariantsCache[$searchTerm];
         }
 
-        $variants = [$searchTerm];
-        $deduplicated = [$searchTerm => true];
+        $variants = [];
+        $deduplicated = [];
 
-        $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
-        if ($romanVariant !== $searchTerm && !isset($deduplicated[$romanVariant])) {
-            $variants[] = $romanVariant;
-            $deduplicated[$romanVariant] = true;
-        }
-
-        $numericVariant = $this->replaceRomansWithDigits($searchTerm);
-        if ($numericVariant !== $searchTerm && !isset($deduplicated[$numericVariant])) {
-            $variants[] = $numericVariant;
-        }
+        $this->appendVariant($variants, $deduplicated, $searchTerm);
+        $this->appendVariant($variants, $deduplicated, $this->replaceDigitsWithRomans($searchTerm));
+        $this->appendVariant($variants, $deduplicated, $this->replaceRomansWithDigits($searchTerm));
 
         $this->searchVariantsCache[$searchTerm] = $variants;
 
         return $variants;
+    }
+
+    /**
+     * @param list<string> $variants
+     * @param array<string, true> $deduplicated
+     */
+    private function appendVariant(array &$variants, array &$deduplicated, string $variant): void
+    {
+        if (isset($deduplicated[$variant])) {
+            return;
+        }
+
+        $variants[] = $variant;
+        $deduplicated[$variant] = true;
     }
 
     private function replaceDigitsWithRomans(string $value): string
