@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GamePlayerFilter.php';
+
 final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
 {
     private int $page;
