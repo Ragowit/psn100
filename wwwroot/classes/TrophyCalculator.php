@@ -7,6 +7,33 @@ final class TrophyCalculator
     private const int BRONZE_SCORE = 15;
     private const int SILVER_SCORE = 30;
     private const int GOLD_SCORE = 90;
+    private const string TROPHY_TITLE_PLAYER_UPSERT_TEMPLATE = 'INSERT INTO trophy_title_player (
+            np_communication_id,
+            account_id,
+            bronze,
+            silver,
+            gold,
+            platinum,
+            progress,
+            last_updated_date
+        )
+        VALUES (
+            :np_communication_id,
+            :account_id,
+            :bronze,
+            :silver,
+            :gold,
+            :platinum,
+            :progress,
+            :last_updated_date
+        ) AS new
+        ON DUPLICATE KEY UPDATE
+            bronze = new.bronze,
+            silver = new.silver,
+            gold = new.gold,
+            platinum = new.platinum,
+            progress = new.progress,
+            last_updated_date = %s';
 
     public function __construct(
         private readonly PDO $database
@@ -107,9 +134,9 @@ final class TrophyCalculator
         $query = $this->database->prepare(
             'SELECT t.type, COUNT(t.type) AS count
             FROM trophy_earned te
-            LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
+            JOIN trophy t ON t.np_communication_id = te.np_communication_id
                 AND t.order_id = te.order_id
-            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE account_id = :account_id
                 AND te.np_communication_id = :np_communication_id
                 AND te.group_id = :group_id
@@ -263,67 +290,11 @@ final class TrophyCalculator
 
         $dtAsTextForInsert = $dateTimeObject->format('Y-m-d H:i:s');
 
-        if ($merge) {
-            $query = $this->database->prepare(
-                'INSERT INTO trophy_title_player (
-                    np_communication_id,
-                    account_id,
-                    bronze,
-                    silver,
-                    gold,
-                    platinum,
-                    progress,
-                    last_updated_date
-                )
-                VALUES (
-                    :np_communication_id,
-                    :account_id,
-                    :bronze,
-                    :silver,
-                    :gold,
-                    :platinum,
-                    :progress,
-                    :last_updated_date
-                ) AS new
-                ON DUPLICATE KEY UPDATE
-                    bronze = new.bronze,
-                    silver = new.silver,
-                    gold = new.gold,
-                    platinum = new.platinum,
-                    progress = new.progress,
-                    last_updated_date = GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)'
-            );
-        } else {
-            $query = $this->database->prepare(
-                'INSERT INTO trophy_title_player (
-                    np_communication_id,
-                    account_id,
-                    bronze,
-                    silver,
-                    gold,
-                    platinum,
-                    progress,
-                    last_updated_date
-                )
-                VALUES (
-                    :np_communication_id,
-                    :account_id,
-                    :bronze,
-                    :silver,
-                    :gold,
-                    :platinum,
-                    :progress,
-                    :last_updated_date
-                ) AS new
-                ON DUPLICATE KEY UPDATE
-                    bronze = new.bronze,
-                    silver = new.silver,
-                    gold = new.gold,
-                    platinum = new.platinum,
-                    progress = new.progress,
-                    last_updated_date = new.last_updated_date'
-            );
-        }
+        $lastUpdatedDateExpression = match ($merge) {
+            true => 'GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)',
+            false => 'new.last_updated_date',
+        };
+        $query = $this->database->prepare(sprintf(self::TROPHY_TITLE_PLAYER_UPSERT_TEMPLATE, $lastUpdatedDateExpression));
 
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
