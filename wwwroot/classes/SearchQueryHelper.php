@@ -30,6 +30,11 @@ final class SearchQueryHelper
         'V' => 5,
         'I' => 1,
     ];
+
+    /**
+     * @var array<string, list<string>>
+     */
+    private array $searchVariantsCache = [];
     /**
      * @param array<int, string> $columns
      * @return array<int, string>
@@ -165,12 +170,17 @@ final class SearchQueryHelper
 
     private function buildSearchLikeParameter(string $search): string
     {
-        return '%' . addcslashes($search, "\\%_") . '%';
+        return '%' . $this->escapeLikeSpecialCharacters($search) . '%';
     }
 
     private function buildSearchPrefixParameter(string $search): string
     {
-        return addcslashes($search, "\\%_") . '%';
+        return $this->escapeLikeSpecialCharacters($search) . '%';
+    }
+
+    private function escapeLikeSpecialCharacters(string $value): string
+    {
+        return addcslashes($value, "\\%_");
     }
 
     /**
@@ -193,6 +203,10 @@ final class SearchQueryHelper
      */
     private function getSearchVariants(string $searchTerm): array
     {
+        if (isset($this->searchVariantsCache[$searchTerm])) {
+            return $this->searchVariantsCache[$searchTerm];
+        }
+
         $variants = [$searchTerm];
 
         $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
@@ -204,6 +218,8 @@ final class SearchQueryHelper
         if ($numericVariant !== $searchTerm && !in_array($numericVariant, $variants, true)) {
             $variants[] = $numericVariant;
         }
+
+        $this->searchVariantsCache[$searchTerm] = $variants;
 
         return $variants;
     }
