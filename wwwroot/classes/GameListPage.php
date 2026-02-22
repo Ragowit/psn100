@@ -7,27 +7,27 @@ require_once __DIR__ . '/GameListFilter.php';
 
 class GameListPage
 {
-    private GameListService $gameListService;
+    private readonly GameListService $gameListService;
 
-    private GameListFilter $filter;
+    private readonly GameListFilter $filter;
 
-    private int $limit;
+    private readonly int $limit;
 
-    private int $offset;
+    private readonly int $offset;
 
-    private int $totalGames;
+    private readonly int $totalGames;
 
-    private int $totalPages;
+    private readonly int $totalPages;
 
     /**
      * @var GameListItem[]
      */
-    private array $games;
+    private readonly array $games;
 
     /**
      * @var array<string, string>
      */
-    private array $paginationParameters;
+    private readonly array $paginationParameters;
 
     public function __construct(GameListService $gameListService, GameListFilter $filter)
     {
@@ -35,11 +35,12 @@ class GameListPage
         $this->filter = $filter->withPlayer($gameListService->resolvePlayer($filter->getPlayer()));
         $this->limit = $this->gameListService->getLimit();
         $this->offset = $this->gameListService->getOffset($this->filter);
-        $this->totalGames = $this->gameListService->countGames($this->filter);
+        $result = $this->gameListService->getGamesPage($this->filter);
+        $this->totalGames = $result->totalGames;
         $this->totalPages = $this->totalGames > 0
             ? (int) ceil($this->totalGames / $this->limit)
             : 0;
-        $this->games = $this->gameListService->getGames($this->filter);
+        $this->games = $result->games;
         $this->paginationParameters = $this->filter->getQueryParametersForPagination();
     }
 
