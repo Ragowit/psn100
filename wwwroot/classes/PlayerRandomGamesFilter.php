@@ -13,6 +13,19 @@ final readonly class PlayerRandomGamesFilter
     public const string PLATFORM_PSVR2 = 'psvr2';
 
     /**
+     * @var list<string>
+     */
+    private const PLATFORM_KEYS = [
+        self::PLATFORM_PC,
+        self::PLATFORM_PS3,
+        self::PLATFORM_PS4,
+        self::PLATFORM_PS5,
+        self::PLATFORM_PSVITA,
+        self::PLATFORM_PSVR,
+        self::PLATFORM_PSVR2,
+    ];
+
+    /**
      * @var array<string, bool>
      */
     private array $selectedPlatforms;
@@ -28,35 +41,34 @@ final readonly class PlayerRandomGamesFilter
     public static function fromArray(array $parameters): self
     {
         $selectedPlatforms = [];
-        foreach (self::getPlatformKeys() as $platformKey) {
+        foreach (self::PLATFORM_KEYS as $platformKey) {
             $selectedPlatforms[$platformKey] = self::toBool($parameters[$platformKey] ?? null);
         }
 
         return new self($selectedPlatforms);
     }
 
-    /**
-     * @return array<string>
-     */
-    private static function getPlatformKeys(): array
+    private static function toBool(mixed $value): bool
     {
-        return [
-            self::PLATFORM_PC,
-            self::PLATFORM_PS3,
-            self::PLATFORM_PS4,
-            self::PLATFORM_PS5,
-            self::PLATFORM_PSVITA,
-            self::PLATFORM_PSVR,
-            self::PLATFORM_PSVR2,
-        ];
-    }
+        if ($value === null) {
+            return false;
+        }
 
-    /**
-     * @param mixed $value
-     */
-    private static function toBool($value): bool
-    {
-        return !empty($value);
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value !== 0;
+        }
+
+        if (!is_string($value) && !is_numeric($value)) {
+            return false;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+
+        return !in_array($normalized, ['', '0', 'false', 'off', 'no'], true);
     }
 
     public function isPlatformSelected(string $platform): bool
