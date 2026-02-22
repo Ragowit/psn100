@@ -18,7 +18,7 @@ class ChangelogService
 
     public function getTotalChangeCount(): int
     {
-        $query = $this->database->prepare('SELECT COUNT(*) FROM psn100_change');
+        $query = $this->database->prepare("SELECT COUNT(*) FROM psn100_change WHERE change_type NOT IN ('GAME_UPDATE', 'GAME_VERSION')");
         $query->execute();
 
         return (int) ($query->fetchColumn() ?: 0);
@@ -44,6 +44,7 @@ class ChangelogService
             LEFT JOIN trophy_title_meta ttm1 ON ttm1.np_communication_id = tt1.np_communication_id
             LEFT JOIN trophy_title tt2 ON tt2.id = c.param_2
             LEFT JOIN trophy_title_meta ttm2 ON ttm2.np_communication_id = tt2.np_communication_id
+            WHERE c.change_type NOT IN ('GAME_UPDATE', 'GAME_VERSION')
             ORDER BY c.time DESC
             LIMIT :limit OFFSET :offset
             SQL

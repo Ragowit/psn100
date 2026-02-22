@@ -68,6 +68,39 @@ final class ChangelogServiceTest extends TestCase
         $this->assertSame('US', $entry->getParam2Region());
     }
 
+
+    public function testGetChangesAndCountExcludeGameUpdateAndGameVersion(): void
+    {
+        $this->database->exec(
+            "INSERT INTO psn100_change (time, change_type, param_1, param_2, extra) VALUES " .
+            "('2024-01-03 00:00:00', 'GAME_MERGE', 1, 2, NULL), " .
+            "('2024-01-02 00:00:00', 'GAME_VERSION', 1, 2, NULL), " .
+            "('2024-01-01 00:00:00', 'GAME_UPDATE', 1, 2, NULL), " .
+            "('2023-12-31 00:00:00', 'PLAYER_CREATE', 1, 2, NULL)"
+        );
+
+        $this->assertSame(2, $this->service->getTotalChangeCount());
+
+        $pageOnePaginator = new ChangelogPaginator(1, 1, 1);
+        $pageOneEntries = $this->service->getChanges($pageOnePaginator);
+
+        $this->assertCount(1, $pageOneEntries);
+        $this->assertSame(ChangelogEntryType::GAME_MERGE, $pageOneEntries[0]->getChangeType());
+
+        $pageTwoPaginator = new ChangelogPaginator(2, 2, 1);
+        $pageTwoEntries = $this->service->getChanges($pageTwoPaginator);
+
+        $this->assertCount(1, $pageTwoEntries);
+        $this->assertSame(ChangelogEntryType::UNKNOWN, $pageTwoEntries[0]->getChangeType());
+        $this->assertSame('PLAYER_CREATE', $pageTwoEntries[0]->getChangeTypeValue());
+
+        $pageThreePaginator = new ChangelogPaginator(3, 2, 1);
+        $pageThreeEntries = $this->service->getChanges($pageThreePaginator);
+
+        $this->assertCount(1, $pageThreeEntries);
+        $this->assertSame('PLAYER_CREATE', $pageThreeEntries[0]->getChangeTypeValue());
+    }
+
     private function insertTitle(int $id, string $npCommunicationId, string $name, string $platform, string $region): void
     {
         $titleStatement = $this->database->prepare(
