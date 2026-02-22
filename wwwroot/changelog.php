@@ -39,7 +39,7 @@ require_once("header.php");
                 </div>
 
                 <?php foreach ($entries as $presenter) { ?>
-                    <div class="col-1">
+                    <div class="col-4 col-sm-2 col-md-1 text-nowrap small text-body-secondary">
                         <time
                             class="js-localized-changelog-time"
                             datetime="<?= htmlspecialchars($presenter->getIsoTimestamp(), ENT_QUOTES, 'UTF-8'); ?>"
@@ -47,7 +47,7 @@ require_once("header.php");
                             <?= $presenter->getTimeLabel(); ?>
                         </time>
                     </div>
-                    <div class="col-11">
+                    <div class="col-8 col-sm-10 col-md-11">
                         <?= $presenter->getMessage(); ?>
                     </div>
                 <?php } ?>
@@ -172,7 +172,7 @@ require_once("header.php");
 
                 group.entries.forEach((entry) => {
                     const timeColumn = document.createElement('div');
-                    timeColumn.className = 'col-1';
+                    timeColumn.className = 'col-4 col-sm-2 col-md-1 text-nowrap small text-body-secondary';
 
                     const timeElement = document.createElement('time');
                     timeElement.className = 'js-localized-changelog-time';
@@ -183,7 +183,7 @@ require_once("header.php");
                     rowElement.appendChild(timeColumn);
 
                     const messageColumn = document.createElement('div');
-                    messageColumn.className = 'col-11';
+                    messageColumn.className = 'col-8 col-sm-10 col-md-11';
                     messageColumn.innerHTML = entry.messageHtml;
 
                     rowElement.appendChild(messageColumn);
