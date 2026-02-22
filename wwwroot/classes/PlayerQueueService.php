@@ -152,20 +152,27 @@ class PlayerQueueService
 
         $position = $this->fetchSingleValue(
             <<<'SQL'
-            WITH ranked_queue AS (
+            WITH target AS (
                 SELECT
-                    online_id,
-                    ROW_NUMBER() OVER (ORDER BY request_time, online_id) AS position
+                    request_time,
+                    online_id
                 FROM
                     player_queue
+                WHERE
+                    online_id = :online_id
+                LIMIT 1
             )
             SELECT
-                position
+                (
+                    SELECT
+                        COUNT(*) + 1
+                    FROM
+                        player_queue queue_entry
+                    WHERE
+                        (queue_entry.request_time, queue_entry.online_id) < (target.request_time, target.online_id)
+                ) AS position
             FROM
-                ranked_queue
-            WHERE
-                online_id = :online_id
-            LIMIT 1
+                target
             SQL,
             [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
