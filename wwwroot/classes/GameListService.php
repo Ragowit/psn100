@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/GameListItem.php';
+require_once __DIR__ . '/GameListPageResult.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 
 class GameListService
@@ -64,14 +65,7 @@ class GameListService
 
     public function countGames(GameListFilter $filter): int
     {
-        $sql = $this->buildCountQuery($filter);
-        $statement = $this->database->prepare($sql);
-        $this->bindCommonParameters($statement, $filter, false);
-        $statement->execute();
-
-        $count = $statement->fetchColumn();
-
-        return $count === false ? 0 : (int) $count;
+        return $this->fetchCount($filter);
     }
 
     /**
@@ -79,7 +73,12 @@ class GameListService
      */
     public function getGames(GameListFilter $filter): array
     {
-        $sql = $this->buildListQuery($filter);
+        return $this->getGamesPage($filter)->games;
+    }
+
+    public function getGamesPage(GameListFilter $filter): GameListPageResult
+    {
+        $sql = $this->buildListQuery($filter, true);
         $statement = $this->database->prepare($sql);
         $this->bindCommonParameters($statement, $filter, true);
         $statement->bindValue(':offset', $this->getOffset($filter), PDO::PARAM_INT);
@@ -88,10 +87,19 @@ class GameListService
 
         $games = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(
+        $totalGames = 0;
+        if ($games !== []) {
+            $totalGames = (int) ($games[0]['total_games'] ?? 0);
+        } elseif ($this->getOffset($filter) > 0) {
+            $totalGames = $this->fetchCount($filter);
+        }
+
+        $items = array_map(
             static fn(array $row): GameListItem => GameListItem::fromArray($row),
             $games
         );
+
+        return new GameListPageResult($items, $totalGames);
     }
 
     private function bindCommonParameters(PDOStatement $statement, GameListFilter $filter, bool $bindPrefix): void
@@ -110,7 +118,7 @@ class GameListService
 
     private function buildCountQuery(GameListFilter $filter): string
     {
-        $conditions = $this->buildConditions($filter, true);
+        $conditions = $this->buildConditions($filter);
 
         return sprintf(
             <<<'SQL'
@@ -131,7 +139,7 @@ class GameListService
         );
     }
 
-    private function buildListQuery(GameListFilter $filter): string
+    private function buildListQuery(GameListFilter $filter, bool $includeTotalCount = false): string
     {
         $columns = [
             'tt.np_communication_id',
@@ -151,6 +159,10 @@ class GameListService
             'ttp.progress',
         ];
 
+        if ($includeTotalCount) {
+            $columns[] = 'COUNT(*) OVER() AS total_games';
+        }
+
         $columns = $this->searchQueryHelper->addFulltextSelectColumns(
             $columns,
             'tt.name',
@@ -158,7 +170,7 @@ class GameListService
             $filter->getSearch()
         );
 
-        $conditions = $this->buildConditions($filter, false);
+        $conditions = $this->buildConditions($filter);
         $orderBy = $this->buildOrderByClause($filter);
 
         return sprintf(
@@ -185,7 +197,7 @@ class GameListService
         );
     }
 
-    private function buildConditions(GameListFilter $filter, bool $forCount): string
+    private function buildConditions(GameListFilter $filter): string
     {
         $conditions = [
             match ($filter->getSort()) {
@@ -212,6 +224,18 @@ class GameListService
         }
 
         return implode(' AND ', $conditions);
+    }
+
+    private function fetchCount(GameListFilter $filter): int
+    {
+        $sql = $this->buildCountQuery($filter);
+        $statement = $this->database->prepare($sql);
+        $this->bindCommonParameters($statement, $filter, false);
+        $statement->execute();
+
+        $count = $statement->fetchColumn();
+
+        return $count === false ? 0 : (int) $count;
     }
 
     private function buildOrderByClause(GameListFilter $filter): string
