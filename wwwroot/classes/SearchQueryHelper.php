@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 final class SearchQueryHelper
 {
-    private const ROMAN_MIN = 1;
-    private const ROMAN_MAX = 3999;
-    private const ROMAN_CONVERSION_MAP = [
+    private const int ROMAN_MIN = 1;
+    private const int ROMAN_MAX = 3999;
+    private const array ROMAN_CONVERSION_MAP = [
         'M' => 1000,
         'CM' => 900,
         'D' => 500,
@@ -21,7 +21,7 @@ final class SearchQueryHelper
         'IV' => 4,
         'I' => 1,
     ];
-    private const ROMAN_VALUE_MAP = [
+    private const array ROMAN_VALUE_MAP = [
         'M' => 1000,
         'D' => 500,
         'C' => 100,
@@ -238,9 +238,9 @@ final class SearchQueryHelper
     {
         return (string) preg_replace_callback(
             '/\b\d+\b/u',
-            function (array $matches): string {
+            static function (array $matches): string {
                 $number = (int) $matches[0];
-                $roman = $this->convertIntToRoman($number);
+                $roman = self::convertIntToRoman($number);
 
                 return $roman ?? $matches[0];
             },
@@ -252,15 +252,15 @@ final class SearchQueryHelper
     {
         return (string) preg_replace_callback(
             '/\b[ivxlcdm]+\b/ui',
-            function (array $matches): string {
+            static function (array $matches): string {
                 $roman = strtoupper($matches[0]);
-                $number = $this->convertRomanToInt($roman);
+                $number = self::convertRomanToInt($roman);
 
                 if ($number === null) {
                     return $matches[0];
                 }
 
-                $normalizedRoman = $this->convertIntToRoman($number);
+                $normalizedRoman = self::convertIntToRoman($number);
                 if ($normalizedRoman !== $roman) {
                     return $matches[0];
                 }
@@ -271,7 +271,7 @@ final class SearchQueryHelper
         );
     }
 
-    private function convertIntToRoman(int $number): ?string
+    private static function convertIntToRoman(int $number): ?string
     {
         if ($number < self::ROMAN_MIN || $number > self::ROMAN_MAX) {
             return null;
@@ -288,7 +288,7 @@ final class SearchQueryHelper
         return $result;
     }
 
-    private function convertRomanToInt(string $roman): ?int
+    private static function convertRomanToInt(string $roman): ?int
     {
         if ($roman === '') {
             return null;
