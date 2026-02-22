@@ -47,22 +47,22 @@ class Router
     {
         $path = parse_url($requestUri, PHP_URL_PATH);
         $path = is_string($path) ? $path : '';
-        $path = ltrim($path, '/');
+        $normalizedPath = trim($path, '/');
 
-        $segments = $path === '' ? [] : explode('/', $path);
-
-        if ($segments === [] || $segments[0] === '') {
+        if ($normalizedPath === '') {
             return $this->defaultHandler->handle([]);
         }
 
-        $route = array_shift($segments);
+        $segments = explode('/', $normalizedPath);
+        $route = $segments[0];
+        $routeSegments = array_slice($segments, 1);
 
-        $handler = $route !== null ? ($this->routeHandlers[$route] ?? null) : null;
+        $handler = $this->routeHandlers[$route] ?? null;
 
         if (!$handler instanceof RouteHandlerInterface) {
             return RouteResult::notFound();
         }
 
-        return $handler->handle($segments);
+        return $handler->handle($routeSegments);
     }
 }

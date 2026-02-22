@@ -35,6 +35,7 @@ final class SearchQueryHelper
      * @var array<string, list<string>>
      */
     private array $searchVariantsCache = [];
+
     /**
      * @param array<int, string> $columns
      * @return array<int, string>
@@ -208,14 +209,16 @@ final class SearchQueryHelper
         }
 
         $variants = [$searchTerm];
+        $deduplicated = [$searchTerm => true];
 
         $romanVariant = $this->replaceDigitsWithRomans($searchTerm);
-        if ($romanVariant !== $searchTerm && !in_array($romanVariant, $variants, true)) {
+        if ($romanVariant !== $searchTerm && !isset($deduplicated[$romanVariant])) {
             $variants[] = $romanVariant;
+            $deduplicated[$romanVariant] = true;
         }
 
         $numericVariant = $this->replaceRomansWithDigits($searchTerm);
-        if ($numericVariant !== $searchTerm && !in_array($numericVariant, $variants, true)) {
+        if ($numericVariant !== $searchTerm && !isset($deduplicated[$numericVariant])) {
             $variants[] = $numericVariant;
         }
 
