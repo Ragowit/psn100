@@ -194,7 +194,7 @@ class GameService
                         np_communication_id,
                         group_id,
                         order_id,
-                        earned_date,
+                        IFNULL(earned_date, 'No Timestamp') AS earned_date,
                         progress,
                         earned
                     FROM
