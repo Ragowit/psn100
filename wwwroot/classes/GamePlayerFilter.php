@@ -10,11 +10,8 @@ readonly class GamePlayerFilter
 
     public function __construct(?string $country, ?string $avatar)
     {
-        $country = $country !== null ? trim($country) : null;
-        $avatar = $avatar !== null ? trim($avatar) : null;
-
-        $this->country = $country === '' ? null : $country;
-        $this->avatar = $avatar === '' ? null : $avatar;
+        $this->country = self::normalizeOptionalString($country);
+        $this->avatar = self::normalizeOptionalString($avatar);
     }
 
     /**
@@ -22,8 +19,8 @@ readonly class GamePlayerFilter
      */
     public static function fromArray(array $queryParameters): self
     {
-        $country = isset($queryParameters['country']) ? (string) $queryParameters['country'] : null;
-        $avatar = isset($queryParameters['avatar']) ? (string) $queryParameters['avatar'] : null;
+        $country = self::readOptionalString($queryParameters, 'country');
+        $avatar = self::readOptionalString($queryParameters, 'avatar');
 
         return new self($country, $avatar);
     }
@@ -80,9 +77,9 @@ readonly class GamePlayerFilter
     public function withCountry(?string $country): array
     {
         $parameters = $this->getFilterParameters();
-        $country = $country !== null ? trim($country) : null;
+        $country = self::normalizeOptionalString($country);
 
-        if ($country === null || $country === '') {
+        if ($country === null) {
             unset($parameters['country']);
         } else {
             $parameters['country'] = $country;
@@ -97,14 +94,39 @@ readonly class GamePlayerFilter
     public function withAvatar(?string $avatar): array
     {
         $parameters = $this->getFilterParameters();
-        $avatar = $avatar !== null ? trim($avatar) : null;
+        $avatar = self::normalizeOptionalString($avatar);
 
-        if ($avatar === null || $avatar === '') {
+        if ($avatar === null) {
             unset($parameters['avatar']);
         } else {
             $parameters['avatar'] = $avatar;
         }
 
         return $parameters;
+    }
+
+    /**
+     * @param array<string, mixed> $queryParameters
+     */
+    private static function readOptionalString(array $queryParameters, string $key): ?string
+    {
+        $value = $queryParameters[$key] ?? null;
+
+        if ($value === null || is_array($value)) {
+            return null;
+        }
+
+        return self::normalizeOptionalString((string) $value);
+    }
+
+    private static function normalizeOptionalString(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 }
