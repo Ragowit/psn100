@@ -6,11 +6,20 @@ require_once __DIR__ . '/GamePlayerFilter.php';
 
 final class GameRecentPlayersQueryBuilder
 {
-    private readonly GamePlayerFilter $filter;
-
-    private readonly int $limit;
-
     private const BASE_QUERY = <<<'SQL'
+        WITH eligible_players AS (
+            SELECT
+                p.account_id,
+                p.avatar_url,
+                p.country,
+                p.online_id,
+                p.trophy_count_npwr,
+                p.trophy_count_sony
+            FROM player p
+            JOIN player_ranking r ON r.account_id = p.account_id
+            WHERE p.status = 0
+              AND r.ranking <= 10000
+        )
         SELECT
             p.account_id,
             p.avatar_url,
@@ -24,15 +33,9 @@ final class GameRecentPlayersQueryBuilder
             ttp.platinum,
             ttp.progress,
             ttp.last_updated_date AS last_known_date
-        FROM
-            trophy_title_player ttp
-        JOIN player p ON p.account_id = ttp.account_id
-        JOIN player_ranking r ON
-            r.account_id = ttp.account_id
-            AND r.ranking <= 10000
-        WHERE
-            p.status = 0
-            AND ttp.np_communication_id = :np_communication_id
+        FROM trophy_title_player ttp
+        JOIN eligible_players p ON p.account_id = ttp.account_id
+        WHERE ttp.np_communication_id = :np_communication_id
     SQL;
 
     private const ORDER_BY_QUERY = <<<'SQL'
@@ -41,11 +44,14 @@ final class GameRecentPlayersQueryBuilder
         LIMIT :limit
     SQL;
 
-    public function __construct(GamePlayerFilter $filter, int $limit)
-    {
-        $this->filter = $filter;
+    public function __construct(
+        private readonly GamePlayerFilter $filter,
+        int $limit,
+    ) {
         $this->limit = max(1, $limit);
     }
+
+    private readonly int $limit;
 
     public function prepare(\PDO $database, string $npCommunicationId): \PDOStatement
     {
