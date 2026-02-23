@@ -1155,7 +1155,7 @@ SQL
                 earned
             )
         SQL
-            . '\n' . $mergeSourceCte . '\n'
+            . "\n" . $mergeSourceCte . "\n"
             . <<<'SQL'
             SELECT
                 source.parent_np_communication_id,
