@@ -1144,7 +1144,7 @@ SQL
         SQL;
 
         $insertMissingParentEarned = $this->database->prepare(
-            $mergeSourceCte . <<<'SQL'
+            <<<'SQL'
             INSERT INTO trophy_earned (
                 np_communication_id,
                 group_id,
@@ -1154,6 +1154,9 @@ SQL
                 progress,
                 earned
             )
+        SQL
+            . "\n" . $mergeSourceCte . "\n"
+            . <<<'SQL'
             SELECT
                 source.parent_np_communication_id,
                 source.parent_group_id,
