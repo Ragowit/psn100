@@ -1125,26 +1125,8 @@ SQL
             sprintf('Found %d merged trophies to copy…', $total)
         );
 
-        $mergeSourceCte = <<<'SQL'
-            WITH merge_source AS (
-                SELECT
-                    tm.parent_np_communication_id,
-                    tm.parent_group_id,
-                    tm.parent_order_id,
-                    child.account_id,
-                    child.earned_date,
-                    child.progress,
-                    child.earned
-                FROM trophy_merge AS tm
-                JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
-                    AND child.group_id = tm.child_group_id
-                    AND child.order_id = tm.child_order_id
-                WHERE tm.child_np_communication_id = :child_np_communication_id
-            )
-        SQL;
-
         $insertMissingParentEarned = $this->database->prepare(
-            $mergeSourceCte . <<<'SQL'
+            <<<'SQL'
             INSERT INTO trophy_earned (
                 np_communication_id,
                 group_id,
@@ -1162,7 +1144,21 @@ SQL
                 source.earned_date,
                 source.progress,
                 source.earned
-            FROM merge_source AS source
+            FROM (
+                SELECT
+                    tm.parent_np_communication_id,
+                    tm.parent_group_id,
+                    tm.parent_order_id,
+                    child.account_id,
+                    child.earned_date,
+                    child.progress,
+                    child.earned
+                FROM trophy_merge AS tm
+                JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                    AND child.group_id = tm.child_group_id
+                    AND child.order_id = tm.child_order_id
+                WHERE tm.child_np_communication_id = :child_np_communication_id
+            ) AS source
             LEFT JOIN trophy_earned AS parent ON parent.np_communication_id = source.parent_np_communication_id
                 AND parent.group_id = source.parent_group_id
                 AND parent.order_id = source.parent_order_id
@@ -1174,9 +1170,23 @@ SQL
         $insertMissingParentEarned->execute();
 
         $synchronizeExistingEarned = $this->database->prepare(
-            $mergeSourceCte . <<<'SQL'
+            <<<'SQL'
             UPDATE trophy_earned AS parent
-            JOIN merge_source AS source ON source.parent_np_communication_id = parent.np_communication_id
+            JOIN (
+                SELECT
+                    tm.parent_np_communication_id,
+                    tm.parent_group_id,
+                    tm.parent_order_id,
+                    child.account_id,
+                    child.earned_date,
+                    child.progress,
+                    child.earned
+                FROM trophy_merge AS tm
+                JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                    AND child.group_id = tm.child_group_id
+                    AND child.order_id = tm.child_order_id
+                WHERE tm.child_np_communication_id = :child_np_communication_id
+            ) AS source ON source.parent_np_communication_id = parent.np_communication_id
                 AND source.parent_group_id = parent.group_id
                 AND source.parent_order_id = parent.order_id
                 AND source.account_id = parent.account_id
