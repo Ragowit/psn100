@@ -167,14 +167,6 @@ class PossibleCheaterService
             ],
         ],
         [
-            'label' => 'NINJA GAIDEN Σ2 PLUS',
-            'conditions' => [
-                'te.np_communication_id = \'NPWR04361_00\' AND te.order_id = 0',
-                'te.np_communication_id = \'NPWR04361_00\' AND te.order_id = 39',
-                'te.np_communication_id = \'NPWR04361_00\' AND te.order_id = 40',
-            ],
-        ],
-        [
             'label' => 'Night Trap - 25th Anniversary Edition',
             'conditions' => [
                 'te.np_communication_id = \'NPWR14011_00\' AND te.order_id = 0',
