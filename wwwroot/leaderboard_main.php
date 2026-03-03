@@ -15,15 +15,15 @@ $filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
 
 <main class="container">
     <div class="row">
-        <div class="col-12">
-            <div class="hstack gap-3">
-                <h1>PSN Trophy Leaderboard</h1>
-                <div class="bg-body-tertiary p-3 rounded">
-                    <div class="btn-group">
-                        <a class="btn btn-primary active" href="/leaderboard/trophy">Trophy</a>
-                        <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity (Meta)</a>
-                        <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (In-Game)</a>
-                    </div>
+        <div class="col-6">
+            <h1>PSN Trophy Leaderboard</h1>
+        </div>
+        <div class="col-6 d-flex justify-content-end">
+            <div class="bg-body-tertiary p-3 rounded">
+                <div class="btn-group">
+                    <a class="btn btn-primary active" href="/leaderboard/trophy">Trophy</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity (Meta)</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (In-Game)</a>
                 </div>
             </div>
         </div>
