@@ -1519,9 +1519,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $missingGameDeletionCheck[$onlineId] = true;
                                 $this->setWaitingScanProgress(
                                     (int) $worker['id'],
-                                    'Waiting 1 minute before retrying because of game deletion check.'
+                                    'Waiting 5 minutes before retrying because of game deletion check.'
                                 );
-                                sleep(60 * 1);
+                                sleep(60 * 5);
                                 $recheck = '';
 
                                 continue;
