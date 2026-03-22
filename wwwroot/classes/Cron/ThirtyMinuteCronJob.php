@@ -638,14 +638,26 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         continue;
                     }
 
-                    $md5Hash = $this->imageHashCalculator->calculate($avatarContents);
-                    if ($md5Hash === null) {
-                        $md5Hash = md5($avatarContents);
+                    $newPHash = $this->imageHashCalculator->calculatePHash($avatarContents);
+                    if ($newPHash === null) {
+                        // Something went wrong with the image processing, skip saving this avatar.
+                        continue;
+                    }
+
+                    $query = $this->database->prepare("SELECT DISTINCT md5_hash FROM psn100_avatars");
+                    $query->execute();
+                    $existingPHashes = $query->fetchAll(PDO::FETCH_COLUMN);
+
+                    foreach ($existingPHashes as $existingPHash) {
+                        if ($this->imageHashCalculator->getHammingDistance($newPHash, $existingPHash) <= 3) {
+                            $newPHash = $existingPHash;
+                            break; 
+                        }
                     }
 
                     $extension = strtolower(pathinfo($avatarUrl, PATHINFO_EXTENSION));
 
-                    $avatarFilename = $md5Hash .".". $extension;
+                    $avatarFilename = $newPHash .".". $extension;
                     if (!file_exists("/home/psn100/public_html/img/avatar/". $avatarFilename)) {
                         file_put_contents("/home/psn100/public_html/img/avatar/". $avatarFilename, $avatarContents);
                     }
@@ -665,7 +677,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         )");
                     $query->bindValue(":size", $size, PDO::PARAM_STR);
                     $query->bindValue(":avatar_url", $avatarUrl, PDO::PARAM_STR);
-                    $query->bindValue(":md5_hash", $md5Hash, PDO::PARAM_STR);
+                    $query->bindValue(":md5_hash", $newPHash, PDO::PARAM_STR);
                     $query->bindValue(":extension", $extension, PDO::PARAM_STR);
                     $query->execute();
                 } else {
