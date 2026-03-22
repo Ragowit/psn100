@@ -649,7 +649,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $existingPHashes = $query->fetchAll(PDO::FETCH_COLUMN);
 
                     foreach ($existingPHashes as $existingPHash) {
-                        if ($this->imageHashCalculator->getHammingDistance($newPHash, $existingPHash) <= 3) {
+                        if ($this->imageHashCalculator->getHammingDistance($newPHash, $existingPHash) <= 10) {
                             $newPHash = $existingPHash;
                             break; 
                         }

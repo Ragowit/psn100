@@ -75,20 +75,20 @@ final class ImageHashCalculator
         if ($image === null) return null;
 
         try {
-            // 1. Create a small 8x8 grayscale thumbnail to ignore noise/fine details
-            $sample = imagecreatetruecolor(8, 8);
+            // 1. Create a 16x16 thumbnail for better detail retention than 8x8
+            $sample = imagecreatetruecolor(16, 16);
             
-            // Fill with white background to handle transparency consistently
+            // Background fill to normalize transparency
             $white = imagecolorallocate($sample, 255, 255, 255);
             imagefill($sample, 0, 0, $white);
             
-            imagecopyresampled($sample, $image, 0, 0, 0, 0, 8, 8, imagesx($image), imagesy($image));
+            imagecopyresampled($sample, $image, 0, 0, 0, 0, 16, 16, imagesx($image), imagesy($image));
 
             $pixels = [];
             $totalLuminance = 0;
 
-            for ($y = 0; $y < 8; $y++) {
-                for ($x = 0; $x < 8; $x++) {
+            for ($y = 0; $y < 16; $y++) {
+                for ($x = 0; $x < 16; $x++) {
                     $rgb = imagecolorat($sample, $x, $y);
                     $r = ($rgb >> 16) & 0xFF;
                     $g = ($rgb >> 8) & 0xFF;
@@ -101,22 +101,23 @@ final class ImageHashCalculator
                 }
             }
 
-            $avg = $totalLuminance / 64;
-            $hashBin = '';
+            $avg = $totalLuminance / 256;
+            $hashHex = '';
+            $binaryChunk = '';
 
-            // 2. Generate bit string (1 if pixel >= average, 0 otherwise)
-            foreach ($pixels as $pixel) {
-                $hashBin .= ($pixel >= $avg) ? '1' : '0';
-            }
-
-            // 3. Convert 64-bit binary string to 16-character Hexadecimal
-            $pHash = '';
-            foreach (str_split($hashBin, 4) as $nibble) {
-                $pHash .= dechex(bindec($nibble));
+            // 2. Generate 256 bits and convert to Hex
+            foreach ($pixels as $index => $pixel) {
+                $binaryChunk .= ($pixel >= $avg) ? '1' : '0';
+                
+                // Every 4 bits, convert to one hex character
+                if (strlen($binaryChunk) === 4) {
+                    $hashHex .= dechex(bindec($binaryChunk));
+                    $binaryChunk = '';
+                }
             }
 
             imagedestroy($sample);
-            return $pHash;
+            return $hashHex;
 
         } finally {
             $this->imageProcessor->destroyImage($image);
@@ -124,21 +125,27 @@ final class ImageHashCalculator
     }
 
     /**
-     * Calculates the Hamming Distance between two hex hashes.
-     * 0 = Identical, 1-3 = Visually very similar, >10 = Different images.
+     * Calculates the Hamming Distance between two 64-character pHash strings.
+     * Scale: 0-256 bits.
+     * Recommendation: Distance <= 10 for "likely the same image" at 16x16 resolution.
      */
     public function getHammingDistance(string $hash1, string $hash2): int
     {
-        if (strlen($hash1) !== strlen($hash2)) return 64;
-
-        // Convert hex to binary strings padded to 64 bits
-        $bin1 = str_pad(base_convert($hash1, 16, 2), 64, '0', STR_PAD_LEFT);
-        $bin2 = str_pad(base_convert($hash2, 16, 2), 64, '0', STR_PAD_LEFT);
+        if (strlen($hash1) !== strlen($hash2)) return 256;
 
         $distance = 0;
-        for ($i = 0; $i < 64; $i++) {
-            if ($bin1[$i] !== $bin2[$i]) {
-                $distance++;
+        // Compare hex characters directly by converting them back to integers
+        for ($i = 0; $i < strlen($hash1); $i++) {
+            $val1 = hexdec($hash1[$i]);
+            $val2 = hexdec($hash2[$i]);
+            
+            // XOR shows the differing bits
+            $xor = $val1 ^ $val2;
+            
+            // Count set bits (popcount)
+            while ($xor > 0) {
+                if ($xor & 1) $distance++;
+                $xor >>= 1;
             }
         }
 
