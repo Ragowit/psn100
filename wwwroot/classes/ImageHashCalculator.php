@@ -61,9 +61,9 @@ final class ImageHashCalculator
     }
 
     /**
-     * Perceptual Hash (pHash) for Avatars.
-     * Generates a 16-character HEX string based on the image structure.
-     * Resistant to minor compression artifacts and metadata changes.
+     * Difference Hash (dHash) - 16x16 resolution.
+     * Compares adjacent pixels to capture structural gradients.
+     * This is much better at distinguishing different subjects like an Orb vs a Bear.
      */
     public function calculatePHash(string $contents): ?string
     {
@@ -75,44 +75,35 @@ final class ImageHashCalculator
         if ($image === null) return null;
 
         try {
-            // 1. Create a 16x16 thumbnail for better detail retention than 8x8
-            $sample = imagecreatetruecolor(16, 16);
+            // For dHash 16x16, we need 17x16 pixels to compare horizontally
+            $width = 17;
+            $height = 16;
+            $sample = imagecreatetruecolor($width, $height);
             
-            // Background fill to normalize transparency
             $white = imagecolorallocate($sample, 255, 255, 255);
             imagefill($sample, 0, 0, $white);
             
-            imagecopyresampled($sample, $image, 0, 0, 0, 0, 16, 16, imagesx($image), imagesy($image));
+            imagecopyresampled($sample, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
 
-            $pixels = [];
-            $totalLuminance = 0;
-
-            for ($y = 0; $y < 16; $y++) {
-                for ($x = 0; $x < 16; $x++) {
-                    $rgb = imagecolorat($sample, $x, $y);
-                    $r = ($rgb >> 16) & 0xFF;
-                    $g = ($rgb >> 8) & 0xFF;
-                    $b = $rgb & 0xFF;
-
-                    // Calculate perceived brightness (Luminance) using BT.601 formula
-                    $gray = (int)($r * 0.299 + $g * 0.587 + $b * 0.114);
-                    $pixels[] = $gray;
-                    $totalLuminance += $gray;
-                }
-            }
-
-            $avg = $totalLuminance / 256;
             $hashHex = '';
             $binaryChunk = '';
 
-            // 2. Generate 256 bits and convert to Hex
-            foreach ($pixels as $index => $pixel) {
-                $binaryChunk .= ($pixel >= $avg) ? '1' : '0';
-                
-                // Every 4 bits, convert to one hex character
-                if (strlen($binaryChunk) === 4) {
-                    $hashHex .= dechex(bindec($binaryChunk));
-                    $binaryChunk = '';
+            for ($y = 0; $y < $height; $y++) {
+                for ($x = 0; $x < 16; $x++) {
+                    // Get luminance of current pixel and the one to its right
+                    $rgbLeft = imagecolorat($sample, $x, $y);
+                    $rgbRight = imagecolorat($sample, $x + 1, $y);
+
+                    $lLeft = (($rgbLeft >> 16) & 0xFF) * 0.299 + (($rgbLeft >> 8) & 0xFF) * 0.587 + ($rgbLeft & 0xFF) * 0.114;
+                    $lRight = (($rgbRight >> 16) & 0xFF) * 0.299 + (($rgbRight >> 8) & 0xFF) * 0.587 + ($rgbRight & 0xFF) * 0.114;
+
+                    // The bit is 1 if the left pixel is brighter than the right
+                    $binaryChunk .= ($lLeft > $lRight) ? '1' : '0';
+
+                    if (strlen($binaryChunk) === 4) {
+                        $hashHex .= dechex(bindec($binaryChunk));
+                        $binaryChunk = '';
+                    }
                 }
             }
 
@@ -124,31 +115,17 @@ final class ImageHashCalculator
         }
     }
 
-    /**
-     * Calculates the Hamming Distance between two 64-character pHash strings.
-     * Scale: 0-256 bits.
-     * Recommendation: Distance <= 10 for "likely the same image" at 16x16 resolution.
-     */
     public function getHammingDistance(string $hash1, string $hash2): int
     {
         if (strlen($hash1) !== strlen($hash2)) return 256;
-
         $distance = 0;
-        // Compare hex characters directly by converting them back to integers
         for ($i = 0; $i < strlen($hash1); $i++) {
-            $val1 = hexdec($hash1[$i]);
-            $val2 = hexdec($hash2[$i]);
-            
-            // XOR shows the differing bits
-            $xor = $val1 ^ $val2;
-            
-            // Count set bits (popcount)
+            $xor = hexdec($hash1[$i]) ^ hexdec($hash2[$i]);
             while ($xor > 0) {
                 if ($xor & 1) $distance++;
                 $xor >>= 1;
             }
         }
-
         return $distance;
     }
 
