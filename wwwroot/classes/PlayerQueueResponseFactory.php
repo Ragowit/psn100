@@ -151,9 +151,9 @@ final class PlayerQueueResponseFactory
         }
 
         if (preg_match('/^(Updating|Fetching)\b/i', $normalizedTitle) === 1) {
-            $actionText = lcfirst($normalizedTitle);
+            $actionText = ucfirst($normalizedTitle);
 
-            return 'Currently ' . $this->service->escapeHtml($actionText);
+            return $this->service->escapeHtml($actionText);
         }
 
         if ($this->isErrorProgressTitle($normalizedTitle)) {

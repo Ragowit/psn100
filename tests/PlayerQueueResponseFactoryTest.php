@@ -235,7 +235,7 @@ final class PlayerQueueResponseFactoryTest extends TestCase
 
         $message = $response->getMessage();
         $this->assertStringContainsString('is currently being scanned.', $message);
-        $this->assertStringContainsString('Currently updating avatar.', $message);
+        $this->assertStringContainsString('Updating avatar.', $message);
 
         $this->assertSame(
             ['Ragowit', '/player/Ragowit', 'updating avatar'],
