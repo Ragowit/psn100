@@ -61,72 +61,137 @@ final class ImageHashCalculator
     }
 
     /**
-     * Difference Hash (dHash) - 16x16 resolution.
-     * Compares adjacent pixels to capture structural gradients.
-     * This is much better at distinguishing different subjects like an Orb vs a Bear.
+     * * * Generates a high-precision perceptual hash (dHash) for images.
+     * Architecture: 152 bits total (38 hex characters)
+     * - 64 bits: Luminance Structure (8x8)
+     * - 64 bits: Alpha/Transparency Structure (8x8)
+     * - 24 bits: Average RGB Color
+     * Calculates the perceptual hash of an image from a binary string.
+     * * @param string $contents The raw image data.
+     * @return string|null The 38-character hex hash, or null on failure.
      */
-    public function calculatePHash(string $contents): ?string
+    public function calculatePHash(string $contents): ?string 
     {
-        if ($contents === '' || !$this->imageProcessor->isSupported()) {
+        if ($contents === '') {
             return null;
         }
 
-        $image = $this->imageProcessor->createImageFromString($contents);
-        if ($image === null) return null;
+        // Create image resource from binary string
+        $image = imagecreatefromstring($contents);
+        if (!$image) {
+            return null;
+        }
 
         try {
-            // For dHash 16x16, we need 17x16 pixels to compare horizontally
-            $width = 17;
-            $height = 16;
+            // Sampling size: 9x8 pixels to allow for 8 horizontal comparisons per row
+            $width = 9; 
+            $height = 8;
             $sample = imagecreatetruecolor($width, $height);
             
-            $white = imagecolorallocate($sample, 255, 255, 255);
-            imagefill($sample, 0, 0, $white);
+            // Prepare the sample to handle transparency correctly
+            imagealphablending($sample, false);
+            imagesavealpha($sample, true);
             
-            imagecopyresampled($sample, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
+            // Resize original image to the sampling grid
+            imagecopyresampled(
+                $sample, $image, 
+                0, 0, 0, 0, 
+                $width, $height, 
+                imagesx($image), imagesy($image)
+            );
 
-            $hashHex = '';
-            $binaryChunk = '';
+            $lBits = ''; // Luminance gradient bits
+            $aBits = ''; // Alpha gradient bits
+            $rTotal = 0; $gTotal = 0; $bTotal = 0;
 
             for ($y = 0; $y < $height; $y++) {
-                for ($x = 0; $x < 16; $x++) {
-                    // Get luminance of current pixel and the one to its right
-                    $rgbLeft = imagecolorat($sample, $x, $y);
-                    $rgbRight = imagecolorat($sample, $x + 1, $y);
+                for ($x = 0; $x < 8; $x++) {
+                    // Get RGBA values for current pixel and the pixel to its right
+                    $rgbL = imagecolorat($sample, $x, $y);
+                    $rgbR = imagecolorat($sample, $x + 1, $y);
 
-                    $lLeft = (($rgbLeft >> 16) & 0xFF) * 0.299 + (($rgbLeft >> 8) & 0xFF) * 0.587 + ($rgbLeft & 0xFF) * 0.114;
-                    $lRight = (($rgbRight >> 16) & 0xFF) * 0.299 + (($rgbRight >> 8) & 0xFF) * 0.587 + ($rgbRight & 0xFF) * 0.114;
+                    // Extract Alpha and calculate Luminance (Y) for both pixels
+                    // GD Alpha is 0 (opaque) to 127 (transparent)
+                    $aL = ($rgbL >> 24) & 0x7F;
+                    $rL = ($rgbL >> 16) & 0xFF;
+                    $gL = ($rgbL >> 8) & 0xFF;
+                    $bL = $rgbL & 0xFF;
+                    $yL = ($rL * 0.299 + $gL * 0.587 + $bL * 0.114);
+                    
+                    $aR = ($rgbR >> 24) & 0x7F;
+                    $rR = ($rgbR >> 16) & 0xFF;
+                    $gR = ($rgbR >> 8) & 0xFF;
+                    $bR = $rgbR & 0xFF;
+                    $yR = ($rR * 0.299 + $gR * 0.587 + $bR * 0.114);
 
-                    // The bit is 1 if the left pixel is brighter than the right
-                    $binaryChunk .= ($lLeft > $lRight) ? '1' : '0';
+                    // Difference Hash Logic: 1 if left is greater than right, else 0
+                    $lBits .= ($yL > $yR) ? '1' : '0'; // Structural change in brightness
+                    $aBits .= ($aL > $aR) ? '1' : '0'; // Structural change in transparency
 
-                    if (strlen($binaryChunk) === 4) {
-                        $hashHex .= dechex(bindec($binaryChunk));
-                        $binaryChunk = '';
-                    }
+                    // Accumulate RGB values for the global color signature
+                    $rTotal += $rL;
+                    $gTotal += $gL;
+                    $bTotal += $bL;
                 }
             }
 
-            imagedestroy($sample);
-            return $hashHex;
+            // Construct final hash: 16 chars (Luminance) + 16 chars (Alpha) + 6 chars (Color)
+            $hash = $this->binToHex($lBits);
+            $hash .= $this->binToHex($aBits);
+            
+            // Calculate average color across all 72 sampled pixels
+            $hash .= str_pad(dechex((int)($rTotal / 72)), 2, '0', STR_PAD_LEFT);
+            $hash .= str_pad(dechex((int)($gTotal / 72)), 2, '0', STR_PAD_LEFT);
+            $hash .= str_pad(dechex((int)($bTotal / 72)), 2, '0', STR_PAD_LEFT);
+
+            return $hash;
 
         } finally {
-            $this->imageProcessor->destroyImage($image);
+            // Free up memory
+            imagedestroy($image);
+            if (isset($sample)) {
+                imagedestroy($sample);
+            }
         }
     }
 
-    public function getHammingDistance(string $hash1, string $hash2): int
+    /**
+     * Converts a binary string to a hexadecimal string.
+     */
+    private function binToHex(string $bin): string 
     {
-        if (strlen($hash1) !== strlen($hash2)) return 256;
-        $distance = 0;
-        for ($i = 0; $i < strlen($hash1); $i++) {
-            $xor = hexdec($hash1[$i]) ^ hexdec($hash2[$i]);
+        $hex = '';
+        foreach (str_split($bin, 4) as $chunk) {
+            $hex .= dechex(bindec($chunk));
+        }
+        return $hex;
+    }
+
+    /**
+     * Calculates the Hamming Distance between two hashes.
+     * * @param string $h1 First hash (38 chars)
+     * @param string $h2 Second hash (38 chars)
+     * @return int Number of differing bits. 
+     * A distance <= 10 is usually considered the same image.
+     */
+    public function getHammingDistance(string $h1, string $h2): int 
+    {
+        if (strlen($h1) !== strlen($h2)) {
+            return 152; // Max distance for this specific bit length
+        }
+
+        $dist = 0;
+        for ($i = 0; $i < strlen($h1); $i++) {
+            // XOR the hex nibbles and count set bits
+            $xor = hexdec($h1[$i]) ^ hexdec($h2[$i]);
             while ($xor > 0) {
-                if ($xor & 1) $distance++;
+                if ($xor & 1) {
+                    $dist++;
+                }
                 $xor >>= 1;
             }
         }
-        return $distance;
+        return $dist;
     }
 
     /**
