@@ -2472,7 +2472,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             'per',
             'to',
             'via',
-            'up',
             'off',
             // Other permitted lowercase forms
             'vs',
