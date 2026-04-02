@@ -176,19 +176,28 @@ final class ImageHashCalculator
      */
     public function getHammingDistance(string $h1, string $h2): int 
     {
-        if (strlen($h1) !== strlen($h2)) {
-            return 152; // Max distance for this specific bit length
-        }
+        if (strlen($h1) !== strlen($h2)) return 152;
 
         $dist = 0;
-        for ($i = 0; $i < strlen($h1); $i++) {
-            // XOR the hex nibbles and count set bits
+        $len = strlen($h1);
+
+        for ($i = 0; $i < $len; $i++) {
             $xor = hexdec($h1[$i]) ^ hexdec($h2[$i]);
+            
+            $charDist = 0;
             while ($xor > 0) {
-                if ($xor & 1) {
-                    $dist++;
-                }
+                if ($xor & 1) $charDist++;
                 $xor >>= 1;
+            }
+
+            // The last 6 characters (index 32-37) are the RGB color signature.
+            // We double the weight of color differences to ensure that 
+            // color-swapped but structurally identical images
+            // are recognized as different.
+            if ($i >= 32) {
+                $dist += ($charDist * 2); 
+            } else {
+                $dist += $charDist;
             }
         }
         return $dist;
