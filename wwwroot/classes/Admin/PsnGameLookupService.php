@@ -146,8 +146,38 @@ final class PsnGameLookupService
             'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups/all/trophies',
             rawurlencode($npCommunicationId)
         );
+        $queryVariants = [
+            ['npLanguage' => 'en-US'],
+            ['npLanguage' => 'en-US', 'npServiceName' => 'trophy'],
+            ['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'],
+        ];
 
-        return $client->get($path, ['npLanguage' => 'en-US'], ['content-type' => 'application/json']);
+        $lastException = null;
+
+        foreach ($queryVariants as $query) {
+            try {
+                return $client->get($path, $query, ['content-type' => 'application/json']);
+            } catch (Throwable $exception) {
+                $lastException = $exception;
+
+                if (!$this->shouldRetryWithDifferentServiceName($exception)) {
+                    throw $exception;
+                }
+            }
+        }
+
+        if ($lastException instanceof Throwable) {
+            throw $lastException;
+        }
+
+        throw new RuntimeException('Unable to retrieve trophy data from PlayStation Network.');
+    }
+
+    private function shouldRetryWithDifferentServiceName(Throwable $exception): bool
+    {
+        $statusCode = $this->determineStatusCode($exception);
+
+        return $statusCode === 400 || $statusCode === 404;
     }
 
     private function determineStatusCode(Throwable $exception): ?int
