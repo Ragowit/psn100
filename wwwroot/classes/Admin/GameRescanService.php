@@ -8,6 +8,7 @@ require_once __DIR__ . '/GameRescanResult.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/PsnGameLookupService.php';
 
 use Tustin\PlayStation\Client;
 
@@ -28,6 +29,7 @@ class GameRescanService
     private TrophyHistoryRecorder $historyRecorder;
 
     private ImageHashCalculator $imageHashCalculator;
+    private PsnGameLookupService $psnGameLookupService;
 
     /**
      * @var \Closure(string):void|null
@@ -38,7 +40,8 @@ class GameRescanService
         PDO $database,
         TrophyCalculator $trophyCalculator,
         ?TrophyHistoryRecorder $historyRecorder = null,
-        ?ImageHashCalculator $imageHashCalculator = null
+        ?ImageHashCalculator $imageHashCalculator = null,
+        ?PsnGameLookupService $psnGameLookupService = null
     )
     {
         $this->database = $database;
@@ -46,6 +49,7 @@ class GameRescanService
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
+        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
     }
 
     /**
@@ -363,25 +367,12 @@ class GameRescanService
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
-        $serviceName = $trophyTitle->serviceName();
-
-        $trophies = $client->trophies($npCommunicationId, $serviceName);
-        $groupData = [];
-        $totalSteps = 0;
-
-        foreach ($trophies->trophyGroups() as $trophyGroup) {
-            $trophiesInGroup = [];
-            foreach ($trophyGroup->trophies() as $trophy) {
-                $trophiesInGroup[] = $trophy;
-            }
-
-            $groupData[] = [
-                'group' => $trophyGroup,
-                'trophies' => $trophiesInGroup,
-            ];
-
-            $totalSteps += 1 + count($trophiesInGroup);
-        }
+        $groupData = $this->fetchGameLookupGroupData($client, $npCommunicationId);
+        $totalSteps = array_reduce(
+            $groupData,
+            static fn (int $carry, array $data): int => $carry + 1 + count($data['trophies']),
+            0
+        );
 
         if ($groupData === []) {
             $this->notifyProgress($progressListener, 70, 'Refreshing trophy details…');
@@ -600,6 +591,158 @@ class GameRescanService
             static fn (array $data) => $data['group'],
             $groupData
         );
+    }
+
+    /**
+     * @return array<int, array{group: object, trophies: array<int, object>}>
+     */
+    private function fetchGameLookupGroupData(Client $client, string $npCommunicationId): array
+    {
+        $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npCommunicationId, $client);
+        $rawGroups = $trophyData['trophyGroups'] ?? [];
+
+        if (!is_array($rawGroups)) {
+            return [];
+        }
+
+        $groupData = [];
+
+        foreach ($rawGroups as $rawGroup) {
+            if (!is_array($rawGroup)) {
+                continue;
+            }
+
+            $groupId = (string) ($rawGroup['trophyGroupId'] ?? '');
+            $rawTrophies = $rawGroup['trophies'] ?? [];
+
+            if (!is_array($rawTrophies)) {
+                $rawTrophies = [];
+            }
+
+            $trophies = [];
+            foreach ($rawTrophies as $rawTrophy) {
+                if (!is_array($rawTrophy)) {
+                    continue;
+                }
+
+                $trophies[] = $this->createTrophyApiAdapter($rawTrophy);
+            }
+
+            $groupData[] = [
+                'group' => $this->createTrophyGroupApiAdapter($groupId, $rawGroup),
+                'trophies' => $trophies,
+            ];
+        }
+
+        return $groupData;
+    }
+
+    /**
+     * @param array<string, mixed> $rawGroup
+     */
+    private function createTrophyGroupApiAdapter(string $groupId, array $rawGroup): object
+    {
+        return new class ($groupId, $rawGroup) {
+            /**
+             * @param array<string, mixed> $rawGroup
+             */
+            public function __construct(
+                private readonly string $groupId,
+                private readonly array $rawGroup
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->groupId;
+            }
+
+            public function name(): string
+            {
+                return (string) ($this->rawGroup['trophyGroupName'] ?? '');
+            }
+
+            public function detail(): string
+            {
+                return (string) ($this->rawGroup['trophyGroupDetail'] ?? '');
+            }
+
+            public function iconUrl(): string
+            {
+                return (string) ($this->rawGroup['trophyGroupIconUrl'] ?? '');
+            }
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $rawTrophy
+     */
+    private function createTrophyApiAdapter(array $rawTrophy): object
+    {
+        return new class ($rawTrophy) {
+            /**
+             * @param array<string, mixed> $rawTrophy
+             */
+            public function __construct(private readonly array $rawTrophy)
+            {
+            }
+
+            public function id(): int
+            {
+                return (int) ($this->rawTrophy['trophyId'] ?? 0);
+            }
+
+            public function hidden(): bool
+            {
+                return (bool) ($this->rawTrophy['trophyHidden'] ?? false);
+            }
+
+            public function type(): object
+            {
+                return new class ((string) ($this->rawTrophy['trophyType'] ?? 'bronze')) {
+                    public function __construct(public readonly string $value)
+                    {
+                    }
+                };
+            }
+
+            public function name(): string
+            {
+                return (string) ($this->rawTrophy['trophyName'] ?? '');
+            }
+
+            public function detail(): string
+            {
+                return (string) ($this->rawTrophy['trophyDetail'] ?? '');
+            }
+
+            public function iconUrl(): string
+            {
+                return (string) ($this->rawTrophy['trophyIconUrl'] ?? '');
+            }
+
+            public function progressTargetValue(): string
+            {
+                $value = $this->rawTrophy['trophyProgressTargetValue'] ?? '';
+
+                return is_scalar($value) ? (string) $value : '';
+            }
+
+            public function rewardName(): string
+            {
+                return (string) ($this->rawTrophy['trophyRewardName'] ?? '');
+            }
+
+            public function rewardImageUrl(): ?string
+            {
+                $rewardImageUrl = $this->rawTrophy['trophyRewardImageUrl'] ?? null;
+                if (!is_string($rewardImageUrl) || $rewardImageUrl === '') {
+                    return null;
+                }
+
+                return $rewardImageUrl;
+            }
+        };
     }
 
     private function recalculateTrophies(
