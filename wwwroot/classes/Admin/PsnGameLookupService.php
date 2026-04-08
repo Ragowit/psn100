@@ -181,6 +181,10 @@ final class PsnGameLookupService
             return true;
         }
 
+        if ($statusCode !== null) {
+            return false;
+        }
+
         return $this->isRetryableKnownHttpException($exception);
     }
 

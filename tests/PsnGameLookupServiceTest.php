@@ -173,6 +173,42 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]);
         $this->assertSame(8, $result['trophyData']['trophies'][0]['trophyId']);
     }
+
+    public function testLookupByGameIdDoesNotRetryKnownHasteExceptionWhenStatusCodeIsNonRetryable(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (54139, 'NPWR51065_00', 'Retry Game')");
+
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $attempts = [];
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            function () use (&$attempts): object {
+                return new GameLookupStubClient(
+                    profileHandler: function (string $path, array $query) use (&$attempts): object {
+                        $attempts[] = $query;
+
+                        throw new \Tustin\Haste\Exception\NotFoundHttpException(
+                            'Known haste exception with non-retryable status',
+                            0,
+                            new GameLookupHttpException(500)
+                        );
+                    }
+                );
+            }
+        );
+
+        try {
+            $service->lookupByGameId('54139');
+            $this->fail('Expected PsnGameLookupException to be thrown.');
+        } catch (PsnGameLookupException $exception) {
+            $this->assertStringContainsString('Failed to retrieve trophy data from PlayStation Network', $exception->getMessage());
+            $this->assertCount(1, $attempts);
+            $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
+        }
+    }
 }
 
 final class GameLookupStubClient
