@@ -98,6 +98,44 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(null, $handled->getResult());
         $this->assertSame('Game ID must be a numeric value.', $handled->getErrorMessage());
     }
+
+    public function testLookupByGameIdRetriesWhenStatusCodeIsOnlyAvailableOnPreviousException(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (54139, 'NPWR51065_00', 'Retry Game')");
+
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $attempts = [];
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            function () use (&$attempts): object {
+                return new GameLookupStubClient(
+                    profileHandler: function (string $path, array $query) use (&$attempts): object {
+                        $attempts[] = $query;
+
+                        if (count($attempts) < 3) {
+                            throw new RuntimeException(
+                                'Wrapped request failure',
+                                0,
+                                new GameLookupHttpException(404)
+                            );
+                        }
+
+                        return (object) ['trophies' => [(object) ['trophyId' => 7]]];
+                    }
+                );
+            }
+        );
+
+        $result = $service->lookupByGameId('54139');
+
+        $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
+        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]);
+        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'], $attempts[2]);
+        $this->assertSame(7, $result['trophyData']['trophies'][0]['trophyId']);
+    }
 }
 
 final class GameLookupStubClient
@@ -123,5 +161,27 @@ final class GameLookupStubClient
     public function get(string $path = '', array $query = [], array $headers = []): object
     {
         return ($this->profileHandler)($path, $query, $headers);
+    }
+}
+
+final class GameLookupHttpException extends RuntimeException
+{
+    public function __construct(private readonly int $statusCode)
+    {
+        parent::__construct('HTTP error', $statusCode);
+    }
+
+    public function getResponse(): object
+    {
+        return new class ($this->statusCode) {
+            public function __construct(private readonly int $statusCode)
+            {
+            }
+
+            public function getStatusCode(): int
+            {
+                return $this->statusCode;
+            }
+        };
     }
 }
