@@ -21,7 +21,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $this->database = new PDO('sqlite::memory:');
         $this->database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT NOT NULL, name TEXT NOT NULL)');
+        $this->database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT NOT NULL, name TEXT NOT NULL, platform TEXT)');
     }
 
     public function testLookupByGameIdReturnsRawTrophyData(): void
@@ -43,10 +43,16 @@ final class PsnGameLookupServiceTest extends TestCase
                         $capturedPath = $path;
                         $capturedQuery = $query;
                         $capturedHeaders = $headers;
-
                         return (object) [
                             'trophies' => [
-                                (object) ['trophyId' => 1, 'trophyName' => 'Bronze Trophy'],
+                                (object) [
+                                    'trophyGroupId' => 'all',
+                                    'trophyGroupName' => 'Base',
+                                    'trophyGroupDetail' => '',
+                                    'trophyGroupIconUrl' => 'https://example.com/group.png',
+                                    'trophyId' => 1,
+                                    'trophyName' => 'Bronze Trophy',
+                                ],
                             ],
                         ];
                     }
@@ -65,7 +71,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(42, $result['game']['id']);
         $this->assertSame('NPWR12345_00', $result['game']['npCommunicationId']);
         $this->assertSame('Example Game', $result['game']['name']);
-        $this->assertSame('Bronze Trophy', $result['trophyData']['trophies'][0]['trophyName']);
+        $this->assertSame('Bronze Trophy', $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyName']);
     }
 
     public function testLookupByGameIdReturnsNotFoundErrorForMissingGame(): void
@@ -84,6 +90,56 @@ final class PsnGameLookupServiceTest extends TestCase
         } catch (PsnGameLookupException $exception) {
             $this->assertSame('Game ID "999" was not found.', $exception->getMessage());
         }
+    }
+
+    public function testLookupByGameIdPrefersTrophy2ForPs5Platforms(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name, platform) VALUES (77, 'NPWR77777_00', 'PS5 Game', 'PS5')");
+
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $attempts = [];
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            function () use (&$attempts): object {
+                return new GameLookupStubClient(
+                    profileHandler: static function (string $path, array $query) use (&$attempts): object {
+                        $attempts[] = $query;
+
+                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 1]]];
+                    }
+                );
+            }
+        );
+
+        $service->lookupByGameId('77');
+
+        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'], $attempts[0]);
+    }
+
+    public function testFetchTrophyDataForNpCommunicationIdUsesProvidedAuthenticatedClient(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $loginAttempts = 0;
+        $providedClient = new GameLookupStubClient(
+            profileHandler: static fn (): object => (object) ['trophies' => []],
+            loginHandler: static function () use (&$loginAttempts): void {
+                $loginAttempts++;
+            }
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
+
+        $this->assertSame([], $result['trophies']);
+        $this->assertSame(0, $loginAttempts);
     }
 
     public function testRequestHandlerReturnsValidationErrorMessage(): void
@@ -127,7 +183,7 @@ final class PsnGameLookupServiceTest extends TestCase
                             );
                         }
 
-                        return (object) ['trophies' => [(object) ['trophyId' => 7]]];
+                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 7]]];
                     }
                 );
             }
@@ -138,7 +194,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
         $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]);
         $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'], $attempts[2]);
-        $this->assertSame(7, $result['trophyData']['trophies'][0]['trophyId']);
+        $this->assertSame(7, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
     public function testLookupByGameIdRetriesForKnownHasteExceptionWithoutStatusCode(): void
@@ -161,7 +217,7 @@ final class PsnGameLookupServiceTest extends TestCase
                             throw new \Tustin\Haste\Exception\NotFoundHttpException();
                         }
 
-                        return (object) ['trophies' => [(object) ['trophyId' => 8]]];
+                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 8]]];
                     }
                 );
             }
@@ -171,7 +227,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
         $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]);
-        $this->assertSame(8, $result['trophyData']['trophies'][0]['trophyId']);
+        $this->assertSame(8, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
     public function testLookupByGameIdDoesNotRetryKnownHasteExceptionWhenStatusCodeIsNonRetryable(): void

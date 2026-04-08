@@ -55,10 +55,39 @@ final class PsnGameLookupService
             throw new PsnGameLookupException(sprintf('Game ID "%s" was not found.', $normalizedGameId));
         }
 
-        $client = $this->createAuthenticatedClient();
+        return [
+            'game' => [
+                'id' => $gameMetadata['id'],
+                'name' => $gameMetadata['name'],
+                'npCommunicationId' => $gameMetadata['np_communication_id'],
+            ],
+            'trophyData' => $this->fetchTrophyDataForNpCommunicationId($gameMetadata['np_communication_id']),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function fetchTrophyDataForNpCommunicationId(string $npCommunicationId, ?object $authenticatedClient = null): array
+    {
+        $normalizedNpCommunicationId = trim($npCommunicationId);
+        if ($normalizedNpCommunicationId === '') {
+            throw new InvalidArgumentException('NP communication ID must be provided.');
+        }
+
+        $client = $authenticatedClient ?? $this->createAuthenticatedClient();
+        $preferredNpServiceName = $this->resolvePreferredNpServiceName($normalizedNpCommunicationId);
 
         try {
-            $trophyResponse = $this->executeGameTrophyRequest($client, $gameMetadata['np_communication_id']);
+            $trophyResponse = $this->executeLookupRequest(
+                $client,
+                sprintf(
+                    'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups/all/trophies',
+                    rawurlencode($normalizedNpCommunicationId)
+                ),
+                $preferredNpServiceName
+            );
+            $normalizedResponse = $this->normalizeResponse($trophyResponse);
         } catch (Throwable $exception) {
             $statusCode = $this->determineStatusCode($exception);
 
@@ -69,14 +98,78 @@ final class PsnGameLookupService
             );
         }
 
-        return [
-            'game' => [
-                'id' => $gameMetadata['id'],
-                'name' => $gameMetadata['name'],
-                'npCommunicationId' => $gameMetadata['np_communication_id'],
-            ],
-            'trophyData' => $this->normalizeResponse($trophyResponse),
-        ];
+        $normalizedResponse['trophyGroups'] = $this->groupTrophiesByGroupId($normalizedResponse['trophies'] ?? null);
+
+        return $normalizedResponse;
+    }
+
+    /**
+     * @return array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}>
+     */
+    private function groupTrophiesByGroupId(mixed $rawTrophies): array
+    {
+        if (!is_array($rawTrophies)) {
+            return [];
+        }
+
+        $groups = [];
+
+        foreach ($rawTrophies as $rawTrophy) {
+            if (!is_array($rawTrophy)) {
+                continue;
+            }
+
+            $groupId = (string) ($rawTrophy['trophyGroupId'] ?? '');
+            if ($groupId === '') {
+                continue;
+            }
+
+            if (!isset($groups[$groupId])) {
+                $groups[$groupId] = [
+                    'trophyGroupId' => $groupId,
+                    'trophyGroupName' => (string) ($rawTrophy['trophyGroupName'] ?? ''),
+                    'trophyGroupDetail' => (string) ($rawTrophy['trophyGroupDetail'] ?? ''),
+                    'trophyGroupIconUrl' => (string) ($rawTrophy['trophyGroupIconUrl'] ?? ''),
+                    'trophies' => [],
+                ];
+            }
+
+            $groups[$groupId]['trophies'][] = $rawTrophy;
+        }
+
+        return array_values($groups);
+    }
+
+    private function resolvePreferredNpServiceName(string $npCommunicationId): ?string
+    {
+        $query = $this->database->prepare(
+            'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id LIMIT 1'
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $platform = $query->fetchColumn();
+        if ($platform === false) {
+            return null;
+        }
+
+        $platforms = array_values(array_filter(array_map(
+            static fn (string $value): string => strtoupper(trim($value)),
+            explode(',', (string) $platform)
+        ), static fn (string $value): bool => $value !== ''));
+
+        if ($platforms === []) {
+            return null;
+        }
+
+        $legacyPlatforms = ['PS3', 'PS4', 'PSVR', 'PSVITA'];
+        foreach ($platforms as $platformValue) {
+            if (in_array($platformValue, $legacyPlatforms, true)) {
+                return 'trophy';
+            }
+        }
+
+        return 'trophy2';
     }
 
     /**
@@ -136,21 +229,28 @@ final class PsnGameLookupService
         throw new RuntimeException('Unable to login to any worker accounts.');
     }
 
-    private function executeGameTrophyRequest(object $client, string $npCommunicationId): mixed
+    private function executeLookupRequest(object $client, string $path, ?string $preferredNpServiceName = null): mixed
     {
         if (!method_exists($client, 'get')) {
             throw new RuntimeException('The PlayStation client does not support trophy requests.');
         }
 
-        $path = sprintf(
-            'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups/all/trophies',
-            rawurlencode($npCommunicationId)
-        );
-        $queryVariants = [
-            ['npLanguage' => 'en-US'],
-            ['npLanguage' => 'en-US', 'npServiceName' => 'trophy'],
-            ['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'],
-        ];
+        $queryVariants = [];
+        $addVariant = static function (array $variant) use (&$queryVariants): void {
+            if (!in_array($variant, $queryVariants, true)) {
+                $queryVariants[] = $variant;
+            }
+        };
+
+        if ($preferredNpServiceName === 'trophy' || $preferredNpServiceName === 'trophy2') {
+            $addVariant(['npLanguage' => 'en-US', 'npServiceName' => $preferredNpServiceName]);
+        } else {
+            $addVariant(['npLanguage' => 'en-US']);
+        }
+
+        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy']);
+        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2']);
+        $addVariant(['npLanguage' => 'en-US']);
 
         $lastException = null;
 
