@@ -79,7 +79,7 @@ final class PsnGameLookupService
         $preferredNpServiceName = $this->resolvePreferredNpServiceName($normalizedNpCommunicationId);
 
         try {
-            $trophyResponse = $this->executeLookupRequest(
+            $trophyRequestResult = $this->executeLookupRequest(
                 $client,
                 sprintf(
                     'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups/all/trophies',
@@ -87,17 +87,54 @@ final class PsnGameLookupService
                 ),
                 $preferredNpServiceName
             );
-            $normalizedResponse = $this->normalizeResponse($trophyResponse);
+            $normalizedResponse = $this->normalizeResponse($trophyRequestResult['payload']);
 
-            $trophyGroupResponse = $this->executeLookupRequest(
-                $client,
-                sprintf(
-                    'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups',
-                    rawurlencode($normalizedNpCommunicationId)
-                ),
-                $preferredNpServiceName
+            $trophyGroupsPath = sprintf(
+                'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups',
+                rawurlencode($normalizedNpCommunicationId)
             );
-            $normalizedGroupResponse = $this->normalizeResponse($trophyGroupResponse);
+
+            try {
+                $trophyGroupRequestResult = $this->executeLookupRequest(
+                    $client,
+                    $trophyGroupsPath,
+                    null,
+                    $trophyRequestResult['query']
+                );
+                $normalizedGroupResponse = $this->normalizeResponse($trophyGroupRequestResult['payload']);
+            } catch (Throwable $trophyGroupsException) {
+                if (!$this->shouldRetryWithDifferentServiceName($trophyGroupsException)) {
+                    throw $trophyGroupsException;
+                }
+
+                $fallbackQuery = $this->resolveAlternateQueryVariant(
+                    $this->buildLookupQueryVariants($preferredNpServiceName),
+                    $trophyRequestResult['query']
+                );
+
+                if ($fallbackQuery === null) {
+                    throw $trophyGroupsException;
+                }
+
+                $trophyRequestResult = $this->executeLookupRequest(
+                    $client,
+                    sprintf(
+                        'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups/all/trophies',
+                        rawurlencode($normalizedNpCommunicationId)
+                    ),
+                    null,
+                    $fallbackQuery
+                );
+                $normalizedResponse = $this->normalizeResponse($trophyRequestResult['payload']);
+
+                $trophyGroupRequestResult = $this->executeLookupRequest(
+                    $client,
+                    $trophyGroupsPath,
+                    null,
+                    $fallbackQuery
+                );
+                $normalizedGroupResponse = $this->normalizeResponse($trophyGroupRequestResult['payload']);
+            }
         } catch (Throwable $exception) {
             $statusCode = $this->determineStatusCode($exception);
 
@@ -292,12 +329,54 @@ final class PsnGameLookupService
         throw new RuntimeException('Unable to login to any worker accounts.');
     }
 
-    private function executeLookupRequest(object $client, string $path, ?string $preferredNpServiceName = null): mixed
+    /**
+     * @param array{npLanguage: string, npServiceName?: string}|null $pinnedQuery
+     * @return array{payload: mixed, query: array{npLanguage: string, npServiceName?: string}}
+     */
+    private function executeLookupRequest(
+        object $client,
+        string $path,
+        ?string $preferredNpServiceName = null,
+        ?array $pinnedQuery = null
+    ): array
     {
         if (!method_exists($client, 'get')) {
             throw new RuntimeException('The PlayStation client does not support trophy requests.');
         }
 
+        $queryVariants = $pinnedQuery === null
+            ? $this->buildLookupQueryVariants($preferredNpServiceName)
+            : [$pinnedQuery];
+
+        $lastException = null;
+
+        foreach ($queryVariants as $query) {
+            try {
+                return [
+                    'payload' => $client->get($path, $query, ['content-type' => 'application/json']),
+                    'query' => $query,
+                ];
+            } catch (Throwable $exception) {
+                $lastException = $exception;
+
+                if ($pinnedQuery !== null || !$this->shouldRetryWithDifferentServiceName($exception)) {
+                    throw $exception;
+                }
+            }
+        }
+
+        if ($lastException instanceof Throwable) {
+            throw $lastException;
+        }
+
+        throw new RuntimeException('Unable to retrieve trophy data from PlayStation Network.');
+    }
+
+    /**
+     * @return list<array{npLanguage: string, npServiceName?: string}>
+     */
+    private function buildLookupQueryVariants(?string $preferredNpServiceName): array
+    {
         $queryVariants = [];
         $addVariant = static function (array $variant) use (&$queryVariants): void {
             if (!in_array($variant, $queryVariants, true)) {
@@ -315,25 +394,23 @@ final class PsnGameLookupService
         $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2']);
         $addVariant(['npLanguage' => 'en-US']);
 
-        $lastException = null;
+        return $queryVariants;
+    }
 
-        foreach ($queryVariants as $query) {
-            try {
-                return $client->get($path, $query, ['content-type' => 'application/json']);
-            } catch (Throwable $exception) {
-                $lastException = $exception;
-
-                if (!$this->shouldRetryWithDifferentServiceName($exception)) {
-                    throw $exception;
-                }
+    /**
+     * @param list<array{npLanguage: string, npServiceName?: string}> $queryVariants
+     * @param array{npLanguage: string, npServiceName?: string} $winningQuery
+     * @return array{npLanguage: string, npServiceName?: string}|null
+     */
+    private function resolveAlternateQueryVariant(array $queryVariants, array $winningQuery): ?array
+    {
+        foreach ($queryVariants as $queryVariant) {
+            if ($queryVariant !== $winningQuery) {
+                return $queryVariant;
             }
         }
 
-        if ($lastException instanceof Throwable) {
-            throw $lastException;
-        }
-
-        throw new RuntimeException('Unable to retrieve trophy data from PlayStation Network.');
+        return null;
     }
 
     private function shouldRetryWithDifferentServiceName(Throwable $exception): bool
