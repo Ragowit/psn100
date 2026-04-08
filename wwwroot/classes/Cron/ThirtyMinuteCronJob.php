@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
@@ -26,6 +27,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
 
     private readonly ImageHashCalculator $imageHashCalculator;
+    private readonly PsnGameLookupService $psnGameLookupService;
 
     public function __construct(
         private readonly PDO $database,
@@ -35,13 +37,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         private readonly int $workerId,
         ?TrophyMetaRepository $trophyMetaRepository = null,
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
-        ?ImageHashCalculator $imageHashCalculator = null
+        ?ImageHashCalculator $imageHashCalculator = null,
+        ?PsnGameLookupService $psnGameLookupService = null
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
+        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
     }
 
     private function setWaitingScanProgress(int $workerId, string $message): void
@@ -1014,14 +1018,38 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $metaQuery->execute();
 
                             // Get "groups" (game and DLCs)
-                            $serviceName = $trophyTitle->serviceName();
+                            try {
+                                $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npid, $client);
+                            } catch (Throwable $exception) {
+                                $this->logger->log(sprintf(
+                                    'Unable to fetch trophy data for %s (%s): %s',
+                                    $trophyTitle->name(),
+                                    $npid,
+                                    $exception->getMessage()
+                                ));
+                                $restartScan = true;
 
-                            $trophyGroups = $this->retryNotFound(
-                                fn () => $client->trophies($npid, $serviceName)->trophyGroups(),
-                                sprintf('Fetching trophy groups for %s (%s)', $trophyTitle->name(), $npid)
-                            );
+                                break;
+                            }
+
+                            $trophyGroups = $trophyData['trophyGroups'] ?? [];
+                            if (!is_array($trophyGroups)) {
+                                $trophyGroups = [];
+                            }
 
                             foreach ($trophyGroups as $trophyGroup) {
+                                if (!is_array($trophyGroup)) {
+                                    continue;
+                                }
+
+                                $trophyGroupId = (string) ($trophyGroup['trophyGroupId'] ?? '');
+                                if ($trophyGroupId === '') {
+                                    continue;
+                                }
+
+                                $trophyGroupName = (string) ($trophyGroup['trophyGroupName'] ?? '');
+                                $trophyGroupDetail = (string) ($trophyGroup['trophyGroupDetail'] ?? '');
+                                $trophyGroupIconUrl = (string) ($trophyGroup['trophyGroupIconUrl'] ?? '');
                                 $groupNewTrophies = false;
                                 // Add trophy group (game + dlcs) into database
                                 $existingGroupQuery = $this->database->prepare(
@@ -1030,7 +1058,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     WHERE np_communication_id = :np_communication_id AND group_id = :group_id'
                                 );
                                 $existingGroupQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-                                $existingGroupQuery->bindValue(':group_id', $trophyGroup->id(), PDO::PARAM_STR);
+                                $existingGroupQuery->bindValue(':group_id', $trophyGroupId, PDO::PARAM_STR);
                                 $existingGroupQuery->execute();
                                 $existingGroup = $existingGroupQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
@@ -1040,14 +1068,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     || !file_exists(self::GROUP_ICON_DIRECTORY . $groupIconFilename);
 
                                 $groupNeedsUpdate = $existingGroup === null
-                                    || $existingGroup['name'] !== $trophyGroup->name()
-                                    || $existingGroup['detail'] !== $trophyGroup->detail();
+                                    || $existingGroup['name'] !== $trophyGroupName
+                                    || $existingGroup['detail'] !== $trophyGroupDetail;
 
                                 if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
                                     $groupIconFilename = $this->downloadMandatoryImage(
-                                        $trophyGroup->iconUrl(),
+                                        $trophyGroupIconUrl,
                                         self::GROUP_ICON_DIRECTORY,
-                                        sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroup->name(), $npid, $trophyGroup->id()),
+                                        sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroupName, $npid, $trophyGroupId),
                                         $previousGroupIconFilename
                                     );
                                 }
@@ -1073,9 +1101,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                             detail = new.detail,
                                             icon_url = new.icon_url");
                                     $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                    $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                    $query->bindValue(":name", $trophyGroup->name(), PDO::PARAM_STR);
-                                    $query->bindValue(":detail", $trophyGroup->detail(), PDO::PARAM_STR);
+                                    $query->bindValue(":group_id", $trophyGroupId, PDO::PARAM_STR);
+                                    $query->bindValue(":name", $trophyGroupName, PDO::PARAM_STR);
+                                    $query->bindValue(":detail", $trophyGroupDetail, PDO::PARAM_STR);
                                     $query->bindValue(":icon_url", $groupIconFilename, PDO::PARAM_STR);
                                     // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                     $query->execute();
@@ -1085,18 +1113,22 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     }
                                 }
 
-                                $groupTrophies = $this->retryNotFound(
-                                    fn () => $trophyGroup->trophies(),
-                                    sprintf(
-                                        'Fetching trophies for %s (%s/%s)',
-                                        $trophyTitle->name(),
-                                        $npid,
-                                        $trophyGroup->id()
-                                    )
-                                );
+                                $groupTrophies = $trophyGroup['trophies'] ?? [];
+                                if (!is_array($groupTrophies)) {
+                                    $groupTrophies = [];
+                                }
 
                                 // Add trophies into database
                                 foreach ($groupTrophies as $trophy) {
+                                    if (!is_array($trophy)) {
+                                        continue;
+                                    }
+
+                                    $trophyOrderId = (int) ($trophy['trophyId'] ?? 0);
+                                    if ($trophyOrderId <= 0) {
+                                        continue;
+                                    }
+
                                     $existingTrophyQuery = $this->database->prepare(
                                         'SELECT hidden, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url
                                         FROM trophy
@@ -1105,27 +1137,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         AND order_id = :order_id'
                                     );
                                     $existingTrophyQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-                                    $existingTrophyQuery->bindValue(':group_id', $trophyGroup->id(), PDO::PARAM_STR);
-                                    $existingTrophyQuery->bindValue(':order_id', $trophy->id(), PDO::PARAM_INT);
+                                    $existingTrophyQuery->bindValue(':group_id', $trophyGroupId, PDO::PARAM_STR);
+                                    $existingTrophyQuery->bindValue(':order_id', $trophyOrderId, PDO::PARAM_INT);
                                     $existingTrophyQuery->execute();
                                     $existingTrophy = $existingTrophyQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
-                                    $trophyHidden = (int) $trophy->hidden();
+                                    $trophyHidden = (int) ($trophy['trophyHidden'] ?? 0);
 
-                                    $rawProgressTargetValue = null;
-                                    $progressTargetLookupFailed = false;
-
-                                    try {
-                                        $rawProgressTargetValue = $trophy->progressTargetValue();
-                                    } catch (Throwable $exception) {
-                                        $progressTargetLookupFailed = true;
-                                        // Restarting worker to trigger re-authentication after progress target lookup failure.
-                                    }
-
-                                    if ($progressTargetLookupFailed) {
-                                        $restartScan = true;
-                                        break 3;
-                                    }
+                                    $rawProgressTargetValue = $trophy['progressTargetValue'] ?? null;
 
                                     $existingProgressTargetValue = null;
                                     $existingRewardName = null;
@@ -1145,18 +1164,26 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         ? null
                                         : (int) $rawProgressTargetValue;
 
-                                    $rewardName = $trophy->rewardName() === '' ? null : $trophy->rewardName();
+                                    $rewardName = (string) ($trophy['rewardName'] ?? '');
+                                    $rewardName = $rewardName === '' ? null : $rewardName;
 
-                                    $rewardImageShouldBeNull = $trophy->rewardImageUrl() === null
-                                        || $trophy->rewardImageUrl() === '';
+                                    $rewardImageUrl = $trophy['rewardImageUrl'] ?? null;
+                                    $rewardImageShouldBeNull = $rewardImageUrl === null || $rewardImageUrl === '';
 
-                                    $trophyTypeEnumValue = $trophy->type()->value;
+                                    $trophyTypeEnumValue = strtolower((string) ($trophy['trophyType'] ?? ''));
+                                    if ($trophyTypeEnumValue === '') {
+                                        $trophyTypeEnumValue = 'bronze';
+                                    }
+
+                                    $trophyName = (string) ($trophy['trophyName'] ?? '');
+                                    $trophyDetail = (string) ($trophy['trophyDetail'] ?? '');
+                                    $trophyIconUrl = (string) ($trophy['trophyIconUrl'] ?? '');
 
                                     $trophyNeedsUpdate = $existingTrophy === null
                                         || (int) ($existingTrophy['hidden'] ?? -1) !== $trophyHidden
                                         || ($existingTrophy['type'] ?? '') !== $trophyTypeEnumValue
-                                        || ($existingTrophy['name'] ?? '') !== $trophy->name()
-                                        || ($existingTrophy['detail'] ?? '') !== $trophy->detail()
+                                        || ($existingTrophy['name'] ?? '') !== $trophyName
+                                        || ($existingTrophy['detail'] ?? '') !== $trophyDetail
                                         || $existingProgressTargetValue !== $progressTargetValue
                                         || ($existingRewardName !== $rewardName)
                                         || ($rewardImageShouldBeNull && $existingRewardImageFilename !== null)
@@ -1169,14 +1196,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                                     if ($existingTrophy === null || $trophyNeedsUpdate || $iconMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
                                         $trophyIconFilename = $this->downloadMandatoryImage(
-                                            $trophy->iconUrl(),
+                                            $trophyIconUrl,
                                             self::TROPHY_ICON_DIRECTORY,
                                             sprintf(
                                                 'trophy icon for "%s" (%s/%s/%d)',
-                                                $trophy->name(),
+                                                $trophyName,
                                                 $npid,
-                                                $trophyGroup->id(),
-                                                $trophy->id()
+                                                $trophyGroupId,
+                                                $trophyOrderId
                                             ),
                                             $previousIconFilename
                                         );
@@ -1194,14 +1221,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                                         if ($existingTrophy === null || $trophyNeedsUpdate || $rewardImageMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
                                             $rewardImageFilename = $this->downloadOptionalImage(
-                                                $trophy->rewardImageUrl(),
+                                                $rewardImageUrl === null ? '' : (string) $rewardImageUrl,
                                                 self::REWARD_ICON_DIRECTORY,
                                                 sprintf(
                                                     'reward image for "%s" (%s/%s/%d)',
-                                                    $trophy->name(),
+                                                    $trophyName,
                                                     $npid,
-                                                    $trophyGroup->id(),
-                                                    $trophy->id()
+                                                    $trophyGroupId,
+                                                    $trophyOrderId
                                                 ),
                                                 $existingRewardImageFilename
                                             );
@@ -1255,12 +1282,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                                 reward_name = new.reward_name,
                                                 reward_image_url = new.reward_image_url");
                                         $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                        $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                        $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
+                                        $query->bindValue(":group_id", $trophyGroupId, PDO::PARAM_STR);
+                                        $query->bindValue(":order_id", $trophyOrderId, PDO::PARAM_INT);
                                         $query->bindValue(":hidden", $trophyHidden, PDO::PARAM_INT);
                                         $query->bindValue(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
-                                        $query->bindValue(":name", $trophy->name(), PDO::PARAM_STR);
-                                        $query->bindValue(":detail", $trophy->detail(), PDO::PARAM_STR);
+                                        $query->bindValue(":name", $trophyName, PDO::PARAM_STR);
+                                        $query->bindValue(":detail", $trophyDetail, PDO::PARAM_STR);
                                         $query->bindValue(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
                                         if ($progressTargetValue === null) {
                                             $query->bindValue(":progress_target_value", null, PDO::PARAM_NULL);
@@ -1286,8 +1313,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                                     $this->ensureTrophyMetaRow(
                                         $npid,
-                                        $trophyGroup->id(),
-                                        (int) $trophy->id()
+                                        $trophyGroupId,
+                                        $trophyOrderId
                                     );
                                 }
 
@@ -1299,9 +1326,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     $query->execute();
                                     $status = $query->fetchColumn();
                                     if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
-                                        $this->logger->log("New trophies added for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
+                                        $this->logger->log("New trophies added for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroupId .", ". $trophyGroupName);
                                     } else {
-                                        $this->logger->log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroup->id() .", ". $trophyGroup->name());
+                                        $this->logger->log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroupId .", ". $trophyGroupName);
                                     }
                                 }
                             }
