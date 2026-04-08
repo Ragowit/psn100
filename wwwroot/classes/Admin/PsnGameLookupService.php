@@ -88,6 +88,16 @@ final class PsnGameLookupService
                 $preferredNpServiceName
             );
             $normalizedResponse = $this->normalizeResponse($trophyResponse);
+
+            $trophyGroupResponse = $this->executeLookupRequest(
+                $client,
+                sprintf(
+                    'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups',
+                    rawurlencode($normalizedNpCommunicationId)
+                ),
+                $preferredNpServiceName
+            );
+            $normalizedGroupResponse = $this->normalizeResponse($trophyGroupResponse);
         } catch (Throwable $exception) {
             $statusCode = $this->determineStatusCode($exception);
 
@@ -98,16 +108,62 @@ final class PsnGameLookupService
             );
         }
 
-        if (!isset($normalizedResponse['trophyGroups']) || !is_array($normalizedResponse['trophyGroups'])) {
-            $groupedTrophies = $this->groupTrophiesByGroupId($normalizedResponse['trophies'] ?? null);
-            $normalizedResponse['trophyGroups'] = $groupedTrophies;
-        }
-
-        if (!is_array($normalizedResponse['trophyGroups'])) {
-            $normalizedResponse['trophyGroups'] = [];
-        }
+        $groupedTrophies = $this->groupTrophiesByGroupId($normalizedResponse['trophies'] ?? null);
+        $normalizedResponse['trophyGroups'] = $this->buildTrophyGroups(
+            $normalizedGroupResponse['trophyGroups'] ?? null,
+            $groupedTrophies
+        );
 
         return $normalizedResponse;
+    }
+
+    /**
+     * @param mixed $rawGroups
+     * @param array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}> $groupedTrophies
+     * @return array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}>
+     */
+    private function buildTrophyGroups(mixed $rawGroups, array $groupedTrophies): array
+    {
+        $trophiesByGroupId = [];
+        foreach ($groupedTrophies as $groupedTrophy) {
+            $groupId = $groupedTrophy['trophyGroupId'] ?? '';
+            if (!is_string($groupId) || $groupId === '') {
+                continue;
+            }
+
+            $trophiesByGroupId[$groupId] = $groupedTrophy['trophies'] ?? [];
+        }
+
+        if (!is_array($rawGroups)) {
+            return $groupedTrophies;
+        }
+
+        $groups = [];
+
+        foreach ($rawGroups as $rawGroup) {
+            if (!is_array($rawGroup)) {
+                continue;
+            }
+
+            $groupId = (string) ($rawGroup['trophyGroupId'] ?? '');
+            if ($groupId === '') {
+                continue;
+            }
+
+            $groups[] = [
+                'trophyGroupId' => $groupId,
+                'trophyGroupName' => (string) ($rawGroup['trophyGroupName'] ?? ''),
+                'trophyGroupDetail' => (string) ($rawGroup['trophyGroupDetail'] ?? ''),
+                'trophyGroupIconUrl' => (string) ($rawGroup['trophyGroupIconUrl'] ?? ''),
+                'trophies' => is_array($trophiesByGroupId[$groupId] ?? null) ? $trophiesByGroupId[$groupId] : [],
+            ];
+        }
+
+        if ($groups === []) {
+            return $groupedTrophies;
+        }
+
+        return $groups;
     }
 
     /**
