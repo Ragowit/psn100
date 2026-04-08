@@ -177,7 +177,34 @@ final class PsnGameLookupService
     {
         $statusCode = $this->determineStatusCode($exception);
 
-        return $statusCode === 400 || $statusCode === 403 || $statusCode === 404;
+        if ($statusCode === 400 || $statusCode === 403 || $statusCode === 404) {
+            return true;
+        }
+
+        return $this->isRetryableKnownHttpException($exception);
+    }
+
+    private function isRetryableKnownHttpException(Throwable $exception): bool
+    {
+        $retryableExceptionClasses = [
+            'Tustin\\Haste\\Exception\\ApiException',
+            'Tustin\\Haste\\Exception\\AccessDeniedHttpException',
+            'Tustin\\Haste\\Exception\\NotFoundHttpException',
+        ];
+
+        foreach ($retryableExceptionClasses as $retryableExceptionClass) {
+            if ($exception instanceof $retryableExceptionClass) {
+                return true;
+            }
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->isRetryableKnownHttpException($previous);
+        }
+
+        return false;
     }
 
     private function determineStatusCode(Throwable $exception): ?int
