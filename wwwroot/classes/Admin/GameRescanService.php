@@ -723,7 +723,7 @@ class GameRescanService
 
             public function progressTargetValue(): string
             {
-                $value = $this->rawTrophy['progressTargetValue'] ?? '';
+                $value = $this->rawTrophy['trophyProgressTargetValue'] ?? '';
 
                 return is_scalar($value) ? (string) $value : '';
             }
