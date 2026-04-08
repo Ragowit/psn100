@@ -177,26 +177,79 @@ final class PsnGameLookupService
     {
         $statusCode = $this->determineStatusCode($exception);
 
-        return $statusCode === 400 || $statusCode === 404;
+        return $statusCode === 400 || $statusCode === 403 || $statusCode === 404;
     }
 
     private function determineStatusCode(Throwable $exception): ?int
     {
-        if (method_exists($exception, 'getResponse')) {
-            $response = $exception->getResponse();
+        $response = $this->findResponse($exception);
 
-            if (is_object($response) && method_exists($response, 'getStatusCode')) {
-                $statusCode = $response->getStatusCode();
+        if ($response !== null) {
+            $statusCode = $this->extractStatusCodeFromResponse($response);
 
-                if (is_int($statusCode)) {
-                    return $statusCode;
-                }
+            if ($statusCode !== null) {
+                return $statusCode;
             }
         }
 
+        return $this->extractStatusCodeFromThrowable($exception);
+    }
+
+    private function findResponse(Throwable $exception): ?object
+    {
+        if (method_exists($exception, 'getResponse')) {
+            $response = $exception->getResponse();
+
+            if (is_object($response)) {
+                return $response;
+            }
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->findResponse($previous);
+        }
+
+        return null;
+    }
+
+    private function extractStatusCodeFromResponse(object $response): ?int
+    {
+        if (method_exists($response, 'getStatusCode')) {
+            $statusCode = $response->getStatusCode();
+
+            if (is_int($statusCode)) {
+                return $statusCode;
+            }
+        }
+
+        if (method_exists($response, 'getStatus')) {
+            $status = $response->getStatus();
+
+            if (is_int($status)) {
+                return $status;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractStatusCodeFromThrowable(Throwable $exception): ?int
+    {
         $code = $exception->getCode();
 
-        return is_int($code) && $code > 0 ? $code : null;
+        if (is_int($code) && $code > 0) {
+            return $code;
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->extractStatusCodeFromThrowable($previous);
+        }
+
+        return null;
     }
 
     /**
