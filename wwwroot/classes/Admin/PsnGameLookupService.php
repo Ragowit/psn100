@@ -98,10 +98,12 @@ final class PsnGameLookupService
             );
         }
 
-        $groupedTrophies = $this->groupTrophiesByGroupId($normalizedResponse['trophies'] ?? null);
-        if ($groupedTrophies !== []) {
+        if (!isset($normalizedResponse['trophyGroups']) || !is_array($normalizedResponse['trophyGroups'])) {
+            $groupedTrophies = $this->groupTrophiesByGroupId($normalizedResponse['trophies'] ?? null);
             $normalizedResponse['trophyGroups'] = $groupedTrophies;
-        } elseif (!isset($normalizedResponse['trophyGroups']) || !is_array($normalizedResponse['trophyGroups'])) {
+        }
+
+        if (!is_array($normalizedResponse['trophyGroups'])) {
             $normalizedResponse['trophyGroups'] = [];
         }
 

@@ -177,6 +177,53 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame('Bronze Trophy', $result['trophyGroups'][0]['trophies'][0]['trophyName']);
     }
 
+    public function testFetchTrophyDataForNpCommunicationIdPreservesApiGroupedPayloadWhenFlatTrophiesExist(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $providedClient = new GameLookupStubClient(
+            profileHandler: static fn (): object => (object) [
+                'trophyGroups' => [
+                    (object) [
+                        'trophyGroupId' => 'all',
+                        'trophyGroupName' => 'Base Group Name',
+                        'trophyGroupDetail' => 'Base Group Detail',
+                        'trophyGroupIconUrl' => 'https://example.com/group-icon.png',
+                        'trophies' => [
+                            (object) [
+                                'trophyId' => 1,
+                                'trophyGroupId' => 'all',
+                                'trophyName' => 'Bronze Trophy',
+                            ],
+                        ],
+                    ],
+                ],
+                'trophies' => [
+                    (object) [
+                        'trophyId' => 1,
+                        'trophyGroupId' => 'all',
+                        'trophyGroupName' => '',
+                        'trophyGroupDetail' => '',
+                        'trophyGroupIconUrl' => '',
+                        'trophyName' => 'Bronze Trophy',
+                    ],
+                ],
+            ]
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
+
+        $this->assertSame('Base Group Name', $result['trophyGroups'][0]['trophyGroupName']);
+        $this->assertSame('Base Group Detail', $result['trophyGroups'][0]['trophyGroupDetail']);
+        $this->assertSame('https://example.com/group-icon.png', $result['trophyGroups'][0]['trophyGroupIconUrl']);
+    }
+
     public function testRequestHandlerReturnsValidationErrorMessage(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
