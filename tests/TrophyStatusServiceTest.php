@@ -92,7 +92,7 @@ final class RecordingTrophyStatusPDO extends PDO
             ]);
         }
 
-        if (str_contains($trimmedQuery, 'WITH player_trophy_count AS(') && str_contains($trimmedQuery, 'trophy_earned te')) {
+        if (str_starts_with($trimmedQuery, 'UPDATE') && str_contains($trimmedQuery, 'LEFT JOIN (') && str_contains($trimmedQuery, 'trophy_earned te')) {
             $this->playerTrophyCountQueries[] = $trimmedQuery;
 
             return new RecordingExecuteOnlyStatement();
