@@ -288,6 +288,16 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $query->execute();
                 $worker = $query->fetch();
 
+                if ($worker === false) {
+                    $message = sprintf(
+                        'Worker %d not found in setting table',
+                        $this->workerId
+                    );
+                    $this->logger->log($message);
+
+                    throw new RuntimeException($message);
+                }
+
                 try {
                     $client = new Client();
                     $npsso = $worker["npsso"];

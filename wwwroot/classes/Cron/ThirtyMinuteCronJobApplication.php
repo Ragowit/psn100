@@ -34,6 +34,12 @@ final class ThirtyMinuteCronJobApplication
     public function run(): void
     {
         $workerId = $this->cliArguments->getWorkerId();
+        if ($workerId <= 0) {
+            throw new InvalidArgumentException(sprintf(
+                'Worker ID must be greater than zero. Received: %d',
+                $workerId
+            ));
+        }
 
         $this->entryPoint->runWithFactory(function (PDO $database) use ($workerId): \CronJobInterface {
             $trophyCalculator = new TrophyCalculator($database);
