@@ -1184,7 +1184,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                                     $trophyHidden = (int) ($trophy['trophyHidden'] ?? 0);
 
-                                    $rawProgressTargetValue = $trophy['progressTargetValue'] ?? null;
+                                    $rawProgressTargetValue = $trophy['trophyProgressTargetValue']
+                                        ?? ($trophy['progressTargetValue'] ?? null);
 
                                     $existingProgressTargetValue = null;
                                     $existingRewardName = null;
@@ -1204,10 +1205,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         ? null
                                         : (int) $rawProgressTargetValue;
 
-                                    $rewardName = (string) ($trophy['rewardName'] ?? '');
+                                    $rewardName = (string) ($trophy['trophyRewardName']
+                                        ?? ($trophy['rewardName'] ?? ''));
                                     $rewardName = $rewardName === '' ? null : $rewardName;
 
-                                    $rewardImageUrl = $trophy['rewardImageUrl'] ?? null;
+                                    $rewardImageUrl = $trophy['trophyRewardImageUrl']
+                                        ?? ($trophy['rewardImageUrl'] ?? null);
                                     $rewardImageShouldBeNull = $rewardImageUrl === null || $rewardImageUrl === '';
 
                                     $trophyTypeEnumValue = strtolower((string) ($trophy['trophyType'] ?? ''));
@@ -1371,6 +1374,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         $this->logger->log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroupId .", ". $trophyGroupName);
                                     }
                                 }
+                            }
+
+                            if ($restartScan) {
+                                break;
                             }
 
                             if ($titleDataChanged || $groupDataChanged || $trophyDataChanged) {
