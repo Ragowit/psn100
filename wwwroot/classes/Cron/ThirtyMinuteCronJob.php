@@ -1037,6 +1037,25 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $trophyGroups = [];
                             }
 
+                            $topLevelTrophies = $trophyData['trophies'] ?? [];
+                            if (!is_array($topLevelTrophies)) {
+                                $topLevelTrophies = [];
+                            }
+
+                            $fallbackGroupTrophies = [];
+                            foreach ($topLevelTrophies as $topLevelTrophy) {
+                                if (!is_array($topLevelTrophy)) {
+                                    continue;
+                                }
+
+                                $topLevelTrophyGroupId = (string) ($topLevelTrophy['trophyGroupId'] ?? '');
+                                if ($topLevelTrophyGroupId === '') {
+                                    continue;
+                                }
+
+                                $fallbackGroupTrophies[$topLevelTrophyGroupId][] = $topLevelTrophy;
+                            }
+
                             foreach ($trophyGroups as $trophyGroup) {
                                 if (!is_array($trophyGroup)) {
                                     continue;
@@ -1116,6 +1135,22 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $groupTrophies = $trophyGroup['trophies'] ?? [];
                                 if (!is_array($groupTrophies)) {
                                     $groupTrophies = [];
+                                }
+
+                                if ($groupTrophies === [] && isset($fallbackGroupTrophies[$trophyGroupId])) {
+                                    $groupTrophies = $fallbackGroupTrophies[$trophyGroupId];
+                                }
+
+                                if ($groupTrophies === []) {
+                                    $this->logger->log(sprintf(
+                                        'Unable to sync trophies for %s (%s/%s): trophy group payload did not include any trophies.',
+                                        $trophyTitle->name(),
+                                        $npid,
+                                        $trophyGroupId
+                                    ));
+                                    $restartScan = true;
+
+                                    break;
                                 }
 
                                 // Add trophies into database
