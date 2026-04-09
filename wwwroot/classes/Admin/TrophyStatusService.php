@@ -339,6 +339,7 @@ WITH player_trophy_count AS(
     WHERE
         te.np_communication_id = :np_communication_id
         AND te.group_id = :group_id
+        AND te.earned = 1
     GROUP BY
         account_id
     )
