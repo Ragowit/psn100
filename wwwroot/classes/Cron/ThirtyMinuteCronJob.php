@@ -185,6 +185,31 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     }
 
     /**
+     * @param array<string, mixed>|false $player
+     * @return array<string, mixed>|null
+     */
+    private function reservePlayerForScanning(int $workerId, array|false $player): ?array
+    {
+        if ($player === false) {
+            $this->releaseWorkerFromCurrentScan($workerId);
+            $this->setWaitingScanProgress(
+                $workerId,
+                'No player to scan; retrying soon.'
+            );
+            sleep(5);
+
+            return null;
+        }
+
+        $query = $this->database->prepare('UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id');
+        $query->bindValue(':scanning', $player['online_id'], PDO::PARAM_STR);
+        $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
+        $query->execute();
+
+        return $player;
+    }
+
+    /**
      * @template T
      * @param callable():T $operation
      * @return T
@@ -286,7 +311,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         id = :id");
                 $query->bindValue(":id", $this->workerId, PDO::PARAM_INT);
                 $query->execute();
-                $worker = $query->fetch();
+                $worker = $query->fetch(PDO::FETCH_ASSOC);
 
                 if ($worker === false) {
                     $message = sprintf(
@@ -427,15 +452,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 ");
                 $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
                 $query->execute();
-                $player = $query->fetch();
-
-                $query = $this->database->prepare("UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id");
-                $query->bindValue(":scanning", $player["online_id"], PDO::PARAM_STR);
-                $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
-                $query->execute();
+                $player = $query->fetch(PDO::FETCH_ASSOC);
+                $player = $this->reservePlayerForScanning((int) $worker['id'], $player);
             } catch (Exception $e) {
                 // Probably just an exception for "Integrity constraint violation: 1062 Duplicate entry 'online_id' for key 'setting.scanning'" because another thread was faster then this one
                 // Continue and try again!
+                continue;
+            }
+
+            if ($player === null) {
                 continue;
             }
 
