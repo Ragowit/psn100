@@ -25,6 +25,7 @@ final class TrophyStatusServiceTest extends TestCase
             $this->assertSame(1, count($matchingQueries), 'Expected one player trophy count query for type ' . $type);
 
             $query = $matchingQueries[0];
+            $this->assertTrue(str_contains($query, 'trophy_group_player tgp'), 'Expected player trophy count SQL to anchor on trophy_group_player for ' . $type);
             $this->assertTrue(str_contains($query, 'AND te.earned = 1'), 'Expected earned filter in player trophy count SQL for ' . $type);
             $this->assertTrue(str_contains($query, 'AND tm.status = 0'), 'Expected unobtainable filter in player trophy count SQL for ' . $type);
         }

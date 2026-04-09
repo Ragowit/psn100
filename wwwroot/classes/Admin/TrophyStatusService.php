@@ -326,10 +326,14 @@ SQL,
             <<<'SQL'
 WITH player_trophy_count AS(
     SELECT
-        account_id,
+        tgp.account_id,
         COUNT(tm.trophy_id) AS count
     FROM
-        trophy_earned te
+        trophy_group_player tgp
+        LEFT JOIN trophy_earned te ON te.np_communication_id = tgp.np_communication_id
+        AND te.group_id = tgp.group_id
+        AND te.account_id = tgp.account_id
+        AND te.earned = 1
         LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
         AND t.group_id = te.group_id
         AND t.order_id = te.order_id
@@ -337,11 +341,10 @@ WITH player_trophy_count AS(
         LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
         AND tm.status = 0
     WHERE
-        te.np_communication_id = :np_communication_id
-        AND te.group_id = :group_id
-        AND te.earned = 1
+        tgp.np_communication_id = :np_communication_id
+        AND tgp.group_id = :group_id
     GROUP BY
-        account_id
+        tgp.account_id
     )
     UPDATE
         trophy_group_player tgp,
