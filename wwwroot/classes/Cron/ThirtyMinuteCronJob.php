@@ -1124,8 +1124,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         continue;
                                     }
 
-                                    $trophyOrderId = (int) ($trophy['trophyId'] ?? 0);
-                                    if ($trophyOrderId <= 0) {
+                                    $rawTrophyOrderId = $trophy['trophyId'] ?? null;
+                                    if (!is_numeric($rawTrophyOrderId)) {
+                                        continue;
+                                    }
+
+                                    $trophyOrderId = (int) $rawTrophyOrderId;
+                                    if ($trophyOrderId < 0) {
                                         continue;
                                     }
 
