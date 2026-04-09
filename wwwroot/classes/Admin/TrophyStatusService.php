@@ -324,37 +324,32 @@ SQL,
     {
         return sprintf(
             <<<'SQL'
-WITH player_trophy_count AS(
-    SELECT
-        tgp.account_id,
-        COUNT(tm.trophy_id) AS count
-    FROM
-        trophy_group_player tgp
-        LEFT JOIN trophy_earned te ON te.np_communication_id = tgp.np_communication_id
-        AND te.group_id = tgp.group_id
-        AND te.account_id = tgp.account_id
-        AND te.earned = 1
-        LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
-        AND t.group_id = te.group_id
-        AND t.order_id = te.order_id
-        AND t.type = '%1$s'
-        LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
-        AND tm.status = 0
-    WHERE
-        tgp.np_communication_id = :np_communication_id
-        AND tgp.group_id = :group_id
-    GROUP BY
-        tgp.account_id
-    )
-    UPDATE
-        trophy_group_player tgp,
-        player_trophy_count ptc
-    SET
-        tgp.%2$s = ptc.count
-    WHERE
-        tgp.np_communication_id = :np_communication_id
-        AND tgp.group_id = :group_id
-        AND tgp.account_id = ptc.account_id
+UPDATE
+    trophy_group_player tgp
+    LEFT JOIN (
+        SELECT
+            te.account_id,
+            COUNT(tm.trophy_id) AS cnt
+        FROM
+            trophy_earned te
+            INNER JOIN trophy t ON t.np_communication_id = te.np_communication_id
+            AND t.group_id = te.group_id
+            AND t.order_id = te.order_id
+            AND t.type = '%1$s'
+            INNER JOIN trophy_meta tm ON tm.trophy_id = t.id
+            AND tm.status = 0
+        WHERE
+            te.np_communication_id = :np_communication_id
+            AND te.group_id = :group_id
+            AND te.earned = 1
+        GROUP BY
+            te.account_id
+    ) aggregate ON aggregate.account_id = tgp.account_id
+SET
+    tgp.%2$s = COALESCE(aggregate.cnt, 0)
+WHERE
+    tgp.np_communication_id = :np_communication_id
+    AND tgp.group_id = :group_id
 SQL,
             $type,
             $column
