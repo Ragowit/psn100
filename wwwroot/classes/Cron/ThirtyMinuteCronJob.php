@@ -1184,8 +1184,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                                     $trophyHidden = (int) ($trophy['trophyHidden'] ?? 0);
 
-                                    $rawProgressTargetValue = $trophy['trophyProgressTargetValue']
-                                        ?? ($trophy['progressTargetValue'] ?? null);
+                                    $rawProgressTargetValue = $trophy['trophyProgressTargetValue'] ?? null;
 
                                     $existingProgressTargetValue = null;
                                     $existingRewardName = null;
@@ -1205,12 +1204,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         ? null
                                         : (int) $rawProgressTargetValue;
 
-                                    $rewardName = (string) ($trophy['trophyRewardName']
-                                        ?? ($trophy['rewardName'] ?? ''));
+                                    $rewardName = (string) ($trophy['trophyRewardName'] ?? '');
                                     $rewardName = $rewardName === '' ? null : $rewardName;
 
-                                    $rewardImageUrl = $trophy['trophyRewardImageUrl']
-                                        ?? ($trophy['rewardImageUrl'] ?? null);
+                                    $rewardImageUrl = $trophy['trophyRewardImageUrl'] ?? null;
                                     $rewardImageShouldBeNull = $rewardImageUrl === null || $rewardImageUrl === '';
 
                                     $trophyTypeEnumValue = strtolower((string) ($trophy['trophyType'] ?? ''));
