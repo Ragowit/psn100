@@ -1014,6 +1014,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             // Add trophy title (game) information into database
                             $titleId = null;
                             $isNewTitle = false;
+                            $mergeParentsToRecompute = [];
+
+                            if ($skipMetadataSyncForVersionMismatch) {
+                                $titleId = $this->findTrophyTitleId($npid);
+                                if ($titleId === null) {
+                                    continue;
+                                }
+                            }
 
                             if (!$skipMetadataSyncForVersionMismatch) {
                                 $platforms = "";
@@ -1462,11 +1470,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 }
                             }
 
-                            $mergeParentsToRecompute = [];
-                            if ($isNewTitle) {
-                                $mergeParentsToRecompute = $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
-                            }
-
                             if ($newTrophies) {
                                 if ($titleId === null) {
                                     $titleId = $this->findTrophyTitleId($npid);
@@ -1480,6 +1483,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $query->bindValue(":param_1", $titleId, PDO::PARAM_INT);
                                 $query->execute();
                             }
+                            }
+
+                            if ($isNewTitle) {
+                                $mergeParentsToRecompute = $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
                             }
 
                             // Fetch user trophies
