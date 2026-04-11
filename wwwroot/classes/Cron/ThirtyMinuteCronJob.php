@@ -184,6 +184,36 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         sleep(60);
     }
 
+    private function shouldSkipMetadataSyncForVersionMismatch(
+        string $onlineId,
+        string $titleName,
+        string $npCommunicationId,
+        string $titleSetVersion,
+        string $lookupSetVersion
+    ): bool {
+        $normalizedTitleSetVersion = trim($titleSetVersion);
+        $normalizedLookupSetVersion = trim($lookupSetVersion);
+
+        if (
+            $normalizedTitleSetVersion === ''
+            || $normalizedLookupSetVersion === ''
+            || $normalizedTitleSetVersion === $normalizedLookupSetVersion
+        ) {
+            return false;
+        }
+
+        $this->logger->log(sprintf(
+            'Skipping metadata update due to trophy set version mismatch for %s - "%s" (%s): title version "%s", lookup version "%s".',
+            $onlineId,
+            $titleName,
+            $npCommunicationId,
+            $normalizedTitleSetVersion,
+            $normalizedLookupSetVersion
+        ));
+
+        return true;
+    }
+
     /**
      * @param array<string, mixed>|false $player
      * @return array<string, mixed>|null
@@ -958,6 +988,31 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 }
                             }
 
+                            // Get "groups" (game and DLCs)
+                            try {
+                                $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npid, $client);
+                            } catch (Throwable $exception) {
+                                $this->logger->log(sprintf(
+                                    'Unable to fetch trophy data for %s (%s): %s',
+                                    $trophyTitle->name(),
+                                    $npid,
+                                    $exception->getMessage()
+                                ));
+                                $restartScan = true;
+
+                                break;
+                            }
+
+                            if ($this->shouldSkipMetadataSyncForVersionMismatch(
+                                (string) $player['online_id'],
+                                (string) $trophyTitle->name(),
+                                (string) $npid,
+                                (string) $trophyTitle->trophySetVersion(),
+                                (string) ($trophyData['trophySetVersion'] ?? '')
+                            )) {
+                                continue;
+                            }
+
                             // Add trophy title (game) information into database
                             $titleId = null;
 
@@ -1051,21 +1106,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $metaQuery->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                             $metaQuery->bindValue(":message", '', PDO::PARAM_STR);
                             $metaQuery->execute();
-
-                            // Get "groups" (game and DLCs)
-                            try {
-                                $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npid, $client);
-                            } catch (Throwable $exception) {
-                                $this->logger->log(sprintf(
-                                    'Unable to fetch trophy data for %s (%s): %s',
-                                    $trophyTitle->name(),
-                                    $npid,
-                                    $exception->getMessage()
-                                ));
-                                $restartScan = true;
-
-                                break;
-                            }
 
                             $trophyGroups = $trophyData['trophyGroups'] ?? [];
                             if (!is_array($trophyGroups)) {
