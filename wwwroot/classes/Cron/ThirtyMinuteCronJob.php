@@ -1003,43 +1003,43 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 break;
                             }
 
-                            if ($this->shouldSkipMetadataSyncForVersionMismatch(
+                            $skipMetadataSyncForVersionMismatch = $this->shouldSkipMetadataSyncForVersionMismatch(
                                 (string) $player['online_id'],
                                 (string) $trophyTitle->name(),
                                 (string) $npid,
                                 (string) $trophyTitle->trophySetVersion(),
                                 (string) ($trophyData['trophySetVersion'] ?? '')
-                            )) {
-                                continue;
-                            }
+                            );
 
                             // Add trophy title (game) information into database
                             $titleId = null;
+                            $isNewTitle = false;
 
-                            $platforms = "";
-                            foreach ($trophyTitle->platform() as $platform) {
-                                $platformValue = $platform->value;
-                                if ($platformValue === 'PSPC') {
-                                    $platformValue = 'PC';
+                            if (!$skipMetadataSyncForVersionMismatch) {
+                                $platforms = "";
+                                foreach ($trophyTitle->platform() as $platform) {
+                                    $platformValue = $platform->value;
+                                    if ($platformValue === 'PSPC') {
+                                        $platformValue = 'PC';
+                                    }
+
+                                    $platforms .= $platformValue .",";
                                 }
+                                $platforms = rtrim($platforms, ",");
 
-                                $platforms .= $platformValue .",";
-                            }
-                            $platforms = rtrim($platforms, ",");
+                                $sanitizedTitleName = $this->convertToApaTitleCase(
+                                    $this->sanitizeTrophyTitleName($trophyTitle->name())
+                                );
 
-                            $sanitizedTitleName = $this->convertToApaTitleCase(
-                                $this->sanitizeTrophyTitleName($trophyTitle->name())
-                            );
-
-                            $existingTitleQuery = $this->database->prepare(
-                                'SELECT name, detail, icon_url, platform, set_version
-                                FROM trophy_title
-                                WHERE np_communication_id = :np_communication_id'
-                            );
-                            $existingTitleQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-                            $existingTitleQuery->execute();
-                            $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
-                            $isNewTitle = $existingTitle === null;
+                                $existingTitleQuery = $this->database->prepare(
+                                    'SELECT name, detail, icon_url, platform, set_version
+                                    FROM trophy_title
+                                    WHERE np_communication_id = :np_communication_id'
+                                );
+                                $existingTitleQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
+                                $existingTitleQuery->execute();
+                                $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
+                                $isNewTitle = $existingTitle === null;
 
                             $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
                             $titleIconFilename = $previousTitleIconFilename;
@@ -1479,6 +1479,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $query = $this->database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
                                 $query->bindValue(":param_1", $titleId, PDO::PARAM_INT);
                                 $query->execute();
+                            }
                             }
 
                             // Fetch user trophies
