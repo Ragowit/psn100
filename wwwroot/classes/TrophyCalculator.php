@@ -193,7 +193,14 @@ final class TrophyCalculator
         $query->execute();
     }
 
-    public function recalculateTrophyTitle(string $npCommunicationId, string $lastUpdateDate, bool $newTrophies, int $accountId, bool $merge): void
+    public function recalculateTrophyTitle(
+        string $npCommunicationId,
+        string $lastUpdateDate,
+        bool $newTrophies,
+        int $accountId,
+        bool $merge,
+        bool $preserveLastUpdatedDate = false
+    ): void
     {
         $query = $this->database->prepare(
             'SELECT SUM(bronze) AS bronze,
@@ -290,9 +297,10 @@ final class TrophyCalculator
 
         $dtAsTextForInsert = $dateTimeObject->format('Y-m-d H:i:s');
 
-        $lastUpdatedDateExpression = match ($merge) {
-            true => 'GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)',
-            false => 'new.last_updated_date',
+        $lastUpdatedDateExpression = match (true) {
+            $preserveLastUpdatedDate => 'trophy_title_player.last_updated_date',
+            $merge => 'GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)',
+            default => 'new.last_updated_date',
         };
         $query = $this->database->prepare(sprintf(self::TROPHY_TITLE_PLAYER_UPSERT_TEMPLATE, $lastUpdatedDateExpression));
 

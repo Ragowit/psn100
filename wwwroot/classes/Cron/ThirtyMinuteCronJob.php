@@ -1612,7 +1612,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             }
 
                             // Recalculate trophies for trophy title and player
-                            $this->trophyCalculator->recalculateTrophyTitle($npid, $trophyTitle->lastUpdatedDateTime(), $newTrophies, (int) $user->accountId(), false);
+                            $this->trophyCalculator->recalculateTrophyTitle(
+                                $npid,
+                                $trophyTitle->lastUpdatedDateTime(),
+                                $newTrophies,
+                                (int) $user->accountId(),
+                                false,
+                                $skipMetadataSyncForVersionMismatch
+                            );
 
                             // Game Merge stuff
                             $query = $this->database->prepare("SELECT DISTINCT parent_np_communication_id, 
