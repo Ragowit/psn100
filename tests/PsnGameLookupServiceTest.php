@@ -328,6 +328,49 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(1, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
+    public function testFetchTrophyDataForNpCommunicationIdThrowsForMismatchedTrophyGroupsNpCommunicationId(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $providedClient = new GameLookupStubClient(
+            profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                ? (object) [
+                    'trophies' => [
+                        (object) [
+                            'trophyGroupId' => 'all',
+                            'trophyId' => 1,
+                        ],
+                    ],
+                ]
+                : (object) [
+                    'trophyGroups' => [
+                        (object) [
+                            'trophyGroupId' => 'all',
+                            'npCommunicationId' => 'NPWR99999_00',
+                        ],
+                    ],
+                ]
+        );
+
+        try {
+            $service->fetchTrophyDataForNpCommunicationId('NPWR12345_00', $providedClient);
+            $this->fail('Expected PsnGameLookupException to be thrown for mismatched trophyGroups payload ID.');
+        } catch (PsnGameLookupException $exception) {
+            $this->assertStringContainsString(
+                'PSN response integrity check failed for endpoint "trophyGroups"',
+                $exception->getMessage()
+            );
+            $this->assertStringContainsString('NPWR12345_00', $exception->getMessage());
+            $this->assertStringContainsString('NPWR99999_00', $exception->getMessage());
+        }
+    }
+
     public function testRequestHandlerReturnsValidationErrorMessage(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);

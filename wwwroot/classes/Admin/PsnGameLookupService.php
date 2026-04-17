@@ -583,7 +583,37 @@ final class PsnGameLookupService
             return $candidate;
         }
 
-        $trophies = $payload['trophies'] ?? null;
+        $candidate = $this->extractNpCommunicationIdFromTrophies($payload['trophies'] ?? null);
+        if ($candidate !== null) {
+            return $candidate;
+        }
+
+        $trophyGroups = $payload['trophyGroups'] ?? null;
+        if (!is_array($trophyGroups) || $trophyGroups === []) {
+            return null;
+        }
+
+        foreach ($trophyGroups as $trophyGroup) {
+            if (!is_array($trophyGroup)) {
+                continue;
+            }
+
+            $candidate = $this->extractNpCommunicationIdFromArray($trophyGroup);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+
+            $candidate = $this->extractNpCommunicationIdFromTrophies($trophyGroup['trophies'] ?? null);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractNpCommunicationIdFromTrophies(mixed $trophies): ?string
+    {
         if (!is_array($trophies) || $trophies === []) {
             return null;
         }
