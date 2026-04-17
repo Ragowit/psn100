@@ -506,7 +506,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 try {
                     $originalOnlineId = (string) $player['online_id'];
                     $existingAccountId = $this->normalizeAccountIdValue($player['account_id'] ?? null);
-                    $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
+                    try {
+                        $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
+                    } catch (UnexpectedValueException) {
+                        $this->markPlayerAsPrivate($originalOnlineId);
+
+                        continue 2;
+                    }
                     $country = 'zz';
 
                     if ($profileLookup !== null) {
@@ -2086,7 +2092,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
         $mappedProfile = $this->psnProfileMapper->mapLookupResponse($profile);
         if ($mappedProfile === null) {
-            throw new TypeError('Malformed profile lookup payload.');
+            throw new UnexpectedValueException('Malformed profile lookup payload.');
         }
 
         return $mappedProfile;

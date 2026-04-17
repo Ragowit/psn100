@@ -23,10 +23,19 @@ final class PsnProfileMapper
 
         return new PsnProfileDto(
             $accountId,
-            (string) ($profile['onlineId'] ?? ''),
-            (string) ($profile['currentOnlineId'] ?? ''),
-            (string) ($profile['npId'] ?? '')
+            $this->normalizeStringField($profile['onlineId'] ?? null),
+            $this->normalizeStringField($profile['currentOnlineId'] ?? null),
+            $this->normalizeStringField($profile['npId'] ?? null)
         );
+    }
+
+    private function normalizeStringField(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        return $value;
     }
 
     /**
