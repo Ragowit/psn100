@@ -2084,7 +2084,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             throw $exception;
         }
 
-        return $this->psnProfileMapper->mapLookupResponse($profile);
+        $mappedProfile = $this->psnProfileMapper->mapLookupResponse($profile);
+        if ($mappedProfile === null) {
+            throw new TypeError('Malformed profile lookup payload.');
+        }
+
+        return $mappedProfile;
     }
 
     private function determineResolvedOnlineId(PsnProfileDto $profile, string $fallbackOnlineId): string

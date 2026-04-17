@@ -15,10 +15,11 @@ final class PsnProfileMapper
             return null;
         }
 
-        $accountId = (string) ($profile['accountId'] ?? '');
-        if ($accountId === '') {
+        $rawAccountId = $profile['accountId'] ?? null;
+        if (!is_string($rawAccountId) || $rawAccountId === '') {
             return null;
         }
+        $accountId = $rawAccountId;
 
         return new PsnProfileDto(
             $accountId,
