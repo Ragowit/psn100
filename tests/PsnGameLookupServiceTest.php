@@ -6,10 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
-
-if (!class_exists('Tustin\\Haste\\Exception\\NotFoundHttpException')) {
-    eval('namespace Tustin\\Haste\\Exception; final class NotFoundHttpException extends \RuntimeException {}');
-}
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationNotFoundException.php';
 
 final class PsnGameLookupServiceTest extends TestCase
 {
@@ -627,7 +624,7 @@ final class PsnGameLookupServiceTest extends TestCase
                         $attempts[] = $query;
 
                         if (count($attempts) === 1) {
-                            throw new \Tustin\Haste\Exception\NotFoundHttpException();
+                            throw new PlayStationNotFoundException();
                         }
 
                         return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 8]]];
@@ -659,7 +656,7 @@ final class PsnGameLookupServiceTest extends TestCase
                     profileHandler: function (string $path, array $query) use (&$attempts): object {
                         $attempts[] = $query;
 
-                        throw new \Tustin\Haste\Exception\NotFoundHttpException(
+                        throw new PlayStationNotFoundException(
                             'Known haste exception with non-retryable status',
                             0,
                             new GameLookupHttpException(500)

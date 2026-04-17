@@ -8,6 +8,9 @@ require_once __DIR__ . '/PsnGameLookupException.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/TrophyClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationAccessDeniedException.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationNotFoundException.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationTransientUpstreamException.php';
 require_once __DIR__ . '/../PlayStation/Policy/NpServiceNamePolicy.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
 
@@ -569,16 +572,10 @@ final class PsnGameLookupService
 
     private function isRetryableKnownHttpException(Throwable $exception): bool
     {
-        $retryableExceptionClasses = [
-            'Tustin\\Haste\\Exception\\ApiException',
-            'Tustin\\Haste\\Exception\\AccessDeniedHttpException',
-            'Tustin\\Haste\\Exception\\NotFoundHttpException',
-        ];
-
-        foreach ($retryableExceptionClasses as $retryableExceptionClass) {
-            if ($exception instanceof $retryableExceptionClass) {
-                return true;
-            }
+        if ($exception instanceof PlayStationTransientUpstreamException
+            || $exception instanceof PlayStationAccessDeniedException
+            || $exception instanceof PlayStationNotFoundException) {
+            return true;
         }
 
         $previous = $exception->getPrevious();

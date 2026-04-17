@@ -21,9 +21,8 @@ require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyDto.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnProfileMapper.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyGroupMapper.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyMapper.php';
-
-use Tustin\Haste\Exception\NotFoundHttpException;
-use Tustin\Haste\Exception\UnauthorizedHttpException;
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationAuthFailureException.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationNotFoundException.php';
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
@@ -245,7 +244,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         while (true) {
             try {
                 return $operation();
-            } catch (NotFoundHttpException $exception) {
+            } catch (PlayStationNotFoundException $exception) {
                 $attempt++;
 
                 if ($attempt >= $maxAttempts) {
@@ -622,7 +621,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
                     $query->execute();
 
-                    if (get_class($e) == "Tustin\Haste\Exception\NotFoundHttpException") {
+                    if ($e instanceof PlayStationNotFoundException) {
                         $query = $this->database->prepare("SELECT account_id
                             FROM   player
                             WHERE  online_id = :online_id ");
@@ -1971,7 +1970,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     unset($missingTrophyTitleRetry[$onlineId]);
                     unset($trophyTitleCountRetry[$onlineId]);
                 }
-            } catch (NotFoundHttpException $exception) {
+            } catch (PlayStationNotFoundException $exception) {
                 sleep(2);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
@@ -1979,7 +1978,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($trophyTitleCountRetry[$onlineId]);
 
                 continue;
-            } catch (UnauthorizedHttpException $exception) {
+            } catch (PlayStationAuthFailureException $exception) {
                 sleep(2);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);

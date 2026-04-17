@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayStation/Http/PlayStationHttpTransport.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationInvalidPayloadException.php';
 
 final class PlayStationHttpTransportTest extends TestCase
 {
@@ -77,8 +78,8 @@ final class PlayStationHttpTransportTest extends TestCase
 
         try {
             $transport->request('https://example.com');
-            $this->fail('Expected UnexpectedValueException to be thrown.');
-        } catch (UnexpectedValueException) {
+            $this->fail('Expected PlayStationInvalidPayloadException to be thrown.');
+        } catch (PlayStationInvalidPayloadException) {
             $this->assertTrue(true);
         }
     }
