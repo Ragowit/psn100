@@ -88,6 +88,11 @@ final class PsnGameLookupService
                 $preferredNpServiceName
             );
             $normalizedResponse = $this->normalizeResponse($trophyRequestResult['payload']);
+            $this->assertPayloadMatchesRequestedNpCommunicationId(
+                $normalizedNpCommunicationId,
+                $normalizedResponse,
+                'all/trophies'
+            );
 
             $trophyGroupsPath = sprintf(
                 'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/%s/trophyGroups',
@@ -102,6 +107,11 @@ final class PsnGameLookupService
                     $trophyRequestResult['query']
                 );
                 $normalizedGroupResponse = $this->normalizeResponse($trophyGroupRequestResult['payload']);
+                $this->assertPayloadMatchesRequestedNpCommunicationId(
+                    $normalizedNpCommunicationId,
+                    $normalizedGroupResponse,
+                    'trophyGroups'
+                );
             } catch (Throwable $trophyGroupsException) {
                 if (!$this->shouldRetryWithDifferentServiceName($trophyGroupsException)) {
                     throw $trophyGroupsException;
@@ -126,6 +136,11 @@ final class PsnGameLookupService
                     $fallbackQuery
                 );
                 $normalizedResponse = $this->normalizeResponse($trophyRequestResult['payload']);
+                $this->assertPayloadMatchesRequestedNpCommunicationId(
+                    $normalizedNpCommunicationId,
+                    $normalizedResponse,
+                    'all/trophies'
+                );
 
                 $trophyGroupRequestResult = $this->executeLookupRequest(
                     $client,
@@ -134,8 +149,17 @@ final class PsnGameLookupService
                     $fallbackQuery
                 );
                 $normalizedGroupResponse = $this->normalizeResponse($trophyGroupRequestResult['payload']);
+                $this->assertPayloadMatchesRequestedNpCommunicationId(
+                    $normalizedNpCommunicationId,
+                    $normalizedGroupResponse,
+                    'trophyGroups'
+                );
             }
         } catch (Throwable $exception) {
+            if ($exception instanceof PsnGameLookupException) {
+                throw $exception;
+            }
+
             $statusCode = $this->determineStatusCode($exception);
 
             throw new PsnGameLookupException(
@@ -547,5 +571,157 @@ final class PsnGameLookupService
         }
 
         return [];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function extractNpCommunicationIdsFromPayload(array $payload): array
+    {
+        $detected = [];
+        $seen = [];
+
+        $this->addNpCommunicationIdCandidates(
+            $this->extractNpCommunicationIdFromArray($payload),
+            $detected,
+            $seen
+        );
+
+        $this->addNpCommunicationIdCandidates(
+            $this->extractNpCommunicationIdFromTrophies($payload['trophies'] ?? null),
+            $detected,
+            $seen
+        );
+
+        $trophyGroups = $payload['trophyGroups'] ?? null;
+        if (!is_array($trophyGroups)) {
+            return $detected;
+        }
+
+        foreach ($trophyGroups as $trophyGroup) {
+            if (!is_array($trophyGroup)) {
+                continue;
+            }
+
+            $this->addNpCommunicationIdCandidates(
+                $this->extractNpCommunicationIdFromArray($trophyGroup),
+                $detected,
+                $seen
+            );
+
+            $this->addNpCommunicationIdCandidates(
+                $this->extractNpCommunicationIdFromTrophies($trophyGroup['trophies'] ?? null),
+                $detected,
+                $seen
+            );
+        }
+
+        return $detected;
+    }
+
+    private function extractNpCommunicationIdFromTrophies(mixed $trophies): array
+    {
+        if (!is_array($trophies) || $trophies === []) {
+            return [];
+        }
+
+        $detected = [];
+        $seen = [];
+
+        foreach ($trophies as $trophy) {
+            if (!is_array($trophy)) {
+                continue;
+            }
+
+            $this->addNpCommunicationIdCandidates(
+                $this->extractNpCommunicationIdFromArray($trophy),
+                $detected,
+                $seen
+            );
+
+            $trophyIconUrl = $trophy['trophyIconUrl'] ?? null;
+            if (!is_string($trophyIconUrl) || trim($trophyIconUrl) === '') {
+                continue;
+            }
+
+            if (preg_match('/\/(NP[A-Z0-9]{2}[0-9]{5}_[0-9]{2})_/i', $trophyIconUrl, $matches) !== 1) {
+                continue;
+            }
+
+            $this->addNpCommunicationIdCandidates($matches[1], $detected, $seen);
+        }
+
+        return $detected;
+    }
+
+    /**
+     * @param list<string>|string|null $candidates
+     * @param list<string>             $detected
+     * @param array<string, true>      $seen
+     */
+    private function addNpCommunicationIdCandidates(array|string|null $candidates, array &$detected, array &$seen): void
+    {
+        if ($candidates === null) {
+            return;
+        }
+
+        if (is_string($candidates)) {
+            $candidates = [$candidates];
+        }
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
+
+            $normalizedCandidate = strtoupper(trim($candidate));
+            if (isset($seen[$normalizedCandidate])) {
+                continue;
+            }
+
+            $detected[] = $normalizedCandidate;
+            $seen[$normalizedCandidate] = true;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function extractNpCommunicationIdFromArray(array $payload): ?string
+    {
+        $topLevelCandidateKeys = ['npCommunicationId', 'np_communication_id'];
+        foreach ($topLevelCandidateKeys as $candidateKey) {
+            $candidate = $payload[$candidateKey] ?? null;
+            if (is_string($candidate) && trim($candidate) !== '') {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function assertPayloadMatchesRequestedNpCommunicationId(string $requested, array $payload, string $endpointLabel): void
+    {
+        $detected = $this->extractNpCommunicationIdsFromPayload($payload);
+        if ($detected === []) {
+            return;
+        }
+
+        $normalizedRequested = strtoupper(trim($requested));
+        foreach ($detected as $normalizedDetected) {
+            if ($normalizedDetected === $normalizedRequested) {
+                continue;
+            }
+
+            throw new PsnGameLookupException(sprintf(
+                'PSN response integrity check failed for endpoint "%s": requested npCommunicationId "%s" but received "%s".',
+                $endpointLabel,
+                $normalizedRequested,
+                $normalizedDetected
+            ));
+        }
     }
 }
