@@ -169,7 +169,7 @@ final class PlayStationHttpTransport
         $results = ($this->userSearchExecutor)($onlineId);
 
         foreach ($results as $result) {
-            yield PlayStationUserSearchResult::fromPayload($this->decodePayload($result));
+            yield PlayStationUserSearchResult::fromPayload($this->decodeUserSearchPayload($result));
         }
     }
 
@@ -282,6 +282,59 @@ final class PlayStationHttpTransport
         }
 
         return $decoded;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeUserSearchPayload(mixed $payload): array
+    {
+        if (is_array($payload) || is_string($payload)) {
+            return $this->decodePayload($payload);
+        }
+
+        if (!is_object($payload)) {
+            throw new UnexpectedValueException('Malformed PlayStation user search payload.');
+        }
+
+        if (method_exists($payload, 'toArray')) {
+            $decoded = $payload->toArray();
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        $decoded = get_object_vars($payload);
+        if ($decoded !== []) {
+            return $decoded;
+        }
+
+        $onlineId = $this->readObjectStringValue($payload, ['onlineId', 'getOnlineId']);
+        if ($onlineId === null) {
+            throw new UnexpectedValueException('Missing or invalid user onlineId in PlayStation payload.');
+        }
+
+        return [
+            'onlineId' => $onlineId,
+            'country' => $this->readObjectStringValue($payload, ['country', 'getCountry']),
+            'aboutMe' => $this->readObjectStringValue($payload, ['aboutMe', 'getAboutMe']),
+        ];
+    }
+
+    private function readObjectStringValue(object $payload, array $accessors): ?string
+    {
+        foreach ($accessors as $accessor) {
+            if (!method_exists($payload, $accessor)) {
+                continue;
+            }
+
+            $value = $payload->{$accessor}();
+            if ($value === null || is_string($value)) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     /**

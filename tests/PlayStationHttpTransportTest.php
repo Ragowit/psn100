@@ -100,6 +100,32 @@ final class PlayStationHttpTransportTest extends TestCase
         $this->assertSame('se', $results[1]->country());
     }
 
+    public function testSearchUsersSupportsMethodBackedObjectsWithoutJsonEncoding(): void
+    {
+        $user = new class {
+            public function onlineId(): string
+            {
+                return 'MethodPlayer';
+            }
+
+            public function country(): string
+            {
+                return 'us';
+            }
+        };
+
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            userSearchExecutor: static fn (): array => [$user]
+        );
+
+        $results = array_values(iterator_to_array($transport->searchUsers('MethodPlayer')));
+
+        $this->assertCount(1, $results);
+        $this->assertSame('MethodPlayer', $results[0]->onlineId());
+        $this->assertSame('us', $results[0]->country());
+    }
+
     public function testFindUserByAccountIdReturnsOriginalUserObject(): void
     {
         $user = new class {
