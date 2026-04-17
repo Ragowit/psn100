@@ -576,21 +576,26 @@ final class PsnGameLookupService
     /**
      * @param array<string, mixed> $payload
      */
-    private function extractNpCommunicationIdFromPayload(array $payload): ?string
+    private function extractNpCommunicationIdsFromPayload(array $payload): array
     {
-        $candidate = $this->extractNpCommunicationIdFromArray($payload);
-        if ($candidate !== null) {
-            return $candidate;
-        }
+        $detected = [];
+        $seen = [];
 
-        $candidate = $this->extractNpCommunicationIdFromTrophies($payload['trophies'] ?? null);
-        if ($candidate !== null) {
-            return $candidate;
-        }
+        $this->addNpCommunicationIdCandidates(
+            $this->extractNpCommunicationIdFromArray($payload),
+            $detected,
+            $seen
+        );
+
+        $this->addNpCommunicationIdCandidates(
+            $this->extractNpCommunicationIdFromTrophies($payload['trophies'] ?? null),
+            $detected,
+            $seen
+        );
 
         $trophyGroups = $payload['trophyGroups'] ?? null;
-        if (!is_array($trophyGroups) || $trophyGroups === []) {
-            return null;
+        if (!is_array($trophyGroups)) {
+            return $detected;
         }
 
         foreach ($trophyGroups as $trophyGroup) {
@@ -598,46 +603,85 @@ final class PsnGameLookupService
                 continue;
             }
 
-            $candidate = $this->extractNpCommunicationIdFromArray($trophyGroup);
-            if ($candidate !== null) {
-                return $candidate;
-            }
+            $this->addNpCommunicationIdCandidates(
+                $this->extractNpCommunicationIdFromArray($trophyGroup),
+                $detected,
+                $seen
+            );
 
-            $candidate = $this->extractNpCommunicationIdFromTrophies($trophyGroup['trophies'] ?? null);
-            if ($candidate !== null) {
-                return $candidate;
-            }
+            $this->addNpCommunicationIdCandidates(
+                $this->extractNpCommunicationIdFromTrophies($trophyGroup['trophies'] ?? null),
+                $detected,
+                $seen
+            );
         }
 
-        return null;
+        return $detected;
     }
 
-    private function extractNpCommunicationIdFromTrophies(mixed $trophies): ?string
+    private function extractNpCommunicationIdFromTrophies(mixed $trophies): array
     {
         if (!is_array($trophies) || $trophies === []) {
-            return null;
+            return [];
         }
 
-        $firstTrophy = $trophies[0] ?? null;
-        if (!is_array($firstTrophy)) {
-            return null;
+        $detected = [];
+        $seen = [];
+
+        foreach ($trophies as $trophy) {
+            if (!is_array($trophy)) {
+                continue;
+            }
+
+            $this->addNpCommunicationIdCandidates(
+                $this->extractNpCommunicationIdFromArray($trophy),
+                $detected,
+                $seen
+            );
+
+            $trophyIconUrl = $trophy['trophyIconUrl'] ?? null;
+            if (!is_string($trophyIconUrl) || trim($trophyIconUrl) === '') {
+                continue;
+            }
+
+            if (preg_match('/\/(NP[A-Z0-9]{2}[0-9]{5}_[0-9]{2})_/i', $trophyIconUrl, $matches) !== 1) {
+                continue;
+            }
+
+            $this->addNpCommunicationIdCandidates($matches[1], $detected, $seen);
         }
 
-        $candidate = $this->extractNpCommunicationIdFromArray($firstTrophy);
-        if ($candidate !== null) {
-            return $candidate;
+        return $detected;
+    }
+
+    /**
+     * @param list<string>|string|null $candidates
+     * @param list<string>             $detected
+     * @param array<string, true>      $seen
+     */
+    private function addNpCommunicationIdCandidates(array|string|null $candidates, array &$detected, array &$seen): void
+    {
+        if ($candidates === null) {
+            return;
         }
 
-        $trophyIconUrl = $firstTrophy['trophyIconUrl'] ?? null;
-        if (!is_string($trophyIconUrl) || trim($trophyIconUrl) === '') {
-            return null;
+        if (is_string($candidates)) {
+            $candidates = [$candidates];
         }
 
-        if (preg_match('/\/(NP[A-Z0-9]{2}[0-9]{5}_[0-9]{2})_/i', $trophyIconUrl, $matches) === 1) {
-            return $matches[1];
-        }
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
 
-        return null;
+            $normalizedCandidate = strtoupper(trim($candidate));
+            if (isset($seen[$normalizedCandidate])) {
+                continue;
+            }
+
+            $detected[] = $normalizedCandidate;
+            $seen[$normalizedCandidate] = true;
+        }
     }
 
     /**
@@ -661,23 +705,23 @@ final class PsnGameLookupService
      */
     private function assertPayloadMatchesRequestedNpCommunicationId(string $requested, array $payload, string $endpointLabel): void
     {
-        $detected = $this->extractNpCommunicationIdFromPayload($payload);
-        if ($detected === null) {
+        $detected = $this->extractNpCommunicationIdsFromPayload($payload);
+        if ($detected === []) {
             return;
         }
 
         $normalizedRequested = strtoupper(trim($requested));
-        $normalizedDetected = strtoupper(trim($detected));
+        foreach ($detected as $normalizedDetected) {
+            if ($normalizedDetected === $normalizedRequested) {
+                continue;
+            }
 
-        if ($normalizedDetected === $normalizedRequested) {
-            return;
+            throw new PsnGameLookupException(sprintf(
+                'PSN response integrity check failed for endpoint "%s": requested npCommunicationId "%s" but received "%s".',
+                $endpointLabel,
+                $normalizedRequested,
+                $normalizedDetected
+            ));
         }
-
-        throw new PsnGameLookupException(sprintf(
-            'PSN response integrity check failed for endpoint "%s": requested npCommunicationId "%s" but received "%s".',
-            $endpointLabel,
-            $normalizedRequested,
-            $normalizedDetected
-        ));
     }
 }
