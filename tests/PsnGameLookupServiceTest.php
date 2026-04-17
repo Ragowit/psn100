@@ -220,6 +220,114 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame('https://example.com/group-icon.png', $result['trophyGroups'][0]['trophyGroupIconUrl']);
     }
 
+    public function testFetchTrophyDataForNpCommunicationIdAcceptsMatchingPayloadNpCommunicationId(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $providedClient = new GameLookupStubClient(
+            profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                ? (object) [
+                    'trophies' => [
+                        (object) [
+                            'trophyGroupId' => 'all',
+                            'trophyId' => 1,
+                            'trophyIconUrl' => 'https://image.api.playstation.com/trophy/np/NPWR12345_00_HASH/ICON.PNG',
+                        ],
+                    ],
+                ]
+                : (object) [
+                    'trophyGroups' => [
+                        (object) [
+                            'npCommunicationId' => 'NPWR12345_00',
+                            'trophyGroupId' => 'all',
+                        ],
+                    ],
+                ]
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId(' NPWR12345_00 ', $providedClient);
+
+        $this->assertSame(1, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+    }
+
+    public function testFetchTrophyDataForNpCommunicationIdThrowsForMismatchedPayloadNpCommunicationId(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $providedClient = new GameLookupStubClient(
+            profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                ? (object) [
+                    'trophies' => [
+                        (object) [
+                            'trophyGroupId' => 'all',
+                            'trophyIconUrl' => 'https://image.api.playstation.com/trophy/np/NPWR99999_00_HASH/ICON.PNG',
+                        ],
+                    ],
+                ]
+                : (object) [
+                    'trophyGroups' => [],
+                ]
+        );
+
+        try {
+            $service->fetchTrophyDataForNpCommunicationId('NPWR12345_00', $providedClient);
+            $this->fail('Expected PsnGameLookupException to be thrown for mismatched payload ID.');
+        } catch (PsnGameLookupException $exception) {
+            $this->assertStringContainsString(
+                'PSN response integrity check failed for endpoint "all/trophies"',
+                $exception->getMessage()
+            );
+            $this->assertStringContainsString('NPWR12345_00', $exception->getMessage());
+            $this->assertStringContainsString('NPWR99999_00', $exception->getMessage());
+        }
+    }
+
+    public function testFetchTrophyDataForNpCommunicationIdDoesNotFailWhenPayloadHasNoDetectableNpCommunicationId(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $providedClient = new GameLookupStubClient(
+            profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                ? (object) [
+                    'trophies' => [
+                        (object) [
+                            'trophyGroupId' => 'all',
+                            'trophyId' => 1,
+                        ],
+                    ],
+                ]
+                : (object) [
+                    'trophyGroups' => [
+                        (object) [
+                            'trophyGroupId' => 'all',
+                        ],
+                    ],
+                ]
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR12345_00', $providedClient);
+
+        $this->assertSame(1, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+    }
+
     public function testRequestHandlerReturnsValidationErrorMessage(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
