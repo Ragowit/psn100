@@ -244,7 +244,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         while (true) {
             try {
                 return $operation();
-            } catch (PlayStationNotFoundException $exception) {
+            } catch (Throwable $exception) {
+                if (!$this->isNotFoundThrowable($exception)) {
+                    throw $exception;
+                }
+
                 $attempt++;
 
                 if ($attempt >= $maxAttempts) {
@@ -1970,15 +1974,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     unset($missingTrophyTitleRetry[$onlineId]);
                     unset($trophyTitleCountRetry[$onlineId]);
                 }
-            } catch (PlayStationNotFoundException $exception) {
-                sleep(2);
-                $recheck = '';
-                unset($missingGameDeletionCheck[$onlineId]);
-                unset($missingTrophyTitleRetry[$onlineId]);
-                unset($trophyTitleCountRetry[$onlineId]);
+            } catch (Throwable $exception) {
+                if (!$this->isNotFoundThrowable($exception) && !$this->isAuthFailureThrowable($exception)) {
+                    throw $exception;
+                }
 
-                continue;
-            } catch (PlayStationAuthFailureException $exception) {
                 sleep(2);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
@@ -2018,6 +2018,53 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     {
         return $exception->getCode() === '40001'
             || (($exception->errorInfo[1] ?? null) === 1213);
+    }
+
+    private function isNotFoundThrowable(Throwable $exception): bool
+    {
+        return $exception instanceof PlayStationNotFoundException
+            || $this->determineThrowableStatusCode($exception) === 404;
+    }
+
+    private function isAuthFailureThrowable(Throwable $exception): bool
+    {
+        return $exception instanceof PlayStationAuthFailureException
+            || $this->determineThrowableStatusCode($exception) === 401;
+    }
+
+    private function determineThrowableStatusCode(Throwable $exception): ?int
+    {
+        if (method_exists($exception, 'getResponse')) {
+            $response = $exception->getResponse();
+
+            if (is_object($response)) {
+                if (method_exists($response, 'getStatusCode')) {
+                    $statusCode = $response->getStatusCode();
+                    if (is_int($statusCode)) {
+                        return $statusCode;
+                    }
+                }
+
+                if (method_exists($response, 'getStatus')) {
+                    $statusCode = $response->getStatus();
+                    if (is_int($statusCode)) {
+                        return $statusCode;
+                    }
+                }
+            }
+        }
+
+        $statusCode = $exception->getCode();
+        if (is_int($statusCode) && $statusCode > 0) {
+            return $statusCode;
+        }
+
+        $previous = $exception->getPrevious();
+        if ($previous instanceof Throwable) {
+            return $this->determineThrowableStatusCode($previous);
+        }
+
+        return null;
     }
 
     /**
