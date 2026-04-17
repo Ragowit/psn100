@@ -15,6 +15,12 @@ require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.
 require_once __DIR__ . '/../PlayStation/Contracts/ProfileClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/UserSearchClientInterface.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
+require_once __DIR__ . '/../PlayStation/Dto/PsnProfileDto.php';
+require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyGroupDto.php';
+require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyDto.php';
+require_once __DIR__ . '/../PlayStation/Mapper/PsnProfileMapper.php';
+require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyGroupMapper.php';
+require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyMapper.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -33,6 +39,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly ImageHashCalculator $imageHashCalculator;
     private readonly PsnGameLookupService $psnGameLookupService;
     private readonly PlayStationClientFactoryInterface $playStationClientFactory;
+    private readonly PsnProfileMapper $psnProfileMapper;
+    private readonly PsnTrophyGroupMapper $psnTrophyGroupMapper;
+    private readonly PsnTrophyMapper $psnTrophyMapper;
 
     public function __construct(
         private readonly PDO $database,
@@ -52,6 +61,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
+        $this->psnProfileMapper = new PsnProfileMapper();
+        $this->psnTrophyMapper = new PsnTrophyMapper();
+        $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper($this->psnTrophyMapper);
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
             $this->playStationClientFactory
@@ -498,21 +510,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $country = 'zz';
 
                     if ($profileLookup !== null) {
-                        $profile = $profileLookup['profile'] ?? null;
+                        $profileAccountId = $profileLookup->accountId();
 
-                        if (!is_array($profile)) {
+                        if ($profileAccountId === '') {
                             $this->markPlayerAsPrivate($originalOnlineId);
                             continue 2;
                         }
 
-                        $profileAccountId = $profile['accountId'] ?? null;
-
-                        if (!is_string($profileAccountId) || $profileAccountId === '') {
-                            $this->markPlayerAsPrivate($originalOnlineId);
-                            continue 2;
-                        }
-
-                        $resolvedOnlineId = $this->determineResolvedOnlineId($profile, $originalOnlineId);
+                        $resolvedOnlineId = $this->determineResolvedOnlineId($profileLookup, $originalOnlineId);
 
                         if ($resolvedOnlineId !== '' && strcasecmp($resolvedOnlineId, $originalOnlineId) !== 0) {
                             $this->updateQueuedOnlineId((int) $worker['id'], $originalOnlineId, $resolvedOnlineId);
@@ -524,7 +529,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         $player['account_id'] = $profileAccountId;
                         $user = $client->findUserByAccountId($profileAccountId);
 
-                        $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
+                        $countryFromProfile = $this->extractCountryFromNpId($profileLookup->npId());
                         $country = $countryFromProfile;
 
                         if ($country === null || strtolower($country) === 'zz') {
@@ -1077,43 +1082,18 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 break;
                             }
 
-                            $trophyGroups = $trophyData['trophyGroups'] ?? [];
-                            if (!is_array($trophyGroups)) {
-                                $trophyGroups = [];
-                            }
-
-                            $topLevelTrophies = $trophyData['trophies'] ?? [];
-                            if (!is_array($topLevelTrophies)) {
-                                $topLevelTrophies = [];
-                            }
-
-                            $fallbackGroupTrophies = [];
-                            foreach ($topLevelTrophies as $topLevelTrophy) {
-                                if (!is_array($topLevelTrophy)) {
-                                    continue;
-                                }
-
-                                $topLevelTrophyGroupId = (string) ($topLevelTrophy['trophyGroupId'] ?? '');
-                                if ($topLevelTrophyGroupId === '') {
-                                    continue;
-                                }
-
-                                $fallbackGroupTrophies[$topLevelTrophyGroupId][] = $topLevelTrophy;
-                            }
+                            $trophyGroups = $this->mapTrophyGroupsFromLookupData($trophyData);
+                            $fallbackGroupTrophies = $this->mapFallbackGroupTrophiesFromLookupData($trophyData);
 
                             foreach ($trophyGroups as $trophyGroup) {
-                                if (!is_array($trophyGroup)) {
-                                    continue;
-                                }
-
-                                $trophyGroupId = (string) ($trophyGroup['trophyGroupId'] ?? '');
+                                $trophyGroupId = $trophyGroup->id();
                                 if ($trophyGroupId === '') {
                                     continue;
                                 }
 
-                                $trophyGroupName = (string) ($trophyGroup['trophyGroupName'] ?? '');
-                                $trophyGroupDetail = (string) ($trophyGroup['trophyGroupDetail'] ?? '');
-                                $trophyGroupIconUrl = (string) ($trophyGroup['trophyGroupIconUrl'] ?? '');
+                                $trophyGroupName = $trophyGroup->name();
+                                $trophyGroupDetail = $trophyGroup->detail();
+                                $trophyGroupIconUrl = $trophyGroup->iconUrl();
                                 $groupNewTrophies = false;
                                 // Add trophy group (game + dlcs) into database
                                 $existingGroupQuery = $this->database->prepare(
@@ -1177,10 +1157,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     }
                                 }
 
-                                $groupTrophies = $trophyGroup['trophies'] ?? [];
-                                if (!is_array($groupTrophies)) {
-                                    $groupTrophies = [];
-                                }
+                                $groupTrophies = $trophyGroup->trophies();
 
                                 if ($groupTrophies === [] && isset($fallbackGroupTrophies[$trophyGroupId])) {
                                     $groupTrophies = $fallbackGroupTrophies[$trophyGroupId];
@@ -1197,19 +1174,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                                     break;
                                 }
-
+                                
                                 // Add trophies into database
                                 foreach ($groupTrophies as $trophy) {
-                                    if (!is_array($trophy)) {
+                                    if (!$trophy->hasValidId()) {
                                         continue;
                                     }
 
-                                    $rawTrophyOrderId = $trophy['trophyId'] ?? null;
-                                    if (!is_numeric($rawTrophyOrderId)) {
-                                        continue;
-                                    }
-
-                                    $trophyOrderId = (int) $rawTrophyOrderId;
+                                    $trophyOrderId = $trophy->id();
                                     if ($trophyOrderId < 0) {
                                         continue;
                                     }
@@ -1227,9 +1199,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     $existingTrophyQuery->execute();
                                     $existingTrophy = $existingTrophyQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
-                                    $trophyHidden = (int) ($trophy['trophyHidden'] ?? 0);
+                                    $trophyHidden = (int) $trophy->hidden();
 
-                                    $rawProgressTargetValue = $trophy['trophyProgressTargetValue'] ?? null;
+                                    $rawProgressTargetValue = $trophy->progressTargetValue();
 
                                     $existingProgressTargetValue = null;
                                     $existingRewardName = null;
@@ -1249,20 +1221,20 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         ? null
                                         : (int) $rawProgressTargetValue;
 
-                                    $rewardName = (string) ($trophy['trophyRewardName'] ?? '');
+                                    $rewardName = $trophy->rewardName();
                                     $rewardName = $rewardName === '' ? null : $rewardName;
 
-                                    $rewardImageUrl = $trophy['trophyRewardImageUrl'] ?? null;
+                                    $rewardImageUrl = $trophy->rewardImageUrl();
                                     $rewardImageShouldBeNull = $rewardImageUrl === null || $rewardImageUrl === '';
 
-                                    $trophyTypeEnumValue = strtolower((string) ($trophy['trophyType'] ?? ''));
+                                    $trophyTypeEnumValue = strtolower($trophy->type());
                                     if ($trophyTypeEnumValue === '') {
                                         $trophyTypeEnumValue = 'bronze';
                                     }
 
-                                    $trophyName = (string) ($trophy['trophyName'] ?? '');
-                                    $trophyDetail = (string) ($trophy['trophyDetail'] ?? '');
-                                    $trophyIconUrl = (string) ($trophy['trophyIconUrl'] ?? '');
+                                    $trophyName = $trophy->name();
+                                    $trophyDetail = $trophy->detail();
+                                    $trophyIconUrl = $trophy->iconUrl();
 
                                     $trophyNeedsUpdate = $existingTrophy === null
                                         || (int) ($existingTrophy['hidden'] ?? -1) !== $trophyHidden
@@ -2043,7 +2015,64 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             || (($exception->errorInfo[1] ?? null) === 1213);
     }
 
-    private function lookupPlayerProfile(ProfileClientInterface $client, string $onlineId): ?array
+    /**
+     * @param array<string, mixed> $trophyData
+     * @return array<int, PsnTrophyGroupDto>
+     */
+    private function mapTrophyGroupsFromLookupData(array $trophyData): array
+    {
+        $rawGroups = $trophyData['trophyGroups'] ?? [];
+        if (!is_array($rawGroups)) {
+            return [];
+        }
+
+        $groups = [];
+
+        foreach ($rawGroups as $rawGroup) {
+            if (!is_array($rawGroup)) {
+                continue;
+            }
+
+            $group = $this->psnTrophyGroupMapper->mapFromLookupArray($rawGroup);
+            if ($group->id() === '') {
+                continue;
+            }
+
+            $groups[] = $group;
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @param array<string, mixed> $trophyData
+     * @return array<string, array<int, PsnTrophyDto>>
+     */
+    private function mapFallbackGroupTrophiesFromLookupData(array $trophyData): array
+    {
+        $rawTopLevelTrophies = $trophyData['trophies'] ?? [];
+        if (!is_array($rawTopLevelTrophies)) {
+            return [];
+        }
+
+        $grouped = [];
+        foreach ($rawTopLevelTrophies as $rawTrophy) {
+            if (!is_array($rawTrophy)) {
+                continue;
+            }
+
+            $groupId = (string) ($rawTrophy['trophyGroupId'] ?? '');
+            if ($groupId === '') {
+                continue;
+            }
+
+            $grouped[$groupId][] = $this->psnTrophyMapper->mapFromLookupArray($rawTrophy);
+        }
+
+        return $grouped;
+    }
+
+    private function lookupPlayerProfile(ProfileClientInterface $client, string $onlineId): ?PsnProfileDto
     {
         try {
             $profile = $client->lookupProfileByOnlineId($onlineId);
@@ -2055,23 +2084,18 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             throw $exception;
         }
 
-        $normalized = $this->normalizePlayerProfileResponse($profile);
-
-        return is_array($normalized) ? $normalized : null;
+        return $this->psnProfileMapper->mapLookupResponse($profile);
     }
 
-    /**
-     * @param array<string, mixed> $profile
-     */
-    private function determineResolvedOnlineId(array $profile, string $fallbackOnlineId): string
+    private function determineResolvedOnlineId(PsnProfileDto $profile, string $fallbackOnlineId): string
     {
-        $currentOnlineId = $profile['currentOnlineId'] ?? null;
-        if (is_string($currentOnlineId) && $currentOnlineId !== '') {
+        $currentOnlineId = $profile->currentOnlineId();
+        if ($currentOnlineId !== '') {
             return $currentOnlineId;
         }
 
-        $onlineId = $profile['onlineId'] ?? null;
-        if (is_string($onlineId) && $onlineId !== '') {
+        $onlineId = $profile->onlineId();
+        if ($onlineId !== '') {
             return $onlineId;
         }
 
@@ -2259,30 +2283,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return null;
-    }
-
-    private function normalizePlayerProfileResponse(mixed $profile): array
-    {
-        if (is_array($profile)) {
-            return $profile;
-        }
-
-        if (is_object($profile)) {
-            try {
-                $encoded = json_encode($profile, JSON_THROW_ON_ERROR);
-                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
-
-                if (is_array($decoded)) {
-                    return $decoded;
-                }
-            } catch (JsonException) {
-                // Fall back to exposing public properties.
-            }
-
-            return get_object_vars($profile);
-        }
-
-        return [];
     }
 
     private function findPlayerCountry(UserSearchClientInterface $client, string $onlineId): ?string
