@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/Http/PlayStationHttpTransport.php';
 
 use Tustin\PlayStation\Client;
 
@@ -10,9 +11,17 @@ final class TustinPlayStationApiClient implements PlayStationApiClientInterface
 {
     private readonly Client $client;
 
+    private readonly PlayStationHttpTransport $transport;
+
     public function __construct(?Client $client = null)
     {
         $this->client = $client ?? new Client();
+        $this->transport = new PlayStationHttpTransport(
+            requestExecutor: fn (string $path, array $query, array $headers): mixed => $this->client->get($path, $query, $headers),
+            accountLookupExecutor: fn (string $accountId): mixed => $this->client->users()->find($accountId),
+            userSearchExecutor: fn (string $onlineId): iterable => $this->client->users()->search($onlineId),
+            maxAttempts: 2,
+        );
     }
 
     public function loginWithNpsso(string $npsso): void
@@ -44,30 +53,21 @@ final class TustinPlayStationApiClient implements PlayStationApiClientInterface
 
     public function lookupProfileByOnlineId(string $onlineId): mixed
     {
-        $path = sprintf(
-            'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
-            rawurlencode($onlineId)
-        );
-
-        return $this->client->get(
-            $path,
-            ['fields' => 'accountId,onlineId,currentOnlineId,npId'],
-            ['content-type' => 'application/json']
-        );
+        return $this->transport->lookupUserProfile($onlineId);
     }
 
     public function findUserByAccountId(string $accountId): object
     {
-        return $this->client->users()->find($accountId);
+        return $this->transport->findUserByAccountId($accountId);
     }
 
     public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
     {
-        return $this->client->get($path, $query, $headers);
+        return $this->transport->request($path, $query, $headers);
     }
 
     public function searchUsers(string $onlineId): iterable
     {
-        return $this->client->users()->search($onlineId);
+        return $this->transport->searchUsers($onlineId);
     }
 }
