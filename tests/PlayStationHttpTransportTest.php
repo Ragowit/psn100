@@ -99,4 +99,23 @@ final class PlayStationHttpTransportTest extends TestCase
         $this->assertSame('PlayerOne', $results[0]->onlineId());
         $this->assertSame('se', $results[1]->country());
     }
+
+    public function testFindUserByAccountIdReturnsOriginalUserObject(): void
+    {
+        $user = new class {
+            public function accountId(): string
+            {
+                return '123';
+            }
+        };
+
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            accountLookupExecutor: static fn (): object => $user
+        );
+
+        $result = $transport->findUserByAccountId('123');
+
+        $this->assertSame($user, $result);
+    }
 }

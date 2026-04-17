@@ -22,7 +22,7 @@ final class PlayStationHttpTransport
 
     /**
      * @param callable(string, array<string, scalar|null>, array<string, string>): mixed $requestExecutor
-     * @param null|callable(string): mixed $accountLookupExecutor
+     * @param null|callable(string): object $accountLookupExecutor
      * @param null|callable(string): iterable<mixed> $userSearchExecutor
      * @param null|callable(string, array<string, scalar|null>, array<string, string>): void $beforeRequest
      * @param null|callable(string, array<string, scalar|null>, array<string, string>, array<string, mixed>): void $afterResponse
@@ -142,15 +142,19 @@ final class PlayStationHttpTransport
         );
     }
 
-    public function findUserByAccountId(string $accountId): PlayStationUserSearchResult
+    public function findUserByAccountId(string $accountId): object
     {
         if ($this->accountLookupExecutor === null) {
             throw new RuntimeException('Account lookup is not configured for this transport.');
         }
 
-        $payload = $this->decodePayload(($this->accountLookupExecutor)($accountId));
+        $user = ($this->accountLookupExecutor)($accountId);
 
-        return PlayStationUserSearchResult::fromPayload($payload);
+        if (!is_object($user)) {
+            throw new UnexpectedValueException('Malformed account lookup response from PlayStation Network.');
+        }
+
+        return $user;
     }
 
     /**
