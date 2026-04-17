@@ -62,7 +62,7 @@ final class PsnGameLookupServiceTest extends TestCase
             'https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/NPWR12345_00/trophyGroups/all/trophies',
             $capturedCalls[0]['path']
         );
-        $this->assertSame(['npLanguage' => 'en-US'], $capturedCalls[0]['query']);
+        $this->assertSame([], $capturedCalls[0]['query']);
         $this->assertSame(['content-type' => 'application/json'], $capturedCalls[0]['headers']);
         $this->assertSame(42, $result['game']['id']);
         $this->assertSame('NPWR12345_00', $result['game']['npCommunicationId']);
@@ -111,7 +111,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $service->lookupByGameId('77');
 
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'], $attempts[0]);
+        $this->assertSame(['npServiceName' => 'trophy2'], $attempts[0]);
     }
 
     public function testFetchTrophyDataForNpCommunicationIdUsesProvidedAuthenticatedClient(): void
@@ -509,9 +509,9 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $result = $service->lookupByGameId('54139');
 
-        $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]);
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2'], $attempts[2]);
+        $this->assertSame([], $attempts[0]);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[1]);
+        $this->assertSame(['npServiceName' => 'trophy2'], $attempts[2]);
         $this->assertSame(7, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
@@ -529,17 +529,17 @@ final class PsnGameLookupServiceTest extends TestCase
                         $attempts[] = ['path' => $path, 'query' => $query];
 
                         if (str_ends_with($path, '/all/trophies')) {
-                            if ($query === ['npLanguage' => 'en-US']) {
+                            if ($query === []) {
                                 throw new GameLookupHttpException(404);
                             }
 
-                            if ($query === ['npLanguage' => 'en-US', 'npServiceName' => 'trophy']) {
+                            if ($query === ['npServiceName' => 'trophy']) {
                                 return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 41]]];
                             }
                         }
 
                         if (str_ends_with($path, '/trophyGroups')
-                            && $query === ['npLanguage' => 'en-US', 'npServiceName' => 'trophy']) {
+                            && $query === ['npServiceName' => 'trophy']) {
                             return (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]];
                         }
 
@@ -553,9 +553,9 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $this->assertSame(41, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
         $this->assertCount(3, $attempts);
-        $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]['query']);
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]['query']);
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[2]['query']);
+        $this->assertSame([], $attempts[0]['query']);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[1]['query']);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[2]['query']);
         $this->assertTrue(str_ends_with($attempts[2]['path'], '/trophyGroups'));
     }
 
@@ -572,21 +572,21 @@ final class PsnGameLookupServiceTest extends TestCase
                     profileHandler: static function (string $path, array $query) use (&$attempts): object {
                         $attempts[] = ['path' => $path, 'query' => $query];
 
-                        if (str_ends_with($path, '/all/trophies') && $query === ['npLanguage' => 'en-US']) {
+                        if (str_ends_with($path, '/all/trophies') && $query === []) {
                             return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 51]]];
                         }
 
-                        if (str_ends_with($path, '/trophyGroups') && $query === ['npLanguage' => 'en-US']) {
+                        if (str_ends_with($path, '/trophyGroups') && $query === []) {
                             throw new GameLookupHttpException(404);
                         }
 
                         if (str_ends_with($path, '/all/trophies')
-                            && $query === ['npLanguage' => 'en-US', 'npServiceName' => 'trophy']) {
+                            && $query === ['npServiceName' => 'trophy']) {
                             return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 52]]];
                         }
 
                         if (str_ends_with($path, '/trophyGroups')
-                            && $query === ['npLanguage' => 'en-US', 'npServiceName' => 'trophy']) {
+                            && $query === ['npServiceName' => 'trophy']) {
                             return (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]];
                         }
 
@@ -601,13 +601,13 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(52, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
         $this->assertCount(4, $attempts);
         $this->assertTrue(str_ends_with($attempts[0]['path'], '/all/trophies'));
-        $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]['query']);
+        $this->assertSame([], $attempts[0]['query']);
         $this->assertTrue(str_ends_with($attempts[1]['path'], '/trophyGroups'));
-        $this->assertSame(['npLanguage' => 'en-US'], $attempts[1]['query']);
+        $this->assertSame([], $attempts[1]['query']);
         $this->assertTrue(str_ends_with($attempts[2]['path'], '/all/trophies'));
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[2]['query']);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[2]['query']);
         $this->assertTrue(str_ends_with($attempts[3]['path'], '/trophyGroups'));
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[3]['query']);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[3]['query']);
     }
 
     public function testLookupByGameIdRetriesForKnownHasteExceptionWithoutStatusCode(): void
@@ -638,8 +638,8 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $result = $service->lookupByGameId('54139');
 
-        $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
-        $this->assertSame(['npLanguage' => 'en-US', 'npServiceName' => 'trophy'], $attempts[1]);
+        $this->assertSame([], $attempts[0]);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[1]);
         $this->assertSame(8, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
@@ -675,7 +675,7 @@ final class PsnGameLookupServiceTest extends TestCase
         } catch (PsnGameLookupException $exception) {
             $this->assertStringContainsString('Failed to retrieve trophy data from PlayStation Network', $exception->getMessage());
             $this->assertCount(1, $attempts);
-            $this->assertSame(['npLanguage' => 'en-US'], $attempts[0]);
+            $this->assertSame([], $attempts[0]);
         }
     }
 }
