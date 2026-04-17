@@ -9,8 +9,11 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
-
-use Tustin\PlayStation\Client;
+require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/ProfileClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/TrophyClientInterface.php';
+require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
 
 class GameRescanService
 {
@@ -30,6 +33,7 @@ class GameRescanService
 
     private ImageHashCalculator $imageHashCalculator;
     private PsnGameLookupService $psnGameLookupService;
+    private PlayStationClientFactoryInterface $playStationClientFactory;
 
     /**
      * @var \Closure(string):void|null
@@ -41,7 +45,8 @@ class GameRescanService
         TrophyCalculator $trophyCalculator,
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?ImageHashCalculator $imageHashCalculator = null,
-        ?PsnGameLookupService $psnGameLookupService = null
+        ?PsnGameLookupService $psnGameLookupService = null,
+        ?PlayStationClientFactoryInterface $playStationClientFactory = null
     )
     {
         $this->database = $database;
@@ -49,7 +54,11 @@ class GameRescanService
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
-        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
+        $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
+        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
+            $database,
+            $this->playStationClientFactory
+        );
     }
 
     /**
@@ -152,12 +161,12 @@ class GameRescanService
         return str_starts_with($npCommunicationId, self::ORIGINAL_GAME_PREFIX);
     }
 
-    private function loginToWorker(): Client
+    private function loginToWorker(): PlayStationApiClientInterface
     {
         while (true) {
             foreach ($this->fetchWorkers() as $worker) {
                 try {
-                    $client = new Client();
+                    $client = $this->playStationClientFactory->createClient();
                     $client->loginWithNpsso($worker['npsso']);
 
                     return $client;
@@ -193,7 +202,7 @@ class GameRescanService
         $query->execute();
     }
 
-    private function findAccessibleUserWithGame(Client $client, string $npCommunicationId): ?object
+    private function findAccessibleUserWithGame(ProfileClientInterface $client, string $npCommunicationId): ?object
     {
         $query = $this->database->prepare(
             'SELECT account_id
@@ -206,7 +215,7 @@ class GameRescanService
         $query->execute();
 
         while (($accountId = $query->fetchColumn()) !== false) {
-            $user = $client->users()->find((string) $accountId);
+            $user = $client->findUserByAccountId((string) $accountId);
 
             try {
                 $user->trophySummary()->level();
@@ -332,7 +341,7 @@ class GameRescanService
     }
 
     private function updateTrophyTitle(
-        Client $client,
+        TrophyClientInterface $client,
         object $trophyTitle,
         string $npCommunicationId,
         ?GameRescanProgressListener $progressListener,
@@ -596,7 +605,7 @@ class GameRescanService
     /**
      * @return array<int, array{group: object, trophies: array<int, object>}>
      */
-    private function fetchGameLookupGroupData(Client $client, string $npCommunicationId): array
+    private function fetchGameLookupGroupData(TrophyClientInterface $client, string $npCommunicationId): array
     {
         $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npCommunicationId, $client);
         $rawGroups = $trophyData['trophyGroups'] ?? [];

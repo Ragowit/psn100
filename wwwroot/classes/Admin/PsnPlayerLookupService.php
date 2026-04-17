@@ -5,8 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/PsnPlayerLookupException.php';
-
-use Tustin\PlayStation\Client;
+require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/ProfileClientInterface.php';
+require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
 
 final class PsnPlayerLookupService
 {
@@ -15,30 +17,141 @@ final class PsnPlayerLookupService
      */
     private readonly \Closure $workerFetcher;
 
-    /**
-     * @var \Closure(): object
-     */
-    private readonly \Closure $clientFactory;
+    private readonly PlayStationClientFactoryInterface $playStationClientFactory;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher
-     * @param callable(): object|null $clientFactory
      */
-    public function __construct(callable $workerFetcher, ?callable $clientFactory = null)
-    {
+    public function __construct(
+        callable $workerFetcher,
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null
+    ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable(
-            $clientFactory ?? static function (): object {
-                return new Client();
-            }
+        $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
+    }
+
+    public static function fromDatabase(
+        PDO $database,
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null
+    ): self {
+        $workerService = new WorkerService($database);
+
+        return new self(
+            static fn (): array => $workerService->fetchWorkers(),
+            $playStationClientFactory
         );
     }
 
-    public static function fromDatabase(PDO $database): self
-    {
-        $workerService = new WorkerService($database);
+    private function normalizePlayStationClientFactory(
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory
+    ): PlayStationClientFactoryInterface {
+        if ($playStationClientFactory instanceof PlayStationClientFactoryInterface) {
+            return $playStationClientFactory;
+        }
 
-        return new self(static fn (): array => $workerService->fetchWorkers());
+        if (is_callable($playStationClientFactory)) {
+            $legacyClientFactory = \Closure::fromCallable($playStationClientFactory);
+
+            return new class ($legacyClientFactory) implements PlayStationClientFactoryInterface {
+                /**
+                 * @var \Closure(): PlayStationApiClientInterface
+                 */
+                private readonly \Closure $legacyClientFactory;
+
+                /**
+                 * @param \Closure(): PlayStationApiClientInterface $legacyClientFactory
+                 */
+                public function __construct(\Closure $legacyClientFactory)
+                {
+                    $this->legacyClientFactory = $legacyClientFactory;
+                }
+
+                public function createClient(): PlayStationApiClientInterface
+                {
+                    $client = ($this->legacyClientFactory)();
+
+                    if ($client instanceof PlayStationApiClientInterface) {
+                        return $client;
+                    }
+
+                    if (!is_object($client)) {
+                        throw new RuntimeException('Invalid PlayStation client.');
+                    }
+
+                    return new class ($client) implements PlayStationApiClientInterface {
+                        public function __construct(private readonly object $client)
+                        {
+                        }
+
+                        public function loginWithNpsso(string $npsso): void
+                        {
+                            if (!method_exists($this->client, 'loginWithNpsso')) {
+                                throw new RuntimeException('The PlayStation client does not support NPSSO authentication.');
+                            }
+
+                            $this->client->loginWithNpsso($npsso);
+                        }
+
+                        public function acquireAccessToken(): ?string
+                        {
+                            return null;
+                        }
+
+                        public function refreshAccessToken(): void
+                        {
+                            throw new RuntimeException('The PlayStation client does not support token refresh.');
+                        }
+
+                        public function lookupProfileByOnlineId(string $onlineId): mixed
+                        {
+                            if (!method_exists($this->client, 'get')) {
+                                throw new RuntimeException('The PlayStation client does not support profile requests.');
+                            }
+
+                            $path = sprintf(
+                                'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
+                                rawurlencode($onlineId)
+                            );
+
+                            return $this->client->get(
+                                $path,
+                                ['fields' => 'accountId,onlineId,currentOnlineId,npId'],
+                                ['content-type' => 'application/json']
+                            );
+                        }
+
+                        public function findUserByAccountId(string $accountId): object
+                        {
+                            if (!method_exists($this->client, 'users')) {
+                                throw new RuntimeException('The PlayStation client does not support profile requests.');
+                            }
+
+                            return $this->client->users()->find($accountId);
+                        }
+
+                        public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+                        {
+                            if (!method_exists($this->client, 'get')) {
+                                throw new RuntimeException('The PlayStation client does not support trophy requests.');
+                            }
+
+                            return $this->client->get($path, $query, $headers);
+                        }
+
+                        public function searchUsers(string $onlineId): iterable
+                        {
+                            if (!method_exists($this->client, 'users')) {
+                                return [];
+                            }
+
+                            return $this->client->users()->search($onlineId);
+                        }
+                    };
+                }
+            };
+        }
+
+        return new PlayStationClientFactory();
     }
 
     /**
@@ -77,9 +190,8 @@ final class PsnPlayerLookupService
         return $this->normalizeProfileResponse($profile);
     }
 
-    private function createAuthenticatedClient(): object
+    private function createAuthenticatedClient(): PlayStationApiClientInterface
     {
-        $factory = $this->clientFactory;
 
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
@@ -93,16 +205,7 @@ final class PsnPlayerLookupService
             }
 
             try {
-                $client = $factory();
-
-                if (!is_object($client)) {
-                    throw new RuntimeException('Invalid PlayStation client.');
-                }
-
-                if (!method_exists($client, 'loginWithNpsso')) {
-                    throw new RuntimeException('The PlayStation client does not support NPSSO authentication.');
-                }
-
+                $client = $this->playStationClientFactory->createClient();
                 $client->loginWithNpsso($npsso);
 
                 return $client;
@@ -114,22 +217,9 @@ final class PsnPlayerLookupService
         throw new RuntimeException('Unable to login to any worker accounts.');
     }
 
-    private function executeUserProfileRequest(object $client, string $onlineId): mixed
+    private function executeUserProfileRequest(ProfileClientInterface $client, string $onlineId): mixed
     {
-        if (!method_exists($client, 'get')) {
-            throw new RuntimeException('The PlayStation client does not support profile requests.');
-        }
-
-        $path = sprintf(
-            'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
-            rawurlencode($onlineId)
-        );
-
-        $query = [
-            'fields' => 'accountId,onlineId,currentOnlineId,npId',
-        ];
-
-        return $client->get($path, $query, ['content-type' => 'application/json']);
+        return $client->lookupProfileByOnlineId($onlineId);
     }
 
     private function determineStatusCode(Throwable $exception): ?int

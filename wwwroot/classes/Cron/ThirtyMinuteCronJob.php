@@ -10,10 +10,14 @@ require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/ProfileClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Contracts/UserSearchClientInterface.php';
+require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
-use Tustin\PlayStation\Client;
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
@@ -28,6 +32,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private readonly ImageHashCalculator $imageHashCalculator;
     private readonly PsnGameLookupService $psnGameLookupService;
+    private readonly PlayStationClientFactoryInterface $playStationClientFactory;
 
     public function __construct(
         private readonly PDO $database,
@@ -38,14 +43,19 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?TrophyMetaRepository $trophyMetaRepository = null,
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null,
-        ?PsnGameLookupService $psnGameLookupService = null
+        ?PsnGameLookupService $psnGameLookupService = null,
+        ?PlayStationClientFactoryInterface $playStationClientFactory = null
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
-        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
+        $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
+        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
+            $database,
+            $this->playStationClientFactory
+        );
     }
 
     private function setWaitingScanProgress(int $workerId, string $message): void
@@ -324,7 +334,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 }
 
                 try {
-                    $client = new Client();
+                    $client = $this->playStationClientFactory->createClient();
                     $npsso = $worker["npsso"];
                     $client->loginWithNpsso($npsso);
 
@@ -512,7 +522,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         $player['account_id'] = $profileAccountId;
-                        $user = $client->users()->find($profileAccountId);
+                        $user = $client->findUserByAccountId($profileAccountId);
 
                         $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
                         $country = $countryFromProfile;
@@ -544,7 +554,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         $player['account_id'] = $existingAccountId;
-                        $user = $client->users()->find($existingAccountId);
+                        $user = $client->findUserByAccountId($existingAccountId);
 
                         $resolvedOnlineId = (string) $user->onlineId();
 
@@ -2033,19 +2043,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             || (($exception->errorInfo[1] ?? null) === 1213);
     }
 
-    private function lookupPlayerProfile(Client $client, string $onlineId): ?array
+    private function lookupPlayerProfile(ProfileClientInterface $client, string $onlineId): ?array
     {
-        $path = sprintf(
-            'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
-            rawurlencode($onlineId)
-        );
-
-        $query = [
-            'fields' => 'accountId,onlineId,currentOnlineId,npId',
-        ];
-
         try {
-            $profile = $client->get($path, $query, ['content-type' => 'application/json']);
+            $profile = $client->lookupProfileByOnlineId($onlineId);
         } catch (Throwable $exception) {
             if ($this->determineStatusCode($exception) === 404) {
                 return null;
@@ -2284,13 +2285,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         return [];
     }
 
-    private function findPlayerCountry(Client $client, string $onlineId): ?string
+    private function findPlayerCountry(UserSearchClientInterface $client, string $onlineId): ?string
     {
         $normalizedOnlineId = strtolower($onlineId);
         $userCounter = 0;
 
         try {
-            foreach ($client->users()->search($onlineId) as $result) {
+            foreach ($client->searchUsers($onlineId) as $result) {
                 if (strtolower($result->onlineId()) === $normalizedOnlineId) {
                     $country = $result->country();
 
