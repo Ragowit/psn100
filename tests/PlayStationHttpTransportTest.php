@@ -126,6 +126,38 @@ final class PlayStationHttpTransportTest extends TestCase
         $this->assertSame('us', $results[0]->country());
     }
 
+    public function testSearchUsersDoesNotInvokeAboutMeAccessorDuringMapping(): void
+    {
+        $user = new class {
+            public function onlineId(): string
+            {
+                return 'NoBioFetch';
+            }
+
+            public function country(): string
+            {
+                return 'jp';
+            }
+
+            public function aboutMe(): string
+            {
+                throw new RuntimeException('aboutMe accessor should not be called while mapping search results.');
+            }
+        };
+
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            userSearchExecutor: static fn (): array => [$user]
+        );
+
+        $results = array_values(iterator_to_array($transport->searchUsers('NoBioFetch')));
+
+        $this->assertCount(1, $results);
+        $this->assertSame('NoBioFetch', $results[0]->onlineId());
+        $this->assertSame('jp', $results[0]->country());
+        $this->assertSame(null, $results[0]->aboutMe());
+    }
+
     public function testFindUserByAccountIdReturnsOriginalUserObject(): void
     {
         $user = new class {

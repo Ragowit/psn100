@@ -317,7 +317,6 @@ final class PlayStationHttpTransport
         return [
             'onlineId' => $onlineId,
             'country' => $this->readObjectStringValue($payload, ['country', 'getCountry']),
-            'aboutMe' => $this->readObjectStringValue($payload, ['aboutMe', 'getAboutMe']),
         ];
     }
 
