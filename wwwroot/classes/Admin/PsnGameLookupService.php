@@ -8,6 +8,7 @@ require_once __DIR__ . '/PsnGameLookupException.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/TrophyClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Policy/NpServiceNamePolicy.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
 
 final class PsnGameLookupService
@@ -18,6 +19,7 @@ final class PsnGameLookupService
     private readonly \Closure $workerFetcher;
 
     private readonly PlayStationClientFactoryInterface $playStationClientFactory;
+    private readonly NpServiceNamePolicy $npServiceNamePolicy;
 
     public function __construct(
         private readonly PDO $database,
@@ -26,6 +28,7 @@ final class PsnGameLookupService
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
+        $this->npServiceNamePolicy = new NpServiceNamePolicy();
     }
 
     public static function fromDatabase(
@@ -223,9 +226,15 @@ final class PsnGameLookupService
                     throw $trophyGroupsException;
                 }
 
-                $fallbackQuery = $this->resolveAlternateQueryVariant(
-                    $this->buildLookupQueryVariants($preferredNpServiceName),
+                $fallbackQuery = $this->npServiceNamePolicy->resolveAlternateQueryVariant(
+                    $this->npServiceNamePolicy->buildLookupQueryVariants($preferredNpServiceName),
                     $trophyRequestResult['query']
+                );
+                $this->logLookupVariantSelection(
+                    'trophyGroups',
+                    $fallbackQuery ?? $trophyRequestResult['query'],
+                    $this->describeFallbackTriggerReason($trophyGroupsException),
+                    $fallbackQuery !== null
                 );
 
                 if ($fallbackQuery === null) {
@@ -383,23 +392,7 @@ final class PsnGameLookupService
             return null;
         }
 
-        $platforms = array_values(array_filter(array_map(
-            static fn (string $value): string => strtoupper(trim($value)),
-            explode(',', (string) $platform)
-        ), static fn (string $value): bool => $value !== ''));
-
-        if ($platforms === []) {
-            return null;
-        }
-
-        $legacyPlatforms = ['PS3', 'PS4', 'PSVR', 'PSVITA'];
-        foreach ($platforms as $platformValue) {
-            if (in_array($platformValue, $legacyPlatforms, true)) {
-                return 'trophy';
-            }
-        }
-
-        return 'trophy2';
+        return $this->npServiceNamePolicy->resolvePreferredNpServiceName((string) $platform);
     }
 
     /**
@@ -475,8 +468,8 @@ final class PsnGameLookupService
     }
 
     /**
-     * @param array{npLanguage: string, npServiceName?: string}|null $pinnedQuery
-     * @return array{payload: mixed, query: array{npLanguage: string, npServiceName?: string}}
+     * @param array{npServiceName?: string}|null $pinnedQuery
+     * @return array{payload: mixed, query: array{npServiceName?: string}}
      */
     private function executeLookupRequest(
         TrophyClientInterface $client,
@@ -486,19 +479,31 @@ final class PsnGameLookupService
     ): array
     {
         $queryVariants = $pinnedQuery === null
-            ? $this->buildLookupQueryVariants($preferredNpServiceName)
+            ? $this->npServiceNamePolicy->buildLookupQueryVariants($preferredNpServiceName)
             : [$pinnedQuery];
 
         $lastException = null;
 
         foreach ($queryVariants as $query) {
             try {
+                $this->logLookupVariantSelection(
+                    $path,
+                    $query,
+                    null,
+                    false
+                );
                 return [
                     'payload' => $client->requestTrophyEndpoint($path, $query, ['content-type' => 'application/json']),
                     'query' => $query,
                 ];
             } catch (Throwable $exception) {
                 $lastException = $exception;
+                $this->logLookupVariantSelection(
+                    $path,
+                    $query,
+                    $this->describeFallbackTriggerReason($exception),
+                    true
+                );
 
                 if ($pinnedQuery !== null || !$this->shouldRetryWithDifferentServiceName($exception)) {
                     throw $exception;
@@ -513,45 +518,38 @@ final class PsnGameLookupService
         throw new RuntimeException('Unable to retrieve trophy data from PlayStation Network.');
     }
 
-    /**
-     * @return list<array{npLanguage: string, npServiceName?: string}>
-     */
-    private function buildLookupQueryVariants(?string $preferredNpServiceName): array
+    private function describeFallbackTriggerReason(Throwable $exception): string
     {
-        $queryVariants = [];
-        $addVariant = static function (array $variant) use (&$queryVariants): void {
-            if (!in_array($variant, $queryVariants, true)) {
-                $queryVariants[] = $variant;
-            }
-        };
-
-        if ($preferredNpServiceName === 'trophy' || $preferredNpServiceName === 'trophy2') {
-            $addVariant(['npLanguage' => 'en-US', 'npServiceName' => $preferredNpServiceName]);
-        } else {
-            $addVariant(['npLanguage' => 'en-US']);
+        $statusCode = $this->determineStatusCode($exception);
+        if ($statusCode !== null) {
+            return sprintf('http_status:%d', $statusCode);
         }
 
-        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy']);
-        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2']);
-        $addVariant(['npLanguage' => 'en-US']);
-
-        return $queryVariants;
+        return sprintf('exception:%s', $exception::class);
     }
 
     /**
-     * @param list<array{npLanguage: string, npServiceName?: string}> $queryVariants
-     * @param array{npLanguage: string, npServiceName?: string} $winningQuery
-     * @return array{npLanguage: string, npServiceName?: string}|null
+     * @param array{npServiceName?: string} $queryVariant
      */
-    private function resolveAlternateQueryVariant(array $queryVariants, array $winningQuery): ?array
-    {
-        foreach ($queryVariants as $queryVariant) {
-            if ($queryVariant !== $winningQuery) {
-                return $queryVariant;
-            }
-        }
+    private function logLookupVariantSelection(
+        string $endpoint,
+        array $queryVariant,
+        ?string $fallbackTriggerReason,
+        bool $isFallbackCandidate
+    ): void {
+        $payload = [
+            'event' => 'psn_lookup_variant_selected',
+            'endpoint' => $endpoint,
+            'queryVariant' => $queryVariant,
+            'isFallbackCandidate' => $isFallbackCandidate,
+            'fallbackTriggerReason' => $fallbackTriggerReason,
+        ];
 
-        return null;
+        try {
+            error_log((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        } catch (JsonException) {
+            error_log('{"event":"psn_lookup_variant_selected","error":"failed_to_encode_log_payload"}');
+        }
     }
 
     private function shouldRetryWithDifferentServiceName(Throwable $exception): bool
