@@ -102,6 +102,17 @@ abstract class TestCase
         }
     }
 
+
+    protected function assertArrayNotHasKey(string|int $key, array $array, string $message = ''): void
+    {
+        if (array_key_exists($key, $array)) {
+            $this->fail(
+                $message !== ''
+                    ? $message
+                    : sprintf('Failed asserting that array does not contain key %s.', var_export($key, true))
+            );
+        }
+    }
     protected function assertStringContainsString(string $needle, string $haystack, string $message = ''): void
     {
         if (!str_contains($haystack, $needle)) {

@@ -329,12 +329,17 @@ final class PsnGameLookupService
                 continue;
             }
 
+            $groupTrophies = is_array($trophiesByGroupId[$groupId] ?? null) ? $trophiesByGroupId[$groupId] : [];
+            if ($groupTrophies === [] && is_array($rawGroup['trophies'] ?? null)) {
+                $groupTrophies = $rawGroup['trophies'];
+            }
+
             $groups[] = [
                 'trophyGroupId' => $groupId,
                 'trophyGroupName' => (string) ($rawGroup['trophyGroupName'] ?? ''),
                 'trophyGroupDetail' => (string) ($rawGroup['trophyGroupDetail'] ?? ''),
                 'trophyGroupIconUrl' => (string) ($rawGroup['trophyGroupIconUrl'] ?? ''),
-                'trophies' => is_array($trophiesByGroupId[$groupId] ?? null) ? $trophiesByGroupId[$groupId] : [],
+                'trophies' => $groupTrophies,
             ];
         }
 

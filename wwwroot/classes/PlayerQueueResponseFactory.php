@@ -151,9 +151,9 @@ final class PlayerQueueResponseFactory
         }
 
         if (preg_match('/^(Updating|Fetching)\b/i', $normalizedTitle) === 1) {
-            $actionText = ucfirst($normalizedTitle);
+            $escapedActionText = $this->service->escapeHtml(lcfirst($normalizedTitle));
 
-            return $this->service->escapeHtml($actionText);
+            return ucfirst($escapedActionText);
         }
 
         if ($this->isErrorProgressTitle($normalizedTitle)) {
