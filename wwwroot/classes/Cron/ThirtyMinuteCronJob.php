@@ -625,7 +625,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $query->bindValue(":online_id", $player["online_id"], PDO::PARAM_STR);
                     $query->execute();
 
-                    if ($e instanceof PlayStationNotFoundException) {
+                    if ($this->isNotFoundThrowable($e)) {
                         $query = $this->database->prepare("SELECT account_id
                             FROM   player
                             WHERE  online_id = :online_id ");
@@ -2023,13 +2023,42 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private function isNotFoundThrowable(Throwable $exception): bool
     {
         return $exception instanceof PlayStationNotFoundException
+            || $this->isThrowableClassNamed($exception, [
+                'NotFoundHttpException',
+                'NotFoundException',
+            ])
             || $this->determineThrowableStatusCode($exception) === 404;
     }
 
     private function isAuthFailureThrowable(Throwable $exception): bool
     {
         return $exception instanceof PlayStationAuthFailureException
+            || $this->isThrowableClassNamed($exception, [
+                'UnauthorizedHttpException',
+                'UnauthorizedException',
+            ])
             || $this->determineThrowableStatusCode($exception) === 401;
+    }
+
+    /**
+     * @param array<int, string> $classSuffixes
+     */
+    private function isThrowableClassNamed(Throwable $throwable, array $classSuffixes): bool
+    {
+        $className = get_class($throwable);
+
+        foreach ($classSuffixes as $classSuffix) {
+            if ($className === $classSuffix || str_ends_with($className, '\\' . $classSuffix)) {
+                return true;
+            }
+        }
+
+        $previous = $throwable->getPrevious();
+        if ($previous instanceof Throwable) {
+            return $this->isThrowableClassNamed($previous, $classSuffixes);
+        }
+
+        return false;
     }
 
     private function determineThrowableStatusCode(Throwable $exception): ?int
