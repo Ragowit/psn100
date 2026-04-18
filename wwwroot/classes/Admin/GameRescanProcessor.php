@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../TrophyCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
+require_once __DIR__ . '/../PlayStationClientModeConfig.php';
 require_once __DIR__ . '/GameRescanService.php';
 require_once __DIR__ . '/GameRescanRequestHandler.php';
 
@@ -20,7 +21,8 @@ final class GameRescanProcessor
     {
         $trophyCalculator = new TrophyCalculator($database);
         $historyRecorder = new TrophyHistoryRecorder($database, new Psn100Logger($database));
-        $gameRescanService = new GameRescanService($database, $trophyCalculator, $historyRecorder);
+        $clientMode = PlayStationClientModeConfig::fromEnvironment($_ENV ?? [])->getMode();
+        $gameRescanService = new GameRescanService($database, $trophyCalculator, $historyRecorder, clientMode: $clientMode);
         $requestHandler = new GameRescanRequestHandler($gameRescanService);
 
         return new self($requestHandler);
@@ -35,4 +37,3 @@ final class GameRescanProcessor
         $this->requestHandler->handleRequest($postData, $serverData);
     }
 }
-

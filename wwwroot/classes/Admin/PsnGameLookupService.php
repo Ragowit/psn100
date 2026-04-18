@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/PsnGameLookupException.php';
+require_once __DIR__ . '/../PlayStationClientMode.php';
+require_once __DIR__ . '/../PlayStationClientModeConfig.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/TrophyClientInterface.php';
@@ -21,30 +23,62 @@ final class PsnGameLookupService
      */
     private readonly \Closure $workerFetcher;
 
-    private readonly PlayStationClientFactoryInterface $playStationClientFactory;
+    private readonly PlayStationClientFactoryInterface $newClientFactory;
+    /**
+     * @var \Closure(): object
+     */
+    private readonly \Closure $legacyClientFactory;
+    private readonly PlayStationClientMode $clientMode;
     private readonly NpServiceNamePolicy $npServiceNamePolicy;
 
     public function __construct(
         private readonly PDO $database,
         callable $workerFetcher,
-        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null,
+        ?PlayStationClientMode $clientMode = null,
+        ?callable $legacyClientFactory = null
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
+        $this->newClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
+        $this->clientMode = $clientMode ?? PlayStationClientMode::Legacy;
+        if ($legacyClientFactory !== null) {
+            $this->legacyClientFactory = \Closure::fromCallable($legacyClientFactory);
+        } elseif (is_callable($playStationClientFactory)) {
+            $this->legacyClientFactory = \Closure::fromCallable($playStationClientFactory);
+        } else {
+            $this->legacyClientFactory = $this->createDefaultLegacyClientFactory();
+        }
         $this->npServiceNamePolicy = new NpServiceNamePolicy();
     }
 
     public static function fromDatabase(
         PDO $database,
-        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null,
+        ?PlayStationClientMode $clientMode = null
     ): self {
         $workerService = new WorkerService($database);
+        $resolvedMode = $clientMode ?? PlayStationClientModeConfig::fromEnvironment($_ENV ?? [])->getMode();
 
         return new self(
             $database,
             static fn (): array => $workerService->fetchWorkers(),
-            $playStationClientFactory
+            $playStationClientFactory,
+            $resolvedMode
         );
+    }
+
+    /**
+     * @return \Closure(): object
+     */
+    private function createDefaultLegacyClientFactory(): \Closure
+    {
+        return static function (): object {
+            if (!class_exists(\Tustin\PlayStation\Client::class)) {
+                throw new RuntimeException('Legacy PlayStation client is unavailable. Ensure composer autoload is loaded.');
+            }
+
+            return new \Tustin\PlayStation\Client();
+        };
     }
 
     private function normalizePlayStationClientFactory(
@@ -185,9 +219,76 @@ final class PsnGameLookupService
             throw new InvalidArgumentException('NP communication ID must be provided.');
         }
 
+        return match ($this->clientMode) {
+            PlayStationClientMode::Legacy => $this->fetchTrophyDataForNpCommunicationIdViaLegacyClient(
+                $normalizedNpCommunicationId,
+                $authenticatedClient
+            ),
+            PlayStationClientMode::New => $this->fetchTrophyDataForNpCommunicationIdViaNewClient(
+                $normalizedNpCommunicationId,
+                $authenticatedClient
+            ),
+            PlayStationClientMode::Shadow => $this->fetchTrophyDataForNpCommunicationIdInShadowMode(
+                $normalizedNpCommunicationId,
+                $authenticatedClient
+            ),
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchTrophyDataForNpCommunicationIdViaLegacyClient(
+        string $npCommunicationId,
+        ?object $authenticatedClient = null
+    ): array {
         $client = $authenticatedClient === null
-            ? $this->createAuthenticatedClient()
+            ? $this->createAuthenticatedLegacyClient()
             : $this->normalizeTrophyClient($authenticatedClient);
+
+        return $this->fetchTrophyDataForNpCommunicationIdFromClient($npCommunicationId, $client);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchTrophyDataForNpCommunicationIdViaNewClient(
+        string $npCommunicationId,
+        ?object $authenticatedClient = null
+    ): array {
+        $client = $authenticatedClient === null
+            ? $this->createAuthenticatedNewClient()
+            : $this->normalizeTrophyClient($authenticatedClient);
+
+        return $this->fetchTrophyDataForNpCommunicationIdFromClient($npCommunicationId, $client);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchTrophyDataForNpCommunicationIdInShadowMode(
+        string $npCommunicationId,
+        ?object $authenticatedClient = null
+    ): array {
+        $legacyResult = $this->fetchTrophyDataForNpCommunicationIdViaLegacyClient($npCommunicationId, $authenticatedClient);
+
+        try {
+            $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient($npCommunicationId, null);
+            $this->logShadowMismatchIfNeeded($npCommunicationId, $legacyResult, $newResult);
+        } catch (Throwable $exception) {
+            $this->logShadowExecutionFailure($npCommunicationId, $exception);
+        }
+
+        return $legacyResult;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchTrophyDataForNpCommunicationIdFromClient(
+        string $normalizedNpCommunicationId,
+        TrophyClientInterface $client
+    ): array {
         $preferredNpServiceName = $this->resolvePreferredNpServiceName($normalizedNpCommunicationId);
 
         try {
@@ -422,7 +523,7 @@ final class PsnGameLookupService
         ];
     }
 
-    private function createAuthenticatedClient(): PlayStationApiClientInterface
+    private function createAuthenticatedNewClient(): PlayStationApiClientInterface
     {
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
@@ -436,10 +537,39 @@ final class PsnGameLookupService
             }
 
             try {
-                $client = $this->playStationClientFactory->createClient();
+                $client = $this->newClientFactory->createClient();
                 $client->loginWithNpsso($npsso);
 
                 return $client;
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
+        throw new RuntimeException('Unable to login to any worker accounts.');
+    }
+
+    private function createAuthenticatedLegacyClient(): TrophyClientInterface
+    {
+        foreach (($this->workerFetcher)() as $worker) {
+            if (!$worker instanceof Worker) {
+                continue;
+            }
+
+            $npsso = $worker->getNpsso();
+            if ($npsso === '') {
+                continue;
+            }
+
+            try {
+                $client = ($this->legacyClientFactory)();
+                if (!is_object($client) || !method_exists($client, 'loginWithNpsso') || !method_exists($client, 'get')) {
+                    throw new RuntimeException('Invalid legacy PlayStation client.');
+                }
+
+                $client->loginWithNpsso($npsso);
+
+                return $this->normalizeTrophyClient($client);
             } catch (Throwable) {
                 continue;
             }
@@ -552,6 +682,74 @@ final class PsnGameLookupService
             error_log((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
         } catch (JsonException) {
             error_log('{"event":"psn_lookup_variant_selected","error":"failed_to_encode_log_payload"}');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $legacyResult
+     * @param array<string, mixed> $newResult
+     */
+    private function logShadowMismatchIfNeeded(string $npCommunicationId, array $legacyResult, array $newResult): void
+    {
+        $normalizedLegacy = $this->normalizeForShadowComparison($legacyResult);
+        $normalizedNew = $this->normalizeForShadowComparison($newResult);
+
+        if ($normalizedLegacy === $normalizedNew) {
+            return;
+        }
+
+        $this->logShadowEvent('psn_game_lookup_shadow_mismatch', [
+            'mode' => $this->clientMode->value,
+            'npCommunicationId' => $npCommunicationId,
+            'legacy' => $normalizedLegacy,
+            'new' => $normalizedNew,
+        ]);
+    }
+
+    private function logShadowExecutionFailure(string $npCommunicationId, Throwable $exception): void
+    {
+        $this->logShadowEvent('psn_game_lookup_shadow_execution_failure', [
+            'mode' => $this->clientMode->value,
+            'npCommunicationId' => $npCommunicationId,
+            'error' => $exception->getMessage(),
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     * @return array<string, mixed>
+     */
+    private function normalizeForShadowComparison(array $result): array
+    {
+        $firstTrophy = null;
+        $groups = $result['trophyGroups'] ?? null;
+        if (is_array($groups) && isset($groups[0]) && is_array($groups[0])) {
+            $groupTrophies = $groups[0]['trophies'] ?? null;
+            if (is_array($groupTrophies) && isset($groupTrophies[0]) && is_array($groupTrophies[0])) {
+                $firstTrophy = $groupTrophies[0];
+            }
+        }
+
+        return [
+            'npCommunicationId' => (string) ($result['npCommunicationId'] ?? ''),
+            'titleName' => (string) ($result['trophyTitleName'] ?? ''),
+            'trophyGroupCount' => is_array($groups) ? count($groups) : 0,
+            'firstTrophyId' => is_array($firstTrophy) ? (string) ($firstTrophy['trophyId'] ?? '') : '',
+            'firstTrophyName' => is_array($firstTrophy) ? (string) ($firstTrophy['trophyName'] ?? '') : '',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function logShadowEvent(string $event, array $payload): void
+    {
+        $payload = ['event' => $event] + $payload;
+
+        try {
+            error_log((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        } catch (JsonException) {
+            error_log(sprintf('{"event":"%s","error":"failed_to_encode_log_payload"}', $event));
         }
     }
 

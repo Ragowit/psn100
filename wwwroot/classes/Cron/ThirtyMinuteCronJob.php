@@ -7,6 +7,7 @@ require_once __DIR__ . '/../Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
+require_once __DIR__ . '/../PlayStationClientMode.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
@@ -52,7 +53,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?PsnGameLookupService $psnGameLookupService = null,
-        ?PlayStationClientFactoryInterface $playStationClientFactory = null
+        ?PlayStationClientFactoryInterface $playStationClientFactory = null,
+        ?PlayStationClientMode $clientMode = null
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -65,7 +67,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper($this->psnTrophyMapper);
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
-            $this->playStationClientFactory
+            $this->playStationClientFactory,
+            $clientMode
         );
     }
 

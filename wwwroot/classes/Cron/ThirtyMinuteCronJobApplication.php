@@ -6,6 +6,7 @@ require_once __DIR__ . '/CronJobEntryPoint.php';
 require_once __DIR__ . '/CronJobCliArguments.php';
 require_once __DIR__ . '/../TrophyCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
+require_once __DIR__ . '/../PlayStationClientModeConfig.php';
 require_once __DIR__ . '/ThirtyMinuteCronJob.php';
 
 final class ThirtyMinuteCronJobApplication
@@ -41,12 +42,21 @@ final class ThirtyMinuteCronJobApplication
             ));
         }
 
-        $this->entryPoint->runWithFactory(function (PDO $database) use ($workerId): \CronJobInterface {
+        $clientMode = PlayStationClientModeConfig::fromEnvironment($_ENV ?? [])->getMode();
+
+        $this->entryPoint->runWithFactory(function (PDO $database) use ($workerId, $clientMode): \CronJobInterface {
             $trophyCalculator = new TrophyCalculator($database);
             $logger = new Psn100Logger($database);
             $historyRecorder = new TrophyHistoryRecorder($database, $logger);
 
-            return new ThirtyMinuteCronJob($database, $trophyCalculator, $logger, $historyRecorder, $workerId);
+            return new ThirtyMinuteCronJob(
+                $database,
+                $trophyCalculator,
+                $logger,
+                $historyRecorder,
+                $workerId,
+                clientMode: $clientMode
+            );
         }, true);
     }
 }

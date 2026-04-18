@@ -6,6 +6,7 @@ require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/GameRescanDifferenceTracker.php';
 require_once __DIR__ . '/GameRescanResult.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
+require_once __DIR__ . '/../PlayStationClientMode.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
@@ -51,7 +52,8 @@ class GameRescanService
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?PsnGameLookupService $psnGameLookupService = null,
-        ?PlayStationClientFactoryInterface $playStationClientFactory = null
+        ?PlayStationClientFactoryInterface $playStationClientFactory = null,
+        ?PlayStationClientMode $clientMode = null
     )
     {
         $this->database = $database;
@@ -63,7 +65,8 @@ class GameRescanService
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper(new PsnTrophyMapper());
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
-            $this->playStationClientFactory
+            $this->playStationClientFactory,
+            $clientMode
         );
     }
 
