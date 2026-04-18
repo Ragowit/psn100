@@ -135,7 +135,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(0, $loginAttempts);
     }
 
-    public function testFetchTrophyDataForNpCommunicationIdInNewModeIgnoresLegacyAuthenticatedClient(): void
+    public function testFetchTrophyDataForNpCommunicationIdInNewModeUsesDedicatedClientEvenWhenAuthenticatedClientIsProvided(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $legacyProvidedCalls = 0;
@@ -174,7 +174,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(1, $newClientLogins);
     }
 
-    public function testFetchTrophyDataForNpCommunicationIdInShadowModeReusesProvidedNewClient(): void
+    public function testFetchTrophyDataForNpCommunicationIdInShadowModeUsesDistinctClientForNewPath(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $factoryCreateCalls = 0;
@@ -210,9 +210,9 @@ final class PsnGameLookupServiceTest extends TestCase
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
         $this->assertSame(6, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $this->assertSame(4, $providedCalls);
-        $this->assertSame(0, $factoryCreateCalls);
-        $this->assertSame(0, $newClientLoginAttempts);
+        $this->assertSame(2, $providedCalls);
+        $this->assertSame(1, $factoryCreateCalls);
+        $this->assertSame(1, $newClientLoginAttempts);
     }
 
     public function testFetchTrophyDataForNpCommunicationIdPreservesGroupedPayloadWhenFlatTrophiesMissing(): void
