@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayStationUserSearchResult.php';
+require_once __DIR__ . '/../Exception/PlayStationAccessDeniedException.php';
+require_once __DIR__ . '/../Exception/PlayStationAuthFailureException.php';
+require_once __DIR__ . '/../Exception/PlayStationInvalidPayloadException.php';
+require_once __DIR__ . '/../Exception/PlayStationNotFoundException.php';
+require_once __DIR__ . '/../Exception/PlayStationTransientUpstreamException.php';
 
 final class PlayStationHttpTransport
 {
@@ -148,7 +153,11 @@ final class PlayStationHttpTransport
             throw new RuntimeException('Account lookup is not configured for this transport.');
         }
 
-        $user = ($this->accountLookupExecutor)($accountId);
+        try {
+            $user = ($this->accountLookupExecutor)($accountId);
+        } catch (Throwable $throwable) {
+            throw $this->mapTransportThrowable($throwable);
+        }
 
         if (!is_object($user)) {
             throw new UnexpectedValueException('Malformed account lookup response from PlayStation Network.');
@@ -202,7 +211,7 @@ final class PlayStationHttpTransport
 
                 return $payload;
             } catch (Throwable $throwable) {
-                $lastException = $throwable;
+                $lastException = $this->mapTransportThrowable($throwable);
 
                 if ($attempt >= $this->maxAttempts) {
                     break;
@@ -257,13 +266,13 @@ final class PlayStationHttpTransport
             $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
 
             if (!is_string($encoded)) {
-                throw new UnexpectedValueException('Unable to encode PlayStation response object.');
+                throw new PlayStationInvalidPayloadException('Unable to encode PlayStation response object.');
             }
 
             return $this->decodeJsonString($encoded);
         }
 
-        throw new UnexpectedValueException('Malformed PlayStation response payload.');
+        throw new PlayStationInvalidPayloadException('Malformed PlayStation response payload.');
     }
 
     /**
@@ -272,13 +281,20 @@ final class PlayStationHttpTransport
     private function decodeJsonString(string $payload): array
     {
         if (trim($payload) === '') {
-            throw new UnexpectedValueException('Empty PlayStation response payload.');
+            throw new PlayStationInvalidPayloadException('Empty PlayStation response payload.');
         }
 
-        $decoded = json_decode($payload, true, $this->decodeDepth, JSON_THROW_ON_ERROR);
+        try {
+            $decoded = json_decode($payload, true, $this->decodeDepth, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new PlayStationInvalidPayloadException(
+                'PlayStation response payload contains invalid JSON.',
+                previous: $exception
+            );
+        }
 
         if (!is_array($decoded)) {
-            throw new UnexpectedValueException('PlayStation response payload must decode to an object.');
+            throw new PlayStationInvalidPayloadException('PlayStation response payload must decode to an object.');
         }
 
         return $decoded;
@@ -294,7 +310,7 @@ final class PlayStationHttpTransport
         }
 
         if (!is_object($payload)) {
-            throw new UnexpectedValueException('Malformed PlayStation user search payload.');
+            throw new PlayStationInvalidPayloadException('Malformed PlayStation user search payload.');
         }
 
         if (method_exists($payload, 'toArray')) {
@@ -311,7 +327,7 @@ final class PlayStationHttpTransport
 
         $onlineId = $this->readObjectStringValue($payload, ['onlineId', 'getOnlineId']);
         if ($onlineId === null) {
-            throw new UnexpectedValueException('Missing or invalid user onlineId in PlayStation payload.');
+            throw new PlayStationInvalidPayloadException('Missing or invalid user onlineId in PlayStation payload.');
         }
 
         return [
@@ -346,7 +362,133 @@ final class PlayStationHttpTransport
         }
 
         if (!is_string($payload[$field]) || $payload[$field] === '') {
-            throw new UnexpectedValueException(sprintf('Invalid profile field "%s" in PlayStation response.', $field));
+            throw new PlayStationInvalidPayloadException(
+                sprintf('Invalid profile field "%s" in PlayStation response.', $field)
+            );
         }
+    }
+
+    private function mapTransportThrowable(Throwable $throwable): Throwable
+    {
+        if ($throwable instanceof PlayStationAuthFailureException
+            || $throwable instanceof PlayStationNotFoundException
+            || $throwable instanceof PlayStationAccessDeniedException
+            || $throwable instanceof PlayStationTransientUpstreamException
+            || $throwable instanceof PlayStationInvalidPayloadException) {
+            return $throwable;
+        }
+
+        $statusCode = $this->determineStatusCode($throwable);
+
+        if ($statusCode === 401) {
+            return new PlayStationAuthFailureException('PlayStation authentication failed.', $statusCode, $throwable);
+        }
+
+        if ($statusCode === 403) {
+            return new PlayStationAccessDeniedException('PlayStation request was denied.', $statusCode, $throwable);
+        }
+
+        if ($statusCode === 404) {
+            return new PlayStationNotFoundException('PlayStation resource was not found.', $statusCode, $throwable);
+        }
+
+        if ($this->isUnauthorizedThrowable($throwable)) {
+            return new PlayStationAuthFailureException('PlayStation authentication failed.', previous: $throwable);
+        }
+
+        if ($this->isNotFoundThrowable($throwable)) {
+            return new PlayStationNotFoundException('PlayStation resource was not found.', previous: $throwable);
+        }
+
+        if ($statusCode === 408 || $statusCode === 429 || ($statusCode !== null && $statusCode >= 500)) {
+            return new PlayStationTransientUpstreamException(
+                'PlayStation upstream request failed temporarily.',
+                $statusCode,
+                $throwable
+            );
+        }
+
+        if ($throwable instanceof UnexpectedValueException || $throwable instanceof JsonException) {
+            return new PlayStationInvalidPayloadException($throwable->getMessage(), previous: $throwable);
+        }
+
+        if ($throwable instanceof RuntimeException || $throwable instanceof Exception) {
+            return new PlayStationTransientUpstreamException($throwable->getMessage(), previous: $throwable);
+        }
+
+        return $throwable;
+    }
+
+    private function isUnauthorizedThrowable(Throwable $throwable): bool
+    {
+        return $this->isThrowableClassNamed($throwable, [
+            'UnauthorizedHttpException',
+            'UnauthorizedException',
+        ]);
+    }
+
+    private function isNotFoundThrowable(Throwable $throwable): bool
+    {
+        return $this->isThrowableClassNamed($throwable, [
+            'NotFoundHttpException',
+            'NotFoundException',
+        ]);
+    }
+
+    /**
+     * @param array<int, string> $classSuffixes
+     */
+    private function isThrowableClassNamed(Throwable $throwable, array $classSuffixes): bool
+    {
+        $className = get_class($throwable);
+
+        foreach ($classSuffixes as $classSuffix) {
+            if ($className === $classSuffix || str_ends_with($className, '\\' . $classSuffix)) {
+                return true;
+            }
+        }
+
+        $previous = $throwable->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->isThrowableClassNamed($previous, $classSuffixes);
+        }
+
+        return false;
+    }
+
+    private function determineStatusCode(Throwable $exception): ?int
+    {
+        if (method_exists($exception, 'getResponse')) {
+            $response = $exception->getResponse();
+            if (is_object($response)) {
+                if (method_exists($response, 'getStatusCode')) {
+                    $statusCode = $response->getStatusCode();
+                    if (is_int($statusCode)) {
+                        return $statusCode;
+                    }
+                }
+
+                if (method_exists($response, 'getStatus')) {
+                    $statusCode = $response->getStatus();
+                    if (is_int($statusCode)) {
+                        return $statusCode;
+                    }
+                }
+            }
+        }
+
+        $code = $exception->getCode();
+        if (is_int($code) && $code > 0) {
+            return $code;
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->determineStatusCode($previous);
+        }
+
+        return null;
     }
 }

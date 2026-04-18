@@ -6,10 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
-
-if (!class_exists('Tustin\\Haste\\Exception\\NotFoundHttpException')) {
-    eval('namespace Tustin\\Haste\\Exception; final class NotFoundHttpException extends \RuntimeException {}');
-}
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationNotFoundException.php';
 
 final class PsnGameLookupServiceTest extends TestCase
 {
@@ -627,7 +624,7 @@ final class PsnGameLookupServiceTest extends TestCase
                         $attempts[] = $query;
 
                         if (count($attempts) === 1) {
-                            throw new \Tustin\Haste\Exception\NotFoundHttpException();
+                            throw new PlayStationNotFoundException();
                         }
 
                         return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 8]]];
@@ -659,7 +656,7 @@ final class PsnGameLookupServiceTest extends TestCase
                     profileHandler: function (string $path, array $query) use (&$attempts): object {
                         $attempts[] = $query;
 
-                        throw new \Tustin\Haste\Exception\NotFoundHttpException(
+                        throw new PlayStationNotFoundException(
                             'Known haste exception with non-retryable status',
                             0,
                             new GameLookupHttpException(500)
@@ -677,6 +674,39 @@ final class PsnGameLookupServiceTest extends TestCase
             $this->assertCount(1, $attempts);
             $this->assertSame([], $attempts[0]);
         }
+    }
+
+    public function testLookupByGameIdRetriesForVendorNotFoundExceptionWithoutStatusCode(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (54139, 'NPWR51065_00', 'Retry Game')");
+
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $attempts = [];
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            function () use (&$attempts): object {
+                return new GameLookupStubClient(
+                    profileHandler: function (string $path, array $query) use (&$attempts): object {
+                        $attempts[] = $query;
+
+                        if (count($attempts) === 1) {
+                            throw new GameLookupNotFoundHttpException('not found');
+                        }
+
+                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 9]]];
+                    }
+                );
+            }
+        );
+
+        $result = $service->lookupByGameId('54139');
+
+        $this->assertSame([], $attempts[0]);
+        $this->assertSame(['npServiceName' => 'trophy'], $attempts[1]);
+        $this->assertSame(9, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 }
 
@@ -726,4 +756,8 @@ final class GameLookupHttpException extends RuntimeException
             }
         };
     }
+}
+
+final class GameLookupNotFoundHttpException extends Exception
+{
 }

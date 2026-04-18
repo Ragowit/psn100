@@ -8,6 +8,9 @@ require_once __DIR__ . '/PsnGameLookupException.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/TrophyClientInterface.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationAccessDeniedException.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationNotFoundException.php';
+require_once __DIR__ . '/../PlayStation/Exception/PlayStationTransientUpstreamException.php';
 require_once __DIR__ . '/../PlayStation/Policy/NpServiceNamePolicy.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
 
@@ -569,14 +572,42 @@ final class PsnGameLookupService
 
     private function isRetryableKnownHttpException(Throwable $exception): bool
     {
-        $retryableExceptionClasses = [
-            'Tustin\\Haste\\Exception\\ApiException',
-            'Tustin\\Haste\\Exception\\AccessDeniedHttpException',
-            'Tustin\\Haste\\Exception\\NotFoundHttpException',
-        ];
+        if ($exception instanceof PlayStationTransientUpstreamException
+            || $exception instanceof PlayStationAccessDeniedException
+            || $exception instanceof PlayStationNotFoundException
+            || $this->isThrowableClassNamed(
+                $exception,
+                [
+                    'AccessDeniedHttpException',
+                    'AccessDeniedException',
+                    'NotFoundHttpException',
+                    'NotFoundException',
+                    'ApiException',
+                ]
+            )) {
+            return true;
+        }
 
-        foreach ($retryableExceptionClasses as $retryableExceptionClass) {
-            if ($exception instanceof $retryableExceptionClass) {
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->isRetryableKnownHttpException($previous);
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<string> $classNames
+     */
+    private function isThrowableClassNamed(Throwable $exception, array $classNames): bool
+    {
+        $currentClass = $exception::class;
+
+        foreach ($classNames as $className) {
+            if ($currentClass === $className
+                || str_ends_with($currentClass, '\\' . $className)
+                || str_ends_with($currentClass, $className)) {
                 return true;
             }
         }
@@ -584,7 +615,7 @@ final class PsnGameLookupService
         $previous = $exception->getPrevious();
 
         if ($previous instanceof Throwable) {
-            return $this->isRetryableKnownHttpException($previous);
+            return $this->isThrowableClassNamed($previous, $classNames);
         }
 
         return false;

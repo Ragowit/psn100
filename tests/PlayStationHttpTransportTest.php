@@ -4,9 +4,44 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayStation/Http/PlayStationHttpTransport.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationInvalidPayloadException.php';
 
 final class PlayStationHttpTransportTest extends TestCase
 {
+    public function testFindUserByAccountIdMapsVendorUnauthorizedExceptionWithoutStatusCode(): void
+    {
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            accountLookupExecutor: static function (): object {
+                throw new UnauthorizedHttpException('unauthorized');
+            }
+        );
+
+        try {
+            $transport->findUserByAccountId('123');
+            $this->fail('Expected PlayStationAuthFailureException to be thrown.');
+        } catch (PlayStationAuthFailureException) {
+            $this->assertTrue(true);
+        }
+    }
+
+    public function testFindUserByAccountIdMapsVendorNotFoundExceptionWithoutStatusCode(): void
+    {
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            accountLookupExecutor: static function (): object {
+                throw new NotFoundHttpException('not found');
+            }
+        );
+
+        try {
+            $transport->findUserByAccountId('123');
+            $this->fail('Expected PlayStationNotFoundException to be thrown.');
+        } catch (PlayStationNotFoundException) {
+            $this->assertTrue(true);
+        }
+    }
+
     public function testLookupUserProfileBuildsRequestAndValidatesPayload(): void
     {
         $capturedPath = null;
@@ -77,8 +112,8 @@ final class PlayStationHttpTransportTest extends TestCase
 
         try {
             $transport->request('https://example.com');
-            $this->fail('Expected UnexpectedValueException to be thrown.');
-        } catch (UnexpectedValueException) {
+            $this->fail('Expected PlayStationInvalidPayloadException to be thrown.');
+        } catch (PlayStationInvalidPayloadException) {
             $this->assertTrue(true);
         }
     }
@@ -176,4 +211,12 @@ final class PlayStationHttpTransportTest extends TestCase
 
         $this->assertSame($user, $result);
     }
+}
+
+final class UnauthorizedHttpException extends Exception
+{
+}
+
+final class NotFoundHttpException extends Exception
+{
 }
