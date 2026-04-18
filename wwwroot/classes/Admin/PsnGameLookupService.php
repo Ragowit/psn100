@@ -256,9 +256,7 @@ final class PsnGameLookupService
         string $npCommunicationId,
         ?object $authenticatedClient = null
     ): array {
-        $client = $authenticatedClient === null
-            ? $this->createAuthenticatedNewClient()
-            : $this->normalizeTrophyClient($authenticatedClient);
+        $client = $this->resolveNewModeTrophyClient($authenticatedClient);
 
         return $this->fetchTrophyDataForNpCommunicationIdFromClient($npCommunicationId, $client);
     }
@@ -273,7 +271,8 @@ final class PsnGameLookupService
         $legacyResult = $this->fetchTrophyDataForNpCommunicationIdViaLegacyClient($npCommunicationId, $authenticatedClient);
 
         try {
-            $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient($npCommunicationId, null);
+            $newModeClient = $this->resolveProvidedClientForNewMode($authenticatedClient);
+            $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient($npCommunicationId, $newModeClient);
             $this->logShadowMismatchIfNeeded($npCommunicationId, $legacyResult, $newResult);
         } catch (Throwable $exception) {
             $this->logShadowExecutionFailure($npCommunicationId, $exception);
@@ -598,6 +597,33 @@ final class PsnGameLookupService
                 return $this->client->get($path, $query, $headers);
             }
         };
+    }
+
+    private function resolveNewModeTrophyClient(?object $authenticatedClient): TrophyClientInterface
+    {
+        if ($authenticatedClient === null) {
+            return $this->createAuthenticatedNewClient();
+        }
+
+        $providedClient = $this->resolveProvidedClientForNewMode($authenticatedClient);
+        if ($providedClient !== null) {
+            return $providedClient;
+        }
+
+        return $this->createAuthenticatedNewClient();
+    }
+
+    private function resolveProvidedClientForNewMode(?object $authenticatedClient): ?TrophyClientInterface
+    {
+        if ($authenticatedClient instanceof PlayStationApiClientInterface) {
+            return $authenticatedClient;
+        }
+
+        if ($authenticatedClient instanceof TrophyClientInterface && method_exists($authenticatedClient, 'loginWithNpsso')) {
+            return $authenticatedClient;
+        }
+
+        return null;
     }
 
     /**
