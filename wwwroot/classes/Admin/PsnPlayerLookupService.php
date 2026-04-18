@@ -225,7 +225,7 @@ final class PsnPlayerLookupService
         } catch (Throwable $exception) {
             $statusCode = $this->determineStatusCode($exception);
 
-            if ($exception instanceof RuntimeException && $statusCode === null) {
+            if ($this->isAuthenticationBootstrapFailure($exception, $statusCode)) {
                 throw $exception;
             }
 
@@ -243,6 +243,15 @@ final class PsnPlayerLookupService
                 $exception
             );
         }
+    }
+
+    private function isAuthenticationBootstrapFailure(Throwable $exception, ?int $statusCode): bool
+    {
+        if (!$exception instanceof RuntimeException || $statusCode !== null) {
+            return false;
+        }
+
+        return $exception->getMessage() === 'Unable to login to any worker accounts.';
     }
 
     /**

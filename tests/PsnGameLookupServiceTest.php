@@ -173,6 +173,43 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(0, $factoryCreateCalls);
     }
 
+    public function testFetchTrophyDataForNpCommunicationIdInLegacyModeUsesInjectedFactoryClient(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $factoryCreateCalls = 0;
+        $loginAttempts = 0;
+        $requestCalls = 0;
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            new GameLookupStubPlayStationClientFactory(
+                static function () use (&$factoryCreateCalls, &$loginAttempts, &$requestCalls): PlayStationApiClientInterface {
+                    $factoryCreateCalls++;
+
+                    return new GameLookupNewApiClientStub(
+                        requestHandler: static function () use (&$requestCalls): object {
+                            $requestCalls++;
+
+                            return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 33]]];
+                        },
+                        loginHandler: static function () use (&$loginAttempts): void {
+                            $loginAttempts++;
+                        }
+                    );
+                }
+            ),
+            PlayStationClientMode::Legacy
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00');
+
+        $this->assertSame(33, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(1, $factoryCreateCalls);
+        $this->assertSame(1, $loginAttempts);
+        $this->assertSame(2, $requestCalls);
+    }
+
     public function testFetchTrophyDataForNpCommunicationIdInShadowModeUsesDistinctClientsForLegacyAndNewPaths(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);

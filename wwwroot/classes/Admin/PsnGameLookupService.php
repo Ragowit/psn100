@@ -43,6 +43,8 @@ final class PsnGameLookupService
         $this->clientMode = $clientMode ?? PlayStationClientMode::Legacy;
         if ($legacyClientFactory !== null) {
             $this->legacyClientFactory = \Closure::fromCallable($legacyClientFactory);
+        } elseif ($playStationClientFactory instanceof PlayStationClientFactoryInterface) {
+            $this->legacyClientFactory = static fn (): PlayStationApiClientInterface => $playStationClientFactory->createClient();
         } elseif (is_callable($playStationClientFactory)) {
             $this->legacyClientFactory = \Closure::fromCallable($playStationClientFactory);
         } else {
@@ -561,6 +563,12 @@ final class PsnGameLookupService
 
             try {
                 $client = ($this->legacyClientFactory)();
+                if ($client instanceof PlayStationApiClientInterface) {
+                    $client->loginWithNpsso($npsso);
+
+                    return $this->normalizeTrophyClient($client);
+                }
+
                 if (!is_object($client) || !method_exists($client, 'loginWithNpsso') || !method_exists($client, 'get')) {
                     throw new RuntimeException('Invalid legacy PlayStation client.');
                 }

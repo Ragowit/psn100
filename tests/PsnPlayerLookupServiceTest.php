@@ -136,6 +136,32 @@ final class PsnPlayerLookupServiceTest extends TestCase
         }
     }
 
+    public function testLookupWrapsRuntimeRequestFailuresWithoutStatusCodes(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static function (): object {
+                    throw new RuntimeException('transport failed');
+                }
+            )
+        );
+
+        try {
+            $service->lookup('Example');
+            $this->fail('Expected PsnPlayerLookupException to be thrown.');
+        } catch (PsnPlayerLookupException $exception) {
+            $this->assertSame(
+                'Failed to retrieve the player profile from PlayStation Network. Please try again later.',
+                $exception->getMessage()
+            );
+            $this->assertSame(null, $exception->getStatusCode());
+            $this->assertTrue($exception->getPrevious() instanceof RuntimeException);
+        }
+    }
+
     public function testRequestHandlerReturnsNullForBlankInput(): void
     {
         $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
@@ -192,7 +218,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('example', $handled->getNormalizedOnlineId());
         $this->assertSame(null, $handled->getResult());
         $this->assertSame(
-            'An unexpected error occurred while looking up the player. Please try again later.',
+            'Failed to retrieve the player profile from PlayStation Network. Please try again later.',
             $handled->getErrorMessage()
         );
         $this->assertSame(null, $handled->getDecodedNpId());
