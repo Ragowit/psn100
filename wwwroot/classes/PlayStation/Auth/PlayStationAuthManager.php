@@ -38,12 +38,16 @@ final class PlayStationAuthManager
      */
     public function authenticateWorker(int $retryDelaySeconds = 3): array
     {
+        $retryDelaySeconds = $this->normalizeSleepDelay($retryDelaySeconds);
+
         while (true) {
             $workers = $this->fetchWorkersInFailoverOrder();
             $availableWorkers = $this->filterWorkersByCooldown($workers);
 
             if ($availableWorkers === []) {
-                $sleepSeconds = max(1, $this->secondsUntilNextWorkerAvailable());
+                $sleepSeconds = $workers === []
+                    ? $retryDelaySeconds
+                    : max(1, $this->secondsUntilNextWorkerAvailable());
                 $this->logAuthResult(0, sprintf('no workers available; sleeping %d second(s)', $sleepSeconds), false);
                 sleep($sleepSeconds);
                 continue;
@@ -180,5 +184,10 @@ final class PlayStationAuthManager
         $query = $this->database->prepare('INSERT INTO log(message) VALUES(:message)');
         $query->bindValue(':message', $message, PDO::PARAM_STR);
         $query->execute();
+    }
+
+    private function normalizeSleepDelay(int $delaySeconds): int
+    {
+        return max(0, $delaySeconds);
     }
 }
