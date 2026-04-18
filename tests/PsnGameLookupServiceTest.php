@@ -237,58 +237,6 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(2, $requestCalls);
     }
 
-    public function testFetchTrophyDataForNpCommunicationIdInShadowModeUsesDedicatedClientsForLegacyAndNewPaths(): void
-    {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
-        $factoryCreateCalls = 0;
-        $newClientLoginAttempts = 0;
-        $providedCalls = 0;
-        $legacyClientCalls = 0;
-
-        $service = new PsnGameLookupService(
-            $this->database,
-            static fn (): array => [$worker],
-            new GameLookupStubPlayStationClientFactory(
-                static function () use (&$factoryCreateCalls, &$newClientLoginAttempts): PlayStationApiClientInterface {
-                    $factoryCreateCalls++;
-
-                    return new GameLookupNewApiClientStub(
-                        requestHandler: static fn (): object => (object) ['trophies' => []],
-                        loginHandler: static function () use (&$newClientLoginAttempts): void {
-                            $newClientLoginAttempts++;
-                        }
-                    );
-                }
-            ),
-            PlayStationClientMode::Shadow,
-            static function () use (&$legacyClientCalls): object {
-                return new GameLookupStubClient(
-                    profileHandler: static function () use (&$legacyClientCalls): object {
-                        $legacyClientCalls++;
-
-                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 6]]];
-                    }
-                );
-            }
-        );
-
-        $providedClient = new GameLookupNewApiClientStub(
-            requestHandler: static function () use (&$providedCalls): object {
-                $providedCalls++;
-
-                return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]];
-            }
-        );
-
-        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
-
-        $this->assertSame(6, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $this->assertSame(2, $legacyClientCalls);
-        $this->assertSame(0, $providedCalls);
-        $this->assertSame(1, $factoryCreateCalls);
-        $this->assertSame(1, $newClientLoginAttempts);
-    }
-
     public function testFetchTrophyDataForNpCommunicationIdPreservesGroupedPayloadWhenFlatTrophiesMissing(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);

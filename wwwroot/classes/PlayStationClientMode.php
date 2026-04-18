@@ -5,7 +5,6 @@ declare(strict_types=1);
 enum PlayStationClientMode: string
 {
     case Legacy = 'legacy';
-    case Shadow = 'shadow';
     case New = 'new';
 
     public static function fromEnvironmentValue(mixed $value, self $default = self::Legacy): self
@@ -18,7 +17,6 @@ enum PlayStationClientMode: string
 
         return match ($normalized) {
             self::Legacy->value => self::Legacy,
-            self::Shadow->value => self::Shadow,
             self::New->value => self::New,
             default => $default,
         };

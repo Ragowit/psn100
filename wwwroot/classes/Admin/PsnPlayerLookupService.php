@@ -206,7 +206,6 @@ final class PsnPlayerLookupService
                 fn (): array => $this->lookupViaNewClient($normalizedOnlineId),
                 $normalizedOnlineId
             ),
-            PlayStationClientMode::Shadow => $this->executeShadowLookup($normalizedOnlineId),
         };
     }
 
@@ -248,29 +247,6 @@ final class PsnPlayerLookupService
         }
 
         return $exception->getMessage() === 'Unable to login to any worker accounts.';
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function executeShadowLookup(string $normalizedOnlineId): array
-    {
-        $legacyResult = $this->executeLookupWithErrorHandling(
-            fn (): array => $this->lookupViaLegacyClient($normalizedOnlineId),
-            $normalizedOnlineId
-        );
-
-        try {
-            $newResult = $this->executeLookupWithErrorHandling(
-                fn (): array => $this->lookupViaNewClient($normalizedOnlineId),
-                $normalizedOnlineId
-            );
-            $this->logShadowMismatchIfNeeded($legacyResult, $newResult, $normalizedOnlineId);
-        } catch (Throwable $exception) {
-            $this->logShadowExecutionFailure($normalizedOnlineId, $exception);
-        }
-
-        return $legacyResult;
     }
 
     /**
@@ -400,72 +376,6 @@ final class PsnPlayerLookupService
     private function executeUserProfileRequest(ProfileClientInterface $client, string $onlineId): mixed
     {
         return $client->lookupProfileByOnlineId($onlineId);
-    }
-
-    /**
-     * @param array<string, mixed> $legacyResult
-     * @param array<string, mixed> $newResult
-     */
-    private function logShadowMismatchIfNeeded(array $legacyResult, array $newResult, string $fallbackOnlineId): void
-    {
-        $normalizedLegacy = $this->normalizeForShadowComparison($legacyResult);
-        $normalizedNew = $this->normalizeForShadowComparison($newResult);
-
-        if ($normalizedLegacy === $normalizedNew) {
-            return;
-        }
-
-        $legacyProfile = is_array($legacyResult['profile'] ?? null) ? $legacyResult['profile'] : [];
-        $newProfile = is_array($newResult['profile'] ?? null) ? $newResult['profile'] : [];
-
-        $context = [
-            'mode' => $this->clientMode->value,
-            'onlineId' => (string) ($legacyProfile['onlineId'] ?? $newProfile['onlineId'] ?? $fallbackOnlineId),
-            'accountId' => (string) ($legacyProfile['accountId'] ?? $newProfile['accountId'] ?? ''),
-            'legacy' => $normalizedLegacy,
-            'new' => $normalizedNew,
-        ];
-
-        $this->logShadowEvent('psn_player_lookup_shadow_mismatch', $context);
-    }
-
-    private function logShadowExecutionFailure(string $onlineId, Throwable $exception): void
-    {
-        $this->logShadowEvent('psn_player_lookup_shadow_execution_failure', [
-            'mode' => $this->clientMode->value,
-            'onlineId' => $onlineId,
-            'error' => $exception->getMessage(),
-        ]);
-    }
-
-    /**
-     * @param array<string, mixed> $result
-     * @return array<string, mixed>
-     */
-    private function normalizeForShadowComparison(array $result): array
-    {
-        $profile = is_array($result['profile'] ?? null) ? $result['profile'] : [];
-
-        return [
-            'accountId' => (string) ($profile['accountId'] ?? ''),
-            'onlineId' => (string) ($profile['onlineId'] ?? ''),
-            'currentOnlineId' => (string) ($profile['currentOnlineId'] ?? ''),
-            'npId' => (string) ($profile['npId'] ?? ''),
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function logShadowEvent(string $event, array $payload): void
-    {
-        $payload = ['event' => $event] + $payload;
-
-        try {
-            error_log((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-        } catch (JsonException) {
-            error_log(sprintf('{"event":"%s","error":"failed_to_encode_log_payload"}', $event));
-        }
     }
 
     private function determineStatusCode(Throwable $exception): ?int

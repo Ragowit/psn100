@@ -224,10 +224,6 @@ final class PsnGameLookupService
                 $normalizedNpCommunicationId,
                 $authenticatedClient
             ),
-            PlayStationClientMode::Shadow => $this->fetchTrophyDataForNpCommunicationIdInShadowMode(
-                $normalizedNpCommunicationId,
-                $authenticatedClient
-            ),
         };
     }
 
@@ -255,31 +251,6 @@ final class PsnGameLookupService
         $client = $this->resolveNewModeTrophyClient($authenticatedClient);
 
         return $this->fetchTrophyDataForNpCommunicationIdFromClient($npCommunicationId, $client);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function fetchTrophyDataForNpCommunicationIdInShadowMode(
-        string $npCommunicationId,
-        ?object $authenticatedClient = null
-    ): array {
-        $legacyResult = $this->fetchTrophyDataForNpCommunicationIdViaLegacyClient(
-            $npCommunicationId,
-            null
-        );
-
-        try {
-            $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient(
-                $npCommunicationId,
-                null
-            );
-            $this->logShadowMismatchIfNeeded($npCommunicationId, $legacyResult, $newResult);
-        } catch (Throwable $exception) {
-            $this->logShadowExecutionFailure($npCommunicationId, $exception);
-        }
-
-        return $legacyResult;
     }
 
     /**
@@ -693,74 +664,6 @@ final class PsnGameLookupService
             error_log((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
         } catch (JsonException) {
             error_log('{"event":"psn_lookup_variant_selected","error":"failed_to_encode_log_payload"}');
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $legacyResult
-     * @param array<string, mixed> $newResult
-     */
-    private function logShadowMismatchIfNeeded(string $npCommunicationId, array $legacyResult, array $newResult): void
-    {
-        $normalizedLegacy = $this->normalizeForShadowComparison($legacyResult);
-        $normalizedNew = $this->normalizeForShadowComparison($newResult);
-
-        if ($normalizedLegacy === $normalizedNew) {
-            return;
-        }
-
-        $this->logShadowEvent('psn_game_lookup_shadow_mismatch', [
-            'mode' => $this->clientMode->value,
-            'npCommunicationId' => $npCommunicationId,
-            'legacy' => $normalizedLegacy,
-            'new' => $normalizedNew,
-        ]);
-    }
-
-    private function logShadowExecutionFailure(string $npCommunicationId, Throwable $exception): void
-    {
-        $this->logShadowEvent('psn_game_lookup_shadow_execution_failure', [
-            'mode' => $this->clientMode->value,
-            'npCommunicationId' => $npCommunicationId,
-            'error' => $exception->getMessage(),
-        ]);
-    }
-
-    /**
-     * @param array<string, mixed> $result
-     * @return array<string, mixed>
-     */
-    private function normalizeForShadowComparison(array $result): array
-    {
-        $firstTrophy = null;
-        $groups = $result['trophyGroups'] ?? null;
-        if (is_array($groups) && isset($groups[0]) && is_array($groups[0])) {
-            $groupTrophies = $groups[0]['trophies'] ?? null;
-            if (is_array($groupTrophies) && isset($groupTrophies[0]) && is_array($groupTrophies[0])) {
-                $firstTrophy = $groupTrophies[0];
-            }
-        }
-
-        return [
-            'npCommunicationId' => (string) ($result['npCommunicationId'] ?? ''),
-            'titleName' => (string) ($result['trophyTitleName'] ?? ''),
-            'trophyGroupCount' => is_array($groups) ? count($groups) : 0,
-            'firstTrophyId' => is_array($firstTrophy) ? (string) ($firstTrophy['trophyId'] ?? '') : '',
-            'firstTrophyName' => is_array($firstTrophy) ? (string) ($firstTrophy['trophyName'] ?? '') : '',
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function logShadowEvent(string $event, array $payload): void
-    {
-        $payload = ['event' => $event] + $payload;
-
-        try {
-            error_log((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-        } catch (JsonException) {
-            error_log(sprintf('{"event":"%s","error":"failed_to_encode_log_payload"}', $event));
         }
     }
 
