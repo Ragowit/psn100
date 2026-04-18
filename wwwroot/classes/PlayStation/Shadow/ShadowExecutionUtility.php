@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ShadowResponseComparator.php';
 
+final class ShadowExecutionTimeoutException extends RuntimeException
+{
+}
+
 final class ShadowExecutionUtility
 {
     /**
@@ -43,18 +47,8 @@ final class ShadowExecutionUtility
 
         $shadowStart = hrtime(true);
         try {
-            $shadowResponse = $shadowExecutor();
+            $shadowResponse = self::executeShadowWithTimeout($shadowExecutor, $shadowLatencyBudgetMs);
             $shadowDurationMs = (int) ((hrtime(true) - $shadowStart) / 1_000_000);
-
-            if ($shadowDurationMs > $shadowLatencyBudgetMs) {
-                self::emitEvent([
-                    'event' => 'psn_shadow_sla_warning',
-                    'operation' => $operation,
-                    'legacyDurationMs' => $legacyDurationMs,
-                    'shadowDurationMs' => $shadowDurationMs,
-                    'shadowLatencyBudgetMs' => $shadowLatencyBudgetMs,
-                ]);
-            }
 
             $comparison = ShadowResponseComparator::compare(
                 $normalizer($legacyResponse),
@@ -70,6 +64,15 @@ final class ShadowExecutionUtility
                     'mismatch' => $comparison,
                 ]);
             }
+        } catch (ShadowExecutionTimeoutException $timeoutException) {
+            self::emitEvent([
+                'event' => 'psn_shadow_skipped',
+                'operation' => $operation,
+                'reason' => 'shadow_latency_budget_exhausted',
+                'legacyDurationMs' => $legacyDurationMs,
+                'shadowLatencyBudgetMs' => $shadowLatencyBudgetMs,
+                'message' => $timeoutException->getMessage(),
+            ]);
         } catch (Throwable $shadowException) {
             self::emitEvent([
                 'event' => 'psn_shadow_failure',
@@ -81,6 +84,31 @@ final class ShadowExecutionUtility
         }
 
         return $legacyResponse;
+    }
+
+    private static function executeShadowWithTimeout(callable $shadowExecutor, int $shadowLatencyBudgetMs): mixed
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_alarm')
+            || !function_exists('pcntl_async_signals')
+        ) {
+            return $shadowExecutor();
+        }
+
+        pcntl_async_signals(true);
+        pcntl_signal(SIGALRM, static function (): void {
+            throw new ShadowExecutionTimeoutException('Shadow execution exceeded latency budget.');
+        });
+        pcntl_alarm((int) ceil($shadowLatencyBudgetMs / 1000));
+
+        try {
+            return $shadowExecutor();
+        } finally {
+            pcntl_alarm(0);
+            pcntl_async_signals(false);
+            pcntl_signal(SIGALRM, SIG_DFL);
+        }
     }
 
     /**

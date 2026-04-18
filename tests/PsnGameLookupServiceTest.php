@@ -748,6 +748,58 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $this->assertSame('7', $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
+
+    public function testFetchTrophyDataInShadowModeWithProvidedClientExecutesShadowPath(): void
+    {
+        $worker = new Worker(1, 'worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $shadowFactoryCounter = (object) ['count' => 0];
+
+        $legacyFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 1]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+        $shadowFactory = new class ($shadowFactoryCounter) implements PlayStationClientFactoryInterface {
+            private object $counter;
+
+            public function __construct(object $counter)
+            {
+                $this->counter = $counter;
+            }
+
+            public function createClient(): PlayStationApiClientInterface
+            {
+                $this->counter->count++;
+
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $shadowFactory,
+            PsnClientMode::fromValue('shadow')
+        );
+
+        $providedClient = new ShadowGameClientStub(
+            static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 7]]],
+            static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
+
+        $this->assertSame(7, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(1, $shadowFactoryCounter->count);
+    }
 }
 
 final class GameLookupStubClient
