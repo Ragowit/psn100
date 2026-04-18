@@ -266,7 +266,7 @@ final class PsnGameLookupService
     ): array {
         $legacyResult = $this->fetchTrophyDataForNpCommunicationIdViaLegacyClient(
             $npCommunicationId,
-            $authenticatedClient
+            null
         );
 
         try {
