@@ -381,14 +381,4 @@ final class PlayerLookupTypedClientStub implements PlayStationApiClientInterface
     {
         return [];
     }
-
-    public function get(string $path = '', array $query = [], array $headers = []): object
-    {
-        return (object) [
-            'profile' => (object) [
-                'onlineId' => 'Example',
-                'accountId' => '1234',
-            ],
-        ];
-    }
 }

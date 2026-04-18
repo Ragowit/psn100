@@ -285,14 +285,7 @@ final class PsnPlayerLookupService
     private function lookupViaLegacyClient(string $onlineId): array
     {
         $client = $this->createAuthenticatedLegacyClient();
-        $profile = $client->get(
-            sprintf(
-                'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
-                rawurlencode($onlineId)
-            ),
-            ['fields' => 'accountId,onlineId,currentOnlineId,npId'],
-            ['content-type' => 'application/json']
-        );
+        $profile = $this->executeUserProfileRequest($client, $onlineId);
 
         return $this->normalizeProfileResponse($profile);
     }
@@ -335,7 +328,7 @@ final class PsnPlayerLookupService
         throw new RuntimeException('Unable to login to any worker accounts.');
     }
 
-    private function createAuthenticatedLegacyClient(): object
+    private function createAuthenticatedLegacyClient(): ProfileClientInterface
     {
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
@@ -349,19 +342,65 @@ final class PsnPlayerLookupService
 
             try {
                 $client = ($this->legacyClientFactory)();
-                if (!is_object($client) || !method_exists($client, 'loginWithNpsso') || !method_exists($client, 'get')) {
+                if ($client instanceof PlayStationApiClientInterface) {
+                    $client->loginWithNpsso($npsso);
+
+                    return $client;
+                }
+
+                if (!is_object($client) || !method_exists($client, 'loginWithNpsso')) {
                     throw new RuntimeException('Invalid legacy PlayStation client.');
                 }
 
                 $client->loginWithNpsso($npsso);
 
-                return $client;
+                return $this->normalizeLegacyProfileClient($client);
             } catch (Throwable) {
                 continue;
             }
         }
 
         throw new RuntimeException('Unable to login to any worker accounts.');
+    }
+
+    private function normalizeLegacyProfileClient(object $client): ProfileClientInterface
+    {
+        if ($client instanceof ProfileClientInterface) {
+            return $client;
+        }
+
+        return new class ($client) implements ProfileClientInterface {
+            public function __construct(private readonly object $client)
+            {
+            }
+
+            public function lookupProfileByOnlineId(string $onlineId): mixed
+            {
+                if (!method_exists($this->client, 'get')) {
+                    throw new RuntimeException('The PlayStation client does not support profile requests.');
+                }
+
+                $path = sprintf(
+                    'https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2',
+                    rawurlencode($onlineId)
+                );
+
+                return $this->client->get(
+                    $path,
+                    ['fields' => 'accountId,onlineId,currentOnlineId,npId'],
+                    ['content-type' => 'application/json']
+                );
+            }
+
+            public function findUserByAccountId(string $accountId): object
+            {
+                if (!method_exists($this->client, 'users')) {
+                    throw new RuntimeException('The PlayStation client does not support profile requests.');
+                }
+
+                return $this->client->users()->find($accountId);
+            }
+        };
     }
 
     private function executeUserProfileRequest(ProfileClientInterface $client, string $onlineId): mixed
