@@ -71,13 +71,9 @@ final class PsnPlayerLookupService
      */
     private function createDefaultLegacyClientFactory(): \Closure
     {
-        return static function (): object {
-            if (!class_exists(\Tustin\PlayStation\Client::class)) {
-                throw new RuntimeException('Legacy PlayStation client is unavailable. Ensure composer autoload is loaded.');
-            }
+        $factory = new PlayStationClientFactory();
 
-            return new \Tustin\PlayStation\Client();
-        };
+        return static fn (): PlayStationApiClientInterface => $factory->createClient();
     }
 
     private function normalizePlayStationClientFactory(
