@@ -6,6 +6,9 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/../wwwroot/classes/PsnClientMode.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Contracts/PlayStationClientFactoryInterface.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationNotFoundException.php';
 
 final class PsnGameLookupServiceTest extends TestCase
@@ -708,6 +711,43 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(['npServiceName' => 'trophy'], $attempts[1]);
         $this->assertSame(9, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
+
+    public function testLookupInShadowModeReturnsLegacyTrophyPayload(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (88, 'NPWR88888_00', 'Shadow Game')");
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $legacyFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => '7']]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+        $shadowFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $shadowFactory,
+            PsnClientMode::fromValue('shadow')
+        );
+
+        $result = $service->lookupByGameId('88');
+
+        $this->assertSame('7', $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
+    }
 }
 
 final class GameLookupStubClient
@@ -760,4 +800,56 @@ final class GameLookupHttpException extends RuntimeException
 
 final class GameLookupNotFoundHttpException extends Exception
 {
+}
+
+final class ShadowGameClientStub implements PlayStationApiClientInterface
+{
+    /** @var callable(): object */
+    private $trophiesHandler;
+
+    /** @var callable(): object */
+    private $groupsHandler;
+
+    public function __construct(callable $trophiesHandler, callable $groupsHandler)
+    {
+        $this->trophiesHandler = $trophiesHandler;
+        $this->groupsHandler = $groupsHandler;
+    }
+
+    public function loginWithNpsso(string $npsso): void
+    {
+    }
+
+    public function acquireAccessToken(): ?string
+    {
+        return null;
+    }
+
+    public function refreshAccessToken(): void
+    {
+    }
+
+    public function lookupProfileByOnlineId(string $onlineId): mixed
+    {
+        return (object) [];
+    }
+
+    public function findUserByAccountId(string $accountId): object
+    {
+        return (object) [];
+    }
+
+    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+    {
+        if (str_ends_with($path, '/all/trophies')) {
+            return ($this->trophiesHandler)();
+        }
+
+        return ($this->groupsHandler)();
+    }
+
+    public function searchUsers(string $onlineId): iterable
+    {
+        return [];
+    }
 }
