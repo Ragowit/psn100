@@ -174,12 +174,13 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(1, $newClientLogins);
     }
 
-    public function testFetchTrophyDataForNpCommunicationIdInShadowModeUsesDistinctClientForNewPath(): void
+    public function testFetchTrophyDataForNpCommunicationIdInShadowModeUsesDistinctClientsForLegacyAndNewPaths(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $factoryCreateCalls = 0;
         $newClientLoginAttempts = 0;
         $providedCalls = 0;
+        $legacyClientCalls = 0;
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -196,21 +197,31 @@ final class PsnGameLookupServiceTest extends TestCase
                     );
                 }
             ),
-            PlayStationClientMode::Shadow
+            PlayStationClientMode::Shadow,
+            static function () use (&$legacyClientCalls): object {
+                return new GameLookupStubClient(
+                    profileHandler: static function () use (&$legacyClientCalls): object {
+                        $legacyClientCalls++;
+
+                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 6]]];
+                    }
+                );
+            }
         );
 
         $providedClient = new GameLookupNewApiClientStub(
             requestHandler: static function () use (&$providedCalls): object {
                 $providedCalls++;
 
-                return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 6]]];
+                return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]];
             }
         );
 
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
         $this->assertSame(6, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $this->assertSame(2, $providedCalls);
+        $this->assertSame(2, $legacyClientCalls);
+        $this->assertSame(0, $providedCalls);
         $this->assertSame(1, $factoryCreateCalls);
         $this->assertSame(1, $newClientLoginAttempts);
     }
