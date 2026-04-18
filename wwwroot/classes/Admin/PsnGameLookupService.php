@@ -254,7 +254,7 @@ final class PsnGameLookupService
         string $npCommunicationId,
         ?object $authenticatedClient = null
     ): array {
-        $client = $this->resolveNewModeTrophyClient();
+        $client = $this->resolveNewModeTrophyClient($authenticatedClient);
 
         return $this->fetchTrophyDataForNpCommunicationIdFromClient($npCommunicationId, $client);
     }
@@ -274,7 +274,7 @@ final class PsnGameLookupService
         try {
             $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient(
                 $npCommunicationId,
-                null
+                $authenticatedClient
             );
             $this->logShadowMismatchIfNeeded($npCommunicationId, $legacyResult, $newResult);
         } catch (Throwable $exception) {
@@ -608,8 +608,12 @@ final class PsnGameLookupService
         };
     }
 
-    private function resolveNewModeTrophyClient(): TrophyClientInterface
+    private function resolveNewModeTrophyClient(?object $authenticatedClient = null): TrophyClientInterface
     {
+        if ($authenticatedClient !== null) {
+            return $this->normalizeTrophyClient($authenticatedClient);
+        }
+
         return $this->createAuthenticatedNewClient();
     }
 
