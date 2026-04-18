@@ -54,36 +54,39 @@ final class PlayStationAuthManager
             }
 
             foreach ($availableWorkers as $worker) {
-                $workerId = (int) $worker['id'];
-                $npsso = trim((string) ($worker['npsso'] ?? ''));
-
-                if ($npsso === '') {
-                    $this->logAuthResult($workerId, 'empty NPSSO; skipping', false);
-                    continue;
-                }
-
-                try {
-                    $client = $this->playStationClientFactory->createClient();
-                    $client->loginWithNpsso($npsso);
-                    $this->workerBlockedUntil[$workerId] = 0;
-                    $this->logAuthResult($workerId, 'authenticated', true);
-
-                    return [
-                        'worker_id' => $workerId,
-                        'client' => $client,
-                    ];
-                } catch (Throwable $throwable) {
-                    $this->logAuthResult(
-                        $workerId,
-                        sprintf('authentication failed: %s', $throwable::class),
-                        false
-                    );
+                $authenticatedWorker = $this->authenticateWorkerRecord($worker);
+                if ($authenticatedWorker !== null) {
+                    return $authenticatedWorker;
                 }
             }
 
             $this->logAuthResult(0, sprintf('all workers failed; sleeping %d second(s)', $retryDelaySeconds), false);
             sleep($retryDelaySeconds);
         }
+    }
+
+    /**
+     * Authenticates a specific worker by id.
+     *
+     * @return array{worker_id: int, client: PlayStationApiClientInterface}
+     */
+    public function authenticateSpecificWorker(int $workerId): array
+    {
+        $worker = $this->fetchWorkerById($workerId);
+        if ($worker === null) {
+            throw new RuntimeException(sprintf('Worker %d not found in setting table.', $workerId));
+        }
+
+        if (($this->workerBlockedUntil[$workerId] ?? 0) > time()) {
+            throw new RuntimeException(sprintf('Worker %d is currently in cooldown.', $workerId));
+        }
+
+        $authenticatedWorker = $this->authenticateWorkerRecord($worker);
+        if ($authenticatedWorker === null) {
+            throw new RuntimeException(sprintf('Unable to authenticate worker %d.', $workerId));
+        }
+
+        return $authenticatedWorker;
     }
 
     /**
@@ -140,6 +143,24 @@ final class PlayStationAuthManager
     }
 
     /**
+     * @return array{id: int|string, npsso: string|null}|null
+     */
+    private function fetchWorkerById(int $workerId): ?array
+    {
+        $query = $this->database->prepare('SELECT id, npsso FROM setting WHERE id = :worker_id LIMIT 1');
+        $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
+        $query->execute();
+
+        $worker = $query->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($worker)) {
+            return null;
+        }
+
+        return $worker;
+    }
+
+    /**
      * @param list<array{id: int|string, npsso: string|null}> $workers
      *
      * @return list<array{id: int|string, npsso: string|null}>
@@ -189,5 +210,42 @@ final class PlayStationAuthManager
     private function normalizeSleepDelay(int $delaySeconds): int
     {
         return max(1, $delaySeconds);
+    }
+
+    /**
+     * @param array{id: int|string, npsso: string|null} $worker
+     *
+     * @return array{worker_id: int, client: PlayStationApiClientInterface}|null
+     */
+    private function authenticateWorkerRecord(array $worker): ?array
+    {
+        $workerId = (int) $worker['id'];
+        $npsso = trim((string) ($worker['npsso'] ?? ''));
+
+        if ($npsso === '') {
+            $this->logAuthResult($workerId, 'empty NPSSO; skipping', false);
+
+            return null;
+        }
+
+        try {
+            $client = $this->playStationClientFactory->createClient();
+            $client->loginWithNpsso($npsso);
+            $this->workerBlockedUntil[$workerId] = 0;
+            $this->logAuthResult($workerId, 'authenticated', true);
+
+            return [
+                'worker_id' => $workerId,
+                'client' => $client,
+            ];
+        } catch (Throwable $throwable) {
+            $this->logAuthResult(
+                $workerId,
+                sprintf('authentication failed: %s', $throwable::class),
+                false
+            );
+
+            return null;
+        }
     }
 }
