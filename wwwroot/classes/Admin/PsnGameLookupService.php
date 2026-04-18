@@ -74,9 +74,7 @@ final class PsnGameLookupService
      */
     private function createDefaultLegacyClientFactory(): \Closure
     {
-        $factory = new PlayStationClientFactory();
-
-        return static fn (): PlayStationApiClientInterface => $factory->createClient();
+        return static fn (): object => new \Tustin\PlayStation\Client();
     }
 
     private function normalizePlayStationClientFactory(
@@ -274,7 +272,7 @@ final class PsnGameLookupService
         try {
             $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient(
                 $npCommunicationId,
-                $authenticatedClient
+                null
             );
             $this->logShadowMismatchIfNeeded($npCommunicationId, $legacyResult, $newResult);
         } catch (Throwable $exception) {
