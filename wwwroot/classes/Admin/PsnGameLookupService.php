@@ -579,6 +579,10 @@ final class PsnGameLookupService
 
     private function resolveNewModeTrophyClient(?object $authenticatedClient = null): TrophyClientInterface
     {
+        if ($authenticatedClient !== null) {
+            return $this->normalizeTrophyClient($authenticatedClient);
+        }
+
         return $this->createAuthenticatedNewClient();
     }
 
