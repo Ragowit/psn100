@@ -188,6 +188,6 @@ final class PlayStationAuthManager
 
     private function normalizeSleepDelay(int $delaySeconds): int
     {
-        return max(0, $delaySeconds);
+        return max(1, $delaySeconds);
     }
 }
