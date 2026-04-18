@@ -574,7 +574,17 @@ final class PsnGameLookupService
     {
         if ($exception instanceof PlayStationTransientUpstreamException
             || $exception instanceof PlayStationAccessDeniedException
-            || $exception instanceof PlayStationNotFoundException) {
+            || $exception instanceof PlayStationNotFoundException
+            || $this->isThrowableClassNamed(
+                $exception,
+                [
+                    'AccessDeniedHttpException',
+                    'AccessDeniedException',
+                    'NotFoundHttpException',
+                    'NotFoundException',
+                    'ApiException',
+                ]
+            )) {
             return true;
         }
 
@@ -582,6 +592,30 @@ final class PsnGameLookupService
 
         if ($previous instanceof Throwable) {
             return $this->isRetryableKnownHttpException($previous);
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<string> $classNames
+     */
+    private function isThrowableClassNamed(Throwable $exception, array $classNames): bool
+    {
+        $currentClass = $exception::class;
+
+        foreach ($classNames as $className) {
+            if ($currentClass === $className
+                || str_ends_with($currentClass, '\\' . $className)
+                || str_ends_with($currentClass, $className)) {
+                return true;
+            }
+        }
+
+        $previous = $exception->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->isThrowableClassNamed($previous, $classNames);
         }
 
         return false;
