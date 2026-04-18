@@ -244,7 +244,9 @@ final class PsnGameLookupService
         string $npCommunicationId,
         ?object $authenticatedClient = null
     ): array {
-        $client = $this->createAuthenticatedLegacyClient();
+        $client = $authenticatedClient === null
+            ? $this->createAuthenticatedLegacyClient()
+            : $this->normalizeTrophyClient($authenticatedClient);
 
         return $this->fetchTrophyDataForNpCommunicationIdFromClient($npCommunicationId, $client);
     }
