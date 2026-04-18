@@ -111,19 +111,33 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(['npServiceName' => 'trophy2'], $attempts[0]);
     }
 
-    public function testFetchTrophyDataForNpCommunicationIdUsesProvidedAuthenticatedClient(): void
+    public function testFetchTrophyDataForNpCommunicationIdInLegacyModeIgnoresProvidedAuthenticatedClient(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $legacyClientCalls = 0;
 
         $service = new PsnGameLookupService(
             $this->database,
             static fn (): array => [$worker],
-            static fn (): object => new GameLookupStubClient()
+            static function () use (&$legacyClientCalls): object {
+                return new GameLookupStubClient(
+                    profileHandler: static function () use (&$legacyClientCalls): object {
+                        $legacyClientCalls++;
+
+                        return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 101]]];
+                    }
+                );
+            }
         );
 
         $loginAttempts = 0;
+        $providedClientCalls = 0;
         $providedClient = new GameLookupStubClient(
-            profileHandler: static fn (): object => (object) ['trophies' => []],
+            profileHandler: static function () use (&$providedClientCalls): object {
+                $providedClientCalls++;
+
+                return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]];
+            },
             loginHandler: static function () use (&$loginAttempts): void {
                 $loginAttempts++;
             }
@@ -131,7 +145,9 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
-        $this->assertSame([], $result['trophies']);
+        $this->assertSame(101, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(2, $legacyClientCalls);
+        $this->assertSame(0, $providedClientCalls);
         $this->assertSame(0, $loginAttempts);
     }
 
@@ -210,7 +226,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(2, $requestCalls);
     }
 
-    public function testFetchTrophyDataForNpCommunicationIdInShadowModeReusesProvidedClientForLegacyAndNewPaths(): void
+    public function testFetchTrophyDataForNpCommunicationIdInShadowModeUsesLegacyClientForLegacyPath(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $factoryCreateCalls = 0;
@@ -255,9 +271,9 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
-        $this->assertSame(999, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $this->assertSame(0, $legacyClientCalls);
-        $this->assertSame(4, $providedCalls);
+        $this->assertSame(6, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(2, $legacyClientCalls);
+        $this->assertSame(2, $providedCalls);
         $this->assertSame(0, $factoryCreateCalls);
         $this->assertSame(0, $newClientLoginAttempts);
     }
