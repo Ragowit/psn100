@@ -162,6 +162,35 @@ final class PsnPlayerLookupServiceTest extends TestCase
         }
     }
 
+    public function testLookupInLegacyModeUsesInjectedPlayStationClientFactoryInterface(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $stats = (object) ['createdClientCount' => 0];
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            new class ($stats) implements PlayStationClientFactoryInterface {
+                public function __construct(private object $stats)
+                {
+                }
+
+                public function createClient(): PlayStationApiClientInterface
+                {
+                    $this->stats->createdClientCount++;
+
+                    return new PlayerLookupTypedClientStub();
+                }
+            },
+            PlayStationClientMode::Legacy
+        );
+
+        $result = $service->lookup('Example');
+
+        $this->assertSame(1, $stats->createdClientCount);
+        $this->assertSame('Example', $result['profile']['onlineId']);
+        $this->assertSame('1234', $result['profile']['accountId']);
+    }
+
     public function testRequestHandlerReturnsNullForBlankInput(): void
     {
         $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
@@ -310,5 +339,56 @@ final class StubHttpException extends RuntimeException
     public function getResponse(): StubResponse
     {
         return $this->response;
+    }
+}
+
+final class PlayerLookupTypedClientStub implements PlayStationApiClientInterface
+{
+    public function loginWithNpsso(string $npsso): void
+    {
+    }
+
+    public function acquireAccessToken(): ?string
+    {
+        return null;
+    }
+
+    public function refreshAccessToken(): void
+    {
+    }
+
+    public function lookupProfileByOnlineId(string $onlineId): mixed
+    {
+        return (object) [
+            'profile' => (object) [
+                'onlineId' => trim($onlineId),
+                'accountId' => '1234',
+            ],
+        ];
+    }
+
+    public function findUserByAccountId(string $accountId): object
+    {
+        return (object) [];
+    }
+
+    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+    {
+        return (object) [];
+    }
+
+    public function searchUsers(string $onlineId): iterable
+    {
+        return [];
+    }
+
+    public function get(string $path = '', array $query = [], array $headers = []): object
+    {
+        return (object) [
+            'profile' => (object) [
+                'onlineId' => 'Example',
+                'accountId' => '1234',
+            ],
+        ];
     }
 }

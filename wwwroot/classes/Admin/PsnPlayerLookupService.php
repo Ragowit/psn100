@@ -42,6 +42,8 @@ final class PsnPlayerLookupService
         $this->clientMode = $clientMode ?? PlayStationClientMode::Legacy;
         if ($legacyClientFactory !== null) {
             $this->legacyClientFactory = \Closure::fromCallable($legacyClientFactory);
+        } elseif ($playStationClientFactory instanceof PlayStationClientFactoryInterface) {
+            $this->legacyClientFactory = static fn (): PlayStationApiClientInterface => $playStationClientFactory->createClient();
         } elseif (is_callable($playStationClientFactory)) {
             $this->legacyClientFactory = \Closure::fromCallable($playStationClientFactory);
         } else {
