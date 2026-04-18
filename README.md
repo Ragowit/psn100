@@ -10,6 +10,21 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 - **PHP:** 8.5
 - **MySQL:** 8.4
 
+
+## Application configuration
+
+The canonical service config file is `wwwroot/config/app.php`.
+
+### PSN client mode
+
+Set `PSN_CLIENT_MODE` to control which PSN client mode is used by PSN lookup, rescan, and cron flows.
+
+- `legacy` (default): use the current production behavior.
+- `shadow`: run the shadow mode configuration path while still using legacy client behavior.
+- `new`: run the new mode configuration path (currently mapped to the same client implementation as `legacy` until rollout is complete).
+
+The app validates the configured mode on first use and fails fast with a clear error if the value is not one of `legacy`, `shadow`, or `new`.
+
 ## Merge Guideline Priorities
 1. Available > Delisted
 2. English language > Other language
