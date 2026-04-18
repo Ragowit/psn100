@@ -278,7 +278,7 @@ final class PsnGameLookupService
         try {
             $newResult = $this->fetchTrophyDataForNpCommunicationIdViaNewClient(
                 $npCommunicationId,
-                $authenticatedClient
+                null
             );
             $this->logShadowMismatchIfNeeded($npCommunicationId, $legacyResult, $newResult);
         } catch (Throwable $exception) {
