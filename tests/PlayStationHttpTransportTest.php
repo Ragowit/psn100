@@ -8,6 +8,40 @@ require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationInv
 
 final class PlayStationHttpTransportTest extends TestCase
 {
+    public function testFindUserByAccountIdMapsVendorUnauthorizedExceptionWithoutStatusCode(): void
+    {
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            accountLookupExecutor: static function (): object {
+                throw new UnauthorizedHttpException('unauthorized');
+            }
+        );
+
+        try {
+            $transport->findUserByAccountId('123');
+            $this->fail('Expected PlayStationAuthFailureException to be thrown.');
+        } catch (PlayStationAuthFailureException) {
+            $this->assertTrue(true);
+        }
+    }
+
+    public function testFindUserByAccountIdMapsVendorNotFoundExceptionWithoutStatusCode(): void
+    {
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            accountLookupExecutor: static function (): object {
+                throw new NotFoundHttpException('not found');
+            }
+        );
+
+        try {
+            $transport->findUserByAccountId('123');
+            $this->fail('Expected PlayStationNotFoundException to be thrown.');
+        } catch (PlayStationNotFoundException) {
+            $this->assertTrue(true);
+        }
+    }
+
     public function testLookupUserProfileBuildsRequestAndValidatesPayload(): void
     {
         $capturedPath = null;
@@ -177,4 +211,12 @@ final class PlayStationHttpTransportTest extends TestCase
 
         $this->assertSame($user, $result);
     }
+}
+
+final class UnauthorizedHttpException extends Exception
+{
+}
+
+final class NotFoundHttpException extends Exception
+{
 }

@@ -392,6 +392,14 @@ final class PlayStationHttpTransport
             return new PlayStationNotFoundException('PlayStation resource was not found.', $statusCode, $throwable);
         }
 
+        if ($this->isUnauthorizedThrowable($throwable)) {
+            return new PlayStationAuthFailureException('PlayStation authentication failed.', previous: $throwable);
+        }
+
+        if ($this->isNotFoundThrowable($throwable)) {
+            return new PlayStationNotFoundException('PlayStation resource was not found.', previous: $throwable);
+        }
+
         if ($statusCode === 408 || $statusCode === 429 || ($statusCode !== null && $statusCode >= 500)) {
             return new PlayStationTransientUpstreamException(
                 'PlayStation upstream request failed temporarily.',
@@ -404,11 +412,49 @@ final class PlayStationHttpTransport
             return new PlayStationInvalidPayloadException($throwable->getMessage(), previous: $throwable);
         }
 
-        if ($throwable instanceof RuntimeException) {
+        if ($throwable instanceof RuntimeException || $throwable instanceof Exception) {
             return new PlayStationTransientUpstreamException($throwable->getMessage(), previous: $throwable);
         }
 
         return $throwable;
+    }
+
+    private function isUnauthorizedThrowable(Throwable $throwable): bool
+    {
+        return $this->isThrowableClassNamed($throwable, [
+            'UnauthorizedHttpException',
+            'UnauthorizedException',
+        ]);
+    }
+
+    private function isNotFoundThrowable(Throwable $throwable): bool
+    {
+        return $this->isThrowableClassNamed($throwable, [
+            'NotFoundHttpException',
+            'NotFoundException',
+        ]);
+    }
+
+    /**
+     * @param array<int, string> $classSuffixes
+     */
+    private function isThrowableClassNamed(Throwable $throwable, array $classSuffixes): bool
+    {
+        $className = get_class($throwable);
+
+        foreach ($classSuffixes as $classSuffix) {
+            if ($className === $classSuffix || str_ends_with($className, '\\' . $classSuffix)) {
+                return true;
+            }
+        }
+
+        $previous = $throwable->getPrevious();
+
+        if ($previous instanceof Throwable) {
+            return $this->isThrowableClassNamed($previous, $classSuffixes);
+        }
+
+        return false;
     }
 
     private function determineStatusCode(Throwable $exception): ?int
