@@ -71,9 +71,7 @@ final class PsnPlayerLookupService
      */
     private function createDefaultLegacyClientFactory(): \Closure
     {
-        $factory = new PlayStationClientFactory();
-
-        return static fn (): PlayStationApiClientInterface => $factory->createClient();
+        return static fn (): object => new \Tustin\PlayStation\Client();
     }
 
     private function normalizePlayStationClientFactory(
