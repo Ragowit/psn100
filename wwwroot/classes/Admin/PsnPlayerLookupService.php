@@ -191,7 +191,7 @@ final class PsnPlayerLookupService
             ),
             static fn (mixed $payload): array => ShadowResponseNormalizer::normalizePlayerProfileLookup($payload),
             350,
-            ['service' => 'psn_player_lookup']
+            ['service' => 'psn_player_lookup', 'onlineId' => $normalizedOnlineId]
         );
 
         return $this->normalizeProfileResponse($profile);
