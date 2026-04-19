@@ -273,4 +273,90 @@ final class ShadowPlayStationUtilityTest extends TestCase
         ShadowExecutionUtility::resetStateForTests();
     }
 
+    public function testExecuteWithLegacyTruthUsesDefaultSharedStorePathWhenEnvUnset(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        putenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH');
+        ShadowExecutionUtility::resetStateForTests();
+
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        for ($i = 0; $i < 2; $i++) {
+            ShadowExecutionUtility::executeWithLegacyTruth(
+                PsnClientMode::fromValue('shadow'),
+                'player_profile_lookup',
+                static fn (): array => ['profile' => ['title' => 'legacy']],
+                static fn (): array => ['profile' => ['title' => 'shadow']],
+                static fn (mixed $value): array => is_array($value) ? $value : [],
+                350,
+                [
+                    'service' => 'psn_player_lookup',
+                    'correlationId' => 'default-store-path',
+                    'mismatchSampleRate' => 1,
+                    'mismatchRateLimitPerMinute' => 1,
+                ]
+            );
+
+            ShadowExecutionUtility::resetStateForTests();
+            ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+                $events[] = $event;
+            });
+        }
+
+        $this->assertCount(1, $events);
+    }
+
+    public function testExecuteWithLegacyTruthHandlesUtf8SampleTruncation(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        $longUtf8 = str_repeat('😀', 40) . 'legacy';
+
+        ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'player_profile_lookup',
+            static fn (): array => ['profile' => ['title' => $longUtf8]],
+            static fn (): array => ['profile' => ['title' => 'shadow']],
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350,
+            [
+                'service' => 'psn_player_lookup',
+                'correlationId' => 'utf8-safe-truncate',
+                'mismatchSampleRate' => 1,
+                'mismatchRateLimitPerMinute' => 100,
+            ]
+        );
+
+        $this->assertCount(1, $events);
+        $sampledLegacy = $events[0]['diffSummary']['sampledValues'][0]['legacy'];
+        $this->assertTrue(is_string($sampledLegacy));
+        $this->assertTrue(str_ends_with($sampledLegacy, '...'));
+        $this->assertSame(1, preg_match('//u', $sampledLegacy));
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
 }

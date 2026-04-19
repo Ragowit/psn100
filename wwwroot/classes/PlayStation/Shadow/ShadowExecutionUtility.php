@@ -289,7 +289,7 @@ final class ShadowExecutionUtility
 
         if (is_scalar($value) || $value === null) {
             if (is_string($value) && strlen($value) > 128) {
-                return substr($value, 0, 125) . '...';
+                return self::truncateUtf8($value, 125) . '...';
             }
 
             return $value;
@@ -331,11 +331,42 @@ final class ShadowExecutionUtility
      */
     private static function resolveMismatchRateLimitStorePath(array $metricTags): ?string
     {
-        $storePath = $metricTags['mismatchRateLimitStorePath']
-            ?? getenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH')
-            ?? self::DEFAULT_MISMATCH_RATE_LIMIT_STORE_PATH;
+        $storePath = $metricTags['mismatchRateLimitStorePath'] ?? null;
+        if ($storePath === null) {
+            $envStorePath = getenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH');
+            $storePath = $envStorePath === false
+                ? self::DEFAULT_MISMATCH_RATE_LIMIT_STORE_PATH
+                : $envStorePath;
+        }
 
         return self::normalizeRateLimitStorePath(is_scalar($storePath) ? (string) $storePath : null);
+    }
+
+    private static function truncateUtf8(string $value, int $maxBytes): string
+    {
+        if (strlen($value) <= $maxBytes) {
+            return $value;
+        }
+
+        if (function_exists('mb_strcut')) {
+            $truncated = mb_strcut($value, 0, $maxBytes, 'UTF-8');
+
+            return is_string($truncated) ? $truncated : '';
+        }
+
+        $truncated = substr($value, 0, $maxBytes);
+        if (!is_string($truncated) || $truncated === '') {
+            return '';
+        }
+
+        while ($truncated !== '' && !preg_match('//u', $truncated)) {
+            $truncated = substr($truncated, 0, -1);
+            if (!is_string($truncated)) {
+                return '';
+            }
+        }
+
+        return $truncated;
     }
 
     /**
