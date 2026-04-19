@@ -1,0 +1,251 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/Http/PlayStationHttpTransport.php';
+
+final class NativePlayStationApiClient implements PlayStationApiClientInterface
+{
+    private const OAUTH_AUTHORIZE_URL = 'https://ca.account.sony.com/api/authz/v3/oauth/authorize';
+    private const OAUTH_TOKEN_URL = 'https://ca.account.sony.com/api/authz/v3/oauth/token';
+    private const OAUTH_CLIENT_ID = '09515159-7237-4370-9b40-3806e67c0891';
+    private const OAUTH_CLIENT_SECRET = 'XMB9w0L5xEN7VBdT';
+    private const OAUTH_SCOPE = 'psn:mobile.v2.core psn:clientapp';
+    private const OAUTH_REDIRECT_URI = 'com.scee.psxandroid.scecompcall://redirect';
+
+    private readonly PlayStationHttpTransport $transport;
+
+    private ?string $accessToken = null;
+    private ?string $refreshToken = null;
+
+    public function __construct()
+    {
+        $this->transport = new PlayStationHttpTransport(
+            requestExecutor: fn (string $path, array $query, array $headers): mixed => $this->requestJson('GET', $path, $query, $headers),
+            accountLookupExecutor: fn (string $accountId): object => (object) $this->requestJson(
+                'GET',
+                sprintf('https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2', rawurlencode($accountId)),
+                ['fields' => 'accountId,onlineId,currentOnlineId,npId'],
+                []
+            ),
+            userSearchExecutor: fn (string $onlineId): iterable => [],
+            maxAttempts: 2
+        );
+    }
+
+    public function loginWithNpsso(string $npsso): void
+    {
+        $authorizationCode = $this->exchangeNpssoForAuthorizationCode($npsso);
+        $tokenPayload = $this->exchangeAuthorizationCodeForToken($authorizationCode);
+        $this->hydrateTokenState($tokenPayload);
+    }
+
+    public function acquireAccessToken(): ?string
+    {
+        return $this->accessToken;
+    }
+
+    public function refreshAccessToken(): void
+    {
+        if (!is_string($this->refreshToken) || $this->refreshToken === '') {
+            throw new RuntimeException('No refresh token available.');
+        }
+
+        $payload = $this->requestJson(
+            'POST',
+            self::OAUTH_TOKEN_URL,
+            [],
+            [
+                'authorization' => 'Basic ' . base64_encode(self::OAUTH_CLIENT_ID . ':' . self::OAUTH_CLIENT_SECRET),
+                'content-type' => 'application/x-www-form-urlencoded',
+            ],
+            http_build_query([
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $this->refreshToken,
+                'scope' => self::OAUTH_SCOPE,
+            ])
+        );
+
+        $this->hydrateTokenState($payload);
+    }
+
+    public function lookupProfileByOnlineId(string $onlineId): mixed
+    {
+        return $this->transport->lookupUserProfile($onlineId);
+    }
+
+    public function findUserByAccountId(string $accountId): object
+    {
+        return $this->transport->findUserByAccountId($accountId);
+    }
+
+    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+    {
+        return $this->transport->request($path, $query, $headers);
+    }
+
+    public function searchUsers(string $onlineId): iterable
+    {
+        return $this->transport->searchUsers($onlineId);
+    }
+
+    private function exchangeNpssoForAuthorizationCode(string $npsso): string
+    {
+        $response = $this->rawHttpRequest(
+            'GET',
+            self::OAUTH_AUTHORIZE_URL . '?' . http_build_query([
+                'access_type' => 'offline',
+                'client_id' => self::OAUTH_CLIENT_ID,
+                'redirect_uri' => self::OAUTH_REDIRECT_URI,
+                'response_type' => 'code',
+                'scope' => self::OAUTH_SCOPE,
+            ]),
+            ['cookie' => sprintf('npsso=%s', $npsso)],
+            null,
+            false
+        );
+
+        $location = $response['headers']['location'] ?? '';
+        if (!is_string($location) || $location === '') {
+            throw new RuntimeException('Unable to exchange NPSSO for authorization code.');
+        }
+
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
+        $code = $query['code'] ?? null;
+        if (!is_string($code) || $code === '') {
+            throw new RuntimeException('Authorization code was not present in PlayStation response.');
+        }
+
+        return $code;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function exchangeAuthorizationCodeForToken(string $authorizationCode): array
+    {
+        return $this->requestJson(
+            'POST',
+            self::OAUTH_TOKEN_URL,
+            [],
+            [
+                'authorization' => 'Basic ' . base64_encode(self::OAUTH_CLIENT_ID . ':' . self::OAUTH_CLIENT_SECRET),
+                'content-type' => 'application/x-www-form-urlencoded',
+            ],
+            http_build_query([
+                'code' => $authorizationCode,
+                'grant_type' => 'authorization_code',
+                'redirect_uri' => self::OAUTH_REDIRECT_URI,
+                'scope' => self::OAUTH_SCOPE,
+                'token_format' => 'jwt',
+            ])
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function hydrateTokenState(array $payload): void
+    {
+        $accessToken = $payload['access_token'] ?? null;
+        if (!is_string($accessToken) || $accessToken === '') {
+            throw new RuntimeException('PlayStation token response did not include an access token.');
+        }
+
+        $refreshToken = $payload['refresh_token'] ?? null;
+        $this->accessToken = $accessToken;
+        $this->refreshToken = is_string($refreshToken) && $refreshToken !== '' ? $refreshToken : null;
+    }
+
+    /**
+     * @param array<string, scalar|null> $query
+     * @param array<string, string> $headers
+     * @return array<string, mixed>
+     */
+    private function requestJson(
+        string $method,
+        string $url,
+        array $query = [],
+        array $headers = [],
+        ?string $body = null
+    ): array {
+        $resolvedUrl = $query === [] ? $url : $url . '?' . http_build_query($query);
+
+        if (!isset($headers['authorization']) && is_string($this->accessToken) && $this->accessToken !== '') {
+            $headers['authorization'] = 'Bearer ' . $this->accessToken;
+        }
+
+        $response = $this->rawHttpRequest($method, $resolvedUrl, $headers, $body, true);
+        $payload = json_decode($response['body'], true);
+
+        if (!is_array($payload)) {
+            throw new RuntimeException('Invalid JSON response from PlayStation API.');
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<string, string> $headers
+     * @return array{status: int, headers: array<string, string>, body: string}
+     */
+    private function rawHttpRequest(
+        string $method,
+        string $url,
+        array $headers,
+        ?string $body,
+        bool $followLocation
+    ): array {
+        $curl = curl_init();
+        if ($curl === false) {
+            throw new RuntimeException('Unable to initialize cURL.');
+        }
+
+        $responseHeaders = [];
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_FOLLOWLOCATION => $followLocation,
+            CURLOPT_HTTPHEADER => array_map(
+                static fn (string $name, string $value): string => $name . ': ' . $value,
+                array_keys($headers),
+                $headers
+            ),
+            CURLOPT_HEADERFUNCTION => static function ($curlHandle, string $headerLine) use (&$responseHeaders): int {
+                $parts = explode(':', $headerLine, 2);
+                if (count($parts) === 2) {
+                    $responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
+                }
+
+                return strlen($headerLine);
+            },
+            CURLOPT_TIMEOUT => 30,
+        ]);
+
+        if ($body !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+        }
+
+        $rawBody = curl_exec($curl);
+        if (!is_string($rawBody)) {
+            $error = curl_error($curl);
+            curl_close($curl);
+            throw new RuntimeException($error === '' ? 'Unknown cURL failure.' : $error);
+        }
+
+        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        curl_close($curl);
+
+        if ($status >= 400) {
+            throw new RuntimeException(sprintf('PlayStation API request failed with HTTP %d.', $status));
+        }
+
+        return [
+            'status' => $status,
+            'headers' => $responseHeaders,
+            'body' => $rawBody,
+        ];
+    }
+}

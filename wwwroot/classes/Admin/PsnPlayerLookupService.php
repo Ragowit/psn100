@@ -9,9 +9,6 @@ require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterf
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/ProfileClientInterface.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
-require_once __DIR__ . '/../PlayStation/Shadow/ShadowExecutionUtility.php';
-require_once __DIR__ . '/../PlayStation/Shadow/ShadowResponseNormalizer.php';
-require_once __DIR__ . '/../PsnClientMode.php';
 
 final class PsnPlayerLookupService
 {
@@ -21,8 +18,6 @@ final class PsnPlayerLookupService
     private readonly \Closure $workerFetcher;
 
     private readonly PlayStationClientFactoryInterface $playStationClientFactory;
-    private readonly PlayStationClientFactoryInterface $shadowPlayStationClientFactory;
-    private readonly PsnClientMode $psnClientMode;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher
@@ -35,8 +30,6 @@ final class PsnPlayerLookupService
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
-        $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('psn_player_lookup');
     }
 
     public static function fromDatabase(
@@ -179,20 +172,7 @@ final class PsnPlayerLookupService
         }
 
         $session = $this->createAuthenticatedClientSession();
-        $legacyClient = $session['client'];
-
-        $profile = ShadowExecutionUtility::executeWithLegacyTruth(
-            $this->psnClientMode,
-            'player_profile_lookup',
-            fn (): mixed => $this->executeUserProfileRequest($legacyClient, $normalizedOnlineId),
-            fn (): mixed => $this->executeShadowUserProfileRequest(
-                $session['npsso'],
-                $normalizedOnlineId
-            ),
-            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizePlayerProfileLookup($payload),
-            350,
-            ['service' => 'psn_player_lookup', 'onlineId' => $normalizedOnlineId]
-        );
+        $profile = $this->executeUserProfileRequest($session['client'], $normalizedOnlineId);
 
         return $this->normalizeProfileResponse($profile);
     }
@@ -202,10 +182,6 @@ final class PsnPlayerLookupService
      */
     private function createAuthenticatedClientSession(): array
     {
-        $clientFactory = $this->psnClientMode->isNew()
-            ? $this->shadowPlayStationClientFactory
-            : $this->playStationClientFactory;
-
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
                 continue;
@@ -218,7 +194,7 @@ final class PsnPlayerLookupService
             }
 
             try {
-                $client = $clientFactory->createClient();
+                $client = $this->playStationClientFactory->createClient();
                 $client->loginWithNpsso($npsso);
 
                 return [
@@ -231,14 +207,6 @@ final class PsnPlayerLookupService
         }
 
         throw new RuntimeException('Unable to login to any worker accounts.');
-    }
-
-    private function executeShadowUserProfileRequest(string $npsso, string $onlineId): mixed
-    {
-        $shadowClient = $this->shadowPlayStationClientFactory->createClient();
-        $shadowClient->loginWithNpsso($npsso);
-
-        return $this->executeUserProfileRequest($shadowClient, $onlineId);
     }
 
     private function executeUserProfileRequest(ProfileClientInterface $client, string $onlineId): mixed

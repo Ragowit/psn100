@@ -713,7 +713,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(9, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
-    public function testLookupInShadowModeReturnsLegacyTrophyPayload(): void
+    public function testLookupInShadowModeStillUsesPrimaryFactoryPayload(): void
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (88, 'NPWR88888_00', 'Shadow Game')");
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
@@ -750,7 +750,7 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame('7', $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
 
-    public function testFetchTrophyDataInShadowModeWithProvidedClientExecutesShadowPath(): void
+    public function testFetchTrophyDataInShadowModeWithProvidedClientDoesNotExecuteSecondaryFactory(): void
     {
         $worker = new Worker(1, 'worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $shadowFactoryCounter = (object) ['count' => 0];
@@ -799,24 +799,11 @@ final class PsnGameLookupServiceTest extends TestCase
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
         $this->assertSame(7, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $expectedShadowExecutions = (
-            function_exists('pcntl_signal')
-            && function_exists('pcntl_async_signals')
-            && function_exists('pcntl_setitimer')
-        ) ? 1 : 0;
-        $this->assertSame($expectedShadowExecutions, $shadowFactoryCounter->count);
+        $this->assertSame(0, $shadowFactoryCounter->count);
     }
 
-    public function testFetchTrophyDataInShadowModeReusesLegacyWorkerSessionForShadowLookup(): void
+    public function testFetchTrophyDataInShadowModeDoesNotUseSecondaryFactorySession(): void
     {
-        if (
-            !function_exists('pcntl_signal')
-            || !function_exists('pcntl_async_signals')
-            || !function_exists('pcntl_setitimer')
-        ) {
-            return;
-        }
-
         $workers = [
             new Worker(1, 'legacy-worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null),
             new Worker(2, 'secondary-worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null),
@@ -970,10 +957,10 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $this->assertSame(101, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
         $this->assertSame(['legacy-worker-npsso'], $legacyLogins);
-        $this->assertSame(['legacy-worker-npsso'], $shadowLogins);
+        $this->assertSame([], $shadowLogins);
     }
 
-    public function testLookupInNewModeUsesNewClientOnly(): void
+    public function testLookupInNewModeStillUsesPrimaryFactory(): void
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (91, 'NPWR91919_00', 'New Mode Game')");
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
@@ -1014,8 +1001,8 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $result = $service->lookupByGameId('91');
 
-        $this->assertSame(44, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $this->assertSame(0, $legacyFactoryCounter->count);
+        $this->assertSame(7, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(1, $legacyFactoryCounter->count);
     }
 
     public function testFetchTrophyDataNormalizationHasParityAcrossFixtureServiceVariants(): void
