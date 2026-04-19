@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/Http/PlayStationHttpTransport.php';
+require_once __DIR__ . '/Http/PlayStationAccountLookupUser.php';
 
 final class NativePlayStationApiClient implements PlayStationApiClientInterface
 {
@@ -23,13 +24,8 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     {
         $this->transport = new PlayStationHttpTransport(
             requestExecutor: fn (string $path, array $query, array $headers): mixed => $this->requestJson('GET', $path, $query, $headers),
-            accountLookupExecutor: fn (string $accountId): object => (object) $this->requestJson(
-                'GET',
-                sprintf('https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2', rawurlencode($accountId)),
-                ['fields' => 'accountId,onlineId,currentOnlineId,npId'],
-                []
-            ),
-            userSearchExecutor: fn (string $onlineId): iterable => [],
+            accountLookupExecutor: fn (string $accountId): object => $this->executeAccountLookup($accountId),
+            userSearchExecutor: fn (string $onlineId): iterable => $this->executeUserSearch($onlineId),
             maxAttempts: 2
         );
     }
@@ -88,6 +84,55 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     public function searchUsers(string $onlineId): iterable
     {
         return $this->transport->searchUsers($onlineId);
+    }
+
+    private function executeAccountLookup(string $accountId): PlayStationAccountLookupUser
+    {
+        $payload = $this->requestJson(
+            'GET',
+            sprintf('https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2', rawurlencode($accountId)),
+            ['fields' => 'accountId,onlineId,currentOnlineId,npId,aboutMe,country,trophySummary'],
+            []
+        );
+
+        return PlayStationAccountLookupUser::fromPayload($payload);
+    }
+
+    /**
+     * @return iterable<array<string, string|null>>
+     */
+    private function executeUserSearch(string $onlineId): iterable
+    {
+        $normalizedOnlineId = trim($onlineId);
+        if ($normalizedOnlineId === '') {
+            return [];
+        }
+
+        $payload = $this->requestJson(
+            'GET',
+            sprintf('https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2', rawurlencode($normalizedOnlineId)),
+            ['fields' => 'accountId,onlineId,currentOnlineId,npId,aboutMe,country'],
+            []
+        );
+
+        $profile = $payload['profile'] ?? null;
+        if (!is_array($profile)) {
+            return [];
+        }
+
+        $resolvedOnlineId = $profile['onlineId'] ?? $profile['currentOnlineId'] ?? null;
+        if (!is_string($resolvedOnlineId) || trim($resolvedOnlineId) === '') {
+            return [];
+        }
+
+        $country = $profile['country'] ?? null;
+        $aboutMe = $profile['aboutMe'] ?? null;
+
+        return [[
+            'onlineId' => $resolvedOnlineId,
+            'country' => is_string($country) ? $country : null,
+            'aboutMe' => is_string($aboutMe) ? $aboutMe : null,
+        ]];
     }
 
     private function exchangeNpssoForAuthorizationCode(string $npsso): string
@@ -239,7 +284,7 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
         curl_close($curl);
 
         if ($status >= 400) {
-            throw new RuntimeException(sprintf('PlayStation API request failed with HTTP %d.', $status));
+            throw new RuntimeException(sprintf('PlayStation API request failed with HTTP %d.', $status), $status);
         }
 
         return [
