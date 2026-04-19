@@ -14,6 +14,7 @@ final class ShadowTimeoutSupportUnavailableException extends RuntimeException
 
 final class ShadowExecutionUtility
 {
+    private const string EXECUTE_WITHOUT_TIMEOUT_ENV = 'PSN_SHADOW_EXECUTE_WITHOUT_TIMEOUT';
     private const float DEFAULT_MISMATCH_SAMPLE_RATE = 0.2;
     private const int DEFAULT_MISMATCH_RATE_LIMIT_PER_MINUTE = 60;
     private const int MAX_MISMATCH_SAMPLES = 3;
@@ -187,6 +188,10 @@ final class ShadowExecutionUtility
             || !function_exists('pcntl_async_signals')
             || !function_exists('pcntl_setitimer')
         ) {
+            if (self::shouldExecuteWithoutTimeout()) {
+                return $shadowExecutor();
+            }
+
             throw new ShadowTimeoutSupportUnavailableException('Shadow timeout support is unavailable on this runtime.');
         }
 
@@ -205,6 +210,16 @@ final class ShadowExecutionUtility
             pcntl_async_signals(false);
             pcntl_signal(SIGALRM, SIG_DFL);
         }
+    }
+
+    private static function shouldExecuteWithoutTimeout(): bool
+    {
+        $configured = getenv(self::EXECUTE_WITHOUT_TIMEOUT_ENV);
+        if (!is_string($configured)) {
+            return false;
+        }
+
+        return filter_var($configured, FILTER_VALIDATE_BOOL) === true;
     }
 
     /**
