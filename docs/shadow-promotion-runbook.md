@@ -56,6 +56,6 @@ Use per-service overrides to promote incrementally:
 
 - `psn_player_lookup`: `shadow` → `new`
 - `psn_game_lookup`: stay `shadow` until stable
-- `psn_worker_login`: stay `legacy` until dependencies are validated
+- `playstation_client_factory`: stay `legacy` until dependencies are validated
 
 This avoids requiring a global cutover and reduces blast radius.
