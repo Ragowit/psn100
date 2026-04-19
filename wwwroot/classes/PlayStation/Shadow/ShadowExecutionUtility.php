@@ -27,7 +27,8 @@ final class ShadowExecutionUtility
         callable $legacyExecutor,
         callable $shadowExecutor,
         callable $normalizer,
-        int $shadowLatencyBudgetMs = 350
+        int $shadowLatencyBudgetMs = 350,
+        array $metricTags = []
     ): mixed {
         $legacyStart = hrtime(true);
         $legacyResponse = $legacyExecutor();
@@ -38,13 +39,13 @@ final class ShadowExecutionUtility
         }
 
         if ($legacyDurationMs >= $shadowLatencyBudgetMs) {
-            self::emitEvent([
+            self::emitEvent(array_merge($metricTags, [
                 'event' => 'psn_shadow_skipped',
                 'operation' => $operation,
                 'reason' => 'legacy_latency_budget_exhausted',
                 'legacyDurationMs' => $legacyDurationMs,
                 'shadowLatencyBudgetMs' => $shadowLatencyBudgetMs,
-            ]);
+            ]));
 
             return $legacyResponse;
         }
@@ -62,40 +63,40 @@ final class ShadowExecutionUtility
             );
 
             if ($comparison['hasMismatch']) {
-                self::emitEvent([
+                self::emitEvent(array_merge($metricTags, [
                     'event' => 'psn_shadow_mismatch',
                     'operation' => $operation,
                     'legacyDurationMs' => $legacyDurationMs,
                     'shadowDurationMs' => $shadowDurationMs,
                     'mismatch' => $comparison,
-                ]);
+                ]));
             }
         } catch (ShadowTimeoutSupportUnavailableException $unsupportedException) {
-            self::emitEvent([
+            self::emitEvent(array_merge($metricTags, [
                 'event' => 'psn_shadow_skipped',
                 'operation' => $operation,
                 'reason' => 'shadow_timeout_support_unavailable',
                 'legacyDurationMs' => $legacyDurationMs,
                 'shadowLatencyBudgetMs' => $shadowLatencyBudgetMs,
                 'message' => $unsupportedException->getMessage(),
-            ]);
+            ]));
         } catch (ShadowExecutionTimeoutException $timeoutException) {
-            self::emitEvent([
+            self::emitEvent(array_merge($metricTags, [
                 'event' => 'psn_shadow_skipped',
                 'operation' => $operation,
                 'reason' => 'shadow_latency_budget_exhausted',
                 'legacyDurationMs' => $legacyDurationMs,
                 'shadowLatencyBudgetMs' => $shadowLatencyBudgetMs,
                 'message' => $timeoutException->getMessage(),
-            ]);
+            ]));
         } catch (Throwable $shadowException) {
-            self::emitEvent([
+            self::emitEvent(array_merge($metricTags, [
                 'event' => 'psn_shadow_failure',
                 'operation' => $operation,
                 'legacyDurationMs' => $legacyDurationMs,
                 'errorType' => $shadowException::class,
                 'message' => $shadowException->getMessage(),
-            ]);
+            ]));
         }
 
         return $legacyResponse;

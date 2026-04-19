@@ -272,6 +272,58 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('LegacyName', $result['profile']['onlineId']);
         $this->assertSame('100', $result['profile']['accountId']);
     }
+
+    public function testLookupInNewModeUsesNewClientOnly(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $legacyFactoryCounter = (object) ['count' => 0];
+
+        $legacyFactory = new class ($legacyFactoryCounter) implements PlayStationClientFactoryInterface {
+            public function __construct(private readonly object $counter)
+            {
+            }
+
+            public function createClient(): PlayStationApiClientInterface
+            {
+                $this->counter->count++;
+
+                return new ShadowPlayerClientStub(
+                    profileResponse: (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'LegacyName',
+                            'accountId' => '100',
+                        ],
+                    ]
+                );
+            }
+        };
+        $newFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowPlayerClientStub(
+                    profileResponse: (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'NewName',
+                            'accountId' => '200',
+                        ],
+                    ]
+                );
+            }
+        };
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $newFactory,
+            PsnClientMode::fromValue('new')
+        );
+
+        $result = $service->lookup('Example');
+
+        $this->assertSame('NewName', $result['profile']['onlineId']);
+        $this->assertSame('200', $result['profile']['accountId']);
+        $this->assertSame(0, $legacyFactoryCounter->count);
+    }
 }
 
 final class ShadowPlayerClientStub implements PlayStationApiClientInterface

@@ -189,7 +189,9 @@ final class PsnPlayerLookupService
                 $session['npsso'],
                 $normalizedOnlineId
             ),
-            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizePlayerProfileLookup($payload)
+            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizePlayerProfileLookup($payload),
+            350,
+            ['service' => 'psn_player_lookup']
         );
 
         return $this->normalizeProfileResponse($profile);
@@ -200,6 +202,9 @@ final class PsnPlayerLookupService
      */
     private function createAuthenticatedClientSession(): array
     {
+        $clientFactory = $this->psnClientMode->isNew()
+            ? $this->shadowPlayStationClientFactory
+            : $this->playStationClientFactory;
 
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
@@ -213,7 +218,7 @@ final class PsnPlayerLookupService
             }
 
             try {
-                $client = $this->playStationClientFactory->createClient();
+                $client = $clientFactory->createClient();
                 $client->loginWithNpsso($npsso);
 
                 return [
