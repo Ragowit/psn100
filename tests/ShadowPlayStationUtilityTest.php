@@ -99,4 +99,31 @@ final class ShadowPlayStationUtilityTest extends TestCase
         $this->assertSame(['legacy' => true], $result);
         $this->assertSame(0, $shadowCompleted);
     }
+
+    public function testExecuteWithLegacyTruthInNewModeUsesPrimaryExecutorOnly(): void
+    {
+        $legacyExecutions = 0;
+        $shadowExecutions = 0;
+
+        $result = ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('new'),
+            'test_operation',
+            static function () use (&$legacyExecutions): array {
+                $legacyExecutions++;
+
+                return ['primary' => true];
+            },
+            static function () use (&$shadowExecutions): array {
+                $shadowExecutions++;
+
+                return ['shadow' => true];
+            },
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350
+        );
+
+        $this->assertSame(['primary' => true], $result);
+        $this->assertSame(1, $legacyExecutions);
+        $this->assertSame(0, $shadowExecutions);
+    }
 }

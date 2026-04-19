@@ -30,10 +30,6 @@ final class ShadowExecutionUtility
         int $shadowLatencyBudgetMs = 350,
         array $metricTags = []
     ): mixed {
-        if ($mode->isNew()) {
-            return $shadowExecutor();
-        }
-
         $legacyStart = hrtime(true);
         $legacyResponse = $legacyExecutor();
         $legacyDurationMs = (int) ((hrtime(true) - $legacyStart) / 1_000_000);
