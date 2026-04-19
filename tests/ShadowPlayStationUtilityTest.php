@@ -317,6 +317,62 @@ final class ShadowPlayStationUtilityTest extends TestCase
         $this->assertCount(1, $events);
     }
 
+    public function testExecuteWithLegacyTruthRejectsSymlinkSharedStorePath(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        $targetPath = sys_get_temp_dir() . '/psn-shadow-rate-limit-target-' . uniqid('', true) . '.json';
+        $symlinkPath = sys_get_temp_dir() . '/psn-shadow-rate-limit-link-' . uniqid('', true) . '.json';
+        file_put_contents($targetPath, '{}');
+        if (!@symlink($targetPath, $symlinkPath)) {
+            @unlink($targetPath);
+
+            return;
+        }
+
+        for ($i = 0; $i < 2; $i++) {
+            ShadowExecutionUtility::executeWithLegacyTruth(
+                PsnClientMode::fromValue('shadow'),
+                'player_profile_lookup',
+                static fn (): array => ['profile' => ['title' => 'legacy']],
+                static fn (): array => ['profile' => ['title' => 'shadow']],
+                static fn (mixed $value): array => is_array($value) ? $value : [],
+                350,
+                [
+                    'service' => 'psn_player_lookup',
+                    'correlationId' => 'unsafe-symlink-' . $i,
+                    'mismatchSampleRate' => 1,
+                    'mismatchRateLimitPerMinute' => 1,
+                    'mismatchRateLimitStorePath' => $symlinkPath,
+                ]
+            );
+
+            ShadowExecutionUtility::resetStateForTests();
+            ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+                $events[] = $event;
+            });
+        }
+
+        $this->assertCount(2, $events);
+        $this->assertSame('{}', file_get_contents($targetPath));
+
+        @unlink($symlinkPath);
+        @unlink($targetPath);
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
     public function testExecuteWithLegacyTruthHandlesUtf8SampleTruncation(): void
     {
         if (

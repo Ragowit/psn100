@@ -17,7 +17,8 @@ final class ShadowExecutionUtility
     private const float DEFAULT_MISMATCH_SAMPLE_RATE = 0.2;
     private const int DEFAULT_MISMATCH_RATE_LIMIT_PER_MINUTE = 60;
     private const int MAX_MISMATCH_SAMPLES = 3;
-    private const string DEFAULT_MISMATCH_RATE_LIMIT_STORE_PATH = '/tmp/psn_shadow_mismatch_rate_limit.json';
+    private const string DEFAULT_MISMATCH_RATE_LIMIT_STORE_DIR_NAME = 'psn_shadow_observability';
+    private const string DEFAULT_MISMATCH_RATE_LIMIT_STORE_FILE_NAME = 'mismatch_rate_limit.json';
 
     /** @var callable(array<string, mixed>): void|null */
     private static $eventEmitter = null;
@@ -161,9 +162,21 @@ final class ShadowExecutionUtility
         self::$eventEmitter = null;
         self::$mismatchRateLimitState = [];
 
+        $storePaths = [];
         $storePath = getenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH');
-        if (is_string($storePath) && $storePath !== '' && is_file($storePath)) {
-            @unlink($storePath);
+        if (is_string($storePath) && $storePath !== '') {
+            $storePaths[] = $storePath;
+        }
+
+        $defaultStorePath = self::resolveDefaultMismatchRateLimitStorePath();
+        if ($defaultStorePath !== null) {
+            $storePaths[] = $defaultStorePath;
+        }
+
+        foreach (array_unique($storePaths) as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
         }
     }
 
@@ -338,11 +351,26 @@ final class ShadowExecutionUtility
         if ($storePath === null) {
             $envStorePath = getenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH');
             $storePath = $envStorePath === false
-                ? self::DEFAULT_MISMATCH_RATE_LIMIT_STORE_PATH
+                ? self::resolveDefaultMismatchRateLimitStorePath()
                 : $envStorePath;
         }
 
         return self::normalizeRateLimitStorePath(is_scalar($storePath) ? (string) $storePath : null);
+    }
+
+    private static function resolveDefaultMismatchRateLimitStorePath(): ?string
+    {
+        $tempDir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR);
+        if ($tempDir === '') {
+            return null;
+        }
+
+        $storeDir = $tempDir . DIRECTORY_SEPARATOR . self::DEFAULT_MISMATCH_RATE_LIMIT_STORE_DIR_NAME;
+        if (!self::ensurePrivateStoreDirectory($storeDir)) {
+            return null;
+        }
+
+        return $storeDir . DIRECTORY_SEPARATOR . self::DEFAULT_MISMATCH_RATE_LIMIT_STORE_FILE_NAME;
     }
 
     private static function truncateUtf8(string $value, int $maxBytes): string
@@ -494,8 +522,18 @@ final class ShadowExecutionUtility
         string $rateLimitKey,
         int $rateLimitPerMinute
     ): ?bool {
+        if (!self::isSafeStorePath($storePath)) {
+            return null;
+        }
+
         $storeHandle = @fopen($storePath, 'c+');
         if ($storeHandle === false) {
+            return null;
+        }
+
+        if (!self::isOpenedFileSafe($storePath, $storeHandle)) {
+            fclose($storeHandle);
+
             return null;
         }
 
@@ -562,6 +600,66 @@ final class ShadowExecutionUtility
         }
 
         return $trimmedPath;
+    }
+
+    private static function ensurePrivateStoreDirectory(string $storeDir): bool
+    {
+        if (is_link($storeDir)) {
+            return false;
+        }
+
+        if (!is_dir($storeDir) && !@mkdir($storeDir, 0700, true) && !is_dir($storeDir)) {
+            return false;
+        }
+
+        $permissions = @fileperms($storeDir);
+        if (is_int($permissions)) {
+            $mode = $permissions & 0o777;
+            if (($mode & 0o077) !== 0) {
+                @chmod($storeDir, 0700);
+            }
+        }
+
+        return is_dir($storeDir) && !is_link($storeDir);
+    }
+
+    private static function isSafeStorePath(string $storePath): bool
+    {
+        $directory = dirname($storePath);
+        if ($directory === '' || $directory === '.') {
+            return false;
+        }
+
+        if (is_link($directory) || is_link($storePath)) {
+            return false;
+        }
+
+        if (!is_dir($directory) || !is_writable($directory)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param resource $storeHandle
+     */
+    private static function isOpenedFileSafe(string $storePath, $storeHandle): bool
+    {
+        clearstatcache(true, $storePath);
+        $pathStat = @lstat($storePath);
+        $handleStat = @fstat($storeHandle);
+        if (!is_array($pathStat) || !is_array($handleStat)) {
+            return false;
+        }
+
+        if (($pathStat['mode'] & 0o170000) === 0o120000) {
+            return false;
+        }
+
+        return isset($pathStat['ino'], $pathStat['dev'], $handleStat['ino'], $handleStat['dev'])
+            && $pathStat['ino'] === $handleStat['ino']
+            && $pathStat['dev'] === $handleStat['dev'];
     }
 
     private static function createCorrelationId(): string
