@@ -28,6 +28,8 @@ require_once __DIR__ . '/../PsnClientMode.php';
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
+    private const int DEFAULT_SHADOW_LOGIN_LATENCY_BUDGET_MS = 700;
+    private const string SHADOW_LOGIN_LATENCY_BUDGET_ENV = 'PSN_CRON_SHADOW_LOGIN_LATENCY_BUDGET_MS';
     private const string TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
     private const string GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
     private const string TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
@@ -2017,9 +2019,30 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             fn (): PlayStationApiClientInterface => $this->createAndLoginClient($this->playStationClientFactory, $npsso),
             fn (): bool => $this->executeShadowLogin($npsso),
             static fn (mixed $payload): array => ['authenticated' => (bool) $payload],
-            700,
+            $this->resolveShadowLoginLatencyBudgetMs(),
             ['service' => 'thirty_minute_cron']
         );
+    }
+
+    private function resolveShadowLoginLatencyBudgetMs(): int
+    {
+        $configuredBudget = getenv(self::SHADOW_LOGIN_LATENCY_BUDGET_ENV);
+
+        if (!is_string($configuredBudget) || $configuredBudget === '') {
+            return self::DEFAULT_SHADOW_LOGIN_LATENCY_BUDGET_MS;
+        }
+
+        $validatedBudget = filter_var(
+            $configuredBudget,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+
+        if (!is_int($validatedBudget)) {
+            return self::DEFAULT_SHADOW_LOGIN_LATENCY_BUDGET_MS;
+        }
+
+        return $validatedBudget;
     }
 
     private function executeShadowLogin(string $npsso): bool
