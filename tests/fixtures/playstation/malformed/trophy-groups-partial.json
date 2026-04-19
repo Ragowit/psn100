@@ -1,0 +1,26 @@
+{
+  "allTrophies": {
+    "trophies": [
+      {
+        "trophyId": "2",
+        "trophyGroupId": "dlc1",
+        "trophyType": "SILVER",
+        "trophyName": "DLC Win",
+        "trophyDetail": null,
+        "trophyIconUrl": "https://image.api.playstation.com/trophy/np/NPWR12345_00_DEF/icon.png",
+        "trophyHidden": "1",
+        "trophyProgressTargetValue": "15",
+        "trophyRewardName": "DLC Badge",
+        "trophyRewardImageUrl": ""
+      }
+    ]
+  },
+  "trophyGroups": {
+    "trophyGroups": [
+      {
+        "trophyGroupId": "dlc1",
+        "trophyGroupDetail": "Extra challenges"
+      }
+    ]
+  }
+}

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/PlayStationFixtureLoader.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
@@ -323,6 +324,93 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('NewName', $result['profile']['onlineId']);
         $this->assertSame('200', $result['profile']['accountId']);
         $this->assertSame(0, $legacyFactoryCounter->count);
+    }
+
+    public function testLookupNormalizesFixtureSuccessPayload(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $fixture = PlayStationFixtureLoader::loadJson('profile/success.json');
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static fn (): object => (object) $fixture
+            )
+        );
+
+        $result = $service->lookup('FixtureHunter');
+
+        $this->assertSame('FixtureHunter', $result['profile']['onlineId']);
+        $this->assertSame('1000000000001', $result['profile']['accountId']);
+        $this->assertSame('FixtureHunterLive', $result['profile']['currentOnlineId']);
+    }
+
+    public function testLookupMapsPrivateFixturePayloadToLookupExceptionWithStatusCode(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $fixture = PlayStationFixtureLoader::loadJson('profile/private.json');
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static function () use ($fixture): object {
+                    throw new StubHttpException((string) $fixture['message'], new StubResponse((int) $fixture['statusCode']));
+                }
+            )
+        );
+
+        try {
+            $service->lookup('PrivatePlayer');
+            $this->fail('Expected private profile lookup to raise an exception.');
+        } catch (PsnPlayerLookupException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+            $this->assertSame(
+                'Failed to retrieve the player profile from PlayStation Network. Please try again later.',
+                $exception->getMessage()
+            );
+        }
+    }
+
+    public function testLookupMapsNotFoundFixturePayloadToNotFoundException(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $fixture = PlayStationFixtureLoader::loadJson('profile/not-found.json');
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static function () use ($fixture): object {
+                    throw new StubHttpException((string) $fixture['message'], new StubResponse((int) $fixture['statusCode']));
+                }
+            )
+        );
+
+        try {
+            $service->lookup('MissingFixturePlayer');
+            $this->fail('Expected missing profile lookup to raise a not found exception.');
+        } catch (PsnPlayerLookupException $exception) {
+            $this->assertSame(404, $exception->getStatusCode());
+            $this->assertSame('Player "MissingFixturePlayer" was not found.', $exception->getMessage());
+        }
+    }
+
+    public function testLookupNormalizesMalformedFixturePayloadWithoutProfileNode(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $fixture = PlayStationFixtureLoader::loadJson('malformed/profile-missing-profile-node.json');
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static fn (): object => (object) $fixture
+            )
+        );
+
+        $result = $service->lookup('FixtureHunter');
+
+        $this->assertTrue(array_key_exists('status', $result));
+        $this->assertTrue(array_key_exists('data', $result));
+        $this->assertSame('FixtureHunter', $result['data']['onlineId']);
     }
 }
 
