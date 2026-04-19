@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/PlayStationFixtureLoader.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
@@ -1015,6 +1016,101 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $this->assertSame(44, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
         $this->assertSame(0, $legacyFactoryCounter->count);
+    }
+
+    public function testFetchTrophyDataNormalizationHasParityAcrossFixtureServiceVariants(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $trophyFixture = PlayStationFixtureLoader::loadJson('trophies/groups-and-trophies-trophy.json');
+        $trophy2Fixture = PlayStationFixtureLoader::loadJson('trophies/groups-and-trophies-trophy2.json');
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $payloadFromTrophy = $service->fetchTrophyDataForNpCommunicationId(
+            'NPWR12345_00',
+            new GameLookupStubClient(
+                profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                    ? (object) $trophyFixture['allTrophies']
+                    : (object) $trophyFixture['trophyGroups']
+            )
+        );
+        $payloadFromTrophy2 = $service->fetchTrophyDataForNpCommunicationId(
+            'NPWR12345_00',
+            new GameLookupStubClient(
+                profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                    ? (object) $trophy2Fixture['allTrophies']
+                    : (object) $trophy2Fixture['trophyGroups']
+            )
+        );
+
+        $legacyTrophy = $payloadFromTrophy['trophyGroups'][0]['trophies'][0];
+        $newTrophy = $payloadFromTrophy2['trophyGroups'][0]['trophies'][0];
+
+        $this->assertSame((string) $legacyTrophy['trophyId'], (string) $newTrophy['trophyId']);
+        $this->assertSame((string) $legacyTrophy['trophyName'], (string) $newTrophy['trophyName']);
+        $this->assertSame(strtolower((string) $legacyTrophy['trophyType']), strtolower((string) $newTrophy['trophyType']));
+        $this->assertSame('all', $payloadFromTrophy2['trophyGroups'][0]['trophyGroupId']);
+    }
+
+    public function testFetchTrophyDataNormalizesPartialFixturePayloadForRankingFields(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $partialFixture = PlayStationFixtureLoader::loadJson('malformed/trophy-groups-partial.json');
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        $payload = $service->fetchTrophyDataForNpCommunicationId(
+            'NPWR12345_00',
+            new GameLookupStubClient(
+                profileHandler: static fn (string $path): object => str_ends_with($path, '/all/trophies')
+                    ? (object) $partialFixture['allTrophies']
+                    : (object) $partialFixture['trophyGroups']
+            )
+        );
+
+        $trophy = $payload['trophyGroups'][0]['trophies'][0];
+        $this->assertSame('dlc1', $payload['trophyGroups'][0]['trophyGroupId']);
+        $this->assertSame('silver', strtolower((string) $trophy['trophyType']));
+        $this->assertSame('15', (string) $trophy['trophyProgressTargetValue']);
+        $this->assertSame('DLC Badge', $trophy['trophyRewardName']);
+    }
+
+    public function testFetchTrophyDataMapsFixturePrivateStatusToLookupException(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $fixture = PlayStationFixtureLoader::loadJson('profile/private.json');
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            static fn (): object => new GameLookupStubClient()
+        );
+
+        try {
+            $service->fetchTrophyDataForNpCommunicationId(
+                'NPWR12345_00',
+                new GameLookupStubClient(
+                    profileHandler: static function () use ($fixture): object {
+                        throw new GameLookupHttpException((int) $fixture['statusCode']);
+                    }
+                )
+            );
+            $this->fail('Expected private trophy payload status to be mapped to lookup exception.');
+        } catch (PsnGameLookupException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+            $this->assertSame(
+                'Failed to retrieve trophy data from PlayStation Network. Please try again later.',
+                $exception->getMessage()
+            );
+        }
     }
 }
 

@@ -1,0 +1,31 @@
+{
+  "allTrophies": {
+    "trophies": [
+      {
+        "trophyId": 1,
+        "trophyGroupId": "all",
+        "trophyGroupName": "",
+        "trophyGroupDetail": "",
+        "trophyGroupIconUrl": "",
+        "trophyHidden": 0,
+        "trophyType": "bronze",
+        "trophyName": "First Steps",
+        "trophyDetail": "Finish tutorial",
+        "trophyIconUrl": "https://image.api.playstation.com/trophy/np/NPWR12345_00_ABC/icon.png",
+        "trophyProgressTargetValue": null,
+        "trophyRewardName": "",
+        "trophyRewardImageUrl": null
+      }
+    ]
+  },
+  "trophyGroups": {
+    "trophyGroups": [
+      {
+        "trophyGroupId": "all",
+        "trophyGroupName": "Base",
+        "trophyGroupDetail": "Base game",
+        "trophyGroupIconUrl": "https://example.com/group/all.png"
+      }
+    ]
+  }
+}

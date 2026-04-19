@@ -1,0 +1,16 @@
+{
+  "trophyTitles": [
+    {
+      "npCommunicationId": "NPWR77777_00",
+      "trophyTitleName": "Fixture Game",
+      "trophyTitlePlatform": "PS5",
+      "trophySetVersion": "01.00"
+    },
+    {
+      "npCommunicationId": "NPWR12345_00",
+      "trophyTitleName": "Fixture Legacy Game",
+      "trophyTitlePlatform": "PS4",
+      "trophySetVersion": "02.10"
+    }
+  ]
+}
