@@ -73,12 +73,49 @@ final class ShadowExecutionUtility
             $shadowResponse = self::executeShadowWithTimeout($shadowExecutor, $remainingShadowBudgetMs);
             $shadowDurationMs = (int) ((hrtime(true) - $shadowStart) / 1_000_000);
 
-            $normalizedLegacyResponse = $normalizer($legacyResponse);
-            $normalizedShadowResponse = $normalizer($shadowResponse);
+            try {
+                $normalizedLegacyResponse = $normalizer($legacyResponse);
+                $normalizedShadowResponse = $normalizer($shadowResponse);
+            } catch (Throwable $normalizationException) {
+                self::emitEvent(array_merge($metricTags, [
+                    'event' => 'psn_shadow_comparison_result',
+                    'service' => self::toNullableString($metricTags['service'] ?? null) ?? 'unknown_service',
+                    'operation' => $operation,
+                    'comparisonMetrics' => self::buildComparisonMetricsPayload(
+                        totalCompared: 0,
+                        matched: 0,
+                        mismatched: 0,
+                        skippedNormalizationFailure: 1,
+                        newClientErrors: 0
+                    ),
+                    'normalizationErrorType' => $normalizationException::class,
+                    'message' => $normalizationException->getMessage(),
+                    'legacyDurationMs' => $legacyDurationMs,
+                    'shadowDurationMs' => $shadowDurationMs,
+                ]));
+
+                return $legacyResponse;
+            }
+
             $comparison = ShadowResponseComparator::compare(
                 $normalizedLegacyResponse,
                 $normalizedShadowResponse
             );
+
+            self::emitEvent(array_merge($metricTags, [
+                'event' => 'psn_shadow_comparison_result',
+                'service' => self::toNullableString($metricTags['service'] ?? null) ?? 'unknown_service',
+                'operation' => $operation,
+                'comparisonMetrics' => self::buildComparisonMetricsPayload(
+                    totalCompared: 1,
+                    matched: $comparison['hasMismatch'] ? 0 : 1,
+                    mismatched: $comparison['hasMismatch'] ? 1 : 0,
+                    skippedNormalizationFailure: 0,
+                    newClientErrors: 0
+                ),
+                'legacyDurationMs' => $legacyDurationMs,
+                'shadowDurationMs' => $shadowDurationMs,
+            ]));
 
             if ($comparison['hasMismatch']) {
                 $service = self::toNullableString($metricTags['service'] ?? null) ?? 'unknown_service';
@@ -139,6 +176,22 @@ final class ShadowExecutionUtility
             ]));
         } catch (Throwable $shadowException) {
             self::emitEvent(array_merge($metricTags, [
+                'event' => 'psn_shadow_comparison_result',
+                'service' => self::toNullableString($metricTags['service'] ?? null) ?? 'unknown_service',
+                'operation' => $operation,
+                'comparisonMetrics' => self::buildComparisonMetricsPayload(
+                    totalCompared: 0,
+                    matched: 0,
+                    mismatched: 0,
+                    skippedNormalizationFailure: 0,
+                    newClientErrors: 1
+                ),
+                'legacyDurationMs' => $legacyDurationMs,
+                'shadowDurationMs' => (int) ((hrtime(true) - $shadowStart) / 1_000_000),
+                'errorType' => $shadowException::class,
+                'message' => $shadowException->getMessage(),
+            ]));
+            self::emitEvent(array_merge($metricTags, [
                 'event' => 'psn_shadow_failure',
                 'operation' => $operation,
                 'legacyDurationMs' => $legacyDurationMs,
@@ -148,6 +201,25 @@ final class ShadowExecutionUtility
         }
 
         return $legacyResponse;
+    }
+
+    /**
+     * @return array{totalCompared: int, matched: int, mismatched: int, skippedNormalizationFailure: int, newClientErrors: int}
+     */
+    private static function buildComparisonMetricsPayload(
+        int $totalCompared,
+        int $matched,
+        int $mismatched,
+        int $skippedNormalizationFailure,
+        int $newClientErrors
+    ): array {
+        return [
+            'totalCompared' => $totalCompared,
+            'matched' => $matched,
+            'mismatched' => $mismatched,
+            'skippedNormalizationFailure' => $skippedNormalizationFailure,
+            'newClientErrors' => $newClientErrors,
+        ];
     }
 
     /**

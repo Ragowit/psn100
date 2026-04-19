@@ -30,6 +30,18 @@ final class PsnClientMode
         return self::$resolvedMode;
     }
 
+    public static function forService(string $service): self
+    {
+        $configuredOverrides = self::resolveConfiguredOverrides();
+        $normalizedService = strtolower(trim($service));
+
+        if ($normalizedService !== '' && isset($configuredOverrides[$normalizedService])) {
+            return self::fromValue($configuredOverrides[$normalizedService]);
+        }
+
+        return self::current();
+    }
+
     public static function fromValue(mixed $mode): self
     {
         if (!is_string($mode)) {
@@ -100,5 +112,52 @@ final class PsnClientMode
         $configuration = @include $configurationFile;
 
         return is_array($configuration) ? $configuration : [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function resolveConfiguredOverrides(): array
+    {
+        $configuration = self::loadAppConfiguration();
+        $configuredOverrides = $configuration['psn']['client_mode_overrides'] ?? [];
+        $environmentOverrides = self::readOverridesFromEnvironment();
+
+        $combined = [];
+        foreach ([$configuredOverrides, $environmentOverrides] as $overrideSource) {
+            if (!is_array($overrideSource)) {
+                continue;
+            }
+
+            foreach ($overrideSource as $service => $mode) {
+                if (!is_string($service) || !is_string($mode)) {
+                    continue;
+                }
+
+                $normalizedService = strtolower(trim($service));
+                if ($normalizedService === '') {
+                    continue;
+                }
+
+                $combined[$normalizedService] = $mode;
+            }
+        }
+
+        return $combined;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function readOverridesFromEnvironment(): array
+    {
+        $rawValue = $_ENV['PSN_CLIENT_MODE_OVERRIDES_JSON'] ?? getenv('PSN_CLIENT_MODE_OVERRIDES_JSON');
+        if (!is_string($rawValue) || trim($rawValue) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($rawValue, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }

@@ -67,13 +67,12 @@ class GameRescanService
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
         $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::current();
+        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('game_rescan');
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper(new PsnTrophyMapper());
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
             $this->playStationClientFactory,
-            $this->shadowPlayStationClientFactory,
-            $this->psnClientMode
+            $this->shadowPlayStationClientFactory
         );
     }
 

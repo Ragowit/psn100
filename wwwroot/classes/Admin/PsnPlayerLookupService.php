@@ -36,7 +36,7 @@ final class PsnPlayerLookupService
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
         $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::current();
+        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('psn_player_lookup');
     }
 
     public static function fromDatabase(

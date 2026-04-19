@@ -528,4 +528,100 @@ final class ShadowPlayStationUtilityTest extends TestCase
         ShadowExecutionUtility::resetStateForTests();
     }
 
+    public function testExecuteWithLegacyTruthEmitsComparisonMetricsForMatchedResponses(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'player_profile_lookup',
+            static fn (): array => ['profile' => ['title' => 'same']],
+            static fn (): array => ['profile' => ['title' => 'same']],
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350,
+            ['service' => 'psn_player_lookup']
+        );
+
+        $comparisonEvent = null;
+        foreach ($events as $event) {
+            if (($event['event'] ?? null) === 'psn_shadow_comparison_result') {
+                $comparisonEvent = $event;
+                break;
+            }
+        }
+
+        if (!is_array($comparisonEvent)) {
+            $this->fail('Expected psn_shadow_comparison_result event to be emitted.');
+        }
+
+        $this->assertSame(1, $comparisonEvent['comparisonMetrics']['totalCompared']);
+        $this->assertSame(1, $comparisonEvent['comparisonMetrics']['matched']);
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['mismatched']);
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['newClientErrors']);
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['skippedNormalizationFailure']);
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
+    public function testExecuteWithLegacyTruthEmitsComparisonMetricsForNewClientErrors(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'player_profile_lookup',
+            static fn (): array => ['profile' => ['title' => 'legacy']],
+            static function (): array {
+                throw new RuntimeException('shadow exploded');
+            },
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350,
+            ['service' => 'psn_player_lookup']
+        );
+
+        $comparisonEvent = null;
+        foreach ($events as $event) {
+            if (($event['event'] ?? null) === 'psn_shadow_comparison_result') {
+                $comparisonEvent = $event;
+                break;
+            }
+        }
+
+        if (!is_array($comparisonEvent)) {
+            $this->fail('Expected psn_shadow_comparison_result event to be emitted.');
+        }
+
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['totalCompared']);
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['matched']);
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['mismatched']);
+        $this->assertSame(1, $comparisonEvent['comparisonMetrics']['newClientErrors']);
+        $this->assertSame(0, $comparisonEvent['comparisonMetrics']['skippedNormalizationFailure']);
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
 }
