@@ -152,7 +152,8 @@ final class ShadowPlayStationUtilityTest extends TestCase
             350,
             [
                 'service' => 'psn_player_lookup',
-                'correlationId' => 'req-123',
+                'correlationId' => 'corr-123',
+                'requestId' => 'req-123',
                 'mismatchSampleRate' => 1,
                 'mismatchRateLimitPerMinute' => 100,
             ]
@@ -163,7 +164,7 @@ final class ShadowPlayStationUtilityTest extends TestCase
         $this->assertSame('psn_shadow_mismatch', $event['event']);
         $this->assertSame('psn_player_lookup', $event['service']);
         $this->assertSame('player_profile_lookup', $event['operation']);
-        $this->assertSame('req-123', $event['correlationId']);
+        $this->assertSame('corr-123', $event['correlationId']);
         $this->assertSame('req-123', $event['requestId']);
         $this->assertSame('Tester', $event['identifiers']['onlineId']);
         $this->assertSame('42', $event['identifiers']['accountId']);

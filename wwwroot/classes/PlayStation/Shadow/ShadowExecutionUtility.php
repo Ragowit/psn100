@@ -84,6 +84,7 @@ final class ShadowExecutionUtility
                 $providedCorrelationId = self::toNullableString($metricTags['correlationId'] ?? null) ?? $requestId;
                 $correlationId = $providedCorrelationId
                     ?? self::createCorrelationId();
+                $eventRequestId = $requestId ?? $correlationId;
                 $identifiers = self::buildIdentifiers($metricTags, $normalizedLegacyResponse, $normalizedShadowResponse);
 
                 $rateLimitDecision = self::evaluateMismatchEmission(
@@ -103,7 +104,7 @@ final class ShadowExecutionUtility
                         'operation' => $operation,
                         'timestamp' => gmdate('c'),
                         'correlationId' => $correlationId,
-                        'requestId' => $correlationId,
+                        'requestId' => $eventRequestId,
                         'legacyDurationMs' => $legacyDurationMs,
                         'shadowDurationMs' => $shadowDurationMs,
                         'identifiers' => $identifiers,
