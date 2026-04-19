@@ -10,7 +10,7 @@ final class PlayStationClientFactory implements PlayStationClientFactoryInterfac
 {
     public function createClient(): PlayStationApiClientInterface
     {
-        $mode = PsnClientMode::current();
+        $mode = PsnClientMode::forService('playstation_client_factory');
 
         return match ($mode->value()) {
             PsnClientMode::LEGACY,

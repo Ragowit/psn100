@@ -69,7 +69,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
         $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::current();
+        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('thirty_minute_cron');
         $this->psnProfileMapper = new PsnProfileMapper();
         $this->psnTrophyMapper = new PsnTrophyMapper();
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper($this->psnTrophyMapper);

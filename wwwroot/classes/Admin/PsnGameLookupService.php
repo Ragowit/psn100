@@ -40,7 +40,7 @@ final class PsnGameLookupService
         $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
         $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
         $this->npServiceNamePolicy = new NpServiceNamePolicy();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::current();
+        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('psn_game_lookup');
     }
 
     public static function fromDatabase(
