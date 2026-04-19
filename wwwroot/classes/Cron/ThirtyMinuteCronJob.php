@@ -76,8 +76,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
             $this->playStationClientFactory,
-            $this->shadowPlayStationClientFactory,
-            $this->psnClientMode
+            $this->shadowPlayStationClientFactory
         );
     }
 

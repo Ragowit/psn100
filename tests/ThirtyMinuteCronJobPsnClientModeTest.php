@@ -59,6 +59,33 @@ final class ThirtyMinuteCronJobPsnClientModeTest extends TestCase
         $this->assertSame(1, $newCounter->count);
     }
 
+
+    public function testGameLookupServiceRetainsItsOwnServiceOverrideWhenCronModeDiffers(): void
+    {
+        putenv('PSN_CLIENT_MODE_OVERRIDES_JSON={"psn_game_lookup":"shadow"}');
+
+        $cronJob = new ThirtyMinuteCronJob(
+            $this->database,
+            new TrophyCalculator($this->database),
+            new Psn100Logger($this->database),
+            new TrophyHistoryRecorder($this->database),
+            1,
+            psnClientMode: PsnClientMode::fromValue('new')
+        );
+
+        $gameLookupServiceProperty = new ReflectionProperty(ThirtyMinuteCronJob::class, 'psnGameLookupService');
+        $gameLookupServiceProperty->setAccessible(true);
+        $gameLookupService = $gameLookupServiceProperty->getValue($cronJob);
+
+        $gameLookupModeProperty = new ReflectionProperty(PsnGameLookupService::class, 'psnClientMode');
+        $gameLookupModeProperty->setAccessible(true);
+        $gameLookupMode = $gameLookupModeProperty->getValue($gameLookupService);
+
+        $this->assertSame('shadow', $gameLookupMode->value());
+
+        putenv('PSN_CLIENT_MODE_OVERRIDES_JSON');
+    }
+
     public function testCreateAuthenticatedClientInShadowModeKeepsLegacyTruthAndOptionallyRunsShadow(): void
     {
         $legacyCounter = (object) ['count' => 0];
