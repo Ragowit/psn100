@@ -49,9 +49,11 @@ final class ShadowExecutionUtility
             return $legacyResponse;
         }
 
+        $remainingShadowBudgetMs = $shadowLatencyBudgetMs - $legacyDurationMs;
+
         $shadowStart = hrtime(true);
         try {
-            $shadowResponse = self::executeShadowWithTimeout($shadowExecutor, $shadowLatencyBudgetMs);
+            $shadowResponse = self::executeShadowWithTimeout($shadowExecutor, $remainingShadowBudgetMs);
             $shadowDurationMs = (int) ((hrtime(true) - $shadowStart) / 1_000_000);
 
             $comparison = ShadowResponseComparator::compare(

@@ -65,4 +65,38 @@ final class ShadowPlayStationUtilityTest extends TestCase
         $this->assertSame(['legacy' => true], $result);
         $this->assertSame(0, $shadowExecutions);
     }
+
+    public function testExecuteWithLegacyTruthUsesRemainingShadowBudgetAfterLegacyExecution(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        $shadowCompleted = 0;
+
+        $result = ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'test_operation',
+            static function (): array {
+                usleep(120_000);
+
+                return ['legacy' => true];
+            },
+            static function () use (&$shadowCompleted): array {
+                usleep(80_000);
+                $shadowCompleted++;
+
+                return ['shadow' => true];
+            },
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            150
+        );
+
+        $this->assertSame(['legacy' => true], $result);
+        $this->assertSame(0, $shadowCompleted);
+    }
 }

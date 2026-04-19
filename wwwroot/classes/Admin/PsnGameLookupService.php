@@ -206,27 +206,21 @@ final class PsnGameLookupService
             return $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $client);
         }
 
-        $legacyClient = $authenticatedClient === null
-            ? $this->createAuthenticatedClientSession()['client']
-            : $this->normalizeTrophyClient($authenticatedClient);
+        $legacySession = $authenticatedClient === null ? $this->createAuthenticatedClientSession() : null;
+        $legacyClient = $legacySession === null
+            ? $this->normalizeTrophyClient($authenticatedClient)
+            : $legacySession['client'];
 
         return ShadowExecutionUtility::executeWithLegacyTruth(
             $this->psnClientMode,
             'game_trophy_lookup',
             fn (): array => $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $legacyClient),
-            fn (): array => $this->executeShadowTrophyLookupWithWorkerSession($normalizedNpCommunicationId),
+            fn (): array => $this->executeShadowTrophyLookup(
+                $legacySession['npsso'] ?? $this->createAuthenticatedClientSession()['npsso'],
+                $normalizedNpCommunicationId
+            ),
             static fn (mixed $payload): array => ShadowResponseNormalizer::normalizeTrophyLookup($payload)
         );
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function executeShadowTrophyLookupWithWorkerSession(string $npCommunicationId): array
-    {
-        $session = $this->createAuthenticatedClientSession();
-
-        return $this->executeShadowTrophyLookup($session['npsso'], $npCommunicationId);
     }
 
     /**
