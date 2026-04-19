@@ -2017,7 +2017,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             fn (): PlayStationApiClientInterface => $this->createAndLoginClient($this->playStationClientFactory, $npsso),
             fn (): bool => $this->executeShadowLogin($npsso),
             static fn (mixed $payload): array => ['authenticated' => (bool) $payload],
-            350,
+            700,
             ['service' => 'thirty_minute_cron']
         );
     }
