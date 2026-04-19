@@ -7,6 +7,7 @@
 Build dashboard widgets from JSON fields below:
 
 - mismatch rate by `service` + `operation`
+- comparison quality from `comparisonMetrics.totalCompared`, `comparisonMetrics.matched`, `comparisonMetrics.mismatched`, `comparisonMetrics.skippedNormalizationFailure`, `comparisonMetrics.newClientErrors`
 - identifier coverage using `identifiers.onlineId`, `identifiers.accountId`, `identifiers.npCommunicationId`
 - top changed field paths from `diffSummary.changedPaths`
 - rate-limited versus sampled volume from `sampling.sampleRate` and `sampling.rateLimitPerMinute`
@@ -26,6 +27,24 @@ WHERE JSON_UNQUOTE(JSON_EXTRACT(payload, '$.event')) = 'psn_shadow_mismatch'
   AND timestamp >= NOW() - INTERVAL 24 HOUR
 GROUP BY service, operation
 ORDER BY mismatch_events DESC;
+```
+
+### Promotion-policy rollup counters (1h window)
+
+```sql
+SELECT
+  JSON_UNQUOTE(JSON_EXTRACT(payload, '$.service')) AS service,
+  JSON_UNQUOTE(JSON_EXTRACT(payload, '$.operation')) AS operation,
+  SUM(JSON_EXTRACT(payload, '$.comparisonMetrics.totalCompared')) AS total_compared,
+  SUM(JSON_EXTRACT(payload, '$.comparisonMetrics.matched')) AS matched,
+  SUM(JSON_EXTRACT(payload, '$.comparisonMetrics.mismatched')) AS mismatched,
+  SUM(JSON_EXTRACT(payload, '$.comparisonMetrics.skippedNormalizationFailure')) AS normalization_skips,
+  SUM(JSON_EXTRACT(payload, '$.comparisonMetrics.newClientErrors')) AS new_client_errors
+FROM observability_logs
+WHERE JSON_UNQUOTE(JSON_EXTRACT(payload, '$.event')) = 'psn_shadow_comparison_result'
+  AND timestamp >= NOW() - INTERVAL 1 HOUR
+GROUP BY service, operation
+ORDER BY total_compared DESC;
 ```
 
 ### Identifier coverage
