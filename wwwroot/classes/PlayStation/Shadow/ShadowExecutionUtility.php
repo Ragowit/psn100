@@ -80,15 +80,17 @@ final class ShadowExecutionUtility
 
             if ($comparison['hasMismatch']) {
                 $service = self::toNullableString($metricTags['service'] ?? null) ?? 'unknown_service';
-                $correlationId = self::toNullableString($metricTags['correlationId'] ?? null)
-                    ?? self::toNullableString($metricTags['requestId'] ?? null)
+                $requestId = self::toNullableString($metricTags['requestId'] ?? null);
+                $providedCorrelationId = self::toNullableString($metricTags['correlationId'] ?? null) ?? $requestId;
+                $correlationId = $providedCorrelationId
                     ?? self::createCorrelationId();
                 $identifiers = self::buildIdentifiers($metricTags, $normalizedLegacyResponse, $normalizedShadowResponse);
 
                 $rateLimitDecision = self::evaluateMismatchEmission(
                     $service,
                     $operation,
-                    $correlationId,
+                    $identifiers,
+                    $providedCorrelationId,
                     self::resolveMismatchSampleRate($metricTags),
                     self::resolveMismatchRateLimitPerMinute($metricTags),
                     self::resolveMismatchRateLimitStorePath($metricTags)
@@ -370,17 +372,20 @@ final class ShadowExecutionUtility
     }
 
     /**
+     * @param array{onlineId: string|null, accountId: string|null, npCommunicationId: string|null} $identifiers
      * @return array{emit: bool, sampleRate: float, rateLimitPerMinute: int, samplingKey: string}
      */
     private static function evaluateMismatchEmission(
         string $service,
         string $operation,
-        string $correlationId,
+        array $identifiers,
+        ?string $correlationId,
         float $sampleRate,
         int $rateLimitPerMinute,
         ?string $rateLimitStorePath = null
     ): array {
-        $samplingKey = sprintf('%s:%s:%s', $service, $operation, $correlationId);
+        $samplingSubject = self::resolveSamplingSubject($identifiers, $correlationId);
+        $samplingKey = sprintf('%s:%s:%s', $service, $operation, $samplingSubject);
 
         if (!self::passesSampling($samplingKey, $sampleRate)) {
             return [
@@ -407,6 +412,30 @@ final class ShadowExecutionUtility
             'rateLimitPerMinute' => $rateLimitPerMinute,
             'samplingKey' => $samplingKey,
         ];
+    }
+
+    /**
+     * @param array{onlineId: string|null, accountId: string|null, npCommunicationId: string|null} $identifiers
+     */
+    private static function resolveSamplingSubject(array $identifiers, ?string $correlationId): string
+    {
+        if (is_string($identifiers['onlineId']) && $identifiers['onlineId'] !== '') {
+            return 'onlineId:' . $identifiers['onlineId'];
+        }
+
+        if (is_string($identifiers['npCommunicationId']) && $identifiers['npCommunicationId'] !== '') {
+            return 'npCommunicationId:' . $identifiers['npCommunicationId'];
+        }
+
+        if (is_string($identifiers['accountId']) && $identifiers['accountId'] !== '') {
+            return 'accountId:' . $identifiers['accountId'];
+        }
+
+        if ($correlationId !== null && $correlationId !== '') {
+            return 'correlationId:' . $correlationId;
+        }
+
+        return 'anonymous';
     }
 
     private static function passesSampling(string $samplingKey, float $sampleRate): bool

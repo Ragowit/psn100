@@ -359,4 +359,48 @@ final class ShadowPlayStationUtilityTest extends TestCase
         ShadowExecutionUtility::resetStateForTests();
     }
 
+    public function testExecuteWithLegacyTruthUsesStableIdentifierForSamplingWhenRequestIdsAreMissing(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        for ($i = 0; $i < 2; $i++) {
+            ShadowExecutionUtility::executeWithLegacyTruth(
+                PsnClientMode::fromValue('shadow'),
+                'player_profile_lookup',
+                static fn (): array => ['profile' => ['onlineId' => 'DeterministicPlayer', 'title' => 'legacy']],
+                static fn (): array => ['profile' => ['onlineId' => 'DeterministicPlayer', 'title' => 'shadow']],
+                static fn (mixed $value): array => is_array($value) ? $value : [],
+                350,
+                [
+                    'service' => 'psn_player_lookup',
+                    'mismatchSampleRate' => 0.5,
+                    'mismatchRateLimitPerMinute' => 100,
+                ]
+            );
+        }
+
+        $this->assertNotSame(1, count($events));
+        if (count($events) > 0) {
+            $this->assertSame(
+                'psn_player_lookup:player_profile_lookup:onlineId:DeterministicPlayer',
+                $events[0]['sampling']['samplingKey']
+            );
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
 }
