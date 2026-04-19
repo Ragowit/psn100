@@ -100,6 +100,27 @@ final class ShadowPlayStationUtilityTest extends TestCase
         $this->assertSame(0, $shadowCompleted);
     }
 
+    public function testShouldExecuteWithoutTimeoutEnvFlagParsing(): void
+    {
+        $method = new ReflectionMethod(ShadowExecutionUtility::class, 'shouldExecuteWithoutTimeout');
+        $method->setAccessible(true);
+
+        putenv('PSN_SHADOW_EXECUTE_WITHOUT_TIMEOUT=true');
+        $this->assertTrue($method->invoke(null));
+
+        putenv('PSN_SHADOW_EXECUTE_WITHOUT_TIMEOUT=1');
+        $this->assertTrue($method->invoke(null));
+
+        putenv('PSN_SHADOW_EXECUTE_WITHOUT_TIMEOUT=false');
+        $this->assertFalse($method->invoke(null));
+
+        putenv('PSN_SHADOW_EXECUTE_WITHOUT_TIMEOUT=0');
+        $this->assertFalse($method->invoke(null));
+
+        putenv('PSN_SHADOW_EXECUTE_WITHOUT_TIMEOUT');
+        $this->assertFalse($method->invoke(null));
+    }
+
     public function testExecuteWithLegacyTruthInNewModeUsesPrimaryExecutorOnly(): void
     {
         $legacyExecutions = 0;
