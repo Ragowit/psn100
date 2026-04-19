@@ -971,6 +971,51 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(['legacy-worker-npsso'], $legacyLogins);
         $this->assertSame(['legacy-worker-npsso'], $shadowLogins);
     }
+
+    public function testLookupInNewModeUsesNewClientOnly(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (91, 'NPWR91919_00', 'New Mode Game')");
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $legacyFactoryCounter = (object) ['count' => 0];
+
+        $legacyFactory = new class ($legacyFactoryCounter) implements PlayStationClientFactoryInterface {
+            public function __construct(private readonly object $counter)
+            {
+            }
+
+            public function createClient(): PlayStationApiClientInterface
+            {
+                $this->counter->count++;
+
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 7]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+        $newFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 44]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $newFactory,
+            PsnClientMode::fromValue('new')
+        );
+
+        $result = $service->lookupByGameId('91');
+
+        $this->assertSame(44, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(0, $legacyFactoryCounter->count);
+    }
 }
 
 final class GameLookupStubClient

@@ -18,6 +18,8 @@ require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyDto.php';
 require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyGroupDto.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyGroupMapper.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyMapper.php';
+require_once __DIR__ . '/../PlayStation/Shadow/ShadowExecutionUtility.php';
+require_once __DIR__ . '/../PsnClientMode.php';
 
 class GameRescanService
 {
@@ -38,6 +40,8 @@ class GameRescanService
     private ImageHashCalculator $imageHashCalculator;
     private PsnGameLookupService $psnGameLookupService;
     private PlayStationClientFactoryInterface $playStationClientFactory;
+    private PlayStationClientFactoryInterface $shadowPlayStationClientFactory;
+    private PsnClientMode $psnClientMode;
     private PsnTrophyGroupMapper $psnTrophyGroupMapper;
 
     /**
@@ -51,7 +55,9 @@ class GameRescanService
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?PsnGameLookupService $psnGameLookupService = null,
-        ?PlayStationClientFactoryInterface $playStationClientFactory = null
+        ?PlayStationClientFactoryInterface $playStationClientFactory = null,
+        ?PlayStationClientFactoryInterface $shadowPlayStationClientFactory = null,
+        ?PsnClientMode $psnClientMode = null
     )
     {
         $this->database = $database;
@@ -60,10 +66,14 @@ class GameRescanService
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
+        $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
+        $this->psnClientMode = $psnClientMode ?? PsnClientMode::current();
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper(new PsnTrophyMapper());
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
-            $this->playStationClientFactory
+            $this->playStationClientFactory,
+            $this->shadowPlayStationClientFactory,
+            $this->psnClientMode
         );
     }
 
@@ -172,8 +182,7 @@ class GameRescanService
         while (true) {
             foreach ($this->fetchWorkers() as $worker) {
                 try {
-                    $client = $this->playStationClientFactory->createClient();
-                    $client->loginWithNpsso($worker['npsso']);
+                    $client = $this->createAuthenticatedClient((string) $worker['npsso']);
 
                     return $client;
                 } catch (TypeError $exception) {
@@ -185,6 +194,44 @@ class GameRescanService
 
             sleep(self::LOGIN_RETRY_DELAY_SECONDS);
         }
+    }
+
+    private function createAuthenticatedClient(string $npsso): PlayStationApiClientInterface
+    {
+        if ($this->psnClientMode->isLegacy()) {
+            return $this->createAndLoginClient($this->playStationClientFactory, $npsso);
+        }
+
+        if ($this->psnClientMode->isNew()) {
+            return $this->createAndLoginClient($this->shadowPlayStationClientFactory, $npsso);
+        }
+
+        return ShadowExecutionUtility::executeWithLegacyTruth(
+            $this->psnClientMode,
+            'rescan_worker_login',
+            fn (): PlayStationApiClientInterface => $this->createAndLoginClient($this->playStationClientFactory, $npsso),
+            fn (): bool => $this->executeShadowLogin($npsso),
+            static fn (mixed $payload): array => ['authenticated' => (bool) $payload],
+            350,
+            ['service' => 'game_rescan']
+        );
+    }
+
+    private function executeShadowLogin(string $npsso): bool
+    {
+        $this->createAndLoginClient($this->shadowPlayStationClientFactory, $npsso);
+
+        return true;
+    }
+
+    private function createAndLoginClient(
+        PlayStationClientFactoryInterface $clientFactory,
+        string $npsso
+    ): PlayStationApiClientInterface {
+        $client = $clientFactory->createClient();
+        $client->loginWithNpsso($npsso);
+
+        return $client;
     }
 
     private function fetchWorkers(): array

@@ -198,7 +198,7 @@ final class PsnGameLookupService
             throw new InvalidArgumentException('NP communication ID must be provided.');
         }
 
-        if (!$this->psnClientMode->isShadow()) {
+        if ($this->psnClientMode->isLegacy()) {
             $client = $authenticatedClient === null
                 ? $this->createAuthenticatedClient()
                 : $this->normalizeTrophyClient($authenticatedClient);
@@ -206,7 +206,17 @@ final class PsnGameLookupService
             return $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $client);
         }
 
-        $legacySession = $authenticatedClient === null ? $this->createAuthenticatedClientSession() : null;
+        if ($this->psnClientMode->isNew()) {
+            $client = $authenticatedClient === null
+                ? $this->createAuthenticatedClientSession($this->shadowPlayStationClientFactory)['client']
+                : $this->normalizeTrophyClient($authenticatedClient);
+
+            return $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $client);
+        }
+
+        $legacySession = $authenticatedClient === null
+            ? $this->createAuthenticatedClientSession($this->playStationClientFactory)
+            : null;
         $legacyClient = $legacySession === null
             ? $this->normalizeTrophyClient($authenticatedClient)
             : $legacySession['client'];
@@ -219,7 +229,9 @@ final class PsnGameLookupService
                 $legacySession['npsso'] ?? $this->createAuthenticatedClientSession()['npsso'],
                 $normalizedNpCommunicationId
             ),
-            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizeTrophyLookup($payload)
+            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizeTrophyLookup($payload),
+            350,
+            ['service' => 'psn_game_lookup']
         );
     }
 
@@ -480,14 +492,20 @@ final class PsnGameLookupService
 
     private function createAuthenticatedClient(): PlayStationApiClientInterface
     {
-        return $this->createAuthenticatedClientSession()['client'];
+        $factory = $this->psnClientMode->isNew()
+            ? $this->shadowPlayStationClientFactory
+            : $this->playStationClientFactory;
+
+        return $this->createAuthenticatedClientSession($factory)['client'];
     }
 
     /**
      * @return array{client: PlayStationApiClientInterface, npsso: string}
      */
-    private function createAuthenticatedClientSession(): array
+    private function createAuthenticatedClientSession(?PlayStationClientFactoryInterface $clientFactory = null): array
     {
+        $resolvedClientFactory = $clientFactory ?? $this->playStationClientFactory;
+
         foreach (($this->workerFetcher)() as $worker) {
             if (!$worker instanceof Worker) {
                 continue;
@@ -500,7 +518,7 @@ final class PsnGameLookupService
             }
 
             try {
-                $client = $this->playStationClientFactory->createClient();
+                $client = $resolvedClientFactory->createClient();
                 $client->loginWithNpsso($npsso);
 
                 return [
