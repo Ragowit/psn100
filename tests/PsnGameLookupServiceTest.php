@@ -6,6 +6,9 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnGameLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/../wwwroot/classes/PsnClientMode.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Contracts/PlayStationApiClientInterface.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Contracts/PlayStationClientFactoryInterface.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayStation/Exception/PlayStationNotFoundException.php';
 
 final class PsnGameLookupServiceTest extends TestCase
@@ -708,6 +711,266 @@ final class PsnGameLookupServiceTest extends TestCase
         $this->assertSame(['npServiceName' => 'trophy'], $attempts[1]);
         $this->assertSame(9, $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
     }
+
+    public function testLookupInShadowModeReturnsLegacyTrophyPayload(): void
+    {
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (88, 'NPWR88888_00', 'Shadow Game')");
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $legacyFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => '7']]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+        $shadowFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $shadowFactory,
+            PsnClientMode::fromValue('shadow')
+        );
+
+        $result = $service->lookupByGameId('88');
+
+        $this->assertSame('7', $result['trophyData']['trophyGroups'][0]['trophies'][0]['trophyId']);
+    }
+
+    public function testFetchTrophyDataInShadowModeWithProvidedClientExecutesShadowPath(): void
+    {
+        $worker = new Worker(1, 'worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $shadowFactoryCounter = (object) ['count' => 0];
+
+        $legacyFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 1]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+        $shadowFactory = new class ($shadowFactoryCounter) implements PlayStationClientFactoryInterface {
+            private object $counter;
+
+            public function __construct(object $counter)
+            {
+                $this->counter = $counter;
+            }
+
+            public function createClient(): PlayStationApiClientInterface
+            {
+                $this->counter->count++;
+
+                return new ShadowGameClientStub(
+                    static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]],
+                    static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+                );
+            }
+        };
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $shadowFactory,
+            PsnClientMode::fromValue('shadow')
+        );
+
+        $providedClient = new ShadowGameClientStub(
+            static fn (): object => (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 7]]],
+            static fn (): object => (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]]
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
+
+        $this->assertSame(7, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $expectedShadowExecutions = (
+            function_exists('pcntl_signal')
+            && function_exists('pcntl_async_signals')
+            && function_exists('pcntl_setitimer')
+        ) ? 1 : 0;
+        $this->assertSame($expectedShadowExecutions, $shadowFactoryCounter->count);
+    }
+
+    public function testFetchTrophyDataInShadowModeReusesLegacyWorkerSessionForShadowLookup(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        $workers = [
+            new Worker(1, 'legacy-worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null),
+            new Worker(2, 'secondary-worker-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null),
+        ];
+        $legacyLogins = [];
+        $shadowLogins = [];
+
+        $legacyFactory = new class ($legacyLogins) implements PlayStationClientFactoryInterface {
+            /** @var array<int, string> */
+            private array $legacyLogins;
+
+            /**
+             * @param array<int, string> $legacyLogins
+             */
+            public function __construct(array &$legacyLogins)
+            {
+                $this->legacyLogins = &$legacyLogins;
+            }
+
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new class ($this->legacyLogins) implements PlayStationApiClientInterface {
+                    /** @var array<int, string> */
+                    private array $legacyLogins;
+
+                    /**
+                     * @param array<int, string> $legacyLogins
+                     */
+                    public function __construct(array &$legacyLogins)
+                    {
+                        $this->legacyLogins = &$legacyLogins;
+                    }
+
+                    public function loginWithNpsso(string $npsso): void
+                    {
+                        $this->legacyLogins[] = $npsso;
+                    }
+
+                    public function acquireAccessToken(): ?string
+                    {
+                        return null;
+                    }
+
+                    public function refreshAccessToken(): void
+                    {
+                    }
+
+                    public function lookupProfileByOnlineId(string $onlineId): mixed
+                    {
+                        return (object) [];
+                    }
+
+                    public function findUserByAccountId(string $accountId): object
+                    {
+                        return (object) [];
+                    }
+
+                    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+                    {
+                        if (str_contains($path, '/trophyGroups/all/trophies')) {
+                            return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 101]]];
+                        }
+
+                        return (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]];
+                    }
+
+                    public function searchUsers(string $onlineId): iterable
+                    {
+                        return [];
+                    }
+                };
+            }
+        };
+
+        $shadowFactory = new class ($shadowLogins) implements PlayStationClientFactoryInterface {
+            /** @var array<int, string> */
+            private array $shadowLogins;
+
+            /**
+             * @param array<int, string> $shadowLogins
+             */
+            public function __construct(array &$shadowLogins)
+            {
+                $this->shadowLogins = &$shadowLogins;
+            }
+
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new class ($this->shadowLogins) implements PlayStationApiClientInterface {
+                    /** @var array<int, string> */
+                    private array $shadowLogins;
+
+                    /**
+                     * @param array<int, string> $shadowLogins
+                     */
+                    public function __construct(array &$shadowLogins)
+                    {
+                        $this->shadowLogins = &$shadowLogins;
+                    }
+
+                    public function loginWithNpsso(string $npsso): void
+                    {
+                        $this->shadowLogins[] = $npsso;
+                    }
+
+                    public function acquireAccessToken(): ?string
+                    {
+                        return null;
+                    }
+
+                    public function refreshAccessToken(): void
+                    {
+                    }
+
+                    public function lookupProfileByOnlineId(string $onlineId): mixed
+                    {
+                        return (object) [];
+                    }
+
+                    public function findUserByAccountId(string $accountId): object
+                    {
+                        return (object) [];
+                    }
+
+                    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+                    {
+                        if (str_contains($path, '/trophyGroups/all/trophies')) {
+                            return (object) ['trophies' => [(object) ['trophyGroupId' => 'all', 'trophyId' => 999]]];
+                        }
+
+                        return (object) ['trophyGroups' => [(object) ['trophyGroupId' => 'all']]];
+                    }
+
+                    public function searchUsers(string $onlineId): iterable
+                    {
+                        return [];
+                    }
+                };
+            }
+        };
+
+        $service = new PsnGameLookupService(
+            $this->database,
+            static fn (): array => $workers,
+            $legacyFactory,
+            $shadowFactory,
+            PsnClientMode::fromValue('shadow')
+        );
+
+        $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00');
+
+        $this->assertSame(101, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
+        $this->assertSame(['legacy-worker-npsso'], $legacyLogins);
+        $this->assertSame(['legacy-worker-npsso'], $shadowLogins);
+    }
 }
 
 final class GameLookupStubClient
@@ -760,4 +1023,56 @@ final class GameLookupHttpException extends RuntimeException
 
 final class GameLookupNotFoundHttpException extends Exception
 {
+}
+
+final class ShadowGameClientStub implements PlayStationApiClientInterface
+{
+    /** @var callable(): object */
+    private $trophiesHandler;
+
+    /** @var callable(): object */
+    private $groupsHandler;
+
+    public function __construct(callable $trophiesHandler, callable $groupsHandler)
+    {
+        $this->trophiesHandler = $trophiesHandler;
+        $this->groupsHandler = $groupsHandler;
+    }
+
+    public function loginWithNpsso(string $npsso): void
+    {
+    }
+
+    public function acquireAccessToken(): ?string
+    {
+        return null;
+    }
+
+    public function refreshAccessToken(): void
+    {
+    }
+
+    public function lookupProfileByOnlineId(string $onlineId): mixed
+    {
+        return (object) [];
+    }
+
+    public function findUserByAccountId(string $accountId): object
+    {
+        return (object) [];
+    }
+
+    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+    {
+        if (str_ends_with($path, '/all/trophies')) {
+            return ($this->trophiesHandler)();
+        }
+
+        return ($this->groupsHandler)();
+    }
+
+    public function searchUsers(string $onlineId): iterable
+    {
+        return [];
+    }
 }

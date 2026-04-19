@@ -6,6 +6,9 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerLookupService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PsnPlayerLookupRequestHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/../wwwroot/classes/PsnClientMode.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Contracts/PlayStationClientFactoryInterface.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayStation/Contracts/PlayStationApiClientInterface.php';
 
 final class PsnPlayerLookupServiceTest extends TestCase
 {
@@ -224,6 +227,90 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame(null, $handled->getErrorMessage());
         $this->assertSame('example@a6.us', $handled->getDecodedNpId());
         $this->assertSame('US', $handled->getNpCountry());
+    }
+
+    public function testLookupInShadowModeKeepsLegacyResponseAsSourceOfTruth(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $legacyFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowPlayerClientStub(
+                    profileResponse: (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'LegacyName',
+                            'accountId' => '100',
+                        ],
+                    ]
+                );
+            }
+        };
+        $shadowFactory = new class () implements PlayStationClientFactoryInterface {
+            public function createClient(): PlayStationApiClientInterface
+            {
+                return new ShadowPlayerClientStub(
+                    profileResponse: (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'ShadowName',
+                            'accountId' => 100,
+                        ],
+                    ]
+                );
+            }
+        };
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            $legacyFactory,
+            $shadowFactory,
+            PsnClientMode::fromValue('shadow')
+        );
+
+        $result = $service->lookup('Example');
+
+        $this->assertSame('LegacyName', $result['profile']['onlineId']);
+        $this->assertSame('100', $result['profile']['accountId']);
+    }
+}
+
+final class ShadowPlayerClientStub implements PlayStationApiClientInterface
+{
+    public function __construct(private readonly object $profileResponse)
+    {
+    }
+
+    public function loginWithNpsso(string $npsso): void
+    {
+    }
+
+    public function acquireAccessToken(): ?string
+    {
+        return null;
+    }
+
+    public function refreshAccessToken(): void
+    {
+    }
+
+    public function lookupProfileByOnlineId(string $onlineId): mixed
+    {
+        return $this->profileResponse;
+    }
+
+    public function findUserByAccountId(string $accountId): object
+    {
+        return (object) [];
+    }
+
+    public function requestTrophyEndpoint(string $path, array $query = [], array $headers = []): mixed
+    {
+        return (object) [];
+    }
+
+    public function searchUsers(string $onlineId): iterable
+    {
+        return [];
     }
 }
 

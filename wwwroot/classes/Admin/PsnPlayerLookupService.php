@@ -9,6 +9,9 @@ require_once __DIR__ . '/../PlayStation/Contracts/PlayStationClientFactoryInterf
 require_once __DIR__ . '/../PlayStation/Contracts/PlayStationApiClientInterface.php';
 require_once __DIR__ . '/../PlayStation/Contracts/ProfileClientInterface.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
+require_once __DIR__ . '/../PlayStation/Shadow/ShadowExecutionUtility.php';
+require_once __DIR__ . '/../PlayStation/Shadow/ShadowResponseNormalizer.php';
+require_once __DIR__ . '/../PsnClientMode.php';
 
 final class PsnPlayerLookupService
 {
@@ -18,27 +21,37 @@ final class PsnPlayerLookupService
     private readonly \Closure $workerFetcher;
 
     private readonly PlayStationClientFactoryInterface $playStationClientFactory;
+    private readonly PlayStationClientFactoryInterface $shadowPlayStationClientFactory;
+    private readonly PsnClientMode $psnClientMode;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher
      */
     public function __construct(
         callable $workerFetcher,
-        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null,
+        ?PlayStationClientFactoryInterface $shadowPlayStationClientFactory = null,
+        ?PsnClientMode $psnClientMode = null
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
+        $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
+        $this->psnClientMode = $psnClientMode ?? PsnClientMode::current();
     }
 
     public static function fromDatabase(
         PDO $database,
-        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null
+        PlayStationClientFactoryInterface|callable|null $playStationClientFactory = null,
+        ?PlayStationClientFactoryInterface $shadowPlayStationClientFactory = null,
+        ?PsnClientMode $psnClientMode = null
     ): self {
         $workerService = new WorkerService($database);
 
         return new self(
             static fn (): array => $workerService->fetchWorkers(),
-            $playStationClientFactory
+            $playStationClientFactory,
+            $shadowPlayStationClientFactory,
+            $psnClientMode
         );
     }
 
@@ -165,32 +178,27 @@ final class PsnPlayerLookupService
             throw new InvalidArgumentException('Online ID cannot be blank.');
         }
 
-        $client = $this->createAuthenticatedClient();
+        $session = $this->createAuthenticatedClientSession();
+        $legacyClient = $session['client'];
 
-        try {
-            $profile = $this->executeUserProfileRequest($client, $normalizedOnlineId);
-        } catch (Throwable $exception) {
-            $statusCode = $this->determineStatusCode($exception);
-
-            if ($statusCode === 404) {
-                throw new PsnPlayerLookupException(
-                    sprintf('Player "%s" was not found.', $normalizedOnlineId),
-                    $statusCode,
-                    $exception
-                );
-            }
-
-            throw new PsnPlayerLookupException(
-                'Failed to retrieve the player profile from PlayStation Network. Please try again later.',
-                $statusCode,
-                $exception
-            );
-        }
+        $profile = ShadowExecutionUtility::executeWithLegacyTruth(
+            $this->psnClientMode,
+            'player_profile_lookup',
+            fn (): mixed => $this->executeUserProfileRequest($legacyClient, $normalizedOnlineId),
+            fn (): mixed => $this->executeShadowUserProfileRequest(
+                $session['npsso'],
+                $normalizedOnlineId
+            ),
+            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizePlayerProfileLookup($payload)
+        );
 
         return $this->normalizeProfileResponse($profile);
     }
 
-    private function createAuthenticatedClient(): PlayStationApiClientInterface
+    /**
+     * @return array{client: PlayStationApiClientInterface, npsso: string}
+     */
+    private function createAuthenticatedClientSession(): array
     {
 
         foreach (($this->workerFetcher)() as $worker) {
@@ -208,7 +216,10 @@ final class PsnPlayerLookupService
                 $client = $this->playStationClientFactory->createClient();
                 $client->loginWithNpsso($npsso);
 
-                return $client;
+                return [
+                    'client' => $client,
+                    'npsso' => $npsso,
+                ];
             } catch (Throwable) {
                 continue;
             }
@@ -217,9 +228,35 @@ final class PsnPlayerLookupService
         throw new RuntimeException('Unable to login to any worker accounts.');
     }
 
+    private function executeShadowUserProfileRequest(string $npsso, string $onlineId): mixed
+    {
+        $shadowClient = $this->shadowPlayStationClientFactory->createClient();
+        $shadowClient->loginWithNpsso($npsso);
+
+        return $this->executeUserProfileRequest($shadowClient, $onlineId);
+    }
+
     private function executeUserProfileRequest(ProfileClientInterface $client, string $onlineId): mixed
     {
-        return $client->lookupProfileByOnlineId($onlineId);
+        try {
+            return $client->lookupProfileByOnlineId($onlineId);
+        } catch (Throwable $exception) {
+            $statusCode = $this->determineStatusCode($exception);
+
+            if ($statusCode === 404) {
+                throw new PsnPlayerLookupException(
+                    sprintf('Player "%s" was not found.', $onlineId),
+                    $statusCode,
+                    $exception
+                );
+            }
+
+            throw new PsnPlayerLookupException(
+                'Failed to retrieve the player profile from PlayStation Network. Please try again later.',
+                $statusCode,
+                $exception
+            );
+        }
     }
 
     private function determineStatusCode(Throwable $exception): ?int
