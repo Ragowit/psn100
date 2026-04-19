@@ -126,4 +126,91 @@ final class ShadowPlayStationUtilityTest extends TestCase
         $this->assertSame(1, $legacyExecutions);
         $this->assertSame(0, $shadowExecutions);
     }
+
+    public function testExecuteWithLegacyTruthEmitsStructuredMismatchEvent(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'player_profile_lookup',
+            static fn (): array => ['profile' => ['onlineId' => 'Tester', 'accountId' => '42', 'title' => 'old']],
+            static fn (): array => ['profile' => ['onlineId' => 'Tester', 'accountId' => '42', 'title' => 'new']],
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350,
+            [
+                'service' => 'psn_player_lookup',
+                'correlationId' => 'req-123',
+                'mismatchSampleRate' => 1,
+                'mismatchRateLimitPerMinute' => 100,
+            ]
+        );
+
+        $this->assertCount(1, $events);
+        $event = $events[0];
+        $this->assertSame('psn_shadow_mismatch', $event['event']);
+        $this->assertSame('psn_player_lookup', $event['service']);
+        $this->assertSame('player_profile_lookup', $event['operation']);
+        $this->assertSame('req-123', $event['correlationId']);
+        $this->assertSame('req-123', $event['requestId']);
+        $this->assertSame('Tester', $event['identifiers']['onlineId']);
+        $this->assertSame('42', $event['identifiers']['accountId']);
+        $this->assertNull($event['identifiers']['npCommunicationId']);
+        $this->assertSame(1, $event['diffSummary']['mismatchCount']);
+        $this->assertContains('profile.title', $event['diffSummary']['changedPaths']);
+        $this->assertSame(1.0, $event['sampling']['sampleRate']);
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
+    public function testExecuteWithLegacyTruthAppliesMismatchRateLimit(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        for ($i = 0; $i < 3; $i++) {
+            ShadowExecutionUtility::executeWithLegacyTruth(
+                PsnClientMode::fromValue('shadow'),
+                'player_profile_lookup',
+                static fn (): array => ['profile' => ['title' => 'legacy']],
+                static fn (): array => ['profile' => ['title' => 'shadow']],
+                static fn (mixed $value): array => is_array($value) ? $value : [],
+                350,
+                [
+                    'service' => 'psn_player_lookup',
+                    'correlationId' => 'shared-correlation-id',
+                    'mismatchSampleRate' => 1,
+                    'mismatchRateLimitPerMinute' => 2,
+                ]
+            );
+        }
+
+        $this->assertCount(2, $events);
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
 }
