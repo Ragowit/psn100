@@ -213,4 +213,64 @@ final class ShadowPlayStationUtilityTest extends TestCase
         ShadowExecutionUtility::resetStateForTests();
     }
 
+    public function testExecuteWithLegacyTruthAppliesMismatchRateLimitAcrossStateResetsWhenUsingSharedStore(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+        $events = [];
+        $storePath = sys_get_temp_dir() . '/psn-shadow-rate-limit-' . uniqid('', true) . '.json';
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'player_profile_lookup',
+            static fn (): array => ['profile' => ['title' => 'legacy']],
+            static fn (): array => ['profile' => ['title' => 'shadow']],
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350,
+            [
+                'service' => 'psn_player_lookup',
+                'correlationId' => 'shared-store-1',
+                'mismatchSampleRate' => 1,
+                'mismatchRateLimitPerMinute' => 1,
+                'mismatchRateLimitStorePath' => $storePath,
+            ]
+        );
+
+        ShadowExecutionUtility::resetStateForTests();
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        ShadowExecutionUtility::executeWithLegacyTruth(
+            PsnClientMode::fromValue('shadow'),
+            'player_profile_lookup',
+            static fn (): array => ['profile' => ['title' => 'legacy']],
+            static fn (): array => ['profile' => ['title' => 'shadow']],
+            static fn (mixed $value): array => is_array($value) ? $value : [],
+            350,
+            [
+                'service' => 'psn_player_lookup',
+                'correlationId' => 'shared-store-2',
+                'mismatchSampleRate' => 1,
+                'mismatchRateLimitPerMinute' => 1,
+                'mismatchRateLimitStorePath' => $storePath,
+            ]
+        );
+
+        $this->assertCount(1, $events);
+
+        @unlink($storePath);
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
 }

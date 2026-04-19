@@ -17,6 +17,7 @@ final class ShadowExecutionUtility
     private const float DEFAULT_MISMATCH_SAMPLE_RATE = 0.2;
     private const int DEFAULT_MISMATCH_RATE_LIMIT_PER_MINUTE = 60;
     private const int MAX_MISMATCH_SAMPLES = 3;
+    private const string DEFAULT_MISMATCH_RATE_LIMIT_STORE_PATH = '/tmp/psn_shadow_mismatch_rate_limit.json';
 
     /** @var callable(array<string, mixed>): void|null */
     private static $eventEmitter = null;
@@ -89,7 +90,8 @@ final class ShadowExecutionUtility
                     $operation,
                     $correlationId,
                     self::resolveMismatchSampleRate($metricTags),
-                    self::resolveMismatchRateLimitPerMinute($metricTags)
+                    self::resolveMismatchRateLimitPerMinute($metricTags),
+                    self::resolveMismatchRateLimitStorePath($metricTags)
                 );
 
                 if ($rateLimitDecision['emit']) {
@@ -155,6 +157,11 @@ final class ShadowExecutionUtility
     {
         self::$eventEmitter = null;
         self::$mismatchRateLimitState = [];
+
+        $storePath = getenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH');
+        if (is_string($storePath) && $storePath !== '' && is_file($storePath)) {
+            @unlink($storePath);
+        }
     }
 
     private static function executeShadowWithTimeout(callable $shadowExecutor, int $shadowLatencyBudgetMs): mixed
@@ -320,6 +327,18 @@ final class ShadowExecutionUtility
     }
 
     /**
+     * @param array<string, mixed> $metricTags
+     */
+    private static function resolveMismatchRateLimitStorePath(array $metricTags): ?string
+    {
+        $storePath = $metricTags['mismatchRateLimitStorePath']
+            ?? getenv('PSN_SHADOW_MISMATCH_RATE_LIMIT_STORE_PATH')
+            ?? self::DEFAULT_MISMATCH_RATE_LIMIT_STORE_PATH;
+
+        return self::normalizeRateLimitStorePath(is_scalar($storePath) ? (string) $storePath : null);
+    }
+
+    /**
      * @return array{emit: bool, sampleRate: float, rateLimitPerMinute: int, samplingKey: string}
      */
     private static function evaluateMismatchEmission(
@@ -327,7 +346,8 @@ final class ShadowExecutionUtility
         string $operation,
         string $correlationId,
         float $sampleRate,
-        int $rateLimitPerMinute
+        int $rateLimitPerMinute,
+        ?string $rateLimitStorePath = null
     ): array {
         $samplingKey = sprintf('%s:%s:%s', $service, $operation, $correlationId);
 
@@ -341,7 +361,7 @@ final class ShadowExecutionUtility
         }
 
         $rateLimitKey = $service . ':' . $operation;
-        if (!self::passesRateLimit($rateLimitKey, $rateLimitPerMinute)) {
+        if (!self::passesRateLimit($rateLimitKey, $rateLimitPerMinute, $rateLimitStorePath)) {
             return [
                 'emit' => false,
                 'sampleRate' => $sampleRate,
@@ -374,8 +394,19 @@ final class ShadowExecutionUtility
         return $normalized <= $sampleRate;
     }
 
-    private static function passesRateLimit(string $rateLimitKey, int $rateLimitPerMinute): bool
-    {
+    private static function passesRateLimit(
+        string $rateLimitKey,
+        int $rateLimitPerMinute,
+        ?string $rateLimitStorePath = null
+    ): bool {
+        $sharedStorePath = self::normalizeRateLimitStorePath($rateLimitStorePath);
+        if ($sharedStorePath !== null) {
+            $result = self::passesRateLimitWithSharedStore($sharedStorePath, $rateLimitKey, $rateLimitPerMinute);
+            if ($result !== null) {
+                return $result;
+            }
+        }
+
         $minuteWindow = (int) floor(time() / 60);
         $state = self::$mismatchRateLimitState[$rateLimitKey] ?? null;
 
@@ -395,6 +426,81 @@ final class ShadowExecutionUtility
         self::$mismatchRateLimitState[$rateLimitKey]['count']++;
 
         return true;
+    }
+
+    private static function passesRateLimitWithSharedStore(
+        string $storePath,
+        string $rateLimitKey,
+        int $rateLimitPerMinute
+    ): ?bool {
+        $storeHandle = @fopen($storePath, 'c+');
+        if ($storeHandle === false) {
+            return null;
+        }
+
+        if (!flock($storeHandle, LOCK_EX)) {
+            fclose($storeHandle);
+
+            return null;
+        }
+
+        $minuteWindow = (int) floor(time() / 60);
+        $stateKey = $minuteWindow . ':' . $rateLimitKey;
+
+        rewind($storeHandle);
+        $encodedState = stream_get_contents($storeHandle);
+        $decodedState = is_string($encodedState) && $encodedState !== '' ? json_decode($encodedState, true) : [];
+        $state = is_array($decodedState) ? $decodedState : [];
+
+        $threshold = $minuteWindow - 1;
+        foreach (array_keys($state) as $key) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $delimiterOffset = strpos($key, ':');
+            if ($delimiterOffset === false) {
+                continue;
+            }
+
+            $window = (int) substr($key, 0, $delimiterOffset);
+            if ($window < $threshold) {
+                unset($state[$key]);
+            }
+        }
+
+        $count = isset($state[$stateKey]) && is_int($state[$stateKey]) ? $state[$stateKey] : 0;
+        if ($count >= $rateLimitPerMinute) {
+            flock($storeHandle, LOCK_UN);
+            fclose($storeHandle);
+
+            return false;
+        }
+
+        $state[$stateKey] = $count + 1;
+
+        rewind($storeHandle);
+        ftruncate($storeHandle, 0);
+        fwrite($storeHandle, (string) json_encode($state));
+        fflush($storeHandle);
+        flock($storeHandle, LOCK_UN);
+        fclose($storeHandle);
+
+        return true;
+    }
+
+    private static function normalizeRateLimitStorePath(?string $storePath): ?string
+    {
+        if ($storePath === null) {
+            return null;
+        }
+
+        $trimmedPath = trim($storePath);
+        if ($trimmedPath === '' || str_contains($trimmedPath, "\0")) {
+            return null;
+        }
+
+        return $trimmedPath;
     }
 
     private static function createCorrelationId(): string
