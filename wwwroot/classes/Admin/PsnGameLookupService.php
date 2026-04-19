@@ -230,7 +230,7 @@ final class PsnGameLookupService
                 $normalizedNpCommunicationId
             ),
             static fn (mixed $payload): array => ShadowResponseNormalizer::normalizeTrophyLookup($payload),
-            350,
+            700,
             ['service' => 'psn_game_lookup', 'npCommunicationId' => $normalizedNpCommunicationId]
         );
     }
