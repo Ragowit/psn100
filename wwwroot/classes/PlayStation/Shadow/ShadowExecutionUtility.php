@@ -90,7 +90,7 @@ final class ShadowExecutionUtility
                     $service,
                     $operation,
                     $identifiers,
-                    $providedCorrelationId,
+                    $correlationId,
                     self::resolveMismatchSampleRate($metricTags),
                     self::resolveMismatchRateLimitPerMinute($metricTags),
                     self::resolveMismatchRateLimitStorePath($metricTags)

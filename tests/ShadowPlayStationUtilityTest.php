@@ -403,4 +403,51 @@ final class ShadowPlayStationUtilityTest extends TestCase
         ShadowExecutionUtility::resetStateForTests();
     }
 
+    public function testExecuteWithLegacyTruthUsesGeneratedCorrelationForSamplingWhenNoIdentifiersExist(): void
+    {
+        if (
+            !function_exists('pcntl_signal')
+            || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
+        ) {
+            return;
+        }
+
+        ShadowExecutionUtility::resetStateForTests();
+
+        $events = [];
+        ShadowExecutionUtility::setEventEmitter(static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        for ($i = 0; $i < 2; $i++) {
+            ShadowExecutionUtility::executeWithLegacyTruth(
+                PsnClientMode::fromValue('shadow'),
+                'worker_login_shadow_check',
+                static fn (): array => ['status' => 'legacy'],
+                static fn (): array => ['status' => 'shadow'],
+                static fn (mixed $value): array => is_array($value) ? $value : [],
+                350,
+                [
+                    'service' => 'psn_worker_login',
+                    'mismatchSampleRate' => 1,
+                    'mismatchRateLimitPerMinute' => 100,
+                ]
+            );
+        }
+
+        $this->assertCount(2, $events);
+        $this->assertStringStartsWith(
+            'psn_worker_login:worker_login_shadow_check:correlationId:',
+            $events[0]['sampling']['samplingKey']
+        );
+        $this->assertStringStartsWith(
+            'psn_worker_login:worker_login_shadow_check:correlationId:',
+            $events[1]['sampling']['samplingKey']
+        );
+        $this->assertNotSame($events[0]['sampling']['samplingKey'], $events[1]['sampling']['samplingKey']);
+
+        ShadowExecutionUtility::resetStateForTests();
+    }
+
 }
