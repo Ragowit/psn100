@@ -8,6 +8,10 @@ final class ShadowExecutionTimeoutException extends RuntimeException
 {
 }
 
+final class ShadowTimeoutSupportUnavailableException extends RuntimeException
+{
+}
+
 final class ShadowExecutionUtility
 {
     /**
@@ -64,6 +68,15 @@ final class ShadowExecutionUtility
                     'mismatch' => $comparison,
                 ]);
             }
+        } catch (ShadowTimeoutSupportUnavailableException $unsupportedException) {
+            self::emitEvent([
+                'event' => 'psn_shadow_skipped',
+                'operation' => $operation,
+                'reason' => 'shadow_timeout_support_unavailable',
+                'legacyDurationMs' => $legacyDurationMs,
+                'shadowLatencyBudgetMs' => $shadowLatencyBudgetMs,
+                'message' => $unsupportedException->getMessage(),
+            ]);
         } catch (ShadowExecutionTimeoutException $timeoutException) {
             self::emitEvent([
                 'event' => 'psn_shadow_skipped',
@@ -90,22 +103,24 @@ final class ShadowExecutionUtility
     {
         if (
             !function_exists('pcntl_signal')
-            || !function_exists('pcntl_alarm')
             || !function_exists('pcntl_async_signals')
+            || !function_exists('pcntl_setitimer')
         ) {
-            return $shadowExecutor();
+            throw new ShadowTimeoutSupportUnavailableException('Shadow timeout support is unavailable on this runtime.');
         }
+
+        $budgetSeconds = $shadowLatencyBudgetMs / 1000;
 
         pcntl_async_signals(true);
         pcntl_signal(SIGALRM, static function (): void {
             throw new ShadowExecutionTimeoutException('Shadow execution exceeded latency budget.');
         });
-        pcntl_alarm((int) ceil($shadowLatencyBudgetMs / 1000));
+        pcntl_setitimer(ITIMER_REAL, $budgetSeconds);
 
         try {
             return $shadowExecutor();
         } finally {
-            pcntl_alarm(0);
+            pcntl_setitimer(ITIMER_REAL, 0.0);
             pcntl_async_signals(false);
             pcntl_signal(SIGALRM, SIG_DFL);
         }

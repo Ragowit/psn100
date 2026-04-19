@@ -72,21 +72,21 @@ final class ShadowResponseNormalizer
     /**
      * @return array<string, mixed>|list<mixed>|int|string|float|bool|null
      */
-    public static function canonicalize(mixed $value): mixed
+    public static function canonicalize(mixed $value, bool $coerceNumericString = false): mixed
     {
         if (is_object($value)) {
             $value = get_object_vars($value);
         }
 
         if (!is_array($value)) {
-            return self::normalizeNullableScalar($value, true);
+            return self::normalizeNullableScalar($value, $coerceNumericString);
         }
 
         $isList = array_is_list($value);
         $normalized = [];
 
         foreach ($value as $key => $item) {
-            $normalized[$key] = self::canonicalize($item);
+            $normalized[$key] = self::canonicalize($item, $coerceNumericString);
         }
 
         if (!$isList) {

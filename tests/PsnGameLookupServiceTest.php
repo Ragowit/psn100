@@ -798,7 +798,12 @@ final class PsnGameLookupServiceTest extends TestCase
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
         $this->assertSame(7, $result['trophyGroups'][0]['trophies'][0]['trophyId']);
-        $this->assertSame(1, $shadowFactoryCounter->count);
+        $expectedShadowExecutions = (
+            function_exists('pcntl_signal')
+            && function_exists('pcntl_async_signals')
+            && function_exists('pcntl_setitimer')
+        ) ? 1 : 0;
+        $this->assertSame($expectedShadowExecutions, $shadowFactoryCounter->count);
     }
 }
 
