@@ -135,6 +135,19 @@ final class NativePlayStationApiClientTest extends TestCase
         );
     }
 
+    public function testIsRecoverableTrophySummaryStatusCodeTreats401403404AsRecoverable(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'isRecoverableTrophySummaryStatusCode');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($client, 401));
+        $this->assertTrue($method->invoke($client, 403));
+        $this->assertTrue($method->invoke($client, 404));
+        $this->assertFalse($method->invoke($client, 500));
+        $this->assertFalse($method->invoke($client, null));
+    }
+
     public function testMergeAccountLookupPayloadWithTrophySummaryUsesNestedProfileWhenPresent(): void
     {
         $client = new NativePlayStationApiClient();

@@ -141,12 +141,18 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
                 []
             );
         } catch (Throwable $exception) {
-            if ($this->determineThrowableStatusCode($exception) !== 404) {
+            if (!$this->isRecoverableTrophySummaryStatusCode($this->determineThrowableStatusCode($exception))) {
                 throw $exception;
             }
 
             return null;
         }
+    }
+
+
+    private function isRecoverableTrophySummaryStatusCode(?int $statusCode): bool
+    {
+        return in_array($statusCode, [401, 403, 404], true);
     }
 
     /**
