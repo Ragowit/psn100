@@ -104,4 +104,33 @@ final class NativePlayStationApiClientTest extends TestCase
         );
     }
 
+    public function testMergeAccountLookupPayloadWithTrophySummaryUsesNestedProfileWhenPresent(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'mergeAccountLookupPayloadWithTrophySummary');
+        $method->setAccessible(true);
+
+        $payload = [
+            'profile' => [
+                'accountId' => '123',
+                'onlineId' => 'PlayerOne',
+            ],
+        ];
+        $trophySummaryPayload = [
+            'level' => 321,
+            'progress' => 99,
+            'earnedTrophies' => [
+                'platinum' => 1,
+                'gold' => 2,
+                'silver' => 3,
+                'bronze' => 4,
+            ],
+        ];
+
+        $result = $method->invoke($client, $payload, $trophySummaryPayload);
+
+        $this->assertSame($trophySummaryPayload, $result['profile']['trophySummary']);
+        $this->assertSame('PlayerOne', $result['profile']['onlineId']);
+    }
+
 }

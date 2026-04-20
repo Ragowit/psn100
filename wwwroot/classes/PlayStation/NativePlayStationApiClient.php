@@ -114,7 +114,38 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
             []
         );
 
-        return PlayStationAccountLookupUser::fromPayload($payload, $accountId);
+        $trophySummaryPayload = $this->requestJson(
+            'GET',
+            sprintf(
+                'https://m.np.playstation.com/api/trophy/v1/users/%s/trophySummary',
+                rawurlencode($accountId)
+            ),
+            [],
+            []
+        );
+
+        return PlayStationAccountLookupUser::fromPayload(
+            $this->mergeAccountLookupPayloadWithTrophySummary($payload, $trophySummaryPayload),
+            $accountId
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $trophySummaryPayload
+     * @return array<string, mixed>
+     */
+    private function mergeAccountLookupPayloadWithTrophySummary(array $payload, array $trophySummaryPayload): array
+    {
+        if (isset($payload['profile']) && is_array($payload['profile'])) {
+            $payload['profile']['trophySummary'] = $trophySummaryPayload;
+
+            return $payload;
+        }
+
+        $payload['trophySummary'] = $trophySummaryPayload;
+
+        return $payload;
     }
 
     /**
