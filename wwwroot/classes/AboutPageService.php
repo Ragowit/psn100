@@ -66,8 +66,6 @@ class AboutPageService implements AboutPageDataProviderInterface
             FROM
                 player p
                 LEFT JOIN player_ranking r ON p.account_id = r.account_id
-            WHERE
-                p.status = 0
             ORDER BY
                 p.last_updated_date DESC
             LIMIT
