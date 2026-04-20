@@ -82,77 +82,68 @@ final class ImageHashCalculator
             return null;
         }
 
-        try {
-            // Sampling size: 9x8 pixels to allow for 8 horizontal comparisons per row
-            $width = 9; 
-            $height = 8;
-            $sample = imagecreatetruecolor($width, $height);
-            
-            // Prepare the sample to handle transparency correctly
-            imagealphablending($sample, false);
-            imagesavealpha($sample, true);
-            
-            // Resize original image to the sampling grid
-            imagecopyresampled(
-                $sample, $image, 
-                0, 0, 0, 0, 
-                $width, $height, 
-                imagesx($image), imagesy($image)
-            );
+        // Sampling size: 9x8 pixels to allow for 8 horizontal comparisons per row
+        $width = 9;
+        $height = 8;
+        $sample = imagecreatetruecolor($width, $height);
 
-            $lBits = ''; // Luminance gradient bits
-            $aBits = ''; // Alpha gradient bits
-            $rTotal = 0; $gTotal = 0; $bTotal = 0;
+        // Prepare the sample to handle transparency correctly
+        imagealphablending($sample, false);
+        imagesavealpha($sample, true);
 
-            for ($y = 0; $y < $height; $y++) {
-                for ($x = 0; $x < 8; $x++) {
-                    // Get RGBA values for current pixel and the pixel to its right
-                    $rgbL = imagecolorat($sample, $x, $y);
-                    $rgbR = imagecolorat($sample, $x + 1, $y);
+        // Resize original image to the sampling grid
+        imagecopyresampled(
+            $sample, $image,
+            0, 0, 0, 0,
+            $width, $height,
+            imagesx($image), imagesy($image)
+        );
 
-                    // Extract Alpha and calculate Luminance (Y) for both pixels
-                    // GD Alpha is 0 (opaque) to 127 (transparent)
-                    $aL = ($rgbL >> 24) & 0x7F;
-                    $rL = ($rgbL >> 16) & 0xFF;
-                    $gL = ($rgbL >> 8) & 0xFF;
-                    $bL = $rgbL & 0xFF;
-                    $yL = ($rL * 0.299 + $gL * 0.587 + $bL * 0.114);
-                    
-                    $aR = ($rgbR >> 24) & 0x7F;
-                    $rR = ($rgbR >> 16) & 0xFF;
-                    $gR = ($rgbR >> 8) & 0xFF;
-                    $bR = $rgbR & 0xFF;
-                    $yR = ($rR * 0.299 + $gR * 0.587 + $bR * 0.114);
+        $lBits = ''; // Luminance gradient bits
+        $aBits = ''; // Alpha gradient bits
+        $rTotal = 0; $gTotal = 0; $bTotal = 0;
 
-                    // Difference Hash Logic: 1 if left is greater than right, else 0
-                    $lBits .= ($yL > $yR) ? '1' : '0'; // Structural change in brightness
-                    $aBits .= ($aL > $aR) ? '1' : '0'; // Structural change in transparency
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < 8; $x++) {
+                // Get RGBA values for current pixel and the pixel to its right
+                $rgbL = imagecolorat($sample, $x, $y);
+                $rgbR = imagecolorat($sample, $x + 1, $y);
 
-                    // Accumulate RGB values for the global color signature
-                    $rTotal += $rL;
-                    $gTotal += $gL;
-                    $bTotal += $bL;
-                }
-            }
+                // Extract Alpha and calculate Luminance (Y) for both pixels
+                // GD Alpha is 0 (opaque) to 127 (transparent)
+                $aL = ($rgbL >> 24) & 0x7F;
+                $rL = ($rgbL >> 16) & 0xFF;
+                $gL = ($rgbL >> 8) & 0xFF;
+                $bL = $rgbL & 0xFF;
+                $yL = ($rL * 0.299 + $gL * 0.587 + $bL * 0.114);
 
-            // Construct final hash: 16 chars (Luminance) + 16 chars (Alpha) + 6 chars (Color)
-            $hash = $this->binToHex($lBits);
-            $hash .= $this->binToHex($aBits);
-            
-            // Calculate average color across all 72 sampled pixels
-            $hash .= str_pad(dechex((int)($rTotal / 72)), 2, '0', STR_PAD_LEFT);
-            $hash .= str_pad(dechex((int)($gTotal / 72)), 2, '0', STR_PAD_LEFT);
-            $hash .= str_pad(dechex((int)($bTotal / 72)), 2, '0', STR_PAD_LEFT);
+                $aR = ($rgbR >> 24) & 0x7F;
+                $rR = ($rgbR >> 16) & 0xFF;
+                $gR = ($rgbR >> 8) & 0xFF;
+                $bR = $rgbR & 0xFF;
+                $yR = ($rR * 0.299 + $gR * 0.587 + $bR * 0.114);
 
-            return $hash;
+                // Difference Hash Logic: 1 if left is greater than right, else 0
+                $lBits .= ($yL > $yR) ? '1' : '0'; // Structural change in brightness
+                $aBits .= ($aL > $aR) ? '1' : '0'; // Structural change in transparency
 
-        } finally {
-            // Free up memory
-            imagedestroy($image);
-            if (isset($sample)) {
-                imagedestroy($sample);
+                // Accumulate RGB values for the global color signature
+                $rTotal += $rL;
+                $gTotal += $gL;
+                $bTotal += $bL;
             }
         }
+
+        // Construct final hash: 16 chars (Luminance) + 16 chars (Alpha) + 6 chars (Color)
+        $hash = $this->binToHex($lBits);
+        $hash .= $this->binToHex($aBits);
+
+        // Calculate average color across all 72 sampled pixels
+        $hash .= str_pad(dechex((int)($rTotal / 72)), 2, '0', STR_PAD_LEFT);
+        $hash .= str_pad(dechex((int)($gTotal / 72)), 2, '0', STR_PAD_LEFT);
+        $hash .= str_pad(dechex((int)($bTotal / 72)), 2, '0', STR_PAD_LEFT);
+
+        return $hash;
     }
 
     /**
