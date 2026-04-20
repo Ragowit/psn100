@@ -68,7 +68,23 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
 
     public function lookupProfileByOnlineId(string $onlineId): mixed
     {
-        return $this->transport->lookupUserProfile($onlineId);
+        try {
+            return $this->transport->lookupUserProfile($onlineId);
+        } catch (Throwable $exception) {
+            if ($this->determineThrowableStatusCode($exception) !== 404) {
+                throw $exception;
+            }
+        }
+
+        $searchCandidate = $this->findSearchCandidateByOnlineId($onlineId);
+        if ($searchCandidate === null) {
+            throw new RuntimeException(
+                sprintf('Unable to resolve accountId for online ID "%s".', $onlineId),
+                404
+            );
+        }
+
+        return $this->transport->lookupUserProfile($searchCandidate['onlineId']);
     }
 
     public function findUserByAccountId(string $accountId): object
@@ -90,12 +106,15 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     {
         $payload = $this->requestJson(
             'GET',
-            sprintf('https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2', rawurlencode($accountId)),
-            ['fields' => 'accountId,onlineId,currentOnlineId,npId,aboutMe,country,trophySummary'],
+            sprintf(
+                'https://m.np.playstation.com/api/userProfile/v1/internal/users/%s/profiles',
+                rawurlencode($accountId)
+            ),
+            [],
             []
         );
 
-        return PlayStationAccountLookupUser::fromPayload($payload);
+        return PlayStationAccountLookupUser::fromPayload($payload, $accountId);
     }
 
     /**
@@ -103,36 +122,130 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
      */
     private function executeUserSearch(string $onlineId): iterable
     {
+        return $this->mapUserSearchResults(
+            $this->requestUserSearchPayload($onlineId)
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function requestUserSearchPayload(string $onlineId): array
+    {
         $normalizedOnlineId = trim($onlineId);
         if ($normalizedOnlineId === '') {
             return [];
         }
 
-        $payload = $this->requestJson(
-            'GET',
-            sprintf('https://us-prof.np.community.playstation.net/userProfile/v1/users/%s/profile2', rawurlencode($normalizedOnlineId)),
-            ['fields' => 'accountId,onlineId,currentOnlineId,npId,aboutMe,country'],
-            []
+        return $this->requestJson(
+            'POST',
+            'https://m.np.playstation.com/api/search/v1/universalSearch',
+            [],
+            ['content-type' => 'application/json'],
+            json_encode([
+                'age' => '69',
+                'countryCode' => 'us',
+                'domainRequests' => [[
+                    'domain' => 'SocialAllAccounts',
+                    'pagination' => [
+                        'cursor' => '',
+                        'pageSize' => '50',
+                    ],
+                ]],
+                'languageCode' => 'en',
+                'searchTerm' => $normalizedOnlineId,
+            ], JSON_THROW_ON_ERROR)
         );
+    }
 
-        $profile = $payload['profile'] ?? null;
-        if (!is_array($profile)) {
-            return [];
+    /**
+     * @param array<string, mixed> $payload
+     * @return iterable<array{onlineId: string, country: string|null, aboutMe: string|null}>
+     */
+    private function mapUserSearchResults(array $payload): iterable
+    {
+        foreach ($this->extractUserSearchCandidates($payload) as $candidate) {
+            yield [
+                'onlineId' => $candidate['onlineId'],
+                'country' => $candidate['country'],
+                'aboutMe' => $candidate['aboutMe'],
+            ];
+        }
+    }
+
+    /**
+     * @return array{accountId: string, onlineId: string, country: string|null, aboutMe: string|null}|null
+     */
+    private function findSearchCandidateByOnlineId(string $onlineId): ?array
+    {
+        $normalizedOnlineId = trim($onlineId);
+        if ($normalizedOnlineId === '') {
+            return null;
         }
 
-        $resolvedOnlineId = $profile['onlineId'] ?? $profile['currentOnlineId'] ?? null;
-        if (!is_string($resolvedOnlineId) || trim($resolvedOnlineId) === '') {
-            return [];
+        $payload = $this->requestUserSearchPayload($normalizedOnlineId);
+
+        foreach ($this->extractUserSearchCandidates($payload) as $candidate) {
+            if (strcasecmp($candidate['onlineId'], $normalizedOnlineId) !== 0) {
+                continue;
+            }
+
+            return $candidate;
         }
 
-        $country = $profile['country'] ?? null;
-        $aboutMe = $profile['aboutMe'] ?? null;
+        return null;
+    }
 
-        return [[
-            'onlineId' => $resolvedOnlineId,
-            'country' => is_string($country) ? $country : null,
-            'aboutMe' => is_string($aboutMe) ? $aboutMe : null,
-        ]];
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array{accountId: string, onlineId: string, country: string|null, aboutMe: string|null}>
+     */
+    private function extractUserSearchCandidates(array $payload): array
+    {
+        $results = [];
+        $nodes = [$payload];
+
+        while ($nodes !== []) {
+            $node = array_pop($nodes);
+            if (!is_array($node)) {
+                continue;
+            }
+
+            $accountId = $node['accountId'] ?? null;
+            $onlineId = $node['onlineId'] ?? $node['currentOnlineId'] ?? null;
+
+            if (is_string($accountId) && trim($accountId) !== '' && is_string($onlineId) && trim($onlineId) !== '') {
+                $results[] = [
+                    'accountId' => trim($accountId),
+                    'onlineId' => trim($onlineId),
+                    'country' => isset($node['country']) && is_string($node['country']) ? $node['country'] : null,
+                    'aboutMe' => isset($node['aboutMe']) && is_string($node['aboutMe']) ? $node['aboutMe'] : null,
+                ];
+            }
+
+            foreach ($node as $value) {
+                if (is_array($value)) {
+                    $nodes[] = $value;
+                }
+            }
+        }
+
+        return $results;
+    }
+
+    private function determineThrowableStatusCode(Throwable $exception): ?int
+    {
+        $statusCode = $exception->getCode();
+        if (is_int($statusCode) && $statusCode > 0) {
+            return $statusCode;
+        }
+
+        $previous = $exception->getPrevious();
+        if ($previous instanceof Throwable) {
+            return $this->determineThrowableStatusCode($previous);
+        }
+
+        return null;
     }
 
     private function exchangeNpssoForAuthorizationCode(string $npsso): string

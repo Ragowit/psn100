@@ -14,4 +14,65 @@ final class NativePlayStationApiClientTest extends TestCase
 
         $this->assertSame('ucPjka5tntB2KqsP', $clientSecret);
     }
+
+    public function testExtractUserSearchCandidatesFindsNestedAccountEntries(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'extractUserSearchCandidates');
+        $method->setAccessible(true);
+
+        $payload = [
+            'domainResponses' => [
+                [
+                    'domain' => 'SocialAllAccounts',
+                    'results' => [
+                        [
+                            'socialMetadata' => [
+                                'accountId' => '1882371903386905898',
+                                'onlineId' => 'Ragowit',
+                                'country' => 'PL',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $method->invoke($client, $payload);
+
+        $this->assertSame(
+            [[
+                'accountId' => '1882371903386905898',
+                'onlineId' => 'Ragowit',
+                'country' => 'PL',
+                'aboutMe' => null,
+            ]],
+            $result
+        );
+    }
+
+    public function testExtractUserSearchCandidatesAcceptsCurrentOnlineIdFallback(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'extractUserSearchCandidates');
+        $method->setAccessible(true);
+
+        $payload = [
+            'accountId' => '100',
+            'currentOnlineId' => 'CurrentName',
+            'aboutMe' => 'Bio',
+        ];
+
+        $result = $method->invoke($client, $payload);
+
+        $this->assertSame(
+            [[
+                'accountId' => '100',
+                'onlineId' => 'CurrentName',
+                'country' => null,
+                'aboutMe' => 'Bio',
+            ]],
+            $result
+        );
+    }
 }

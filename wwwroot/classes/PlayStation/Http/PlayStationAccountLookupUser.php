@@ -11,6 +11,9 @@ final readonly class PlayStationAccountLookupUser
         private string $onlineId,
         private ?string $aboutMe,
         private ?string $country,
+        private bool $isPlus,
+        /** @var array<string, string> */
+        private array $avatarUrls,
         private PsnTrophySummaryDto $trophySummary,
     ) {
     }
@@ -40,10 +43,23 @@ final readonly class PlayStationAccountLookupUser
         return $this->trophySummary;
     }
 
+    public function hasPlus(): bool
+    {
+        return $this->isPlus;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function avatarUrls(): array
+    {
+        return $this->avatarUrls;
+    }
+
     /**
      * @param array<string, mixed> $payload
      */
-    public static function fromPayload(array $payload): self
+    public static function fromPayload(array $payload, ?string $fallbackAccountId = null): self
     {
         $profile = $payload['profile'] ?? null;
         if (!is_array($profile)) {
@@ -51,6 +67,9 @@ final readonly class PlayStationAccountLookupUser
         }
 
         $accountId = $profile['accountId'] ?? null;
+        if (!is_string($accountId) || trim($accountId) === '') {
+            $accountId = $fallbackAccountId;
+        }
         if (!is_string($accountId) || trim($accountId) === '') {
             throw new UnexpectedValueException('Missing or invalid accountId in PlayStation payload.');
         }
@@ -70,6 +89,29 @@ final readonly class PlayStationAccountLookupUser
             throw new UnexpectedValueException('Invalid country field in PlayStation payload.');
         }
 
+        $isPlus = $profile['isPlus'] ?? false;
+        if (!is_bool($isPlus)) {
+            $isPlus = false;
+        }
+
+        $avatarUrls = [];
+        $avatars = $profile['avatars'] ?? [];
+        if (is_array($avatars)) {
+            foreach ($avatars as $avatar) {
+                if (!is_array($avatar)) {
+                    continue;
+                }
+
+                $size = $avatar['size'] ?? null;
+                $url = $avatar['url'] ?? null;
+                if (!is_string($size) || $size === '' || !is_string($url) || $url === '') {
+                    continue;
+                }
+
+                $avatarUrls[$size] = $url;
+            }
+        }
+
         $trophySummary = $profile['trophySummary'] ?? [];
         if (!is_array($trophySummary)) {
             throw new UnexpectedValueException('Invalid trophySummary in PlayStation payload.');
@@ -80,6 +122,8 @@ final readonly class PlayStationAccountLookupUser
             onlineId: $onlineId,
             aboutMe: $aboutMe,
             country: $country,
+            isPlus: $isPlus,
+            avatarUrls: $avatarUrls,
             trophySummary: new PsnTrophySummaryDto(
                 self::toInt($trophySummary['level'] ?? 0),
                 self::toInt($trophySummary['progress'] ?? 0),

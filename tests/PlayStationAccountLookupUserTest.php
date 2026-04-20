@@ -37,6 +37,8 @@ final class PlayStationAccountLookupUserTest extends TestCase
         $this->assertSame(2, $user->trophySummary()->gold());
         $this->assertSame(3, $user->trophySummary()->silver());
         $this->assertSame(4, $user->trophySummary()->bronze());
+        $this->assertFalse($user->hasPlus());
+        $this->assertSame([], $user->avatarUrls());
     }
 
     public function testFromPayloadDefaultsMissingTrophySummaryValuesToZero(): void
@@ -54,5 +56,31 @@ final class PlayStationAccountLookupUserTest extends TestCase
         $this->assertSame(0, $user->trophySummary()->gold());
         $this->assertSame(0, $user->trophySummary()->silver());
         $this->assertSame(0, $user->trophySummary()->bronze());
+    }
+
+    public function testFromPayloadUsesFallbackAccountIdAndMapsAvatarUrls(): void
+    {
+        $user = PlayStationAccountLookupUser::fromPayload(
+            [
+                'onlineId' => 'Ragowit',
+                'isPlus' => true,
+                'avatars' => [
+                    ['size' => 's', 'url' => 'https://example.com/s.png'],
+                    ['size' => 'xl', 'url' => 'https://example.com/xl.png'],
+                ],
+            ],
+            '1882371903386905898'
+        );
+
+        $this->assertSame('1882371903386905898', $user->accountId());
+        $this->assertSame('Ragowit', $user->onlineId());
+        $this->assertTrue($user->hasPlus());
+        $this->assertSame(
+            [
+                's' => 'https://example.com/s.png',
+                'xl' => 'https://example.com/xl.png',
+            ],
+            $user->avatarUrls()
+        );
     }
 }
