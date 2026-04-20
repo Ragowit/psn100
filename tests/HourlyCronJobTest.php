@@ -7,50 +7,53 @@ require_once __DIR__ . '/../wwwroot/classes/Cron/HourlyCronJob.php';
 
 final class HourlyCronJobTest extends TestCase
 {
-    public function testUsesBatchAndStatsTemporaryTablesForNonEmptyBatchUpdates(): void
+    public function testUsesSingleSetBasedUpdateQuery(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);
-        $createBatchTableQuery = $this->readPrivateConstantValue($class, 'CREATE_BATCH_TEMP_TABLE_QUERY');
-        $createStatsTableQuery = $this->readPrivateConstantValue($class, 'CREATE_STATS_TEMP_TABLE_QUERY');
-        $insertStatsQuery = $this->readPrivateConstantValue($class, 'INSERT_STATS_QUERY');
-        $updateMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_META_QUERY');
+        $updateAllMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_ALL_META_QUERY');
 
-        $this->assertStringContainsString('COLLATE utf8mb4_unicode_ci', $createBatchTableQuery);
-        $this->assertStringContainsString('COLLATE utf8mb4_unicode_ci', $createStatsTableQuery);
-        $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $insertStatsQuery);
-        $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id', $insertStatsQuery);
-        $this->assertStringContainsString('COUNT(*) AS owners', $insertStatsQuery);
-        $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $insertStatsQuery);
-        $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $insertStatsQuery);
+        $this->assertStringContainsString('UPDATE trophy_title_meta ttm', $updateAllMetaQuery);
+        $this->assertStringContainsString('LEFT JOIN (', $updateAllMetaQuery);
+        $this->assertStringContainsString('FROM trophy_title_player ttp', $updateAllMetaQuery);
+        $this->assertStringContainsString('JOIN player_ranking pr ON pr.account_id = ttp.account_id', $updateAllMetaQuery);
+        $this->assertStringContainsString('WHERE pr.ranking <= 10000', $updateAllMetaQuery);
+        $this->assertStringContainsString('GROUP BY ttp.np_communication_id', $updateAllMetaQuery);
+        $this->assertStringContainsString('COUNT(*) AS owners', $updateAllMetaQuery);
+        $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $updateAllMetaQuery);
+        $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $updateAllMetaQuery);
 
-        $this->assertStringContainsString('UPDATE trophy_title_meta ttm', $updateMetaQuery);
-        $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttm.np_communication_id', $updateMetaQuery);
+        $this->assertFalse(str_contains($updateAllMetaQuery, 'tmp_hourly_batch'));
+        $this->assertFalse(str_contains($updateAllMetaQuery, 'tmp_hourly_stats'));
     }
 
-    public function testResetsBatchTitlesWithoutQualifyingPlayersToZeroValues(): void
+    public function testResetsTitlesWithoutQualifyingPlayersToZeroValues(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);
-        $updateMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_META_QUERY');
+        $updateAllMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_ALL_META_QUERY');
 
-        $this->assertStringContainsString('LEFT JOIN tmp_hourly_stats s ON s.np_communication_id = ttm.np_communication_id', $updateMetaQuery);
-        $this->assertStringContainsString('ttm.owners = COALESCE(s.owners, 0)', $updateMetaQuery);
-        $this->assertStringContainsString('ttm.owners_completed = COALESCE(s.owners_completed, 0)', $updateMetaQuery);
-        $this->assertStringContainsString('ttm.recent_players = COALESCE(s.recent_players, 0)', $updateMetaQuery);
-        $this->assertStringContainsString('COALESCE(s.owners, 0) = 0', $updateMetaQuery);
-        $this->assertStringContainsString('(COALESCE(s.owners_completed, 0) / COALESCE(s.owners, 0)) * 100', $updateMetaQuery);
+        $this->assertStringContainsString('LEFT JOIN (', $updateAllMetaQuery);
+        $this->assertStringContainsString(') s ON s.np_communication_id = ttm.np_communication_id', $updateAllMetaQuery);
+        $this->assertStringContainsString('ttm.owners = COALESCE(s.owners, 0)', $updateAllMetaQuery);
+        $this->assertStringContainsString('ttm.owners_completed = COALESCE(s.owners_completed, 0)', $updateAllMetaQuery);
+        $this->assertStringContainsString('ttm.recent_players = COALESCE(s.recent_players, 0)', $updateAllMetaQuery);
+        $this->assertStringContainsString('COALESCE(s.owners, 0) = 0', $updateAllMetaQuery);
+        $this->assertStringContainsString('(COALESCE(s.owners_completed, 0) / COALESCE(s.owners, 0)) * 100', $updateAllMetaQuery);
     }
 
 
-    public function testUsesDeleteInsteadOfTruncateInBatchUpdateFlow(): void
+    public function testDoesNotUseTempTableBatchFlow(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);
         $source = file_get_contents((string) $class->getFileName());
         $this->assertTrue(is_string($source));
 
-        $this->assertStringContainsString("DELETE FROM tmp_hourly_batch", $source);
-        $this->assertStringContainsString("DELETE FROM tmp_hourly_stats", $source);
-        $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_batch'));
-        $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_stats'));
+        $this->assertFalse(str_contains($source, 'tmp_hourly_batch'));
+        $this->assertFalse(str_contains($source, 'tmp_hourly_stats'));
+        $this->assertFalse(str_contains($source, 'TRUNCATE TABLE'));
+        $this->assertFalse($class->hasConstant('CREATE_BATCH_TEMP_TABLE_QUERY'));
+        $this->assertFalse($class->hasConstant('CREATE_STATS_TEMP_TABLE_QUERY'));
+        $this->assertFalse($class->hasConstant('INSERT_STATS_QUERY'));
+        $this->assertFalse($class->hasConstant('UPDATE_META_QUERY'));
     }
 
     public function testNoDynamicUnionAllSelectBatchPathExists(): void
