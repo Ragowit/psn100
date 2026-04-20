@@ -140,7 +140,11 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
                 [],
                 []
             );
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            if ($this->determineThrowableStatusCode($exception) !== 404) {
+                throw $exception;
+            }
+
             return null;
         }
     }
@@ -263,7 +267,7 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
                 continue;
             }
 
-            $accountId = $node['accountId'] ?? null;
+            $accountId = $this->normalizeAccountId($node['accountId'] ?? null);
             $onlineId = $node['onlineId'] ?? null;
             $currentOnlineId = $node['currentOnlineId'] ?? null;
 
@@ -272,9 +276,9 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
                 ? trim($currentOnlineId)
                 : null;
 
-            if (is_string($accountId) && trim($accountId) !== '' && ($normalizedOnlineId !== null || $normalizedCurrentOnlineId !== null)) {
+            if ($accountId !== null && ($normalizedOnlineId !== null || $normalizedCurrentOnlineId !== null)) {
                 $results[] = [
-                    'accountId' => trim($accountId),
+                    'accountId' => $accountId,
                     'onlineId' => $normalizedOnlineId ?? $normalizedCurrentOnlineId,
                     'currentOnlineId' => $normalizedCurrentOnlineId,
                     'country' => isset($node['country']) && is_string($node['country']) ? $node['country'] : null,
@@ -290,6 +294,25 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
         }
 
         return $results;
+    }
+
+    private function normalizeAccountId(mixed $accountId): ?string
+    {
+        if (is_string($accountId)) {
+            $normalizedAccountId = trim($accountId);
+
+            return $normalizedAccountId !== '' ? $normalizedAccountId : null;
+        }
+
+        if (is_int($accountId)) {
+            return (string) $accountId;
+        }
+
+        if (is_float($accountId) && is_finite($accountId) && floor($accountId) === $accountId) {
+            return sprintf('%.0F', $accountId);
+        }
+
+        return null;
     }
 
     private function determineThrowableStatusCode(Throwable $exception): ?int

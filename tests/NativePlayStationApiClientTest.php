@@ -104,6 +104,37 @@ final class NativePlayStationApiClientTest extends TestCase
         );
     }
 
+    public function testExtractUserSearchCandidatesNormalizesNumericAccountIds(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'extractUserSearchCandidates');
+        $method->setAccessible(true);
+
+        $payload = [
+            'domainResponses' => [[
+                'results' => [[
+                    'socialMetadata' => [
+                        'accountId' => 123456789,
+                        'onlineId' => 'PlayerOne',
+                    ],
+                ]],
+            ]],
+        ];
+
+        $result = $method->invoke($client, $payload);
+
+        $this->assertSame(
+            [[
+                'accountId' => '123456789',
+                'onlineId' => 'PlayerOne',
+                'currentOnlineId' => null,
+                'country' => null,
+                'aboutMe' => null,
+            ]],
+            $result
+        );
+    }
+
     public function testMergeAccountLookupPayloadWithTrophySummaryUsesNestedProfileWhenPresent(): void
     {
         $client = new NativePlayStationApiClient();
