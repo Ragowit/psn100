@@ -114,20 +114,35 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
             []
         );
 
-        $trophySummaryPayload = $this->requestJson(
-            'GET',
-            sprintf(
-                'https://m.np.playstation.com/api/trophy/v1/users/%s/trophySummary',
-                rawurlencode($accountId)
-            ),
-            [],
-            []
-        );
+        $trophySummaryPayload = $this->requestTrophySummaryForAccountId($accountId);
+        if (is_array($trophySummaryPayload)) {
+            $payload = $this->mergeAccountLookupPayloadWithTrophySummary($payload, $trophySummaryPayload);
+        }
 
         return PlayStationAccountLookupUser::fromPayload(
-            $this->mergeAccountLookupPayloadWithTrophySummary($payload, $trophySummaryPayload),
+            $payload,
             $accountId
         );
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function requestTrophySummaryForAccountId(string $accountId): ?array
+    {
+        try {
+            return $this->requestJson(
+                'GET',
+                sprintf(
+                    'https://m.np.playstation.com/api/trophy/v1/users/%s/trophySummary',
+                    rawurlencode($accountId)
+                ),
+                [],
+                []
+            );
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -196,8 +211,10 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     private function mapUserSearchResults(array $payload): iterable
     {
         foreach ($this->extractUserSearchCandidates($payload) as $candidate) {
+            $preferredOnlineId = $candidate['currentOnlineId'] ?? $candidate['onlineId'];
+
             yield [
-                'onlineId' => $candidate['onlineId'],
+                'onlineId' => $preferredOnlineId,
                 'country' => $candidate['country'],
                 'aboutMe' => $candidate['aboutMe'],
             ];

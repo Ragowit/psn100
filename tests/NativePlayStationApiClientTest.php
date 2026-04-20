@@ -133,4 +133,39 @@ final class NativePlayStationApiClientTest extends TestCase
         $this->assertSame('PlayerOne', $result['profile']['onlineId']);
     }
 
+    public function testMapUserSearchResultsPrefersCurrentOnlineIdWhenAvailable(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'mapUserSearchResults');
+        $method->setAccessible(true);
+
+        $payload = [
+            'domainResponses' => [
+                [
+                    'results' => [
+                        [
+                            'socialMetadata' => [
+                                'accountId' => '300',
+                                'onlineId' => 'LegacyName',
+                                'currentOnlineId' => 'CurrentName',
+                                'country' => 'US',
+                                'aboutMe' => 'Bio',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $results = iterator_to_array($method->invoke($client, $payload), false);
+
+        $this->assertSame(
+            [[
+                'onlineId' => 'CurrentName',
+                'country' => 'US',
+                'aboutMe' => 'Bio',
+            ]],
+            $results
+        );
+    }
 }
