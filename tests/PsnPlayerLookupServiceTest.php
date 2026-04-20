@@ -230,7 +230,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('US', $handled->getNpCountry());
     }
 
-    public function testLookupInShadowModeKeepsLegacyResponseAsSourceOfTruth(): void
+    public function testLookupUsesPrimaryFactoryEvenWhenShadowModeIsPassed(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
@@ -274,7 +274,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('100', $result['profile']['accountId']);
     }
 
-    public function testLookupInNewModeUsesNewClientOnly(): void
+    public function testLookupUsesPrimaryFactoryEvenWhenNewModeIsPassed(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $legacyFactoryCounter = (object) ['count' => 0];
@@ -321,9 +321,9 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
         $result = $service->lookup('Example');
 
-        $this->assertSame('NewName', $result['profile']['onlineId']);
-        $this->assertSame('200', $result['profile']['accountId']);
-        $this->assertSame(0, $legacyFactoryCounter->count);
+        $this->assertSame('LegacyName', $result['profile']['onlineId']);
+        $this->assertSame('100', $result['profile']['accountId']);
+        $this->assertSame(1, $legacyFactoryCounter->count);
     }
 
     public function testLookupNormalizesFixtureSuccessPayload(): void

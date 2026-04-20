@@ -15,15 +15,22 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 
 The canonical service config file is `wwwroot/config/app.php`.
 
-### PSN client mode
+### PSN integration architecture
 
-Set `PSN_CLIENT_MODE` to control which PSN client mode is used by PSN lookup, rescan, and cron flows.
+PSN100 now uses a single internal PSN client implementation for all PSN operations:
 
-- `legacy` (default): use the current production behavior.
-- `shadow`: run the shadow mode configuration path while still using legacy client behavior.
-- `new`: run the new mode configuration path (currently mapped to the same client implementation as `legacy` until rollout is complete).
+- admin player lookup (`PsnPlayerLookupService`)
+- admin game lookup and trophy retrieval (`PsnGameLookupService`)
+- game rescan workflow (`GameRescanService`)
+- 30-minute worker cron sync (`ThirtyMinuteCronJob`)
 
-The app validates the configured mode on first use and fails fast with a clear error if the value is not one of `legacy`, `shadow`, or `new`.
+`PlayStationClientFactory` always returns the internal `NativePlayStationApiClient` implementation and no longer performs shadow/legacy dual execution.
+
+### Operational guidance
+
+- Worker NPSSO values are still the authentication source-of-truth and should be rotated periodically.
+- If PSN auth starts failing, verify worker NPSSO validity first, then validate outbound network access to Sony auth/profile/trophy endpoints.
+- Prefer observing application logs around worker authentication and PSN request failures before retrying bulk scans.
 
 ## Merge Guideline Priorities
 1. Available > Delisted

@@ -13,8 +13,6 @@ require_once __DIR__ . '/../PlayStation/Exception/PlayStationNotFoundException.p
 require_once __DIR__ . '/../PlayStation/Exception/PlayStationTransientUpstreamException.php';
 require_once __DIR__ . '/../PlayStation/Policy/NpServiceNamePolicy.php';
 require_once __DIR__ . '/../PlayStation/PlayStationClientFactory.php';
-require_once __DIR__ . '/../PlayStation/Shadow/ShadowExecutionUtility.php';
-require_once __DIR__ . '/../PlayStation/Shadow/ShadowResponseNormalizer.php';
 require_once __DIR__ . '/../PsnClientMode.php';
 
 final class PsnGameLookupService
@@ -25,9 +23,7 @@ final class PsnGameLookupService
     private readonly \Closure $workerFetcher;
 
     private readonly PlayStationClientFactoryInterface $playStationClientFactory;
-    private readonly PlayStationClientFactoryInterface $shadowPlayStationClientFactory;
     private readonly NpServiceNamePolicy $npServiceNamePolicy;
-    private readonly PsnClientMode $psnClientMode;
 
     public function __construct(
         private readonly PDO $database,
@@ -38,9 +34,7 @@ final class PsnGameLookupService
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->playStationClientFactory = $this->normalizePlayStationClientFactory($playStationClientFactory);
-        $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
         $this->npServiceNamePolicy = new NpServiceNamePolicy();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('psn_game_lookup');
     }
 
     public static function fromDatabase(
@@ -198,41 +192,11 @@ final class PsnGameLookupService
             throw new InvalidArgumentException('NP communication ID must be provided.');
         }
 
-        if ($this->psnClientMode->isLegacy()) {
-            $client = $authenticatedClient === null
-                ? $this->createAuthenticatedClient()
-                : $this->normalizeTrophyClient($authenticatedClient);
+        $client = $authenticatedClient === null
+            ? $this->createAuthenticatedClient()
+            : $this->normalizeTrophyClient($authenticatedClient);
 
-            return $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $client);
-        }
-
-        if ($this->psnClientMode->isNew()) {
-            $client = $authenticatedClient === null
-                ? $this->createAuthenticatedClientSession($this->shadowPlayStationClientFactory)['client']
-                : $this->normalizeTrophyClient($authenticatedClient);
-
-            return $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $client);
-        }
-
-        $legacySession = $authenticatedClient === null
-            ? $this->createAuthenticatedClientSession($this->playStationClientFactory)
-            : null;
-        $legacyClient = $legacySession === null
-            ? $this->normalizeTrophyClient($authenticatedClient)
-            : $legacySession['client'];
-
-        return ShadowExecutionUtility::executeWithLegacyTruth(
-            $this->psnClientMode,
-            'game_trophy_lookup',
-            fn (): array => $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $legacyClient),
-            fn (): array => $this->executeShadowTrophyLookup(
-                $legacySession['npsso'] ?? $this->createAuthenticatedClientSession()['npsso'],
-                $normalizedNpCommunicationId
-            ),
-            static fn (mixed $payload): array => ShadowResponseNormalizer::normalizeTrophyLookup($payload),
-            700,
-            ['service' => 'psn_game_lookup', 'npCommunicationId' => $normalizedNpCommunicationId]
-        );
+        return $this->fetchTrophyDataFromClient($normalizedNpCommunicationId, $client);
     }
 
     /**
@@ -351,14 +315,6 @@ final class PsnGameLookupService
     /**
      * @return array<string, mixed>
      */
-    private function executeShadowTrophyLookup(string $npsso, string $npCommunicationId): array
-    {
-        $shadowClient = $this->shadowPlayStationClientFactory->createClient();
-        $shadowClient->loginWithNpsso($npsso);
-
-        return $this->fetchTrophyDataFromClient($npCommunicationId, $shadowClient);
-    }
-
     /**
      * @param mixed $rawGroups
      * @param array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}> $groupedTrophies
@@ -452,11 +408,15 @@ final class PsnGameLookupService
 
     private function resolvePreferredNpServiceName(string $npCommunicationId): ?string
     {
-        $query = $this->database->prepare(
-            'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id LIMIT 1'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
+        try {
+            $query = $this->database->prepare(
+                'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id LIMIT 1'
+            );
+            $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+            $query->execute();
+        } catch (PDOException) {
+            return null;
+        }
 
         $platform = $query->fetchColumn();
         if ($platform === false) {
@@ -492,11 +452,7 @@ final class PsnGameLookupService
 
     private function createAuthenticatedClient(): PlayStationApiClientInterface
     {
-        $factory = $this->psnClientMode->isNew()
-            ? $this->shadowPlayStationClientFactory
-            : $this->playStationClientFactory;
-
-        return $this->createAuthenticatedClientSession($factory)['client'];
+        return $this->createAuthenticatedClientSession($this->playStationClientFactory)['client'];
     }
 
     /**

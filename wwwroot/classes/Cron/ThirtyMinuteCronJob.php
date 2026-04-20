@@ -23,13 +23,10 @@ require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyGroupMapper.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyMapper.php';
 require_once __DIR__ . '/../PlayStation/Exception/PlayStationAuthFailureException.php';
 require_once __DIR__ . '/../PlayStation/Exception/PlayStationNotFoundException.php';
-require_once __DIR__ . '/../PlayStation/Shadow/ShadowExecutionUtility.php';
 require_once __DIR__ . '/../PsnClientMode.php';
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
-    private const int DEFAULT_SHADOW_LOGIN_LATENCY_BUDGET_MS = 700;
-    private const string SHADOW_LOGIN_LATENCY_BUDGET_ENV = 'PSN_CRON_SHADOW_LOGIN_LATENCY_BUDGET_MS';
     private const string TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
     private const string GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
     private const string TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
@@ -42,8 +39,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly ImageHashCalculator $imageHashCalculator;
     private readonly PsnGameLookupService $psnGameLookupService;
     private readonly PlayStationClientFactoryInterface $playStationClientFactory;
-    private readonly PlayStationClientFactoryInterface $shadowPlayStationClientFactory;
-    private readonly PsnClientMode $psnClientMode;
     private readonly PsnProfileMapper $psnProfileMapper;
     private readonly PsnTrophyGroupMapper $psnTrophyGroupMapper;
     private readonly PsnTrophyMapper $psnTrophyMapper;
@@ -68,15 +63,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
-        $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('thirty_minute_cron');
         $this->psnProfileMapper = new PsnProfileMapper();
         $this->psnTrophyMapper = new PsnTrophyMapper();
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper($this->psnTrophyMapper);
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
-            $this->playStationClientFactory,
-            $this->shadowPlayStationClientFactory
+            $this->playStationClientFactory
         );
     }
 
@@ -2004,51 +1996,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private function createAuthenticatedClient(string $npsso): PlayStationApiClientInterface
     {
-        if ($this->psnClientMode->isLegacy()) {
-            return $this->createAndLoginClient($this->playStationClientFactory, $npsso);
-        }
-
-        if ($this->psnClientMode->isNew()) {
-            return $this->createAndLoginClient($this->shadowPlayStationClientFactory, $npsso);
-        }
-
-        return ShadowExecutionUtility::executeWithLegacyTruth(
-            $this->psnClientMode,
-            'cron_worker_login',
-            fn (): PlayStationApiClientInterface => $this->createAndLoginClient($this->playStationClientFactory, $npsso),
-            fn (): bool => $this->executeShadowLogin($npsso),
-            static fn (mixed $payload): array => ['authenticated' => (bool) $payload],
-            $this->resolveShadowLoginLatencyBudgetMs(),
-            ['service' => 'thirty_minute_cron']
-        );
-    }
-
-    private function resolveShadowLoginLatencyBudgetMs(): int
-    {
-        $configuredBudget = getenv(self::SHADOW_LOGIN_LATENCY_BUDGET_ENV);
-
-        if (!is_string($configuredBudget) || $configuredBudget === '') {
-            return self::DEFAULT_SHADOW_LOGIN_LATENCY_BUDGET_MS;
-        }
-
-        $validatedBudget = filter_var(
-            $configuredBudget,
-            FILTER_VALIDATE_INT,
-            ['options' => ['min_range' => 1]]
-        );
-
-        if (!is_int($validatedBudget)) {
-            return self::DEFAULT_SHADOW_LOGIN_LATENCY_BUDGET_MS;
-        }
-
-        return $validatedBudget;
-    }
-
-    private function executeShadowLogin(string $npsso): bool
-    {
-        $this->createAndLoginClient($this->shadowPlayStationClientFactory, $npsso);
-
-        return true;
+        return $this->createAndLoginClient($this->playStationClientFactory, $npsso);
     }
 
     private function createAndLoginClient(

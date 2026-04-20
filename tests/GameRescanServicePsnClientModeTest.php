@@ -16,61 +16,16 @@ final class GameRescanServicePsnClientModeTest extends TestCase
         $this->database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
-    public function testCreateAuthenticatedClientUsesNewFactoryInNewMode(): void
+    public function testCreateAuthenticatedClientUsesPrimaryFactoryRegardlessOfModeFlag(): void
     {
-        $legacyCounter = (object) ['count' => 0];
-        $newCounter = (object) ['count' => 0];
+        $primaryCounter = (object) ['count' => 0];
+        $secondaryCounter = (object) ['count' => 0];
 
         $service = new GameRescanService(
             $this->database,
             new TrophyCalculator($this->database),
-            playStationClientFactory: new CountingPlayStationClientFactory($legacyCounter),
-            shadowPlayStationClientFactory: new CountingPlayStationClientFactory($newCounter),
-            psnClientMode: PsnClientMode::fromValue('new')
-        );
-
-        $method = new ReflectionMethod(GameRescanService::class, 'createAuthenticatedClient');
-        $method->setAccessible(true);
-        $method->invoke($service, 'worker-token');
-
-        $this->assertSame(0, $legacyCounter->count);
-        $this->assertSame(1, $newCounter->count);
-    }
-
-
-    public function testGameLookupServiceRetainsItsOwnServiceOverrideWhenRescanModeDiffers(): void
-    {
-        putenv('PSN_CLIENT_MODE_OVERRIDES_JSON={"psn_game_lookup":"shadow"}');
-
-        $service = new GameRescanService(
-            $this->database,
-            new TrophyCalculator($this->database),
-            psnClientMode: PsnClientMode::fromValue('new')
-        );
-
-        $gameLookupServiceProperty = new ReflectionProperty(GameRescanService::class, 'psnGameLookupService');
-        $gameLookupServiceProperty->setAccessible(true);
-        $gameLookupService = $gameLookupServiceProperty->getValue($service);
-
-        $gameLookupModeProperty = new ReflectionProperty(PsnGameLookupService::class, 'psnClientMode');
-        $gameLookupModeProperty->setAccessible(true);
-        $gameLookupMode = $gameLookupModeProperty->getValue($gameLookupService);
-
-        $this->assertSame('shadow', $gameLookupMode->value());
-
-        putenv('PSN_CLIENT_MODE_OVERRIDES_JSON');
-    }
-
-    public function testCreateAuthenticatedClientInShadowModeKeepsLegacyTruthAndOptionallyRunsShadow(): void
-    {
-        $legacyCounter = (object) ['count' => 0];
-        $newCounter = (object) ['count' => 0];
-
-        $service = new GameRescanService(
-            $this->database,
-            new TrophyCalculator($this->database),
-            playStationClientFactory: new CountingPlayStationClientFactory($legacyCounter),
-            shadowPlayStationClientFactory: new CountingPlayStationClientFactory($newCounter),
+            playStationClientFactory: new CountingPlayStationClientFactory($primaryCounter),
+            shadowPlayStationClientFactory: new CountingPlayStationClientFactory($secondaryCounter),
             psnClientMode: PsnClientMode::fromValue('shadow')
         );
 
@@ -78,13 +33,8 @@ final class GameRescanServicePsnClientModeTest extends TestCase
         $method->setAccessible(true);
         $method->invoke($service, 'worker-token');
 
-        $this->assertSame(1, $legacyCounter->count);
-        $expectedShadowExecutions = (
-            function_exists('pcntl_signal')
-            && function_exists('pcntl_async_signals')
-            && function_exists('pcntl_setitimer')
-        ) ? 1 : 0;
-        $this->assertSame($expectedShadowExecutions, $newCounter->count);
+        $this->assertSame(1, $primaryCounter->count);
+        $this->assertSame(0, $secondaryCounter->count);
     }
 }
 

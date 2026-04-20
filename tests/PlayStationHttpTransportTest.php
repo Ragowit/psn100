@@ -42,6 +42,24 @@ final class PlayStationHttpTransportTest extends TestCase
         }
     }
 
+
+    public function testFindUserByAccountIdMapsRuntimeExceptionStatusCode(): void
+    {
+        $transport = new PlayStationHttpTransport(
+            requestExecutor: static fn (): array => [],
+            accountLookupExecutor: static function (): object {
+                throw new RuntimeException('not found', 404);
+            }
+        );
+
+        try {
+            $transport->findUserByAccountId('123');
+            $this->fail('Expected PlayStationNotFoundException to be thrown.');
+        } catch (PlayStationNotFoundException) {
+            $this->assertTrue(true);
+        }
+    }
+
     public function testLookupUserProfileBuildsRequestAndValidatesPayload(): void
     {
         $capturedPath = null;

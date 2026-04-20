@@ -18,7 +18,6 @@ require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyDto.php';
 require_once __DIR__ . '/../PlayStation/Dto/PsnTrophyGroupDto.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyGroupMapper.php';
 require_once __DIR__ . '/../PlayStation/Mapper/PsnTrophyMapper.php';
-require_once __DIR__ . '/../PlayStation/Shadow/ShadowExecutionUtility.php';
 require_once __DIR__ . '/../PsnClientMode.php';
 
 class GameRescanService
@@ -40,8 +39,6 @@ class GameRescanService
     private ImageHashCalculator $imageHashCalculator;
     private PsnGameLookupService $psnGameLookupService;
     private PlayStationClientFactoryInterface $playStationClientFactory;
-    private PlayStationClientFactoryInterface $shadowPlayStationClientFactory;
-    private PsnClientMode $psnClientMode;
     private PsnTrophyGroupMapper $psnTrophyGroupMapper;
 
     /**
@@ -66,13 +63,10 @@ class GameRescanService
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->playStationClientFactory = $playStationClientFactory ?? new PlayStationClientFactory();
-        $this->shadowPlayStationClientFactory = $shadowPlayStationClientFactory ?? new PlayStationClientFactory();
-        $this->psnClientMode = $psnClientMode ?? PsnClientMode::forService('game_rescan');
         $this->psnTrophyGroupMapper = new PsnTrophyGroupMapper(new PsnTrophyMapper());
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase(
             $database,
-            $this->playStationClientFactory,
-            $this->shadowPlayStationClientFactory
+            $this->playStationClientFactory
         );
     }
 
@@ -197,30 +191,7 @@ class GameRescanService
 
     private function createAuthenticatedClient(string $npsso): PlayStationApiClientInterface
     {
-        if ($this->psnClientMode->isLegacy()) {
-            return $this->createAndLoginClient($this->playStationClientFactory, $npsso);
-        }
-
-        if ($this->psnClientMode->isNew()) {
-            return $this->createAndLoginClient($this->shadowPlayStationClientFactory, $npsso);
-        }
-
-        return ShadowExecutionUtility::executeWithLegacyTruth(
-            $this->psnClientMode,
-            'rescan_worker_login',
-            fn (): PlayStationApiClientInterface => $this->createAndLoginClient($this->playStationClientFactory, $npsso),
-            fn (): bool => $this->executeShadowLogin($npsso),
-            static fn (mixed $payload): array => ['authenticated' => (bool) $payload],
-            700,
-            ['service' => 'game_rescan']
-        );
-    }
-
-    private function executeShadowLogin(string $npsso): bool
-    {
-        $this->createAndLoginClient($this->shadowPlayStationClientFactory, $npsso);
-
-        return true;
+        return $this->createAndLoginClient($this->playStationClientFactory, $npsso);
     }
 
     private function createAndLoginClient(
