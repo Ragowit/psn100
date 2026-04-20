@@ -276,12 +276,10 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
         $rawBody = curl_exec($curl);
         if (!is_string($rawBody)) {
             $error = curl_error($curl);
-            curl_close($curl);
             throw new RuntimeException($error === '' ? 'Unknown cURL failure.' : $error);
         }
 
         $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        curl_close($curl);
 
         if ($status >= 400) {
             throw new RuntimeException(sprintf('PlayStation API request failed with HTTP %d.', $status), $status);
