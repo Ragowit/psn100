@@ -11,7 +11,7 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     private const OAUTH_AUTHORIZE_URL = 'https://ca.account.sony.com/api/authz/v3/oauth/authorize';
     private const OAUTH_TOKEN_URL = 'https://ca.account.sony.com/api/authz/v3/oauth/token';
     private const OAUTH_CLIENT_ID = '09515159-7237-4370-9b40-3806e67c0891';
-    private const OAUTH_CLIENT_SECRET = 'XMB9w0L5xEN7VBdT';
+    private const OAUTH_CLIENT_SECRET = 'ucPjka5tntB2KqsP';
     private const OAUTH_SCOPE = 'psn:mobile.v2.core psn:clientapp';
     private const OAUTH_REDIRECT_URI = 'com.scee.psxandroid.scecompcall://redirect';
 
