@@ -10,13 +10,13 @@ final readonly class HourlyCronJob implements CronJobInterface
 
     private const CREATE_BATCH_TEMP_TABLE_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_batch (
-            np_communication_id VARCHAR(12) PRIMARY KEY
+            np_communication_id VARCHAR(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY
         )
         SQL;
 
     private const CREATE_STATS_TEMP_TABLE_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_stats (
-            np_communication_id VARCHAR(12) PRIMARY KEY,
+            np_communication_id VARCHAR(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
             owners INT NOT NULL,
             owners_completed INT NOT NULL,
             recent_players INT NOT NULL

@@ -10,9 +10,13 @@ final class HourlyCronJobTest extends TestCase
     public function testUsesBatchAndStatsTemporaryTablesForNonEmptyBatchUpdates(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);
+        $createBatchTableQuery = $this->readPrivateConstantValue($class, 'CREATE_BATCH_TEMP_TABLE_QUERY');
+        $createStatsTableQuery = $this->readPrivateConstantValue($class, 'CREATE_STATS_TEMP_TABLE_QUERY');
         $insertStatsQuery = $this->readPrivateConstantValue($class, 'INSERT_STATS_QUERY');
         $updateMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_META_QUERY');
 
+        $this->assertStringContainsString('COLLATE utf8mb4_unicode_ci', $createBatchTableQuery);
+        $this->assertStringContainsString('COLLATE utf8mb4_unicode_ci', $createStatsTableQuery);
         $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $insertStatsQuery);
         $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id', $insertStatsQuery);
         $this->assertStringContainsString('COUNT(*) AS owners', $insertStatsQuery);
