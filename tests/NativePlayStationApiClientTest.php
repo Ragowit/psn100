@@ -164,7 +164,7 @@ final class NativePlayStationApiClientTest extends TestCase
         $this->assertSame('PlayerOne', $result['profile']['onlineId']);
     }
 
-    public function testMapUserSearchResultsPrefersCurrentOnlineIdWhenAvailable(): void
+    public function testMapUserSearchResultsPrefersCurrentOnlineIdWhenAvailableAndQueryDoesNotMatchLegacyId(): void
     {
         $client = new NativePlayStationApiClient();
         $method = new ReflectionMethod(NativePlayStationApiClient::class, 'mapUserSearchResults');
@@ -188,7 +188,7 @@ final class NativePlayStationApiClientTest extends TestCase
             ],
         ];
 
-        $results = iterator_to_array($method->invoke($client, $payload), false);
+        $results = iterator_to_array($method->invoke($client, $payload, 'DifferentQuery'), false);
 
         $this->assertSame(
             [[
@@ -199,4 +199,41 @@ final class NativePlayStationApiClientTest extends TestCase
             $results
         );
     }
+
+    public function testMapUserSearchResultsPreservesQueriedLegacyOnlineIdWhenCurrentOnlineIdAlsoExists(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'mapUserSearchResults');
+        $method->setAccessible(true);
+
+        $payload = [
+            'domainResponses' => [
+                [
+                    'results' => [
+                        [
+                            'socialMetadata' => [
+                                'accountId' => '300',
+                                'onlineId' => 'LegacyName',
+                                'currentOnlineId' => 'CurrentName',
+                                'country' => 'US',
+                                'aboutMe' => 'Bio',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $results = iterator_to_array($method->invoke($client, $payload, 'LegacyName'), false);
+
+        $this->assertSame(
+            [[
+                'onlineId' => 'LegacyName',
+                'country' => 'US',
+                'aboutMe' => 'Bio',
+            ]],
+            $results
+        );
+    }
+
 }

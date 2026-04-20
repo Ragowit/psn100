@@ -173,7 +173,8 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     private function executeUserSearch(string $onlineId): iterable
     {
         return $this->mapUserSearchResults(
-            $this->requestUserSearchPayload($onlineId)
+            $this->requestUserSearchPayload($onlineId),
+            $onlineId
         );
     }
 
@@ -212,10 +213,21 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
      * @param array<string, mixed> $payload
      * @return iterable<array{onlineId: string, country: string|null, aboutMe: string|null}>
      */
-    private function mapUserSearchResults(array $payload): iterable
+    private function mapUserSearchResults(array $payload, ?string $queriedOnlineId = null): iterable
     {
+        $normalizedQueriedOnlineId = is_string($queriedOnlineId) ? trim($queriedOnlineId) : '';
+
         foreach ($this->extractUserSearchCandidates($payload) as $candidate) {
             $preferredOnlineId = $candidate['currentOnlineId'] ?? $candidate['onlineId'];
+
+            if ($normalizedQueriedOnlineId !== ''
+                && strcasecmp($candidate['onlineId'], $normalizedQueriedOnlineId) === 0) {
+                $preferredOnlineId = $candidate['onlineId'];
+            } elseif ($normalizedQueriedOnlineId !== ''
+                && is_string($candidate['currentOnlineId'])
+                && strcasecmp($candidate['currentOnlineId'], $normalizedQueriedOnlineId) === 0) {
+                $preferredOnlineId = $candidate['currentOnlineId'];
+            }
 
             yield [
                 'onlineId' => $preferredOnlineId,
