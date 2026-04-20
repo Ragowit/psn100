@@ -36,6 +36,19 @@ final class HourlyCronJobTest extends TestCase
         $this->assertStringContainsString('(COALESCE(s.owners_completed, 0) / COALESCE(s.owners, 0)) * 100', $updateMetaQuery);
     }
 
+
+    public function testUsesDeleteInsteadOfTruncateInBatchUpdateFlow(): void
+    {
+        $class = new ReflectionClass(HourlyCronJob::class);
+        $source = file_get_contents((string) $class->getFileName());
+        $this->assertTrue(is_string($source));
+
+        $this->assertStringContainsString("DELETE FROM tmp_hourly_batch", $source);
+        $this->assertStringContainsString("DELETE FROM tmp_hourly_stats", $source);
+        $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_batch'));
+        $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_stats'));
+    }
+
     public function testNoDynamicUnionAllSelectBatchPathExists(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);

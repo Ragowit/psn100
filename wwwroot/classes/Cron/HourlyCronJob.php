@@ -112,10 +112,10 @@ final readonly class HourlyCronJob implements CronJobInterface
 
     private function updateStatisticsForBatch(array $batchIds): void
     {
-        $this->database->exec('TRUNCATE TABLE tmp_hourly_batch');
+        $this->database->exec('DELETE FROM tmp_hourly_batch');
         $this->insertBatchIdsIntoTemporaryTable($batchIds);
 
-        $this->database->exec('TRUNCATE TABLE tmp_hourly_stats');
+        $this->database->exec('DELETE FROM tmp_hourly_stats');
         $insertStatsQuery = $this->database->prepare(self::INSERT_STATS_QUERY);
         $insertStatsQuery->execute();
 
