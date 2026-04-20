@@ -135,7 +135,7 @@ final class NativePlayStationApiClientTest extends TestCase
         );
     }
 
-    public function testIsRecoverableTrophySummaryStatusCodeTreats401403404AsRecoverable(): void
+    public function testIsRecoverableTrophySummaryStatusCodeTreatsExpectedStatusesAsRecoverable(): void
     {
         $client = new NativePlayStationApiClient();
         $method = new ReflectionMethod(NativePlayStationApiClient::class, 'isRecoverableTrophySummaryStatusCode');
@@ -144,8 +144,42 @@ final class NativePlayStationApiClientTest extends TestCase
         $this->assertTrue($method->invoke($client, 401));
         $this->assertTrue($method->invoke($client, 403));
         $this->assertTrue($method->invoke($client, 404));
-        $this->assertFalse($method->invoke($client, 500));
+        $this->assertTrue($method->invoke($client, 429));
+        $this->assertTrue($method->invoke($client, 500));
+        $this->assertTrue($method->invoke($client, 503));
+        $this->assertFalse($method->invoke($client, 400));
         $this->assertFalse($method->invoke($client, null));
+    }
+
+    public function testExtractUserSearchCandidatesPreservesInputResultPriority(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'extractUserSearchCandidates');
+        $method->setAccessible(true);
+
+        $payload = [
+            'domainResponses' => [[
+                'results' => [
+                    [
+                        'socialMetadata' => [
+                            'accountId' => '100',
+                            'onlineId' => 'SameName',
+                        ],
+                    ],
+                    [
+                        'socialMetadata' => [
+                            'accountId' => '200',
+                            'onlineId' => 'SameName',
+                        ],
+                    ],
+                ],
+            ]],
+        ];
+
+        $result = $method->invoke($client, $payload);
+
+        $this->assertSame('100', $result[0]['accountId']);
+        $this->assertSame('200', $result[1]['accountId']);
     }
 
     public function testMergeAccountLookupPayloadWithTrophySummaryUsesNestedProfileWhenPresent(): void

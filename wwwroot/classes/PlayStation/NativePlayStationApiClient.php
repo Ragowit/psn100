@@ -152,7 +152,15 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
 
     private function isRecoverableTrophySummaryStatusCode(?int $statusCode): bool
     {
-        return in_array($statusCode, [401, 403, 404], true);
+        if ($statusCode === null) {
+            return false;
+        }
+
+        if (in_array($statusCode, [401, 403, 404, 429], true)) {
+            return true;
+        }
+
+        return $statusCode >= 500 && $statusCode <= 599;
     }
 
     /**
@@ -304,10 +312,15 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
                 ];
             }
 
+            $nestedValues = [];
             foreach ($node as $value) {
                 if (is_array($value)) {
-                    $nodes[] = $value;
+                    $nestedValues[] = $value;
                 }
+            }
+
+            for ($index = count($nestedValues) - 1; $index >= 0; $index--) {
+                $nodes[] = $nestedValues[$index];
             }
         }
 
