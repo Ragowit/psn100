@@ -8,28 +8,47 @@ final readonly class HourlyCronJob implements CronJobInterface
 {
     private const BATCH_SIZE = 500;
 
-    private const STATISTICS_UPDATE_QUERY = <<<'SQL'
-        game AS (
-            SELECT
-                ttp.np_communication_id,
-                COUNT(*) AS owners,
-                COUNT(CASE WHEN ttp.progress = 100 THEN 1 END) AS owners_completed,
-                COUNT(CASE WHEN ttp.last_updated_date >= CURDATE() - INTERVAL 7 DAY THEN 1 END) AS recent_players
-            FROM
-                trophy_title_player ttp
-                JOIN player_ranking pr ON pr.account_id = ttp.account_id AND pr.ranking <= 10000
-                JOIN batch b ON b.np_communication_id = ttp.np_communication_id
-            GROUP BY
-                ttp.np_communication_id
+    private const CREATE_BATCH_TEMP_TABLE_QUERY = <<<'SQL'
+        CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_batch (
+            np_communication_id VARCHAR(12) PRIMARY KEY
         )
+        SQL;
+
+    private const CREATE_STATS_TEMP_TABLE_QUERY = <<<'SQL'
+        CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_stats (
+            np_communication_id VARCHAR(12) PRIMARY KEY,
+            owners INT NOT NULL,
+            owners_completed INT NOT NULL,
+            recent_players INT NOT NULL
+        )
+        SQL;
+
+    private const INSERT_STATS_QUERY = <<<'SQL'
+        INSERT INTO tmp_hourly_stats (np_communication_id, owners, owners_completed, recent_players)
+        SELECT
+            ttp.np_communication_id,
+            COUNT(*) AS owners,
+            SUM(ttp.progress = 100) AS owners_completed,
+            SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players
+        FROM trophy_title_player ttp
+        JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id
+        JOIN player_ranking pr ON pr.account_id = ttp.account_id AND pr.ranking <= 10000
+        GROUP BY ttp.np_communication_id
+        SQL;
+
+    private const UPDATE_META_QUERY = <<<'SQL'
         UPDATE trophy_title_meta ttm
-        JOIN batch b ON b.np_communication_id = ttm.np_communication_id
-        JOIN game g ON ttm.np_communication_id = g.np_communication_id
+        JOIN tmp_hourly_batch b ON b.np_communication_id = ttm.np_communication_id
+        LEFT JOIN tmp_hourly_stats s ON s.np_communication_id = ttm.np_communication_id
         SET
-            ttm.owners = g.owners,
-            ttm.owners_completed = g.owners_completed,
-            ttm.recent_players = g.recent_players,
-            ttm.difficulty = IF(g.owners = 0, 0, (g.owners_completed / g.owners) * 100)
+            ttm.owners = COALESCE(s.owners, 0),
+            ttm.owners_completed = COALESCE(s.owners_completed, 0),
+            ttm.recent_players = COALESCE(s.recent_players, 0),
+            ttm.difficulty = IF(
+                COALESCE(s.owners, 0) = 0,
+                0,
+                (COALESCE(s.owners_completed, 0) / COALESCE(s.owners, 0)) * 100
+            )
         SQL;
 
     public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
@@ -46,25 +65,31 @@ final readonly class HourlyCronJob implements CronJobInterface
     {
         $lastId = null;
 
-        while (true) {
-            $batchIds = $this->getBatchNpCommunicationIds($lastId, self::BATCH_SIZE);
+        $this->initializeTemporaryTables();
 
-            if ($batchIds === []) {
-                break;
+        try {
+            while (true) {
+                $batchIds = $this->getBatchNpCommunicationIds($lastId, self::BATCH_SIZE);
+
+                if ($batchIds === []) {
+                    break;
+                }
+
+                $this->database->beginTransaction();
+
+                try {
+                    $this->updateStatisticsForBatch($batchIds);
+                    $this->database->commit();
+                } catch (Exception $exception) {
+                    $this->database->rollBack();
+
+                    throw $exception;
+                }
+
+                $lastId = end($batchIds);
             }
-
-            $this->database->beginTransaction();
-
-            try {
-                $this->updateStatisticsForBatch($batchIds);
-                $this->database->commit();
-            } catch (Exception $exception) {
-                $this->database->rollBack();
-
-                throw $exception;
-            }
-
-            $lastId = end($batchIds);
+        } finally {
+            $this->dropTemporaryTables();
         }
     }
 
@@ -87,20 +112,39 @@ final readonly class HourlyCronJob implements CronJobInterface
 
     private function updateStatisticsForBatch(array $batchIds): void
     {
-        $batchQuery = $this->buildBatchUnionQuery(count($batchIds));
-        $sql = sprintf(
-            "WITH batch AS (%s),\n%s WHERE b.np_communication_id = ttm.np_communication_id",
-            $batchQuery,
-            self::STATISTICS_UPDATE_QUERY
-        );
+        $this->database->exec('TRUNCATE TABLE tmp_hourly_batch');
+        $this->insertBatchIdsIntoTemporaryTable($batchIds);
 
-        $query = $this->database->prepare($sql);
-        $query->execute(array_values($batchIds));
+        $this->database->exec('TRUNCATE TABLE tmp_hourly_stats');
+        $insertStatsQuery = $this->database->prepare(self::INSERT_STATS_QUERY);
+        $insertStatsQuery->execute();
+
+        $updateMetaQuery = $this->database->prepare(self::UPDATE_META_QUERY);
+        $updateMetaQuery->execute();
     }
 
-    private function buildBatchUnionQuery(int $size): string
+    private function initializeTemporaryTables(): void
     {
-        return implode("\nUNION ALL\n", array_fill(0, $size, 'SELECT ? AS np_communication_id'));
+        $this->database->exec(self::CREATE_BATCH_TEMP_TABLE_QUERY);
+        $this->database->exec(self::CREATE_STATS_TEMP_TABLE_QUERY);
+    }
+
+    private function dropTemporaryTables(): void
+    {
+        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_stats');
+        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_batch');
+    }
+
+    private function insertBatchIdsIntoTemporaryTable(array $batchIds): void
+    {
+        $placeholders = implode(', ', array_fill(0, count($batchIds), '(?)'));
+        $query = $this->database->prepare(
+            sprintf(
+                'INSERT INTO tmp_hourly_batch (np_communication_id) VALUES %s',
+                $placeholders
+            )
+        );
+        $query->execute(array_values($batchIds));
     }
 
     private function executeWithRetry(callable $operation): void
