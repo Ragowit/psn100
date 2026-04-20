@@ -84,7 +84,7 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
             );
         }
 
-        return $this->transport->lookupUserProfile($searchCandidate['onlineId']);
+        return $this->transport->lookupUserProfile($searchCandidate['accountId']);
     }
 
     public function findUserByAccountId(string $accountId): object
@@ -174,7 +174,7 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
     }
 
     /**
-     * @return array{accountId: string, onlineId: string, country: string|null, aboutMe: string|null}|null
+     * @return array{accountId: string, onlineId: string, currentOnlineId: string|null, country: string|null, aboutMe: string|null}|null
      */
     private function findSearchCandidateByOnlineId(string $onlineId): ?array
     {
@@ -186,7 +186,11 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
         $payload = $this->requestUserSearchPayload($normalizedOnlineId);
 
         foreach ($this->extractUserSearchCandidates($payload) as $candidate) {
-            if (strcasecmp($candidate['onlineId'], $normalizedOnlineId) !== 0) {
+            $matchesOnlineId = strcasecmp($candidate['onlineId'], $normalizedOnlineId) === 0;
+            $matchesCurrentOnlineId = is_string($candidate['currentOnlineId'])
+                && strcasecmp($candidate['currentOnlineId'], $normalizedOnlineId) === 0;
+
+            if (!$matchesOnlineId && !$matchesCurrentOnlineId) {
                 continue;
             }
 
@@ -198,7 +202,7 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
 
     /**
      * @param array<string, mixed> $payload
-     * @return list<array{accountId: string, onlineId: string, country: string|null, aboutMe: string|null}>
+     * @return list<array{accountId: string, onlineId: string, currentOnlineId: string|null, country: string|null, aboutMe: string|null}>
      */
     private function extractUserSearchCandidates(array $payload): array
     {
@@ -212,12 +216,19 @@ final class NativePlayStationApiClient implements PlayStationApiClientInterface
             }
 
             $accountId = $node['accountId'] ?? null;
-            $onlineId = $node['onlineId'] ?? $node['currentOnlineId'] ?? null;
+            $onlineId = $node['onlineId'] ?? null;
+            $currentOnlineId = $node['currentOnlineId'] ?? null;
 
-            if (is_string($accountId) && trim($accountId) !== '' && is_string($onlineId) && trim($onlineId) !== '') {
+            $normalizedOnlineId = is_string($onlineId) && trim($onlineId) !== '' ? trim($onlineId) : null;
+            $normalizedCurrentOnlineId = is_string($currentOnlineId) && trim($currentOnlineId) !== ''
+                ? trim($currentOnlineId)
+                : null;
+
+            if (is_string($accountId) && trim($accountId) !== '' && ($normalizedOnlineId !== null || $normalizedCurrentOnlineId !== null)) {
                 $results[] = [
                     'accountId' => trim($accountId),
-                    'onlineId' => trim($onlineId),
+                    'onlineId' => $normalizedOnlineId ?? $normalizedCurrentOnlineId,
+                    'currentOnlineId' => $normalizedCurrentOnlineId,
                     'country' => isset($node['country']) && is_string($node['country']) ? $node['country'] : null,
                     'aboutMe' => isset($node['aboutMe']) && is_string($node['aboutMe']) ? $node['aboutMe'] : null,
                 ];

@@ -44,6 +44,7 @@ final class NativePlayStationApiClientTest extends TestCase
             [[
                 'accountId' => '1882371903386905898',
                 'onlineId' => 'Ragowit',
+                'currentOnlineId' => null,
                 'country' => 'PL',
                 'aboutMe' => null,
             ]],
@@ -69,10 +70,38 @@ final class NativePlayStationApiClientTest extends TestCase
             [[
                 'accountId' => '100',
                 'onlineId' => 'CurrentName',
+                'currentOnlineId' => 'CurrentName',
                 'country' => null,
                 'aboutMe' => 'Bio',
             ]],
             $result
         );
     }
+
+    public function testExtractUserSearchCandidatesPreservesBothOnlineIdFields(): void
+    {
+        $client = new NativePlayStationApiClient();
+        $method = new ReflectionMethod(NativePlayStationApiClient::class, 'extractUserSearchCandidates');
+        $method->setAccessible(true);
+
+        $payload = [
+            'accountId' => '200',
+            'onlineId' => 'LegacyName',
+            'currentOnlineId' => 'CurrentName',
+        ];
+
+        $result = $method->invoke($client, $payload);
+
+        $this->assertSame(
+            [[
+                'accountId' => '200',
+                'onlineId' => 'LegacyName',
+                'currentOnlineId' => 'CurrentName',
+                'country' => null,
+                'aboutMe' => null,
+            ]],
+            $result
+        );
+    }
+
 }
