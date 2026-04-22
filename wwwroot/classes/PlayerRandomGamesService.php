@@ -36,72 +36,22 @@ class PlayerRandomGamesService
     {
         $limit = max(1, $limit);
 
-        $bounds = $this->fetchIdBounds($accountId, $filter);
-
-        if ($bounds === null) {
+        $eligibleIds = $this->fetchEligibleIds($accountId, $filter);
+        if ($eligibleIds === []) {
             return [];
         }
 
-        [$minId, $maxId] = $bounds;
-        $rangeSize = $maxId - $minId + 1;
-
-        if ($rangeSize <= 0) {
+        $sampledIds = $this->sampleEligibleIds($eligibleIds, $limit);
+        if ($sampledIds === []) {
             return [];
         }
 
-        $sampleSize = (int) min(max($limit * 4, 20), $rangeSize);
-        $sampleSize = max($sampleSize, $limit);
-        $maxAttempts = max(1, min(5, (int) ceil($rangeSize / $sampleSize)));
+        $rows = $this->fetchSampledGames($accountId, $filter, $sampledIds);
 
-        $games = [];
-        $seenIds = [];
-
-        for ($attempt = 0; $attempt < $maxAttempts && count($games) < $limit; $attempt++) {
-            $sampleIds = $this->generateRandomIds($minId, $maxId, $sampleSize);
-            if ($sampleIds === []) {
-                break;
-            }
-
-            $rows = $this->fetchSampledGames($accountId, $filter, $sampleIds);
-
-            if ($rows === []) {
-                continue;
-            }
-
-            foreach ($rows as $gameData) {
-                $id = isset($gameData['id']) ? (int) $gameData['id'] : 0;
-                if ($id === 0 || isset($seenIds[$id])) {
-                    continue;
-                }
-
-                $seenIds[$id] = true;
-                $games[] = PlayerRandomGame::fromArray($gameData, $this->utility);
-
-                if (count($games) >= $limit) {
-                    break;
-                }
-            }
-        }
-
-        if (count($games) < $limit) {
-            $fallbackRows = $this->fetchFallbackGames($accountId, $filter, $limit - count($games), array_keys($seenIds));
-
-            foreach ($fallbackRows as $gameData) {
-                $id = isset($gameData['id']) ? (int) $gameData['id'] : 0;
-                if ($id === 0 || isset($seenIds[$id])) {
-                    continue;
-                }
-
-                $seenIds[$id] = true;
-                $games[] = PlayerRandomGame::fromArray($gameData, $this->utility);
-
-                if (count($games) >= $limit) {
-                    break;
-                }
-            }
-        }
-
-        return $games;
+        return array_map(
+            fn(array $gameData): PlayerRandomGame => PlayerRandomGame::fromArray($gameData, $this->utility),
+            $rows
+        );
     }
 
     private function buildSelectableQuery(PlayerRandomGamesFilter $filter): string
@@ -161,30 +111,39 @@ class PlayerRandomGamesService
     }
 
     /**
-     * @return array{0: int, 1: int}|null
+     * @return list<int>
      */
-    private function fetchIdBounds(int $accountId, PlayerRandomGamesFilter $filter): ?array
+    private function fetchEligibleIds(int $accountId, PlayerRandomGamesFilter $filter): array
     {
-        $sql = 'SELECT MIN(tt.id) AS min_id, MAX(tt.id) AS max_id' . $this->buildBaseQuery($filter);
+        $sql = 'SELECT tt.id' . $this->buildBaseQuery($filter);
 
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
         $statement->execute();
 
-        $result = $statement->fetch(PDO::FETCH_ASSOC);
-
-        if (!is_array($result)) {
-            return null;
+        $results = $statement->fetchAll(PDO::FETCH_COLUMN);
+        if (!is_array($results) || $results === []) {
+            return [];
         }
 
-        $minId = isset($result['min_id']) ? (int) $result['min_id'] : null;
-        $maxId = isset($result['max_id']) ? (int) $result['max_id'] : null;
+        return array_values(array_map('intval', $results));
+    }
 
-        if ($minId === null || $maxId === null) {
-            return null;
+    /**
+     * @param list<int> $eligibleIds
+     * @return list<int>
+     */
+    private function sampleEligibleIds(array $eligibleIds, int $limit): array
+    {
+        if ($eligibleIds === []) {
+            return [];
         }
 
-        return [$minId, $maxId];
+        if (count($eligibleIds) <= $limit) {
+            return $this->randomizer->shuffleArray($eligibleIds);
+        }
+
+        return array_slice($this->randomizer->shuffleArray($eligibleIds), 0, $limit);
     }
 
     /**
