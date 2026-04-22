@@ -16,6 +16,67 @@ $handledRequest = PsnTrophyTitleComparisonRequestHandler::handle($service, $acco
 $normalizedAccountId = $handledRequest->getNormalizedAccountId();
 $result = $handledRequest->getResult();
 $errorMessage = $handledRequest->getErrorMessage();
+
+/**
+ * @return mixed
+ */
+function normalizeForJsonPayload(mixed $value): mixed
+{
+    if (is_null($value) || is_scalar($value)) {
+        return $value;
+    }
+
+    if (is_array($value)) {
+        $normalized = [];
+        foreach ($value as $key => $item) {
+            $normalized[$key] = normalizeForJsonPayload($item);
+        }
+
+        return $normalized;
+    }
+
+    if ($value instanceof JsonSerializable) {
+        return normalizeForJsonPayload($value->jsonSerialize());
+    }
+
+    if (is_object($value)) {
+        if (method_exists($value, 'toArray')) {
+            /** @var mixed $toArrayValue */
+            $toArrayValue = $value->toArray();
+            return normalizeForJsonPayload($toArrayValue);
+        }
+
+        $normalized = ['__class' => get_class($value)];
+        $reflection = new ReflectionObject($value);
+
+        foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->isStatic() || $method->getNumberOfRequiredParameters() > 0) {
+                continue;
+            }
+
+            $methodName = $method->getName();
+            if (str_starts_with($methodName, '__')) {
+                continue;
+            }
+
+            try {
+                $methodValue = $method->invoke($value);
+            } catch (Throwable) {
+                continue;
+            }
+
+            if (!is_scalar($methodValue) && !is_array($methodValue) && !is_null($methodValue)) {
+                continue;
+            }
+
+            $normalized[$methodName] = normalizeForJsonPayload($methodValue);
+        }
+
+        return $normalized;
+    }
+
+    return (string) $value;
+}
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -96,7 +157,7 @@ $errorMessage = $handledRequest->getErrorMessage();
                     <div class="card-body">
                         <h2 class="h5">tustin/psn-php payload</h2>
                         <pre class="mb-0 text-white-50"><?php
-                            $json = json_encode($result['tustin']['titles'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                            $json = json_encode(normalizeForJsonPayload($result['tustin']['titles'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                             echo htmlentities($json === false ? 'Unable to encode response.' : $json, ENT_QUOTES, 'UTF-8');
                         ?></pre>
                     </div>
