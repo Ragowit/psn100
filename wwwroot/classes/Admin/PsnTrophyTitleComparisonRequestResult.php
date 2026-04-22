@@ -9,6 +9,7 @@ final readonly class PsnTrophyTitleComparisonRequestResult
      */
     public function __construct(
         private string $normalizedAccountId,
+        private string $normalizedSource,
         private ?array $result,
         private ?string $errorMessage,
     ) {
@@ -17,6 +18,11 @@ final readonly class PsnTrophyTitleComparisonRequestResult
     public function getNormalizedAccountId(): string
     {
         return $this->normalizedAccountId;
+    }
+
+    public function getNormalizedSource(): string
+    {
+        return $this->normalizedSource;
     }
 
     /**

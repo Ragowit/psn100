@@ -8,15 +8,17 @@ require_once __DIR__ . '/PsnTrophyTitleComparisonService.php';
 
 final class PsnTrophyTitleComparisonRequestHandler
 {
-    public static function handle(PsnTrophyTitleComparisonService $service, string $accountId): PsnTrophyTitleComparisonRequestResult
+    public static function handle(PsnTrophyTitleComparisonService $service, string $accountId, string $source): PsnTrophyTitleComparisonRequestResult
     {
         $normalizedAccountId = trim($accountId);
+        $normalizedSource = PsnTrophyTitleComparisonService::normalizeSource($source)
+            ?? PsnTrophyTitleComparisonService::SOURCE_DIRECT;
         $result = null;
         $errorMessage = null;
 
         if ($normalizedAccountId !== '') {
             try {
-                $result = $service->compareByAccountId($normalizedAccountId);
+                $result = $service->compareByAccountId($normalizedAccountId, $normalizedSource);
             } catch (PsnTrophyTitleComparisonException $exception) {
                 $errorMessage = $exception->getMessage();
             } catch (Throwable $exception) {
@@ -29,6 +31,6 @@ final class PsnTrophyTitleComparisonRequestHandler
             }
         }
 
-        return new PsnTrophyTitleComparisonRequestResult($normalizedAccountId, $result, $errorMessage);
+        return new PsnTrophyTitleComparisonRequestResult($normalizedAccountId, $normalizedSource, $result, $errorMessage);
     }
 }
