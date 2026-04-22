@@ -63,8 +63,6 @@ $errorMessage = $handledRequest->getErrorMessage();
                                     <dd class="col-sm-7"><?= htmlentities((string) ($result['direct']['totalItemCount'] ?? 'n/a'), ENT_QUOTES, 'UTF-8'); ?></dd>
                                     <dt class="col-sm-5">Duration (ms)</dt>
                                     <dd class="col-sm-7"><?= htmlentities((string) ($result['direct']['durationMs'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></dd>
-                                    <dt class="col-sm-5">Fingerprint</dt>
-                                    <dd class="col-sm-7"><code><?= htmlentities((string) ($result['direct']['fingerprint'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></dd>
                                 </dl>
                             </div>
                         </div>
@@ -80,10 +78,6 @@ $errorMessage = $handledRequest->getErrorMessage();
                                     <dd class="col-sm-7"><?= htmlentities((string) ($result['tustin']['durationMs'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></dd>
                                     <dt class="col-sm-5">Count match</dt>
                                     <dd class="col-sm-7"><?= htmlentities(($result['countsMatch'] ?? false) ? 'Yes' : 'No', ENT_QUOTES, 'UTF-8'); ?></dd>
-                                    <dt class="col-sm-5">Fingerprint</dt>
-                                    <dd class="col-sm-7"><code><?= htmlentities((string) ($result['tustin']['fingerprint'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></dd>
-                                    <dt class="col-sm-5">Fingerprint match</dt>
-                                    <dd class="col-sm-7"><?= htmlentities(($result['fingerprintsMatch'] ?? false) ? 'Yes' : 'No', ENT_QUOTES, 'UTF-8'); ?></dd>
                                 </dl>
                             </div>
                         </div>
@@ -91,7 +85,7 @@ $errorMessage = $handledRequest->getErrorMessage();
                 </div>
                 <div class="alert alert-secondary" role="alert">
                     Full payload rendering is intentionally disabled on this page to avoid response-size timeouts.
-                    The comparison still fetches <strong>all titles</strong> from both sources and verifies them using count + fingerprint.
+                    The comparison still fetches <strong>all titles</strong> from both sources and compares the title counts.
                 </div>
             <?php } ?>
         </div>

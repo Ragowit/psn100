@@ -68,7 +68,6 @@ final class PsnTrophyTitleComparisonService
             'direct' => $directFetch,
             'tustin' => $tustinFetch,
             'countsMatch' => ($directFetch['count'] ?? -1) === ($tustinFetch['count'] ?? -1),
-            'fingerprintsMatch' => ($directFetch['fingerprint'] ?? '') === ($tustinFetch['fingerprint'] ?? ''),
         ];
     }
 
@@ -105,7 +104,7 @@ final class PsnTrophyTitleComparisonService
     }
 
     /**
-     * @return array{count: int, durationMs: float, pagesFetched: int, totalItemCount: int|null, fingerprint: string}
+     * @return array{count: int, durationMs: float, pagesFetched: int, totalItemCount: int|null}
      */
     private function fetchTitlesViaEndpoint(object $client, string $accountId): array
     {
@@ -116,7 +115,6 @@ final class PsnTrophyTitleComparisonService
         $limit = 800;
         $offset = 0;
         $totalItemCount = null;
-        $titleKeys = [];
         $count = 0;
         $pagesFetched = 0;
         $startTime = ($this->timeProvider)();
@@ -154,13 +152,6 @@ final class PsnTrophyTitleComparisonService
             foreach ($batchTitles as $batchTitle) {
                 if (is_array($batchTitle)) {
                     $count++;
-
-                    $titleKey = $this->createTitleKey($batchTitle);
-
-                    if ($titleKey !== '') {
-                        $titleKeys[] = $titleKey;
-                    }
-
                 }
             }
 
@@ -191,19 +182,16 @@ final class PsnTrophyTitleComparisonService
         }
 
         $endTime = ($this->timeProvider)();
-        sort($titleKeys);
-
         return [
             'count' => $count,
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
             'pagesFetched' => $pagesFetched,
             'totalItemCount' => $totalItemCount,
-            'fingerprint' => hash('sha256', implode('|', $titleKeys)),
         ];
     }
 
     /**
-     * @return array{count: int, durationMs: float, fingerprint: string}
+     * @return array{count: int, durationMs: float}
      */
     private function fetchTitlesViaTustin(object $client, string $accountId): array
     {
@@ -221,16 +209,10 @@ final class PsnTrophyTitleComparisonService
             $user = $users->find($accountId);
             $startTime = ($this->timeProvider)();
             $trophyTitleCollection = $user->trophyTitles();
-            $titleKeys = [];
             $count = 0;
 
             foreach ($trophyTitleCollection->getIterator() as $trophyTitle) {
                 $count++;
-
-                $titleKey = $this->createTustinTitleKey($trophyTitle);
-                if ($titleKey !== '') {
-                    $titleKeys[] = $titleKey;
-                }
             }
         } catch (Throwable $exception) {
             throw new PsnTrophyTitleComparisonException(
@@ -241,77 +223,10 @@ final class PsnTrophyTitleComparisonService
         }
 
         $endTime = ($this->timeProvider)();
-        sort($titleKeys);
-
         return [
             'count' => $count,
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
-            'fingerprint' => hash('sha256', implode('|', $titleKeys)),
         ];
-    }
-
-
-    private function createTustinTitleKey(mixed $trophyTitle): string
-    {
-        if (is_object($trophyTitle)) {
-            $preferredMethods = [
-                'npCommunicationId',
-                'trophyTitleId',
-                'titleId',
-                'titleName',
-                'trophyTitleName',
-            ];
-
-            foreach ($preferredMethods as $method) {
-                if (!method_exists($trophyTitle, $method)) {
-                    continue;
-                }
-
-                try {
-                    $value = $trophyTitle->{$method}();
-                } catch (Throwable) {
-                    continue;
-                }
-
-                if (is_scalar($value) || $value === null) {
-                    return $method . ':' . (string) $value;
-                }
-            }
-        }
-
-        return $this->createTitleKey($this->normalizeResponse($trophyTitle));
-    }
-
-    /**
-     * @param array<string, mixed> $title
-     */
-    private function createTitleKey(array $title): string
-    {
-        $preferredKeys = [
-            'npCommunicationId',
-            'trophyTitleId',
-            'titleId',
-            'titleName',
-            'trophyTitleName',
-        ];
-
-        foreach ($preferredKeys as $key) {
-            if (!array_key_exists($key, $title)) {
-                continue;
-            }
-
-            $value = $title[$key];
-            if (is_scalar($value) || $value === null) {
-                return $key . ':' . (string) $value;
-            }
-        }
-
-        $encoded = json_encode($title, JSON_UNESCAPED_SLASHES);
-        if ($encoded === false) {
-            return '';
-        }
-
-        return 'json:' . hash('sha256', $encoded);
     }
 
     private function determineStatusCode(Throwable $exception): ?int

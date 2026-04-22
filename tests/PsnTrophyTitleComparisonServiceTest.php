@@ -102,16 +102,13 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
         $this->assertSame(3, $result['direct']['count']);
         $this->assertSame(2, $result['direct']['pagesFetched']);
         $this->assertSame(1250.0, $result['direct']['durationMs']);
-        $this->assertSame(hash('sha256', 'npCommunicationId:NPWR1|npCommunicationId:NPWR2|npCommunicationId:NPWR3'), $result['direct']['fingerprint']);
         $this->assertSame(3, $result['tustin']['count']);
         $this->assertSame(500.0, $result['tustin']['durationMs']);
-        $this->assertSame(hash('sha256', 'npCommunicationId:NPWR1|npCommunicationId:NPWR2|npCommunicationId:NPWR3'), $result['tustin']['fingerprint']);
         $this->assertSame(true, $result['countsMatch']);
-        $this->assertSame(true, $result['fingerprintsMatch']);
     }
 
 
-    public function testCompareByAccountIdUsesMethodBasedTustinTitleKeys(): void
+    public function testCompareByAccountIdCountsObjectBasedTustinTitles(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
@@ -181,11 +178,9 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
 
         $result = $service->compareByAccountId('123456');
 
-        $expectedFingerprint = hash('sha256', 'npCommunicationId:NPWR10|npCommunicationId:NPWR20');
-
-        $this->assertSame($expectedFingerprint, $result['direct']['fingerprint']);
-        $this->assertSame($expectedFingerprint, $result['tustin']['fingerprint']);
-        $this->assertSame(true, $result['fingerprintsMatch']);
+        $this->assertSame(2, $result['direct']['count']);
+        $this->assertSame(2, $result['tustin']['count']);
+        $this->assertSame(true, $result['countsMatch']);
     }
 
     public function testCompareByAccountIdRejectsInvalidInput(): void
