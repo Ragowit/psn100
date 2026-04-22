@@ -84,7 +84,7 @@ class PlayerRandomGamesService
         }
 
         if (count($games) < $limit) {
-            $fallbackRows = $this->fetchFallbackGames($accountId, $filter, $limit - count($games));
+            $fallbackRows = $this->fetchFallbackGames($accountId, $filter, $limit - count($games), array_keys($seenIds));
 
             foreach ($fallbackRows as $gameData) {
                 $id = isset($gameData['id']) ? (int) $gameData['id'] : 0;
@@ -228,7 +228,12 @@ class PlayerRandomGamesService
      * @param list<int> $ids
      * @return array<int, array<string, mixed>>
      */
-    private function fetchSampledGames(int $accountId, PlayerRandomGamesFilter $filter, array $ids): array
+    private function fetchSampledGames(
+        int $accountId,
+        PlayerRandomGamesFilter $filter,
+        array $ids,
+        array $excludeIds = []
+    ): array
     {
         if ($ids === []) {
             return [];
@@ -240,7 +245,8 @@ class PlayerRandomGamesService
         }
 
         $sql = $this->buildSelectableQuery($filter)
-            . sprintf(' AND tt.id IN (%s)', implode(', ', $placeholders));
+            . sprintf(' AND tt.id IN (%s)', implode(', ', $placeholders))
+            . $this->buildExcludeSeenIdsClause($excludeIds);
 
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
@@ -248,6 +254,7 @@ class PlayerRandomGamesService
         foreach ($ids as $index => $id) {
             $statement->bindValue(':id_' . $index, $id, PDO::PARAM_INT);
         }
+        $this->bindSeenIdParameters($statement, $excludeIds);
 
         $statement->execute();
 
@@ -267,16 +274,51 @@ class PlayerRandomGamesService
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function fetchFallbackGames(int $accountId, PlayerRandomGamesFilter $filter, int $limit): array
+    private function fetchFallbackGames(int $accountId, PlayerRandomGamesFilter $filter, int $limit, array $seenIds = []): array
     {
         if ($limit <= 0) {
             return [];
         }
 
-        $sql = $this->buildSelectableQuery($filter) . ' ORDER BY tt.id LIMIT :limit';
+        $seenIds = array_values(array_unique(array_map('intval', $seenIds)));
+
+        if ($limit <= 25) {
+            return $this->fetchFallbackRowsWithRandomOrder($accountId, $filter, $limit, $seenIds);
+        }
+
+        $rows = $this->fetchFallbackRowsByRandomIdSampling($accountId, $filter, $limit, $seenIds);
+
+        if (count($rows) >= $limit) {
+            return $rows;
+        }
+
+        $additionalRows = $this->fetchFallbackRowsWithRandomOrder(
+            $accountId,
+            $filter,
+            $limit - count($rows),
+            [...$seenIds, ...array_map(static fn(array $row): int => (int) ($row['id'] ?? 0), $rows)]
+        );
+
+        if ($additionalRows === []) {
+            return $rows;
+        }
+
+        return [...$rows, ...$additionalRows];
+    }
+
+    /**
+     * @param list<int> $seenIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchFallbackRowsWithRandomOrder(int $accountId, PlayerRandomGamesFilter $filter, int $limit, array $seenIds): array
+    {
+        $sql = $this->buildSelectableQuery($filter)
+            . $this->buildExcludeSeenIdsClause($seenIds)
+            . ' ORDER BY ' . $this->resolveRandomOrderExpression() . ' LIMIT :limit';
 
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $this->bindSeenIdParameters($statement, $seenIds);
         $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
         $statement->execute();
 
@@ -287,5 +329,100 @@ class PlayerRandomGamesService
         }
 
         return array_values(array_filter($rows, 'is_array'));
+    }
+
+    /**
+     * @param list<int> $seenIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchFallbackRowsByRandomIdSampling(int $accountId, PlayerRandomGamesFilter $filter, int $limit, array $seenIds): array
+    {
+        $bounds = $this->fetchIdBoundsWithExclusions($accountId, $filter, $seenIds);
+
+        if ($bounds === null) {
+            return [];
+        }
+
+        [$minId, $maxId] = $bounds;
+        $rangeSize = $maxId - $minId + 1;
+
+        if ($rangeSize <= 0) {
+            return [];
+        }
+
+        $sampleSize = (int) min(max($limit * 6, 60), $rangeSize);
+        $sampleIds = $this->generateRandomIds($minId, $maxId, $sampleSize);
+        if ($sampleIds === []) {
+            return [];
+        }
+
+        $rows = $this->fetchSampledGames($accountId, $filter, $sampleIds, $seenIds);
+
+        return array_slice($rows, 0, $limit);
+    }
+
+    /**
+     * @param list<int> $seenIds
+     * @return array{0: int, 1: int}|null
+     */
+    private function fetchIdBoundsWithExclusions(int $accountId, PlayerRandomGamesFilter $filter, array $seenIds): ?array
+    {
+        $sql = 'SELECT MIN(tt.id) AS min_id, MAX(tt.id) AS max_id'
+            . $this->buildBaseQuery($filter)
+            . $this->buildExcludeSeenIdsClause($seenIds);
+
+        $statement = $this->database->prepare($sql);
+        $statement->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $this->bindSeenIdParameters($statement, $seenIds);
+        $statement->execute();
+
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($result)) {
+            return null;
+        }
+
+        $minId = isset($result['min_id']) ? (int) $result['min_id'] : null;
+        $maxId = isset($result['max_id']) ? (int) $result['max_id'] : null;
+
+        if ($minId === null || $maxId === null) {
+            return null;
+        }
+
+        return [$minId, $maxId];
+    }
+
+    /**
+     * @param list<int> $seenIds
+     */
+    private function buildExcludeSeenIdsClause(array $seenIds): string
+    {
+        if ($seenIds === []) {
+            return '';
+        }
+
+        $placeholders = [];
+        foreach ($seenIds as $index => $_) {
+            $placeholders[] = ':seen_id_' . $index;
+        }
+
+        return ' AND tt.id NOT IN (' . implode(', ', $placeholders) . ')';
+    }
+
+    /**
+     * @param list<int> $seenIds
+     */
+    private function bindSeenIdParameters(PDOStatement $statement, array $seenIds): void
+    {
+        foreach ($seenIds as $index => $seenId) {
+            $statement->bindValue(':seen_id_' . $index, $seenId, PDO::PARAM_INT);
+        }
+    }
+
+    private function resolveRandomOrderExpression(): string
+    {
+        $driverName = strtolower((string) $this->database->getAttribute(PDO::ATTR_DRIVER_NAME));
+
+        return $driverName === 'mysql' ? 'RAND()' : 'RANDOM()';
     }
 }
