@@ -102,9 +102,12 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
         $this->assertSame(3, $result['direct']['count']);
         $this->assertSame(2, $result['direct']['pagesFetched']);
         $this->assertSame(1250.0, $result['direct']['durationMs']);
+        $this->assertSame(hash('sha256', 'npCommunicationId:NPWR1|npCommunicationId:NPWR2|npCommunicationId:NPWR3'), $result['direct']['fingerprint']);
         $this->assertSame(3, $result['tustin']['count']);
         $this->assertSame(500.0, $result['tustin']['durationMs']);
+        $this->assertSame(hash('sha256', 'npCommunicationId:NPWR1|npCommunicationId:NPWR2|npCommunicationId:NPWR3'), $result['tustin']['fingerprint']);
         $this->assertSame(true, $result['countsMatch']);
+        $this->assertSame(true, $result['fingerprintsMatch']);
     }
 
     public function testCompareByAccountIdRejectsInvalidInput(): void

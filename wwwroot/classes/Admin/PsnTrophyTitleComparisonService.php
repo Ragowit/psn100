@@ -68,6 +68,7 @@ final class PsnTrophyTitleComparisonService
             'direct' => $directFetch,
             'tustin' => $tustinFetch,
             'countsMatch' => ($directFetch['count'] ?? -1) === ($tustinFetch['count'] ?? -1),
+            'fingerprintsMatch' => ($directFetch['fingerprint'] ?? '') === ($tustinFetch['fingerprint'] ?? ''),
         ];
     }
 
@@ -104,7 +105,7 @@ final class PsnTrophyTitleComparisonService
     }
 
     /**
-     * @return array{count: int, durationMs: float, pagesFetched: int, totalItemCount: int|null, titles: array<int, array<string, mixed>>}
+     * @return array{count: int, durationMs: float, pagesFetched: int, totalItemCount: int|null, fingerprint: string}
      */
     private function fetchTitlesViaEndpoint(object $client, string $accountId): array
     {
@@ -115,7 +116,8 @@ final class PsnTrophyTitleComparisonService
         $limit = 800;
         $offset = 0;
         $totalItemCount = null;
-        $titles = [];
+        $titleKeys = [];
+        $count = 0;
         $pagesFetched = 0;
         $startTime = ($this->timeProvider)();
 
@@ -151,7 +153,14 @@ final class PsnTrophyTitleComparisonService
 
             foreach ($batchTitles as $batchTitle) {
                 if (is_array($batchTitle)) {
-                    $titles[] = $batchTitle;
+                    $count++;
+
+                    $titleKey = $this->createTitleKey($batchTitle);
+
+                    if ($titleKey !== '') {
+                        $titleKeys[] = $titleKey;
+                    }
+
                 }
             }
 
@@ -182,18 +191,19 @@ final class PsnTrophyTitleComparisonService
         }
 
         $endTime = ($this->timeProvider)();
+        sort($titleKeys);
 
         return [
-            'count' => count($titles),
+            'count' => $count,
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
             'pagesFetched' => $pagesFetched,
             'totalItemCount' => $totalItemCount,
-            'titles' => $titles,
+            'fingerprint' => hash('sha256', implode('|', $titleKeys)),
         ];
     }
 
     /**
-     * @return array{count: int, durationMs: float, titles: array<int, mixed>}
+     * @return array{count: int, durationMs: float, fingerprint: string}
      */
     private function fetchTitlesViaTustin(object $client, string $accountId): array
     {
@@ -211,7 +221,17 @@ final class PsnTrophyTitleComparisonService
             $user = $users->find($accountId);
             $startTime = ($this->timeProvider)();
             $trophyTitleCollection = $user->trophyTitles();
-            $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
+            $titleKeys = [];
+            $count = 0;
+
+            foreach ($trophyTitleCollection->getIterator() as $trophyTitle) {
+                $count++;
+
+                $titleKey = $this->createTitleKey($this->normalizeResponse($trophyTitle));
+                if ($titleKey !== '') {
+                    $titleKeys[] = $titleKey;
+                }
+            }
         } catch (Throwable $exception) {
             throw new PsnTrophyTitleComparisonException(
                 'Failed to retrieve trophy titles via tustin/psn-php.',
@@ -221,12 +241,45 @@ final class PsnTrophyTitleComparisonService
         }
 
         $endTime = ($this->timeProvider)();
+        sort($titleKeys);
 
         return [
-            'count' => count($trophyTitles),
+            'count' => $count,
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
-            'titles' => $trophyTitles,
+            'fingerprint' => hash('sha256', implode('|', $titleKeys)),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $title
+     */
+    private function createTitleKey(array $title): string
+    {
+        $preferredKeys = [
+            'npCommunicationId',
+            'trophyTitleId',
+            'titleId',
+            'titleName',
+            'trophyTitleName',
+        ];
+
+        foreach ($preferredKeys as $key) {
+            if (!array_key_exists($key, $title)) {
+                continue;
+            }
+
+            $value = $title[$key];
+            if (is_scalar($value) || $value === null) {
+                return $key . ':' . (string) $value;
+            }
+        }
+
+        $encoded = json_encode($title, JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            return '';
+        }
+
+        return 'json:' . hash('sha256', $encoded);
     }
 
     private function determineStatusCode(Throwable $exception): ?int
