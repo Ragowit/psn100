@@ -10,6 +10,9 @@ use Tustin\PlayStation\Client;
 
 final class PsnTrophyTitleComparisonService
 {
+    public const SOURCE_DIRECT = 'direct';
+    public const SOURCE_TUSTIN = 'tustin';
+
     /**
      * @var \Closure(): iterable<Worker>
      */
@@ -50,25 +53,40 @@ final class PsnTrophyTitleComparisonService
     /**
      * @return array<string, mixed>
      */
-    public function compareByAccountId(string $accountId): array
+    public function compareByAccountId(string $accountId, string $source): array
     {
         $normalizedAccountId = trim($accountId);
+        $normalizedSource = self::normalizeSource($source);
 
         if ($normalizedAccountId === '' || !ctype_digit($normalizedAccountId)) {
             throw new InvalidArgumentException('Account ID must be a numeric value.');
         }
 
-        $client = $this->createAuthenticatedClient();
+        if ($normalizedSource === null) {
+            throw new InvalidArgumentException('Source must be either "direct" or "tustin".');
+        }
 
-        $directFetch = $this->fetchTitlesViaEndpoint($client, $normalizedAccountId);
-        $tustinFetch = $this->fetchTitlesViaTustin($client, $normalizedAccountId);
+        $client = $this->createAuthenticatedClient();
+        $fetchResult = $normalizedSource === self::SOURCE_DIRECT
+            ? $this->fetchTitlesViaEndpoint($client, $normalizedAccountId)
+            : $this->fetchTitlesViaTustin($client, $normalizedAccountId);
 
         return [
             'accountId' => $normalizedAccountId,
-            'direct' => $directFetch,
-            'tustin' => $tustinFetch,
-            'countsMatch' => ($directFetch['count'] ?? -1) === ($tustinFetch['count'] ?? -1),
+            'source' => $normalizedSource,
+            'result' => $fetchResult,
         ];
+    }
+
+    public static function normalizeSource(string $source): ?string
+    {
+        $normalizedSource = strtolower(trim($source));
+
+        if ($normalizedSource === self::SOURCE_DIRECT || $normalizedSource === self::SOURCE_TUSTIN) {
+            return $normalizedSource;
+        }
+
+        return null;
     }
 
     private function createAuthenticatedClient(): object

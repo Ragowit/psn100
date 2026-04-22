@@ -10,7 +10,7 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
 
 final class PsnTrophyTitleComparisonServiceTest extends TestCase
 {
-    public function testCompareByAccountIdFetchesAllPagesAndMeasuresTime(): void
+    public function testCompareByAccountIdFetchesAllPagesAndMeasuresTimeForDirectSource(): void
     {
         $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
@@ -86,7 +86,7 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
             }
         };
 
-        $times = [10.0, 11.25, 20.0, 20.5];
+        $times = [10.0, 11.25];
 
         $service = new PsnTrophyTitleComparisonService(
             static fn (): array => [$worker],
@@ -96,15 +96,13 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
             }
         );
 
-        $result = $service->compareByAccountId('123456');
+        $result = $service->compareByAccountId('123456', PsnTrophyTitleComparisonService::SOURCE_DIRECT);
 
         $this->assertSame('123456', $result['accountId']);
-        $this->assertSame(3, $result['direct']['count']);
-        $this->assertSame(2, $result['direct']['pagesFetched']);
-        $this->assertSame(1250.0, $result['direct']['durationMs']);
-        $this->assertSame(3, $result['tustin']['count']);
-        $this->assertSame(500.0, $result['tustin']['durationMs']);
-        $this->assertSame(true, $result['countsMatch']);
+        $this->assertSame(PsnTrophyTitleComparisonService::SOURCE_DIRECT, $result['source']);
+        $this->assertSame(3, $result['result']['count']);
+        $this->assertSame(2, $result['result']['pagesFetched']);
+        $this->assertSame(1250.0, $result['result']['durationMs']);
     }
 
 
@@ -166,7 +164,7 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
             }
         };
 
-        $times = [1.0, 1.0, 2.0, 2.0];
+        $times = [2.0, 2.5];
 
         $service = new PsnTrophyTitleComparisonService(
             static fn (): array => [$worker],
@@ -176,11 +174,11 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
             }
         );
 
-        $result = $service->compareByAccountId('123456');
+        $result = $service->compareByAccountId('123456', PsnTrophyTitleComparisonService::SOURCE_TUSTIN);
 
-        $this->assertSame(2, $result['direct']['count']);
-        $this->assertSame(2, $result['tustin']['count']);
-        $this->assertSame(true, $result['countsMatch']);
+        $this->assertSame(PsnTrophyTitleComparisonService::SOURCE_TUSTIN, $result['source']);
+        $this->assertSame(2, $result['result']['count']);
+        $this->assertSame(500.0, $result['result']['durationMs']);
     }
 
     public function testCompareByAccountIdRejectsInvalidInput(): void
@@ -191,10 +189,25 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
         );
 
         try {
-            $service->compareByAccountId('invalid');
+            $service->compareByAccountId('invalid', PsnTrophyTitleComparisonService::SOURCE_DIRECT);
             $this->fail('Expected InvalidArgumentException to be thrown for non numeric account IDs.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Account ID must be a numeric value.', $exception->getMessage());
+        }
+    }
+
+    public function testCompareByAccountIdRejectsInvalidSource(): void
+    {
+        $service = new PsnTrophyTitleComparisonService(
+            static fn (): array => [],
+            static fn (): object => new stdClass()
+        );
+
+        try {
+            $service->compareByAccountId('1234', 'invalid');
+            $this->fail('Expected InvalidArgumentException to be thrown for invalid source.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame('Source must be either "direct" or "tustin".', $exception->getMessage());
         }
     }
 
@@ -211,9 +224,10 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
             }
         );
 
-        $handled = PsnTrophyTitleComparisonRequestHandler::handle($service, '123');
+        $handled = PsnTrophyTitleComparisonRequestHandler::handle($service, '123', PsnTrophyTitleComparisonService::SOURCE_DIRECT);
 
         $this->assertSame('123', $handled->getNormalizedAccountId());
+        $this->assertSame(PsnTrophyTitleComparisonService::SOURCE_DIRECT, $handled->getNormalizedSource());
         $this->assertSame(null, $handled->getResult());
         $this->assertSame('The PlayStation client does not support endpoint requests.', $handled->getErrorMessage());
     }
