@@ -80,7 +80,7 @@ final class PlayerRandomGamesServiceTest extends TestCase
 
         $this->assertCount(8, $rows);
         foreach ($rows as $row) {
-            $this->assertNotContains((int) $row['id'], [1, 2, 3, 4, 5, 6]);
+            $this->assertTrue(!in_array((int) $row['id'], [1, 2, 3, 4, 5, 6], true));
         }
     }
 
@@ -101,9 +101,8 @@ final class PlayerRandomGamesServiceTest extends TestCase
             $selectedIds[] = (int) $rows[0]['id'];
         }
 
-        $this->assertGreaterThan(
-            1,
-            count(array_unique($selectedIds)),
+        $this->assertTrue(
+            count(array_unique($selectedIds)) > 1,
             'Expected fallback selection to vary across repeated runs when many eligible rows exist.'
         );
     }
@@ -123,8 +122,64 @@ final class PlayerRandomGamesServiceTest extends TestCase
         $this->assertCount(10, $rows);
         foreach ($rows as $row) {
             $this->assertStringContainsString('PS3', (string) $row['platform']);
-            $this->assertNotContains((int) $row['id'], [1, 2]);
+            $this->assertTrue(!in_array((int) $row['id'], [1, 2], true));
         }
+    }
+
+    public function testGetRandomGamesSamplesFromSparsePs3EligibleSet(): void
+    {
+        $this->insertEligibleGames(total: 7, platform: 'PS3', startingId: 10);
+        $this->insertEligibleGames(total: 120, platform: 'PS5', startingId: 1000);
+
+        $games = $this->service->getRandomGames(
+            accountId: 222,
+            filter: PlayerRandomGamesFilter::fromArray([PlayerRandomGamesFilter::PLATFORM_PS3 => '1']),
+            limit: 5
+        );
+
+        $this->assertCount(5, $games);
+        foreach ($games as $game) {
+            $this->assertTrue(in_array('PS3', $game->getPlatforms(), true));
+        }
+    }
+
+    public function testGetRandomGamesPsvrFilterExcludesPsvr2Rows(): void
+    {
+        $this->insertEligibleGames(total: 8, platform: 'PSVR', startingId: 200);
+        $this->insertEligibleGames(total: 12, platform: 'PSVR2', startingId: 400);
+
+        $games = $this->service->getRandomGames(
+            accountId: 333,
+            filter: PlayerRandomGamesFilter::fromArray([PlayerRandomGamesFilter::PLATFORM_PSVR => '1']),
+            limit: 6
+        );
+
+        $this->assertCount(6, $games);
+        foreach ($games as $game) {
+            $this->assertSame(['PSVR'], $game->getPlatforms());
+        }
+    }
+
+    public function testGetRandomGamesHasNearUniformVariabilityAcrossRepeatedSampling(): void
+    {
+        $this->insertEligibleGames(total: 10, platform: 'PS5');
+
+        $selectionCounts = [];
+        for ($seed = 1; $seed <= 1000; $seed++) {
+            $service = $this->createServiceWithSeed($seed);
+            $games = $service->getRandomGames(
+                accountId: 444,
+                filter: PlayerRandomGamesFilter::fromArray([]),
+                limit: 1
+            );
+
+            $this->assertCount(1, $games);
+            $id = $games[0]->getId();
+            $selectionCounts[$id] = ($selectionCounts[$id] ?? 0) + 1;
+        }
+
+        $this->assertCount(10, $selectionCounts);
+        $this->assertTrue((max($selectionCounts) - min($selectionCounts)) <= 80);
     }
 
     private function insertEligibleGames(int $total, string $platform, int $startingId = 1): void
@@ -155,6 +210,15 @@ final class PlayerRandomGamesServiceTest extends TestCase
         }
     }
 
+    private function createServiceWithSeed(int $seed): PlayerRandomGamesService
+    {
+        return new PlayerRandomGamesService(
+            $this->database,
+            new Utility(),
+            new Randomizer(new Mt19937($seed))
+        );
+    }
+
     /**
      * @param list<int> $seenIds
      * @return array<int, array<string, mixed>>
@@ -166,7 +230,7 @@ final class PlayerRandomGamesServiceTest extends TestCase
 
         $result = $reflectionMethod->invoke($this->service, $accountId, $filter, $limit, $seenIds);
 
-        $this->assertIsArray($result);
+        $this->assertTrue(is_array($result));
 
         return $result;
     }
