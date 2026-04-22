@@ -61,19 +61,24 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
                 ];
             }
 
-            public function user(string $accountId): object
+            public function users(): object
             {
                 return new class {
-                    public function trophyTitles(): object
+                    public function find(string $accountId): object
                     {
-                        return new class implements IteratorAggregate {
-                            public function getIterator(): Traversable
+                        return new class {
+                            public function trophyTitles(): object
                             {
-                                return new ArrayIterator([
-                                    ['npCommunicationId' => 'NPWR1'],
-                                    ['npCommunicationId' => 'NPWR2'],
-                                    ['npCommunicationId' => 'NPWR3'],
-                                ]);
+                                return new class implements IteratorAggregate {
+                                    public function getIterator(): Traversable
+                                    {
+                                        return new ArrayIterator([
+                                            ['npCommunicationId' => 'NPWR1'],
+                                            ['npCommunicationId' => 'NPWR2'],
+                                            ['npCommunicationId' => 'NPWR3'],
+                                        ]);
+                                    }
+                                };
                             }
                         };
                     }

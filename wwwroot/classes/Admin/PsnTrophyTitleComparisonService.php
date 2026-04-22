@@ -193,16 +193,22 @@ final class PsnTrophyTitleComparisonService
     }
 
     /**
-     * @return array{count: int, durationMs: float, titles: array<int, array<string, mixed>>}
+     * @return array{count: int, durationMs: float, titles: array<int, mixed>}
      */
     private function fetchTitlesViaTustin(object $client, string $accountId): array
     {
-        if (!method_exists($client, 'user')) {
+        if (!method_exists($client, 'users')) {
             throw new PsnTrophyTitleComparisonException('The PlayStation client does not support user requests.');
         }
 
         try {
-            $user = $client->user($accountId);
+            $users = $client->users();
+
+            if (!is_object($users) || !method_exists($users, 'find')) {
+                throw new PsnTrophyTitleComparisonException('The PlayStation client does not support user requests.');
+            }
+
+            $user = $users->find($accountId);
             $startTime = ($this->timeProvider)();
             $trophyTitleCollection = $user->trophyTitles();
             $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
@@ -214,22 +220,12 @@ final class PsnTrophyTitleComparisonService
             );
         }
 
-        $normalizedTitles = [];
-
-        foreach ($trophyTitles as $trophyTitle) {
-            $normalizedTitle = $this->normalizeResponse($trophyTitle);
-
-            if ($normalizedTitle !== []) {
-                $normalizedTitles[] = $normalizedTitle;
-            }
-        }
-
         $endTime = ($this->timeProvider)();
 
         return [
-            'count' => count($normalizedTitles),
+            'count' => count($trophyTitles),
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
-            'titles' => $normalizedTitles,
+            'titles' => $trophyTitles,
         ];
     }
 
