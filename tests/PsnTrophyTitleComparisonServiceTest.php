@@ -110,6 +110,84 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
         $this->assertSame(true, $result['fingerprintsMatch']);
     }
 
+
+    public function testCompareByAccountIdUsesMethodBasedTustinTitleKeys(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $client = new class {
+            public function loginWithNpsso(string $npsso): void
+            {
+            }
+
+            /**
+             * @param array<string, mixed> $query
+             * @param array<string, string> $headers
+             */
+            public function get(string $path, array $query = [], array $headers = []): array
+            {
+                return [
+                    'totalItemCount' => 2,
+                    'trophyTitles' => [
+                        ['npCommunicationId' => 'NPWR10'],
+                        ['npCommunicationId' => 'NPWR20'],
+                    ],
+                ];
+            }
+
+            public function users(): object
+            {
+                return new class {
+                    public function find(string $accountId): object
+                    {
+                        return new class {
+                            public function trophyTitles(): object
+                            {
+                                return new class implements IteratorAggregate {
+                                    public function getIterator(): Traversable
+                                    {
+                                        return new ArrayIterator([
+                                            new class {
+                                                public function npCommunicationId(): string
+                                                {
+                                                    return 'NPWR10';
+                                                }
+                                            },
+                                            new class {
+                                                public function npCommunicationId(): string
+                                                {
+                                                    return 'NPWR20';
+                                                }
+                                            },
+                                        ]);
+                                    }
+                                };
+                            }
+                        };
+                    }
+                };
+            }
+        };
+
+        $times = [1.0, 1.0, 2.0, 2.0];
+
+        $service = new PsnTrophyTitleComparisonService(
+            static fn (): array => [$worker],
+            static fn () => $client,
+            static function () use (&$times): float {
+                return (float) array_shift($times);
+            }
+        );
+
+        $result = $service->compareByAccountId('123456');
+
+        $expectedFingerprint = hash('sha256', 'npCommunicationId:NPWR10|npCommunicationId:NPWR20');
+
+        $this->assertSame($expectedFingerprint, $result['direct']['fingerprint']);
+        $this->assertSame($expectedFingerprint, $result['tustin']['fingerprint']);
+        $this->assertSame(true, $result['fingerprintsMatch']);
+    }
+
     public function testCompareByAccountIdRejectsInvalidInput(): void
     {
         $service = new PsnTrophyTitleComparisonService(

@@ -227,7 +227,7 @@ final class PsnTrophyTitleComparisonService
             foreach ($trophyTitleCollection->getIterator() as $trophyTitle) {
                 $count++;
 
-                $titleKey = $this->createTitleKey($this->normalizeResponse($trophyTitle));
+                $titleKey = $this->createTustinTitleKey($trophyTitle);
                 if ($titleKey !== '') {
                     $titleKeys[] = $titleKey;
                 }
@@ -248,6 +248,38 @@ final class PsnTrophyTitleComparisonService
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
             'fingerprint' => hash('sha256', implode('|', $titleKeys)),
         ];
+    }
+
+
+    private function createTustinTitleKey(mixed $trophyTitle): string
+    {
+        if (is_object($trophyTitle)) {
+            $preferredMethods = [
+                'npCommunicationId',
+                'trophyTitleId',
+                'titleId',
+                'titleName',
+                'trophyTitleName',
+            ];
+
+            foreach ($preferredMethods as $method) {
+                if (!method_exists($trophyTitle, $method)) {
+                    continue;
+                }
+
+                try {
+                    $value = $trophyTitle->{$method}();
+                } catch (Throwable) {
+                    continue;
+                }
+
+                if (is_scalar($value) || $value === null) {
+                    return $method . ':' . (string) $value;
+                }
+            }
+        }
+
+        return $this->createTitleKey($this->normalizeResponse($trophyTitle));
     }
 
     /**
