@@ -500,7 +500,7 @@ ALTER TABLE `trophy`
 ALTER TABLE `trophy_earned`
   ADD PRIMARY KEY (`np_communication_id`,`order_id`,`account_id`),
   ADD KEY `idx_te_npcomm_order_earned_date` (`np_communication_id`,`order_id`,`earned`,`earned_date`),
-  ADD KEY `idx_te_acc_earned_np_date` (`account_id`,`earned`,`np_communication_id`,`earned_date`);
+  ADD KEY `idx_te_acc_comm_order_earned_date` (`account_id`,`np_communication_id`,`order_id`,`earned`,`earned_date`);
 
 --
 -- Indexes for table `trophy_group`

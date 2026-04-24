@@ -1,9 +1,6 @@
 -- Safe trophy_earned index rollout for MySQL 8.4
--- Step 1: Create replacement indexes first.
-ALTER TABLE trophy_earned
-    ADD INDEX idx_te_acc_earned_np_date (account_id, earned, np_communication_id, earned_date),
-    ALGORITHM=INPLACE,
-    LOCK=NONE;
+-- Step 1: Keep the existing account+title index prefix to avoid account-scoped regressions.
+-- Existing index retained: idx_te_acc_comm_order_earned_date
 
 -- Step 2: Compare query plans and costs against production-like sampling.
 -- 2a) Trophy achievers lookup (TrophyService::getAchievers)
@@ -47,6 +44,5 @@ WHERE np_communication_id = 'NPWR00000_00'
 ALTER TABLE trophy_earned
     DROP INDEX idx_te_comm_order_earned_acc_date,
     DROP INDEX idx_te_comm_progress,
-    DROP INDEX idx_te_acc_comm_order_earned_date,
     ALGORITHM=INPLACE,
     LOCK=NONE;
