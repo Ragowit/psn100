@@ -1,15 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 6.0.0-dev+20251026.88b7dfd0f0
+-- version 6.0.0-dev+20260330.e0748802af
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 22, 2025 at 12:30 PM
--- Server version: 8.4.7
--- PHP Version: 8.5.0
+-- Generation Time: Apr 25, 2026 at 07:05 PM
+-- Server version: 8.4.9
+-- PHP Version: 8.5.5
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
-SET time_zone = "+00:00";
 
 --
 -- Database: `psn100`
@@ -24,8 +23,8 @@ SET time_zone = "+00:00";
 CREATE TABLE `log` (
   `id` bigint UNSIGNED NOT NULL,
   `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -35,11 +34,11 @@ CREATE TABLE `log` (
 
 CREATE TABLE `player` (
   `account_id` bigint UNSIGNED NOT NULL,
-  `online_id` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `country` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `avatar_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `online_id` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `country` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `avatar_url` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `plus` tinyint(1) NOT NULL,
-  `about_me` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `about_me` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `last_updated_date` datetime DEFAULT NULL,
   `bronze` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `silver` mediumint UNSIGNED NOT NULL DEFAULT '0',
@@ -69,7 +68,7 @@ CREATE TABLE `player` (
   `in_game_rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_legendary` mediumint UNSIGNED NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -78,11 +77,11 @@ CREATE TABLE `player` (
 --
 
 CREATE TABLE `player_queue` (
-  `online_id` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `online_id` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `request_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `offset` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -98,7 +97,7 @@ CREATE TABLE `player_ranking` (
   `rarity_ranking_country` mediumint UNSIGNED NOT NULL,
   `in_game_rarity_ranking` mediumint UNSIGNED NOT NULL,
   `in_game_rarity_ranking_country` mediumint UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -109,9 +108,9 @@ CREATE TABLE `player_ranking` (
 CREATE TABLE `player_report` (
   `report_id` bigint UNSIGNED NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
-  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `explanation` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `explanation` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -121,11 +120,11 @@ CREATE TABLE `player_report` (
 
 CREATE TABLE `psn100_avatars` (
   `avatar_id` bigint UNSIGNED NOT NULL,
-  `size` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `avatar_url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `md5_hash` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `extension` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `size` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `avatar_url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `md5_hash` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `extension` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -136,11 +135,11 @@ CREATE TABLE `psn100_avatars` (
 CREATE TABLE `psn100_change` (
   `id` bigint UNSIGNED NOT NULL,
   `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE','GAME_DELISTED','GAME_OBSOLETE','GAME_DELISTED_AND_OBSOLETE','GAME_NORMAL','GAME_COPY','GAME_RESET','GAME_DELETE','GAME_RESCAN','GAME_UNOBTAINABLE','GAME_OBTAINABLE','GAME_HISTORY_SNAPSHOT') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `change_type` enum('GAME_VERSION','GAME_CLONE','GAME_MERGE','GAME_UPDATE','GAME_DELISTED','GAME_OBSOLETE','GAME_DELISTED_AND_OBSOLETE','GAME_NORMAL','GAME_COPY','GAME_RESET','GAME_DELETE','GAME_RESCAN','GAME_UNOBTAINABLE','GAME_OBTAINABLE','GAME_HISTORY_SNAPSHOT') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `param_1` int NOT NULL,
   `param_2` int DEFAULT NULL,
-  `extra` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `extra` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -150,12 +149,12 @@ CREATE TABLE `psn100_change` (
 
 CREATE TABLE `setting` (
   `id` bigint UNSIGNED NOT NULL,
-  `refresh_token` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `refresh_token` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `scan_start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `scan_progress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `scan_progress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -165,18 +164,18 @@ CREATE TABLE `setting` (
 
 CREATE TABLE `trophy` (
   `id` bigint UNSIGNED NOT NULL,
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `order_id` smallint UNSIGNED NOT NULL,
   `hidden` tinyint(1) NOT NULL,
-  `type` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `progress_target_value` int UNSIGNED DEFAULT NULL,
-  `reward_name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `reward_image_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `reward_name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `reward_image_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -185,14 +184,14 @@ CREATE TABLE `trophy` (
 --
 
 CREATE TABLE `trophy_earned` (
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `order_id` smallint UNSIGNED NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
   `earned_date` datetime DEFAULT NULL,
   `progress` int UNSIGNED DEFAULT NULL,
   `earned` tinyint NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 PARTITION BY HASH (`account_id`)
 PARTITIONS 256;
 
@@ -232,16 +231,16 @@ DELIMITER ;
 
 CREATE TABLE `trophy_group` (
   `id` bigint UNSIGNED NOT NULL,
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `bronze` smallint UNSIGNED NOT NULL DEFAULT '0',
   `silver` smallint UNSIGNED NOT NULL DEFAULT '0',
   `gold` smallint UNSIGNED NOT NULL DEFAULT '0',
   `platinum` smallint UNSIGNED NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -251,11 +250,11 @@ CREATE TABLE `trophy_group` (
 
 CREATE TABLE `trophy_group_history` (
   `title_history_id` bigint UNSIGNED NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -264,15 +263,15 @@ CREATE TABLE `trophy_group_history` (
 --
 
 CREATE TABLE `trophy_group_player` (
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
   `bronze` smallint UNSIGNED NOT NULL,
   `silver` smallint UNSIGNED NOT NULL,
   `gold` smallint UNSIGNED NOT NULL,
   `platinum` smallint UNSIGNED NOT NULL,
   `progress` tinyint UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -282,13 +281,13 @@ CREATE TABLE `trophy_group_player` (
 
 CREATE TABLE `trophy_history` (
   `title_history_id` bigint UNSIGNED NOT NULL,
-  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `order_id` smallint UNSIGNED NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `progress_target_value` int UNSIGNED DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -297,13 +296,13 @@ CREATE TABLE `trophy_history` (
 --
 
 CREATE TABLE `trophy_merge` (
-  `child_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `child_group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `child_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `child_group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `child_order_id` smallint UNSIGNED NOT NULL,
-  `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `parent_group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `parent_group_id` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `parent_order_id` smallint UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -317,11 +316,11 @@ CREATE TABLE `trophy_meta` (
   `rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
-  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `in_game_rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `in_game_rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'NONE'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `in_game_rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NONE'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -331,17 +330,17 @@ CREATE TABLE `trophy_meta` (
 
 CREATE TABLE `trophy_title` (
   `id` bigint UNSIGNED NOT NULL,
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `platform` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `platform` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `bronze` smallint UNSIGNED NOT NULL DEFAULT '0',
   `silver` smallint UNSIGNED NOT NULL DEFAULT '0',
   `gold` smallint UNSIGNED NOT NULL DEFAULT '0',
   `platinum` smallint UNSIGNED NOT NULL DEFAULT '0',
-  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -352,11 +351,11 @@ CREATE TABLE `trophy_title` (
 CREATE TABLE `trophy_title_history` (
   `id` bigint UNSIGNED NOT NULL,
   `trophy_title_id` bigint UNSIGNED NOT NULL,
-  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `set_version` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
   `discovered_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -365,20 +364,20 @@ CREATE TABLE `trophy_title_history` (
 --
 
 CREATE TABLE `trophy_title_meta` (
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `owners` int UNSIGNED NOT NULL DEFAULT '0',
   `difficulty` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
-  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `status` tinyint UNSIGNED NOT NULL DEFAULT '0',
   `recent_players` int UNSIGNED NOT NULL DEFAULT '0',
   `owners_completed` int UNSIGNED NOT NULL DEFAULT '0',
   `psnprofiles_id` int UNSIGNED DEFAULT NULL,
-  `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `obsolete_ids` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `obsolete_ids` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -387,7 +386,7 @@ CREATE TABLE `trophy_title_meta` (
 --
 
 CREATE TABLE `trophy_title_player` (
-  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `account_id` bigint UNSIGNED NOT NULL,
   `bronze` smallint UNSIGNED NOT NULL,
   `silver` smallint UNSIGNED NOT NULL,
@@ -407,7 +406,7 @@ CREATE TABLE `trophy_title_player` (
   `in_game_rare` smallint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_epic` smallint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_legendary` smallint UNSIGNED NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Indexes for dumped tables
@@ -470,7 +469,8 @@ ALTER TABLE `player_report`
 --
 ALTER TABLE `psn100_avatars`
   ADD PRIMARY KEY (`avatar_id`),
-  ADD KEY `idx_avatar_url` (`avatar_url`(760));
+  ADD KEY `idx_avatar_url` (`avatar_url`(760)),
+  ADD KEY `md5_hash` (`md5_hash`);
 
 --
 -- Indexes for table `psn100_change`
@@ -533,8 +533,9 @@ ALTER TABLE `trophy_history`
 -- Indexes for table `trophy_merge`
 --
 ALTER TABLE `trophy_merge`
-  ADD PRIMARY KEY (`child_np_communication_id`,`child_group_id`,`child_order_id`,`parent_np_communication_id`,`parent_group_id`,`parent_order_id`),
-  ADD UNIQUE KEY `u_child_trophy` (`child_np_communication_id`,`child_group_id`,`child_order_id`);
+  ADD PRIMARY KEY (`child_np_communication_id`,`child_group_id`,`child_order_id`,`parent_np_communication_id`,`parent_group_id`,`parent_order_id`) USING BTREE,
+  ADD UNIQUE KEY `u_child_trophy` (`child_np_communication_id`,`child_group_id`,`child_order_id`),
+  ADD KEY `idx_tm_parent` (`parent_np_communication_id`,`parent_group_id`,`child_np_communication_id`,`child_group_id`);
 
 --
 -- Indexes for table `trophy_meta`
@@ -587,55 +588,55 @@ ALTER TABLE `trophy_title_player`
 -- AUTO_INCREMENT for table `log`
 --
 ALTER TABLE `log`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1582344;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `player_report`
 --
 ALTER TABLE `player_report`
-  MODIFY `report_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `report_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `psn100_avatars`
 --
 ALTER TABLE `psn100_avatars`
-  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20385;
+  MODIFY `avatar_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50524;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `setting`
 --
 ALTER TABLE `setting`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `trophy`
 --
 ALTER TABLE `trophy`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2714072;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `trophy_group`
 --
 ALTER TABLE `trophy_group`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85395;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `trophy_title`
 --
 ALTER TABLE `trophy_title`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60286;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `trophy_title_history`
 --
 ALTER TABLE `trophy_title_history`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69765;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
