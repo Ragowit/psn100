@@ -201,6 +201,8 @@ class GameService
                         trophy_earned
                     WHERE
                         account_id = :account_id
+                        AND np_communication_id = :np_communication_id
+                        AND group_id = :group_id
                 )
                 SELECT
                     t.id,

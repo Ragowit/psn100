@@ -499,8 +499,6 @@ ALTER TABLE `trophy`
 --
 ALTER TABLE `trophy_earned`
   ADD PRIMARY KEY (`np_communication_id`,`order_id`,`account_id`),
-  ADD KEY `idx_te_comm_order_earned_acc_date` (`np_communication_id`,`order_id`,`earned`,`account_id`,`earned_date`),
-  ADD KEY `idx_te_comm_progress` (`np_communication_id`,`progress`),
   ADD KEY `idx_te_npcomm_order_earned_date` (`np_communication_id`,`order_id`,`earned`,`earned_date`),
   ADD KEY `idx_te_acc_comm_order_earned_date` (`account_id`,`np_communication_id`,`order_id`,`earned`,`earned_date`);
 
