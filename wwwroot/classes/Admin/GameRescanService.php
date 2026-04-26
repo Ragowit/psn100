@@ -158,7 +158,25 @@ class GameRescanService
             foreach ($this->fetchWorkers() as $worker) {
                 try {
                     $client = new Client();
-                    $client->loginWithNpsso($worker['npsso']);
+                    $refreshToken = (string) ($worker['refresh_token'] ?? '');
+                    $npsso = (string) ($worker['npsso'] ?? '');
+
+                    if ($refreshToken !== '') {
+                        try {
+                            $client->loginWithRefreshToken($refreshToken);
+                        } catch (Exception|TypeError $exception) {
+                            if ($npsso === '') {
+                                throw $exception;
+                            }
+
+                            $client->loginWithNpsso($npsso);
+                        }
+                    } elseif ($npsso !== '') {
+                        $client->loginWithNpsso($npsso);
+                    } else {
+                        continue;
+                    }
+
                     $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
 
                     return $client;
@@ -175,7 +193,7 @@ class GameRescanService
 
     private function fetchWorkers(): array
     {
-        $query = $this->database->prepare('SELECT id, npsso FROM setting ORDER BY id');
+        $query = $this->database->prepare('SELECT id, refresh_token, npsso FROM setting ORDER BY id');
         $query->execute();
 
         return $query->fetchAll(PDO::FETCH_ASSOC);

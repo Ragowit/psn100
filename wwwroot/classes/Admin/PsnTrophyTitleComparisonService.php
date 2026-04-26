@@ -110,15 +110,31 @@ final class PsnTrophyTitleComparisonService
                 continue;
             }
 
+            $refreshToken = $worker->getRefreshToken();
             $npsso = $worker->getNpsso();
-            if ($npsso === '') {
+            if ($refreshToken === '' && $npsso === '') {
                 continue;
             }
 
             try {
                 $client = $factory();
 
-                if (!is_object($client) || !method_exists($client, 'loginWithNpsso')) {
+                if (!is_object($client)) {
+                    throw new RuntimeException('Invalid PlayStation client.');
+                }
+
+                if ($refreshToken !== '' && method_exists($client, 'loginWithRefreshToken')) {
+                    try {
+                        $client->loginWithRefreshToken($refreshToken);
+                        $this->persistRefreshTokenBestEffort($worker->getId(), $client);
+
+                        return $client;
+                    } catch (Throwable) {
+                        // Fall back to NPSSO for this worker below.
+                    }
+                }
+
+                if (!method_exists($client, 'loginWithNpsso')) {
                     throw new RuntimeException('The PlayStation client does not support NPSSO authentication.');
                 }
 

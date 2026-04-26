@@ -28,7 +28,7 @@ final class PsnGameLookupServiceTest extends TestCase
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (42, 'NPWR12345_00', 'Example Game')");
 
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $capturedCalls = [];
 
@@ -72,7 +72,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testLookupByGameIdReturnsNotFoundErrorForMissingGame(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -92,7 +92,7 @@ final class PsnGameLookupServiceTest extends TestCase
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name, platform) VALUES (77, 'NPWR77777_00', 'PS5 Game', 'PS5')");
 
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $attempts = [];
 
         $service = new PsnGameLookupService(
@@ -116,7 +116,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdUsesProvidedAuthenticatedClient(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -140,7 +140,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdPreservesGroupedPayloadWhenFlatTrophiesMissing(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -175,7 +175,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdPreservesApiGroupedPayloadWhenFlatTrophiesExist(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -222,7 +222,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdAcceptsMatchingPayloadNpCommunicationId(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -258,7 +258,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdThrowsForMismatchedPayloadNpCommunicationId(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -296,7 +296,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdDoesNotFailWhenPayloadHasNoDetectableNpCommunicationId(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -330,7 +330,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdThrowsForMismatchedTrophyGroupsNpCommunicationId(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -373,7 +373,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdThrowsWhenPayloadContainsConflictingNpCommunicationIds(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -413,7 +413,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdThrowsWhenTrophyGroupsContainConflictingNestedIds(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -462,7 +462,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testRequestHandlerReturnsValidationErrorMessage(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnGameLookupService(
             $this->database,
@@ -481,7 +481,7 @@ final class PsnGameLookupServiceTest extends TestCase
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (54139, 'NPWR51065_00', 'Retry Game')");
 
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $attempts = [];
 
@@ -517,7 +517,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdPinsWinningVariantAcrossBothEndpoints(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $attempts = [];
 
         $service = new PsnGameLookupService(
@@ -561,7 +561,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
     public function testFetchTrophyDataForNpCommunicationIdRetriesBothEndpointsUnderSingleFallbackVariant(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
         $attempts = [];
 
         $service = new PsnGameLookupService(
@@ -614,7 +614,7 @@ final class PsnGameLookupServiceTest extends TestCase
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (54139, 'NPWR51065_00', 'Retry Game')");
 
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $attempts = [];
 
@@ -647,7 +647,7 @@ final class PsnGameLookupServiceTest extends TestCase
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (54139, 'NPWR51065_00', 'Retry Game')");
 
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $attempts = [];
 

@@ -8,6 +8,7 @@ final readonly class Worker
 {
     public function __construct(
         private int $id,
+        private string $refreshToken,
         private string $npsso,
         private string $scanning,
         private DateTimeImmutable $scanStart,
@@ -23,6 +24,11 @@ final readonly class Worker
     public function getNpsso(): string
     {
         return $this->npsso;
+    }
+
+    public function getRefreshToken(): string
+    {
+        return $this->refreshToken;
     }
 
     public function getScanning(): string

@@ -11,7 +11,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 {
     public function testLookupReturnsProfileDataAsArray(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $capturedPath = null;
         $capturedQuery = null;
@@ -83,7 +83,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
     public function testLookupThrowsNotFoundException(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],
@@ -107,7 +107,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
     public function testLookupReturnsProfileWhenTrophySummaryRequestFails(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],
@@ -138,8 +138,8 @@ final class PsnPlayerLookupServiceTest extends TestCase
     public function testLookupSkipsWorkersThatFailToAuthenticate(): void
     {
         $workers = [
-            new Worker(1, 'bad-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null),
-            new Worker(2, 'good-npsso', '', new DateTimeImmutable('2024-01-02T00:00:00+00:00'), null),
+            new Worker(1, '', 'bad-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null),
+            new Worker(2, '', 'good-npsso', '', new DateTimeImmutable('2024-01-02T00:00:00+00:00'), null),
         ];
 
         $clients = [
@@ -182,7 +182,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
     public function testLookupSucceedsWhenRefreshTokenPersistenceFails(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],
@@ -239,7 +239,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
     public function testRequestHandlerReturnsNullForBlankInput(): void
     {
-        $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],
@@ -257,7 +257,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
     public function testRequestHandlerReturnsLookupErrorMessage(): void
     {
-        $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],
@@ -302,7 +302,7 @@ final class PsnPlayerLookupServiceTest extends TestCase
 
     public function testRequestHandlerIncludesNpIdMetadataWhenAvailable(): void
     {
-        $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],

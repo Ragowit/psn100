@@ -32,11 +32,21 @@ final class WorkerService
         $sortField = WorkerSortField::fromMixed($orderBy);
         $sortDirection = WorkerSortDirection::fromMixed($direction);
 
-        $statement = $this->database->query(sprintf(
-            'SELECT id, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
+        $query = sprintf(
+            'SELECT id, refresh_token, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
             $sortField->toSqlColumn(),
             $sortDirection->toSqlKeyword()
-        ));
+        );
+
+        try {
+            $statement = $this->database->query($query);
+        } catch (PDOException) {
+            $statement = $this->database->query(sprintf(
+                'SELECT id, "" AS refresh_token, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
+                $sortField->toSqlColumn(),
+                $sortDirection->toSqlKeyword()
+            ));
+        }
 
         if ($statement === false) {
             return [];
@@ -46,6 +56,7 @@ final class WorkerService
 
         while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
             $id = isset($row['id']) ? (int) $row['id'] : 0;
+            $refreshToken = (string) ($row['refresh_token'] ?? '');
             $npsso = (string) ($row['npsso'] ?? '');
             $scanning = (string) ($row['scanning'] ?? '');
             $scanStartRaw = (string) ($row['scan_start'] ?? '');
@@ -61,7 +72,7 @@ final class WorkerService
                 is_string($scanProgressValue) ? $scanProgressValue : null
             );
 
-            $workers[] = new Worker($id, $npsso, $scanning, $scanStart, $scanProgress);
+            $workers[] = new Worker($id, $refreshToken, $npsso, $scanning, $scanStart, $scanProgress);
         }
 
         return $workers;

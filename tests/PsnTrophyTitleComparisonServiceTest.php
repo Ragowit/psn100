@@ -12,7 +12,7 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
 {
     public function testCompareByAccountIdFetchesAllPagesAndMeasuresTimeForDirectSource(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $capturedCalls = [];
 
@@ -108,7 +108,7 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
 
     public function testCompareByAccountIdCountsObjectBasedTustinTitles(): void
     {
-        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $client = new class {
             public function loginWithNpsso(string $npsso): void
@@ -213,7 +213,7 @@ final class PsnTrophyTitleComparisonServiceTest extends TestCase
 
     public function testRequestHandlerReturnsErrorMessageFromServiceException(): void
     {
-        $worker = new Worker(1, 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+        $worker = new Worker(1, '', 'npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
 
         $service = new PsnTrophyTitleComparisonService(
             static fn (): array => [$worker],

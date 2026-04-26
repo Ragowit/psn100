@@ -109,9 +109,10 @@ final class PsnPlayerLookupService
                 continue;
             }
 
+            $refreshToken = $worker->getRefreshToken();
             $npsso = $worker->getNpsso();
 
-            if ($npsso === '') {
+            if ($refreshToken === '' && $npsso === '') {
                 continue;
             }
 
@@ -120,6 +121,17 @@ final class PsnPlayerLookupService
 
                 if (!is_object($client)) {
                     throw new RuntimeException('Invalid PlayStation client.');
+                }
+
+                if ($refreshToken !== '' && method_exists($client, 'loginWithRefreshToken')) {
+                    try {
+                        $client->loginWithRefreshToken($refreshToken);
+                        $this->persistRefreshTokenBestEffort($worker->getId(), $client);
+
+                        return $client;
+                    } catch (Throwable) {
+                        // Fall back to NPSSO for this worker below.
+                    }
                 }
 
                 if (!method_exists($client, 'loginWithNpsso')) {
