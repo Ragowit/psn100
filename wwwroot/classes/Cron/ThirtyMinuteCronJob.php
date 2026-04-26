@@ -302,13 +302,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $loggedIn = false;
             while (!$loggedIn) {
                 $query = $this->database->prepare("SELECT
-                        id,
-                        npsso,
-                        scanning
-                    FROM
-                        setting
-                    WHERE
-                        id = :id");
+                    id,
+                    refresh_token,
+                    npsso,
+                    scanning
+                FROM
+                    setting
+                WHERE
+                    id = :id");
                 $query->bindValue(":id", $this->workerId, PDO::PARAM_INT);
                 $query->execute();
                 $worker = $query->fetch(PDO::FETCH_ASSOC);
@@ -325,8 +326,25 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                 try {
                     $client = new Client();
-                    $npsso = $worker["npsso"];
-                    $client->loginWithNpsso($npsso);
+                    $refreshToken = (string) ($worker['refresh_token'] ?? '');
+                    $npsso = (string) ($worker['npsso'] ?? '');
+
+                    if ($refreshToken !== '') {
+                        try {
+                            $client->loginWithRefreshToken($refreshToken);
+                        } catch (Exception|TypeError $exception) {
+                            if ($npsso === '') {
+                                throw $exception;
+                            }
+
+                            $client->loginWithNpsso($npsso);
+                        }
+                    } elseif ($npsso !== '') {
+                        $client->loginWithNpsso($npsso);
+                    } else {
+                        throw new RuntimeException('Worker has no credentials configured.');
+                    }
+
                     $loggedIn = true;
                     $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
                 } catch (TypeError $e) {

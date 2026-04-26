@@ -19,13 +19,13 @@ final class AdminWorkerPageTest extends TestCase
         parent::setUp();
         $this->database = new PDO('sqlite::memory:');
         $this->database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
+        $this->database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
     }
 
     public function testHandleReturnsSortedWorkersAndLinks(): void
     {
-        $this->database->exec("INSERT INTO setting (id, npsso, scanning, scan_start, scan_progress) VALUES (1, 'foo', 'Alpha', '2024-01-01 00:00:00', null)");
-        $this->database->exec("INSERT INTO setting (id, npsso, scanning, scan_start, scan_progress) VALUES (2, 'bar', 'Bravo', '2024-01-02 00:00:00', null)");
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (1, '', 'foo', 'Alpha', '2024-01-01 00:00:00', null)");
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (2, '', 'bar', 'Bravo', '2024-01-02 00:00:00', null)");
 
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, '')));
         $page = new WorkerPage($service);
@@ -52,7 +52,7 @@ final class AdminWorkerPageTest extends TestCase
 
     public function testHandleProcessesUpdateNpssoRequests(): void
     {
-        $this->database->exec("INSERT INTO setting (id, npsso, scanning, scan_start, scan_progress) VALUES (5, 'old', 'Worker', '2024-01-01 00:00:00', null)");
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (5, '', 'old', 'Worker', '2024-01-01 00:00:00', null)");
 
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, '')));
         $page = new WorkerPage($service);
@@ -70,7 +70,7 @@ final class AdminWorkerPageTest extends TestCase
 
     public function testHandleProcessesRestartWorkerRequests(): void
     {
-        $this->database->exec("INSERT INTO setting (id, npsso, scanning, scan_start, scan_progress) VALUES (3, 'np', 'Worker', '2024-01-01 00:00:00', null)");
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (3, '', 'np', 'Worker', '2024-01-01 00:00:00', null)");
 
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, 'Done')));
         $page = new WorkerPage($service);
@@ -84,7 +84,7 @@ final class AdminWorkerPageTest extends TestCase
 
     public function testHandleProcessesRestartAllWorkersFailure(): void
     {
-        $this->database->exec("INSERT INTO setting (id, npsso, scanning, scan_start, scan_progress) VALUES (1, 'np', 'Worker', '2024-01-01 00:00:00', null)");
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (1, '', 'np', 'Worker', '2024-01-01 00:00:00', null)");
 
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(2, 'error')));
         $page = new WorkerPage($service);
