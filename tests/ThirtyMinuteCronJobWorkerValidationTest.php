@@ -15,7 +15,7 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
     {
         $database = new PDO('sqlite::memory:');
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, npsso TEXT, scanning TEXT, scan_progress TEXT)');
+        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_progress TEXT)');
         $database->exec('CREATE TABLE log (message TEXT NOT NULL)');
 
         $logger = new Psn100Logger($database);

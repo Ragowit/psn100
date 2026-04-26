@@ -301,27 +301,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             // Login with a token
             $loggedIn = false;
             while (!$loggedIn) {
-                try {
-                    $query = $this->database->prepare("SELECT
-                        id,
-                        refresh_token,
-                        npsso,
-                        scanning
-                    FROM
-                        setting
-                    WHERE
-                        id = :id");
-                } catch (PDOException) {
-                    $query = $this->database->prepare("SELECT
-                        id,
-                        '' AS refresh_token,
-                        npsso,
-                        scanning
-                    FROM
-                        setting
-                    WHERE
-                        id = :id");
-                }
+                $query = $this->database->prepare("SELECT
+                    id,
+                    refresh_token,
+                    npsso,
+                    scanning
+                FROM
+                    setting
+                WHERE
+                    id = :id");
                 $query->bindValue(":id", $this->workerId, PDO::PARAM_INT);
                 $query->execute();
                 $worker = $query->fetch(PDO::FETCH_ASSOC);

@@ -38,15 +38,7 @@ final class WorkerService
             $sortDirection->toSqlKeyword()
         );
 
-        try {
-            $statement = $this->database->query($query);
-        } catch (PDOException) {
-            $statement = $this->database->query(sprintf(
-                'SELECT id, "" AS refresh_token, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
-                $sortField->toSqlColumn(),
-                $sortDirection->toSqlKeyword()
-            ));
-        }
+        $statement = $this->database->query($query);
 
         if ($statement === false) {
             return [];
