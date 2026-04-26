@@ -77,6 +77,32 @@ SQL
         $this->assertFalse($service->updateWorkerNpsso(42, 'does-not-exist'));
     }
 
+    public function testUpdateWorkerRefreshTokenReturnsTrueWhenRowUpdated(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
+        $database->exec("INSERT INTO setting (refresh_token, npsso, scanning, scan_start) VALUES ('old-token', 'npsso-1', 'player-one', '2024-01-01 09:00:00')");
+
+        $service = new WorkerService($database);
+        $this->assertTrue($service->updateWorkerRefreshToken(1, 'new-token'));
+
+        $statement = $database->query('SELECT refresh_token FROM setting WHERE id = 1');
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        $this->assertSame('new-token', $row['refresh_token']);
+    }
+
+    public function testUpdateWorkerRefreshTokenReturnsFalseWhenRowMissing(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, refresh_token TEXT, npsso TEXT, scanning TEXT, scan_start TEXT, scan_progress TEXT)');
+
+        $service = new WorkerService($database);
+        $this->assertFalse($service->updateWorkerRefreshToken(42, 'does-not-exist'));
+    }
+
     public function testFetchWorkersHandlesInvalidScanProgress(): void
     {
         $database = new PDO('sqlite::memory:');

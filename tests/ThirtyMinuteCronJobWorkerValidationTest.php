@@ -50,4 +50,39 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
             $this->assertSame('Worker ID must be greater than zero. Received: 0', $exception->getMessage());
         }
     }
+
+    public function testSaveWorkerRefreshTokenBestEffortLogsAndDoesNotThrowOnFailure(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, npsso TEXT, scanning TEXT, scan_progress TEXT, refresh_token TEXT)');
+        $database->exec('CREATE TABLE log (message TEXT NOT NULL)');
+        $database->exec("INSERT INTO setting (id, npsso, scanning, scan_progress, refresh_token) VALUES (1, 'token', NULL, NULL, NULL)");
+
+        $logger = new Psn100Logger($database);
+        $cronJob = new ThirtyMinuteCronJob(
+            $database,
+            new TrophyCalculator($database),
+            $logger,
+            new TrophyHistoryRecorder($database, $logger),
+            1
+        );
+
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'saveWorkerRefreshTokenBestEffort');
+        $method->setAccessible(true);
+
+        $method->invoke($cronJob, 1, new class {
+            public function getRefreshToken(): object
+            {
+                throw new RuntimeException('db unavailable');
+            }
+        });
+
+        $statement = $database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1');
+        $message = $statement !== false ? $statement->fetchColumn() : false;
+        $this->assertSame(
+            'Failed to persist refresh token for worker 1: db unavailable',
+            $message !== false ? (string) $message : ''
+        );
+    }
 }

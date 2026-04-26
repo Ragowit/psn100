@@ -88,6 +88,22 @@ final class WorkerService
         return $statement->rowCount() > 0;
     }
 
+    public function updateWorkerRefreshToken(int $workerId, string $refreshToken): bool
+    {
+        $statement = $this->database->prepare('UPDATE setting SET refresh_token = :refresh_token WHERE id = :id');
+
+        if ($statement === false) {
+            return false;
+        }
+
+        $statement->bindValue(':refresh_token', $refreshToken, PDO::PARAM_STR);
+        $statement->bindValue(':id', $workerId, PDO::PARAM_INT);
+
+        $statement->execute();
+
+        return $statement->rowCount() > 0;
+    }
+
     public function restartWorker(int $workerId): CommandExecutionResult
     {
         return $this->commandExecutor->run([

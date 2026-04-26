@@ -180,6 +180,48 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $this->assertSame('42', $result['profile']['accountId']);
     }
 
+    public function testLookupSucceedsWhenRefreshTokenPersistenceFails(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new class {
+                public function loginWithNpsso(string $npsso): void
+                {
+                }
+
+                public function getRefreshToken(): object
+                {
+                    return new class {
+                        public function getToken(): string
+                        {
+                            return 'refresh-token';
+                        }
+                    };
+                }
+
+                public function get(string $path = '', array $query = [], array $headers = []): object
+                {
+                    return (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'Hunter',
+                            'accountId' => '42',
+                        ],
+                    ];
+                }
+            },
+            static function (): bool {
+                throw new RuntimeException('Failed to persist refresh token.');
+            }
+        );
+
+        $result = $service->lookup('Hunter');
+
+        $this->assertSame('Hunter', $result['profile']['onlineId']);
+        $this->assertSame('42', $result['profile']['accountId']);
+    }
+
     public function testLookupThrowsWhenNoWorkerCanAuthenticate(): void
     {
         $service = new PsnPlayerLookupService(

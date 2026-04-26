@@ -159,6 +159,7 @@ class GameRescanService
                 try {
                     $client = new Client();
                     $client->loginWithNpsso($worker['npsso']);
+                    $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
 
                     return $client;
                 } catch (TypeError $exception) {
@@ -178,6 +179,37 @@ class GameRescanService
         $query->execute();
 
         return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function saveWorkerRefreshTokenBestEffort(int $workerId, object $client): void
+    {
+        try {
+            $this->saveWorkerRefreshToken($workerId, $client);
+        } catch (Throwable) {
+            // Refresh-token persistence is best-effort and must not fail authentication.
+        }
+    }
+
+    private function saveWorkerRefreshToken(int $workerId, object $client): void
+    {
+        if (!method_exists($client, 'getRefreshToken')) {
+            return;
+        }
+
+        $refreshToken = $client->getRefreshToken();
+        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
+            return;
+        }
+
+        $tokenValue = $refreshToken->getToken();
+        if (!is_string($tokenValue) || $tokenValue === '') {
+            return;
+        }
+
+        $query = $this->database->prepare('UPDATE setting SET refresh_token = :refresh_token WHERE id = :id');
+        $query->bindValue(':refresh_token', $tokenValue, PDO::PARAM_STR);
+        $query->bindValue(':id', $workerId, PDO::PARAM_INT);
+        $query->execute();
     }
 
     private function logMessage(string $message): void

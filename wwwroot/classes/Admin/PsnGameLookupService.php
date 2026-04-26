@@ -19,23 +19,35 @@ final class PsnGameLookupService
      * @var \Closure(): object
      */
     private readonly \Closure $clientFactory;
+    /**
+     * @var \Closure(int, string): void
+     */
+    private readonly \Closure $refreshTokenSaver;
 
     public function __construct(
         private readonly PDO $database,
         callable $workerFetcher,
-        ?callable $clientFactory = null
+        ?callable $clientFactory = null,
+        ?callable $refreshTokenSaver = null
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->clientFactory = \Closure::fromCallable(
             $clientFactory ?? static fn (): object => new Client()
         );
+        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? static function (int $workerId, string $refreshToken): void {
+        });
     }
 
     public static function fromDatabase(PDO $database): self
     {
         $workerService = new WorkerService($database);
 
-        return new self($database, static fn (): array => $workerService->fetchWorkers());
+        return new self(
+            $database,
+            static fn (): array => $workerService->fetchWorkers(),
+            null,
+            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
+        );
     }
 
     /**
@@ -343,6 +355,7 @@ final class PsnGameLookupService
                 }
 
                 $client->loginWithNpsso($npsso);
+                $this->persistRefreshTokenBestEffort($worker->getId(), $client);
 
                 return $client;
             } catch (Throwable) {
@@ -351,6 +364,34 @@ final class PsnGameLookupService
         }
 
         throw new RuntimeException('Unable to login to any worker accounts.');
+    }
+
+    private function persistRefreshTokenBestEffort(int $workerId, object $client): void
+    {
+        try {
+            $this->saveRefreshToken($workerId, $client);
+        } catch (Throwable) {
+            // Refresh-token persistence is best-effort and must not fail authentication.
+        }
+    }
+
+    private function saveRefreshToken(int $workerId, object $client): void
+    {
+        if (!method_exists($client, 'getRefreshToken')) {
+            return;
+        }
+
+        $refreshToken = $client->getRefreshToken();
+        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
+            return;
+        }
+
+        $tokenValue = $refreshToken->getToken();
+        if (!is_string($tokenValue) || $tokenValue === '') {
+            return;
+        }
+
+        ($this->refreshTokenSaver)($workerId, $tokenValue);
     }
 
     /**
