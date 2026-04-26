@@ -193,7 +193,12 @@ class GameRescanService
 
     private function fetchWorkers(): array
     {
-        $query = $this->database->prepare('SELECT id, refresh_token, npsso FROM setting ORDER BY id');
+        try {
+            $query = $this->database->prepare('SELECT id, refresh_token, npsso FROM setting ORDER BY id');
+        } catch (PDOException) {
+            $query = $this->database->prepare('SELECT id, "" AS refresh_token, npsso FROM setting ORDER BY id');
+        }
+
         $query->execute();
 
         return $query->fetchAll(PDO::FETCH_ASSOC);
