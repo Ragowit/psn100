@@ -127,7 +127,7 @@ final class PsnPlayerLookupService
                 }
 
                 $client->loginWithNpsso($npsso);
-                $this->saveRefreshToken($worker->getId(), $client);
+                $this->persistRefreshTokenBestEffort($worker->getId(), $client);
 
                 return $client;
             } catch (Throwable) {
@@ -136,6 +136,15 @@ final class PsnPlayerLookupService
         }
 
         throw new RuntimeException('Unable to login to any worker accounts.');
+    }
+
+    private function persistRefreshTokenBestEffort(int $workerId, object $client): void
+    {
+        try {
+            $this->saveRefreshToken($workerId, $client);
+        } catch (Throwable) {
+            // Refresh-token persistence is best-effort and must not fail authentication.
+        }
     }
 
     private function saveRefreshToken(int $workerId, object $client): void

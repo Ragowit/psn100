@@ -327,9 +327,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $client = new Client();
                     $npsso = $worker["npsso"];
                     $client->loginWithNpsso($npsso);
-                    $this->saveWorkerRefreshToken((int) $worker['id'], $client);
-
                     $loggedIn = true;
+                    $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
                 } catch (TypeError $e) {
                     // Something odd, let's wait a minute
                     $this->setWaitingScanProgress(
@@ -2003,6 +2002,17 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             } finally {
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
+        }
+    }
+
+    private function saveWorkerRefreshTokenBestEffort(int $workerId, object $client): void
+    {
+        try {
+            $this->saveWorkerRefreshToken($workerId, $client);
+        } catch (Throwable $exception) {
+            $this->logger->log(
+                sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $exception->getMessage())
+            );
         }
     }
 
