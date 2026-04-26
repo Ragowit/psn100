@@ -16,12 +16,19 @@ final class PsnPlayerLookupServiceTest extends TestCase
         $capturedPath = null;
         $capturedQuery = null;
         $capturedHeaders = null;
+        $capturedSummaryPath = null;
+        $capturedSummaryQuery = null;
+        $capturedSummaryHeaders = null;
 
         $service = new PsnPlayerLookupService(
             static fn (): array => [$worker],
-            function () use (&$capturedPath, &$capturedQuery, &$capturedHeaders): object {
+            function () use (&$capturedPath, &$capturedQuery, &$capturedHeaders, &$capturedSummaryPath, &$capturedSummaryQuery, &$capturedSummaryHeaders): object {
                 return new StubClient(
                     profileHandler: function (string $path, array $query, array $headers) use (&$capturedPath, &$capturedQuery, &$capturedHeaders): object {
+                        if (str_contains($path, '/trophySummary')) {
+                            throw new RuntimeException('Unexpected trophy summary request in profile handler.');
+                        }
+
                         $capturedPath = $path;
                         $capturedQuery = $query;
                         $capturedHeaders = $headers;
@@ -32,6 +39,21 @@ final class PsnPlayerLookupServiceTest extends TestCase
                                 'accountId' => '1234567890',
                                 'currentOnlineId' => 'ExampleNew',
                                 'npId' => base64_encode('example@a6.us'),
+                            ],
+                        ];
+                    },
+                    summaryHandler: function (string $path, array $query, array $headers) use (&$capturedSummaryPath, &$capturedSummaryQuery, &$capturedSummaryHeaders): object {
+                        $capturedSummaryPath = $path;
+                        $capturedSummaryQuery = $query;
+                        $capturedSummaryHeaders = $headers;
+
+                        return (object) [
+                            'accountId' => '1234567890',
+                            'earnedTrophies' => (object) [
+                                'bronze' => 1,
+                                'silver' => 2,
+                                'gold' => 3,
+                                'platinum' => 4,
                             ],
                         ];
                     }
@@ -47,9 +69,16 @@ final class PsnPlayerLookupServiceTest extends TestCase
         );
         $this->assertSame(['fields' => 'accountId,onlineId,currentOnlineId,npId'], $capturedQuery);
         $this->assertSame(['content-type' => 'application/json'], $capturedHeaders);
+        $this->assertSame(
+            'https://m.np.playstation.com/api/trophy/v1/users/1234567890/trophySummary',
+            $capturedSummaryPath
+        );
+        $this->assertSame([], $capturedSummaryQuery);
+        $this->assertSame(['content-type' => 'application/json'], $capturedSummaryHeaders);
         $this->assertSame('Example', $result['profile']['onlineId']);
         $this->assertSame('1234567890', $result['profile']['accountId']);
         $this->assertSame('ExampleNew', $result['profile']['currentOnlineId']);
+        $this->assertSame(4, $result['trophySummary']['earnedTrophies']['platinum']);
     }
 
     public function testLookupThrowsNotFoundException(): void
@@ -232,12 +261,18 @@ final class StubClient
     /** @var callable(string, array, array): object */
     private $profileHandler;
 
+    /** @var callable(string, array, array): object */
+    private $summaryHandler;
+
     /** @var callable(string): void */
     private $loginHandler;
 
-    public function __construct(?callable $profileHandler = null, ?callable $loginHandler = null)
+    public function __construct(?callable $profileHandler = null, ?callable $summaryHandler = null, ?callable $loginHandler = null)
     {
         $this->profileHandler = $profileHandler ?? static function (): object {
+            return (object) [];
+        };
+        $this->summaryHandler = $summaryHandler ?? static function (): object {
             return (object) [];
         };
 
@@ -252,6 +287,10 @@ final class StubClient
 
     public function get(string $path = '', array $query = [], array $headers = []): object
     {
+        if (str_contains($path, '/trophySummary')) {
+            return ($this->summaryHandler)($path, $query, $headers);
+        }
+
         return ($this->profileHandler)($path, $query, $headers);
     }
 }
