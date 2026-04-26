@@ -19,12 +19,16 @@ final class PsnPlayerLookupService
      * @var \Closure(): object
      */
     private readonly \Closure $clientFactory;
+    /**
+     * @var \Closure(int, string): void
+     */
+    private readonly \Closure $refreshTokenSaver;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher
      * @param callable(): object|null $clientFactory
      */
-    public function __construct(callable $workerFetcher, ?callable $clientFactory = null)
+    public function __construct(callable $workerFetcher, ?callable $clientFactory = null, ?callable $refreshTokenSaver = null)
     {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
         $this->clientFactory = \Closure::fromCallable(
@@ -32,13 +36,19 @@ final class PsnPlayerLookupService
                 return new Client();
             }
         );
+        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? static function (int $workerId, string $refreshToken): void {
+        });
     }
 
     public static function fromDatabase(PDO $database): self
     {
         $workerService = new WorkerService($database);
 
-        return new self(static fn (): array => $workerService->fetchWorkers());
+        return new self(
+            static fn (): array => $workerService->fetchWorkers(),
+            null,
+            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
+        );
     }
 
     /**
@@ -117,6 +127,7 @@ final class PsnPlayerLookupService
                 }
 
                 $client->loginWithNpsso($npsso);
+                $this->saveRefreshToken($worker->getId(), $client);
 
                 return $client;
             } catch (Throwable) {
@@ -125,6 +136,25 @@ final class PsnPlayerLookupService
         }
 
         throw new RuntimeException('Unable to login to any worker accounts.');
+    }
+
+    private function saveRefreshToken(int $workerId, object $client): void
+    {
+        if (!method_exists($client, 'getRefreshToken')) {
+            return;
+        }
+
+        $refreshToken = $client->getRefreshToken();
+        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
+            return;
+        }
+
+        $tokenValue = $refreshToken->getToken();
+        if (!is_string($tokenValue) || $tokenValue === '') {
+            return;
+        }
+
+        ($this->refreshTokenSaver)($workerId, $tokenValue);
     }
 
     private function executeUserProfileRequest(object $client, string $onlineId): mixed

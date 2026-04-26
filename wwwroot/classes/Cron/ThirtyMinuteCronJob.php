@@ -327,6 +327,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $client = new Client();
                     $npsso = $worker["npsso"];
                     $client->loginWithNpsso($npsso);
+                    $this->saveWorkerRefreshToken((int) $worker['id'], $client);
 
                     $loggedIn = true;
                 } catch (TypeError $e) {
@@ -2003,6 +2004,28 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $this->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
+    }
+
+    private function saveWorkerRefreshToken(int $workerId, object $client): void
+    {
+        if (!method_exists($client, 'getRefreshToken')) {
+            return;
+        }
+
+        $refreshToken = $client->getRefreshToken();
+        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
+            return;
+        }
+
+        $tokenValue = $refreshToken->getToken();
+        if (!is_string($tokenValue) || $tokenValue === '') {
+            return;
+        }
+
+        $query = $this->database->prepare('UPDATE setting SET refresh_token = :refresh_token WHERE id = :id');
+        $query->bindValue(':refresh_token', $tokenValue, PDO::PARAM_STR);
+        $query->bindValue(':id', $workerId, PDO::PARAM_INT);
+        $query->execute();
     }
 
     /**
