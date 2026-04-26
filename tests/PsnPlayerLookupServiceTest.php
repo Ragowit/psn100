@@ -105,6 +105,36 @@ final class PsnPlayerLookupServiceTest extends TestCase
         }
     }
 
+    public function testLookupReturnsProfileWhenTrophySummaryRequestFails(): void
+    {
+        $worker = new Worker(1, 'valid-npsso', '', new DateTimeImmutable('2024-01-01T00:00:00+00:00'), null);
+
+        $service = new PsnPlayerLookupService(
+            static fn (): array => [$worker],
+            static fn (): object => new StubClient(
+                profileHandler: static function (string $path = '', array $query = [], array $headers = []): object {
+                    return (object) [
+                        'profile' => (object) [
+                            'onlineId' => 'Example',
+                            'accountId' => '1234567890',
+                        ],
+                    ];
+                },
+                summaryHandler: static function (string $path = '', array $query = [], array $headers = []): object {
+                    $response = new StubResponse(503);
+
+                    throw new StubHttpException('Service Unavailable', $response);
+                }
+            )
+        );
+
+        $result = $service->lookup('Example');
+
+        $this->assertSame('Example', $result['profile']['onlineId']);
+        $this->assertSame('1234567890', $result['profile']['accountId']);
+        $this->assertFalse(array_key_exists('trophySummary', $result));
+    }
+
     public function testLookupSkipsWorkersThatFailToAuthenticate(): void
     {
         $workers = [

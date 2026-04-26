@@ -57,7 +57,6 @@ final class PsnPlayerLookupService
         try {
             $profile = $this->executeUserProfileRequest($client, $normalizedOnlineId);
             $normalizedProfile = $this->normalizeProfileResponse($profile);
-            $trophySummary = $this->fetchTrophySummary($client, $normalizedProfile);
         } catch (Throwable $exception) {
             $statusCode = $this->determineStatusCode($exception);
 
@@ -74,6 +73,14 @@ final class PsnPlayerLookupService
                 $statusCode,
                 $exception
             );
+        }
+
+        $trophySummary = null;
+
+        try {
+            $trophySummary = $this->fetchTrophySummary($client, $normalizedProfile);
+        } catch (Throwable) {
+            $trophySummary = null;
         }
 
         if ($trophySummary !== null) {
