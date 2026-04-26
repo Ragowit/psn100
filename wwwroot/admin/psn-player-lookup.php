@@ -15,6 +15,21 @@ $result = $handledRequest->getResult();
 $errorMessage = $handledRequest->getErrorMessage();
 $decodedNpId = $handledRequest->getDecodedNpId();
 $npCountry = $handledRequest->getNpCountry();
+$trophySummary = is_array($result) && isset($result['trophySummary']) && is_array($result['trophySummary'])
+    ? $result['trophySummary']
+    : null;
+$earnedTrophies = is_array($trophySummary) && isset($trophySummary['earnedTrophies']) && is_array($trophySummary['earnedTrophies'])
+    ? $trophySummary['earnedTrophies']
+    : null;
+$totalTrophies = null;
+
+if (is_array($earnedTrophies)) {
+    $bronze = isset($earnedTrophies['bronze']) && is_numeric($earnedTrophies['bronze']) ? (int) $earnedTrophies['bronze'] : 0;
+    $silver = isset($earnedTrophies['silver']) && is_numeric($earnedTrophies['silver']) ? (int) $earnedTrophies['silver'] : 0;
+    $gold = isset($earnedTrophies['gold']) && is_numeric($earnedTrophies['gold']) ? (int) $earnedTrophies['gold'] : 0;
+    $platinum = isset($earnedTrophies['platinum']) && is_numeric($earnedTrophies['platinum']) ? (int) $earnedTrophies['platinum'] : 0;
+    $totalTrophies = $bronze + $silver + $gold + $platinum;
+}
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -59,6 +74,27 @@ $npCountry = $handledRequest->getNpCountry();
                             <?php if ($npCountry !== null) { ?>
                                 <dt class="col-sm-3">Country</dt>
                                 <dd class="col-sm-9"><?= htmlentities($npCountry, ENT_QUOTES, 'UTF-8'); ?></dd>
+                            <?php } ?>
+                        </dl>
+                    </div>
+                </div>
+            <?php } ?>
+            <?php if ($trophySummary !== null) { ?>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">Trophy Summary</h2>
+                        <dl class="row mb-0">
+                            <?php if ($totalTrophies !== null) { ?>
+                                <dt class="col-sm-3">Total Trophies</dt>
+                                <dd class="col-sm-9"><?= number_format($totalTrophies); ?></dd>
+                            <?php } ?>
+                            <?php if (isset($trophySummary['trophyLevel']) && is_numeric($trophySummary['trophyLevel'])) { ?>
+                                <dt class="col-sm-3">Trophy Level</dt>
+                                <dd class="col-sm-9"><?= number_format((int) $trophySummary['trophyLevel']); ?></dd>
+                            <?php } ?>
+                            <?php if (isset($trophySummary['progress']) && is_numeric($trophySummary['progress'])) { ?>
+                                <dt class="col-sm-3">Progress</dt>
+                                <dd class="col-sm-9"><?= number_format((int) $trophySummary['progress']); ?>%</dd>
                             <?php } ?>
                         </dl>
                     </div>

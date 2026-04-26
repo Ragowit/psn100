@@ -56,6 +56,7 @@ final class PsnPlayerLookupService
 
         try {
             $profile = $this->executeUserProfileRequest($client, $normalizedOnlineId);
+            $normalizedProfile = $this->normalizeProfileResponse($profile);
         } catch (Throwable $exception) {
             $statusCode = $this->determineStatusCode($exception);
 
@@ -74,7 +75,19 @@ final class PsnPlayerLookupService
             );
         }
 
-        return $this->normalizeProfileResponse($profile);
+        $trophySummary = null;
+
+        try {
+            $trophySummary = $this->fetchTrophySummary($client, $normalizedProfile);
+        } catch (Throwable) {
+            $trophySummary = null;
+        }
+
+        if ($trophySummary !== null) {
+            $normalizedProfile['trophySummary'] = $trophySummary;
+        }
+
+        return $normalizedProfile;
     }
 
     private function createAuthenticatedClient(): object
@@ -130,6 +143,33 @@ final class PsnPlayerLookupService
         ];
 
         return $client->get($path, $query, ['content-type' => 'application/json']);
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return array<string, mixed>|null
+     */
+    private function fetchTrophySummary(object $client, array $profile): ?array
+    {
+        if (!method_exists($client, 'get')) {
+            return null;
+        }
+
+        $accountId = $profile['profile']['accountId'] ?? null;
+
+        if (!is_string($accountId) || $accountId === '') {
+            return null;
+        }
+
+        $path = sprintf(
+            'https://m.np.playstation.com/api/trophy/v1/users/%s/trophySummary',
+            rawurlencode($accountId)
+        );
+
+        $summary = $client->get($path, [], ['content-type' => 'application/json']);
+        $normalizedSummary = $this->normalizeProfileResponse($summary);
+
+        return $normalizedSummary === [] ? null : $normalizedSummary;
     }
 
     private function determineStatusCode(Throwable $exception): ?int
