@@ -168,7 +168,7 @@ final class PsnGameLookupServiceTest extends TestCase
 
         $result = $service->fetchTrophyDataForNpCommunicationId('NPWR00000_00', $providedClient);
 
-        $this->assertArrayNotHasKey('trophies', $result);
+        $this->assertFalse(array_key_exists('trophies', $result));
         $this->assertSame('all', $result['trophyGroups'][0]['trophyGroupId']);
         $this->assertSame('Bronze Trophy', $result['trophyGroups'][0]['trophies'][0]['trophyName']);
     }
