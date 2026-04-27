@@ -24,7 +24,7 @@ final readonly class FooterViewModel
         return new self(
             2019,
             $currentYear,
-            'v7.48',
+            'v7.49',
             'https://github.com/Ragowit/psn100/releases',
             '/changelog',
             'https://github.com/Ragowit/psn100/issues',
