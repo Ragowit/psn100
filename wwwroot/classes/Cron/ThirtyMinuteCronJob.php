@@ -1003,6 +1003,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $existingTitleQuery->execute();
                             $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
                             $isNewTitle = $existingTitle === null;
+                            $incomingSetVersion = $trophyTitle->trophySetVersion();
+                            $setVersionForUpdate = $this->resolveSetVersionForUpdate(
+                                $incomingSetVersion,
+                                is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
+                            );
+                            $incomingVersionIsOlderThanStored = $this->isIncomingSetVersionOlderThanStored(
+                                $incomingSetVersion,
+                                is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
+                            );
 
                             $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
                             $titleIconFilename = $previousTitleIconFilename;
@@ -1010,8 +1019,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 || !file_exists(self::TITLE_ICON_DIRECTORY . $titleIconFilename);
 
                             $titleNeedsUpdate = $existingTitle === null
-                                || $existingTitle['detail'] !== $trophyTitle->detail()
-                                || $existingTitle['set_version'] !== $trophyTitle->trophySetVersion();
+                                || (
+                                    !$incomingVersionIsOlderThanStored
+                                    && (
+                                        $existingTitle['detail'] !== $trophyTitle->detail()
+                                        || $existingTitle['set_version'] !== $setVersionForUpdate
+                                    )
+                                );
 
                             if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
                                 $titleIconFilename = $this->downloadMandatoryImage(
@@ -1041,15 +1055,28 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     ) AS new
                                     ON DUPLICATE KEY
                                     UPDATE
-                                        detail = new.detail,
+                                        detail = CASE
+                                            WHEN :incoming_version_is_older = 1 THEN trophy_title.detail
+                                            ELSE new.detail
+                                        END,
                                         icon_url = new.icon_url,
-                                        set_version = new.set_version");
+                                        set_version = CASE
+                                            WHEN trophy_title.set_version IS NULL OR TRIM(trophy_title.set_version) = '' THEN new.set_version
+                                            WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
+                                                > CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED) THEN new.set_version
+                                            WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
+                                                = CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED)
+                                                AND CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', -1) AS UNSIGNED)
+                                                    >= CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', -1) AS UNSIGNED) THEN new.set_version
+                                            ELSE trophy_title.set_version
+                                        END");
                                 $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                                 $query->bindValue(":name", $sanitizedTitleName, PDO::PARAM_STR);
                                 $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                                 $query->bindValue(":icon_url", $titleIconFilename, PDO::PARAM_STR);
                                 $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
-                                $query->bindValue(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
+                                $query->bindValue(":set_version", $setVersionForUpdate, PDO::PARAM_STR);
+                                $query->bindValue(":incoming_version_is_older", $incomingVersionIsOlderThanStored ? 1 : 0, PDO::PARAM_INT);
                                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                 $query->execute();
 
@@ -2767,5 +2794,47 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return false;
+    }
+
+
+    private function isIncomingSetVersionOlderThanStored(string $newVersion, mixed $currentVersion): bool
+    {
+        $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
+
+        if ($normalizedCurrentVersion === null) {
+            return false;
+        }
+
+        return version_compare(trim($newVersion), $normalizedCurrentVersion, '<');
+    }
+
+    private function resolveSetVersionForUpdate(string $newVersion, mixed $currentVersion): string
+    {
+        $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
+
+        if ($normalizedCurrentVersion === null) {
+            return trim($newVersion);
+        }
+
+        if (version_compare(trim($newVersion), $normalizedCurrentVersion, '<')) {
+            return $normalizedCurrentVersion;
+        }
+
+        return trim($newVersion);
+    }
+
+    private function normalizeSetVersion(mixed $version): ?string
+    {
+        if (!is_string($version)) {
+            return null;
+        }
+
+        $trimmedVersion = trim($version);
+
+        if ($trimmedVersion === '') {
+            return null;
+        }
+
+        return $trimmedVersion;
     }
 }

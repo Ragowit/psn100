@@ -390,6 +390,13 @@ class GameRescanService
         GameRescanDifferenceTracker $differenceTracker
     ): array {
         $existingTitleInfo = $this->fetchExistingTrophyTitleInfo($npCommunicationId);
+
+        if (!self::isSetVersionAtLeastCurrent((string) $trophyTitle->trophySetVersion(), $existingTitleInfo['set_version'])) {
+            $this->notifyProgress($progressListener, 70, 'Skipping trophy refresh because incoming set version is lower.');
+
+            return [];
+        }
+
         $existingGroupData = $this->fetchExistingTrophyGroupData($npCommunicationId);
         $existingTrophyData = $this->fetchExistingTrophyData($npCommunicationId);
 
@@ -1003,6 +1010,10 @@ class GameRescanService
     ): void {
         $previousVersion = $this->fetchCurrentTrophySetVersion($npCommunicationId);
 
+        if (!self::isSetVersionAtLeastCurrent($setVersion, $previousVersion)) {
+            return;
+        }
+
         $query = $this->database->prepare(
             'UPDATE trophy_title
             SET set_version = :set_version
@@ -1013,6 +1024,17 @@ class GameRescanService
         $query->execute();
 
         $differenceTracker->recordTitleChange('Set Version', $previousVersion, $setVersion);
+    }
+
+    private static function isSetVersionAtLeastCurrent(string $newVersion, ?string $currentVersion): bool
+    {
+        $normalizedCurrentVersion = $currentVersion === null ? null : trim($currentVersion);
+
+        if ($normalizedCurrentVersion === null || $normalizedCurrentVersion === '') {
+            return true;
+        }
+
+        return version_compare(trim($newVersion), $normalizedCurrentVersion, '>=');
     }
 
     private function recordRescan(int $gameId): void
