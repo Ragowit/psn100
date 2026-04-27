@@ -56,4 +56,24 @@ final class ThirtyMinuteCronJobSetVersionTest extends TestCase
 
         $this->assertSame('01.05', $result);
     }
+
+
+    public function testIsIncomingSetVersionOlderThanStoredReturnsTrueForLowerVersion(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isIncomingSetVersionOlderThanStored');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->cronJob, '01.09', '01.10');
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsIncomingSetVersionOlderThanStoredReturnsFalseForEqualOrHigherVersion(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isIncomingSetVersionOlderThanStored');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke($this->cronJob, '01.10', '01.10'));
+        $this->assertFalse($method->invoke($this->cronJob, '01.11', '01.10'));
+    }
 }

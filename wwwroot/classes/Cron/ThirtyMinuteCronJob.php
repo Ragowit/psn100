@@ -1008,6 +1008,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $incomingSetVersion,
                                 is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
                             );
+                            $incomingVersionIsOlderThanStored = $this->isIncomingSetVersionOlderThanStored(
+                                $incomingSetVersion,
+                                is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
+                            );
 
                             $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
                             $titleIconFilename = $previousTitleIconFilename;
@@ -1015,10 +1019,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 || !file_exists(self::TITLE_ICON_DIRECTORY . $titleIconFilename);
 
                             $titleNeedsUpdate = $existingTitle === null
-                                || $existingTitle['detail'] !== $trophyTitle->detail()
-                                || $existingTitle['set_version'] !== $setVersionForUpdate;
+                                || (
+                                    !$incomingVersionIsOlderThanStored
+                                    && (
+                                        $existingTitle['detail'] !== $trophyTitle->detail()
+                                        || $existingTitle['set_version'] !== $setVersionForUpdate
+                                    )
+                                );
 
-                            if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
+                            if (($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) && !$incomingVersionIsOlderThanStored) {
                                 $titleIconFilename = $this->downloadMandatoryImage(
                                     $trophyTitle->iconUrl(),
                                     self::TITLE_ICON_DIRECTORY,
@@ -1027,7 +1036,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 );
                             }
 
-                            if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
+                            if (($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) && !$incomingVersionIsOlderThanStored) {
                                 $query = $this->database->prepare("INSERT INTO trophy_title(
                                         np_communication_id,
                                         name,
@@ -2781,6 +2790,18 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return false;
+    }
+
+
+    private function isIncomingSetVersionOlderThanStored(string $newVersion, mixed $currentVersion): bool
+    {
+        $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
+
+        if ($normalizedCurrentVersion === null) {
+            return false;
+        }
+
+        return version_compare(trim($newVersion), $normalizedCurrentVersion, '<');
     }
 
     private function resolveSetVersionForUpdate(string $newVersion, mixed $currentVersion): string
