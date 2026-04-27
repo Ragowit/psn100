@@ -1048,7 +1048,16 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     UPDATE
                                         detail = new.detail,
                                         icon_url = new.icon_url,
-                                        set_version = new.set_version");
+                                        set_version = CASE
+                                            WHEN trophy_title.set_version IS NULL OR TRIM(trophy_title.set_version) = '' THEN new.set_version
+                                            WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
+                                                > CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED) THEN new.set_version
+                                            WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
+                                                = CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED)
+                                                AND CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', -1) AS UNSIGNED)
+                                                    >= CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', -1) AS UNSIGNED) THEN new.set_version
+                                            ELSE trophy_title.set_version
+                                        END");
                                 $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
                                 $query->bindValue(":name", $sanitizedTitleName, PDO::PARAM_STR);
                                 $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
