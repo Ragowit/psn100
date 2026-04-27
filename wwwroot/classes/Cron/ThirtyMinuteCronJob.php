@@ -1027,7 +1027,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     )
                                 );
 
-                            if (($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) && !$incomingVersionIsOlderThanStored) {
+                            if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
                                 $titleIconFilename = $this->downloadMandatoryImage(
                                     $trophyTitle->iconUrl(),
                                     self::TITLE_ICON_DIRECTORY,
@@ -1036,7 +1036,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 );
                             }
 
-                            if (($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) && !$incomingVersionIsOlderThanStored) {
+                            if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
                                 $query = $this->database->prepare("INSERT INTO trophy_title(
                                         np_communication_id,
                                         name,
@@ -1055,7 +1055,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     ) AS new
                                     ON DUPLICATE KEY
                                     UPDATE
-                                        detail = new.detail,
+                                        detail = CASE
+                                            WHEN :incoming_version_is_older = 1 THEN trophy_title.detail
+                                            ELSE new.detail
+                                        END,
                                         icon_url = new.icon_url,
                                         set_version = CASE
                                             WHEN trophy_title.set_version IS NULL OR TRIM(trophy_title.set_version) = '' THEN new.set_version
@@ -1073,6 +1076,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $query->bindValue(":icon_url", $titleIconFilename, PDO::PARAM_STR);
                                 $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
                                 $query->bindValue(":set_version", $setVersionForUpdate, PDO::PARAM_STR);
+                                $query->bindValue(":incoming_version_is_older", $incomingVersionIsOlderThanStored ? 1 : 0, PDO::PARAM_INT);
                                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                 $query->execute();
 
