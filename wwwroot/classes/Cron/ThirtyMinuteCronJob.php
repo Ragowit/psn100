@@ -1003,6 +1003,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $existingTitleQuery->execute();
                             $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
                             $isNewTitle = $existingTitle === null;
+                            $incomingSetVersion = $trophyTitle->trophySetVersion();
+                            $setVersionForUpdate = $this->resolveSetVersionForUpdate(
+                                $incomingSetVersion,
+                                is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
+                            );
 
                             $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
                             $titleIconFilename = $previousTitleIconFilename;
@@ -1011,7 +1016,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                             $titleNeedsUpdate = $existingTitle === null
                                 || $existingTitle['detail'] !== $trophyTitle->detail()
-                                || $existingTitle['set_version'] !== $trophyTitle->trophySetVersion();
+                                || $existingTitle['set_version'] !== $setVersionForUpdate;
 
                             if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
                                 $titleIconFilename = $this->downloadMandatoryImage(
@@ -1049,7 +1054,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
                                 $query->bindValue(":icon_url", $titleIconFilename, PDO::PARAM_STR);
                                 $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
-                                $query->bindValue(":set_version", $trophyTitle->trophySetVersion(), PDO::PARAM_STR);
+                                $query->bindValue(":set_version", $setVersionForUpdate, PDO::PARAM_STR);
                                 // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
                                 $query->execute();
 
@@ -2767,5 +2772,35 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return false;
+    }
+
+    private function resolveSetVersionForUpdate(string $newVersion, mixed $currentVersion): string
+    {
+        $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
+
+        if ($normalizedCurrentVersion === null) {
+            return trim($newVersion);
+        }
+
+        if (version_compare(trim($newVersion), $normalizedCurrentVersion, '<')) {
+            return $normalizedCurrentVersion;
+        }
+
+        return trim($newVersion);
+    }
+
+    private function normalizeSetVersion(mixed $version): ?string
+    {
+        if (!is_string($version)) {
+            return null;
+        }
+
+        $trimmedVersion = trim($version);
+
+        if ($trimmedVersion === '') {
+            return null;
+        }
+
+        return $trimmedVersion;
     }
 }
