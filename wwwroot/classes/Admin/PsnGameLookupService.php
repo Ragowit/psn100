@@ -182,6 +182,9 @@ final class PsnGameLookupService
         }
 
         $groupedTrophies = $this->groupTrophiesByGroupId($normalizedResponse['trophies'] ?? null);
+        if ($groupedTrophies === []) {
+            $groupedTrophies = $this->groupNestedTrophiesFromGroups($normalizedResponse['trophyGroups'] ?? null);
+        }
         $normalizedResponse['trophyGroups'] = $this->buildTrophyGroups(
             $normalizedGroupResponse['trophyGroups'] ?? null,
             $groupedTrophies
@@ -274,6 +277,44 @@ final class PsnGameLookupService
         }
 
         return array_values($groups);
+    }
+
+    /**
+     * @return array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}>
+     */
+    private function groupNestedTrophiesFromGroups(mixed $rawGroups): array
+    {
+        if (!is_array($rawGroups)) {
+            return [];
+        }
+
+        $groups = [];
+
+        foreach ($rawGroups as $rawGroup) {
+            if (!is_array($rawGroup)) {
+                continue;
+            }
+
+            $groupId = (string) ($rawGroup['trophyGroupId'] ?? '');
+            if ($groupId === '') {
+                continue;
+            }
+
+            $trophies = $rawGroup['trophies'] ?? null;
+            if (!is_array($trophies)) {
+                $trophies = [];
+            }
+
+            $groups[] = [
+                'trophyGroupId' => $groupId,
+                'trophyGroupName' => (string) ($rawGroup['trophyGroupName'] ?? ''),
+                'trophyGroupDetail' => (string) ($rawGroup['trophyGroupDetail'] ?? ''),
+                'trophyGroupIconUrl' => (string) ($rawGroup['trophyGroupIconUrl'] ?? ''),
+                'trophies' => $trophies,
+            ];
+        }
+
+        return $groups;
     }
 
     private function resolvePreferredNpServiceName(string $npCommunicationId): ?string
