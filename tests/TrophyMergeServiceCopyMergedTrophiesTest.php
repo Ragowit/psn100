@@ -7,7 +7,7 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyMergeProgressListener.ph
 
 final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
 {
-    public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithDerivedTables(): void
+    public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithMergeSourceCte(): void
     {
         $pdo = new RecordingPDO(2);
         $service = new TrophyMergeService($pdo);
@@ -28,10 +28,9 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
         $this->assertCount(1, $insertStatements, 'Expected insert statement for merged trophies.');
 
         $this->assertTrue(
-            str_contains($insertStatements[0], 'FROM (')
-                && str_contains($insertStatements[0], ') AS source')
-                && !str_contains($insertStatements[0], 'WITH merge_source AS ('),
-            'Insert statement should use a derived merge source alias without a CTE.'
+            str_contains($insertStatements[0], 'WITH merge_source AS (')
+                && str_contains($insertStatements[0], 'FROM merge_source AS source'),
+            'Insert statement should use the merge_source CTE.'
         );
 
         $updateStatements = array_values(array_filter(
@@ -42,10 +41,9 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
         $this->assertCount(1, $updateStatements, 'Expected update statement for merged trophies.');
 
         $this->assertTrue(
-            str_contains($updateStatements[0], 'JOIN (')
-                && str_contains($updateStatements[0], ') AS source ON')
-                && !str_contains($updateStatements[0], 'WITH merge_source AS ('),
-            'Update statement should join a derived merge source alias without a CTE.'
+            str_contains($updateStatements[0], 'WITH merge_source AS (')
+                && str_contains($updateStatements[0], 'JOIN merge_source AS source ON'),
+            'Update statement should join from the merge_source CTE.'
         );
 
         $expectedParameters = [':child_np_communication_id' => 'NP_CHILD'];
