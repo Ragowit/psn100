@@ -33,8 +33,8 @@ $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerStatusNotice = $playerAdvisorPageContext->getPlayerStatusNotice();
 $playerOnlineId = $playerAdvisorPageContext->getPlayerOnlineId();
 $rarityColumnLabel = $playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY
-    ? 'Rarity (In-Game)'
-    : 'Rarity (Meta)';
+    ? 'Rarity (Game)'
+    : 'Rarity (Leaderboard)';
 
 $title = $playerAdvisorPageContext->getTitle();
 require_once("header.php");
@@ -62,8 +62,8 @@ require_once("header.php");
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
-                            <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo ' selected'; } ?>>Rarity (In-Game)</option>
-                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo ' selected'; } ?>>Rarity (Meta)</option>
+                            <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo ' selected'; } ?>>Rarity (Game)</option>
+                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo ' selected'; } ?>>Rarity (Leaderboard)</option>
                         </select>
                     </div>
                 </form>

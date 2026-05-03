@@ -17,14 +17,14 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
 <main class="container">
     <div class="row">
         <div class="col-6">
-            <h1>PSN Rarity (Meta) Leaderboard</h1>
+            <h1>PSN Rarity (Leaderboard) Leaderboard</h1>
         </div>
         <div class="col-6 d-flex justify-content-end">
             <div class="bg-body-tertiary p-3 rounded">
                 <div class="btn-group">
                     <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($filterParameters); ?>">Trophy</a>
-                    <a class="btn btn-primary active" href="/leaderboard/rarity">Rarity (Meta)</a>
-                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (In-Game)</a>
+                    <a class="btn btn-primary active" href="/leaderboard/rarity">Rarity (Leaderboard)</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (Game)</a>
                 </div>
             </div>
         </div>

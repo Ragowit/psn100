@@ -136,7 +136,7 @@ require_once("header.php");
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">
-                                    <div class="small text-uppercase text-secondary">Rarity (Meta)</div>
+                                    <div class="small text-uppercase text-secondary">Rarity (Leaderboard)</div>
                                     <div>
                                         <?php if ($metaRarity->isUnobtainable()) { ?>
                                             <?= $metaRarity->getLabel(); ?>
@@ -147,7 +147,7 @@ require_once("header.php");
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">
-                                    <div class="small text-uppercase text-secondary">Rarity (In-Game)</div>
+                                    <div class="small text-uppercase text-secondary">Rarity (Game)</div>
                                     <div>
                                         <?php if ($inGameRarity->isUnobtainable()) { ?>
                                             <?= $inGameRarity->getLabel(); ?>

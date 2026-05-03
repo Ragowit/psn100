@@ -22,8 +22,8 @@ $filterParameters = $trophyLeaderboardPageContext->getFilterQueryParameters();
             <div class="bg-body-tertiary p-3 rounded">
                 <div class="btn-group">
                     <a class="btn btn-primary active" href="/leaderboard/trophy">Trophy</a>
-                    <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity (Meta)</a>
-                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (In-Game)</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity (Leaderboard)</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (Game)</a>
                 </div>
             </div>
         </div>
