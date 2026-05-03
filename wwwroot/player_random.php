@@ -116,14 +116,14 @@ require_once("header.php");
                             <!-- rarity (meta) points -->
                             <div>
                                 <?php
-                                echo number_format($game->getRarityPoints()) . " Rarity (Meta) Points";
+                                echo number_format($game->getRarityPoints()) . " Rarity (Leaderboard) Points";
                                 ?>
                             </div>
 
                             <!-- rarity (in-game) points -->
                             <div>
                                 <?php
-                                echo number_format($game->getInGameRarityPoints()) . " Rarity (In-Game) Points";
+                                echo number_format($game->getInGameRarityPoints()) . " Rarity (Game) Points";
                                 ?>
                             </div>
                         </div>

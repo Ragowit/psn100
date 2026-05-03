@@ -33,8 +33,8 @@ require_once('header.php');
                                 <th scope="col" class="text-center">Game</th>
                                 <th scope="col">Trophy</th>
                                 <th scope="col" class="text-center">Platform</th>
-                                <th scope="col" class="text-center">Rarity (Meta)</th>
-                                <th scope="col" class="text-center">Rarity (In-Game)</th>
+                                <th scope="col" class="text-center">Rarity (Leaderboard)</th>
+                                <th scope="col" class="text-center">Rarity (Game)</th>
                                 <th scope="col" class="text-center">Type</th>
                             </tr>
                         </thead>

@@ -241,7 +241,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
             <div class="bg-body-tertiary p-3 rounded w-100 h-100">
                 <div class="vstack">
                     <div>
-                        Rarity (Meta) Leaderboard
+                        Rarity (Leaderboard) Leaderboard
                     </div>
 
                     <div class="text-center bg-dark-subtle p1 rounded">
@@ -302,11 +302,11 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
 
     <div class="col-12 col-lg-4 mb-3">
         <div class="vstack gap-3 text-center h-100">
-            <!-- Rarity (In-Game) Leaderboard -->
+            <!-- Rarity (Game) Leaderboard -->
             <div class="bg-body-tertiary p-3 rounded w-100 h-100">
                 <div class="vstack">
                     <div>
-                        Rarity (In-Game) Leaderboard
+                        Rarity (Game) Leaderboard
                     </div>
 
                     <div class="text-center bg-dark-subtle p-1 rounded">
