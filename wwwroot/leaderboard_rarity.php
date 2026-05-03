@@ -49,7 +49,7 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
                                 <th scope="col" class="text-center">Rare</th>
                                 <th scope="col" class="text-center">Uncommon</th>
                                 <th scope="col" class="text-center">Common</th>
-                                <th scope="col" class="text-center">Points</th>
+                                <th scope="col" class="text-center">Leaderboard Points</th>
                             </tr>
                         </thead>
 
