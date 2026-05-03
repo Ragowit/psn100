@@ -23,7 +23,7 @@ $shouldShowCountryRank = $leaderboardPageContext->shouldShowCountryRank();
             <div class="bg-body-tertiary p-3 rounded">
                 <div class="btn-group">
                     <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($filterParameters); ?>">Trophy</a>
-                    <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity (Leaderboard)</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity</a>
                     <a class="btn btn-primary active" href="/leaderboard/in-game-rarity">Rarity (Game)</a>
                 </div>
             </div>
