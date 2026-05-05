@@ -62,8 +62,8 @@ require_once("header.php");
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
                             <option value="date"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_DATE) ? ' selected' : ''; ?>>Date</option>
+                            <option value="rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_RARITY) ? ' selected' : ''; ?>>Rarity</option>
                             <option value="in-game-rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''; ?>>Rarity (Game)</option>
-                            <option value="rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_RARITY) ? ' selected' : ''; ?>>Rarity (Leaderboard)</option>
                         </select>
                     </div>
                 </form>
@@ -81,7 +81,7 @@ require_once("header.php");
                                 <th scope="col" class="text-center">Game</th>
                                 <th scope="col">Trophy</th>
                                 <th scope="col" class="text-center">Platform</th>
-                                <th scope="col" class="text-center">Rarity (Leaderboard)</th>
+                                <th scope="col" class="text-center">Rarity</th>
                                 <th scope="col" class="text-center">Rarity (Game)</th>
                                 <th scope="col" class="text-center">Type</th>
                             </tr>

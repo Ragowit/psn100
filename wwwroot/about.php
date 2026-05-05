@@ -630,7 +630,7 @@ require_once("header.php");
                     Thanks to <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/dmland12">dmland12</a> for bringing this formula to our attention (<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://forum.psnprofiles.com/topic/46506-rarity-leaderboard/?page=8#comment-1852921" target="_blank">source</a>).
                 </p>
                 <p>
-                    Our Rarity (Leaderboard) naming uses the following numbers and is calculated from player data within the top 10,000 players:
+                    Our Rarity naming uses the following numbers and is calculated from player data within the top 10,000 players:
                 </p>
                 <ul>
                     <li><span class="trophy-legendary">0-0.02% ~ Legendary</span></li>

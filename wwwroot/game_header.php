@@ -259,7 +259,7 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
                     $details = [];
 
                     if ($status === 0) {
-                        $details[] = number_format($game->getRarityPoints()) . ' Rarity (Leaderboard) Points';
+                        $details[] = number_format($game->getRarityPoints()) . ' Rarity Points';
                         $details[] = number_format($game->getInGameRarityPoints()) . ' Rarity (Game) Points';
                     } elseif ($status === 1) {
                         $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted, no trophies will be accounted for on any leaderboard.'>Delisted</span>";

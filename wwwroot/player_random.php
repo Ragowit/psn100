@@ -116,7 +116,7 @@ require_once("header.php");
                             <!-- rarity (meta) points -->
                             <div>
                                 <?php
-                                echo number_format($game->getRarityPoints()) . " Rarity (Leaderboard) Points";
+                                echo number_format($game->getRarityPoints()) . " Rarity Points";
                                 ?>
                             </div>
 

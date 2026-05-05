@@ -183,7 +183,7 @@ require_once("header.php");
                                         }
                                         ?>
                                     </th>
-                                    <th scope="col" class="text-center align-middle" style="width: 6rem;">Rarity<br>(Leaderboard)</th>
+                                    <th scope="col" class="text-center align-middle" style="width: 6rem;">Rarity</th>
                                     <th scope="col" class="text-center align-middle" style="width: 6rem;">Rarity<br>(Game)</th>
                                 </tr>
                             </thead>
