@@ -617,39 +617,60 @@ require_once("header.php");
         <div class="col-12 col-lg-6 mb-3">
             <!-- Rarity Leaderboard -->
             <div class="bg-body-tertiary p-3 rounded">
-                <h2>Rarity Leaderboard</h2>
-                <p>The rarity leaderboard uses the formula <kbd>1/x - 1, rounded down</kbd></p>
-                <p>
-                    <strong>Examples:</strong><br>
-                    50% (0.5):  For every person that has the trophy, 1 person doesn't.  <strong>1 point</strong><br>
-                    10% (0.1):  For every person that has the trophy, 9 don't.  <strong>9 points</strong><br>
-                    5% (0.05): For every person that has the trophy, 19 don't.  <strong>19 points</strong><br>
-                    1% (0.01): For every person that has the trophy, 99 don't.  <strong>99 points</strong><br>
-                    0.5% (0.005):  For every person that has the trophy, 199 don't.  <strong>199 points</strong><br>
-                    0.1% (0.001): For every person that has the trophy, 999 don't.  <strong>999 points</strong><br>
-                    Thanks to <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/dmland12">dmland12</a> for bringing this formula to our attention (<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://forum.psnprofiles.com/topic/46506-rarity-leaderboard/?page=8#comment-1852921" target="_blank">source</a>).
-                </p>
-                <p>
-                    Our Rarity naming uses the following numbers and is calculated from player data within the top 10,000 players:
-                </p>
-                <ul>
-                    <li><span class="trophy-legendary">0-0.02% ~ Legendary</span></li>
-                    <li><span class="trophy-epic">0.03-0.2% ~ Epic</span></li>
-                    <li><span class="trophy-rare">0.21-2% ~ Rare</span></li>
-                    <li><span class="trophy-uncommon">2.01-10% ~ Uncommon</span></li>
-                    <li>10.01-100% ~ Common</li>
-                </ul>
-                <p>
-                    For Rarity (Game), the percentage comes from the share of trophy owners within its game, again only counting
-                    owners within the top 10,000 players. The naming uses these thresholds:
-                </p>
-                <ul>
-                    <li><span class="trophy-legendary">0-1% ~ Legendary</span></li>
-                    <li><span class="trophy-epic">1.01-5% ~ Epic</span></li>
-                    <li><span class="trophy-rare">5.01-20% ~ Rare</span></li>
-                    <li><span class="trophy-uncommon">20.01-60% ~ Uncommon</span></li>
-                    <li>60.01-100% ~ Common</li>
-                </ul>
+                <h2 class="mb-3">Rarity Leaderboard</h2>
+                <p>Points are awarded based on trophy rarity using the following formula:</p>
+                <div class="mb-3 text-center">
+                    <kbd class="fs-5">1 / x - 1</kbd> <span class="text-muted">(rounded down)</span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <strong>Examples:</strong><br>
+                        <ul class="list-unstyled mb-2">
+                            <li>• <strong>50% (0.5):</strong> 1 person has it, 1 doesn't = <strong>1 point</strong></li>
+                            <li>• <strong>10% (0.1):</strong> 1 person has it, 9 don't = <strong>9 points</strong></li>
+                            <li>• <strong>1% (0.01):</strong> 1 person has it, 99 don't = <strong>99 points</strong></li>
+                            <li>• <strong>0.1% (0.001):</strong> 1 person has it, 999 don't = <strong>999 points</strong></li>
+                        </ul>
+                        <small class="text-muted">
+                            Thanks to <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/dmland12">dmland12</a> 
+                            for this formula (<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="https://forum.psnprofiles.com/topic/46506-rarity-leaderboard/?page=8#comment-1852921" target="_blank">source</a>).
+                        </small>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h3 class="h4">Rarity Tiers</h3>
+                <p>We use two distinct rarity scales based on player data from the top 10,000 players.</p>
+
+                <div class="row">
+                    <!-- Leaderboard Rarity -->
+                    <div class="col-md-6">
+                        <h4 class="h5 text-decoration-underline">Leaderboard Rarity</h4>
+                        <p class="small text-muted">Calculated against the entire top 10,000 player pool.</p>
+                        <ul class="list-unstyled">
+                            <li><span class="trophy-legendary">0.00 - 0.02% ~ Legendary</span></li>
+                            <li><span class="trophy-epic">0.03 - 0.20% ~ Epic</span></li>
+                            <li><span class="trophy-rare">0.21 - 2.00% ~ Rare</span></li>
+                            <li><span class="trophy-uncommon">2.01 - 10.00% ~ Uncommon</span></li>
+                            <li>10.01 - 100% ~ Common</li>
+                        </ul>
+                    </div>
+
+                    <!-- Game Rarity -->
+                    <div class="col-md-6">
+                        <h4 class="h5 text-decoration-underline">Game Rarity</h4>
+                        <p class="small text-muted">Calculated against owners of the specific game within the top 10,000.</p>
+                        <ul class="list-unstyled">
+                            <li><span class="trophy-legendary">0.00 - 1.00% ~ Legendary</span></li>
+                            <li><span class="trophy-epic">1.01 - 5.00% ~ Epic</span></li>
+                            <li><span class="trophy-rare">5.01 - 20.00% ~ Rare</span></li>
+                            <li><span class="trophy-uncommon">20.01 - 60.00% ~ Uncommon</span></li>
+                            <li>60.01 - 100% ~ Common</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
