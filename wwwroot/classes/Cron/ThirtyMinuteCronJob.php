@@ -371,8 +371,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 // #2 - Top 100 players who haven't been updated within an hour, ordered by the oldest one.
                 // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a day, ordered by the oldest one.
                 // #4 - Top 10000 players who haven't been updated within a week, ordered by the oldest one.
-                // #5 - Non-cheater players outside top 10k (or missing ranking data) who have not been updated within a week, oldest first.
-                // #6 - Private/inactive non-cheater players who have not been updated within a month, oldest first.
+                // #5 - Not-found players (status 5) who have not been updated within a day, oldest first.
+                // #6 - Non-cheater players outside top 10k (or missing ranking data) who have not been updated within a week, oldest first.
+                // #7 - Private/inactive non-cheater players who have not been updated within a month, oldest first.
                 $query = $this->database->prepare("
                     WITH
                         now_values AS (
@@ -457,10 +458,24 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             p.account_id
                         FROM
                             player p
+                            JOIN now_values nv
+                        WHERE
+                            p.status = 5
+                            AND p.last_updated_date < nv.cutoff_1d
+
+                        UNION ALL
+
+                        SELECT
+                            6 AS tier,
+                            p.online_id,
+                            p.last_updated_date AS priority_timestamp,
+                            p.account_id
+                        FROM
+                            player p
                             LEFT JOIN player_ranking pr ON pr.account_id = p.account_id
                             JOIN now_values nv
                         WHERE
-                            p.status NOT IN (1, 3, 4)
+                            p.status NOT IN (1, 3, 4, 5)
                             AND p.last_updated_date < nv.cutoff_1w
                             AND (
                                 pr.account_id IS NULL
@@ -472,7 +487,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         UNION ALL
 
                         SELECT
-                            6 AS tier,
+                            7 AS tier,
                             p.online_id,
                             p.last_updated_date AS priority_timestamp,
                             p.account_id
