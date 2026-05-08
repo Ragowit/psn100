@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 25, 2026 at 07:05 PM
+-- Generation Time: May 08, 2026 at 08:33 AM
 -- Server version: 8.4.9
 -- PHP Version: 8.5.5
 
@@ -46,7 +46,7 @@ CREATE TABLE `player` (
   `platinum` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `level` smallint UNSIGNED NOT NULL DEFAULT '0',
   `progress` tinyint UNSIGNED NOT NULL DEFAULT '0',
-  `points` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  `points` int UNSIGNED NOT NULL DEFAULT '0',
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `rarity_rank_last_week` mediumint UNSIGNED NOT NULL DEFAULT '0',
