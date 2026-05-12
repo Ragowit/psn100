@@ -373,7 +373,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 // #4 - Top 10000 players who haven't been updated within a week, ordered by the oldest one.
                 // #5 - Not-found players (status 5) who have not been updated within a day, oldest first.
                 // #6 - Non-cheater players outside top 10k (or missing ranking data) who have not been updated within a week, oldest first.
-                // #7 - Private/inactive non-cheater players who have not been updated within a month, oldest first.
+                // #7 - Private players who have not been updated within a month, oldest first.
+                // #8 - Inactive players who have not been updated within three months, oldest first.
+                // #9 - Any ranked players, oldest first.
                 $query = $this->database->prepare("
                     WITH
                         now_values AS (
@@ -382,7 +384,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 NOW() - INTERVAL 1 HOUR AS cutoff_1h,
                                 NOW() - INTERVAL 1 DAY AS cutoff_1d,
                                 NOW() - INTERVAL 1 WEEK AS cutoff_1w,
-                                NOW() - INTERVAL 1 MONTH AS cutoff_1m
+                                NOW() - INTERVAL 1 MONTH AS cutoff_1m,
+                                NOW() - INTERVAL 3 MONTH AS cutoff_3m
                         )
                     SELECT
                         online_id,
@@ -495,8 +498,33 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             player p
                             JOIN now_values nv
                         WHERE
-                            p.status IN (3, 4)
+                            p.status = 3
                             AND p.last_updated_date < nv.cutoff_1m
+
+                        UNION ALL
+
+                        SELECT
+                            8 AS tier,
+                            p.online_id,
+                            p.last_updated_date AS priority_timestamp,
+                            p.account_id
+                        FROM
+                            player p
+                            JOIN now_values nv
+                        WHERE
+                            p.status = 4
+                            AND p.last_updated_date < nv.cutoff_3m
+
+                        UNION ALL
+
+                        SELECT
+                            9 AS tier,
+                            p.online_id,
+                            p.last_updated_date AS priority_timestamp,
+                            p.account_id
+                        FROM
+                            player p
+                            JOIN player_ranking pr ON pr.account_id = p.account_id
                     ) a
                     WHERE NOT EXISTS (
                         SELECT 1 FROM setting s
