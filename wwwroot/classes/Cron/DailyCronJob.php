@@ -82,7 +82,7 @@ final readonly class DailyCronJob implements CronJobInterface
                 tm.in_game_rarity_percent = r.in_game_rarity_percent,
                 tm.in_game_rarity_point = IF(
                     tm.status = 0 AND ttm.status = 0 AND ttm.owners > 0,
-                    IF(r.in_game_rarity_percent = 0, 10000, FLOOR(1 / (r.in_game_rarity_percent / 100) - 1)),
+                    IF(r.in_game_rarity_percent = 0, 0, FLOOR(1 / (r.in_game_rarity_percent / 100) - 1)),
                     0
                 ),
                 tm.in_game_rarity_name = CASE
