@@ -140,6 +140,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
      */
     private function handleInvalidApiResponse(array $player, int $workerId, Throwable $exception): void
     {
+        // Middleware/type mismatches from the PSN client are treated as temporary API failures, not permanent "player not found" states.
         $this->logger->log(
             sprintf(
                 'Failed to scan %s because the PlayStation API returned an invalid response: %s',
@@ -162,7 +163,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
         if ($accountId !== false) {
             $query = $this->database->prepare('UPDATE player
-                SET `status` = 5, last_updated_date = NOW()
+                SET last_updated_date = CASE
+                    WHEN last_updated_date IS NULL THEN NOW()
+                    ELSE DATE_ADD(last_updated_date, INTERVAL 1 HOUR)
+                END
                 WHERE  account_id = :account_id ');
             $query->bindValue(':account_id', (int) $accountId, PDO::PARAM_INT);
             $query->execute();
