@@ -492,8 +492,7 @@ ALTER TABLE `setting`
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `u_npcid_oid` (`np_communication_id`,`order_id`) USING BTREE,
-  ADD KEY `idx_npcid_gid_oid` (`np_communication_id`,`group_id`,`order_id`),
-  ADD KEY `idx_trophy_hot_predicates` (`np_communication_id`,`group_id`,`order_id`,`type`,`id`);
+  ADD KEY `idx_npcid_gid_oid` (`np_communication_id`,`group_id`,`order_id`,`type`,`id`);
 
 --
 -- Indexes for table `trophy_earned`
