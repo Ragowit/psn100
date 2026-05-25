@@ -492,7 +492,8 @@ ALTER TABLE `setting`
 ALTER TABLE `trophy`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `u_npcid_oid` (`np_communication_id`,`order_id`) USING BTREE,
-  ADD KEY `idx_npcid_gid_oid` (`np_communication_id`,`group_id`,`order_id`);
+  ADD KEY `idx_npcid_gid_oid` (`np_communication_id`,`group_id`,`order_id`),
+  ADD KEY `idx_trophy_hot_predicates` (`np_communication_id`,`group_id`,`order_id`,`type`,`id`);
 
 --
 -- Indexes for table `trophy_earned`
@@ -500,7 +501,8 @@ ALTER TABLE `trophy`
 ALTER TABLE `trophy_earned`
   ADD PRIMARY KEY (`np_communication_id`,`order_id`,`account_id`),
   ADD KEY `idx_te_npcomm_order_earned_date` (`np_communication_id`,`order_id`,`earned`,`earned_date`),
-  ADD KEY `idx_te_acc_comm_order_earned_date` (`account_id`,`np_communication_id`,`order_id`,`earned`,`earned_date`);
+  ADD KEY `idx_te_acc_comm_order_earned_date` (`account_id`,`np_communication_id`,`order_id`,`earned`,`earned_date`),
+  ADD KEY `idx_te_hot_predicates` (`np_communication_id`,`group_id`,`earned`,`account_id`,`order_id`);
 
 --
 -- Indexes for table `trophy_group`
@@ -543,7 +545,8 @@ ALTER TABLE `trophy_merge`
 ALTER TABLE `trophy_meta`
   ADD PRIMARY KEY (`trophy_id`),
   ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`),
-  ADD KEY `idx_tm_status_igrp` (`status`,`in_game_rarity_percent`);
+  ADD KEY `idx_tm_status_igrp` (`status`,`in_game_rarity_percent`),
+  ADD KEY `idx_tm_trophy_status` (`trophy_id`,`status`);
 
 --
 -- Indexes for table `trophy_title`

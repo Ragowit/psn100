@@ -14,21 +14,15 @@ final class TrophyStatusServiceTest extends TestCase
 
         $service->updateTrophies([10], 1);
 
-        $this->assertSame(4, count($database->playerTrophyCountQueries));
-
-        foreach (['bronze', 'silver', 'gold', 'platinum'] as $type) {
-            $matchingQueries = array_values(array_filter(
-                $database->playerTrophyCountQueries,
-                static fn (string $query): bool => str_contains($query, "AND t.type = '{$type}'")
-            ));
-
-            $this->assertSame(1, count($matchingQueries), 'Expected one player trophy count query for type ' . $type);
-
-            $query = $matchingQueries[0];
-            $this->assertTrue(str_contains($query, 'trophy_group_player tgp'), 'Expected player trophy count SQL to anchor on trophy_group_player for ' . $type);
-            $this->assertTrue(str_contains($query, 'AND te.earned = 1'), 'Expected earned filter in player trophy count SQL for ' . $type);
-            $this->assertTrue(str_contains($query, 'AND tm.status = 0'), 'Expected unobtainable filter in player trophy count SQL for ' . $type);
-        }
+        $this->assertSame(1, count($database->playerTrophyCountQueries));
+        $query = $database->playerTrophyCountQueries[0];
+        $this->assertTrue(str_contains($query, "SUM(t.type = 'bronze') AS bronze"));
+        $this->assertTrue(str_contains($query, "SUM(t.type = 'silver') AS silver"));
+        $this->assertTrue(str_contains($query, "SUM(t.type = 'gold') AS gold"));
+        $this->assertTrue(str_contains($query, "SUM(t.type = 'platinum') AS platinum"));
+        $this->assertTrue(str_contains($query, 'INNER JOIN temp_impacted_accounts tia ON tia.account_id = te.account_id'));
+        $this->assertTrue(str_contains($query, 'AND te.earned = 1'));
+        $this->assertTrue(str_contains($query, 'AND tm.status = 0'));
 
         $this->assertTrue(
             str_contains($database->titlePlayerCountQuery ?? '', 'trophy_group_player'),
@@ -115,6 +109,11 @@ final class RecordingTrophyStatusPDO extends PDO
         }
 
         return new RecordingExecuteOnlyStatement();
+    }
+
+    public function exec(string $statement): int|false
+    {
+        return 0;
     }
 }
 
