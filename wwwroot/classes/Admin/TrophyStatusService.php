@@ -481,11 +481,6 @@ SQL
             $statement->bindValue(':param_1', $gameId, PDO::PARAM_INT);
             $statement->execute();
 
-            $statement = $this->database->prepare(
-                'INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (\'GAME_TROPHY_RECONCILE\', :param_1)'
-            );
-            $statement->bindValue(':param_1', $gameId, PDO::PARAM_INT);
-            $statement->execute();
         }
     }
 
