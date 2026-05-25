@@ -123,19 +123,23 @@ class TrophyStatusService
         foreach ($trophyIds as $trophyId) {
             $trophy = $this->updateTrophyStatus((int) $trophyId, $status);
             $trophyNames[] = $trophy['label'];
-            $trophyGroups[$trophy['groupKey']] = [
-                'np_communication_id' => $trophy['np_communication_id'],
-                'group_id' => $trophy['group_id'],
-            ];
-            $trophyTitles[$trophy['np_communication_id']] = $trophy['np_communication_id'];
+            if (!isset($trophyGroups[$trophy['groupKey']])) {
+                $trophyGroups[$trophy['groupKey']] = [
+                    'np_communication_id' => $trophy['np_communication_id'],
+                    'group_id' => $trophy['group_id'],
+                    'trophy_ids' => [],
+                ];
+            }
+            $trophyGroups[$trophy['groupKey']]['trophy_ids'][] = $trophy['id'];
+            $trophyTitles[$trophy['np_communication_id']][] = $trophy['id'];
         }
 
         foreach ($trophyGroups as $group) {
-            $this->recalculateGroup($group['np_communication_id'], $group['group_id']);
+            $this->recalculateGroup($group['np_communication_id'], $group['group_id'], $group['trophy_ids']);
         }
 
-        foreach ($trophyTitles as $npCommunicationId) {
-            $this->recalculateTitle($npCommunicationId, $status);
+        foreach ($trophyTitles as $npCommunicationId => $titleTrophyIds) {
+            $this->recalculateTitle((string) $npCommunicationId, $status, $titleTrophyIds);
         }
 
         $statusText = $status === 1 ? 'unobtainable' : 'obtainable';
@@ -188,8 +192,10 @@ class TrophyStatusService
         ];
     }
 
-    private function recalculateGroup(string $npCommunicationId, string $groupId): void
+    private function recalculateGroup(string $npCommunicationId, string $groupId, array $affectedTrophyIds): void
     {
+        $this->createImpactedAccountsTempTable($npCommunicationId, $groupId, $affectedTrophyIds);
+
         $this->executeGroupStatement(
             <<<'SQL'
 WITH bronze AS (
@@ -255,14 +261,7 @@ SQL,
             $groupId
         );
 
-        foreach ([
-            'bronze' => 'bronze',
-            'silver' => 'silver',
-            'gold' => 'gold',
-            'platinum' => 'platinum',
-        ] as $type => $column) {
-            $this->executeGroupStatement($this->getPlayerTrophyCountSql($type, $column), $npCommunicationId, $groupId);
-        }
+        $this->executeGroupStatement($this->getPlayerTrophyCountSql(), $npCommunicationId, $groupId);
 
         $this->executeGroupStatement(
             <<<'SQL'
@@ -320,43 +319,45 @@ SQL,
         $statement->execute();
     }
 
-    private function getPlayerTrophyCountSql(string $type, string $column): string
+    private function getPlayerTrophyCountSql(): string
     {
-        return sprintf(
-            <<<'SQL'
+        return <<<'SQL'
 UPDATE
     trophy_group_player tgp
     LEFT JOIN (
         SELECT
-            te.account_id,
-            COUNT(tm.trophy_id) AS cnt
+            tia.account_id,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
         FROM
-            trophy_earned te
-            INNER JOIN trophy t ON t.np_communication_id = te.np_communication_id
-            AND t.group_id = te.group_id
-            AND t.order_id = te.order_id
-            AND t.type = '%1$s'
-            INNER JOIN trophy_meta tm ON tm.trophy_id = t.id
-            AND tm.status = 0
-        WHERE
-            te.np_communication_id = :np_communication_id
+            temp_impacted_accounts tia
+            LEFT JOIN trophy_earned te ON te.account_id = tia.account_id
+            AND te.np_communication_id = :np_communication_id
             AND te.group_id = :group_id
             AND te.earned = 1
+            LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
+            AND t.group_id = te.group_id
+            AND t.order_id = te.order_id
+            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
+            AND tm.status = 0
         GROUP BY
-            te.account_id
+            tia.account_id
     ) aggregate ON aggregate.account_id = tgp.account_id
 SET
-    tgp.%2$s = COALESCE(aggregate.cnt, 0)
+    tgp.bronze = COALESCE(aggregate.bronze, 0),
+    tgp.silver = COALESCE(aggregate.silver, 0),
+    tgp.gold = COALESCE(aggregate.gold, 0),
+    tgp.platinum = COALESCE(aggregate.platinum, 0)
 WHERE
     tgp.np_communication_id = :np_communication_id
     AND tgp.group_id = :group_id
-SQL,
-            $type,
-            $column
-        );
+    AND aggregate.account_id IS NOT NULL
+SQL;
     }
 
-    private function recalculateTitle(string $npCommunicationId, int $status): void
+    private function recalculateTitle(string $npCommunicationId, int $status, array $affectedTrophyIds): void
     {
         $statement = $this->database->prepare(
             <<<'SQL'
@@ -477,7 +478,45 @@ SQL
             $statement->bindValue(':change_type', $changeType, PDO::PARAM_STR);
             $statement->bindValue(':param_1', $gameId, PDO::PARAM_INT);
             $statement->execute();
+
         }
+    }
+
+    private function createImpactedAccountsTempTable(string $npCommunicationId, ?string $groupId, array $affectedTrophyIds): void
+    {
+        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS temp_impacted_accounts');
+        $this->database->exec('CREATE TEMPORARY TABLE temp_impacted_accounts (account_id BIGINT UNSIGNED PRIMARY KEY)');
+
+        if (count($affectedTrophyIds) === 0) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($affectedTrophyIds), '?'));
+        $sql = 'INSERT IGNORE INTO temp_impacted_accounts (account_id)
+            SELECT DISTINCT te.account_id
+            FROM trophy_earned te
+            INNER JOIN trophy t ON t.np_communication_id = te.np_communication_id
+                AND t.group_id = te.group_id
+                AND t.order_id = te.order_id
+            WHERE te.np_communication_id = ?
+              AND te.earned = 1';
+
+        if ($groupId !== null) {
+            $sql .= ' AND te.group_id = ?';
+        }
+
+        $sql .= ' AND t.id IN (' . $placeholders . ')';
+
+        $statement = $this->database->prepare($sql);
+        $parameterIndex = 1;
+        $statement->bindValue($parameterIndex++, $npCommunicationId, PDO::PARAM_STR);
+        if ($groupId !== null) {
+            $statement->bindValue($parameterIndex++, $groupId, PDO::PARAM_STR);
+        }
+        foreach ($affectedTrophyIds as $trophyId) {
+            $statement->bindValue($parameterIndex++, (int) $trophyId, PDO::PARAM_INT);
+        }
+        $statement->execute();
     }
 
     private function findGameId(string $npCommunicationId): ?int
