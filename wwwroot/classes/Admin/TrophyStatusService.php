@@ -359,11 +359,6 @@ SET
 WHERE
     tgp.np_communication_id = :np_communication_id
     AND tgp.group_id = :group_id
-    AND EXISTS (
-        SELECT 1
-        FROM temp_impacted_accounts tia
-        WHERE tia.account_id = tgp.account_id
-    )
 SQL;
     }
 
