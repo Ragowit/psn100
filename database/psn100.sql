@@ -543,8 +543,7 @@ ALTER TABLE `trophy_merge`
 ALTER TABLE `trophy_meta`
   ADD PRIMARY KEY (`trophy_id`),
   ADD KEY `idx_tm_status_rarity` (`status`,`rarity_percent`),
-  ADD KEY `idx_tm_status_igrp` (`status`,`in_game_rarity_percent`),
-  ADD KEY `idx_tm_trophy_status` (`trophy_id`,`status`);
+  ADD KEY `idx_tm_status_igrp` (`status`,`in_game_rarity_percent`);
 
 --
 -- Indexes for table `trophy_title`
