@@ -359,8 +359,6 @@ SQL;
 
     private function recalculateTitle(string $npCommunicationId, int $status, array $affectedTrophyIds): void
     {
-        $this->createImpactedAccountsTempTable($npCommunicationId, null, $affectedTrophyIds);
-
         $statement = $this->database->prepare(
             <<<'SQL'
 WITH trophy_group_count AS (
@@ -487,7 +485,7 @@ SQL
     private function createImpactedAccountsTempTable(string $npCommunicationId, ?string $groupId, array $affectedTrophyIds): void
     {
         $this->database->exec('DROP TEMPORARY TABLE IF EXISTS temp_impacted_accounts');
-        $this->database->exec('CREATE TEMPORARY TABLE temp_impacted_accounts (account_id BIGINT UNSIGNED PRIMARY KEY) ENGINE=MEMORY');
+        $this->database->exec('CREATE TEMPORARY TABLE temp_impacted_accounts (account_id BIGINT UNSIGNED PRIMARY KEY)');
 
         if (count($affectedTrophyIds) === 0) {
             return;
