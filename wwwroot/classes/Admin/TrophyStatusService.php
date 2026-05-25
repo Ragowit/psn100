@@ -331,25 +331,24 @@ UPDATE
     trophy_group_player tgp
     LEFT JOIN (
         SELECT
-            te.account_id,
-            SUM(t.type = 'bronze') AS bronze,
-            SUM(t.type = 'silver') AS silver,
-            SUM(t.type = 'gold') AS gold,
-            SUM(t.type = 'platinum') AS platinum
+            tia.account_id,
+            COALESCE(SUM(t.type = 'bronze'), 0) AS bronze,
+            COALESCE(SUM(t.type = 'silver'), 0) AS silver,
+            COALESCE(SUM(t.type = 'gold'), 0) AS gold,
+            COALESCE(SUM(t.type = 'platinum'), 0) AS platinum
         FROM
-            trophy_earned te
-            INNER JOIN trophy t ON t.np_communication_id = te.np_communication_id
-            AND t.group_id = te.group_id
-            AND t.order_id = te.order_id
-            INNER JOIN trophy_meta tm ON tm.trophy_id = t.id
-            AND tm.status = 0
-            INNER JOIN temp_impacted_accounts tia ON tia.account_id = te.account_id
-        WHERE
-            te.np_communication_id = :np_communication_id
+            temp_impacted_accounts tia
+            LEFT JOIN trophy_earned te ON te.account_id = tia.account_id
+            AND te.np_communication_id = :np_communication_id
             AND te.group_id = :group_id
             AND te.earned = 1
+            LEFT JOIN trophy t ON t.np_communication_id = te.np_communication_id
+            AND t.group_id = te.group_id
+            AND t.order_id = te.order_id
+            LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
+            AND tm.status = 0
         GROUP BY
-            te.account_id
+            tia.account_id
     ) aggregate ON aggregate.account_id = tgp.account_id
 SET
     tgp.bronze = COALESCE(aggregate.bronze, 0),
@@ -359,6 +358,7 @@ SET
 WHERE
     tgp.np_communication_id = :np_communication_id
     AND tgp.group_id = :group_id
+    AND aggregate.account_id IS NOT NULL
 SQL;
     }
 
