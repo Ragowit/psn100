@@ -123,11 +123,13 @@ class TrophyStatusService
         foreach ($trophyIds as $trophyId) {
             $trophy = $this->updateTrophyStatus((int) $trophyId, $status);
             $trophyNames[] = $trophy['label'];
-            $trophyGroups[$trophy['groupKey']] = [
-                'np_communication_id' => $trophy['np_communication_id'],
-                'group_id' => $trophy['group_id'],
-                'trophy_ids' => [],
-            ];
+            if (!isset($trophyGroups[$trophy['groupKey']])) {
+                $trophyGroups[$trophy['groupKey']] = [
+                    'np_communication_id' => $trophy['np_communication_id'],
+                    'group_id' => $trophy['group_id'],
+                    'trophy_ids' => [],
+                ];
+            }
             $trophyGroups[$trophy['groupKey']]['trophy_ids'][] = $trophy['id'];
             $trophyTitles[$trophy['np_communication_id']][] = $trophy['id'];
         }
