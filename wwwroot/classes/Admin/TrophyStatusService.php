@@ -305,11 +305,6 @@ WITH max_score AS (
         tgp.np_communication_id = :np_communication_id
         AND tgp.group_id = :group_id
         AND tgp.account_id = us.account_id
-        AND EXISTS (
-            SELECT 1
-            FROM temp_impacted_accounts tia
-            WHERE tia.account_id = tgp.account_id
-        )
 SQL,
             $npCommunicationId,
             $groupId
@@ -332,10 +327,10 @@ UPDATE
     LEFT JOIN (
         SELECT
             tia.account_id,
-            COALESCE(SUM(t.type = 'bronze'), 0) AS bronze,
-            COALESCE(SUM(t.type = 'silver'), 0) AS silver,
-            COALESCE(SUM(t.type = 'gold'), 0) AS gold,
-            COALESCE(SUM(t.type = 'platinum'), 0) AS platinum
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
         FROM
             temp_impacted_accounts tia
             LEFT JOIN trophy_earned te ON te.account_id = tia.account_id
@@ -421,11 +416,6 @@ WITH player_trophy_count AS (
     WHERE
         ttp.account_id = ptc.account_id
         AND ttp.np_communication_id = :np_communication_id
-        AND EXISTS (
-            SELECT 1
-            FROM temp_impacted_accounts tia
-            WHERE tia.account_id = ttp.account_id
-        )
 SQL
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
@@ -474,11 +464,6 @@ WITH user_score AS (
     WHERE
         ttp.np_communication_id = :np_communication_id
         AND ttp.account_id = us.account_id
-        AND EXISTS (
-            SELECT 1
-            FROM temp_impacted_accounts tia
-            WHERE tia.account_id = ttp.account_id
-        )
 SQL
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);

@@ -16,10 +16,10 @@ final class TrophyStatusServiceTest extends TestCase
 
         $this->assertSame(1, count($database->playerTrophyCountQueries));
         $query = $database->playerTrophyCountQueries[0];
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(t.type = 'bronze'), 0) AS bronze"));
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(t.type = 'silver'), 0) AS silver"));
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(t.type = 'gold'), 0) AS gold"));
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(t.type = 'platinum'), 0) AS platinum"));
+        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze"));
+        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver"));
+        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold"));
+        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum"));
         $this->assertTrue(str_contains($query, 'FROM
             temp_impacted_accounts tia'));
         $this->assertTrue(str_contains($query, 'LEFT JOIN trophy_earned te ON te.account_id = tia.account_id'));
