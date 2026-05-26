@@ -1339,6 +1339,32 @@ class PossibleCheaterService
             SQL,
             'linkPattern' => '/game/2424-final-fantasy-x2-hd-remaster/%s?sort=date',
         ],
+        [
+            'title' => 'Pic-a-Pix Color 2 [VITA, EU] (Casual Puzzler <-> Casual Completionist)',
+            'query' => <<<'SQL'
+                SELECT
+                    p.account_id,
+                    p.online_id,
+                    TIMESTAMPDIFF(SECOND, trophy_start.earned_date, trophy_end.earned_date) AS time_difference
+                FROM
+                    player p
+                JOIN trophy_earned trophy_start ON
+                    trophy_start.account_id = p.account_id
+                    AND trophy_start.np_communication_id = 'NPWR18592_00'
+                    AND trophy_start.order_id = 1
+                JOIN trophy_earned trophy_end ON
+                    trophy_end.account_id = p.account_id
+                    AND trophy_end.np_communication_id = 'NPWR18592_00'
+                    AND trophy_end.order_id = 4
+                WHERE
+                    p.status != 1
+                HAVING
+                    time_difference <= 10
+                ORDER BY
+                    p.online_id
+            SQL,
+            'linkPattern' => '/game/5992-picapix-color-2/%s?sort=date',
+        ],
     ];
 
     public function __construct(PDO $database)
