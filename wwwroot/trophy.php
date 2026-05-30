@@ -62,14 +62,14 @@ require_once("header.php");
         <div class="col-12">
             <div class="card rounded-4">
                 <div class="d-flex justify-content-center align-items-center">
-                    <img class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" />
+                    <img fetchpriority="high" class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" />
                     <div class="card-img-overlay d-flex align-items-end">
                         <div class="bg-body-tertiary p-3 rounded w-100">
                             <div class="row">
                                 <div class="col-7">
                                     <div class="hstack gap-3">
                                         <div>
-                                            <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
+                                            <img fetchpriority="high" src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
                                         </div>
 
                                         <div>
@@ -201,7 +201,7 @@ require_once("header.php");
                                             </th>
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
-                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
+                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
                                                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($trophy->getGameSlug($utility), ENT_QUOTES, 'UTF-8'); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
                                                     <?php
                                                     if ($result->hasHiddenTrophies()) {
@@ -258,7 +258,7 @@ require_once("header.php");
                                             </th>
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
-                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
+                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
                                                     <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($trophy->getGameSlug($utility), ENT_QUOTES, 'UTF-8'); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
                                                     <?php
                                                     if ($result->hasHiddenTrophies()) {
