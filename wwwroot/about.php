@@ -519,7 +519,9 @@ require_once("header.php");
                                 fetch(url.toString(), {
                                     headers: {
                                         Accept: 'application/json',
+                                        'Cache-Control': 'no-cache',
                                     },
+                                    cache: 'no-store',
                                 })
                                     .then((response) => {
                                         if (!response.ok) {
