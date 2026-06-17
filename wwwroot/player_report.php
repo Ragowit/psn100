@@ -19,7 +19,7 @@ $playerReportPage = new PlayerReportPage(
     $playerReportHandler,
     $playerSummaryService,
     (int) $accountId,
-    $_GET ?? [],
+    $_POST ?? [],
     $_SERVER ?? []
 );
 
@@ -27,8 +27,9 @@ $playerSummary = $playerReportPage->getPlayerSummary();
 $explanation = $playerReportPage->getExplanation();
 $reportResult = $playerReportPage->getReportResult();
 $playerNavigation = PlayerNavigation::forSection((string) $player['online_id']);
+$playerOnlineId = (string) $player['online_id'];
 
-$title = $player["online_id"] . "'s Report ~ PSN 100%";
+$title = htmlspecialchars($playerOnlineId, ENT_QUOTES, 'UTF-8') . "'s Report ~ PSN 100%";
 require_once("header.php");
 ?>
 
@@ -40,7 +41,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="/player/<?= $player["online_id"]; ?>/report">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="/player/<?= htmlspecialchars($playerOnlineId, ENT_QUOTES, 'UTF-8'); ?>/report">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
@@ -68,7 +69,7 @@ require_once("header.php");
 
         <div class="col-12 mb-3">
             <div class="bg-body-tertiary p-3 rounded">
-                <form>
+                <form method="post">
                     <div class="mb-3">
                         <label for="explanation" class="form-label">What's wrong?</label>
                         <ul>

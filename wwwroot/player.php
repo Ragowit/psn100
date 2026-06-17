@@ -154,7 +154,7 @@ require_once("header.php");
 
                                                     <span id="<?= $playerGame->getId(); ?>"></span>
                                                     <script>
-                                                        document.getElementById("<?= $playerGame->getId(); ?>").innerHTML = new Date('<?= $playerGame->getLastUpdatedDate(); ?> UTC').toLocaleString('sv-SE');
+                                                        document.getElementById(<?= json_encode((string) $playerGame->getId()); ?>).innerHTML = new Date(<?= json_encode($playerGame->getLastUpdatedDate() . ' UTC'); ?>).toLocaleString('sv-SE');
                                                     </script>
 
                                                     <?php

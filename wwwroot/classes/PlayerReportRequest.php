@@ -11,13 +11,13 @@ final readonly class PlayerReportRequest
     ) {}
 
     /**
-     * @param array<string, mixed> $queryParameters
+     * @param array<string, mixed> $postParameters
      * @param array<string, mixed> $serverParameters
      */
-    public static function fromArrays(array $queryParameters, array $serverParameters): self
+    public static function fromArrays(array $postParameters, array $serverParameters): self
     {
-        $explanationSubmitted = array_key_exists('explanation', $queryParameters);
-        $explanation = self::sanitizeExplanation($queryParameters['explanation'] ?? null);
+        $explanationSubmitted = array_key_exists('explanation', $postParameters);
+        $explanation = self::sanitizeExplanation($postParameters['explanation'] ?? null);
         $ipAddress = self::resolveIpAddress($serverParameters);
 
         return new self($explanation, $explanationSubmitted, $ipAddress);
