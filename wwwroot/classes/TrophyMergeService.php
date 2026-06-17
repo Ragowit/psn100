@@ -1753,19 +1753,21 @@ SQL
             return;
         }
 
-        $this->transactionDepth--;
+        if ($this->transactionDepth === 1) {
+            if ($this->database->inTransaction()) {
+                $this->database->commit();
+            }
 
-        if ($this->transactionDepth === 0 && $this->database->inTransaction()) {
-            $this->database->commit();
+            $this->transactionDepth = 0;
+
+            return;
         }
+
+        $this->transactionDepth--;
     }
 
     private function rollBackTransaction(): void
     {
-        if ($this->transactionDepth === 0) {
-            return;
-        }
-
         $this->transactionDepth = 0;
 
         if ($this->database->inTransaction()) {

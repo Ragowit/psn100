@@ -64,6 +64,27 @@ final class TrophyMergeServiceTransactionTest extends TestCase
         $this->assertSame(1, $database->rollBackCount, 'Expected mergeGames to roll back on failure.');
         $this->assertTrue($database->mappingInserted, 'Expected mapping step to run before the failure.');
     }
+
+    public function testExecuteTransactionRollsBackWhenCommitFails(): void
+    {
+        $database = new CommitFailingTransactionPDO();
+        $service = new TrophyMergeService($database);
+        $executeTransaction = new ReflectionMethod(TrophyMergeService::class, 'executeTransaction');
+        $executeTransaction->setAccessible(true);
+
+        try {
+            $executeTransaction->invoke($service, static function (): void {
+            });
+            $this->fail('Expected commit failure to bubble up.');
+        } catch (PDOException $exception) {
+            $this->assertSame('Commit failed.', $exception->getMessage());
+        }
+
+        $this->assertSame(1, $database->beginCount, 'Expected one database transaction to start.');
+        $this->assertSame(0, $database->commitCount, 'Expected failed commit to avoid counting as success.');
+        $this->assertSame(1, $database->rollBackCount, 'Expected failed commit to roll back open transaction.');
+        $this->assertFalse($database->inTransaction(), 'Expected rollback to clear transaction state.');
+    }
 }
 
 final class TransactionDepthTrackingPDO extends PDO
@@ -72,6 +93,10 @@ final class TransactionDepthTrackingPDO extends PDO
     public int $commitCount = 0;
     public int $rollBackCount = 0;
     private bool $inTransaction = false;
+
+    public function __construct()
+    {
+    }
 
     public function beginTransaction(): bool
     {
@@ -108,6 +133,14 @@ final class TransactionDepthTrackingPDO extends PDO
     }
 }
 
+final class CommitFailingTransactionPDO extends TransactionDepthTrackingPDO
+{
+    public function commit(): bool
+    {
+        throw new PDOException('Commit failed.');
+    }
+}
+
 final class MergeGamesTransactionPDO extends PDO
 {
     public int $beginCount = 0;
@@ -115,6 +148,10 @@ final class MergeGamesTransactionPDO extends PDO
     public int $rollBackCount = 0;
     public bool $mappingInserted = false;
     private bool $inTransaction = false;
+
+    public function __construct()
+    {
+    }
 
     public function beginTransaction(): bool
     {
