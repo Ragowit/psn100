@@ -67,7 +67,7 @@ final class TrophyMergeServiceTransactionTest extends TestCase
 
     public function testExecuteTransactionRollsBackWhenCommitFails(): void
     {
-        $database = new CommitFailingTransactionPDO();
+        $database = new TransactionDepthTrackingPDO(failOnCommit: true);
         $service = new TrophyMergeService($database);
         $executeTransaction = new ReflectionMethod(TrophyMergeService::class, 'executeTransaction');
         $executeTransaction->setAccessible(true);
@@ -94,7 +94,7 @@ final class TransactionDepthTrackingPDO extends PDO
     public int $rollBackCount = 0;
     private bool $inTransaction = false;
 
-    public function __construct()
+    public function __construct(private bool $failOnCommit = false)
     {
     }
 
@@ -108,6 +108,10 @@ final class TransactionDepthTrackingPDO extends PDO
 
     public function commit(): bool
     {
+        if ($this->failOnCommit) {
+            throw new PDOException('Commit failed.');
+        }
+
         $this->commitCount++;
         $this->inTransaction = false;
 
@@ -130,14 +134,6 @@ final class TransactionDepthTrackingPDO extends PDO
     public function prepare(string $statement, array $options = []): PDOStatement
     {
         throw new RuntimeException('Unexpected SQL in transaction depth test: ' . $statement);
-    }
-}
-
-final class CommitFailingTransactionPDO extends TransactionDepthTrackingPDO
-{
-    public function commit(): bool
-    {
-        throw new PDOException('Commit failed.');
     }
 }
 
