@@ -182,16 +182,12 @@ final class MergeGamesTransactionPDO extends PDO
     {
         $normalized = preg_replace('/\s+/', ' ', trim($statement)) ?? '';
 
-        if (
-            str_contains($normalized, 'SELECT np_communication_id')
-            && str_contains($normalized, 'FROM trophy_title')
-            && str_contains($normalized, 'WHERE id =')
-        ) {
-            return new MergeGamesNpCommunicationIdStatement();
-        }
-
         if (str_contains($normalized, 'INSERT IGNORE into trophy_merge') && str_contains($normalized, 'USING (group_id, order_id)')) {
             return new MergeGamesMappingStatement($this);
+        }
+
+        if (str_starts_with($normalized, 'SELECT np_communication_id FROM trophy_title WHERE id =')) {
+            return new MergeGamesNpCommunicationIdStatement();
         }
 
         if (str_starts_with($normalized, 'UPDATE trophy_title_meta SET status = 2 WHERE np_communication_id = :np_communication_id')) {
