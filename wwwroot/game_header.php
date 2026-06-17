@@ -6,6 +6,9 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
 /** @var GameDetails $game */
 /** @var GameHeaderData $gameHeaderData */
 /** @var GamePlayerProgress|null $gamePlayer */
+
+$encodedPlayer = isset($player) ? rawurlencode((string) $player) : null;
+$escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES, 'UTF-8') : null;
 ?>
 <div class="row">
     <?php
@@ -13,8 +16,8 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         $parentGame = $gameHeaderData->getParentGame();
         if ($parentGame !== null) {
             $parentLink = $parentGame->getId() . '-' . $utility->slugify($parentGame->getName());
-            if (isset($player)) {
-                $parentLink .= '/' . $player;
+            if ($encodedPlayer !== null) {
+                $parentLink .= '/' . $encodedPlayer;
             }
             ?>
             <div class="col-12">
@@ -54,8 +57,8 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
         $replacementLinks = [];
         foreach ($gameHeaderData->getObsoleteReplacements() as $replacement) {
             $replacementLink = '/game/' . $replacement->getId() . '-' . $utility->slugify($replacement->getName());
-            if (isset($player)) {
-                $replacementLink .= '/' . $player;
+            if ($encodedPlayer !== null) {
+                $replacementLink .= '/' . $encodedPlayer;
             }
 
             $replacementLinks[] = sprintf(
@@ -155,8 +158,8 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
                                 <?php
                                 foreach ($stacks as $stack) {
                                     $stackLink = $stack->getId() . '-' . $utility->slugify($stack->getName());
-                                    if (isset($player)) {
-                                        $stackLink .= '/' . $player;
+                                    if ($encodedPlayer !== null) {
+                                        $stackLink .= '/' . $encodedPlayer;
                                     }
 
                                     $region = $stack->getRegion();
@@ -202,9 +205,9 @@ require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
 
                 <div>
                     <?php
-                    if (isset($player)) {
+                    if ($escapedPlayer !== null && $encodedPlayer !== null) {
                         ?>
-                        <small>Viewing as <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $player; ?>"><?= $player; ?></a></small>
+                        <small>Viewing as <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $encodedPlayer; ?>"><?= $escapedPlayer; ?></a></small>
                         <?php
                     }
                     ?>

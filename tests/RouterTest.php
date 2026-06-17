@@ -153,6 +153,23 @@ final class RouterTest extends TestCase
         );
     }
 
+    public function testDispatchIgnoresInvalidGamePlayerSegment(): void
+    {
+        $this->gameRepository->idsBySegment['123-example'] = 123;
+
+        $result = $this->router->dispatch('/game/123-example/%3Cscript%3Ealert(1)%3C/script%3E');
+
+        $this->assertTrue($result->shouldInclude());
+        $this->assertSame('game.php', $result->getInclude());
+        $this->assertSame(
+            [
+                'gameId' => 123,
+                'player' => null,
+            ],
+            $result->getVariables()
+        );
+    }
+
     public function testDispatchProvidesHistoryVariablesWhenRouteMatches(): void
     {
         $this->gameRepository->idsBySegment['77-sample'] = 77;

@@ -104,6 +104,10 @@ require_once("header.php");
                                         $rankDeltaColor = $player->getRankDeltaColor();
                                         $progress = $player->getProgress();
                                         $level = $player->getLevel();
+                                        $encodedOnlineId = rawurlencode($onlineId);
+                                        $escapedOnlineId = htmlspecialchars($onlineId, ENT_QUOTES, 'UTF-8');
+                                        $escapedAvatarUrl = htmlspecialchars($player->getAvatarUrl(), ENT_QUOTES, 'UTF-8');
+                                        $lastUpdateElementId = 'lastUpdate' . preg_replace('/[^a-zA-Z0-9_-]/', '', $onlineId);
                                         ?>
                                         <tr>
                                             <th scope="row" class="align-middle text-center">
@@ -121,7 +125,9 @@ require_once("header.php");
                                                 <br>
                                                 <?php
                                                 if ($statusLabel !== null) {
-                                                    echo "<span style='color: #9d9d9d;'>(' . $statusLabel . ')</span>";
+                                                    echo '<span style="color: #9d9d9d;">('
+                                                        . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8')
+                                                        . ')</span>';
                                                 } elseif ($player->isNew()) {
                                                     echo '(New!)';
                                                 } elseif ($rankDeltaLabel !== null && $rankDeltaColor !== null) {
@@ -129,12 +135,12 @@ require_once("header.php");
                                                 }
                                                 ?>
                                             </th>
-                                            <td class="align-middle text-center" id="lastUpdate<?= $onlineId; ?>"></td>
+                                            <td class="align-middle text-center" id="<?= htmlspecialchars($lastUpdateElementId, ENT_QUOTES, 'UTF-8'); ?>"></td>
                                             <?php
                                             if ($lastUpdatedDate !== null) {
                                                 ?>
                                                 <script>
-                                                    document.getElementById("lastUpdate<?= $onlineId; ?>").innerHTML = new Date('<?= $lastUpdatedDate; ?> UTC').toLocaleString('sv-SE', {timeStyle: 'medium'});
+                                                    document.getElementById(<?= json_encode($lastUpdateElementId); ?>).innerHTML = new Date(<?= json_encode($lastUpdatedDate . ' UTC'); ?>).toLocaleString('sv-SE', {timeStyle: 'medium'});
                                                 </script>
                                                 <?php
                                             }
@@ -142,13 +148,13 @@ require_once("header.php");
                                             <td class="align-middle">
                                                 <div class="hstack gap-3">
                                                     <div>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $onlineId; ?>">
-                                                            <img src="/img/avatar/<?= $player->getAvatarUrl(); ?>" alt="" height="50" width="50" />
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= $encodedOnlineId; ?>">
+                                                            <img src="/img/avatar/<?= $escapedAvatarUrl; ?>" alt="" height="50" width="50" />
                                                         </a>
                                                     </div>
 
                                                     <div>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" style="white-space: nowrap;" href="/player/<?= $onlineId; ?>"><?= $onlineId; ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" style="white-space: nowrap;" href="/player/<?= $encodedOnlineId; ?>"><?= $escapedOnlineId; ?></a>
                                                     </div>
 
                                                     <div class="ms-auto">

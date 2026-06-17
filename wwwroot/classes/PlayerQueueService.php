@@ -129,9 +129,14 @@ class PlayerQueueService
         $query->execute();
     }
 
+    public static function isValidOnlineId(string $playerName): bool
+    {
+        return $playerName !== '' && preg_match(self::PLAYER_NAME_PATTERN, $playerName) === 1;
+    }
+
     public function isValidPlayerName(string $playerName): bool
     {
-        return preg_match(self::PLAYER_NAME_PATTERN, $playerName) === 1;
+        return self::isValidOnlineId($playerName);
     }
 
     public function escapeHtml(string $value): string

@@ -26,14 +26,14 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
         <div class="hstack gap-3 bg-body-tertiary p-3 rounded">
             <!-- Avatar -->
             <div>
-                <img src="/img/avatar/<?= $player["avatar_url"]; ?>" alt="" height="100" width="100" />
+                <img src="/img/avatar/<?= htmlspecialchars((string) $player['avatar_url'], ENT_QUOTES, 'UTF-8'); ?>" alt="" height="100" width="100" />
             </div>
 
             <!-- Online ID and About Me -->
             <div>
                 <figure>
                     <blockquote class="blockquote">
-                        <h1><?= $player["online_id"] ?></h1>
+                        <h1><?= htmlspecialchars((string) $player['online_id'], ENT_QUOTES, 'UTF-8'); ?></h1>
                     </blockquote>
                     <?php
                     $aboutMe = $playerHeaderViewModel->getAboutMe();
