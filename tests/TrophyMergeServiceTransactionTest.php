@@ -182,7 +182,11 @@ final class MergeGamesTransactionPDO extends PDO
     {
         $normalized = preg_replace('/\s+/', ' ', trim($statement)) ?? '';
 
-        if (str_starts_with($normalized, 'SELECT np_communication_id FROM trophy_title WHERE id = :game_id')) {
+        if (
+            str_contains($normalized, 'SELECT np_communication_id')
+            && str_contains($normalized, 'FROM trophy_title')
+            && str_contains($normalized, 'WHERE id =')
+        ) {
             return new MergeGamesNpCommunicationIdStatement();
         }
 
@@ -209,7 +213,7 @@ final class MergeGamesNpCommunicationIdStatement extends PDOStatement
 
     public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
-        if ((string) $param === ':game_id') {
+        if ((string) $param === ':game_id' || (string) $param === ':id') {
             $this->gameId = (int) $value;
         }
 
