@@ -95,7 +95,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                     $lastUpdatedDate = $playerHeaderViewModel->getLastUpdatedDate();
                     ?>
                     <script>
-                        document.getElementById("lastUpdate").innerHTML = new Date('<?= $lastUpdatedDate; ?> UTC').toLocaleString('sv-SE');
+                        document.getElementById("lastUpdate").innerHTML = new Date(<?= json_encode($lastUpdatedDate . ' UTC'); ?>).toLocaleString('sv-SE');
                     </script>
                     <?php
                 }

@@ -70,13 +70,15 @@ require_once('header.php');
                                                     <?php
                                                     $progressTargetValue = $trophy->getProgressTargetValue();
                                                     if ($progressTargetValue !== null) {
-                                                        echo '<br><b>0/' . $progressTargetValue . '</b>';
+                                                        echo '<br><b>0/' . htmlspecialchars((string) $progressTargetValue, ENT_QUOTES, 'UTF-8') . '</b>';
                                                     }
 
                                                     $rewardName = $trophy->getRewardName();
                                                     $rewardImageUrl = $trophy->getRewardImageUrl();
                                                     if ($rewardName !== null && $rewardImageUrl !== null) {
-                                                        echo "<br>Reward: <a href='/img/reward/" . $rewardImageUrl . "'>" . $rewardName . '</a>';
+                                                        echo '<br>Reward: <a href="/img/reward/'
+                                                            . htmlspecialchars($rewardImageUrl, ENT_QUOTES, 'UTF-8') . '">'
+                                                            . htmlspecialchars($rewardName, ENT_QUOTES, 'UTF-8') . '</a>';
                                                     }
                                                     ?>
                                                 </div>
@@ -87,7 +89,8 @@ require_once('header.php');
                                         <div class="vstack gap-1">
                                             <?php
                                             foreach ($trophy->getPlatforms() as $platform) {
-                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . $platform . '</span> ';
+                                                echo '<span class="badge rounded-pill text-bg-primary p-2">'
+                                                    . htmlentities($platform, ENT_QUOTES, 'UTF-8') . '</span> ';
                                             }
                                             ?>
                                         </div>

@@ -19,7 +19,7 @@ class PlayerReportPage
     /**
      * @var array<string, mixed>
      */
-    private array $queryParameters;
+    private array $postParameters;
 
     /**
      * @var array<string, mixed>
@@ -35,20 +35,20 @@ class PlayerReportPage
     private PlayerReportResult $reportResult;
 
     /**
-     * @param array<string, mixed> $queryParameters
+     * @param array<string, mixed> $postParameters
      * @param array<string, mixed> $serverParameters
      */
     public function __construct(
         PlayerReportHandler $playerReportHandler,
         PlayerSummaryService $playerSummaryService,
         int $accountId,
-        array $queryParameters,
+        array $postParameters,
         array $serverParameters
     ) {
         $this->playerReportHandler = $playerReportHandler;
         $this->playerSummaryService = $playerSummaryService;
         $this->accountId = $accountId;
-        $this->queryParameters = $queryParameters;
+        $this->postParameters = $postParameters;
         $this->serverParameters = $serverParameters;
 
         $this->initialize();
@@ -57,7 +57,7 @@ class PlayerReportPage
     private function initialize(): void
     {
         $this->playerSummary = $this->playerSummaryService->getSummary($this->accountId);
-        $request = PlayerReportRequest::fromArrays($this->queryParameters, $this->serverParameters);
+        $request = PlayerReportRequest::fromArrays($this->postParameters, $this->serverParameters);
         $this->explanation = $request->getExplanation();
         $this->explanationSubmitted = $request->wasExplanationSubmitted();
         $this->reportResult = $this->playerReportHandler->handleReportRequest(

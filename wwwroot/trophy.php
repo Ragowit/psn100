@@ -87,7 +87,7 @@ require_once("header.php");
                                                             <span class="badge rounded-pill text-bg-success" id="earnedTrophy"></span>
                                                             <script>
                                                                 <?php if ($earnedDate !== null) { ?>
-                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned ' + new Date('<?= $earnedDate; ?> UTC').toLocaleString('sv-SE');
+                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned ' + new Date(<?= json_encode($earnedDate . ' UTC'); ?>).toLocaleString('sv-SE');
                                                                 <?php } else { ?>
                                                                 document.getElementById("earnedTrophy").innerHTML = 'Earned';
                                                                 <?php } ?>
@@ -214,7 +214,7 @@ require_once("header.php");
                                             </td>
 
                                             <script>
-                                                document.getElementById("faDate<?= $count; ?>").innerHTML = new Date('<?= $result->getEarnedDate(); ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                document.getElementById("faDate<?= $count; ?>").innerHTML = new Date(<?= json_encode($result->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
                                             </script>
                                         </tr>
                                         <?php
@@ -271,7 +271,7 @@ require_once("header.php");
                                             </td>
 
                                             <script>
-                                                document.getElementById("laDate<?= $count; ?>").innerHTML = new Date('<?= $result->getEarnedDate(); ?> UTC').toLocaleString('sv-SE').replace(' ', '<br>');
+                                                document.getElementById("laDate<?= $count; ?>").innerHTML = new Date(<?= json_encode($result->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
                                             </script>
                                         </tr>
                                         <?php

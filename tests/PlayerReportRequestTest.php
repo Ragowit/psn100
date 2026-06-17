@@ -9,10 +9,10 @@ final class PlayerReportRequestTest extends TestCase
 {
     public function testFromArraysTrimsExplanationAndCapturesIpAddress(): void
     {
-        $queryParameters = ['explanation' => '  Needs review  '];
+        $postParameters = ['explanation' => '  Needs review  '];
         $serverParameters = ['REMOTE_ADDR' => '198.51.100.24'];
 
-        $request = PlayerReportRequest::fromArrays($queryParameters, $serverParameters);
+        $request = PlayerReportRequest::fromArrays($postParameters, $serverParameters);
 
         $this->assertSame('Needs review', $request->getExplanation());
         $this->assertTrue($request->wasExplanationSubmitted());
@@ -30,7 +30,7 @@ final class PlayerReportRequestTest extends TestCase
 
     public function testFromArraysSanitizesNonScalarExplanationValues(): void
     {
-        $queryParameters = ['explanation' => ['value', 'other']];
+        $postParameters = ['explanation' => ['value', 'other']];
         $serverParameters = ['REMOTE_ADDR' => new class {
             public function __toString(): string
             {
@@ -38,10 +38,21 @@ final class PlayerReportRequestTest extends TestCase
             }
         }];
 
-        $request = PlayerReportRequest::fromArrays($queryParameters, $serverParameters);
+        $request = PlayerReportRequest::fromArrays($postParameters, $serverParameters);
 
         $this->assertSame('', $request->getExplanation());
         $this->assertTrue($request->wasExplanationSubmitted());
         $this->assertSame('203.0.113.12', $request->getIpAddress());
+    }
+
+    public function testFromArraysIgnoresExplanationInQueryParameters(): void
+    {
+        $request = PlayerReportRequest::fromArrays(
+            [],
+            ['REMOTE_ADDR' => '198.51.100.24', 'QUERY_STRING' => 'explanation=ignored']
+        );
+
+        $this->assertSame('', $request->getExplanation());
+        $this->assertFalse($request->wasExplanationSubmitted());
     }
 }
