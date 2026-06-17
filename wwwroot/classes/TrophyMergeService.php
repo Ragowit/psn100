@@ -11,6 +11,8 @@ class TrophyMergeService
 
     private PDO $database;
 
+    private int $transactionDepth = 0;
+
     public function __construct(PDO $database)
     {
         $this->database = $database;
@@ -28,6 +30,8 @@ class TrophyMergeService
             throw new InvalidArgumentException('Parent must be a merge title.');
         }
 
+        $childTrophies = [];
+
         foreach ($childTrophyIds as $childTrophyId) {
             $childTrophyId = (int) $childTrophyId;
             $childTrophy = $this->getTrophyById($childTrophyId);
@@ -36,23 +40,35 @@ class TrophyMergeService
                 throw new InvalidArgumentException("Child can't be a merge title.");
             }
 
-            $this->insertTrophyMergeMappingFromIds($childTrophyId, $parentTrophyId);
-            $this->markGameAsMergedByNpId($childTrophy['np_communication_id']);
-
-            $childGameId = $this->getGameIdByTrophyId($childTrophyId);
-
-            $this->copyTrophyEarned(
-                $childTrophy['np_communication_id'],
-                $childTrophy['group_id'],
-                (int) $childTrophy['order_id'],
-                $parentTrophy['np_communication_id'],
-                $parentTrophy['group_id'],
-                (int) $parentTrophy['order_id']
-            );
-
-            $this->updateTrophyGroupPlayer($childGameId);
-            $this->updateTrophyTitlePlayer($childGameId);
+            $childTrophies[] = [
+                'id' => $childTrophyId,
+                'trophy' => $childTrophy,
+            ];
         }
+
+        $this->executeTransaction(function () use ($parentTrophy, $parentTrophyId, $childTrophies): void {
+            foreach ($childTrophies as $childData) {
+                $childTrophyId = $childData['id'];
+                $childTrophy = $childData['trophy'];
+
+                $this->insertTrophyMergeMappingFromIds($childTrophyId, $parentTrophyId);
+                $this->markGameAsMergedByNpId($childTrophy['np_communication_id']);
+
+                $childGameId = $this->getGameIdByTrophyId($childTrophyId);
+
+                $this->copyTrophyEarned(
+                    $childTrophy['np_communication_id'],
+                    $childTrophy['group_id'],
+                    (int) $childTrophy['order_id'],
+                    $parentTrophy['np_communication_id'],
+                    $parentTrophy['group_id'],
+                    (int) $parentTrophy['order_id']
+                );
+
+                $this->updateTrophyGroupPlayer($childGameId);
+                $this->updateTrophyTitlePlayer($childGameId);
+            }
+        });
 
         return 'The trophies have been merged.';
     }
@@ -80,9 +96,15 @@ class TrophyMergeService
 
         $message = '';
 
-        $this->beginTransaction();
-
-        try {
+        $this->executeTransaction(function () use (
+            $childGameId,
+            $childNpCommunicationId,
+            $parentGameId,
+            $parentNpCommunicationId,
+            $method,
+            $progressListener,
+            &$message
+        ): void {
             switch ($method) {
                 case 'name':
                     $this->notifyProgress($progressListener, 30, 'Matching trophies by name…');
@@ -100,33 +122,28 @@ class TrophyMergeService
                     throw new InvalidArgumentException('Wrong input');
             }
 
-            $this->commitTransaction();
-        } catch (Throwable $exception) {
-            $this->rollBackTransaction();
-            throw $exception;
-        }
-
-        $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');
-        $this->notifyProgress($progressListener, 60, 'Preparing to mark child game as merged…');
-        $this->notifyProgress($progressListener, 62, 'Marking child game as merged…');
-        $this->markGameAsMergedById($childGameId);
-        $this->notifyProgress($progressListener, 65, 'Child game marked as merged.');
-        $this->notifyProgress($progressListener, 70, 'Preparing to copy merged trophies…');
-        $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
-        $this->copyMergedTrophies($childNpCommunicationId, $progressListener);
-        $this->notifyProgress($progressListener, 75, 'Merged trophies copied.');
-        $this->notifyProgress($progressListener, 80, 'Updating player trophy groups…');
-        $this->updateTrophyGroupPlayer($childGameId);
-        $this->notifyProgress($progressListener, 85, 'Player trophy groups updated.');
-        $this->notifyProgress($progressListener, 88, 'Updating player trophy titles…');
-        $this->updateTrophyTitlePlayer($childGameId);
-        $this->notifyProgress($progressListener, 92, 'Player trophy titles updated.');
-        $this->notifyProgress($progressListener, 94, 'Updating parent relationship…');
-        $this->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
-        $this->notifyProgress($progressListener, 96, 'Parent relationship updated.');
-        $this->notifyProgress($progressListener, 98, 'Logging merge activity…');
-        $this->logChange('GAME_MERGE', $childGameId, $parentGameId);
-        $this->notifyProgress($progressListener, 100, 'Merge process complete.');
+            $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');
+            $this->notifyProgress($progressListener, 60, 'Preparing to mark child game as merged…');
+            $this->notifyProgress($progressListener, 62, 'Marking child game as merged…');
+            $this->markGameAsMergedById($childGameId);
+            $this->notifyProgress($progressListener, 65, 'Child game marked as merged.');
+            $this->notifyProgress($progressListener, 70, 'Preparing to copy merged trophies…');
+            $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
+            $this->copyMergedTrophies($childNpCommunicationId, $progressListener);
+            $this->notifyProgress($progressListener, 75, 'Merged trophies copied.');
+            $this->notifyProgress($progressListener, 80, 'Updating player trophy groups…');
+            $this->updateTrophyGroupPlayer($childGameId);
+            $this->notifyProgress($progressListener, 85, 'Player trophy groups updated.');
+            $this->notifyProgress($progressListener, 88, 'Updating player trophy titles…');
+            $this->updateTrophyTitlePlayer($childGameId);
+            $this->notifyProgress($progressListener, 92, 'Player trophy titles updated.');
+            $this->notifyProgress($progressListener, 94, 'Updating parent relationship…');
+            $this->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
+            $this->notifyProgress($progressListener, 96, 'Parent relationship updated.');
+            $this->notifyProgress($progressListener, 98, 'Logging merge activity…');
+            $this->logChange('GAME_MERGE', $childGameId, $parentGameId);
+            $this->notifyProgress($progressListener, 100, 'Merge process complete.');
+        });
 
         return $message . 'The games have been merged.';
     }
@@ -1723,20 +1740,34 @@ SQL
 
     private function beginTransaction(): void
     {
-        if (!$this->database->inTransaction()) {
+        if ($this->transactionDepth === 0) {
             $this->database->beginTransaction();
         }
+
+        $this->transactionDepth++;
     }
 
     private function commitTransaction(): void
     {
-        if ($this->database->inTransaction()) {
+        if ($this->transactionDepth === 0) {
+            return;
+        }
+
+        $this->transactionDepth--;
+
+        if ($this->transactionDepth === 0 && $this->database->inTransaction()) {
             $this->database->commit();
         }
     }
 
     private function rollBackTransaction(): void
     {
+        if ($this->transactionDepth === 0) {
+            return;
+        }
+
+        $this->transactionDepth = 0;
+
         if ($this->database->inTransaction()) {
             $this->database->rollBack();
         }
