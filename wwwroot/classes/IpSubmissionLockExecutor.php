@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 final class IpSubmissionLockExecutor
 {
+    private const string LOCK_NAME_PREFIX = 'psn100:ip:';
+
+    private const int MYSQL_LOCK_NAME_MAX_LENGTH = 64;
+
     public function __construct(private readonly PDO $database)
     {
     }
@@ -45,6 +49,8 @@ final class IpSubmissionLockExecutor
 
     private function buildLockName(string $ipAddress): string
     {
-        return 'psn100:ip:' . hash('sha256', $ipAddress);
+        $digestLength = self::MYSQL_LOCK_NAME_MAX_LENGTH - strlen(self::LOCK_NAME_PREFIX);
+
+        return self::LOCK_NAME_PREFIX . substr(hash('sha256', $ipAddress), 0, $digestLength);
     }
 }
