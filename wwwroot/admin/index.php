@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-require_once '../classes/Admin/AdminNavigation.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../classes/Admin/AdminNavigation.php';
 
 $navigation = new AdminNavigation();
 $navigationItems = $navigation->getItems();
@@ -18,6 +19,7 @@ $navigationItems = $navigation->getItems();
     </head>
     <body>
         <div class="p-4">
+            <p><a href="/admin/logout.php">Log out</a></p>
             <ul>
                 <?php foreach ($navigationItems as $item) { ?>
                     <li>

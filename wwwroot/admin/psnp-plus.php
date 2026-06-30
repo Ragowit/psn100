@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/../classes/Admin/PsnpPlusService.php';
 
 $psnpPlusService = new PsnpPlusService($database);
@@ -48,6 +48,7 @@ try {
             <h1>PSNP+ changes</h1>
 
             <form method="post" action="/admin/psnp-plus-refresh.php" class="mb-3">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 <button type="submit" class="btn btn-primary">Refresh PSNP+ cache</button>
             </form>
 

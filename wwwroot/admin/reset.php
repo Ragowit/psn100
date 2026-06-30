@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/GameResetService.php';
 require_once '../classes/Admin/GameResetRequestHandler.php';
 
@@ -28,6 +28,7 @@ $error = $result->getErrorMessage();
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form method="post" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 Game ID:<br>
                 <input type="number" name="game"><br>
                 Reset or Delete:<br>

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/PageMetaData.php';
 require_once __DIR__ . '/classes/PageMetaDataRenderer.php';
+require_once __DIR__ . '/classes/SessionManager.php';
+require_once __DIR__ . '/classes/CsrfTokenManager.php';
+
+SessionManager::ensureStarted();
+$publicCsrfToken = htmlspecialchars(CsrfTokenManager::getToken('public'), ENT_QUOTES, 'UTF-8');
 
 $metaTagHtml = '';
 if (isset($metaData) && $metaData instanceof PageMetaData) {
@@ -21,6 +26,7 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
 
         <meta name="description" content="Check your leaderboard position against other PlayStation trophy hunters!">
         <meta name="author" content="Markus 'Ragowit' Persson, and other contributors via GitHub project">
+        <meta name="csrf-token" content="<?= $publicCsrfToken; ?>">
 
         <?= $metaTagHtml; ?>
 

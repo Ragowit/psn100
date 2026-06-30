@@ -8,6 +8,7 @@ require_once __DIR__ . '/classes/PlayerReportService.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 require_once __DIR__ . '/classes/PlayerNavigation.php';
+require_once __DIR__ . '/classes/CsrfTokenManager.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -70,6 +71,7 @@ require_once("header.php");
         <div class="col-12 mb-3">
             <div class="bg-body-tertiary p-3 rounded">
                 <form method="post">
+                    <?= CsrfTokenManager::hiddenField('public'); ?>
                     <div class="mb-3">
                         <label for="explanation" class="form-label">What's wrong?</label>
                         <ul>

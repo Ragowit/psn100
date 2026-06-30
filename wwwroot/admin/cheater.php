@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/CheaterRequestHandler.php';
 
 $cheaterService = new CheaterService($database);
@@ -27,6 +27,7 @@ $errorMessage = $result->getErrorMessage();
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form method="post" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 Player:<br>
                 <input type="text" name="player"><br><br>
                 <input type="submit" value="Submit">

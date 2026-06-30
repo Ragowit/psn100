@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/AdminRequest.php';
 require_once '../classes/Admin/WorkerService.php';
 require_once '../classes/Admin/WorkerPage.php';
@@ -47,6 +47,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
 
             <div class="mb-4 d-flex justify-content-end">
                 <form method="post" onsubmit="return confirm('Restart all workers?');">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                     <input type="hidden" name="action" value="restart_all_workers">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         Restart All Workers
@@ -108,6 +109,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                                             <input type="hidden" name="action" value="update_npsso">
                                             <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                             <input
@@ -179,6 +181,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                             method="post"
                                             onsubmit="return confirm('Restart worker #<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>?');"
                                         >
+                                            <?php AdminBootstrap::renderCsrfField(); ?>
                                             <input type="hidden" name="action" value="restart_worker">
                                             <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-warning">

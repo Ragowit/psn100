@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/IpAddressResolver.php';
+require_once __DIR__ . '/CsrfTokenManager.php';
 
 final readonly class PlayerReportRequest
 {
@@ -10,6 +11,7 @@ final readonly class PlayerReportRequest
         private string $explanation,
         private bool $explanationSubmitted,
         private string $ipAddress,
+        private string $csrfToken,
     ) {}
 
     /**
@@ -21,8 +23,9 @@ final readonly class PlayerReportRequest
         $explanationSubmitted = array_key_exists('explanation', $postParameters);
         $explanation = self::sanitizeExplanation($postParameters['explanation'] ?? null);
         $ipAddress = IpAddressResolver::resolve($serverParameters['REMOTE_ADDR'] ?? '');
+        $csrfToken = self::sanitizeCsrfToken($postParameters['_csrf_token'] ?? null);
 
-        return new self($explanation, $explanationSubmitted, $ipAddress);
+        return new self($explanation, $explanationSubmitted, $ipAddress, $csrfToken);
     }
 
     public function getExplanation(): string
@@ -40,6 +43,16 @@ final readonly class PlayerReportRequest
         return $this->ipAddress;
     }
 
+    public function getCsrfToken(): string
+    {
+        return $this->csrfToken;
+    }
+
+    public function hasValidCsrfToken(): bool
+    {
+        return CsrfTokenManager::validate('public', $this->csrfToken);
+    }
+
     private static function sanitizeExplanation(mixed $explanation): string
     {
         if (!is_scalar($explanation)) {
@@ -49,4 +62,12 @@ final readonly class PlayerReportRequest
         return trim((string) $explanation);
     }
 
+    private static function sanitizeCsrfToken(mixed $csrfToken): string
+    {
+        if (!is_scalar($csrfToken)) {
+            return '';
+        }
+
+        return trim((string) $csrfToken);
+    }
 }

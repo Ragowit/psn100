@@ -232,9 +232,13 @@ class PlayerQueueManager {
 
     addToQueue() {
         const player = this.playerInput.value;
-        const url = `add_to_queue.php?q=${encodeURIComponent(player)}`;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const body = new URLSearchParams({
+            q: player,
+            _csrf_token: csrfToken,
+        });
 
-        this.sendRequest(url, (response) => {
+        this.sendPostRequest('add_to_queue.php', body, (response) => {
             this.updateQueueResult(response.message);
 
             if (response.shouldPoll) {
@@ -267,6 +271,33 @@ class PlayerQueueManager {
             window.clearInterval(this.timerId);
             this.timerId = null;
         }
+    }
+
+    sendPostRequest(url, body, onSuccess) {
+        const request = new XMLHttpRequest();
+
+        request.onreadystatechange = () => {
+            if (request.readyState === XMLHttpRequest.DONE) {
+                if (request.status >= 200 && request.status < 300) {
+                    const response = this.parseResponse(request.responseText);
+
+                    if (response !== null) {
+                        onSuccess(response);
+                    } else {
+                        this.handleError();
+                    }
+                } else {
+                    this.handleError();
+                }
+            }
+        };
+
+        request.onerror = () => this.handleError();
+
+        request.open('POST', url, true);
+        request.setRequestHeader('Accept', 'application/json');
+        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        request.send(body.toString());
     }
 
     sendRequest(url, onSuccess) {

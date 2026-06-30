@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/GameDetail.php';
 require_once '../classes/Admin/GameDetailService.php';
 require_once '../classes/Admin/GameDetailPage.php';
@@ -56,6 +56,7 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     </a>
                 </p>
                 <form method="post" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                     <input type="hidden" name="action" value="update-detail">
                     <input type="hidden" name="game" value="<?= $gameDetail->getId(); ?>"><br>
                     Name:<br>

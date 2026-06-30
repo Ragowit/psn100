@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../vendor/autoload.php';
 require_once '../classes/Admin/PsnPlayerLookupService.php';
 require_once '../classes/Admin/PsnPlayerLookupRequestHandler.php';

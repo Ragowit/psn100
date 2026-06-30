@@ -3,13 +3,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerReportResult.php';
+require_once __DIR__ . '/IpSubmissionLockExecutor.php';
 
 class PlayerReportService
 {
     private const MAX_PENDING_REPORTS_PER_IP = 10;
 
-    public function __construct(private readonly PDO $database)
-    {
+    public function __construct(
+        private readonly PDO $database,
+        private readonly ?IpSubmissionLockExecutor $ipSubmissionLockExecutor = null,
+    ) {
     }
 
     public function submitReport(int $accountId, string $ipAddress, string $explanation): PlayerReportResult
@@ -18,13 +21,33 @@ class PlayerReportService
             return PlayerReportResult::error("You've already reported this player.");
         }
 
-        if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
+        $inserted = $this->getIpSubmissionLockExecutor()->execute(
+            $ipAddress,
+            function () use ($accountId, $ipAddress, $explanation): bool {
+                if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
+                    return false;
+                }
+
+                $this->insertReport($accountId, $ipAddress, $explanation);
+
+                return true;
+            }
+        );
+
+        if (!$inserted) {
             return PlayerReportResult::error('You already have 10 reports waiting to be processed. Please try again later.');
         }
 
-        $this->insertReport($accountId, $ipAddress, $explanation);
-
         return PlayerReportResult::success('Player reported successfully.');
+    }
+
+    private function getIpSubmissionLockExecutor(): IpSubmissionLockExecutor
+    {
+        if ($this->ipSubmissionLockExecutor !== null) {
+            return $this->ipSubmissionLockExecutor;
+        }
+
+        return new IpSubmissionLockExecutor($this->database);
     }
 
     private function hasExistingReport(int $accountId, string $ipAddress): bool
