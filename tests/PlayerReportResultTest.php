@@ -31,5 +31,14 @@ final class PlayerReportResultTest extends TestCase
         $this->assertFalse($result->hasMessage());
         $this->assertFalse($result->isSuccess());
         $this->assertSame('', $result->getMessage());
+        $this->assertSame('', $result->getEscapedMessage());
+    }
+
+    public function testGetEscapedMessageEscapesHtmlEntities(): void
+    {
+        $result = PlayerReportResult::error('<script>alert(1)</script>');
+
+        $this->assertSame('<script>alert(1)</script>', $result->getMessage());
+        $this->assertSame('&lt;script&gt;alert(1)&lt;/script&gt;', $result->getEscapedMessage());
     }
 }

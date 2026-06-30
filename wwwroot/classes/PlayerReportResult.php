@@ -37,4 +37,9 @@ readonly class PlayerReportResult
     {
         return $this->message;
     }
+
+    public function getEscapedMessage(): string
+    {
+        return htmlspecialchars($this->message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
 }

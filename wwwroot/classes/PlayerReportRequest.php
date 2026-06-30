@@ -22,7 +22,7 @@ final readonly class PlayerReportRequest
     {
         $explanationSubmitted = array_key_exists('explanation', $postParameters);
         $explanation = self::sanitizeExplanation($postParameters['explanation'] ?? null);
-        $ipAddress = IpAddressResolver::resolve($serverParameters['REMOTE_ADDR'] ?? '');
+        $ipAddress = IpAddressResolver::resolveFromServer($serverParameters);
         $csrfToken = self::sanitizeCsrfToken($postParameters['_csrf_token'] ?? null);
 
         return new self($explanation, $explanationSubmitted, $ipAddress, $csrfToken);
