@@ -23,6 +23,10 @@ class PlayerReportHandler
             return PlayerReportResult::empty();
         }
 
+        if (!$request->hasValidCsrfToken()) {
+            return PlayerReportResult::error('Your session has expired. Please reload the page and try again.');
+        }
+
         $explanation = $request->getExplanation();
         if ($explanation === '') {
             return PlayerReportResult::error('Please provide an explanation for your report.');

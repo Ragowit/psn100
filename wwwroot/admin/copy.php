@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/GameCopyService.php';
 require_once '../classes/Admin/GameCopyHandler.php';
 
@@ -23,6 +23,7 @@ $message = $gameCopyHandler->handle($_POST);
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form method="post" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 Game Child ID:<br>
                 <input type="number" name="child"><br>
                 Game Parent ID:<br>

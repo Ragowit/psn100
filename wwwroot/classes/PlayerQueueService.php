@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerScanProgress.php';
 require_once __DIR__ . '/PlayerScanStatus.php';
+require_once __DIR__ . '/IpSubmissionLockExecutor.php';
 
 class PlayerQueueService
 {
@@ -51,6 +52,15 @@ class PlayerQueueService
             online_id = :online_id
         LIMIT 1
         SQL;
+    private const string SQL_PLAYER_IN_QUEUE = <<<'SQL'
+        SELECT
+            1
+        FROM
+            player_queue
+        WHERE
+            online_id = :online_id
+        LIMIT 1
+        SQL;
     private const string SQL_PLAYER_STATUS_DATA = <<<'SQL'
         SELECT
             account_id,
@@ -61,8 +71,10 @@ class PlayerQueueService
             online_id = :online_id
         SQL;
 
-    public function __construct(private readonly ?PDO $database = null)
-    {
+    public function __construct(
+        private readonly ?PDO $database = null,
+        private readonly ?IpSubmissionLockExecutor $ipSubmissionLockExecutor = null,
+    ) {
     }
 
     private function requireDatabase(): PDO
@@ -110,8 +122,54 @@ class PlayerQueueService
         return $accountId === false ? null : (string) $accountId;
     }
 
-    public function addPlayerToQueue(string $playerName, string $ipAddress): void
+    public function addPlayerToQueue(string $playerName, string $ipAddress): bool
     {
+        return $this->getIpSubmissionLockExecutor()->execute(
+            $ipAddress,
+            function () use ($playerName, $ipAddress): bool {
+                if (
+                    !$this->isPlayerInQueue($playerName)
+                    && $this->hasReachedIpSubmissionLimit($ipAddress)
+                ) {
+                    return false;
+                }
+
+                $this->executeAddPlayerToQueueInsert($playerName, $ipAddress);
+
+                return true;
+            }
+        );
+    }
+
+    public function isPlayerInQueue(string $playerName): bool
+    {
+        if ($playerName === '') {
+            return false;
+        }
+
+        $exists = $this->fetchSingleValue(
+            self::SQL_PLAYER_IN_QUEUE,
+            [':online_id' => [$playerName, PDO::PARAM_STR]]
+        );
+
+        return $exists !== false;
+    }
+
+    private function executeAddPlayerToQueueInsert(string $playerName, string $ipAddress): void
+    {
+        if ($this->requireDatabase()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $query = $this->prepareAndBind(
+                'INSERT OR IGNORE INTO player_queue (online_id, ip_address) VALUES (:online_id, :ip_address)',
+                [
+                    ':online_id' => [$playerName, PDO::PARAM_STR],
+                    ':ip_address' => [$ipAddress, PDO::PARAM_STR],
+                ]
+            );
+            $query->execute();
+
+            return;
+        }
+
         $query = $this->prepareAndBind(
             <<<'SQL'
             INSERT INTO
@@ -127,6 +185,15 @@ class PlayerQueueService
             ]
         );
         $query->execute();
+    }
+
+    private function getIpSubmissionLockExecutor(): IpSubmissionLockExecutor
+    {
+        if ($this->ipSubmissionLockExecutor !== null) {
+            return $this->ipSubmissionLockExecutor;
+        }
+
+        return new IpSubmissionLockExecutor($this->requireDatabase());
     }
 
     public static function isValidOnlineId(string $playerName): bool

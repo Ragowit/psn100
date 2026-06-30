@@ -7,6 +7,8 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerReportHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerReportRequest.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerReportResult.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerReportService.php';
+require_once __DIR__ . '/../wwwroot/classes/SessionManager.php';
+require_once __DIR__ . '/../wwwroot/classes/CsrfTokenManager.php';
 
 final class PlayerReportServiceStub extends PlayerReportService
 {
@@ -39,6 +41,24 @@ final class PlayerReportServiceStub extends PlayerReportService
 
 final class PlayerReportHandlerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+        session_start();
+        $_SESSION = [];
+    }
+
+    protected function tearDown(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
+            session_destroy();
+        }
+    }
+
     public function testHandleReportRequestReturnsEmptyResultWhenExplanationNotSubmitted(): void
     {
         $service = new PlayerReportServiceStub(PlayerReportResult::success('irrelevant'));
@@ -57,7 +77,7 @@ final class PlayerReportHandlerTest extends TestCase
     {
         $service = new PlayerReportServiceStub(PlayerReportResult::success('irrelevant'));
         $handler = new PlayerReportHandler($service);
-        $request = PlayerReportRequest::fromArrays(['explanation' => '   '], ['REMOTE_ADDR' => '192.0.2.1']);
+        $request = $this->createRequestWithCsrf(['explanation' => '   '], ['REMOTE_ADDR' => '192.0.2.1']);
 
         $result = $handler->handleReportRequest(456, $request);
 
@@ -67,11 +87,31 @@ final class PlayerReportHandlerTest extends TestCase
         $this->assertSame(0, $service->submitReportCallCount);
     }
 
+    public function testHandleReportRequestReturnsErrorWhenCsrfTokenIsInvalid(): void
+    {
+        $service = new PlayerReportServiceStub(PlayerReportResult::success('irrelevant'));
+        $handler = new PlayerReportHandler($service);
+        $request = PlayerReportRequest::fromArrays(
+            ['explanation' => 'Cheating behavior', '_csrf_token' => 'invalid-token'],
+            ['REMOTE_ADDR' => '192.0.2.1']
+        );
+
+        $result = $handler->handleReportRequest(456, $request);
+
+        $this->assertTrue($result->hasMessage());
+        $this->assertFalse($result->isSuccess());
+        $this->assertSame('Your session has expired. Please reload the page and try again.', $result->getMessage());
+        $this->assertSame(0, $service->submitReportCallCount);
+    }
+
     public function testHandleReportRequestDelegatesToServiceWhenExplanationProvided(): void
     {
         $service = new PlayerReportServiceStub(PlayerReportResult::success('Player reported successfully.'));
         $handler = new PlayerReportHandler($service);
-        $request = PlayerReportRequest::fromArrays(['explanation' => '  Cheating behavior observed  '], ['REMOTE_ADDR' => '203.0.113.5']);
+        $request = $this->createRequestWithCsrf(
+            ['explanation' => '  Cheating behavior observed  '],
+            ['REMOTE_ADDR' => '203.0.113.5']
+        );
 
         $result = $handler->handleReportRequest(789, $request);
 
@@ -82,5 +122,16 @@ final class PlayerReportHandlerTest extends TestCase
         $this->assertTrue($result->hasMessage());
         $this->assertTrue($result->isSuccess());
         $this->assertSame('Player reported successfully.', $result->getMessage());
+    }
+
+    /**
+     * @param array<string, mixed> $postParameters
+     * @param array<string, mixed> $serverParameters
+     */
+    private function createRequestWithCsrf(array $postParameters, array $serverParameters): PlayerReportRequest
+    {
+        $postParameters['_csrf_token'] = CsrfTokenManager::getToken('public');
+
+        return PlayerReportRequest::fromArrays($postParameters, $serverParameters);
     }
 }

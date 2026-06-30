@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/LogEntry.php';
 require_once '../classes/Admin/LogEntryFormatter.php';
 require_once '../classes/Admin/LogService.php';
@@ -60,6 +60,7 @@ if ($pageResult->getTotalPages() > 1) {
                 <div class="alert alert-info">No log entries found.</div>
             <?php } else { ?>
                 <form method="post" id="log-entries-form">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                     <div class="d-flex justify-content-end align-items-center mb-2 gap-2">
                         <button type="submit" name="delete_selected" value="1" class="btn btn-sm btn-danger" id="delete-selected-button" disabled>
                             Delete selected

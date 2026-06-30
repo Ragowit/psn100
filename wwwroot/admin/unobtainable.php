@@ -10,7 +10,7 @@ ExecutionEnvironmentConfigurator::create()
     ->enableUnlimitedExecution()
     ->configure();
 
-require_once("../init.php");
+require_once __DIR__ . '/bootstrap.php';
 require_once("../classes/Admin/TrophyStatusService.php");
 require_once("../classes/Admin/TrophyStatusPage.php");
 
@@ -39,6 +39,7 @@ $statusInput = $pageResult->getStatusInput();
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form method="post" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 Game ID:<br>
                 <input type="text" name="game" /><br>
                 Trophy ID:<br>

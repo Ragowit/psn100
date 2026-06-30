@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/PlayerReportAdminService.php';
 require_once '../classes/Admin/PlayerReportAdminPage.php';
 

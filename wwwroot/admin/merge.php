@@ -10,7 +10,7 @@ ExecutionEnvironmentConfigurator::create()
     ->enableUnlimitedExecution()
     ->configure();
 
-require_once("../init.php");
+require_once __DIR__ . '/bootstrap.php';
 require_once("../classes/TrophyMergeService.php");
 require_once("../classes/Admin/TrophyMergeRequestHandler.php");
 
@@ -25,12 +25,14 @@ $message = $requestHandler->handle($_POST ?? []);
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <?php AdminBootstrap::renderCsrfMetaTag(); ?>
         <title>Admin ~ Merge Games</title>
     </head>
     <body>
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form id="merge-form" method="post" autocomplete="off" class="row g-3">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 <div class="row">
                     <div class="col-12 col-md-6 col-xl-4">
                         <label class="form-label" for="merge-parent">Game Parent ID</label>
@@ -185,6 +187,8 @@ $message = $requestHandler->handle($_POST ?? []);
                 }
 
                 async processMergeRequest(childId, parentId, method) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
                     try {
                         const response = await fetch('merge_process.php', {
                             method: 'POST',
@@ -196,6 +200,7 @@ $message = $requestHandler->handle($_POST ?? []);
                                 child: childId,
                                 parent: parentId,
                                 method,
+                                _csrf_token: csrfToken,
                             }),
                         });
 

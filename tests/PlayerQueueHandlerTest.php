@@ -66,12 +66,29 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
         return $this->isValidPlayerName;
     }
 
-    public function addPlayerToQueue(string $playerName, string $ipAddress): void
+    public function addPlayerToQueue(string $playerName, string $ipAddress): bool
     {
+        if ($this->hasReachedIpLimit && !$this->isPlayerInQueue($playerName)) {
+            return false;
+        }
+
         $this->queuedPlayers[] = [
             'playerName' => $playerName,
             'ipAddress' => $ipAddress,
         ];
+
+        return true;
+    }
+
+    public function isPlayerInQueue(string $playerName): bool
+    {
+        foreach ($this->queuedPlayers as $queuedPlayer) {
+            if ($queuedPlayer['playerName'] === $playerName) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

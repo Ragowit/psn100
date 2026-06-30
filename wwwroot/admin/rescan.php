@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require_once("../vendor/autoload.php");
-require_once("../init.php");
+require_once __DIR__ . '/bootstrap.php';
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
@@ -12,6 +12,7 @@ require_once("../init.php");
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <?php AdminBootstrap::renderCsrfMetaTag(); ?>
         <title>Admin ~ Rescan Game</title>
         <style>
             .diff-card .card-header {
@@ -167,6 +168,8 @@ require_once("../init.php");
                 }
 
                 async processRescan(gameId) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
                     try {
                         const response = await fetch('rescan_process.php', {
                             method: 'POST',
@@ -174,7 +177,10 @@ require_once("../init.php");
                                 'Accept': 'application/x-ndjson, application/json',
                                 'Content-Type': 'application/x-www-form-urlencoded',
                             },
-                            body: new URLSearchParams({ game: gameId }),
+                            body: new URLSearchParams({
+                                game: gameId,
+                                _csrf_token: csrfToken,
+                            }),
                         });
 
                         const contentType = response.headers.get('Content-Type') ?? '';

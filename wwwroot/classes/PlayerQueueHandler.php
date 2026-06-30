@@ -31,15 +31,13 @@ class PlayerQueueHandler
             return $this->responseFactory->createCheaterResponse($playerName, $cheaterAccountId);
         }
 
-        if ($this->service->hasReachedIpSubmissionLimit($ipAddress)) {
-            return $this->responseFactory->createQueueLimitResponse();
-        }
-
         if (!$this->service->isValidPlayerName($playerName)) {
             return $this->responseFactory->createInvalidNameResponse();
         }
 
-        $this->service->addPlayerToQueue($playerName, $ipAddress);
+        if (!$this->service->addPlayerToQueue($playerName, $ipAddress)) {
+            return $this->responseFactory->createQueueLimitResponse();
+        }
 
         return $this->responseFactory->createQueuedForAdditionResponse($playerName);
     }

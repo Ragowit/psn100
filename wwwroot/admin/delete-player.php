@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once '../init.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/DeletePlayerService.php';
 require_once '../classes/Admin/DeletePlayerRequestHandler.php';
 
@@ -60,6 +60,7 @@ $encodedConfirmationDisplayName = htmlspecialchars($confirmationDisplayName, ENT
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <form method="post" autocomplete="off" class="mb-4">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                 <div class="mb-3">
                     <label for="account-id" class="form-label">Account ID</label>
                     <input type="text" id="account-id" name="account_id" class="form-control" value="<?= $encodedAccountIdValue; ?>">
@@ -95,6 +96,7 @@ $encodedConfirmationDisplayName = htmlspecialchars($confirmationDisplayName, ENT
                     <p class="mb-0">This action cannot be undone.</p>
                 </div>
                 <form method="post" autocomplete="off" class="mb-4">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
                     <input type="hidden" name="account_id" value="<?= $encodedConfirmationAccountId; ?>">
                     <input type="hidden" name="online_id" value="<?= $encodedConfirmationOnlineId; ?>">
                     <input type="hidden" name="confirm_delete" value="1">
