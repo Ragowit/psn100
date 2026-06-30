@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = is_string($_POST['password'] ?? null) ? (string) $_POST['password'] : '';
 
     if (!$authService->isConfigured()) {
-        $errorMessage = 'Admin access is not configured.';
+        $errorMessage = 'Admin access is not configured. Add at least one row to the admin_user table.';
     } elseif ($authService->login($username, $password)) {
         header('Location: /admin/', true, 303);
         exit;
@@ -55,8 +55,8 @@ $encodedErrorMessage = $errorMessage === null ? null : htmlspecialchars($errorMe
 
             <?php if (!$isConfigured) { ?>
                 <div class="alert alert-warning" role="alert">
-                    Admin access is not configured. Set <code>ADMIN_USERNAME</code> and
-                    <code>ADMIN_PASSWORD</code> or <code>ADMIN_PASSWORD_HASH</code>.
+                    Admin access is not configured. Add at least one row to the
+                    <code>admin_user</code> table with a bcrypt password hash.
                 </div>
             <?php } else { ?>
                 <?php if ($encodedErrorMessage !== null) { ?>

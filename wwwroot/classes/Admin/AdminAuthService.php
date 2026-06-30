@@ -6,13 +6,15 @@ final class AdminAuthService
 {
     private const string SESSION_AUTHENTICATED_KEY = 'admin_authenticated';
 
-    public function __construct(private readonly AdminAuthConfig $config)
+    private const string SESSION_USERNAME_KEY = 'admin_username';
+
+    public function __construct(private readonly AdminUserRepository $adminUserRepository)
     {
     }
 
     public function isConfigured(): bool
     {
-        return $this->config->isConfigured();
+        return $this->adminUserRepository->hasAnyAdmin();
     }
 
     public function isAuthenticated(): bool
@@ -20,21 +22,25 @@ final class AdminAuthService
         return ($_SESSION[self::SESSION_AUTHENTICATED_KEY] ?? false) === true;
     }
 
+    public function getAuthenticatedUsername(): ?string
+    {
+        if (!$this->isAuthenticated()) {
+            return null;
+        }
+
+        $username = $_SESSION[self::SESSION_USERNAME_KEY] ?? null;
+
+        return is_string($username) && $username !== '' ? $username : null;
+    }
+
     public function login(string $username, string $password): bool
     {
-        if (!$this->config->isConfigured()) {
-            return false;
-        }
-
-        if (!hash_equals($this->config->getUsername(), $username)) {
-            return false;
-        }
-
-        if (!$this->config->verifyPassword($password)) {
+        if (!$this->adminUserRepository->verifyCredentials($username, $password)) {
             return false;
         }
 
         $_SESSION[self::SESSION_AUTHENTICATED_KEY] = true;
+        $_SESSION[self::SESSION_USERNAME_KEY] = $username;
         session_regenerate_id(true);
 
         return true;
@@ -42,6 +48,6 @@ final class AdminAuthService
 
     public function logout(): void
     {
-        unset($_SESSION[self::SESSION_AUTHENTICATED_KEY]);
+        unset($_SESSION[self::SESSION_AUTHENTICATED_KEY], $_SESSION[self::SESSION_USERNAME_KEY]);
     }
 }

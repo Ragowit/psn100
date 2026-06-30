@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../CsrfTokenManager.php';
 require_once __DIR__ . '/../SessionManager.php';
-require_once __DIR__ . '/AdminAuthConfig.php';
 require_once __DIR__ . '/AdminAuthService.php';
+require_once __DIR__ . '/AdminUserRepository.php';
 
 final class AdminBootstrap
 {
@@ -31,7 +31,7 @@ final class AdminBootstrap
 
     public static function createAuthService(): AdminAuthService
     {
-        return new AdminAuthService(AdminAuthConfig::fromEnvironment());
+        return new AdminAuthService(new AdminUserRepository(self::requireDatabase()));
     }
 
     public static function getCsrfToken(): string
@@ -48,6 +48,17 @@ final class AdminBootstrap
     {
         $token = htmlspecialchars(self::getCsrfToken(), ENT_QUOTES, 'UTF-8');
         echo '<meta name="csrf-token" content="' . $token . '">';
+    }
+
+    private static function requireDatabase(): PDO
+    {
+        global $database;
+
+        if (!isset($database) || !$database instanceof PDO) {
+            throw new LogicException('Database connection is required for admin authentication.');
+        }
+
+        return $database;
     }
 
     private static function isPostRequest(): bool
@@ -71,7 +82,7 @@ final class AdminBootstrap
     private static function respondNotConfigured(): never
     {
         http_response_code(503);
-        echo 'Admin access is not configured.';
+        echo 'Admin access is not configured. Add at least one row to the admin_user table.';
         exit;
     }
 }

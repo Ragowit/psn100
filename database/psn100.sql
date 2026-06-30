@@ -17,6 +17,18 @@ START TRANSACTION;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `admin_user`
+--
+
+CREATE TABLE `admin_user` (
+  `username` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `log`
 --
 
@@ -411,6 +423,12 @@ CREATE TABLE `trophy_title_player` (
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `admin_user`
+--
+ALTER TABLE `admin_user`
+  ADD PRIMARY KEY (`username`);
 
 --
 -- Indexes for table `log`
