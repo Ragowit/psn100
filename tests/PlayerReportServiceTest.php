@@ -85,7 +85,7 @@ final class PlayerReportServiceTest extends TestCase
 
         $this->assertFalse($result->isSuccess());
         $this->assertSame(
-            "You've already 10 players reported waiting to be processed. Please try again later.",
+            'You already have 10 reports waiting to be processed. Please try again later.',
             $result->getMessage()
         );
 

@@ -62,4 +62,15 @@ final class PlayerQueueRequestTest extends TestCase
         $this->assertSame('', $emptyRequest->getIpAddress());
         $this->assertTrue($emptyRequest->isPlayerNameEmpty());
     }
+
+    public function testFromArraysRejectsInvalidIpAddress(): void
+    {
+        $request = PlayerQueueRequest::fromArrays(
+            ['q' => 'ValidPlayer'],
+            ['REMOTE_ADDR' => 'not-an-ip']
+        );
+
+        $this->assertSame('ValidPlayer', $request->getPlayerName());
+        $this->assertSame('', $request->getIpAddress());
+    }
 }

@@ -19,7 +19,7 @@ class PlayerReportService
         }
 
         if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
-            return PlayerReportResult::error("You've already 10 players reported waiting to be processed. Please try again later.");
+            return PlayerReportResult::error('You already have 10 reports waiting to be processed. Please try again later.');
         }
 
         $this->insertReport($accountId, $ipAddress, $explanation);

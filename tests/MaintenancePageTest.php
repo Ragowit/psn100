@@ -70,9 +70,19 @@ final class MaintenancePageTest extends TestCase
         );
         $this->assertSame('stylesheet', $bootstrap->getRel());
         $this->assertSame(
-            'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
+            'sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM',
             $bootstrap->getIntegrity()
         );
         $this->assertSame('anonymous', $bootstrap->getCrossorigin());
+    }
+
+    public function testBootstrapCdnThrowsForUnsupportedVersion(): void
+    {
+        try {
+            MaintenancePageStylesheet::bootstrapCdn('4.6.2');
+            $this->fail('Expected InvalidArgumentException for unsupported Bootstrap version.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame('Unsupported Bootstrap CDN version: 4.6.2', $exception->getMessage());
+        }
     }
 }

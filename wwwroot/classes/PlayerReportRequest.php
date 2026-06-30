@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/IpAddressResolver.php';
+
 final readonly class PlayerReportRequest
 {
     private function __construct(
@@ -18,7 +20,7 @@ final readonly class PlayerReportRequest
     {
         $explanationSubmitted = array_key_exists('explanation', $postParameters);
         $explanation = self::sanitizeExplanation($postParameters['explanation'] ?? null);
-        $ipAddress = self::resolveIpAddress($serverParameters);
+        $ipAddress = IpAddressResolver::resolve($serverParameters['REMOTE_ADDR'] ?? '');
 
         return new self($explanation, $explanationSubmitted, $ipAddress);
     }
@@ -47,18 +49,4 @@ final readonly class PlayerReportRequest
         return trim((string) $explanation);
     }
 
-    /**
-     * @param array<string, mixed> $serverParameters
-     */
-    private static function resolveIpAddress(array $serverParameters): string
-    {
-        $ipAddress = (string) ($serverParameters['REMOTE_ADDR'] ?? '');
-        if ($ipAddress === '') {
-            return '';
-        }
-
-        $validatedAddress = filter_var($ipAddress, FILTER_VALIDATE_IP);
-
-        return is_string($validatedAddress) ? $validatedAddress : '';
-    }
 }

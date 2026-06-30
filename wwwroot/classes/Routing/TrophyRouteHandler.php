@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../PlayerQueueService.php';
 require_once __DIR__ . '/../TrophyRepository.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
@@ -28,7 +29,10 @@ final readonly class TrophyRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect('/trophy/');
         }
 
-        $player = $segments[0] ?? null;
+        $playerSegment = $segments[0] ?? null;
+        $player = is_string($playerSegment) && PlayerQueueService::isValidOnlineId($playerSegment)
+            ? $playerSegment
+            : null;
 
         return RouteResult::include(
             'trophy.php',
