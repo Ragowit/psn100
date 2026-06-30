@@ -52,4 +52,40 @@ final class IpAddressResolverTest extends TestCase
         $this->assertSame('', IpAddressResolver::resolve(null));
         $this->assertSame('', IpAddressResolver::resolve(''));
     }
+
+    public function testResolveFromServerUsesRemoteAddrByDefault(): void
+    {
+        $ipAddress = IpAddressResolver::resolveFromServerWithTrustedProxies(
+            ['REMOTE_ADDR' => '198.51.100.10'],
+            []
+        );
+
+        $this->assertSame('198.51.100.10', $ipAddress);
+    }
+
+    public function testResolveFromServerUsesForwardedForWhenProxyIsTrusted(): void
+    {
+        $ipAddress = IpAddressResolver::resolveFromServerWithTrustedProxies(
+            [
+                'REMOTE_ADDR' => '10.0.0.1',
+                'HTTP_X_FORWARDED_FOR' => '203.0.113.5, 10.0.0.1',
+            ],
+            ['10.0.0.1']
+        );
+
+        $this->assertSame('203.0.113.5', $ipAddress);
+    }
+
+    public function testResolveFromServerIgnoresForwardedForFromUntrustedProxy(): void
+    {
+        $ipAddress = IpAddressResolver::resolveFromServerWithTrustedProxies(
+            [
+                'REMOTE_ADDR' => '198.51.100.44',
+                'HTTP_X_FORWARDED_FOR' => '203.0.113.5',
+            ],
+            ['10.0.0.1']
+        );
+
+        $this->assertSame('198.51.100.44', $ipAddress);
+    }
 }

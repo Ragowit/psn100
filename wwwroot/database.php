@@ -36,11 +36,31 @@ final readonly class DatabaseConfig
     public static function fromEnvironment(array $environment = []): self
     {
         return new self(
-            (string) ($environment['DB_HOST'] ?? ''),
-            (string) ($environment['DB_NAME'] ?? ''),
-            (string) ($environment['DB_USER'] ?? ''),
-            (string) ($environment['DB_PASSWORD'] ?? '')
+            self::readConfigValue('DB_HOST', $environment),
+            self::readConfigValue('DB_NAME', $environment),
+            self::readConfigValue('DB_USER', $environment),
+            self::readConfigValue('DB_PASSWORD', $environment),
         );
+    }
+
+    public function isComplete(): bool
+    {
+        return $this->host !== '' && $this->database !== '' && $this->user !== '';
+    }
+
+    private static function readConfigValue(string $name, array $environment): string
+    {
+        $value = $environment[$name] ?? false;
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
+        }
+
+        $fallback = getenv($name);
+        if (is_string($fallback) && trim($fallback) !== '') {
+            return trim($fallback);
+        }
+
+        return '';
     }
 
     public function getDsn(): string
@@ -80,6 +100,10 @@ class Database extends PDO
     {
         $this->config = $config ?? DatabaseConfig::createDefault();
         $this->options = $this->resolveOptions($options);
+
+        if (!$this->config->isComplete()) {
+            throw new DatabaseConnectionException(self::buildMissingConfigurationMessage());
+        }
 
         try {
             parent::__construct(
@@ -138,5 +162,12 @@ class Database extends PDO
         } catch (PDOException $exception) {
             // The optimizer switch is an optional hint; ignore failures so connections still succeed.
         }
+    }
+
+    private static function buildMissingConfigurationMessage(): string
+    {
+        return 'Database connection is not configured. Set DB_HOST, DB_NAME, DB_USER, and DB_PASSWORD '
+            . 'environment variables. When using the PHP built-in server, pass -d variables_order=EGPCS '
+            . 'or rely on getenv() by exporting the variables in your shell.';
     }
 }

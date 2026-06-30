@@ -61,7 +61,7 @@ require_once("header.php");
             ?>
             <div class="col-12 mb-3">
                 <div class="alert alert-<?= $alertClass; ?>" role="alert">
-                    <?= $reportResult->getMessage(); ?>
+                    <?= $reportResult->getEscapedMessage(); ?>
                 </div>
             </div>
             <?php

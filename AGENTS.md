@@ -15,8 +15,13 @@ the non-obvious steps to actually run the services.
 
 - MySQL does not auto-start. Start it each session with `sudo service mysql start`.
 - The app reads its DB connection from **environment variables**: `DB_HOST`,
-  `DB_NAME`, `DB_USER`, `DB_PASSWORD` (see `wwwroot/database.php` /
-  `ApplicationContainer::create()`). There is no config file fallback.
+ `DB_NAME`, `DB_USER`, `DB_PASSWORD` (see `wwwroot/database.php` /
+ `ApplicationContainer::create()`). There is no config file fallback.
+ `DatabaseConfig::fromEnvironment()` also falls back to `getenv()` when `$_ENV`
+ is empty, but missing values still produce a clear connection error.
+- IP rate limits use `REMOTE_ADDR` unless `TRUSTED_PROXY_IPS` lists the direct
+ client as a trusted proxy, in which case the leftmost valid `X-Forwarded-For`
+ address is used.
 - Dev database/credentials used during setup: db `psn100`, user `psn100`,
   password `psn100`, host `127.0.0.1`.
 - The committed schema is **structure-only** (`database/psn100.sql`, no rows). If the
