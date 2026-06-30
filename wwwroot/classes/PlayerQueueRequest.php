@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/IpAddressResolver.php';
+
 readonly class PlayerQueueRequest
 {
     private function __construct(
@@ -12,7 +14,7 @@ readonly class PlayerQueueRequest
     public static function fromArrays(array $requestData, array $serverData): self
     {
         $playerName = self::sanitizeValue($requestData['q'] ?? '');
-        $ipAddress = self::sanitizeValue($serverData['REMOTE_ADDR'] ?? '');
+        $ipAddress = IpAddressResolver::resolve($serverData['REMOTE_ADDR'] ?? '');
 
         return new self($playerName, $ipAddress);
     }

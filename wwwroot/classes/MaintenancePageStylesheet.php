@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 final class MaintenancePageStylesheet
 {
+    /** @var array<string, string> */
+    private const array BOOTSTRAP_INTEGRITY_HASHES = [
+        '5.3.0' => 'sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM',
+        '5.3.8' => 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
+    ];
+
     private string $href;
 
     private string $rel;
@@ -27,8 +33,12 @@ final class MaintenancePageStylesheet
 
     public static function bootstrapCdn(string $version = '5.3.8'): self
     {
+        $integrity = self::BOOTSTRAP_INTEGRITY_HASHES[$version] ?? null;
+        if ($integrity === null) {
+            throw new InvalidArgumentException(sprintf('Unsupported Bootstrap CDN version: %s', $version));
+        }
+
         $href = sprintf('https://cdn.jsdelivr.net/npm/bootstrap@%s/dist/css/bootstrap.min.css', $version);
-        $integrity = 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB';
         $crossorigin = 'anonymous';
 
         return new self($href, 'stylesheet', $integrity, $crossorigin);
