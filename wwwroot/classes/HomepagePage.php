@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/HomepageContentService.php';
 require_once __DIR__ . '/HomepageViewModel.php';
+require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
 class HomepagePage
 {
@@ -15,6 +16,7 @@ class HomepagePage
         private ?int $newGamesLimit = null,
         private ?int $newDlcsLimit = null,
         private ?int $popularGamesLimit = null,
+        private ?HomepagePopularGamesFilter $popularGamesFilter = null,
     ) {
     }
 
@@ -49,6 +51,13 @@ class HomepagePage
         return $this;
     }
 
+    public function setPopularGamesFilter(HomepagePopularGamesFilter $filter): self
+    {
+        $this->popularGamesFilter = $filter;
+
+        return $this;
+    }
+
     public function buildViewModel(): HomepageViewModel
     {
         $newGames = $this->newGamesLimit === null
@@ -59,11 +68,13 @@ class HomepagePage
             ? $this->contentService->getNewDlcs()
             : $this->contentService->getNewDlcs($this->newDlcsLimit);
 
-        $popularGames = $this->popularGamesLimit === null
-            ? $this->contentService->getPopularGames()
-            : $this->contentService->getPopularGames($this->popularGamesLimit);
+        $popularGamesFilter = $this->popularGamesFilter ?? HomepagePopularGamesFilter::fromArray([]);
 
-        return new HomepageViewModel($this->title, $newGames, $newDlcs, $popularGames);
+        $popularGames = $this->popularGamesLimit === null
+            ? $this->contentService->getPopularGames(filter: $popularGamesFilter)
+            : $this->contentService->getPopularGames($this->popularGamesLimit, $popularGamesFilter);
+
+        return new HomepageViewModel($this->title, $newGames, $newDlcs, $popularGames, $popularGamesFilter);
     }
 
     private function assertPositiveLimit(int $limit): void

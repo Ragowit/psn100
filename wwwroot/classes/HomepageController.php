@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/HomepageContentService.php';
 require_once __DIR__ . '/HomepagePage.php';
 require_once __DIR__ . '/HomepageViewModel.php';
+require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
 final class HomepageController
 {
@@ -47,6 +48,13 @@ final class HomepageController
     public function withPopularGamesLimit(int $limit): self
     {
         $this->homepagePage->setPopularGamesLimit($limit);
+
+        return $this;
+    }
+
+    public function withPopularGamesFilter(HomepagePopularGamesFilter $filter): self
+    {
+        $this->homepagePage->setPopularGamesFilter($filter);
 
         return $this;
     }
