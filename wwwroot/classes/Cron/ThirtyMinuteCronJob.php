@@ -66,23 +66,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     {
         foreach ($trophyTitles as $index => $trophyTitle) {
             $npid = $trophyTitle->npCommunicationId();
-            $sonyLastUpdatedDate = $this->parseDateTime($trophyTitle->lastUpdatedDateTime());
 
             if (!isset($gameLastUpdatedDate[$npid])) {
                 return (int) $index;
             }
 
-            $dbLastUpdatedDate = $this->parseDateTime($gameLastUpdatedDate[$npid]);
-
-            if ($sonyLastUpdatedDate === null || $dbLastUpdatedDate === null) {
-                if ($gameLastUpdatedDate[$npid] !== $trophyTitle->lastUpdatedDateTime()) {
-                    return (int) $index;
-                }
-
-                continue;
-            }
-
-            if ($sonyLastUpdatedDate != $dbLastUpdatedDate) {
+            if (!$this->gameTimestampsMatch($trophyTitle->lastUpdatedDateTime(), $gameLastUpdatedDate[$npid])) {
                 return (int) $index;
             }
         }
@@ -1036,16 +1025,16 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $groupDataChanged = false;
                             $trophyDataChanged = false;
 
-                            $sonyLastUpdatedDate = date_create($trophyTitle->lastUpdatedDateTime());
                             // Does this user already have the game?
-                            if (isset($gameLastUpdatedDate[$npid])) {
-                                $dbLastUpdatedDate = date_create($gameLastUpdatedDate[$npid]);
-
-                                // Is the timestamp for this game the same as before?
-                                if ($sonyLastUpdatedDate == $dbLastUpdatedDate) {
-                                    // Game seems scanned already, skip to next.
-                                    continue;
-                                }
+                            if (
+                                isset($gameLastUpdatedDate[$npid])
+                                && $this->gameTimestampsMatch(
+                                    $trophyTitle->lastUpdatedDateTime(),
+                                    $gameLastUpdatedDate[$npid]
+                                )
+                            ) {
+                                // Game seems scanned already, skip to next.
+                                continue;
                             }
 
                             // Add trophy title (game) information into database
@@ -1582,8 +1571,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         if ($trophy->earnedDateTime() === '') {
                                             $dtAsTextForInsert = null;
                                         } else {
-                                            $dateTimeObject = DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $trophy->earnedDateTime());
-                                            $dtAsTextForInsert = $dateTimeObject->format("Y-m-d H:i:s");
+                                            $dtAsTextForInsert = $this->formatDateTimeForDatabase($trophy->earnedDateTime());
                                         }
 
                                         $query = $this->database->prepare("INSERT INTO trophy_earned(
@@ -2684,6 +2672,25 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return trim($name);
+    }
+
+    private function gameTimestampsMatch(string $sonyTimestamp, string $dbTimestamp): bool
+    {
+        $sonyLastUpdatedDate = $this->parseDateTime($sonyTimestamp);
+        $dbLastUpdatedDate = $this->parseDateTime($dbTimestamp);
+
+        if ($sonyLastUpdatedDate === null || $dbLastUpdatedDate === null) {
+            return $sonyTimestamp === $dbTimestamp;
+        }
+
+        return $sonyLastUpdatedDate == $dbLastUpdatedDate;
+    }
+
+    private function formatDateTimeForDatabase(?string $value): ?string
+    {
+        $dateTime = $this->parseDateTime($value);
+
+        return $dateTime?->format('Y-m-d H:i:s');
     }
 
     private function parseDateTime(?string $value): ?DateTimeImmutable
