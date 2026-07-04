@@ -138,6 +138,33 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             )
         );
 
+        $this->deferPlayerScanAfterFailure($player, $workerId);
+    }
+
+    /**
+     * @param array<string, mixed> $player
+     */
+    private function handleInvalidTitleLastUpdatedDateResponse(
+        array $player,
+        int $workerId,
+        string $npCommunicationId
+    ): void {
+        $this->logger->log(
+            sprintf(
+                'Failed to scan %s because trophy title %s still has an invalid last updated date after retrying.',
+                (string) ($player['online_id'] ?? ''),
+                $npCommunicationId
+            )
+        );
+
+        $this->deferPlayerScanAfterFailure($player, $workerId);
+    }
+
+    /**
+     * @param array<string, mixed> $player
+     */
+    private function deferPlayerScanAfterFailure(array $player, int $workerId): void
+    {
         $query = $this->database->prepare('DELETE FROM player_queue
             WHERE  online_id = :online_id ');
         $query->bindValue(':online_id', $player['online_id'], PDO::PARAM_STR);
@@ -333,6 +360,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $missingGameDeletionCheck = [];
         $missingTrophyTitleRetry = [];
         $trophyTitleCountRetry = [];
+        $invalidTitleDateRetry = [];
 
         while (true) {
             // Login with a token
@@ -1058,13 +1086,27 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             );
 
                             if ($trophyTitle === null) {
-                                $this->logger->log(sprintf(
-                                    'Unable to fetch a valid last updated date for %s. Restarting scan.',
-                                    (string) $player['online_id']
-                                ));
-                                $restartScan = true;
+                                if ($this->shouldRetryInvalidTitleLastUpdatedDate($invalidTitleDateRetry, $onlineId, $npid)) {
+                                    $this->markInvalidTitleLastUpdatedDateRetried($invalidTitleDateRetry, $onlineId, $npid);
 
-                                break;
+                                    $this->logger->log(sprintf(
+                                        'Unable to fetch a valid last updated date for %s on title %s. Waiting 1 minute before retrying.',
+                                        (string) $player['online_id'],
+                                        $npid
+                                    ));
+                                    $this->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
+                                    $restartScan = true;
+
+                                    break;
+                                }
+
+                                $this->handleInvalidTitleLastUpdatedDateResponse(
+                                    $player,
+                                    (int) $worker['id'],
+                                    $npid
+                                );
+
+                                continue 2;
                             }
 
                             if ($totalGamesToProcess > 0) {
@@ -2147,6 +2189,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     unset($missingGameDeletionCheck[$onlineId]);
                     unset($missingTrophyTitleRetry[$onlineId]);
                     unset($trophyTitleCountRetry[$onlineId]);
+                    $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
                 }
             } catch (NotFoundHttpException $exception) {
                 sleep(2);
@@ -2154,6 +2197,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
                 unset($trophyTitleCountRetry[$onlineId]);
+                $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
             } catch (UnauthorizedHttpException $exception) {
@@ -2162,6 +2206,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
                 unset($trophyTitleCountRetry[$onlineId]);
+                $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
             } finally {
@@ -2754,6 +2799,47 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private function isValidSonyLastUpdatedDateTime(string $value): bool
     {
         return $this->formatDateTimeForDatabase($value) !== null;
+    }
+
+    private function buildInvalidTitleDateRetryKey(string $onlineId, string $npCommunicationId): string
+    {
+        return $onlineId . ':' . $npCommunicationId;
+    }
+
+    /**
+     * @param array<string, bool> $retryTracker
+     */
+    private function shouldRetryInvalidTitleLastUpdatedDate(
+        array $retryTracker,
+        string $onlineId,
+        string $npCommunicationId
+    ): bool {
+        return !($retryTracker[$this->buildInvalidTitleDateRetryKey($onlineId, $npCommunicationId)] ?? false);
+    }
+
+    /**
+     * @param array<string, bool> $retryTracker
+     */
+    private function markInvalidTitleLastUpdatedDateRetried(
+        array &$retryTracker,
+        string $onlineId,
+        string $npCommunicationId
+    ): void {
+        $retryTracker[$this->buildInvalidTitleDateRetryKey($onlineId, $npCommunicationId)] = true;
+    }
+
+    /**
+     * @param array<string, bool> $retryTracker
+     */
+    private function clearInvalidTitleDateRetriesForPlayer(array &$retryTracker, string $onlineId): void
+    {
+        $prefix = $onlineId . ':';
+
+        foreach (array_keys($retryTracker) as $retryKey) {
+            if (str_starts_with($retryKey, $prefix)) {
+                unset($retryTracker[$retryKey]);
+            }
+        }
     }
 
     private function formatDateTimeForDatabase(?string $value): ?string

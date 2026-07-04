@@ -16,12 +16,18 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
     private ReflectionMethod $formatDateTimeForDatabaseMethod;
     private ReflectionMethod $determineScanStartIndexMethod;
     private ReflectionMethod $ensureValidTrophyTitleLastUpdatedDateMethod;
+    private ReflectionMethod $shouldRetryInvalidTitleLastUpdatedDateMethod;
+    private ReflectionMethod $handleInvalidTitleLastUpdatedDateResponseMethod;
 
     protected function setUp(): void
     {
         $this->database = new PDO('sqlite::memory:');
         $this->database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->database->exec('CREATE TABLE log (message TEXT NOT NULL)');
+        $this->database->exec('CREATE TABLE player_queue (online_id TEXT PRIMARY KEY)');
+        $this->database->exec('CREATE TABLE player (account_id INTEGER PRIMARY KEY, online_id TEXT NOT NULL, last_updated_date TEXT)');
+        $this->database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, scanning TEXT, scan_progress TEXT)');
+        $this->database->exec("INSERT INTO setting (id, scanning, scan_progress) VALUES (1, 'ExampleUser', NULL)");
 
         $logger = new Psn100Logger($this->database);
         $this->cronJob = new ThirtyMinuteCronJob(
@@ -46,6 +52,18 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
             'ensureValidTrophyTitleLastUpdatedDate'
         );
         $this->ensureValidTrophyTitleLastUpdatedDateMethod->setAccessible(true);
+
+        $this->shouldRetryInvalidTitleLastUpdatedDateMethod = new ReflectionMethod(
+            ThirtyMinuteCronJob::class,
+            'shouldRetryInvalidTitleLastUpdatedDate'
+        );
+        $this->shouldRetryInvalidTitleLastUpdatedDateMethod->setAccessible(true);
+
+        $this->handleInvalidTitleLastUpdatedDateResponseMethod = new ReflectionMethod(
+            ThirtyMinuteCronJob::class,
+            'handleInvalidTitleLastUpdatedDateResponse'
+        );
+        $this->handleInvalidTitleLastUpdatedDateResponseMethod->setAccessible(true);
     }
 
     public function testGameTimestampsMatchReturnsTrueForMatchingValidDates(): void
@@ -227,6 +245,59 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
 
         $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
         $this->assertStringContainsString('invalid last updated date', (string) $logMessage);
+    }
+
+    public function testShouldRetryInvalidTitleLastUpdatedDateReturnsTrueOnFirstAttempt(): void
+    {
+        $retryTracker = [];
+
+        $result = $this->shouldRetryInvalidTitleLastUpdatedDateMethod->invoke(
+            $this->cronJob,
+            $retryTracker,
+            'ExampleUser',
+            'NPWR12345_00'
+        );
+
+        $this->assertTrue($result);
+    }
+
+    public function testShouldRetryInvalidTitleLastUpdatedDateReturnsFalseAfterMarkedRetried(): void
+    {
+        $retryTracker = [
+            'ExampleUser:NPWR12345_00' => true,
+        ];
+
+        $result = $this->shouldRetryInvalidTitleLastUpdatedDateMethod->invoke(
+            $this->cronJob,
+            $retryTracker,
+            'ExampleUser',
+            'NPWR12345_00'
+        );
+
+        $this->assertFalse($result);
+    }
+
+    public function testHandleInvalidTitleLastUpdatedDateResponseDefersPlayerScan(): void
+    {
+        $this->database->exec("INSERT INTO player_queue (online_id) VALUES ('ExampleUser')");
+
+        $this->handleInvalidTitleLastUpdatedDateResponseMethod->invoke(
+            $this->cronJob,
+            ['online_id' => 'ExampleUser'],
+            1,
+            'NPWR12345_00'
+        );
+
+        $queueCount = $this->database->query('SELECT COUNT(*) FROM player_queue')->fetchColumn();
+        $this->assertSame(0, (int) $queueCount);
+
+        $setting = $this->database->query('SELECT scanning, scan_progress FROM setting WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+        $this->assertTrue(is_array($setting));
+        $this->assertSame('1', (string) $setting['scanning']);
+        $this->assertSame(null, $setting['scan_progress']);
+
+        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
+        $this->assertStringContainsString('NPWR12345_00', (string) $logMessage);
     }
 }
 
