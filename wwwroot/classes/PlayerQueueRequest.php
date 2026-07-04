@@ -14,7 +14,7 @@ readonly class PlayerQueueRequest
     public static function fromArrays(array $requestData, array $serverData): self
     {
         $playerName = self::sanitizeValue($requestData['q'] ?? '');
-        $ipAddress = IpAddressResolver::resolve($serverData['REMOTE_ADDR'] ?? '');
+        $ipAddress = IpAddressResolver::resolveFromServer($serverData);
 
         return new self($playerName, $ipAddress);
     }
