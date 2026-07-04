@@ -282,6 +282,50 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         return null;
     }
 
+    private function ensureValidTrophyTitleLastUpdatedDate(
+        object $user,
+        object $trophyTitle,
+        string $onlineId
+    ): ?object {
+        $maxAttempts = 2;
+        $npCommunicationId = (string) $trophyTitle->npCommunicationId();
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            if ($this->isValidSonyLastUpdatedDateTime($trophyTitle->lastUpdatedDateTime())) {
+                return $trophyTitle;
+            }
+
+            if ($attempt === $maxAttempts) {
+                $titleName = trim((string) $trophyTitle->name());
+                $titleNameForLog = $titleName === '' ? $npCommunicationId : $titleName;
+
+                $this->logger->log(sprintf(
+                    'Trophy title "%s" (%s) has an invalid last updated date while processing user %s (attempt %d/%d).',
+                    $titleNameForLog,
+                    $npCommunicationId,
+                    $onlineId,
+                    $attempt,
+                    $maxAttempts
+                ));
+
+                break;
+            }
+
+            sleep(2);
+
+            $trophyTitleCollection = $user->trophyTitles();
+
+            foreach ($trophyTitleCollection as $refreshedTitle) {
+                if ((string) $refreshedTitle->npCommunicationId() === $npCommunicationId) {
+                    $trophyTitle = $refreshedTitle;
+                    break;
+                }
+            }
+        }
+
+        return null;
+    }
+
     #[\Override]
     public function run(): void
     {
@@ -1000,6 +1044,22 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             if ($trophyTitle === null) {
                                 $this->logger->log(sprintf(
                                     'Unable to fetch trophy title icon for %s. Restarting scan.',
+                                    (string) $player['online_id']
+                                ));
+                                $restartScan = true;
+
+                                break;
+                            }
+
+                            $trophyTitle = $this->ensureValidTrophyTitleLastUpdatedDate(
+                                $user,
+                                $trophyTitle,
+                                (string) $player['online_id']
+                            );
+
+                            if ($trophyTitle === null) {
+                                $this->logger->log(sprintf(
+                                    'Unable to fetch a valid last updated date for %s. Restarting scan.',
                                     (string) $player['online_id']
                                 ));
                                 $restartScan = true;
@@ -2677,13 +2737,23 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private function gameTimestampsMatch(string $sonyTimestamp, string $dbTimestamp): bool
     {
         $sonyLastUpdatedDate = $this->parseDateTime($sonyTimestamp);
+
+        if ($sonyLastUpdatedDate === null) {
+            return false;
+        }
+
         $dbLastUpdatedDate = $this->parseDateTime($dbTimestamp);
 
-        if ($sonyLastUpdatedDate === null || $dbLastUpdatedDate === null) {
-            return $sonyTimestamp === $dbTimestamp;
+        if ($dbLastUpdatedDate === null) {
+            return false;
         }
 
         return $sonyLastUpdatedDate == $dbLastUpdatedDate;
+    }
+
+    private function isValidSonyLastUpdatedDateTime(string $value): bool
+    {
+        return $this->formatDateTimeForDatabase($value) !== null;
     }
 
     private function formatDateTimeForDatabase(?string $value): ?string
