@@ -146,23 +146,29 @@ require_once("header.php");
             <div class="bg-body-tertiary p-3 rounded">
                 <h1>Popular Games</h1>
                 <form method="get" class="mb-3">
-                    <div class="mb-2">
-                        <label for="popular-platform" class="form-label mb-1">Platform</label>
-                        <select class="form-select form-select-sm" name="platform" id="popular-platform" onchange="this.form.submit()">
-                            <?php
-                            foreach (HomepagePopularGamesFilter::getPlatformOptions() as $platformValue => $platformLabel) {
-                                ?>
-                                <option value="<?= htmlentities($platformValue, ENT_QUOTES, 'UTF-8'); ?>"<?= ($popularGamesFilter->isPlatformSelected($platformValue) ? ' selected' : ''); ?>>
-                                    <?= htmlentities($platformLabel); ?>
-                                </option>
-                                <?php
-                            }
-                            ?>
-                        </select>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" name="exclusive" value="true" id="popular-exclusive"<?= ($popularGamesFilter->isExclusiveOnly() ? ' checked' : ''); ?> onchange="this.form.submit()">
-                        <label class="form-check-label" for="popular-exclusive">Exclusive</label>
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="form-floating">
+                                <select class="form-select form-select-sm" name="platform" id="popular-platform" onchange="this.form.submit()">
+                                    <?php
+                                    foreach (HomepagePopularGamesFilter::getPlatformOptions() as $platformValue => $platformLabel) {
+                                        ?>
+                                        <option value="<?= htmlentities($platformValue, ENT_QUOTES, 'UTF-8'); ?>"<?= ($popularGamesFilter->isPlatformSelected($platformValue) ? ' selected' : ''); ?>>
+                                            <?= htmlentities($platformLabel); ?>
+                                        </option>
+                                        <?php
+                                    }
+                                    ?>
+                                </select>
+                                <label for="popular-platform" class="form-label mb-1">Platform</label>
+                            </div>
+                        </div>
+                        <div class="col-4 d-flex align-items-center">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" name="exclusive" value="true" id="popular-exclusive"<?= ($popularGamesFilter->isExclusiveOnly() ? ' checked' : ''); ?> onchange="this.form.submit()">
+                                <label class="form-check-label" for="popular-exclusive">Exclusive</label>
+                            </div>
+                        </div>
                     </div>
                 </form>
                 <?php
