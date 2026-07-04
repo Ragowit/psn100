@@ -16,11 +16,12 @@ class HomepageContentService
     private const DEFAULT_POPULAR_GAME_LIMIT = 10;
 
     private const PLATFORM_CONDITIONS = [
+        HomepagePopularGamesFilter::PLATFORM_PC => "tt.platform LIKE '%PC%'",
         HomepagePopularGamesFilter::PLATFORM_PS3 => "tt.platform LIKE '%PS3%'",
-        HomepagePopularGamesFilter::PLATFORM_PSVITA => "tt.platform LIKE '%PSVITA%'",
         HomepagePopularGamesFilter::PLATFORM_PS4 => "tt.platform LIKE '%PS4%'",
-        HomepagePopularGamesFilter::PLATFORM_PSVR => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
         HomepagePopularGamesFilter::PLATFORM_PS5 => "tt.platform LIKE '%PS5%'",
+        HomepagePopularGamesFilter::PLATFORM_PSVITA => "tt.platform LIKE '%PSVITA%'",
+        HomepagePopularGamesFilter::PLATFORM_PSVR => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
         HomepagePopularGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
     ];
 

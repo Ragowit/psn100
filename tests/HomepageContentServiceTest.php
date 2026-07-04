@@ -267,4 +267,26 @@ final class HomepageContentServiceTest extends TestCase
         $this->assertCount(1, $popularGames);
         $this->assertSame('PS5 Only', $popularGames[0]->getName());
     }
+
+    public function testGetPopularGamesFiltersByPcPlatform(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO trophy_title " .
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR950', 'PC Game', 'pc.png', 'PC', 0, 0, 0, 0)," .
+            " (2, 'NPWR951', 'PS5 Game', 'ps5.png', 'PS5', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR950', 0, 100)," .
+            " ('NPWR951', 0, 200)"
+        );
+
+        $filter = HomepagePopularGamesFilter::fromArray(['platform' => 'pc']);
+        $popularGames = $this->service->getPopularGames(10, $filter);
+
+        $this->assertCount(1, $popularGames);
+        $this->assertSame('PC Game', $popularGames[0]->getName());
+    }
 }

@@ -46,4 +46,16 @@ final class HomepagePopularGamesFilterTest extends TestCase
         $this->assertTrue($filter->isExclusiveOnly());
         $this->assertSame(['exclusive' => 'true'], $filter->getQueryParameters());
     }
+
+    public function testGetPlatformOptionsListsAllFirstThenAlphabeticalPlatforms(): void
+    {
+        $this->assertSame(
+            ['', 'pc', 'ps3', 'ps4', 'ps5', 'psvita', 'psvr', 'psvr2'],
+            array_keys(HomepagePopularGamesFilter::getPlatformOptions())
+        );
+        $this->assertSame(
+            ['All', 'PC', 'PS3', 'PS4', 'PS5', 'PSVITA', 'PSVR', 'PSVR2'],
+            array_values(HomepagePopularGamesFilter::getPlatformOptions())
+        );
+    }
 }

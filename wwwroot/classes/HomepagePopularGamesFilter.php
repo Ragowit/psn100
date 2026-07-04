@@ -5,22 +5,24 @@ declare(strict_types=1);
 final class HomepagePopularGamesFilter
 {
     public const PLATFORM_ALL = '';
+    public const PLATFORM_PC = 'pc';
     public const PLATFORM_PS3 = 'ps3';
-    public const PLATFORM_PSVITA = 'psvita';
     public const PLATFORM_PS4 = 'ps4';
-    public const PLATFORM_PSVR = 'psvr';
     public const PLATFORM_PS5 = 'ps5';
+    public const PLATFORM_PSVITA = 'psvita';
+    public const PLATFORM_PSVR = 'psvr';
     public const PLATFORM_PSVR2 = 'psvr2';
 
     /**
      * @var list<string>
      */
     private const PLATFORM_KEYS = [
+        self::PLATFORM_PC,
         self::PLATFORM_PS3,
-        self::PLATFORM_PSVITA,
         self::PLATFORM_PS4,
-        self::PLATFORM_PSVR,
         self::PLATFORM_PS5,
+        self::PLATFORM_PSVITA,
+        self::PLATFORM_PSVR,
         self::PLATFORM_PSVR2,
     ];
 
@@ -29,11 +31,12 @@ final class HomepagePopularGamesFilter
      */
     private const PLATFORM_LABELS = [
         self::PLATFORM_ALL => 'All',
+        self::PLATFORM_PC => 'PC',
         self::PLATFORM_PS3 => 'PS3',
-        self::PLATFORM_PSVITA => 'PSVITA',
         self::PLATFORM_PS4 => 'PS4',
-        self::PLATFORM_PSVR => 'PSVR',
         self::PLATFORM_PS5 => 'PS5',
+        self::PLATFORM_PSVITA => 'PSVITA',
+        self::PLATFORM_PSVR => 'PSVR',
         self::PLATFORM_PSVR2 => 'PSVR2',
     ];
 
