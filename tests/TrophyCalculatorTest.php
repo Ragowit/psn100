@@ -103,6 +103,81 @@ final class TrophyCalculatorTest extends TestCase
         $this->assertSame(0, $playerProgress['gold']);
         $this->assertSame(0, $playerProgress['platinum']);
     }
+
+    public function testFormatDateTimeForDatabaseReturnsFormattedSonyTimestamp(): void
+    {
+        $method = new ReflectionMethod(TrophyCalculator::class, 'formatDateTimeForDatabase');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, '2024-06-15T10:30:00Z');
+
+        $this->assertSame('2024-06-15 10:30:00', $result);
+    }
+
+    public function testFormatDateTimeForDatabaseReturnsNullForInvalidTimestamp(): void
+    {
+        $method = new ReflectionMethod(TrophyCalculator::class, 'formatDateTimeForDatabase');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 'not-a-valid-date');
+
+        $this->assertSame(null, $result);
+    }
+
+    public function testResolveLastUpdatedDateExpressionPreservesExistingDateWhenFormattedDateMissing(): void
+    {
+        $method = new ReflectionMethod(TrophyCalculator::class, 'resolveLastUpdatedDateExpression');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'trophy_title_player.last_updated_date',
+            $method->invoke($this->calculator, null, false)
+        );
+        $this->assertSame(
+            'trophy_title_player.last_updated_date',
+            $method->invoke($this->calculator, null, true)
+        );
+    }
+
+    public function testResolveLastUpdatedDateExpressionUsesNewDateWhenFormattedDatePresent(): void
+    {
+        $method = new ReflectionMethod(TrophyCalculator::class, 'resolveLastUpdatedDateExpression');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'new.last_updated_date',
+            $method->invoke($this->calculator, '2024-06-15 10:30:00', false)
+        );
+        $this->assertSame(
+            'GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)',
+            $method->invoke($this->calculator, '2024-06-15 10:30:00', true)
+        );
+    }
+
+    public function testRecalculateTrophyTitleDoesNotThrowOnInvalidLastUpdateDate(): void
+    {
+        $npCommunicationId = 'NPWR55555';
+        $accountId = 12;
+
+        $this->database->setTrophyGroup($npCommunicationId, 'default');
+        $this->database->saveTrophyGroupPlayer($npCommunicationId, 'default', $accountId, 1, 0, 0, 0, 50);
+        $this->database->saveTrophyTitlePlayer(
+            $npCommunicationId,
+            $accountId,
+            1,
+            0,
+            0,
+            0,
+            50,
+            '2024-01-01 00:00:00'
+        );
+
+        $this->calculator->recalculateTrophyTitle($npCommunicationId, 'not-a-valid-date', false, $accountId, false);
+
+        $titlePlayer = $this->database->getTrophyTitlePlayer($npCommunicationId, $accountId);
+        $this->assertSame('2024-01-01 00:00:00', $titlePlayer['last_updated_date']);
+        $this->assertSame(1, $titlePlayer['bronze']);
+    }
 }
 
 final class FakePDO extends PDO
@@ -122,6 +197,11 @@ final class FakePDO extends PDO
      * @var array<string, array{np_communication_id:string,group_id:string,account_id:int,bronze:int,silver:int,gold:int,platinum:int,progress:int}>
      */
     public array $trophyGroupPlayers = [];
+
+    /**
+     * @var array<string, array{np_communication_id:string,account_id:int,bronze:int,silver:int,gold:int,platinum:int,progress:int,last_updated_date:?string}>
+     */
+    public array $trophyTitlePlayers = [];
 
     public function __construct()
     {
@@ -210,6 +290,36 @@ final class FakePDO extends PDO
         ];
     }
 
+    public function saveTrophyTitlePlayer(
+        string $npCommunicationId,
+        int $accountId,
+        int $bronze,
+        int $silver,
+        int $gold,
+        int $platinum,
+        int $progress,
+        ?string $lastUpdatedDate
+    ): void {
+        $this->trophyTitlePlayers[$this->buildTitlePlayerKey($npCommunicationId, $accountId)] = [
+            'np_communication_id' => $npCommunicationId,
+            'account_id' => $accountId,
+            'bronze' => $bronze,
+            'silver' => $silver,
+            'gold' => $gold,
+            'platinum' => $platinum,
+            'progress' => $progress,
+            'last_updated_date' => $lastUpdatedDate,
+        ];
+    }
+
+    /**
+     * @return array{np_communication_id:string,account_id:int,bronze:int,silver:int,gold:int,platinum:int,progress:int,last_updated_date:?string}
+     */
+    public function getTrophyTitlePlayer(string $npCommunicationId, int $accountId): array
+    {
+        return $this->trophyTitlePlayers[$this->buildTitlePlayerKey($npCommunicationId, $accountId)];
+    }
+
     public function findTrophy(string $npCommunicationId, string $groupId, int $orderId): ?array
     {
         foreach ($this->trophies as $trophy) {
@@ -233,6 +343,11 @@ final class FakePDO extends PDO
     private function buildGroupPlayerKey(string $npCommunicationId, string $groupId, int $accountId): string
     {
         return $npCommunicationId . '|' . $groupId . '|' . $accountId;
+    }
+
+    private function buildTitlePlayerKey(string $npCommunicationId, int $accountId): string
+    {
+        return $npCommunicationId . '|' . $accountId;
     }
 }
 
@@ -292,6 +407,25 @@ final class FakePDOStatement extends PDOStatement
 
         if (str_starts_with($normalizedQuery, 'INSERT INTO trophy_group_player')) {
             $this->executeSaveTrophyGroupPlayer();
+            return true;
+        }
+
+        if (str_starts_with($normalizedQuery, 'SELECT SUM(bronze) AS bronze')) {
+            if (str_contains($normalizedQuery, 'FROM trophy_group_player')) {
+                $this->executeSelectTrophyGroupPlayerSums();
+            } else {
+                $this->executeSelectTrophyGroupSums();
+            }
+
+            return true;
+        }
+
+        if (str_starts_with($normalizedQuery, 'UPDATE trophy_title')) {
+            return true;
+        }
+
+        if (str_starts_with($normalizedQuery, 'INSERT INTO trophy_title_player')) {
+            $this->executeSaveTrophyTitlePlayer();
             return true;
         }
 
@@ -396,6 +530,83 @@ final class FakePDOStatement extends PDOStatement
             (int) $this->parameters[':gold'],
             (int) $this->parameters[':platinum'],
             (int) $this->parameters[':progress']
+        );
+    }
+
+    private function executeSelectTrophyGroupSums(): void
+    {
+        $npCommunicationId = (string) $this->parameters[':np_communication_id'];
+        $totals = [
+            'bronze' => 0,
+            'silver' => 0,
+            'gold' => 0,
+            'platinum' => 0,
+        ];
+
+        foreach ($this->database->trophyGroups as $group) {
+            if ($group['np_communication_id'] !== $npCommunicationId) {
+                continue;
+            }
+
+            $totals['bronze'] += $group['bronze'];
+            $totals['silver'] += $group['silver'];
+            $totals['gold'] += $group['gold'];
+            $totals['platinum'] += $group['platinum'];
+        }
+
+        $this->result = [$totals];
+    }
+
+    private function executeSelectTrophyGroupPlayerSums(): void
+    {
+        $npCommunicationId = (string) $this->parameters[':np_communication_id'];
+        $accountId = (int) $this->parameters[':account_id'];
+        $totals = [
+            'bronze' => 0,
+            'silver' => 0,
+            'gold' => 0,
+            'platinum' => 0,
+        ];
+
+        foreach ($this->database->trophyGroupPlayers as $playerGroup) {
+            if (
+                $playerGroup['np_communication_id'] !== $npCommunicationId
+                || $playerGroup['account_id'] !== $accountId
+            ) {
+                continue;
+            }
+
+            $totals['bronze'] += $playerGroup['bronze'];
+            $totals['silver'] += $playerGroup['silver'];
+            $totals['gold'] += $playerGroup['gold'];
+            $totals['platinum'] += $playerGroup['platinum'];
+        }
+
+        $this->result = [$totals];
+    }
+
+    private function executeSaveTrophyTitlePlayer(): void
+    {
+        $npCommunicationId = (string) $this->parameters[':np_communication_id'];
+        $accountId = (int) $this->parameters[':account_id'];
+        $existing = $this->database->trophyTitlePlayers[$npCommunicationId . '|' . $accountId] ?? null;
+        $lastUpdatedDate = array_key_exists(':last_updated_date', $this->parameters)
+            ? $this->parameters[':last_updated_date']
+            : null;
+
+        if ($lastUpdatedDate === null && is_array($existing)) {
+            $lastUpdatedDate = $existing['last_updated_date'];
+        }
+
+        $this->database->saveTrophyTitlePlayer(
+            $npCommunicationId,
+            $accountId,
+            (int) $this->parameters[':bronze'],
+            (int) $this->parameters[':silver'],
+            (int) $this->parameters[':gold'],
+            (int) $this->parameters[':platinum'],
+            (int) $this->parameters[':progress'],
+            is_string($lastUpdatedDate) ? $lastUpdatedDate : null
         );
     }
 }

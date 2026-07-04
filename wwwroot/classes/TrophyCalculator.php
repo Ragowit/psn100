@@ -282,18 +282,8 @@ final class TrophyCalculator
 
         $progress = $this->calculateProgress($playerTrophies, $maxScore, $titleHavePlatinum);
 
-        $dateTimeObject = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i:s\\Z', $lastUpdateDate);
-
-        if ($dateTimeObject === false) {
-            throw new InvalidArgumentException(sprintf('Invalid trophy title update date format: %s', $lastUpdateDate));
-        }
-
-        $dtAsTextForInsert = $dateTimeObject->format('Y-m-d H:i:s');
-
-        $lastUpdatedDateExpression = match ($merge) {
-            true => 'GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)',
-            false => 'new.last_updated_date',
-        };
+        $dtAsTextForInsert = $this->formatDateTimeForDatabase($lastUpdateDate);
+        $lastUpdatedDateExpression = $this->resolveLastUpdatedDateExpression($dtAsTextForInsert, $merge);
         $query = $this->database->prepare(sprintf(self::TROPHY_TITLE_PLAYER_UPSERT_TEMPLATE, $lastUpdatedDateExpression));
 
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
@@ -303,7 +293,36 @@ final class TrophyCalculator
         $query->bindValue(':gold', $playerTrophies['gold'], PDO::PARAM_INT);
         $query->bindValue(':platinum', $playerTrophies['platinum'], PDO::PARAM_INT);
         $query->bindValue(':progress', $progress, PDO::PARAM_INT);
-        $query->bindValue(':last_updated_date', $dtAsTextForInsert, PDO::PARAM_STR);
+        $query->bindValue(
+            ':last_updated_date',
+            $dtAsTextForInsert,
+            $dtAsTextForInsert === null ? PDO::PARAM_NULL : PDO::PARAM_STR
+        );
         $query->execute();
+    }
+
+    private function formatDateTimeForDatabase(string $value): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        try {
+            return (new DateTimeImmutable($value))->format('Y-m-d H:i:s');
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    private function resolveLastUpdatedDateExpression(?string $formattedDate, bool $merge): string
+    {
+        if ($formattedDate === null) {
+            return 'trophy_title_player.last_updated_date';
+        }
+
+        return match ($merge) {
+            true => 'GREATEST(trophy_title_player.last_updated_date, new.last_updated_date)',
+            false => 'new.last_updated_date',
+        };
     }
 }
