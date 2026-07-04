@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Homepage/HomepageNewGame.php';
 require_once __DIR__ . '/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
+require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
 class HomepageViewModel
 {
@@ -25,17 +26,25 @@ class HomepageViewModel
      */
     private array $popularGames;
 
+    private HomepagePopularGamesFilter $popularGamesFilter;
+
     /**
      * @param HomepageNewGame[] $newGames
      * @param HomepageDlc[] $newDlcs
      * @param HomepagePopularGame[] $popularGames
      */
-    public function __construct(string $title, array $newGames, array $newDlcs, array $popularGames)
-    {
+    public function __construct(
+        string $title,
+        array $newGames,
+        array $newDlcs,
+        array $popularGames,
+        ?HomepagePopularGamesFilter $popularGamesFilter = null
+    ) {
         $this->title = $title;
         $this->newGames = $newGames;
         $this->newDlcs = $newDlcs;
         $this->popularGames = $popularGames;
+        $this->popularGamesFilter = $popularGamesFilter ?? HomepagePopularGamesFilter::fromArray([]);
     }
 
     public function getTitle(): string
@@ -65,5 +74,10 @@ class HomepageViewModel
     public function getPopularGames(): array
     {
         return $this->popularGames;
+    }
+
+    public function getPopularGamesFilter(): HomepagePopularGamesFilter
+    {
+        return $this->popularGamesFilter;
     }
 }

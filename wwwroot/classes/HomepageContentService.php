@@ -7,12 +7,23 @@ require_once __DIR__ . '/Homepage/HomepageTitle.php';
 require_once __DIR__ . '/Homepage/HomepageNewGame.php';
 require_once __DIR__ . '/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
+require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
 class HomepageContentService
 {
     private const DEFAULT_NEW_GAME_LIMIT = 8;
     private const DEFAULT_NEW_DLCS_LIMIT = 8;
     private const DEFAULT_POPULAR_GAME_LIMIT = 10;
+
+    private const PLATFORM_CONDITIONS = [
+        HomepagePopularGamesFilter::PLATFORM_PC => "tt.platform LIKE '%PC%'",
+        HomepagePopularGamesFilter::PLATFORM_PS3 => "tt.platform LIKE '%PS3%'",
+        HomepagePopularGamesFilter::PLATFORM_PS4 => "tt.platform LIKE '%PS4%'",
+        HomepagePopularGamesFilter::PLATFORM_PS5 => "tt.platform LIKE '%PS5%'",
+        HomepagePopularGamesFilter::PLATFORM_PSVITA => "tt.platform LIKE '%PSVITA%'",
+        HomepagePopularGamesFilter::PLATFORM_PSVR => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
+        HomepagePopularGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
+    ];
 
     public function __construct(private readonly PDO $database)
     {
@@ -100,10 +111,15 @@ class HomepageContentService
     /**
      * @return HomepagePopularGame[]
      */
-    public function getPopularGames(int $limit = self::DEFAULT_POPULAR_GAME_LIMIT): array
-    {
+    public function getPopularGames(
+        int $limit = self::DEFAULT_POPULAR_GAME_LIMIT,
+        ?HomepagePopularGamesFilter $filter = null
+    ): array {
+        $filter ??= HomepagePopularGamesFilter::fromArray([]);
+        $whereClause = implode(' AND ', $this->buildPopularGamesWhereClauses($filter));
+
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 tt.id,
                 tt.icon_url,
@@ -114,7 +130,7 @@ class HomepageContentService
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                ttm.status <> 2
+                {$whereClause}
             ORDER BY
                 ttm.recent_players DESC
             LIMIT
@@ -130,5 +146,26 @@ class HomepageContentService
             static fn(array $row): HomepagePopularGame => HomepagePopularGame::fromArray($row),
             $rows
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function buildPopularGamesWhereClauses(HomepagePopularGamesFilter $filter): array
+    {
+        $conditions = ['ttm.status <> 2'];
+
+        if ($filter->isExclusiveOnly() && $filter->hasPlatformFilter()) {
+            $conditions[] = 'tt.platform = ' . $this->database->quote($filter->getPlatformDatabaseValue());
+        } elseif ($filter->isExclusiveOnly()) {
+            $conditions[] = "tt.platform NOT LIKE '%,%'";
+        } elseif ($filter->hasPlatformFilter()) {
+            $platformCondition = self::PLATFORM_CONDITIONS[$filter->getPlatform()] ?? null;
+            if ($platformCondition !== null) {
+                $conditions[] = $platformCondition;
+            }
+        }
+
+        return $conditions;
     }
 }

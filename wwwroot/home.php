@@ -3,14 +3,18 @@
 declare(strict_types=1);
 
 require_once 'classes/HomepageController.php';
+require_once 'classes/HomepagePopularGamesFilter.php';
 
-$homepageController = HomepageController::fromDatabase($database);
+$popularGamesFilter = HomepagePopularGamesFilter::fromArray($_GET ?? []);
+$homepageController = HomepageController::fromDatabase($database)
+    ->withPopularGamesFilter($popularGamesFilter);
 $homepageViewModel = $homepageController->getViewModel();
 
 $title = $homepageViewModel->getTitle();
 $newGames = $homepageViewModel->getNewGames();
 $newDlcs = $homepageViewModel->getNewDlcs();
 $popularGames = $homepageViewModel->getPopularGames();
+$popularGamesFilter = $homepageViewModel->getPopularGamesFilter();
 require_once("header.php");
 ?>
 
@@ -141,6 +145,26 @@ require_once("header.php");
         <div class="col-12 col-lg-4">
             <div class="bg-body-tertiary p-3 rounded">
                 <h1>Popular Games</h1>
+                <form method="get" class="mb-3">
+                    <div class="mb-2">
+                        <label for="popular-platform" class="form-label mb-1">Platform</label>
+                        <select class="form-select form-select-sm" name="platform" id="popular-platform" onchange="this.form.submit()">
+                            <?php
+                            foreach (HomepagePopularGamesFilter::getPlatformOptions() as $platformValue => $platformLabel) {
+                                ?>
+                                <option value="<?= htmlentities($platformValue, ENT_QUOTES, 'UTF-8'); ?>"<?= ($popularGamesFilter->isPlatformSelected($platformValue) ? ' selected' : ''); ?>>
+                                    <?= htmlentities($platformLabel); ?>
+                                </option>
+                                <?php
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" name="exclusive" value="true" id="popular-exclusive"<?= ($popularGamesFilter->isExclusiveOnly() ? ' checked' : ''); ?> onchange="this.form.submit()">
+                        <label class="form-check-label" for="popular-exclusive">Exclusive</label>
+                    </div>
+                </form>
                 <?php
                 foreach ($popularGames as $game) {
                     $gameUrl = $game->getRelativeUrl($utility);

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/HomepageContentService.php';
+require_once __DIR__ . '/../wwwroot/classes/HomepagePopularGamesFilter.php';
 require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepageNewGame.php';
 require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/../wwwroot/classes/Homepage/HomepagePopularGame.php';
@@ -168,5 +169,124 @@ final class HomepageContentServiceTest extends TestCase
         $this->assertSame(1500, $popularGames[0]->getRecentPlayers());
         $this->assertSame('Moderate Game', $popularGames[1]->getName());
         $this->assertSame(500, $popularGames[1]->getRecentPlayers());
+    }
+
+    public function testGetPopularGamesFiltersByPlatform(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO trophy_title " .
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR600', 'PS4 Game', 'ps4.png', 'PS4', 0, 0, 0, 0)," .
+            " (2, 'NPWR601', 'PS5 Game', 'ps5.png', 'PS5', 0, 0, 0, 0)," .
+            " (3, 'NPWR602', 'Cross Gen', 'cross.png', 'PS4,PS5', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR600', 0, 100)," .
+            " ('NPWR601', 0, 300)," .
+            " ('NPWR602', 0, 200)"
+        );
+
+        $filter = HomepagePopularGamesFilter::fromArray(['platform' => 'ps5']);
+        $popularGames = $this->service->getPopularGames(10, $filter);
+
+        $this->assertSame(['PS5 Game', 'Cross Gen'], array_map(
+            static fn(HomepagePopularGame $game): string => $game->getName(),
+            $popularGames
+        ));
+    }
+
+    public function testGetPopularGamesPsvrFilterExcludesPsvr2OnlyTitles(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO trophy_title " .
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR700', 'PSVR Game', 'psvr.png', 'PSVR', 0, 0, 0, 0)," .
+            " (2, 'NPWR701', 'PSVR2 Game', 'psvr2.png', 'PSVR2', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR700', 0, 100)," .
+            " ('NPWR701', 0, 200)"
+        );
+
+        $filter = HomepagePopularGamesFilter::fromArray(['platform' => 'psvr']);
+        $popularGames = $this->service->getPopularGames(10, $filter);
+
+        $this->assertCount(1, $popularGames);
+        $this->assertSame('PSVR Game', $popularGames[0]->getName());
+    }
+
+    public function testGetPopularGamesExclusiveFilterReturnsSinglePlatformTitlesOnly(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO trophy_title " .
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR800', 'PS5 Only', 'ps5-only.png', 'PS5', 0, 0, 0, 0)," .
+            " (2, 'NPWR801', 'Cross Gen', 'cross.png', 'PS4,PS5', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR800', 0, 50)," .
+            " ('NPWR801', 0, 500)"
+        );
+
+        $filter = HomepagePopularGamesFilter::fromArray(['exclusive' => 'true']);
+        $popularGames = $this->service->getPopularGames(10, $filter);
+
+        $this->assertCount(1, $popularGames);
+        $this->assertSame('PS5 Only', $popularGames[0]->getName());
+    }
+
+    public function testGetPopularGamesExclusivePlatformFilterMatchesExactPlatform(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO trophy_title " .
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR900', 'PS5 Only', 'ps5-only.png', 'PS5', 0, 0, 0, 0)," .
+            " (2, 'NPWR901', 'Cross Gen', 'cross.png', 'PS4,PS5', 0, 0, 0, 0)," .
+            " (3, 'NPWR902', 'PS4 Only', 'ps4-only.png', 'PS4', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR900', 0, 100)," .
+            " ('NPWR901', 0, 500)," .
+            " ('NPWR902', 0, 200)"
+        );
+
+        $filter = HomepagePopularGamesFilter::fromArray([
+            'platform' => 'ps5',
+            'exclusive' => 'true',
+        ]);
+        $popularGames = $this->service->getPopularGames(10, $filter);
+
+        $this->assertCount(1, $popularGames);
+        $this->assertSame('PS5 Only', $popularGames[0]->getName());
+    }
+
+    public function testGetPopularGamesFiltersByPcPlatform(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO trophy_title " .
+            "(id, np_communication_id, name, icon_url, platform, platinum, gold, silver, bronze) VALUES" .
+            " (1, 'NPWR950', 'PC Game', 'pc.png', 'PC', 0, 0, 0, 0)," .
+            " (2, 'NPWR951', 'PS5 Game', 'ps5.png', 'PS5', 0, 0, 0, 0)"
+        );
+
+        $this->pdo->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, status, recent_players) VALUES" .
+            " ('NPWR950', 0, 100)," .
+            " ('NPWR951', 0, 200)"
+        );
+
+        $filter = HomepagePopularGamesFilter::fromArray(['platform' => 'pc']);
+        $popularGames = $this->service->getPopularGames(10, $filter);
+
+        $this->assertCount(1, $popularGames);
+        $this->assertSame('PC Game', $popularGames[0]->getName());
     }
 }
