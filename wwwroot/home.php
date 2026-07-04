@@ -142,14 +142,14 @@ require_once("header.php");
         </div>
 
         <!-- Popular Games -->
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-lg-4" id="popular-games" style="scroll-margin-top: 0.5rem;">
             <div class="bg-body-tertiary p-3 rounded">
                 <h1>Popular Games</h1>
-                <form method="get" class="mb-3">
+                <form method="get" class="mb-3" id="popular-games-filter">
                     <div class="row">
                         <div class="col-8">
                             <div class="form-floating">
-                                <select class="form-select form-select-sm" name="platform" id="popular-platform" onchange="this.form.submit()">
+                                <select class="form-select form-select-sm" name="platform" id="popular-platform" onchange="submitPopularGamesFilter(this.form)">
                                     <?php
                                     foreach (HomepagePopularGamesFilter::getPlatformOptions() as $platformValue => $platformLabel) {
                                         ?>
@@ -165,7 +165,7 @@ require_once("header.php");
                         </div>
                         <div class="col-4 d-flex align-items-center">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" name="exclusive" value="true" id="popular-exclusive"<?= ($popularGamesFilter->isExclusiveOnly() ? ' checked' : ''); ?> onchange="this.form.submit()">
+                                <input class="form-check-input" type="checkbox" role="switch" name="exclusive" value="true" id="popular-exclusive"<?= ($popularGamesFilter->isExclusiveOnly() ? ' checked' : ''); ?> onchange="submitPopularGamesFilter(this.form)">
                                 <label class="form-check-label" for="popular-exclusive">Exclusive</label>
                             </div>
                         </div>
@@ -398,7 +398,70 @@ class PlayerQueueManager {
     }
 }
 
+const POPULAR_GAMES_SCROLL_KEY = 'home-scroll-popular-games';
+
+function isSessionStorageAvailable() {
+    try {
+        const testKey = '__storage_test__';
+        sessionStorage.setItem(testKey, '1');
+        sessionStorage.removeItem(testKey);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+function markPopularGamesScrollOnReload() {
+    if (!isSessionStorageAvailable()) {
+        return;
+    }
+
+    try {
+        sessionStorage.setItem(POPULAR_GAMES_SCROLL_KEY, '1');
+    } catch (error) {
+        // Ignore storage failures.
+    }
+}
+
+function submitPopularGamesFilter(form) {
+    markPopularGamesScrollOnReload();
+
+    if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+        return;
+    }
+
+    form.submit();
+}
+
+function scrollToPopularGamesIfRequested() {
+    if (!isSessionStorageAvailable()) {
+        return;
+    }
+
+    try {
+        if (sessionStorage.getItem(POPULAR_GAMES_SCROLL_KEY) !== '1') {
+            return;
+        }
+
+        sessionStorage.removeItem(POPULAR_GAMES_SCROLL_KEY);
+    } catch (error) {
+        return;
+    }
+
+    const popularGames = document.getElementById('popular-games');
+    if (!popularGames) {
+        return;
+    }
+
+    requestAnimationFrame(() => {
+        popularGames.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    scrollToPopularGamesIfRequested();
+
     const queueManager = new PlayerQueueManager({
         playerInputId: 'player',
         buttonId: 'player-button',
