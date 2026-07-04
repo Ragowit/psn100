@@ -264,7 +264,7 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
     public function testShouldRetryInvalidTitleLastUpdatedDateReturnsFalseAfterMarkedRetried(): void
     {
         $retryTracker = [
-            'ExampleUser:NPWR12345_00' => true,
+            'ExampleUser:title:NPWR12345_00' => true,
         ];
 
         $result = $this->shouldRetryInvalidTitleLastUpdatedDateMethod->invoke(
@@ -299,6 +299,94 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
         $this->assertStringContainsString('NPWR12345_00', (string) $logMessage);
     }
+
+    public function testIsValidTrophyEarnedDateTimeAcceptsEmptyTimestamp(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isValidTrophyEarnedDateTime');
+        $method->setAccessible(true);
+
+        $trophy = new ThirtyMinuteCronJobDateParsingTestTrophy(1, '', true);
+
+        $this->assertTrue($method->invoke($this->cronJob, $trophy));
+    }
+
+    public function testIsValidTrophyEarnedDateTimeRejectsMalformedTimestamp(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isValidTrophyEarnedDateTime');
+        $method->setAccessible(true);
+
+        $trophy = new ThirtyMinuteCronJobDateParsingTestTrophy(1, 'not-a-valid-date', true);
+
+        $this->assertFalse($method->invoke($this->cronJob, $trophy));
+    }
+
+    public function testEnsureValidTrophyEarnedDateRefetchesSonyDataWhenDateIsInvalid(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'ensureValidTrophyEarnedDate');
+        $method->setAccessible(true);
+
+        $invalidTrophy = new ThirtyMinuteCronJobDateParsingTestTrophy(1, 'not-a-valid-date', true);
+        $validTrophy = new ThirtyMinuteCronJobDateParsingTestTrophy(1, '2024-06-15T10:30:00Z', true);
+        $trophyGroup = new ThirtyMinuteCronJobDateParsingTestTrophyGroup([
+            [new ThirtyMinuteCronJobDateParsingTestTrophy(1, '2024-06-15T10:30:00Z', true)],
+        ]);
+
+        $result = $method->invoke(
+            $this->cronJob,
+            $trophyGroup,
+            $invalidTrophy,
+            'ExampleUser',
+            'NPWR12345_00'
+        );
+
+        $this->assertSame('2024-06-15T10:30:00Z', $result->earnedDateTime());
+        $this->assertSame(1, $trophyGroup->getFetchCount());
+        $this->assertSame($validTrophy->earnedDateTime(), $result->earnedDateTime());
+    }
+
+    public function testShouldRetryInvalidTrophyEarnedDateReturnsFalseAfterMarkedRetried(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'shouldRetryInvalidTrophyEarnedDate');
+        $method->setAccessible(true);
+
+        $retryTracker = [
+            'ExampleUser:earned:NPWR12345_00:001:1' => true,
+        ];
+
+        $result = $method->invoke(
+            $this->cronJob,
+            $retryTracker,
+            'ExampleUser',
+            'NPWR12345_00',
+            '001',
+            1
+        );
+
+        $this->assertFalse($result);
+    }
+
+    public function testHandleInvalidTrophyEarnedDateResponseDefersPlayerScan(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'handleInvalidTrophyEarnedDateResponse');
+        $method->setAccessible(true);
+
+        $this->database->exec("INSERT INTO player_queue (online_id) VALUES ('ExampleUser')");
+
+        $method->invoke(
+            $this->cronJob,
+            ['online_id' => 'ExampleUser'],
+            1,
+            'NPWR12345_00',
+            '001',
+            1
+        );
+
+        $queueCount = $this->database->query('SELECT COUNT(*) FROM player_queue')->fetchColumn();
+        $this->assertSame(0, (int) $queueCount);
+
+        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
+        $this->assertStringContainsString('invalid earned date', (string) $logMessage);
+    }
 }
 
 final class ThirtyMinuteCronJobDateParsingTestTrophyTitle
@@ -323,6 +411,72 @@ final class ThirtyMinuteCronJobDateParsingTestTrophyTitle
     public function name(): string
     {
         return $this->name;
+    }
+}
+
+final class ThirtyMinuteCronJobDateParsingTestTrophy
+{
+    public function __construct(
+        private readonly int $id,
+        private readonly string $earnedDateTime,
+        private readonly bool $earned
+    ) {
+    }
+
+    public function id(): int
+    {
+        return $this->id;
+    }
+
+    public function earnedDateTime(): string
+    {
+        return $this->earnedDateTime;
+    }
+
+    public function earned(): bool
+    {
+        return $this->earned;
+    }
+
+    public function progress(): string
+    {
+        return '';
+    }
+}
+
+final class ThirtyMinuteCronJobDateParsingTestTrophyGroup
+{
+    /** @var list<list<ThirtyMinuteCronJobDateParsingTestTrophy>> */
+    private array $fetchResults;
+    private int $fetchCount = 0;
+
+    /**
+     * @param list<list<ThirtyMinuteCronJobDateParsingTestTrophy>> $fetchResults
+     */
+    public function __construct(array $fetchResults)
+    {
+        $this->fetchResults = $fetchResults;
+    }
+
+    public function id(): string
+    {
+        return '001';
+    }
+
+    /**
+     * @return list<ThirtyMinuteCronJobDateParsingTestTrophy>
+     */
+    public function trophies(): array
+    {
+        $titles = $this->fetchResults[$this->fetchCount] ?? $this->fetchResults[array_key_last($this->fetchResults)] ?? [];
+        $this->fetchCount++;
+
+        return $titles;
+    }
+
+    public function getFetchCount(): int
+    {
+        return $this->fetchCount;
     }
 }
 
