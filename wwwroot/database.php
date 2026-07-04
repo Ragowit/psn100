@@ -45,19 +45,34 @@ final readonly class DatabaseConfig
 
     public function isComplete(): bool
     {
-        return $this->host !== '' && $this->database !== '' && $this->user !== '';
+        return $this->host !== ''
+            && $this->database !== ''
+            && $this->user !== ''
+            && $this->password !== '';
     }
 
     private static function readConfigValue(string $name, array $environment): string
     {
         $value = $environment[$name] ?? false;
-        if (is_string($value) && trim($value) !== '') {
-            return trim($value);
+        if (is_string($value)) {
+            if ($name === 'DB_PASSWORD') {
+                return $value;
+            }
+
+            if (trim($value) !== '') {
+                return trim($value);
+            }
         }
 
         $fallback = getenv($name);
-        if (is_string($fallback) && trim($fallback) !== '') {
-            return trim($fallback);
+        if (is_string($fallback)) {
+            if ($name === 'DB_PASSWORD') {
+                return $fallback;
+            }
+
+            if (trim($fallback) !== '') {
+                return trim($fallback);
+            }
         }
 
         return '';

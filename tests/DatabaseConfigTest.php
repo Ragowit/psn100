@@ -41,16 +41,54 @@ final class DatabaseConfigTest extends TestCase
         }
     }
 
-    public function testIsCompleteRequiresHostDatabaseAndUser(): void
+    public function testIsCompleteRequiresHostDatabaseUserAndPassword(): void
     {
-        $config = DatabaseConfig::fromEnvironment([
+        $missingDatabase = DatabaseConfig::fromEnvironment([
             'DB_HOST' => '127.0.0.1',
             'DB_NAME' => '',
             'DB_USER' => 'psn100',
             'DB_PASSWORD' => 'psn100',
         ]);
 
-        $this->assertFalse($config->isComplete());
+        $this->assertFalse($missingDatabase->isComplete());
+
+        $missingPassword = DatabaseConfig::fromEnvironment([
+            'DB_HOST' => '127.0.0.1',
+            'DB_NAME' => 'psn100',
+            'DB_USER' => 'psn100',
+            'DB_PASSWORD' => '',
+        ]);
+
+        $this->assertFalse($missingPassword->isComplete());
+    }
+
+    public function testFromEnvironmentPreservesExactDbPasswordValue(): void
+    {
+        $config = DatabaseConfig::fromEnvironment([
+            'DB_HOST' => '127.0.0.1',
+            'DB_NAME' => 'psn100',
+            'DB_USER' => 'psn100',
+            'DB_PASSWORD' => '  secret-password  ',
+        ]);
+
+        $this->assertTrue($config->isComplete());
+        $this->assertSame('  secret-password  ', $config->getPassword());
+    }
+
+    public function testDatabaseConstructorThrowsWhenPasswordIsMissing(): void
+    {
+        try {
+            new Database(DatabaseConfig::fromEnvironment([
+                'DB_HOST' => '127.0.0.1',
+                'DB_NAME' => 'psn100',
+                'DB_USER' => 'psn100',
+                'DB_PASSWORD' => '',
+            ]));
+            $this->fail('Expected DatabaseConnectionException for missing DB_PASSWORD.');
+        } catch (DatabaseConnectionException $exception) {
+            $this->assertStringContainsString('Database connection is not configured', $exception->getMessage());
+            $this->assertStringContainsString('DB_PASSWORD', $exception->getMessage());
+        }
     }
 
     public function testDatabaseConstructorThrowsWhenConfigurationIsIncomplete(): void
