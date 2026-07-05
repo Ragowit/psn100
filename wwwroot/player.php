@@ -143,7 +143,7 @@ require_once("header.php");
                                     <tr<?= $rowAttributes; ?>>
                                         <td scope="row">
                                             <div class="hstack gap-3">
-                                                <img src="/img/title/<?= $playerGame->getIconFileName(); ?>" alt="<?= htmlentities($playerGame->getName()); ?>" width="100" />
+                                                <img src="/img/title/<?= htmlspecialchars($playerGame->getIconFileName(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($playerGame->getName()); ?>" width="100" />
 
                                                 <div class="vstack">
                                                     <span>

@@ -163,7 +163,7 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
 
         <script src="/js/localized-date-formatter.js" defer></script>
 
-        <title><?= $title; ?></title>
+        <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></title>
     </head>
     <body>
         <?php require_once("nav.php"); ?>

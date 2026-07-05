@@ -7,6 +7,7 @@ require_once '../classes/Admin/GameDetailService.php';
 require_once '../classes/Admin/GameDetailPage.php';
 require_once '../classes/Admin/GameDetailPageResult.php';
 require_once '../classes/GameStatusService.php';
+require_once '../classes/GameMessageSanitizer.php';
 
 $gameDetailService = new GameDetailService($database);
 $gameStatusService = new GameStatusService($database);
@@ -108,7 +109,7 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <input type="text" name="obsolete_ids" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getObsoleteIds() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
                     <small>Comma separated trophy_title.id values.</small><br>
                     Message:<br>
-                    <textarea name="message" rows="6" cols="120"><?= $gameDetail->getMessage(); ?></textarea><br><br>
+                    <textarea name="message" rows="6" cols="120"><?= GameMessageSanitizer::escapeTextareaContent($gameDetail->getMessage()); ?></textarea><br><br>
                     <label for="status">Status:</label><br>
                     <select id="status" name="status" class="form-select" style="max-width: 300px;">
                         <?php foreach ($statusOptions as $value => $label) { ?>

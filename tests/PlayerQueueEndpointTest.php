@@ -77,7 +77,7 @@ final class PlayerQueueEndpointTest extends TestCase
         $controller = new PlayerQueueControllerSpy($response);
         $endpoint = PlayerQueueEndpoint::create($controller, new JsonResponseEmitter());
 
-        $requestData = ['player' => 'ExampleUser'];
+        $requestData = ['q' => 'ExampleUser'];
         $serverData = ['REMOTE_ADDR' => '192.0.2.1'];
 
         header_remove();
@@ -103,7 +103,7 @@ final class PlayerQueueEndpointTest extends TestCase
         $controller = new PlayerQueueControllerSpy($response);
         $endpoint = PlayerQueueEndpoint::create($controller, new JsonResponseEmitter());
 
-        $requestData = ['player' => 'QueueUser'];
+        $requestData = ['q' => 'QueueUser'];
         $serverData = ['REMOTE_ADDR' => '198.51.100.23'];
 
         header_remove();
