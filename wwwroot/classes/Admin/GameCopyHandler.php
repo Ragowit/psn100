@@ -32,7 +32,9 @@ class GameCopyHandler
                 $copySetVersion
             );
         } catch (RuntimeException $exception) {
-            return $exception->getMessage();
+            return $this->escape($exception->getMessage());
+        } catch (Throwable $exception) {
+            return 'An unexpected error occurred while copying game data.';
         }
 
         return 'The group and trophy data have been copied.';
@@ -71,5 +73,10 @@ class GameCopyHandler
         $value = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
         return $value ?? true;
+    }
+
+    private function escape(string $value): string
+    {
+        return htmlentities($value, ENT_QUOTES, 'UTF-8');
     }
 }

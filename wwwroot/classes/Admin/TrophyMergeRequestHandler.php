@@ -32,9 +32,9 @@ class TrophyMergeRequestHandler
                 return $this->handleGameMerge($postData);
             }
         } catch (InvalidArgumentException | RuntimeException $exception) {
-            return $exception->getMessage();
+            return $this->escape($exception->getMessage());
         } catch (Throwable $exception) {
-            return 'An unexpected error occurred: ' . $exception->getMessage();
+            return 'An unexpected error occurred while processing the request.';
         }
 
         return '';
@@ -141,5 +141,10 @@ class TrophyMergeRequestHandler
         }
 
         return ctype_digit((string) $value);
+    }
+
+    private function escape(string $value): string
+    {
+        return htmlentities($value, ENT_QUOTES, 'UTF-8');
     }
 }
