@@ -110,17 +110,9 @@ final class DeletePlayerService
     private function deleteLogMessagesForAccountId(string $accountId): int
     {
         $statement = $this->database->prepare(
-            <<<'SQL'
-            DELETE FROM log
-            WHERE
-                message LIKE :pattern_parentheses
-                OR message LIKE :pattern_parentheses_dot
-                OR message LIKE :pattern_parentheses_comma
-            SQL
+            'DELETE FROM log WHERE message LIKE :pattern_parentheses'
         );
         $statement->bindValue(':pattern_parentheses', '%(' . $accountId . ')%', PDO::PARAM_STR);
-        $statement->bindValue(':pattern_parentheses_dot', '%(' . $accountId . ').%', PDO::PARAM_STR);
-        $statement->bindValue(':pattern_parentheses_comma', '%(' . $accountId . '),%', PDO::PARAM_STR);
         $statement->execute();
 
         return (int) $statement->rowCount();
