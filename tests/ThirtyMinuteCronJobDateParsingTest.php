@@ -13,7 +13,7 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
     private PDO $database;
     private ThirtyMinuteCronJob $cronJob;
     private ReflectionMethod $gameTimestampsMatchMethod;
-    private ReflectionMethod $formatDateTimeForDatabaseMethod;
+    private ReflectionMethod $formatSonyDateTimeForDatabaseMethod;
     private ReflectionMethod $determineScanStartIndexMethod;
     private ReflectionMethod $ensureValidTrophyTitleLastUpdatedDateMethod;
     private ReflectionMethod $shouldRetryInvalidTitleLastUpdatedDateMethod;
@@ -41,8 +41,8 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $this->gameTimestampsMatchMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'gameTimestampsMatch');
         $this->gameTimestampsMatchMethod->setAccessible(true);
 
-        $this->formatDateTimeForDatabaseMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'formatDateTimeForDatabase');
-        $this->formatDateTimeForDatabaseMethod->setAccessible(true);
+        $this->formatSonyDateTimeForDatabaseMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'formatSonyDateTimeForDatabase');
+        $this->formatSonyDateTimeForDatabaseMethod->setAccessible(true);
 
         $this->determineScanStartIndexMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'determineScanStartIndex');
         $this->determineScanStartIndexMethod->setAccessible(true);
@@ -121,9 +121,9 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $this->assertFalse($result);
     }
 
-    public function testFormatDateTimeForDatabaseReturnsFormattedSonyTimestamp(): void
+    public function testFormatSonyDateTimeForDatabaseReturnsFormattedSonyTimestamp(): void
     {
-        $result = $this->formatDateTimeForDatabaseMethod->invoke(
+        $result = $this->formatSonyDateTimeForDatabaseMethod->invoke(
             $this->cronJob,
             '2024-06-15T10:30:00Z'
         );
@@ -131,9 +131,9 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $this->assertSame('2024-06-15 10:30:00', $result);
     }
 
-    public function testFormatDateTimeForDatabaseReturnsNullForInvalidTimestamp(): void
+    public function testFormatSonyDateTimeForDatabaseReturnsNullForInvalidTimestamp(): void
     {
-        $result = $this->formatDateTimeForDatabaseMethod->invoke(
+        $result = $this->formatSonyDateTimeForDatabaseMethod->invoke(
             $this->cronJob,
             'not-a-valid-date'
         );
@@ -141,11 +141,31 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $this->assertSame(null, $result);
     }
 
-    public function testFormatDateTimeForDatabaseReturnsNullForEmptyString(): void
+    public function testFormatSonyDateTimeForDatabaseReturnsNullForEmptyString(): void
     {
-        $result = $this->formatDateTimeForDatabaseMethod->invoke(
+        $result = $this->formatSonyDateTimeForDatabaseMethod->invoke(
             $this->cronJob,
             ''
+        );
+
+        $this->assertSame(null, $result);
+    }
+
+    public function testFormatSonyDateTimeForDatabaseRejectsLenientDatabaseStyleTimestamp(): void
+    {
+        $result = $this->formatSonyDateTimeForDatabaseMethod->invoke(
+            $this->cronJob,
+            '2024-06-15 10:30:00'
+        );
+
+        $this->assertSame(null, $result);
+    }
+
+    public function testFormatSonyDateTimeForDatabaseRejectsInvalidCalendarDate(): void
+    {
+        $result = $this->formatSonyDateTimeForDatabaseMethod->invoke(
+            $this->cronJob,
+            '2024-02-30T10:30:00Z'
         );
 
         $this->assertSame(null, $result);

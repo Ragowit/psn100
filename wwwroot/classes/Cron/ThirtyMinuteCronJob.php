@@ -1793,12 +1793,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                                 $orderId
                                             );
 
-                                            continue 3;
+                                            continue 4;
                                         }
 
                                         $dtAsTextForInsert = $trophy->earnedDateTime() === ''
                                             ? null
-                                            : $this->formatDateTimeForDatabase($trophy->earnedDateTime());
+                                            : $this->formatSonyDateTimeForDatabase($trophy->earnedDateTime());
 
                                         $query = $this->database->prepare("INSERT INTO trophy_earned(
                                                 np_communication_id,
@@ -2908,7 +2908,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private function gameTimestampsMatch(string $sonyTimestamp, string $dbTimestamp): bool
     {
-        $sonyLastUpdatedDate = $this->parseDateTime($sonyTimestamp);
+        $sonyLastUpdatedDate = $this->parseSonyDateTime($sonyTimestamp);
 
         if ($sonyLastUpdatedDate === null) {
             return false;
@@ -2925,7 +2925,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private function isValidSonyLastUpdatedDateTime(string $value): bool
     {
-        return $this->formatDateTimeForDatabase($value) !== null;
+        return $this->parseSonyDateTime($value) !== null;
     }
 
     private function isValidTrophyEarnedDateTime(object $trophy): bool
@@ -2936,7 +2936,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             return true;
         }
 
-        return $this->formatDateTimeForDatabase($earnedDateTime) !== null;
+        return $this->parseSonyDateTime($earnedDateTime) !== null;
     }
 
     private function buildInvalidTitleDateRetryKey(string $onlineId, string $npCommunicationId): string
@@ -3015,11 +3015,32 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
     }
 
-    private function formatDateTimeForDatabase(?string $value): ?string
+    private function formatSonyDateTimeForDatabase(?string $value): ?string
     {
-        $dateTime = $this->parseDateTime($value);
+        $dateTime = $this->parseSonyDateTime($value);
 
         return $dateTime?->format('Y-m-d H:i:s');
+    }
+
+    private function parseSonyDateTime(?string $value): ?DateTimeImmutable
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $dateTime = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i:s\\Z', $value);
+
+        if ($dateTime === false) {
+            return null;
+        }
+
+        $errors = DateTimeImmutable::getLastErrors();
+
+        if ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+            return null;
+        }
+
+        return $dateTime;
     }
 
     private function parseDateTime(?string $value): ?DateTimeImmutable
