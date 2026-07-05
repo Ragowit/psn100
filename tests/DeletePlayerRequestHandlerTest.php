@@ -176,6 +176,20 @@ final class DeletePlayerRequestHandlerTest extends TestCase
             in_game_epic INTEGER NOT NULL DEFAULT 0,
             in_game_legendary INTEGER NOT NULL DEFAULT 0
         )');
+        $this->database->exec('CREATE TABLE player_ranking (
+            account_id TEXT PRIMARY KEY,
+            ranking INTEGER NOT NULL
+        )');
+        $this->database->exec('CREATE TABLE player_report (
+            report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id TEXT NOT NULL,
+            ip_address TEXT NOT NULL,
+            explanation TEXT NOT NULL
+        )');
+        $this->database->exec('CREATE TABLE player_queue (
+            online_id TEXT PRIMARY KEY,
+            ip_address TEXT NOT NULL
+        )');
         $this->database->exec('CREATE TABLE player (
             account_id TEXT PRIMARY KEY,
             online_id TEXT
@@ -200,6 +214,18 @@ final class DeletePlayerRequestHandlerTest extends TestCase
         $this->database->exec(sprintf(
             "INSERT INTO trophy_title_player (account_id) VALUES ('%s')",
             $accountId
+        ));
+        $this->database->exec(sprintf(
+            "INSERT INTO player_ranking (account_id, ranking) VALUES ('%s', 1)",
+            $accountId
+        ));
+        $this->database->exec(sprintf(
+            "INSERT INTO player_report (account_id, ip_address, explanation) VALUES ('%s', '127.0.0.1', 'test')",
+            $accountId
+        ));
+        $this->database->exec(sprintf(
+            "INSERT INTO player_queue (online_id, ip_address) VALUES ('%s', '127.0.0.1')",
+            $onlineId
         ));
         $this->database->exec(sprintf(
             "INSERT INTO log (message) VALUES ('Player (%s) deleted')",

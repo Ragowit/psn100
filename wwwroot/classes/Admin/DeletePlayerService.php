@@ -62,6 +62,9 @@ final class DeletePlayerService
         }
 
         try {
+            $player = $this->findPlayerByAccountId($accountId);
+            $onlineId = $player['online_id'] ?? null;
+
             $counts = [];
             $counts['trophy_earned'] = $this->deleteByAccountId(
                 'DELETE FROM trophy_earned WHERE account_id = :account_id',
@@ -75,15 +78,22 @@ final class DeletePlayerService
                 'DELETE FROM trophy_title_player WHERE account_id = :account_id',
                 $accountId
             );
+            $counts['player_ranking'] = $this->deleteByAccountId(
+                'DELETE FROM player_ranking WHERE account_id = :account_id',
+                $accountId
+            );
+            $counts['player_report'] = $this->deleteByAccountId(
+                'DELETE FROM player_report WHERE account_id = :account_id',
+                $accountId
+            );
+            $counts['player_queue'] = $onlineId !== null && $onlineId !== ''
+                ? $this->deleteByOnlineId('DELETE FROM player_queue WHERE online_id = :online_id', $onlineId)
+                : 0;
             $counts['player'] = $this->deleteByAccountId(
                 'DELETE FROM player WHERE account_id = :account_id',
                 $accountId
             );
-
-            $logStatement = $this->database->prepare('DELETE FROM log WHERE message LIKE :message');
-            $logStatement->bindValue(':message', '%' . $accountId . '%', PDO::PARAM_STR);
-            $logStatement->execute();
-            $counts['log'] = (int) $logStatement->rowCount();
+            $counts['log'] = $this->deleteLogMessagesForAccountId($accountId);
 
             $this->database->commit();
 
@@ -97,10 +107,38 @@ final class DeletePlayerService
         }
     }
 
+    private function deleteLogMessagesForAccountId(string $accountId): int
+    {
+        $statement = $this->database->prepare(
+            <<<'SQL'
+            DELETE FROM log
+            WHERE
+                message LIKE :pattern_parentheses
+                OR message LIKE :pattern_parentheses_dot
+                OR message LIKE :pattern_parentheses_comma
+            SQL
+        );
+        $statement->bindValue(':pattern_parentheses', '%(' . $accountId . ')%', PDO::PARAM_STR);
+        $statement->bindValue(':pattern_parentheses_dot', '%(' . $accountId . ').%', PDO::PARAM_STR);
+        $statement->bindValue(':pattern_parentheses_comma', '%(' . $accountId . '),%', PDO::PARAM_STR);
+        $statement->execute();
+
+        return (int) $statement->rowCount();
+    }
+
     private function deleteByAccountId(string $sql, string $accountId): int
     {
         $statement = $this->database->prepare($sql);
         $statement->bindValue(':account_id', $accountId, PDO::PARAM_STR);
+        $statement->execute();
+
+        return (int) $statement->rowCount();
+    }
+
+    private function deleteByOnlineId(string $sql, string $onlineId): int
+    {
+        $statement = $this->database->prepare($sql);
+        $statement->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
         $statement->execute();
 
         return (int) $statement->rowCount();
