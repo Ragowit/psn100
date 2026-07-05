@@ -124,6 +124,10 @@ class TrophyHistoryRecorder
                     $exception->getMessage()
                 ));
             }
+
+            if (!$startedTransaction) {
+                throw $exception;
+            }
         }
     }
 

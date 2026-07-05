@@ -64,6 +64,34 @@ final class TrophyHistorySnapshotTest extends TestCase
         $this->assertSame('Updated trophy detail', $trophyHistoryQuery->fetchColumn());
     }
 
+    public function testRecordByTitleIdSwallowsErrorsWhenManagingItsOwnTransaction(): void
+    {
+        $this->seedInitialData();
+        $this->database->exec('DROP TABLE trophy_group_history');
+
+        $this->historyRecorder->recordByTitleId(1);
+
+        $this->assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM trophy_title_history')->fetchColumn());
+    }
+
+    public function testRecordByTitleIdRethrowsWhenParticipatingInOuterTransaction(): void
+    {
+        $this->seedInitialData();
+        $this->database->beginTransaction();
+
+        try {
+            $this->database->exec('DROP TABLE trophy_group_history');
+            $this->historyRecorder->recordByTitleId(1);
+            $this->fail('Expected history recording to abort the outer transaction.');
+        } catch (Throwable $exception) {
+            $this->assertTrue($this->database->inTransaction());
+            $this->database->rollBack();
+        }
+
+        $this->assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM trophy_title_history')->fetchColumn());
+        $this->assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM psn100_change')->fetchColumn());
+    }
+
     private function createSchema(): void
     {
         $this->database->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT)');
