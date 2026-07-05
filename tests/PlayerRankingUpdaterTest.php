@@ -197,6 +197,217 @@ final class PlayerRankingUpdaterTest extends TestCase
         $this->assertCount(1, $messages);
         $this->assertStringContainsString('skipped because another run is in progress', $messages[0]);
     }
+
+    public function testSwapPhaseRetriesSafelyAfterRenameCommittedButClientLostConnection(): void
+    {
+        $database = new PlayerRankingUpdaterSwapTestDatabase();
+        $sleepCalls = [];
+
+        $updater = new PlayerRankingUpdater(
+            $database,
+            retryDelaySeconds: 1,
+            maxRetryDelaySeconds: 1,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $updater->recalculate();
+
+        $this->assertSame([1], $sleepCalls);
+        $this->assertSame(1, $database->getRenameAttempts());
+        $this->assertFalse($database->hasTable('player_ranking_new'));
+        $this->assertFalse($database->hasTable('player_ranking_old'));
+        $this->assertTrue($database->hasTable('player_ranking'));
+    }
+
+    public function testIsRankingSwapAlreadyCompleteDetectsCommittedSwap(): void
+    {
+        $database = new PlayerRankingUpdaterSwapStateTestDatabase([
+            'player_ranking' => true,
+            'player_ranking_old' => true,
+        ]);
+        $updater = new PlayerRankingUpdater($database);
+        $method = new ReflectionMethod($updater, 'isRankingSwapAlreadyComplete');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($updater));
+    }
+
+    public function testIsRankingSwapAlreadyCompleteDetectsCommittedSwapAfterOldTableDropped(): void
+    {
+        $database = new PlayerRankingUpdaterSwapStateTestDatabase([
+            'player_ranking' => true,
+        ]);
+        $updater = new PlayerRankingUpdater($database);
+        $method = new ReflectionMethod($updater, 'isRankingSwapAlreadyComplete');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($updater));
+    }
+
+    public function testIsRankingSwapAlreadyCompleteIsFalseWhenTemporaryTableExists(): void
+    {
+        $database = new PlayerRankingUpdaterSwapStateTestDatabase([
+            'player_ranking' => true,
+            'player_ranking_new' => true,
+        ]);
+        $updater = new PlayerRankingUpdater($database);
+        $method = new ReflectionMethod($updater, 'isRankingSwapAlreadyComplete');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke($updater));
+    }
+}
+
+final class PlayerRankingUpdaterSwapStateTestDatabase extends PDO
+{
+    /**
+     * @param array<string, bool> $tables
+     */
+    public function __construct(private array $tables)
+    {
+    }
+
+    public function getAttribute($attribute): mixed
+    {
+        if ($attribute === PDO::ATTR_DRIVER_NAME) {
+            return 'mysql';
+        }
+
+        return parent::getAttribute($attribute);
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'information_schema.tables')) {
+            return new PlayerRankingUpdaterTableExistsStatement($this->tables);
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+final class PlayerRankingUpdaterTableExistsStatement extends PDOStatement
+{
+    private ?string $tableName = null;
+
+    /**
+     * @param array<string, bool> $tables
+     */
+    public function __construct(private array $tables)
+    {
+    }
+
+    public function bindValue($param, $value, $type = PDO::PARAM_STR): bool
+    {
+        if ($param === ':table_name' && is_string($value)) {
+            $this->tableName = $value;
+        }
+
+        return true;
+    }
+
+    public function execute(?array $params = null): bool
+    {
+        return true;
+    }
+
+    public function fetchColumn(int $column = 0): mixed
+    {
+        if ($this->tableName === null) {
+            return 0;
+        }
+
+        return ($this->tables[$this->tableName] ?? false) ? 1 : 0;
+    }
+}
+
+final class PlayerRankingUpdaterSwapTestDatabase extends PDO
+{
+    /** @var array<string, true> */
+    private array $tables = [
+        'player_ranking' => true,
+    ];
+
+    private int $renameAttempts = 0;
+
+    public function __construct()
+    {
+    }
+
+    public function getAttribute($attribute): mixed
+    {
+        if ($attribute === PDO::ATTR_DRIVER_NAME) {
+            return 'sqlite';
+        }
+
+        return parent::getAttribute($attribute);
+    }
+
+    public function getRenameAttempts(): int
+    {
+        return $this->renameAttempts;
+    }
+
+    public function hasTable(string $tableName): bool
+    {
+        return isset($this->tables[$tableName]);
+    }
+
+    public function exec(string $statement): int|false
+    {
+        if (str_contains($statement, 'CREATE TABLE IF NOT EXISTS player_ranking_new')) {
+            $this->tables['player_ranking_new'] = true;
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'TRUNCATE TABLE player_ranking_new')) {
+            return 0;
+        }
+
+        if (str_contains($statement, 'INSERT INTO player_ranking_new')) {
+            return 0;
+        }
+
+        if (str_contains($statement, 'RENAME TABLE')) {
+            $this->renameAttempts++;
+
+            if (!isset($this->tables['player_ranking_new'])) {
+                throw new RuntimeException('player_ranking_new must exist before RENAME TABLE.');
+            }
+
+            unset($this->tables['player_ranking_new']);
+            $this->tables['player_ranking_old'] = true;
+            $this->tables['player_ranking'] = true;
+
+            if ($this->renameAttempts === 1) {
+                throw new RuntimeException('Connection lost after RENAME TABLE.');
+            }
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'DROP TABLE IF EXISTS player_ranking_old')) {
+            unset($this->tables['player_ranking_old']);
+
+            return 0;
+        }
+
+        throw new RuntimeException('Unexpected exec call: ' . $statement);
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'information_schema.tables')) {
+            return new PlayerRankingUpdaterTableExistsStatement(
+                array_fill_keys(array_keys($this->tables), true)
+            );
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
 }
 
 final class PlayerRankingUpdaterFailingLogDatabase extends PDO
@@ -215,6 +426,11 @@ final class PlayerRankingUpdaterRetryTestDatabase extends PDO
 {
     private int $populateAttempts = 0;
 
+    /** @var array<string, true> */
+    private array $tables = [
+        'player_ranking' => true,
+    ];
+
     public function __construct()
     {
     }
@@ -230,12 +446,38 @@ final class PlayerRankingUpdaterRetryTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
+        if (str_contains($statement, 'CREATE TABLE IF NOT EXISTS player_ranking_new')) {
+            $this->tables['player_ranking_new'] = true;
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'TRUNCATE TABLE player_ranking_new')) {
+            return 0;
+        }
+
         if (str_contains($statement, 'INSERT INTO player_ranking_new')) {
             $this->populateAttempts++;
 
             if ($this->populateAttempts < 3) {
                 throw new RuntimeException('Simulated populate failure.');
             }
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'RENAME TABLE')) {
+            unset($this->tables['player_ranking_new']);
+            $this->tables['player_ranking_old'] = true;
+            $this->tables['player_ranking'] = true;
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'DROP TABLE IF EXISTS player_ranking_old')) {
+            unset($this->tables['player_ranking_old']);
+
+            return 0;
         }
 
         return 0;
@@ -243,6 +485,12 @@ final class PlayerRankingUpdaterRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (str_contains($query, 'information_schema.tables')) {
+            return new PlayerRankingUpdaterTableExistsStatement(
+                array_fill_keys(array_keys($this->tables), true)
+            );
+        }
+
         throw new RuntimeException('Unexpected prepare call: ' . $query);
     }
 }
@@ -250,6 +498,11 @@ final class PlayerRankingUpdaterRetryTestDatabase extends PDO
 final class PlayerRankingUpdaterLockTestDatabase extends PDO
 {
     private int $lockAttempts = 0;
+
+    /** @var array<string, true> */
+    private array $tables = [
+        'player_ranking' => true,
+    ];
 
     public function __construct(
         private readonly mixed $lockResult,
@@ -276,6 +529,12 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
             return new PlayerRankingUpdaterLockTestStatement(1);
         }
 
+        if (str_contains($query, 'information_schema.tables')) {
+            return new PlayerRankingUpdaterTableExistsStatement(
+                array_fill_keys(array_keys($this->tables), true)
+            );
+        }
+
         throw new RuntimeException('Unexpected prepare call: ' . $query);
     }
 
@@ -295,13 +554,29 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
+        if (str_contains($statement, 'CREATE TABLE IF NOT EXISTS player_ranking_new')) {
+            $this->tables['player_ranking_new'] = true;
+
+            return 0;
+        }
+
         if (
             str_contains($statement, 'DROP TABLE IF EXISTS')
-            || str_contains($statement, 'CREATE TABLE IF NOT EXISTS')
             || str_contains($statement, 'TRUNCATE TABLE')
             || str_contains($statement, 'INSERT INTO player_ranking_new')
-            || str_contains($statement, 'RENAME TABLE')
         ) {
+            if (str_contains($statement, 'DROP TABLE IF EXISTS player_ranking_old')) {
+                unset($this->tables['player_ranking_old']);
+            }
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'RENAME TABLE')) {
+            unset($this->tables['player_ranking_new']);
+            $this->tables['player_ranking_old'] = true;
+            $this->tables['player_ranking'] = true;
+
             return 0;
         }
 

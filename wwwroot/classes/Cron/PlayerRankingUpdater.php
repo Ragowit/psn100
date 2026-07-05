@@ -97,8 +97,7 @@ SQL;
 
             $this->executeWithRetry(
                 function (): void {
-                    $this->cleanupOrphanedTables();
-                    $this->swapRankingTables();
+                    $this->swapRankingTablesIfNeeded();
                 },
                 'swap'
             );
@@ -174,6 +173,52 @@ SQL;
     {
         $sql = sprintf(self::INSERT_TEMPLATE, self::TEMPORARY_TABLE);
         $this->database->exec($sql);
+    }
+
+    private function swapRankingTablesIfNeeded(): void
+    {
+        if ($this->isRankingSwapAlreadyComplete()) {
+            return;
+        }
+
+        $this->cleanupOrphanedTables();
+        $this->swapRankingTables();
+    }
+
+    private function isRankingSwapAlreadyComplete(): bool
+    {
+        $hasPrimary = $this->tableExists(self::PRIMARY_TABLE);
+        $hasTemporary = $this->tableExists(self::TEMPORARY_TABLE);
+        $hasPrevious = $this->tableExists(self::PREVIOUS_TABLE);
+
+        if (!$hasTemporary && $hasPrevious) {
+            return true;
+        }
+
+        if (!$hasTemporary && !$hasPrevious && $hasPrimary) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function tableExists(string $tableName): bool
+    {
+        $statement = $this->database->prepare(
+            <<<'SQL'
+            SELECT
+                COUNT(*)
+            FROM
+                information_schema.tables
+            WHERE
+                table_schema = DATABASE()
+                AND table_name = :table_name
+            SQL
+        );
+        $statement->bindValue(':table_name', $tableName, PDO::PARAM_STR);
+        $statement->execute();
+
+        return (int) ($statement->fetchColumn() ?? 0) > 0;
     }
 
     private function swapRankingTables(): void
