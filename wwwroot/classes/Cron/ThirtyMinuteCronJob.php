@@ -1796,6 +1796,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                             continue 4;
                                         }
 
+                                        $trophyEarned = $trophy->earned();
+                                        $progress = (clone $trophy)->progress();
+
+                                        if (!$trophyEarned && ($progress === '' || intval($progress) <= 0)) {
+                                            continue;
+                                        }
+
                                         $dtAsTextForInsert = $trophy->earnedDateTime() === ''
                                             ? null
                                             : $this->formatSonyDateTimeForDatabase($trophy->earnedDateTime());

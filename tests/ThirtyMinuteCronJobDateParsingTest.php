@@ -364,6 +364,28 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $this->assertSame($validTrophy->earnedDateTime(), $result->earnedDateTime());
     }
 
+    public function testEnsureValidTrophyEarnedDateReturnsUpdatedEarnedAndProgressValues(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'ensureValidTrophyEarnedDate');
+        $method->setAccessible(true);
+
+        $invalidTrophy = new ThirtyMinuteCronJobDateParsingTestTrophy(1, 'not-a-valid-date', true, '');
+        $trophyGroup = new ThirtyMinuteCronJobDateParsingTestTrophyGroup([
+            [new ThirtyMinuteCronJobDateParsingTestTrophy(1, '2024-06-15T10:30:00Z', false, '75')],
+        ]);
+
+        $result = $method->invoke(
+            $this->cronJob,
+            $trophyGroup,
+            $invalidTrophy,
+            'ExampleUser',
+            'NPWR12345_00'
+        );
+
+        $this->assertFalse($result->earned());
+        $this->assertSame('75', $result->progress());
+    }
+
     public function testShouldRetryInvalidTrophyEarnedDateReturnsFalseAfterMarkedRetried(): void
     {
         $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'shouldRetryInvalidTrophyEarnedDate');
@@ -439,7 +461,8 @@ final class ThirtyMinuteCronJobDateParsingTestTrophy
     public function __construct(
         private readonly int $id,
         private readonly string $earnedDateTime,
-        private readonly bool $earned
+        private readonly bool $earned,
+        private readonly string $progress = ''
     ) {
     }
 
@@ -460,7 +483,7 @@ final class ThirtyMinuteCronJobDateParsingTestTrophy
 
     public function progress(): string
     {
-        return '';
+        return $this->progress;
     }
 }
 
