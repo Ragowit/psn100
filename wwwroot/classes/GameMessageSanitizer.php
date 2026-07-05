@@ -85,7 +85,11 @@ final class GameMessageSanitizer
 
         $href = trim($matches[2]);
 
-        return $href === '' ? null : $href;
+        if ($href === '') {
+            return null;
+        }
+
+        return self::decodeHtmlEntities($href);
     }
 
     private static function hasTargetBlank(string $attributes): bool
@@ -95,6 +99,11 @@ final class GameMessageSanitizer
 
     private static function sanitizeLinkText(string $content): string
     {
-        return htmlentities(strip_tags($content), ENT_QUOTES, 'UTF-8');
+        return htmlentities(self::decodeHtmlEntities(strip_tags($content)), ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function decodeHtmlEntities(string $value): string
+    {
+        return html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 }

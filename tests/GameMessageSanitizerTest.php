@@ -27,6 +27,26 @@ final class GameMessageSanitizerTest extends TestCase
         );
     }
 
+    public function testSanitizePreservesEntityEncodedUrlsInHref(): void
+    {
+        $message = '<a href="https://example.com/?a=1&amp;b=2">Link</a>';
+
+        $this->assertSame(
+            '<a href="https://example.com/?a=1&amp;b=2">Link</a>',
+            GameMessageSanitizer::sanitize($message)
+        );
+    }
+
+    public function testSanitizePreservesEntityEncodedAmpersandsInLinkText(): void
+    {
+        $message = '<a href="https://example.com">Tom &amp; Jerry</a>';
+
+        $this->assertSame(
+            '<a href="https://example.com">Tom &amp; Jerry</a>',
+            GameMessageSanitizer::sanitize($message)
+        );
+    }
+
     public function testSanitizeAllowsLineBreakTags(): void
     {
         $message = 'First line<br>Second line<br />Third line<br/>Fourth line';
