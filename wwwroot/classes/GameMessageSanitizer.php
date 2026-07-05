@@ -18,7 +18,7 @@ final class GameMessageSanitizer
             $matchText = $matches[0][0];
             $matchPosition = $matches[0][1];
 
-            $sanitized .= htmlentities(substr($message, $offset, $matchPosition - $offset), ENT_QUOTES, 'UTF-8');
+            $sanitized .= self::sanitizePlainText(substr($message, $offset, $matchPosition - $offset));
 
             $attributes = $matches[1][0];
             $linkContent = $matches[2][0];
@@ -43,7 +43,36 @@ final class GameMessageSanitizer
             $offset = $matchPosition + strlen($matchText);
         }
 
-        $sanitized .= htmlentities(substr($message, $offset), ENT_QUOTES, 'UTF-8');
+        $sanitized .= self::sanitizePlainText(substr($message, $offset));
+
+        return $sanitized;
+    }
+
+    public static function escapeTextareaContent(string $message): string
+    {
+        return preg_replace('/<\/textarea/i', '&lt;/textarea', $message) ?? $message;
+    }
+
+    private static function sanitizePlainText(string $text): string
+    {
+        if ($text === '') {
+            return '';
+        }
+
+        $pattern = '/<br\s*\/?>/i';
+        $offset = 0;
+        $sanitized = '';
+
+        while (preg_match($pattern, $text, $matches, PREG_OFFSET_CAPTURE, $offset) === 1) {
+            $matchText = $matches[0][0];
+            $matchPosition = $matches[0][1];
+
+            $sanitized .= htmlentities(substr($text, $offset, $matchPosition - $offset), ENT_QUOTES, 'UTF-8');
+            $sanitized .= '<br>';
+            $offset = $matchPosition + strlen($matchText);
+        }
+
+        $sanitized .= htmlentities(substr($text, $offset), ENT_QUOTES, 'UTF-8');
 
         return $sanitized;
     }
@@ -67,10 +96,5 @@ final class GameMessageSanitizer
     private static function sanitizeLinkText(string $content): string
     {
         return htmlentities(strip_tags($content), ENT_QUOTES, 'UTF-8');
-    }
-
-    public static function escapeTextareaContent(string $message): string
-    {
-        return preg_replace('/<\/textarea/i', '&lt;/textarea', $message) ?? $message;
     }
 }

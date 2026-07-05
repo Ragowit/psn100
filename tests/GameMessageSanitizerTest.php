@@ -27,6 +27,36 @@ final class GameMessageSanitizerTest extends TestCase
         );
     }
 
+    public function testSanitizeAllowsLineBreakTags(): void
+    {
+        $message = 'First line<br>Second line<br />Third line<br/>Fourth line';
+
+        $this->assertSame(
+            'First line<br>Second line<br>Third line<br>Fourth line',
+            GameMessageSanitizer::sanitize($message)
+        );
+    }
+
+    public function testSanitizeAllowsLineBreaksWithAnchorTags(): void
+    {
+        $message = 'Read more:<br><a href="https://example.com">the guide</a><br>Then continue.';
+
+        $this->assertSame(
+            'Read more:<br><a href="https://example.com">the guide</a><br>Then continue.',
+            GameMessageSanitizer::sanitize($message)
+        );
+    }
+
+    public function testSanitizeEscapesBrTagsWithAttributes(): void
+    {
+        $message = 'Line one<br onclick="alert(1)">Line two';
+
+        $this->assertSame(
+            'Line one&lt;br onclick=&quot;alert(1)&quot;&gt;Line two',
+            GameMessageSanitizer::sanitize($message)
+        );
+    }
+
     public function testSanitizeEscapesPlainText(): void
     {
         $message = 'Use caution &amp; avoid <script>alert(1)</script>.';
