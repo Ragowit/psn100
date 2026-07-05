@@ -7,7 +7,7 @@ require_once '../classes/Admin/PlayerReportAdminPage.php';
 
 $playerReportAdminService = new PlayerReportAdminService($database);
 $playerReportAdminPage = new PlayerReportAdminPage($playerReportAdminService);
-$pageResult = $playerReportAdminPage->handle($_GET ?? []);
+$pageResult = $playerReportAdminPage->handle($_GET ?? [], $_POST ?? [], $_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 $reportedPlayers = $pageResult->getReportedPlayers();
 $successMessage = $pageResult->getSuccessMessage();
@@ -44,11 +44,24 @@ $errorMessage = $pageResult->getErrorMessage();
                         <?= nl2br(htmlentities($reportedPlayer->getExplanation(), ENT_QUOTES, 'UTF-8')); ?>
                     </div>
                     <div class="mt-2">
-                        <a href="?delete=<?= $reportedPlayer->getReportId(); ?>">Delete</a>
+                        <form method="post" class="d-inline js-report-delete-form">
+                            <?php AdminBootstrap::renderCsrfField(); ?>
+                            <input type="hidden" name="delete_id" value="<?= (int) $reportedPlayer->getReportId(); ?>">
+                            <button type="submit" class="btn btn-link p-0">Delete</button>
+                        </form>
                     </div>
                 </div>
                 <hr>
             <?php } ?>
         </div>
+        <script>
+            document.querySelectorAll('.js-report-delete-form').forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    if (!window.confirm('Are you sure you want to delete this report?')) {
+                        event.preventDefault();
+                    }
+                });
+            });
+        </script>
     </body>
 </html>

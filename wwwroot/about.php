@@ -158,7 +158,7 @@ require_once("header.php");
                                                     </div>
 
                                                     <div class="ms-auto">
-                                                        <img src="/img/country/<?= $countryCode; ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                                        <img src="/img/country/<?= htmlspecialchars($countryCode, ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
                                                     </div>
                                                 </div>
                                             </td>

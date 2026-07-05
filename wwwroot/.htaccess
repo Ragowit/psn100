@@ -12,6 +12,9 @@ FallbackResource /index.php
     AddOutputFilterByType DEFLATE text/xml
 </IfModule>
 #Cache
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+</IfModule>
 <FilesMatch "\.(ico|pdf|jpg|jpeg|png|webp|gif|html|htm|xml|txt|xsl|css|svg|avif|js)$">
     Header set Cache-Control "max-age=31536050"
 </FilesMatch>

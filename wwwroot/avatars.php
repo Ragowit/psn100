@@ -25,8 +25,8 @@ require_once("header.php");
             ?>
             <div class="col">
                 <div class="bg-body-tertiary p-3 rounded mb-3 text-center vstack gap-1">
-                    <a href="/leaderboard/trophy?avatar=<?= $avatar->getUrl(); ?>">
-                        <img src="/img/avatar/<?= $avatar->getUrl(); ?>" class="mx-auto" alt="" width="100" />
+                    <a href="/leaderboard/trophy?avatar=<?= htmlspecialchars($avatar->getUrl(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <img src="/img/avatar/<?= htmlspecialchars($avatar->getUrl(), ENT_QUOTES, 'UTF-8'); ?>" class="mx-auto" alt="" width="100" />
                     </a>
                     <?= $avatar->getCount(); ?> <?= $avatar->getPlayerLabel(); ?>
                 </div>

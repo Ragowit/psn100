@@ -48,14 +48,14 @@ require_once('header.php');
                                 <tr>
                                     <td scope="row" class="text-center align-middle">
                                         <a href="<?= $gameUrl; ?>">
-                                            <img src="/img/title/<?= $trophy->getGameIconPath(); ?>" alt="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 10rem;" />
+                                            <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 10rem;" />
                                         </a>
                                     </td>
                                     <td class="align-middle">
                                         <div class="hstack gap-3">
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <a href="<?= $trophyUrl; ?>">
-                                                    <img src="/img/trophy/<?= $trophy->getTrophyIconPath(); ?>" alt="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
+                                                    <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
                                                 </a>
                                             </div>
 
@@ -108,7 +108,7 @@ require_once('header.php');
                                         <div><?= $inGameRarity->renderSpan(); ?></div>
                                     </td>
                                     <td class="text-center align-middle">
-                                        <img src="/img/trophy-<?= $trophy->getTrophyType(); ?>.svg" alt="<?= ucfirst($trophy->getTrophyType()); ?>" title="<?= ucfirst($trophy->getTrophyType()); ?>" height="50" />
+                                        <img src="/img/trophy-<?= htmlspecialchars($trophy->getTrophyType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= ucfirst($trophy->getTrophyType()); ?>" title="<?= ucfirst($trophy->getTrophyType()); ?>" height="50" />
                                     </td>
                                 </tr>
                                 <?php

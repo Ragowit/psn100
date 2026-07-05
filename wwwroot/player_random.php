@@ -79,7 +79,7 @@ require_once("header.php");
                                 <div class="card">
                                     <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
                                         <a href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
-                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= $game->getIconUrl(); ?>" alt="<?= htmlentities($game->getName()); ?>">
+                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($game->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName()); ?>">
                                             <div class="card-img-overlay d-flex align-items-end p-2">
                                                 <?php
                                                 foreach ($game->getPlatforms() as $platform) {

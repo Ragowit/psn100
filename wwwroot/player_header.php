@@ -51,7 +51,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
             <!-- Country -->
             <div class="ms-auto">
                 <?php $countryName = htmlentities($playerHeaderViewModel->getCountryName(), ENT_QUOTES, 'UTF-8'); ?>
-                <img src="/img/country/<?= $playerHeaderViewModel->getCountryCode(); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                <img src="/img/country/<?= htmlspecialchars($playerHeaderViewModel->getCountryCode(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
             </div>
         </div>
     </div>

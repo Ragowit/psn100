@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerReportAdminService.php';
 require_once __DIR__ . '/PlayerReportAdminPageResult.php';
+require_once __DIR__ . '/PlayerReportDeletionRequest.php';
 
 class PlayerReportAdminPage
 {
@@ -16,49 +17,30 @@ class PlayerReportAdminPage
 
     /**
      * @param array<string, mixed> $queryParameters
+     * @param array<string, mixed> $postData
      */
-    public function handle(array $queryParameters): PlayerReportAdminPageResult
+    public function handle(array $queryParameters, array $postData, string $method): PlayerReportAdminPageResult
     {
         $successMessage = null;
         $errorMessage = null;
 
-        if (array_key_exists('delete', $queryParameters)) {
-            $deleteId = $this->parseDeleteId($queryParameters['delete']);
+        if (strtoupper($method) === 'POST') {
+            $deletionRequest = PlayerReportDeletionRequest::fromPostData($postData);
 
-            if ($deleteId === null) {
-                $errorMessage = 'Please provide a valid report ID to delete.';
-            } else {
-                $this->playerReportAdminService->deleteReportById($deleteId);
-                $successMessage = sprintf('Report %d deleted successfully.', $deleteId);
+            if ($deletionRequest->hasError()) {
+                $errorMessage = $deletionRequest->getErrorMessage();
+            } elseif ($deletionRequest->isValidDeletion()) {
+                $deleteId = $deletionRequest->getDeleteId();
+
+                if ($deleteId !== null) {
+                    $this->playerReportAdminService->deleteReportById($deleteId);
+                    $successMessage = sprintf('Report %d deleted successfully.', $deleteId);
+                }
             }
         }
 
         $reportedPlayers = $this->playerReportAdminService->getReportedPlayers();
 
         return new PlayerReportAdminPageResult($reportedPlayers, $successMessage, $errorMessage);
-    }
-
-    private function parseDeleteId(mixed $value): ?int
-    {
-        if (is_int($value)) {
-            return $value > 0 ? $value : null;
-        }
-
-        if (!is_string($value)) {
-            return null;
-        }
-
-        $trimmedValue = trim($value);
-        if ($trimmedValue === '') {
-            return null;
-        }
-
-        if (!ctype_digit($trimmedValue)) {
-            return null;
-        }
-
-        $deleteId = (int) $trimmedValue;
-
-        return $deleteId > 0 ? $deleteId : null;
     }
 }

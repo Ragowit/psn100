@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
+require_once __DIR__ . '/classes/GameMessageSanitizer.php';
 
 /** @var GameDetails $game */
 /** @var GameHeaderData $gameHeaderData */
@@ -115,7 +116,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
-                <?= $game->getMessage(); ?>
+                <?= GameMessageSanitizer::sanitize($game->getMessage()); ?>
             </div>
         </div>
         <?php
@@ -135,7 +136,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                     : '../missing-ps4-game.png')
                 : $gameIconUrl;
             ?>
-            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= $iconPath; ?>" alt="<?= htmlentities($game->getName()); ?>">
+            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName()); ?>">
         </div>
 
         <div class="col-12 col-lg-6">
