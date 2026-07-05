@@ -43,10 +43,8 @@ final readonly class WeeklyCronJob implements CronJobInterface
     #[\Override]
     public function run(): void
     {
-        $this->executeWithRetry(function (): void {
-            $this->updateLeaderboardsForActivePlayers();
-            $this->resetRankingsForInactivePlayers();
-        });
+        $this->executeWithRetry([$this, 'updateLeaderboardsForActivePlayers']);
+        $this->executeWithRetry([$this, 'resetRankingsForInactivePlayers']);
     }
 
     private function updateLeaderboardsForActivePlayers(): void

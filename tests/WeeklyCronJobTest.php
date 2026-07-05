@@ -30,18 +30,23 @@ final class WeeklyCronJobTest extends TestCase
         $this->assertStringContainsString('p.status != 0', $query);
     }
 
-    public function testRunRetriesBothUpdatesTogether(): void
+    public function testRunUsesSeparateRetryLoopsForActiveAndInactiveUpdates(): void
     {
         $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/WeeklyCronJob.php');
         $this->assertTrue(is_string($source));
-        $this->assertStringContainsString('$this->executeWithRetry(function (): void {', $source);
-        $this->assertStringContainsString('$this->updateLeaderboardsForActivePlayers();', $source);
-        $this->assertStringContainsString('$this->resetRankingsForInactivePlayers();', $source);
+        $this->assertStringContainsString(
+            '$this->executeWithRetry([$this, \'updateLeaderboardsForActivePlayers\']);',
+            $source
+        );
+        $this->assertStringContainsString(
+            '$this->executeWithRetry([$this, \'resetRankingsForInactivePlayers\']);',
+            $source
+        );
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
     }
 
-    public function testRunRetriesUntilInactiveResetSucceeds(): void
+    public function testRunRetriesOnlyInactiveResetAfterActiveSnapshotSucceeds(): void
     {
         $database = new WeeklyCronJobRetryTestDatabase();
         $sleepCalls = [];
@@ -57,8 +62,28 @@ final class WeeklyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([1, 1], $sleepCalls);
-        $this->assertSame(3, $database->getActiveUpdateCount());
+        $this->assertSame(1, $database->getActiveUpdateCount());
         $this->assertSame(3, $database->getInactiveResetCount());
+    }
+
+    public function testRunRetriesActiveSnapshotUntilItSucceeds(): void
+    {
+        $database = new WeeklyCronJobActiveRetryTestDatabase();
+        $sleepCalls = [];
+
+        $job = new WeeklyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame([1, 1], $sleepCalls);
+        $this->assertSame(3, $database->getActiveUpdateCount());
+        $this->assertSame(1, $database->getInactiveResetCount());
     }
 
     private function readPrivateConstantValue(ReflectionClass $class, string $name): string
@@ -107,6 +132,48 @@ final class WeeklyCronJobRetryTestDatabase extends PDO
                 if ($this->inactiveResetCount < 3) {
                     throw new RuntimeException('Simulated inactive reset failure.');
                 }
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+final class WeeklyCronJobActiveRetryTestDatabase extends PDO
+{
+    private int $activeUpdateCount = 0;
+
+    private int $inactiveResetCount = 0;
+
+    public function __construct()
+    {
+    }
+
+    public function getActiveUpdateCount(): int
+    {
+        return $this->activeUpdateCount;
+    }
+
+    public function getInactiveResetCount(): int
+    {
+        return $this->inactiveResetCount;
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'WHERE p.status = 0')) {
+            return new WeeklyCronJobTestStatement(function (): void {
+                $this->activeUpdateCount++;
+
+                if ($this->activeUpdateCount < 3) {
+                    throw new RuntimeException('Simulated active snapshot failure.');
+                }
+            });
+        }
+
+        if (str_contains($query, 'p.status != 0')) {
+            return new WeeklyCronJobTestStatement(function (): void {
+                $this->inactiveResetCount++;
             });
         }
 
