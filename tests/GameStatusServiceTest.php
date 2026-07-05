@@ -113,4 +113,24 @@ final class GameStatusServiceTest extends TestCase
             $this->assertSame('Game ID must be a non-negative integer.', $exception->getMessage());
         }
     }
+
+    public function testUpdateGameStatusThrowsWhenGameDoesNotExist(): void
+    {
+        try {
+            $this->service->updateGameStatus(999, GameAvailabilityStatus::DELISTED);
+            $this->fail('Expected InvalidArgumentException was not thrown.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame('Unable to find the specified game.', $exception->getMessage());
+        }
+
+        $changeCount = $this->database
+            ->query('SELECT COUNT(*) FROM psn100_change')
+            ->fetchColumn();
+        $this->assertSame(0, (int) $changeCount);
+
+        $status = $this->database
+            ->query('SELECT status FROM trophy_title_meta WHERE np_communication_id = "NPWR-1"')
+            ->fetchColumn();
+        $this->assertSame(0, (int) $status);
+    }
 }

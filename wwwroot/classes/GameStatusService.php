@@ -42,7 +42,7 @@ class GameStatusService
         $npCommunicationId = $npCommunicationIdQuery->fetchColumn();
 
         if ($npCommunicationId === false) {
-            return;
+            throw new InvalidArgumentException('Unable to find the specified game.');
         }
 
         $query = $this->database->prepare(
