@@ -78,7 +78,7 @@ SQL;
 
     public function recalculate(): void
     {
-        if (!$this->acquireLock()) {
+        if (!$this->waitForLock()) {
             $this->log('Player ranking recalculation skipped because another run is in progress.');
 
             return;
@@ -195,6 +195,27 @@ SQL;
         $this->database->exec($dropSql);
     }
 
+    private function waitForLock(): bool
+    {
+        $attempt = 0;
+
+        while (true) {
+            try {
+                return $this->acquireLock();
+            } catch (Throwable $exception) {
+                $attempt++;
+                $delay = $this->calculateRetryDelay($attempt);
+                $this->log(sprintf(
+                    'Player ranking lock acquisition failed (attempt %d): %s. Retrying in %d seconds.',
+                    $attempt,
+                    $exception->getMessage(),
+                    $delay
+                ));
+                ($this->sleeper)($delay);
+            }
+        }
+    }
+
     private function acquireLock(): bool
     {
         if (!$this->supportsNamedLocks()) {
@@ -205,7 +226,23 @@ SQL;
         $lockStatement->bindValue(':lock_name', self::LOCK_NAME, PDO::PARAM_STR);
         $lockStatement->execute();
 
-        return (int) ($lockStatement->fetchColumn() ?? 0) === 1;
+        $result = $lockStatement->fetchColumn();
+        if ($result === null || $result === false) {
+            throw new RuntimeException('Unable to acquire player ranking recalculation lock.');
+        }
+
+        if ((string) $result === '1') {
+            return true;
+        }
+
+        if ((string) $result === '0') {
+            return false;
+        }
+
+        throw new RuntimeException(sprintf(
+            'Unexpected GET_LOCK result for player ranking recalculation: %s',
+            var_export($result, true)
+        ));
     }
 
     private function releaseLock(): void

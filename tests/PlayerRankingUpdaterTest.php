@@ -91,7 +91,7 @@ final class PlayerRankingUpdaterTest extends TestCase
 
     public function testAcquireLockReturnsFalseWhenMysqlLockIsUnavailable(): void
     {
-        $database = new PlayerRankingUpdaterLockTestDatabase(false);
+        $database = new PlayerRankingUpdaterLockTestDatabase(0);
         $updater = new PlayerRankingUpdater($database);
         $method = new ReflectionMethod($updater, 'acquireLock');
         $method->setAccessible(true);
@@ -101,12 +101,55 @@ final class PlayerRankingUpdaterTest extends TestCase
 
     public function testAcquireLockReturnsTrueWhenMysqlLockIsAvailable(): void
     {
-        $database = new PlayerRankingUpdaterLockTestDatabase(true);
+        $database = new PlayerRankingUpdaterLockTestDatabase(1);
         $updater = new PlayerRankingUpdater($database);
         $method = new ReflectionMethod($updater, 'acquireLock');
         $method->setAccessible(true);
 
         $this->assertTrue($method->invoke($updater));
+    }
+
+    public function testAcquireLockThrowsWhenGetLockReturnsNull(): void
+    {
+        $database = new PlayerRankingUpdaterLockTestDatabase(null);
+        $updater = new PlayerRankingUpdater($database);
+        $method = new ReflectionMethod($updater, 'acquireLock');
+        $method->setAccessible(true);
+
+        try {
+            $method->invoke($updater);
+            $this->fail('Expected acquireLock to throw when GET_LOCK returns NULL.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('Unable to acquire player ranking recalculation lock', $exception->getMessage());
+        }
+    }
+
+    public function testRecalculateRetriesLockAcquisitionWhenGetLockReturnsNull(): void
+    {
+        $database = new PlayerRankingUpdaterLockTestDatabase(1, 2);
+        $logDatabase = new PDO('sqlite::memory:');
+        $logDatabase->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL)');
+        $logger = new Psn100Logger($logDatabase);
+        $sleepCalls = [];
+
+        $updater = new PlayerRankingUpdater(
+            $database,
+            retryDelaySeconds: 1,
+            maxRetryDelaySeconds: 1,
+            logger: $logger,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $updater->recalculate();
+
+        $this->assertSame([1, 1], $sleepCalls);
+
+        $messages = $logDatabase->query('SELECT message FROM log ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
+        $this->assertCount(2, $messages);
+        $this->assertStringContainsString('lock acquisition failed (attempt 1)', $messages[0]);
+        $this->assertStringContainsString('lock acquisition failed (attempt 2)', $messages[1]);
     }
 
     public function testRecalculateContinuesRetryingWhenDatabaseLoggingFails(): void
@@ -133,7 +176,7 @@ final class PlayerRankingUpdaterTest extends TestCase
 
     public function testRecalculateSkipsWhenLockIsAlreadyHeld(): void
     {
-        $database = new PlayerRankingUpdaterLockTestDatabase(false);
+        $database = new PlayerRankingUpdaterLockTestDatabase(0);
         $logDatabase = new PDO('sqlite::memory:');
         $logDatabase->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL)');
         $logger = new Psn100Logger($logDatabase);
@@ -206,8 +249,12 @@ final class PlayerRankingUpdaterRetryTestDatabase extends PDO
 
 final class PlayerRankingUpdaterLockTestDatabase extends PDO
 {
-    public function __construct(private readonly bool $lockAvailable)
-    {
+    private int $lockAttempts = 0;
+
+    public function __construct(
+        private readonly mixed $lockResult,
+        private readonly ?int $failuresBeforeSuccess = null,
+    ) {
     }
 
     public function getAttribute($attribute): mixed
@@ -221,22 +268,50 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        if (!str_contains($query, 'GET_LOCK')) {
-            throw new RuntimeException('Unexpected prepare call: ' . $query);
+        if (str_contains($query, 'GET_LOCK')) {
+            return new PlayerRankingUpdaterLockTestStatement($this->resolveLockResult());
         }
 
-        return new PlayerRankingUpdaterLockTestStatement($this->lockAvailable);
+        if (str_contains($query, 'RELEASE_LOCK')) {
+            return new PlayerRankingUpdaterLockTestStatement(1);
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+
+    private function resolveLockResult(): mixed
+    {
+        $this->lockAttempts++;
+
+        if (
+            $this->failuresBeforeSuccess !== null
+            && $this->lockAttempts <= $this->failuresBeforeSuccess
+        ) {
+            return null;
+        }
+
+        return $this->lockResult;
     }
 
     public function exec(string $statement): int|false
     {
-        throw new RuntimeException('Should not execute ranking SQL when lock is unavailable.');
+        if (
+            str_contains($statement, 'DROP TABLE IF EXISTS')
+            || str_contains($statement, 'CREATE TABLE IF NOT EXISTS')
+            || str_contains($statement, 'TRUNCATE TABLE')
+            || str_contains($statement, 'INSERT INTO player_ranking_new')
+            || str_contains($statement, 'RENAME TABLE')
+        ) {
+            return 0;
+        }
+
+        throw new RuntimeException('Unexpected exec call: ' . $statement);
     }
 }
 
 final class PlayerRankingUpdaterLockTestStatement extends PDOStatement
 {
-    public function __construct(private readonly bool $lockAvailable)
+    public function __construct(private readonly mixed $lockResult)
     {
     }
 
@@ -252,6 +327,6 @@ final class PlayerRankingUpdaterLockTestStatement extends PDOStatement
 
     public function fetchColumn(int $column = 0): mixed
     {
-        return $this->lockAvailable ? 1 : 0;
+        return $this->lockResult;
     }
 }
