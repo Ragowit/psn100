@@ -22,7 +22,8 @@ final class PlayerReportServiceTest extends TestCase
                 report_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 account_id INTEGER NOT NULL,
                 ip_address TEXT NOT NULL,
-                explanation TEXT NOT NULL
+                explanation TEXT NOT NULL,
+                UNIQUE (account_id, ip_address)
             )
             SQL
         );
@@ -91,5 +92,59 @@ final class PlayerReportServiceTest extends TestCase
 
         $count = (int) $this->pdo->query('SELECT COUNT(*) FROM player_report')->fetchColumn();
         $this->assertSame(10, $count);
+    }
+
+    public function testSubmitReportReturnsErrorWhenExplanationIsTooLong(): void
+    {
+        $result = $this->service->submitReport(123, '198.51.100.10', str_repeat('a', 257));
+
+        $this->assertFalse($result->isSuccess());
+        $this->assertSame('Explanation must be 256 characters or fewer.', $result->getMessage());
+        $this->assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM player_report')->fetchColumn());
+    }
+
+    public function testSubmitReportAcceptsExplanationAtMaximumLength(): void
+    {
+        $explanation = str_repeat('a', 256);
+
+        $result = $this->service->submitReport(123, '198.51.100.10', $explanation);
+
+        $this->assertTrue($result->isSuccess());
+        $this->assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM player_report')->fetchColumn());
+    }
+
+    public function testSubmitReportReturnsDuplicateErrorWhenUniqueConstraintIsViolated(): void
+    {
+        $service = new PlayerReportService($this->pdo);
+        $insertReport = new ReflectionMethod($service, 'insertReport');
+        $insertReport->setAccessible(true);
+        $isDuplicate = new ReflectionMethod($service, 'isDuplicateReportException');
+        $isDuplicate->setAccessible(true);
+
+        $insertReport->invoke($service, 789, '198.51.100.99', 'Existing report');
+
+        try {
+            $insertReport->invoke($service, 789, '198.51.100.99', 'Race condition report');
+            $this->fail('Expected PDOException was not thrown.');
+        } catch (PDOException $exception) {
+            $this->assertTrue($isDuplicate->invoke($service, $exception));
+        }
+    }
+
+    public function testSubmitReportPerformsDuplicateCheckInsideIpLock(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/PlayerReportService.php');
+        $this->assertTrue(is_string($source));
+
+        $methodStart = strpos($source, 'public function submitReport');
+        $this->assertTrue($methodStart !== false);
+
+        $methodSource = substr($source, $methodStart, 1200);
+        $lockPos = strpos($methodSource, 'getIpSubmissionLockExecutor()->execute');
+        $duplicatePos = strpos($methodSource, 'hasExistingReport($accountId, $ipAddress)');
+
+        $this->assertTrue($lockPos !== false);
+        $this->assertTrue($duplicatePos !== false);
+        $this->assertTrue($duplicatePos > $lockPos);
     }
 }

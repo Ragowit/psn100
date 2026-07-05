@@ -9,6 +9,14 @@ class PlayerReportService
 {
     private const MAX_PENDING_REPORTS_PER_IP = 10;
 
+    private const MAX_EXPLANATION_LENGTH = 256;
+
+    private const SUBMIT_OUTCOME_SUCCESS = 'success';
+
+    private const SUBMIT_OUTCOME_DUPLICATE = 'duplicate';
+
+    private const SUBMIT_OUTCOME_LIMIT = 'limit';
+
     public function __construct(
         private readonly PDO $database,
         private readonly ?IpSubmissionLockExecutor $ipSubmissionLockExecutor = null,
@@ -17,28 +25,44 @@ class PlayerReportService
 
     public function submitReport(int $accountId, string $ipAddress, string $explanation): PlayerReportResult
     {
-        if ($this->hasExistingReport($accountId, $ipAddress)) {
-            return PlayerReportResult::error("You've already reported this player.");
+        if (mb_strlen($explanation) > self::MAX_EXPLANATION_LENGTH) {
+            return PlayerReportResult::error(
+                'Explanation must be ' . self::MAX_EXPLANATION_LENGTH . ' characters or fewer.'
+            );
         }
 
-        $inserted = $this->getIpSubmissionLockExecutor()->execute(
+        $outcome = $this->getIpSubmissionLockExecutor()->execute(
             $ipAddress,
-            function () use ($accountId, $ipAddress, $explanation): bool {
-                if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
-                    return false;
+            function () use ($accountId, $ipAddress, $explanation): string {
+                if ($this->hasExistingReport($accountId, $ipAddress)) {
+                    return self::SUBMIT_OUTCOME_DUPLICATE;
                 }
 
-                $this->insertReport($accountId, $ipAddress, $explanation);
+                if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
+                    return self::SUBMIT_OUTCOME_LIMIT;
+                }
 
-                return true;
+                try {
+                    $this->insertReport($accountId, $ipAddress, $explanation);
+                } catch (PDOException $exception) {
+                    if ($this->isDuplicateReportException($exception)) {
+                        return self::SUBMIT_OUTCOME_DUPLICATE;
+                    }
+
+                    throw $exception;
+                }
+
+                return self::SUBMIT_OUTCOME_SUCCESS;
             }
         );
 
-        if (!$inserted) {
-            return PlayerReportResult::error('You already have 10 reports waiting to be processed. Please try again later.');
-        }
-
-        return PlayerReportResult::success('Player reported successfully.');
+        return match ($outcome) {
+            self::SUBMIT_OUTCOME_SUCCESS => PlayerReportResult::success('Player reported successfully.'),
+            self::SUBMIT_OUTCOME_DUPLICATE => PlayerReportResult::error("You've already reported this player."),
+            self::SUBMIT_OUTCOME_LIMIT => PlayerReportResult::error(
+                'You already have 10 reports waiting to be processed. Please try again later.'
+            ),
+        };
     }
 
     private function getIpSubmissionLockExecutor(): IpSubmissionLockExecutor
@@ -103,5 +127,17 @@ class PlayerReportService
         $query->bindValue(':ip_address', $ipAddress, PDO::PARAM_STR);
         $query->bindValue(':explanation', $explanation, PDO::PARAM_STR);
         $query->execute();
+    }
+
+    private function isDuplicateReportException(PDOException $exception): bool
+    {
+        if ($exception->getCode() === '23000') {
+            return true;
+        }
+
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'UNIQUE constraint failed')
+            || str_contains($message, 'Duplicate entry');
     }
 }
