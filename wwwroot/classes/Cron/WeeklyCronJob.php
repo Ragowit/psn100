@@ -33,15 +33,20 @@ final readonly class WeeklyCronJob implements CronJobInterface
             p.status != 0
         SQL;
 
-    public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
-    {
+    public function __construct(
+        private PDO $database,
+        private int $retryDelaySeconds = 3,
+        private ?\Closure $sleeper = null,
+    ) {
     }
 
     #[\Override]
     public function run(): void
     {
-        $this->executeWithRetry([$this, 'updateLeaderboardsForActivePlayers']);
-        $this->resetRankingsForInactivePlayers();
+        $this->executeWithRetry(function (): void {
+            $this->updateLeaderboardsForActivePlayers();
+            $this->resetRankingsForInactivePlayers();
+        });
     }
 
     private function updateLeaderboardsForActivePlayers(): void
@@ -64,8 +69,16 @@ final readonly class WeeklyCronJob implements CronJobInterface
 
                 return;
             } catch (Throwable $exception) {
-                sleep($this->retryDelaySeconds);
+                ($this->getSleeper())($this->retryDelaySeconds);
             }
         }
+    }
+
+    /** @return \Closure(int): void */
+    private function getSleeper(): \Closure
+    {
+        return $this->sleeper ?? static function (int $seconds): void {
+            sleep($seconds);
+        };
     }
 }
