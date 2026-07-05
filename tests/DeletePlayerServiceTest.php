@@ -58,7 +58,7 @@ final class DeletePlayerServiceTest extends TestCase
         $this->assertSame(null, $player);
     }
 
-    public function testDeletePlayerByAccountIdDeletesData(): void
+    public function testDeletePlayerByAccountIdDeletesRelatedData(): void
     {
         $this->insertPlayerData('2002', 'PlayerOne');
         $this->insertPlayerData('3003', 'PlayerTwo');
@@ -70,6 +70,9 @@ final class DeletePlayerServiceTest extends TestCase
                 'trophy_earned' => 2,
                 'trophy_group_player' => 1,
                 'trophy_title_player' => 1,
+                'player_ranking' => 1,
+                'player_report' => 1,
+                'player_queue' => 1,
                 'player' => 1,
                 'log' => 1,
             ],
@@ -79,10 +82,26 @@ final class DeletePlayerServiceTest extends TestCase
         $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM trophy_earned WHERE account_id = '2002'")->fetchColumn());
         $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM trophy_group_player WHERE account_id = '2002'")->fetchColumn());
         $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM trophy_title_player WHERE account_id = '2002'")->fetchColumn());
+        $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM player_ranking WHERE account_id = '2002'")->fetchColumn());
+        $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM player_report WHERE account_id = '2002'")->fetchColumn());
+        $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM player_queue WHERE online_id = 'PlayerOne'")->fetchColumn());
         $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM player WHERE account_id = '2002'")->fetchColumn());
-        $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM log WHERE message LIKE '%2002%'")->fetchColumn());
+        $this->assertSame(0, (int) $this->database->query("SELECT COUNT(*) FROM log WHERE message = 'Player (2002) deleted'")->fetchColumn());
 
         $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM player WHERE account_id = '3003'")->fetchColumn());
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM player_queue WHERE online_id = 'PlayerTwo'")->fetchColumn());
+    }
+
+    public function testDeletePlayerByAccountIdDoesNotDeleteLogsWithSimilarNumericSubstrings(): void
+    {
+        $this->insertPlayerData('2002', 'PlayerOne');
+        $this->database->exec("INSERT INTO log (message) VALUES ('Scan failed for player 92002')");
+        $this->database->exec("INSERT INTO log (message) VALUES ('Sony issues with OtherUser (92002).')");
+
+        $this->service->deletePlayerByAccountId('2002');
+
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM log WHERE message = 'Scan failed for player 92002'")->fetchColumn());
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM log WHERE message = 'Sony issues with OtherUser (92002).'")->fetchColumn());
     }
 
     public function testDeletePlayerByAccountIdRollsBackOnFailure(): void
@@ -104,8 +123,11 @@ final class DeletePlayerServiceTest extends TestCase
         $this->assertSame(2, (int) $this->database->query("SELECT COUNT(*) FROM trophy_earned WHERE account_id = '4004'")->fetchColumn());
         $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM trophy_group_player WHERE account_id = '4004'")->fetchColumn());
         $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM trophy_title_player WHERE account_id = '4004'")->fetchColumn());
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM player_ranking WHERE account_id = '4004'")->fetchColumn());
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM player_report WHERE account_id = '4004'")->fetchColumn());
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM player_queue WHERE online_id = 'FailureUser'")->fetchColumn());
         $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM player WHERE account_id = '4004'")->fetchColumn());
-        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM log WHERE message LIKE '%4004%'")->fetchColumn());
+        $this->assertSame(1, (int) $this->database->query("SELECT COUNT(*) FROM log WHERE message = 'Player (4004) deleted'")->fetchColumn());
     }
 
     private function createTables(): void
@@ -129,6 +151,20 @@ final class DeletePlayerServiceTest extends TestCase
             in_game_rare INTEGER NOT NULL DEFAULT 0,
             in_game_epic INTEGER NOT NULL DEFAULT 0,
             in_game_legendary INTEGER NOT NULL DEFAULT 0
+        )');
+        $this->database->exec('CREATE TABLE player_ranking (
+            account_id TEXT PRIMARY KEY,
+            ranking INTEGER NOT NULL
+        )');
+        $this->database->exec('CREATE TABLE player_report (
+            report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id TEXT NOT NULL,
+            ip_address TEXT NOT NULL,
+            explanation TEXT NOT NULL
+        )');
+        $this->database->exec('CREATE TABLE player_queue (
+            online_id TEXT PRIMARY KEY,
+            ip_address TEXT NOT NULL
         )');
         $this->database->exec('CREATE TABLE player (
             account_id TEXT PRIMARY KEY,
@@ -154,6 +190,18 @@ final class DeletePlayerServiceTest extends TestCase
         $this->database->exec(sprintf(
             "INSERT INTO trophy_title_player (account_id) VALUES ('%s')",
             $accountId
+        ));
+        $this->database->exec(sprintf(
+            "INSERT INTO player_ranking (account_id, ranking) VALUES ('%s', 1)",
+            $accountId
+        ));
+        $this->database->exec(sprintf(
+            "INSERT INTO player_report (account_id, ip_address, explanation) VALUES ('%s', '127.0.0.1', 'test')",
+            $accountId
+        ));
+        $this->database->exec(sprintf(
+            "INSERT INTO player_queue (online_id, ip_address) VALUES ('%s', '127.0.0.1')",
+            $onlineId
         ));
         $this->database->exec(sprintf(
             "INSERT INTO log (message) VALUES ('Player (%s) deleted')",
