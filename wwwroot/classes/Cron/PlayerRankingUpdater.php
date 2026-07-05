@@ -227,9 +227,13 @@ SQL;
     private function log(string $message): void
     {
         if ($this->logger !== null) {
-            $this->logger->log($message);
+            try {
+                $this->logger->log($message);
 
-            return;
+                return;
+            } catch (Throwable) {
+                // Keep retrying even when the database logger is unavailable.
+            }
         }
 
         error_log($message);

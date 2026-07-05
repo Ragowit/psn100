@@ -109,6 +109,28 @@ final class PlayerRankingUpdaterTest extends TestCase
         $this->assertTrue($method->invoke($updater));
     }
 
+    public function testRecalculateContinuesRetryingWhenDatabaseLoggingFails(): void
+    {
+        $database = new PlayerRankingUpdaterRetryTestDatabase();
+        $logDatabase = new PlayerRankingUpdaterFailingLogDatabase();
+        $logger = new Psn100Logger($logDatabase);
+        $sleepCalls = [];
+
+        $updater = new PlayerRankingUpdater(
+            $database,
+            retryDelaySeconds: 1,
+            maxRetryDelaySeconds: 1,
+            logger: $logger,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $updater->recalculate();
+
+        $this->assertSame([1, 1], $sleepCalls);
+    }
+
     public function testRecalculateSkipsWhenLockIsAlreadyHeld(): void
     {
         $database = new PlayerRankingUpdaterLockTestDatabase(false);
@@ -131,6 +153,18 @@ final class PlayerRankingUpdaterTest extends TestCase
         $messages = $query->fetchAll(PDO::FETCH_COLUMN);
         $this->assertCount(1, $messages);
         $this->assertStringContainsString('skipped because another run is in progress', $messages[0]);
+    }
+}
+
+final class PlayerRankingUpdaterFailingLogDatabase extends PDO
+{
+    public function __construct()
+    {
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        throw new RuntimeException('Simulated log insert failure.');
     }
 }
 

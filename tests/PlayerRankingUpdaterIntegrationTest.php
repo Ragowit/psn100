@@ -10,8 +10,15 @@ final class PlayerRankingUpdaterIntegrationTest extends TestCase
 {
     private ?PDO $database = null;
 
+    private ?PDO $lockHolderConnection = null;
+
     protected function tearDown(): void
     {
+        if ($this->lockHolderConnection instanceof PDO) {
+            $this->releaseRankingLock($this->lockHolderConnection);
+            $this->lockHolderConnection = null;
+        }
+
         if ($this->database instanceof PDO) {
             $this->releaseRankingLock();
             $this->database->exec('DROP TABLE IF EXISTS player_ranking_old');
@@ -85,7 +92,14 @@ final class PlayerRankingUpdaterIntegrationTest extends TestCase
         }
 
         $this->seedPlayers($database);
-        $this->assertTrue($this->acquireRankingLock());
+
+        $lockHolder = $this->createAdditionalMysqlConnection();
+        if ($lockHolder === null) {
+            return;
+        }
+
+        $this->lockHolderConnection = $lockHolder;
+        $this->assertTrue($this->acquireRankingLock($lockHolder));
 
         $logDatabase = new PDO('sqlite::memory:');
         $logDatabase->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL)');
@@ -103,6 +117,10 @@ final class PlayerRankingUpdaterIntegrationTest extends TestCase
         $messages = $logDatabase->query('SELECT message FROM log ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
         $this->assertCount(1, $messages);
         $this->assertStringContainsString('skipped because another run is in progress', $messages[0]);
+        $this->assertSame(
+            0,
+            (int) $database->query('SELECT COUNT(*) FROM player_ranking')->fetchColumn()
+        );
     }
 
     private function createMysqlDatabase(): ?PDO
@@ -129,6 +147,27 @@ final class PlayerRankingUpdaterIntegrationTest extends TestCase
         $this->createSchema($database);
 
         return $database;
+    }
+
+    private function createAdditionalMysqlConnection(): ?PDO
+    {
+        $host = getenv('DB_HOST') ?: '127.0.0.1';
+        $name = getenv('DB_NAME') ?: 'psn100';
+        $user = getenv('DB_USER') ?: 'psn100';
+        $password = getenv('DB_PASSWORD') ?: 'psn100';
+
+        try {
+            return new PDO(
+                sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $host, $name),
+                $user,
+                $password,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                ]
+            );
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function createSchema(PDO $database): void
@@ -271,25 +310,29 @@ final class PlayerRankingUpdaterIntegrationTest extends TestCase
         }
     }
 
-    private function acquireRankingLock(): bool
+    private function acquireRankingLock(?PDO $connection = null): bool
     {
-        if (!$this->database instanceof PDO) {
+        $connection ??= $this->database;
+
+        if (!$connection instanceof PDO) {
             return false;
         }
 
-        $statement = $this->database->prepare("SELECT GET_LOCK('psn100:player_ranking_recalc', 0)");
+        $statement = $connection->prepare("SELECT GET_LOCK('psn100:player_ranking_recalc', 0)");
         $statement->execute();
 
         return (int) ($statement->fetchColumn() ?? 0) === 1;
     }
 
-    private function releaseRankingLock(): void
+    private function releaseRankingLock(?PDO $connection = null): void
     {
-        if (!$this->database instanceof PDO) {
+        $connection ??= $this->database;
+
+        if (!$connection instanceof PDO) {
             return;
         }
 
-        $statement = $this->database->prepare("SELECT RELEASE_LOCK('psn100:player_ranking_recalc')");
+        $statement = $connection->prepare("SELECT RELEASE_LOCK('psn100:player_ranking_recalc')");
         $statement->execute();
     }
 }
