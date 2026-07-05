@@ -40,6 +40,8 @@ final class GameHistoryService
                 SQL
             );
         } catch (PDOException $exception) {
+            $this->logDatabaseError($exception, 'prepare history query');
+
             return [];
         }
 
@@ -48,6 +50,8 @@ final class GameHistoryService
         try {
             $query->execute();
         } catch (PDOException $exception) {
+            $this->logDatabaseError($exception, 'execute history query');
+
             return [];
         }
 
@@ -200,6 +204,8 @@ final class GameHistoryService
         try {
             $query = $this->database->prepare($sql);
         } catch (PDOException $exception) {
+            $this->logDatabaseError($exception, 'prepare related history query');
+
             return [];
         }
 
@@ -210,12 +216,19 @@ final class GameHistoryService
         try {
             $query->execute();
         } catch (PDOException $exception) {
+            $this->logDatabaseError($exception, 'execute related history query');
+
             return [];
         }
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
+    }
+
+    private function logDatabaseError(PDOException $exception, string $context): void
+    {
+        error_log(sprintf('GameHistoryService %s failed: %s', $context, $exception->getMessage()));
     }
 
     private function createDateTime(string $value): DateTimeImmutable

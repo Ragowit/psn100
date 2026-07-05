@@ -199,46 +199,55 @@ class GameCopyService
         bool $copyIconUrl = true,
         bool $copySetVersion = true
     ): void {
-        $childNpCommunicationId = $this->getNpCommunicationId($childId);
-        $parentNpCommunicationId = $this->getNpCommunicationId($parentId);
+        $this->database->beginTransaction();
 
-        $this->ensureChildIsNotMergeTitle($childNpCommunicationId);
-        $this->ensureParentIsMergeTitle($parentNpCommunicationId);
+        try {
+            $childNpCommunicationId = $this->getNpCommunicationId($childId);
+            $parentNpCommunicationId = $this->getNpCommunicationId($parentId);
 
-        $this->copyTrophyTitle(
-            $childNpCommunicationId,
-            $parentNpCommunicationId,
-            $copyIconUrl,
-            $copySetVersion
-        );
+            $this->ensureChildIsNotMergeTitle($childNpCommunicationId);
+            $this->ensureParentIsMergeTitle($parentNpCommunicationId);
 
-        if ($this->isBaseList($childNpCommunicationId)) {
-            $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-            $groupIdMapping = $this->copyConflictingTrophyGroups(
+            $this->copyTrophyTitle(
                 $childNpCommunicationId,
                 $parentNpCommunicationId,
-                [],
-                true
+                $copyIconUrl,
+                $copySetVersion
             );
-            $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
-            $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
-            $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
-            $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
-        } else {
-            $numericGroupIds = $this->getNumericGroupIds($childNpCommunicationId);
-            $groupIdMapping = $this->copyConflictingTrophyGroups(
-                $childNpCommunicationId,
-                $parentNpCommunicationId,
-                $numericGroupIds
-            );
-            $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
+
+            if ($this->isBaseList($childNpCommunicationId)) {
+                $this->copyNewTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+                $groupIdMapping = $this->copyConflictingTrophyGroups(
+                    $childNpCommunicationId,
+                    $parentNpCommunicationId,
+                    [],
+                    true
+                );
+                $this->copyTrophyGroups($childNpCommunicationId, $parentNpCommunicationId);
+                $this->copyNewTrophies($childNpCommunicationId, $parentNpCommunicationId);
+                $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
+                $this->copyTrophies($childNpCommunicationId, $parentNpCommunicationId);
+            } else {
+                $numericGroupIds = $this->getNumericGroupIds($childNpCommunicationId);
+                $groupIdMapping = $this->copyConflictingTrophyGroups(
+                    $childNpCommunicationId,
+                    $parentNpCommunicationId,
+                    $numericGroupIds
+                );
+                $this->copyConflictingTrophies($childNpCommunicationId, $parentNpCommunicationId, $groupIdMapping);
+            }
+
+            $this->updateTrophyTitleCounts($parentNpCommunicationId);
+
+            $this->recordCopyAction($childId, $parentId);
+
+            $this->historyRecorder->recordByTitleId($parentId);
+
+            $this->database->commit();
+        } catch (Throwable $exception) {
+            $this->database->rollBack();
+            throw $exception;
         }
-
-        $this->updateTrophyTitleCounts($parentNpCommunicationId);
-
-        $this->recordCopyAction($childId, $parentId);
-
-        $this->historyRecorder->recordByTitleId($parentId);
     }
 
     private function getNpCommunicationId(int $gameId): string

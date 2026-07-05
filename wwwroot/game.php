@@ -277,28 +277,31 @@ require_once("header.php");
                                                     && $previousTimeStamp !== null
                                                     && $trophyRow->hasRecordedEarnedDate()
                                                 ) {
-                                                    echo "<br>";
                                                     $datetime1 = date_create($previousTimeStamp);
                                                     $datetime2 = date_create($trophyRow->getEarnedDate());
-                                                    $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
-                                                    $first = -1;
-                                                    $second = -1;
-                                                    for ($i = 0; $i < count($completionTimes); $i++) {
-                                                        if ($completionTimes[$i][0] == "0") {
-                                                            continue;
+
+                                                    if ($datetime1 !== false && $datetime2 !== false) {
+                                                        echo "<br>";
+                                                        $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
+                                                        $first = -1;
+                                                        $second = -1;
+                                                        for ($i = 0; $i < count($completionTimes); $i++) {
+                                                            if ($completionTimes[$i][0] == "0") {
+                                                                continue;
+                                                            }
+
+                                                            if ($first == -1) {
+                                                                $first = $i;
+                                                            } elseif ($second == -1) {
+                                                                $second = $i;
+                                                            }
                                                         }
 
-                                                        if ($first == -1) {
-                                                            $first = $i;
-                                                        } elseif ($second == -1) {
-                                                            $second = $i;
+                                                        if ($first >= 0 && $second >= 0) {
+                                                            echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
+                                                        } elseif ($first >= 0 && $second == -1) {
+                                                            echo "(+". $completionTimes[$first] .")";
                                                         }
-                                                    }
-
-                                                    if ($first >= 0 && $second >= 0) {
-                                                        echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
-                                                    } elseif ($first >= 0 && $second == -1) {
-                                                        echo "(+". $completionTimes[$first] .")";
                                                     }
                                                 }
                                                 if ($sort == "date") {
