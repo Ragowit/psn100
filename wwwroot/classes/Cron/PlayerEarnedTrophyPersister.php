@@ -25,7 +25,7 @@ final class PlayerEarnedTrophyPersister
         string $npCommunicationId,
         string $groupId,
         int $orderId,
-        int $accountId,
+        string $accountId,
         bool $earned,
         string $rawProgress,
         string $rawEarnedDateTime,
@@ -65,7 +65,7 @@ final class PlayerEarnedTrophyPersister
         string $npCommunicationId,
         string $groupId,
         int $orderId,
-        int $accountId,
+        string $accountId,
         ?string $earnedDate,
         ?int $progress,
         bool $earned,
@@ -96,7 +96,9 @@ final class PlayerEarnedTrophyPersister
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        // Account IDs are stored as BIGINT UNSIGNED. Bind as string to avoid
+        // truncating larger values when PHP integers overflow.
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':earned_date', $earnedDate, PDO::PARAM_STR);
         $query->bindValue(':progress', $progress, PDO::PARAM_INT);
         $query->bindValue(':earned', $earned, PDO::PARAM_INT);
@@ -132,7 +134,7 @@ final class PlayerEarnedTrophyPersister
         string $npCommunicationId,
         string $groupId,
         int $orderId,
-        int $accountId,
+        string $accountId,
         ?string $earnedDate,
         ?int $progress,
         bool $earned,
@@ -167,7 +169,9 @@ final class PlayerEarnedTrophyPersister
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        // Account IDs are stored as BIGINT UNSIGNED. Bind as string to avoid
+        // truncating larger values when PHP integers overflow.
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':earned_date', $earnedDate, PDO::PARAM_STR);
         $query->bindValue(':progress', $progress, PDO::PARAM_INT);
         $query->bindValue(':earned', $earned, PDO::PARAM_INT);

@@ -1095,7 +1095,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                             $npid,
                                             $trophyGroup->id(),
                                             (int) $trophy->id(),
-                                            (int) $user->accountId(),
+                                            (string) $user->accountId(),
                                             $trophyEarned,
                                             $progress,
                                             $trophy->earnedDateTime(),

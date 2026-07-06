@@ -16,7 +16,7 @@ final class PlayerEarnedTrophyPersisterTest extends TestCase
             'NPWR12345_00',
             'default',
             3,
-            42,
+            '42',
             true,
             '',
             '2024-06-15T10:30:00Z',
@@ -34,7 +34,7 @@ final class PlayerEarnedTrophyPersisterTest extends TestCase
             ':np_communication_id' => 'NPWR12345_00',
             ':group_id' => 'default',
             ':order_id' => 3,
-            ':account_id' => 42,
+            ':account_id' => '42',
             ':earned_date' => '2024-06-15 10:30:00',
             ':progress' => null,
             ':earned' => true,
@@ -54,7 +54,7 @@ final class PlayerEarnedTrophyPersisterTest extends TestCase
             'NPWR12345_00',
             'default',
             3,
-            42,
+            '42',
             false,
             '55',
             '',
@@ -70,11 +70,30 @@ final class PlayerEarnedTrophyPersisterTest extends TestCase
             ':np_communication_id' => 'NPWR99999_00',
             ':group_id' => 'default',
             ':order_id' => 7,
-            ':account_id' => 42,
+            ':account_id' => '42',
             ':earned_date' => null,
             ':progress' => 55,
             ':earned' => false,
         ], $pdo->upsertParameters[1], 'Unexpected parent upsert parameters.');
+    }
+
+    public function testPersistEarnedTrophyPreservesAccountIdsAbovePhpIntMax(): void
+    {
+        $pdo = new PlayerEarnedTrophyPersisterRecordingPDO(null);
+        $persister = new PlayerEarnedTrophyPersister($pdo);
+        $largeAccountId = '9223372036854775808';
+
+        $persister->persistEarnedTrophy(
+            'NPWR12345_00',
+            'default',
+            1,
+            $largeAccountId,
+            true,
+            '',
+            '2024-06-15T10:30:00Z',
+        );
+
+        $this->assertSame($largeAccountId, $pdo->upsertParameters[0][':account_id']);
     }
 }
 
