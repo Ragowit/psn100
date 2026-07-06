@@ -12,6 +12,7 @@ require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
+require_once __DIR__ . '/WorkerScanCoordinator.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -27,6 +28,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PsnGameLookupService $psnGameLookupService;
     private readonly TrophyImageDirectories $imageDirectories;
     private readonly TrophyImageDownloader $imageDownloader;
+    private readonly WorkerScanCoordinator $workerScanCoordinator;
 
     public function __construct(
         private readonly PDO $database,
@@ -40,6 +42,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PsnGameLookupService $psnGameLookupService = null,
         ?TrophyImageDirectories $imageDirectories = null,
         ?TrophyImageDownloader $imageDownloader = null,
+        ?WorkerScanCoordinator $workerScanCoordinator = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -54,16 +57,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $logger->log($message);
             },
         );
-    }
-
-    private function setWaitingScanProgress(int $workerId, string $message): void
-    {
-        $this->setWorkerScanProgress(
-            $workerId,
-            [
-                'title' => $message,
-            ]
-        );
+        $this->workerScanCoordinator = $workerScanCoordinator ?? new WorkerScanCoordinator($database);
     }
 
     /**
@@ -100,39 +94,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     }
 
     /**
-     * @param array{current?: int, total?: int, title?: string, npCommunicationId?: string}|null $progress
-     */
-    private function setWorkerScanProgress(int $workerId, ?array $progress): void
-    {
-        $query = $this->database->prepare(
-            'UPDATE setting SET scan_progress = :scan_progress WHERE id = :worker_id'
-        );
-
-        if ($progress === null) {
-            $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
-        } else {
-            try {
-                $encodedProgress = json_encode($progress, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-                $query->bindValue(':scan_progress', $encodedProgress, PDO::PARAM_STR);
-            } catch (JsonException) {
-                $query->bindValue(':scan_progress', null, PDO::PARAM_NULL);
-            }
-        }
-
-        $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
-        $query->execute();
-    }
-
-    private function releaseWorkerFromCurrentScan(int $workerId): void
-    {
-        $query = $this->database->prepare(
-            'UPDATE setting SET scanning = :id, scan_progress = NULL WHERE id = :id'
-        );
-        $query->bindValue(':id', $workerId, PDO::PARAM_INT);
-        $query->execute();
-    }
-
-    /**
      * @param array<string, mixed> $player
      */
     private function handleInvalidApiResponse(array $player, int $workerId, Throwable $exception): void
@@ -146,7 +107,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             )
         );
 
-        $this->deferPlayerScanAfterFailure($player, $workerId);
+        $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
     }
 
     /**
@@ -165,43 +126,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             )
         );
 
-        $this->deferPlayerScanAfterFailure($player, $workerId);
-    }
-
-    /**
-     * @param array<string, mixed> $player
-     */
-    private function deferPlayerScanAfterFailure(array $player, int $workerId): void
-    {
-        $query = $this->database->prepare('DELETE FROM player_queue
-            WHERE  online_id = :online_id ');
-        $query->bindValue(':online_id', $player['online_id'], PDO::PARAM_STR);
-        $query->execute();
-
-        $query = $this->database->prepare('SELECT account_id
-            FROM   player
-            WHERE  online_id = :online_id ');
-        $query->bindValue(':online_id', $player['online_id'], PDO::PARAM_STR);
-        $query->execute();
-        $accountId = $query->fetchColumn();
-
-        if ($accountId !== false) {
-            $query = $this->database->prepare('UPDATE player
-                SET last_updated_date = CASE
-                    WHEN last_updated_date IS NULL THEN NOW()
-                    ELSE DATE_ADD(last_updated_date, INTERVAL 1 HOUR)
-                END
-                WHERE  account_id = :account_id ');
-            $query->bindValue(':account_id', (int) $accountId, PDO::PARAM_INT);
-            $query->execute();
-        }
-
-        $this->releaseWorkerFromCurrentScan($workerId);
+        $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
     }
 
     private function pauseBeforeRetryingInvalidApiResponse(int $workerId, string $onlineId): void
     {
-        $this->setWaitingScanProgress(
+        $this->workerScanCoordinator->setWaitingScanProgress(
             $workerId,
             sprintf(
                 'Encountered an invalid response from the PlayStation API while scanning %s. Waiting 1 minute before retrying.',
@@ -210,31 +140,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         );
 
         sleep(60);
-    }
-
-    /**
-     * @param array<string, mixed>|false $player
-     * @return array<string, mixed>|null
-     */
-    private function reservePlayerForScanning(int $workerId, array|false $player): ?array
-    {
-        if ($player === false) {
-            $this->releaseWorkerFromCurrentScan($workerId);
-            $this->setWaitingScanProgress(
-                $workerId,
-                'No player to scan; retrying soon.'
-            );
-            sleep(5);
-
-            return null;
-        }
-
-        $query = $this->database->prepare('UPDATE setting SET scanning = :scanning, scan_progress = NULL WHERE id = :worker_id');
-        $query->bindValue(':scanning', $player['online_id'], PDO::PARAM_STR);
-        $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
-        $query->execute();
-
-        return $player;
     }
 
     /**
@@ -422,7 +327,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
                 } catch (TypeError $e) {
                     // Something odd, let's wait a minute
-                    $this->setWaitingScanProgress(
+                    $this->workerScanCoordinator->setWaitingScanProgress(
                         (int) $worker['id'],
                         'Encountered a login problem. Waiting 1 minute before retrying.'
                     );
@@ -431,7 +336,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $this->logger->log("Can't login with worker ". $worker["id"]);
 
                     // Something went wrong, 'release' the current scanning profile so other workers can pick it up.
-                    $this->releaseWorkerFromCurrentScan((int) $worker['id']);
+                    $this->workerScanCoordinator->releaseWorkerFromCurrentScan((int) $worker['id']);
 
                     // Wait 30 minutes to not hammer login
                     sleep(60 * 30);
@@ -612,7 +517,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
                 $query->execute();
                 $player = $query->fetch(PDO::FETCH_ASSOC);
-                $player = $this->reservePlayerForScanning((int) $worker['id'], $player);
+                $player = $this->workerScanCoordinator->reservePlayerForScanning((int) $worker['id'], $player);
             } catch (Exception $e) {
                 // Probably just an exception for "Integrity constraint violation: 1062 Duplicate entry 'online_id' for key 'setting.scanning'" because another thread was faster then this one
                 // Continue and try again!
@@ -631,7 +536,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
             $onlineId = (string) $player['online_id'];
 
-            $this->setWaitingScanProgress(
+            $this->workerScanCoordinator->setWaitingScanProgress(
                 (int) $worker['id'],
                 sprintf('Updating profile data for %s.', $onlineId)
             );
@@ -793,7 +698,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     continue 2;
                 }
             }
-            $this->setWaitingScanProgress(
+            $this->workerScanCoordinator->setWaitingScanProgress(
                 (int) $worker['id'],
                 sprintf('Updating avatar for %s.', $onlineId)
             );
@@ -928,7 +833,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $level = $user->trophySummary();
             } catch (Exception $e) {
                 // Wait 5 minutes to not hammer Sony
-                $this->setWaitingScanProgress(
+                $this->workerScanCoordinator->setWaitingScanProgress(
                     (int) $worker['id'],
                     'Encountered a problem while scanning. Waiting 1 minute before retrying.'
                 );
@@ -944,7 +849,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $level = $user->trophySummary()->level();
             } catch (TypeError $e) {
                 // Rare error, wait 1 minute to not hammer Sony and try again.
-                $this->setWaitingScanProgress(
+                $this->workerScanCoordinator->setWaitingScanProgress(
                     (int) $worker['id'],
                     'Encountered a problem while scanning. Waiting 1 minute before retrying.'
                 );
@@ -952,7 +857,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 break;
             } catch (Exception $e) {
                 // Potentially private profile, wait 1 minute and retry before updating the status.
-                $this->setWaitingScanProgress(
+                $this->workerScanCoordinator->setWaitingScanProgress(
                     (int) $worker['id'],
                     'Profile scan failed, waiting 1 minute before confirming privacy.'
                 );
@@ -963,7 +868,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     $level = $user->trophySummary()->level();
                 } catch (TypeError $retryException) {
                     // Rare error, wait 1 minute to not hammer Sony and try again.
-                    $this->setWaitingScanProgress(
+                    $this->workerScanCoordinator->setWaitingScanProgress(
                         (int) $worker['id'],
                         'Encountered a problem while scanning. Waiting 1 minute before retrying.'
                     );
@@ -1006,7 +911,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         $query->execute();
                         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
-                        $this->setWaitingScanProgress(
+                        $this->workerScanCoordinator->setWaitingScanProgress(
                             (int) $worker['id'],
                             sprintf('Fetching game list for %s.', $onlineId)
                         );
@@ -1031,7 +936,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             if (!($trophyTitleCountRetry[$onlineId] ?? false)) {
                                 $trophyTitleCountRetry[$onlineId] = true;
 
-                                $this->setWaitingScanProgress(
+                                $this->workerScanCoordinator->setWaitingScanProgress(
                                     (int) $worker['id'],
                                     'Trophy title count lower than expected. Waiting 1 minute before retrying.'
                                 );
@@ -1119,7 +1024,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                             if ($totalGamesToProcess > 0) {
                                 $currentScanPosition++;
-                                $this->setWorkerScanProgress(
+                                $this->workerScanCoordinator->setWorkerScanProgress(
                                     (int) $worker['id'],
                                     [
                                         'current' => $currentScanPosition,
@@ -1850,7 +1755,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         if ($shouldDeleteMissingGames) {
                             if (!($missingGameDeletionCheck[$onlineId] ?? false)) {
                                 $missingGameDeletionCheck[$onlineId] = true;
-                                $this->setWaitingScanProgress(
+                                $this->workerScanCoordinator->setWaitingScanProgress(
                                     (int) $worker['id'],
                                     'Waiting 5 minutes before retrying because of game deletion check.'
                                 );
@@ -1941,7 +1846,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             if (!($missingTrophyTitleRetry[$onlineId] ?? false)) {
                                 $missingTrophyTitleRetry[$onlineId] = true;
 
-                                $this->setWaitingScanProgress(
+                                $this->workerScanCoordinator->setWaitingScanProgress(
                                     (int) $worker['id'],
                                     'No trophy titles returned. Waiting 1 minute before retrying.'
                                 );
@@ -2218,7 +2123,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                 continue;
             } finally {
-                $this->setWorkerScanProgress((int) $worker['id'], null);
+                $this->workerScanCoordinator->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
     }
