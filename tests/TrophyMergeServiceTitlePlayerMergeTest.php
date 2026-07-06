@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../wwwroot/classes/TrophyMergeService.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMergePlayerProgressUpdater.php';
 
 final class TrophyMergeServiceTitlePlayerMergeTest extends TestCase
 {
@@ -14,11 +14,9 @@ final class TrophyMergeServiceTitlePlayerMergeTest extends TestCase
             ['NP_CHILD_1', 'NP_CHILD_2'],
             ['platinum' => 0, 'max_score' => 0]
         );
-        $service = new TrophyMergeService($pdo);
+        $updater = new TrophyMergePlayerProgressUpdater($pdo);
 
-        $reflection = new ReflectionMethod(TrophyMergeService::class, 'updateTrophyTitlePlayer');
-        $reflection->setAccessible(true);
-        $reflection->invoke($service, 42);
+        $updater->updateTrophyTitlePlayer(42);
 
         $this->assertTrue(
             str_contains($pdo->titlePlayerMergeSql ?? '', 'WHEN :max_score = 0 THEN 100'),
