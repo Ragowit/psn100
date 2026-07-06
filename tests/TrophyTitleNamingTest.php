@@ -2,95 +2,76 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../wwwroot/classes/Psn100Logger.php';
-require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
-require_once __DIR__ . '/../wwwroot/classes/TrophyHistoryRecorder.php';
-require_once __DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php';
+require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyTitleNameFormatter.php';
 
 final class TrophyTitleNamingTest extends TestCase
 {
-    private ThirtyMinuteCronJob $cronJob;
-    private ReflectionMethod $sanitizeMethod;
-    private ReflectionMethod $titleCaseMethod;
+    private TrophyTitleNameFormatter $formatter;
 
     protected function setUp(): void
     {
-        $database = new PDO('sqlite::memory:');
-        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        $trophyCalculator = new TrophyCalculator($database);
-        $logger = new Psn100Logger($database);
-        $historyRecorder = new TrophyHistoryRecorder($database, $logger);
-
-        $this->cronJob = new ThirtyMinuteCronJob($database, $trophyCalculator, $logger, $historyRecorder, 1);
-
-        $this->sanitizeMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'sanitizeTrophyTitleName');
-        $this->sanitizeMethod->setAccessible(true);
-
-        $this->titleCaseMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'convertToApaTitleCase');
-        $this->titleCaseMethod->setAccessible(true);
-    }
-
-    private function formatTitle(string $name): string
-    {
-        $sanitized = $this->sanitizeMethod->invoke($this->cronJob, $name);
-
-        return $this->titleCaseMethod->invoke($this->cronJob, $sanitized);
+        $this->formatter = new TrophyTitleNameFormatter();
     }
 
     public function testSanitizeRemovesDecorationsFromTrophySetTitles(): void
     {
-        $formatted = $this->formatTitle(' Trophy Set - Ratchet & Clank™ Trophy Set. ');
+        $formatted = $this->formatter->format(' Trophy Set - Ratchet & Clank™ Trophy Set. ');
 
         $this->assertSame('Ratchet & Clank', $formatted);
     }
 
     public function testSanitizeRemovesTrophysetPrefix(): void
     {
-        $formatted = $this->formatTitle('Trophyset: Horizon Forbidden West');
+        $formatted = $this->formatter->format('Trophyset: Horizon Forbidden West');
 
         $this->assertSame('Horizon Forbidden West', $formatted);
     }
 
     public function testSanitizeRemovesTrophySetForPrefix(): void
     {
-        $formatted = $this->formatTitle('TROPHY SET FOR FORTNITE');
+        $formatted = $this->formatter->format('TROPHY SET FOR FORTNITE');
 
         $this->assertSame('Fortnite', $formatted);
     }
 
     public function testSanitizeRemovesTrophysetSuffix(): void
     {
-        $formatted = $this->formatTitle('Fortnite Trophyset');
+        $formatted = $this->formatter->format('Fortnite Trophyset');
 
         $this->assertSame('Fortnite', $formatted);
     }
 
     public function testHyphenSeparatorsAreConvertedToColons(): void
     {
-        $formatted = $this->formatTitle("Marvel's Spider-Man - Miles Morales");
+        $formatted = $this->formatter->format("Marvel's Spider-Man - Miles Morales");
 
         $this->assertSame("Marvel's Spider-Man: Miles Morales", $formatted);
     }
 
     public function testEnDashAndTrophiesSuffixAreNormalized(): void
     {
-        $formatted = $this->formatTitle("Journey – Collector's Edition Trophies");
+        $formatted = $this->formatter->format("Journey – Collector's Edition Trophies");
 
         $this->assertSame("Journey: Collector's Edition", $formatted);
     }
 
     public function testExtraSpacingAroundColonsIsNormalized(): void
     {
-        $formatted = $this->formatTitle('Bus Simulator : World Tour');
+        $formatted = $this->formatter->format('Bus Simulator : World Tour');
 
         $this->assertSame('Bus Simulator: World Tour', $formatted);
     }
 
     public function testApaTitleCaseLeavesSmallWordsLowercase(): void
     {
-        $formatted = $this->formatTitle('return of the jedi and the sith');
+        $formatted = $this->formatter->format('return of the jedi and the sith');
 
         $this->assertSame('Return of the Jedi and the Sith', $formatted);
+    }
+
+    public function testFormatReturnsEmptyStringForWhitespaceInput(): void
+    {
+        $this->assertSame('', $this->formatter->format('   '));
     }
 }
