@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/../wwwroot/classes/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyMergeService.php';
 
 final class TrophyMergeServiceTransactionTest extends TestCase
@@ -10,12 +11,10 @@ final class TrophyMergeServiceTransactionTest extends TestCase
     public function testNestedExecuteTransactionCommitsDatabaseOnlyOnce(): void
     {
         $database = new TransactionDepthTrackingPDO();
-        $service = new TrophyMergeService($database);
-        $executeTransaction = new ReflectionMethod(TrophyMergeService::class, 'executeTransaction');
-        $executeTransaction->setAccessible(true);
+        $runner = new NestedDatabaseTransactionRunner($database);
 
-        $executeTransaction->invoke($service, function () use ($executeTransaction, $service): void {
-            $executeTransaction->invoke($service, static function (): void {
+        $runner->execute(function () use ($runner): void {
+            $runner->execute(static function (): void {
             });
         });
 
@@ -27,13 +26,11 @@ final class TrophyMergeServiceTransactionTest extends TestCase
     public function testNestedExecuteTransactionRollsBackDatabaseOnInnerFailure(): void
     {
         $database = new TransactionDepthTrackingPDO();
-        $service = new TrophyMergeService($database);
-        $executeTransaction = new ReflectionMethod(TrophyMergeService::class, 'executeTransaction');
-        $executeTransaction->setAccessible(true);
+        $runner = new NestedDatabaseTransactionRunner($database);
 
         try {
-            $executeTransaction->invoke($service, function () use ($executeTransaction, $service): void {
-                $executeTransaction->invoke($service, static function (): void {
+            $runner->execute(function () use ($runner): void {
+                $runner->execute(static function (): void {
                     throw new RuntimeException('Inner failure.');
                 });
             });
@@ -68,12 +65,10 @@ final class TrophyMergeServiceTransactionTest extends TestCase
     public function testExecuteTransactionRollsBackWhenCommitFails(): void
     {
         $database = new TransactionDepthTrackingPDO(failOnCommit: true);
-        $service = new TrophyMergeService($database);
-        $executeTransaction = new ReflectionMethod(TrophyMergeService::class, 'executeTransaction');
-        $executeTransaction->setAccessible(true);
+        $runner = new NestedDatabaseTransactionRunner($database);
 
         try {
-            $executeTransaction->invoke($service, static function (): void {
+            $runner->execute(static function (): void {
             });
             $this->fail('Expected commit failure to bubble up.');
         } catch (PDOException $exception) {

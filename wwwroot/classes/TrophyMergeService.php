@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Admin/GameCopyService.php';
 require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
+require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressUpdater.php';
 
 class TrophyMergeService
@@ -12,13 +13,14 @@ class TrophyMergeService
 
     private PDO $database;
 
-    private int $transactionDepth = 0;
+    private NestedDatabaseTransactionRunner $transactionRunner;
 
     private ?TrophyMergePlayerProgressUpdater $playerProgressUpdater = null;
 
-    public function __construct(PDO $database)
+    public function __construct(PDO $database, ?NestedDatabaseTransactionRunner $transactionRunner = null)
     {
         $this->database = $database;
+        $this->transactionRunner = $transactionRunner ?? new NestedDatabaseTransactionRunner($database);
     }
 
     public function mergeSpecificTrophies(int $parentTrophyId, array $childTrophyIds): string
@@ -49,7 +51,7 @@ class TrophyMergeService
             ];
         }
 
-        $this->executeTransaction(function () use ($parentTrophy, $parentTrophyId, $childTrophies): void {
+        $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $childTrophies): void {
             foreach ($childTrophies as $childData) {
                 $childTrophyId = $childData['id'];
                 $childTrophy = $childData['trophy'];
@@ -99,7 +101,7 @@ class TrophyMergeService
 
         $message = '';
 
-        $this->executeTransaction(function () use (
+        $this->transactionRunner->execute(function () use (
             $childGameId,
             $childNpCommunicationId,
             $parentGameId,
@@ -219,7 +221,7 @@ SQL
 
         $cloneGameId = null;
 
-        $this->executeTransaction(function () use (
+        $this->transactionRunner->execute(function () use (
             $cloneNpCommunicationId,
             $childGameId,
             $childNpCommunicationId,
@@ -560,7 +562,7 @@ SQL
 
     private function insertTrophyMergeMappingFromIds(int $childTrophyId, int $parentTrophyId): void
     {
-        $this->executeTransaction(function () use ($childTrophyId, $parentTrophyId): void {
+        $this->transactionRunner->execute(function () use ($childTrophyId, $parentTrophyId): void {
             $query = $this->database->prepare(
                 <<<'SQL'
                 INSERT IGNORE
@@ -593,7 +595,7 @@ SQL
 
     private function markGameAsMergedByNpId(string $npCommunicationId): void
     {
-        $this->executeTransaction(function () use ($npCommunicationId): void {
+        $this->transactionRunner->execute(function () use ($npCommunicationId): void {
             $query = $this->database->prepare(
                 <<<'SQL'
                 UPDATE trophy_title_meta
@@ -608,7 +610,7 @@ SQL
 
     private function markGameAsMergedById(int $gameId): void
     {
-        $this->executeTransaction(function () use ($gameId): void {
+        $this->transactionRunner->execute(function () use ($gameId): void {
             $lookup = $this->database->prepare(
                 <<<'SQL'
                 SELECT np_communication_id
@@ -1247,56 +1249,6 @@ SQL
         }
 
         $historyQuery->closeCursor();
-    }
-
-    private function executeTransaction(callable $operation): void
-    {
-        $this->beginTransaction();
-
-        try {
-            $operation();
-            $this->commitTransaction();
-        } catch (Throwable $exception) {
-            $this->rollBackTransaction();
-            throw $exception;
-        }
-    }
-
-    private function beginTransaction(): void
-    {
-        if ($this->transactionDepth === 0) {
-            $this->database->beginTransaction();
-        }
-
-        $this->transactionDepth++;
-    }
-
-    private function commitTransaction(): void
-    {
-        if ($this->transactionDepth === 0) {
-            return;
-        }
-
-        if ($this->transactionDepth === 1) {
-            if ($this->database->inTransaction()) {
-                $this->database->commit();
-            }
-
-            $this->transactionDepth = 0;
-
-            return;
-        }
-
-        $this->transactionDepth--;
-    }
-
-    private function rollBackTransaction(): void
-    {
-        $this->transactionDepth = 0;
-
-        if ($this->database->inTransaction()) {
-            $this->database->rollBack();
-        }
     }
 
     private function notifyProgress(?TrophyMergeProgressListener $listener, int $percent, string $message): void
