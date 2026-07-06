@@ -11,6 +11,8 @@ require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
+require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
+require_once __DIR__ . '/WorkerService.php';
 
 use Tustin\PlayStation\Client;
 
@@ -30,6 +32,7 @@ class GameRescanService
     private PsnGameLookupService $psnGameLookupService;
     private TrophyImageDirectories $imageDirectories;
     private TrophyImageDownloader $imageDownloader;
+    private PlayStationWorkerAuthenticator $workerAuthenticator;
 
     /**
      * @var \Closure(string):void|null
@@ -44,6 +47,7 @@ class GameRescanService
         ?PsnGameLookupService $psnGameLookupService = null,
         ?TrophyImageDirectories $imageDirectories = null,
         ?TrophyImageDownloader $imageDownloader = null,
+        ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
     )
     {
         $this->database = $database;
@@ -54,6 +58,9 @@ class GameRescanService
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
         $this->imageDirectories = $imageDirectories ?? TrophyImageDirectories::productionDefault();
         $this->imageDownloader = $imageDownloader ?? new TrophyImageDownloader($this->imageHashCalculator);
+        $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
+            new WorkerService($database),
+        );
     }
 
     /**
@@ -165,81 +172,15 @@ class GameRescanService
 
     private function loginToWorker(): Client
     {
-        while (true) {
-            foreach ($this->fetchWorkers() as $worker) {
-                try {
-                    $client = new Client();
-                    $refreshToken = (string) ($worker['refresh_token'] ?? '');
-                    $npsso = (string) ($worker['npsso'] ?? '');
+        /** @var Client $client */
+        $client = $this->workerAuthenticator->authenticateWithRetry(
+            self::LOGIN_RETRY_DELAY_SECONDS,
+            function (int $workerId, Throwable $exception): void {
+                $this->logMessage("Can't login with worker " . $workerId);
+            },
+        );
 
-                    if ($refreshToken !== '') {
-                        try {
-                            $client->loginWithRefreshToken($refreshToken);
-                        } catch (Exception|TypeError $exception) {
-                            if ($npsso === '') {
-                                throw $exception;
-                            }
-
-                            $client->loginWithNpsso($npsso);
-                        }
-                    } elseif ($npsso !== '') {
-                        $client->loginWithNpsso($npsso);
-                    } else {
-                        continue;
-                    }
-
-                    $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
-
-                    return $client;
-                } catch (TypeError $exception) {
-                    // Something odd, try next worker.
-                } catch (Exception $exception) {
-                    $this->logMessage("Can't login with worker " . $worker['id']);
-                }
-            }
-
-            sleep(self::LOGIN_RETRY_DELAY_SECONDS);
-        }
-    }
-
-    private function fetchWorkers(): array
-    {
-        $query = $this->database->prepare('SELECT id, refresh_token, npsso FROM setting ORDER BY id');
-
-        $query->execute();
-
-        return $query->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private function saveWorkerRefreshTokenBestEffort(int $workerId, object $client): void
-    {
-        try {
-            $this->saveWorkerRefreshToken($workerId, $client);
-        } catch (Throwable) {
-            // Refresh-token persistence is best-effort and must not fail authentication.
-        }
-    }
-
-    private function saveWorkerRefreshToken(int $workerId, object $client): void
-    {
-        if (!method_exists($client, 'getRefreshToken')) {
-            return;
-        }
-
-        $refreshToken = $client->getRefreshToken();
-        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
-            return;
-        }
-
-        $tokenValue = $refreshToken->getToken();
-        if (!is_string($tokenValue) || $tokenValue === '') {
-            return;
-        }
-
-        $query = $this->database->prepare('UPDATE setting SET refresh_token = :refresh_token WHERE id = :id');
-        $query->bindValue(':refresh_token', $tokenValue, PDO::PARAM_STR);
-        $query->bindValue(':id', $workerId, PDO::PARAM_INT);
-        $query->execute();
+        return $client;
     }
 
     private function logMessage(string $message): void

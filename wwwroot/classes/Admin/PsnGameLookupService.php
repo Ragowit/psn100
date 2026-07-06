@@ -4,38 +4,27 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/Worker.php';
+require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/PsnGameLookupException.php';
 
 use Tustin\PlayStation\Client;
 
 final class PsnGameLookupService
 {
-    /**
-     * @var \Closure(): iterable<Worker>
-     */
-    private readonly \Closure $workerFetcher;
-
-    /**
-     * @var \Closure(): object
-     */
-    private readonly \Closure $clientFactory;
-    /**
-     * @var \Closure(int, string): void
-     */
-    private readonly \Closure $refreshTokenSaver;
+    private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
 
     public function __construct(
         private readonly PDO $database,
         callable $workerFetcher,
         ?callable $clientFactory = null,
-        ?callable $refreshTokenSaver = null
+        ?callable $refreshTokenSaver = null,
+        ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
     ) {
-        $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable(
-            $clientFactory ?? static fn (): object => new Client()
+        $this->workerAuthenticator = $workerAuthenticator ?? new PlayStationWorkerAuthenticator(
+            $workerFetcher,
+            $clientFactory,
+            $refreshTokenSaver,
         );
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? static function (int $workerId, string $refreshToken): void {
-        });
     }
 
     public static function fromDatabase(PDO $database): self
@@ -46,7 +35,8 @@ final class PsnGameLookupService
             $database,
             static fn (): array => $workerService->fetchWorkers(),
             null,
-            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
+            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken),
+            PlayStationWorkerAuthenticator::fromWorkerService($workerService),
         );
     }
 
@@ -375,76 +365,7 @@ final class PsnGameLookupService
 
     private function createAuthenticatedClient(): object
     {
-        $factory = $this->clientFactory;
-
-        foreach (($this->workerFetcher)() as $worker) {
-            if (!$worker instanceof Worker) {
-                continue;
-            }
-
-            $refreshToken = $worker->getRefreshToken();
-            $npsso = $worker->getNpsso();
-
-            if ($refreshToken === '' && $npsso === '') {
-                continue;
-            }
-
-            try {
-                $client = $factory();
-
-                if ($refreshToken !== '' && method_exists($client, 'loginWithRefreshToken')) {
-                    try {
-                        $client->loginWithRefreshToken($refreshToken);
-                        $this->persistRefreshTokenBestEffort($worker->getId(), $client);
-
-                        return $client;
-                    } catch (Throwable) {
-                        // Fall back to NPSSO for this worker below.
-                    }
-                }
-
-                if (!method_exists($client, 'loginWithNpsso')) {
-                    throw new RuntimeException('The PlayStation client does not support NPSSO authentication.');
-                }
-
-                $client->loginWithNpsso($npsso);
-                $this->persistRefreshTokenBestEffort($worker->getId(), $client);
-
-                return $client;
-            } catch (Throwable) {
-                continue;
-            }
-        }
-
-        throw new RuntimeException('Unable to login to any worker accounts.');
-    }
-
-    private function persistRefreshTokenBestEffort(int $workerId, object $client): void
-    {
-        try {
-            $this->saveRefreshToken($workerId, $client);
-        } catch (Throwable) {
-            // Refresh-token persistence is best-effort and must not fail authentication.
-        }
-    }
-
-    private function saveRefreshToken(int $workerId, object $client): void
-    {
-        if (!method_exists($client, 'getRefreshToken')) {
-            return;
-        }
-
-        $refreshToken = $client->getRefreshToken();
-        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
-            return;
-        }
-
-        $tokenValue = $refreshToken->getToken();
-        if (!is_string($tokenValue) || $tokenValue === '') {
-            return;
-        }
-
-        ($this->refreshTokenSaver)($workerId, $tokenValue);
+        return $this->workerAuthenticator->authenticateWithNextAvailableWorker();
     }
 
     /**

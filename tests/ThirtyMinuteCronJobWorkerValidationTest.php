@@ -7,7 +7,9 @@ require_once __DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJobApplication.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
 require_once __DIR__ . '/../wwwroot/classes/Psn100Logger.php';
-require_once __DIR__ . '/../wwwroot/classes/TrophyHistoryRecorder.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/PlayStationWorkerAuthenticator.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerService.php';
 
 final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
 {
@@ -51,7 +53,7 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
         }
     }
 
-    public function testSaveWorkerRefreshTokenBestEffortLogsAndDoesNotThrowOnFailure(): void
+    public function testRefreshTokenPersistenceFailureLogsAndDoesNotThrow(): void
     {
         $database = new PDO('sqlite::memory:');
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -60,23 +62,25 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
         $database->exec("INSERT INTO setting (id, npsso, scanning, scan_progress, refresh_token) VALUES (1, 'token', NULL, NULL, NULL)");
 
         $logger = new Psn100Logger($database);
-        $cronJob = new ThirtyMinuteCronJob(
-            $database,
-            new TrophyCalculator($database),
-            $logger,
-            new TrophyHistoryRecorder($database, $logger),
-            1
+        $authenticator = PlayStationWorkerAuthenticator::fromWorkerService(
+            new WorkerService($database),
+            static fn (): object => new class {
+                public function loginWithNpsso(string $npsso): void
+                {
+                }
+
+                public function getRefreshToken(): object
+                {
+                    throw new RuntimeException('db unavailable');
+                }
+            },
+            function (int $workerId, string $message) use ($logger): void {
+                $logger->log(sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $message));
+            },
         );
 
-        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'saveWorkerRefreshTokenBestEffort');
-        $method->setAccessible(true);
-
-        $method->invoke($cronJob, 1, new class {
-            public function getRefreshToken(): object
-            {
-                throw new RuntimeException('db unavailable');
-            }
-        });
+        $worker = new Worker(1, '', 'token', '', new DateTimeImmutable('2024-01-01'), null);
+        $authenticator->authenticateWorker($worker);
 
         $statement = $database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1');
         $message = $statement !== false ? $statement->fetchColumn() : false;
