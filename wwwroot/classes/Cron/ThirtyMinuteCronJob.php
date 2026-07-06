@@ -22,6 +22,7 @@ require_once __DIR__ . '/PlayerScanProfileSyncResult.php';
 require_once __DIR__ . '/PlayerScanProfileSynchronizer.php';
 require_once __DIR__ . '/PlayerScanCompletionResult.php';
 require_once __DIR__ . '/PlayerScanCompletionService.php';
+require_once __DIR__ . '/PlayerEarnedTrophyPersister.php';
 require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 
@@ -47,6 +48,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper;
     private readonly PlayerScanProfileSynchronizer $profileSynchronizer;
     private readonly PlayerScanCompletionService $scanCompletionService;
+    private readonly PlayerEarnedTrophyPersister $earnedTrophyPersister;
 
     public function __construct(
         private readonly PDO $database,
@@ -68,6 +70,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
         ?PlayerScanProfileSynchronizer $profileSynchronizer = null,
         ?PlayerScanCompletionService $scanCompletionService = null,
+        ?PlayerEarnedTrophyPersister $earnedTrophyPersister = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -101,6 +104,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $this->workerScanCoordinator,
         );
         $this->scanCompletionService = $scanCompletionService ?? new PlayerScanCompletionService($database);
+        $this->earnedTrophyPersister = $earnedTrophyPersister ?? new PlayerEarnedTrophyPersister(
+            $database,
+            $this->titleMetadataHelper,
+        );
     }
 
     /**
@@ -1084,99 +1091,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     $trophyEarned = $trophy->earned();
                                     $progress = (clone $trophy)->progress();
                                     if ($trophyEarned || ($progress != '' && intval($progress) > 0)) {
-                                        if ($trophy->earnedDateTime() === '') {
-                                            $dtAsTextForInsert = null;
-                                        } else {
-                                            $dtAsTextForInsert = $this->titleMetadataHelper->formatDateTimeForDatabase($trophy->earnedDateTime());
-                                        }
-
-                                        $query = $this->database->prepare("INSERT INTO trophy_earned(
-                                                np_communication_id,
-                                                group_id,
-                                                order_id,
-                                                account_id,
-                                                earned_date,
-                                                progress,
-                                                earned
-                                            )
-                                            VALUES(
-                                                :np_communication_id,
-                                                :group_id,
-                                                :order_id,
-                                                :account_id,
-                                                :earned_date,
-                                                :progress,
-                                                :earned
-                                            ) AS new
-                                            ON DUPLICATE KEY
-                                            UPDATE
-                                                earned_date = IF(trophy_earned.earned = 0, new.earned_date, trophy_earned.earned_date),
-                                                progress = new.progress,
-                                                earned = new.earned");
-                                        $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                        $query->bindValue(":group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                        $query->bindValue(":order_id", $trophy->id(), PDO::PARAM_INT);
-                                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                        $query->bindValue(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
-                                        if ($progress === '') {
-                                            $progress = null;
-                                        } else {
-                                            $progress = intval($progress);
-                                        }
-                                        $query->bindValue(":progress", $progress, PDO::PARAM_INT);
-                                        $query->bindValue(":earned", $trophyEarned, PDO::PARAM_INT);
-                                        $query->execute();
-
-                                        // Check if "merge"-trophy
-                                        $query = $this->database->prepare("SELECT parent_np_communication_id,
-                                                    parent_group_id,
-                                                    parent_order_id
-                                            FROM   trophy_merge
-                                            WHERE  child_np_communication_id = :child_np_communication_id
-                                                    AND child_group_id = :child_group_id
-                                                    AND child_order_id = :child_order_id ");
-                                        $query->bindValue(":child_np_communication_id", $npid, PDO::PARAM_STR);
-                                        $query->bindValue(":child_group_id", $trophyGroup->id(), PDO::PARAM_STR);
-                                        $query->bindValue(":child_order_id", $trophy->id(), PDO::PARAM_INT);
-                                        $query->execute();
-                                        $parent = $query->fetch();
-                                        if ($parent !== false) {
-                                            $query = $this->database->prepare("INSERT INTO trophy_earned(
-                                                    np_communication_id,
-                                                    group_id,
-                                                    order_id,
-                                                    account_id,
-                                                    earned_date,
-                                                    progress,
-                                                    earned
-                                                )
-                                                VALUES(
-                                                    :np_communication_id,
-                                                    :group_id,
-                                                    :order_id,
-                                                    :account_id,
-                                                    :earned_date,
-                                                    :progress,
-                                                    :earned
-                                                ) AS new
-                                                ON DUPLICATE KEY
-                                                UPDATE
-                                                    earned_date = IF(trophy_earned.earned_date < new.earned_date, trophy_earned.earned_date, new.earned_date),
-                                                    progress = IF(trophy_earned.progress IS NULL, new.progress,
-                                                        IF(new.progress IS NULL, trophy_earned.progress,
-                                                            IF(trophy_earned.progress > new.progress, trophy_earned.progress, new.progress)
-                                                        )
-                                                    ),
-                                                    earned = IF(trophy_earned.earned = 1, trophy_earned.earned, new.earned)");
-                                            $query->bindValue(":np_communication_id", $parent["parent_np_communication_id"], PDO::PARAM_STR);
-                                            $query->bindValue(":group_id", $parent["parent_group_id"], PDO::PARAM_STR);
-                                            $query->bindValue(":order_id", $parent["parent_order_id"], PDO::PARAM_INT);
-                                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                            $query->bindValue(":earned_date", $dtAsTextForInsert, PDO::PARAM_STR);
-                                            $query->bindValue(":progress", $progress, PDO::PARAM_INT);
-                                            $query->bindValue(":earned", $trophyEarned, PDO::PARAM_INT);
-                                            $query->execute();
-                                        }
+                                        $this->earnedTrophyPersister->persistEarnedTrophy(
+                                            $npid,
+                                            $trophyGroup->id(),
+                                            (int) $trophy->id(),
+                                            (int) $user->accountId(),
+                                            $trophyEarned,
+                                            $progress,
+                                            $trophy->earnedDateTime(),
+                                        );
                                     }
                                 }
 
