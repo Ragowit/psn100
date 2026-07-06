@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 require_once __DIR__ . '/../Admin/PsnGameLookupService.php';
+require_once __DIR__ . '/../Admin/PlayStationWorkerAuthenticator.php';
+require_once __DIR__ . '/../Admin/Worker.php';
+require_once __DIR__ . '/../Admin/WorkerService.php';
 require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
@@ -31,6 +34,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly TrophyImageDownloader $imageDownloader;
     private readonly WorkerScanCoordinator $workerScanCoordinator;
     private readonly TrophyTitleNameFormatter $trophyTitleNameFormatter;
+    private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
 
     public function __construct(
         private readonly PDO $database,
@@ -46,6 +50,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?TrophyImageDownloader $imageDownloader = null,
         ?WorkerScanCoordinator $workerScanCoordinator = null,
         ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
+        ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -62,6 +67,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         );
         $this->workerScanCoordinator = $workerScanCoordinator ?? new WorkerScanCoordinator($database);
         $this->trophyTitleNameFormatter = $trophyTitleNameFormatter ?? new TrophyTitleNameFormatter();
+        $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
+            new WorkerService($database),
+            null,
+            function (int $workerId, string $message) use ($logger): void {
+                $logger->log(sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $message));
+            },
+        );
     }
 
     /**
@@ -307,28 +319,16 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 }
 
                 try {
-                    $client = new Client();
-                    $refreshToken = (string) ($worker['refresh_token'] ?? '');
-                    $npsso = (string) ($worker['npsso'] ?? '');
-
-                    if ($refreshToken !== '') {
-                        try {
-                            $client->loginWithRefreshToken($refreshToken);
-                        } catch (Exception|TypeError $exception) {
-                            if ($npsso === '') {
-                                throw $exception;
-                            }
-
-                            $client->loginWithNpsso($npsso);
-                        }
-                    } elseif ($npsso !== '') {
-                        $client->loginWithNpsso($npsso);
-                    } else {
-                        throw new RuntimeException('Worker has no credentials configured.');
-                    }
-
+                    $workerAccount = new Worker(
+                        (int) $worker['id'],
+                        (string) ($worker['refresh_token'] ?? ''),
+                        (string) ($worker['npsso'] ?? ''),
+                        '',
+                        new DateTimeImmutable('1970-01-01 00:00:00'),
+                        null,
+                    );
+                    $client = $this->workerAuthenticator->authenticateWorker($workerAccount);
                     $loggedIn = true;
-                    $this->saveWorkerRefreshTokenBestEffort((int) $worker['id'], $client);
                 } catch (TypeError $e) {
                     // Something odd, let's wait a minute
                     $this->workerScanCoordinator->setWaitingScanProgress(
@@ -2128,39 +2128,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $this->workerScanCoordinator->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
-    }
-
-    private function saveWorkerRefreshTokenBestEffort(int $workerId, object $client): void
-    {
-        try {
-            $this->saveWorkerRefreshToken($workerId, $client);
-        } catch (Throwable $exception) {
-            $this->logger->log(
-                sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $exception->getMessage())
-            );
-        }
-    }
-
-    private function saveWorkerRefreshToken(int $workerId, object $client): void
-    {
-        if (!method_exists($client, 'getRefreshToken')) {
-            return;
-        }
-
-        $refreshToken = $client->getRefreshToken();
-        if (!is_object($refreshToken) || !method_exists($refreshToken, 'getToken')) {
-            return;
-        }
-
-        $tokenValue = $refreshToken->getToken();
-        if (!is_string($tokenValue) || $tokenValue === '') {
-            return;
-        }
-
-        $query = $this->database->prepare('UPDATE setting SET refresh_token = :refresh_token WHERE id = :id');
-        $query->bindValue(':refresh_token', $tokenValue, PDO::PARAM_STR);
-        $query->bindValue(':id', $workerId, PDO::PARAM_INT);
-        $query->execute();
     }
 
     /**
