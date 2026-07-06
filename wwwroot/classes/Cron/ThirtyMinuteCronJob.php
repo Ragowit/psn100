@@ -1743,7 +1743,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 );
 
                                 foreach ($groupTrophies as $trophy) {
-                                    $trophyEarned = $trophy->earned();
+                                    $trophyEarned = $this->isTrophyEarned($trophy);
                                     $progress = (clone $trophy)->progress();
                                     if ($trophyEarned || ($progress != '' && intval($progress) > 0)) {
                                         $orderId = (int) $trophy->id();
@@ -1796,7 +1796,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                             continue 4;
                                         }
 
-                                        $trophyEarned = $trophy->earned();
+                                        $trophyEarned = $this->isTrophyEarned($trophy);
                                         $progress = (clone $trophy)->progress();
 
                                         if (!$trophyEarned && ($progress === '' || intval($progress) <= 0)) {
@@ -2944,6 +2944,19 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return $this->parseSonyDateTime($earnedDateTime) !== null;
+    }
+
+    private function isTrophyEarned(object $trophy): bool
+    {
+        if (method_exists($trophy, 'getCache')) {
+            return (bool) ($trophy->getCache()['earned'] ?? false);
+        }
+
+        try {
+            return $trophy->earned();
+        } catch (TypeError) {
+            return false;
+        }
     }
 
     private function buildInvalidTitleDateRetryKey(string $onlineId, string $npCommunicationId): string

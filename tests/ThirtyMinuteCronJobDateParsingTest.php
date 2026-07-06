@@ -386,6 +386,34 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         $this->assertSame('75', $result->progress());
     }
 
+    public function testIsTrophyEarnedTreatsNullApiValueAsFalse(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isTrophyEarned');
+        $method->setAccessible(true);
+
+        $trophyWithNullEarned = new ThirtyMinuteCronJobDateParsingTestCachedTrophy(['earned' => null]);
+        $trophyWithMissingEarned = new ThirtyMinuteCronJobDateParsingTestCachedTrophy([]);
+        $trophyWithTrueEarned = new ThirtyMinuteCronJobDateParsingTestCachedTrophy(['earned' => true]);
+        $trophyWithFalseEarned = new ThirtyMinuteCronJobDateParsingTestCachedTrophy(['earned' => false]);
+        $legacyTrophy = new ThirtyMinuteCronJobDateParsingTestTrophy(1, '', true);
+
+        $this->assertFalse($method->invoke($this->cronJob, $trophyWithNullEarned));
+        $this->assertFalse($method->invoke($this->cronJob, $trophyWithMissingEarned));
+        $this->assertTrue($method->invoke($this->cronJob, $trophyWithTrueEarned));
+        $this->assertFalse($method->invoke($this->cronJob, $trophyWithFalseEarned));
+        $this->assertTrue($method->invoke($this->cronJob, $legacyTrophy));
+    }
+
+    public function testIsTrophyEarnedTreatsTypeErrorFromEarnedAccessorAsFalse(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isTrophyEarned');
+        $method->setAccessible(true);
+
+        $trophy = new ThirtyMinuteCronJobDateParsingTestTypeErrorTrophy();
+
+        $this->assertFalse($method->invoke($this->cronJob, $trophy));
+    }
+
     public function testShouldRetryInvalidTrophyEarnedDateReturnsFalseAfterMarkedRetried(): void
     {
         $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'shouldRetryInvalidTrophyEarnedDate');
@@ -484,6 +512,32 @@ final class ThirtyMinuteCronJobDateParsingTestTrophy
     public function progress(): string
     {
         return $this->progress;
+    }
+}
+
+final class ThirtyMinuteCronJobDateParsingTestCachedTrophy
+{
+    /**
+     * @param array<string, mixed> $cache
+     */
+    public function __construct(private readonly array $cache)
+    {
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getCache(): array
+    {
+        return $this->cache;
+    }
+}
+
+final class ThirtyMinuteCronJobDateParsingTestTypeErrorTrophy
+{
+    public function earned(): bool
+    {
+        throw new TypeError('Return value must be of type bool, null returned');
     }
 }
 
