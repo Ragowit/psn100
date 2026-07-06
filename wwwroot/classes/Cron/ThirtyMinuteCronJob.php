@@ -163,29 +163,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     /**
      * @param array<string, mixed> $player
      */
-    private function handleInvalidTrophyEarnedDateResponse(
-        array $player,
-        int $workerId,
-        string $npCommunicationId,
-        string $groupId,
-        int $orderId
-    ): void {
-        $this->logger->log(
-            sprintf(
-                'Failed to scan %s because trophy %d in group %s for title %s still has an invalid earned date after retrying.',
-                (string) ($player['online_id'] ?? ''),
-                $orderId,
-                $groupId,
-                $npCommunicationId
-            )
-        );
-
-        $this->deferPlayerScanAfterFailure($player, $workerId);
-    }
-
-    /**
-     * @param array<string, mixed> $player
-     */
     private function deferPlayerScanAfterFailure(array $player, int $workerId): void
     {
         $query = $this->database->prepare('DELETE FROM player_queue
@@ -376,58 +353,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         return null;
     }
 
-    private function ensureValidTrophyEarnedDate(
-        object $trophyGroup,
-        object $trophy,
-        string $onlineId,
-        string $npCommunicationId
-    ): ?object {
-        $maxAttempts = 2;
-        $orderId = (int) $trophy->id();
-        $groupId = (string) $trophyGroup->id();
-
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            if ($this->isValidTrophyEarnedDateTime($trophy)) {
-                return $trophy;
-            }
-
-            if ($attempt === $maxAttempts) {
-                $this->logger->log(sprintf(
-                    'Trophy %d in group %s for title %s has an invalid earned date while processing user %s (attempt %d/%d).',
-                    $orderId,
-                    $groupId,
-                    $npCommunicationId,
-                    $onlineId,
-                    $attempt,
-                    $maxAttempts
-                ));
-
-                break;
-            }
-
-            sleep(2);
-
-            $groupTrophies = $this->retryNotFound(
-                fn () => $trophyGroup->trophies(),
-                sprintf(
-                    'Re-fetching trophies for %s (%s/%s)',
-                    $npCommunicationId,
-                    $npCommunicationId,
-                    $groupId
-                )
-            );
-
-            foreach ($groupTrophies as $refreshedTrophy) {
-                if ((int) $refreshedTrophy->id() === $orderId) {
-                    $trophy = $refreshedTrophy;
-                    break;
-                }
-            }
-        }
-
-        return null;
-    }
-
     #[\Override]
     public function run(): void
     {
@@ -436,7 +361,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $missingTrophyTitleRetry = [];
         $trophyTitleCountRetry = [];
         $invalidTitleDateRetry = [];
-        $invalidTrophyEarnedDateRetry = [];
 
         while (true) {
             // Login with a token
@@ -1746,66 +1670,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     $trophyEarned = $trophy->earned();
                                     $progress = (clone $trophy)->progress();
                                     if ($trophyEarned || ($progress != '' && intval($progress) > 0)) {
-                                        $orderId = (int) $trophy->id();
-                                        $groupId = (string) $trophyGroup->id();
-
-                                        $trophy = $this->ensureValidTrophyEarnedDate(
-                                            $trophyGroup,
-                                            $trophy,
-                                            $onlineId,
-                                            $npid
-                                        );
-
-                                        if ($trophy === null) {
-                                            if ($this->shouldRetryInvalidTrophyEarnedDate(
-                                                $invalidTrophyEarnedDateRetry,
-                                                $onlineId,
-                                                $npid,
-                                                $groupId,
-                                                $orderId
-                                            )) {
-                                                $this->markInvalidTrophyEarnedDateRetried(
-                                                    $invalidTrophyEarnedDateRetry,
-                                                    $onlineId,
-                                                    $npid,
-                                                    $groupId,
-                                                    $orderId
-                                                );
-
-                                                $this->logger->log(sprintf(
-                                                    'Unable to fetch a valid earned date for %s on trophy %d in group %s for title %s. Waiting 1 minute before retrying.',
-                                                    (string) $player['online_id'],
-                                                    $orderId,
-                                                    $groupId,
-                                                    $npid
-                                                ));
-                                                $this->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
-                                                $restartScan = true;
-
-                                                break 3;
-                                            }
-
-                                            $this->handleInvalidTrophyEarnedDateResponse(
-                                                $player,
-                                                (int) $worker['id'],
-                                                $npid,
-                                                $groupId,
-                                                $orderId
-                                            );
-
-                                            continue 4;
+                                        if ($trophy->earnedDateTime() === '') {
+                                            $dtAsTextForInsert = null;
+                                        } else {
+                                            $dtAsTextForInsert = $this->formatDateTimeForDatabase($trophy->earnedDateTime());
                                         }
-
-                                        $trophyEarned = $trophy->earned();
-                                        $progress = (clone $trophy)->progress();
-
-                                        if (!$trophyEarned && ($progress === '' || intval($progress) <= 0)) {
-                                            continue;
-                                        }
-
-                                        $dtAsTextForInsert = $trophy->earnedDateTime() === ''
-                                            ? null
-                                            : $this->formatSonyDateTimeForDatabase($trophy->earnedDateTime());
 
                                         $query = $this->database->prepare("INSERT INTO trophy_earned(
                                                 np_communication_id,
@@ -2320,8 +2189,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     unset($missingGameDeletionCheck[$onlineId]);
                     unset($missingTrophyTitleRetry[$onlineId]);
                     unset($trophyTitleCountRetry[$onlineId]);
-                    $this->clearInvalidSonyDataRetriesForPlayer($invalidTitleDateRetry, $onlineId);
-                    $this->clearInvalidSonyDataRetriesForPlayer($invalidTrophyEarnedDateRetry, $onlineId);
+                    $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
                 }
             } catch (NotFoundHttpException $exception) {
                 sleep(2);
@@ -2329,8 +2197,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
                 unset($trophyTitleCountRetry[$onlineId]);
-                $this->clearInvalidSonyDataRetriesForPlayer($invalidTitleDateRetry, $onlineId);
-                $this->clearInvalidSonyDataRetriesForPlayer($invalidTrophyEarnedDateRetry, $onlineId);
+                $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
             } catch (UnauthorizedHttpException $exception) {
@@ -2339,8 +2206,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
                 unset($trophyTitleCountRetry[$onlineId]);
-                $this->clearInvalidSonyDataRetriesForPlayer($invalidTitleDateRetry, $onlineId);
-                $this->clearInvalidSonyDataRetriesForPlayer($invalidTrophyEarnedDateRetry, $onlineId);
+                $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
             } finally {
@@ -2915,7 +2781,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private function gameTimestampsMatch(string $sonyTimestamp, string $dbTimestamp): bool
     {
-        $sonyLastUpdatedDate = $this->parseSonyDateTime($sonyTimestamp);
+        $sonyLastUpdatedDate = $this->parseDateTime($sonyTimestamp);
 
         if ($sonyLastUpdatedDate === null) {
             return false;
@@ -2932,32 +2798,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private function isValidSonyLastUpdatedDateTime(string $value): bool
     {
-        return $this->parseSonyDateTime($value) !== null;
-    }
-
-    private function isValidTrophyEarnedDateTime(object $trophy): bool
-    {
-        $earnedDateTime = (string) $trophy->earnedDateTime();
-
-        if ($earnedDateTime === '') {
-            return true;
-        }
-
-        return $this->parseSonyDateTime($earnedDateTime) !== null;
+        return $this->formatDateTimeForDatabase($value) !== null;
     }
 
     private function buildInvalidTitleDateRetryKey(string $onlineId, string $npCommunicationId): string
     {
-        return $onlineId . ':title:' . $npCommunicationId;
-    }
-
-    private function buildInvalidTrophyEarnedDateRetryKey(
-        string $onlineId,
-        string $npCommunicationId,
-        string $groupId,
-        int $orderId
-    ): string {
-        return $onlineId . ':earned:' . $npCommunicationId . ':' . $groupId . ':' . $orderId;
+        return $onlineId . ':' . $npCommunicationId;
     }
 
     /**
@@ -2985,33 +2831,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     /**
      * @param array<string, bool> $retryTracker
      */
-    private function shouldRetryInvalidTrophyEarnedDate(
-        array $retryTracker,
-        string $onlineId,
-        string $npCommunicationId,
-        string $groupId,
-        int $orderId
-    ): bool {
-        return !($retryTracker[$this->buildInvalidTrophyEarnedDateRetryKey($onlineId, $npCommunicationId, $groupId, $orderId)] ?? false);
-    }
-
-    /**
-     * @param array<string, bool> $retryTracker
-     */
-    private function markInvalidTrophyEarnedDateRetried(
-        array &$retryTracker,
-        string $onlineId,
-        string $npCommunicationId,
-        string $groupId,
-        int $orderId
-    ): void {
-        $retryTracker[$this->buildInvalidTrophyEarnedDateRetryKey($onlineId, $npCommunicationId, $groupId, $orderId)] = true;
-    }
-
-    /**
-     * @param array<string, bool> $retryTracker
-     */
-    private function clearInvalidSonyDataRetriesForPlayer(array &$retryTracker, string $onlineId): void
+    private function clearInvalidTitleDateRetriesForPlayer(array &$retryTracker, string $onlineId): void
     {
         $prefix = $onlineId . ':';
 
@@ -3022,32 +2842,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
     }
 
-    private function formatSonyDateTimeForDatabase(?string $value): ?string
+    private function formatDateTimeForDatabase(?string $value): ?string
     {
-        $dateTime = $this->parseSonyDateTime($value);
+        $dateTime = $this->parseDateTime($value);
 
         return $dateTime?->format('Y-m-d H:i:s');
-    }
-
-    private function parseSonyDateTime(?string $value): ?DateTimeImmutable
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $dateTime = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i:s\\Z', $value);
-
-        if ($dateTime === false) {
-            return null;
-        }
-
-        $errors = DateTimeImmutable::getLastErrors();
-
-        if ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
-            return null;
-        }
-
-        return $dateTime;
     }
 
     private function parseDateTime(?string $value): ?DateTimeImmutable
