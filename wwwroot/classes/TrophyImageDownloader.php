@@ -21,6 +21,11 @@ final class TrophyImageDownloader
     ) {
     }
 
+    public function withLogger(?\Closure $logger): self
+    {
+        return new self($this->imageHashCalculator, $logger, $this->remoteFileFetcher);
+    }
+
     /**
      * Player-scan flow: log download failures when no usable cache exists and
      * fall back to the shared placeholder filename.

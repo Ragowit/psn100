@@ -68,11 +68,11 @@ class GameRescanService
         $this->logListener = $logListener !== null
             ? \Closure::fromCallable($logListener)
             : null;
-        $this->imageDownloader = new TrophyImageDownloader(
-            $this->imageHashCalculator,
+        $previousImageDownloader = $this->imageDownloader;
+        $this->imageDownloader = $this->imageDownloader->withLogger(
             function (string $message): void {
                 $this->logMessage($message);
-            },
+            }
         );
 
         try {
@@ -140,6 +140,7 @@ class GameRescanService
             return new GameRescanResult($message, $differenceTracker->getDifferences());
         } finally {
             $this->logListener = $previousLogListener;
+            $this->imageDownloader = $previousImageDownloader;
         }
     }
 

@@ -187,6 +187,26 @@ final class TrophyImageDownloaderTest extends TestCase
         );
     }
 
+    public function testWithLoggerPreservesRemoteFileFetcher(): void
+    {
+        $downloader = new TrophyImageDownloader(
+            new ImageHashCalculator(new FakeImageProcessor(supported: false)),
+            null,
+            static fn (string $url): ?string => 'image-bytes',
+        );
+
+        $withLogger = $downloader->withLogger(static function (string $message): void {
+        });
+
+        $filename = $withLogger->downloadMandatoryForScan(
+            'https://example.test/title.png',
+            $this->tempDirectory,
+            'title icon',
+        );
+
+        $this->assertSame(md5('image-bytes') . '.png', $filename);
+    }
+
     public function testProductionDefaultDirectoriesExposeExpectedPaths(): void
     {
         $directories = TrophyImageDirectories::productionDefault();
