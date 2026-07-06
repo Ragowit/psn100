@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../wwwroot/classes/TrophyMergeService.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMergePlayerProgressUpdater.php';
 
 final class TrophyMergeServiceGroupPlayerMergeTest extends TestCase
 {
@@ -14,11 +14,9 @@ final class TrophyMergeServiceGroupPlayerMergeTest extends TestCase
             ['NP_CHILD_1', 'NP_CHILD_2'],
             [['parent_group_id' => 'default']]
         );
-        $service = new TrophyMergeService($pdo);
+        $updater = new TrophyMergePlayerProgressUpdater($pdo);
 
-        $reflection = new ReflectionMethod(TrophyMergeService::class, 'updateTrophyGroupPlayer');
-        $reflection->setAccessible(true);
-        $reflection->invoke($service, 42);
+        $updater->updateTrophyGroupPlayer(42);
 
         $this->assertSame(
             'MERGE_000010',

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/AutomaticTrophyTitleMergeService.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMergePlayerProgressUpdater.php';
 
 final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 {
@@ -216,11 +217,10 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 
         $this->insertTrophyMerge('NP_CHILD_TWO', 'MERGE_000003');
 
-        $method = new ReflectionMethod(TrophyMergeService::class, 'getMergeParentAndChildren');
-        $method->setAccessible(true);
+        $updater = new TrophyMergePlayerProgressUpdater($this->database);
 
         /** @var array{parent_np_communication_id:string, child_np_communication_ids:list<string>} $result */
-        $result = $method->invoke($this->mergeService, 'NP_CHILD_TWO');
+        $result = $updater->getMergeParentAndChildren('NP_CHILD_TWO');
 
         $this->assertSame('MERGE_000003', $result['parent_np_communication_id']);
         $this->assertSame(['NP_CHILD_ONE', 'NP_CHILD_TWO'], $result['child_np_communication_ids']);

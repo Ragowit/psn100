@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/TrophyMergeService.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMergePlayerProgressUpdater.php';
 
 final class TrophyMergeServiceMetaUsageTest extends TestCase
 {
@@ -78,9 +79,8 @@ final class TrophyMergeServiceMetaUsageTest extends TestCase
         $this->insertMergeMapping('NP_CHILD', 'NP_PARENT_2');
         $this->insertMergeMapping('NP_CHILD_2', 'NP_PARENT_2');
 
-        $method = new ReflectionMethod(TrophyMergeService::class, 'getMergeParentAndChildren');
-        $method->setAccessible(true);
-        $mergeData = $method->invoke($this->service, 'NP_CHILD');
+        $updater = new TrophyMergePlayerProgressUpdater($this->database);
+        $mergeData = $updater->getMergeParentAndChildren('NP_CHILD');
 
         $this->assertSame('NP_PARENT_2', $mergeData['parent_np_communication_id']);
         $this->assertSame(['NP_CHILD', 'NP_CHILD_2'], $mergeData['child_np_communication_ids']);
