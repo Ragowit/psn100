@@ -8,28 +8,25 @@ declare(strict_types=1);
  * Encapsulates the 9-tier UNION query that was previously embedded in
  * ThirtyMinuteCronJob::run() so the main scan loop can focus on PSN API
  * orchestration.
+ *
+ * Stale-player cutoffs are computed with MySQL NOW() so they stay aligned with
+ * the database session clock and INTERVAL month arithmetic.
  */
 final class PlayerScanQueueSelector
 {
     public function __construct(
         private readonly PDO $database,
+        private readonly ?string $selectionSql = null,
     ) {
     }
 
     /**
      * @return array<string, mixed>|false
      */
-    public function selectNextCandidate(int $workerId, ?DateTimeImmutable $referenceTime = null): array|false
+    public function selectNextCandidate(int $workerId): array|false
     {
-        $referenceTime ??= new DateTimeImmutable('now');
-
-        $query = $this->database->prepare($this->selectionSql());
+        $query = $this->database->prepare($this->selectionSql ?? self::mysqlSelectionSql());
         $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
-
-        foreach ($this->buildCutoffs($referenceTime) as $parameter => $value) {
-            $query->bindValue($parameter, $value, PDO::PARAM_STR);
-        }
-
         $query->execute();
 
         $player = $query->fetch(PDO::FETCH_ASSOC);
@@ -37,45 +34,54 @@ final class PlayerScanQueueSelector
         return $player === false ? false : $player;
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private function buildCutoffs(DateTimeImmutable $referenceTime): array
+    private static function mysqlSelectionSql(): string
     {
-        return [
-            ':cutoff_1h' => $referenceTime->modify('-1 hour')->format('Y-m-d H:i:s'),
-            ':cutoff_1d' => $referenceTime->modify('-1 day')->format('Y-m-d H:i:s'),
-            ':cutoff_1w' => $referenceTime->modify('-1 week')->format('Y-m-d H:i:s'),
-            ':cutoff_1m' => $this->subtractMySqlMonths($referenceTime, 1)->format('Y-m-d H:i:s'),
-            ':cutoff_3m' => $this->subtractMySqlMonths($referenceTime, 3)->format('Y-m-d H:i:s'),
-        ];
+        return self::buildSelectionSql(<<<'SQL'
+            SELECT
+                NOW() AS now,
+                NOW() - INTERVAL 1 HOUR AS cutoff_1h,
+                NOW() - INTERVAL 1 DAY AS cutoff_1d,
+                NOW() - INTERVAL 1 WEEK AS cutoff_1w,
+                NOW() - INTERVAL 1 MONTH AS cutoff_1m,
+                NOW() - INTERVAL 3 MONTH AS cutoff_3m
+            SQL);
     }
 
     /**
-     * Mirrors MySQL `reference_time - INTERVAL n MONTH`, clamping to the last day
-     * of the target month when the source day does not exist (e.g. Mar 31 -> Feb 28).
+     * @internal Visible for tests that need deterministic cutoff values on SQLite.
      */
-    private function subtractMySqlMonths(DateTimeImmutable $referenceTime, int $months): DateTimeImmutable
-    {
-        $year = (int) $referenceTime->format('Y');
-        $month = (int) $referenceTime->format('m');
-        $day = (int) $referenceTime->format('d');
-        $time = $referenceTime->format('H:i:s');
-
-        $totalMonths = ($year * 12 + ($month - 1)) - $months;
-        $targetYear = intdiv($totalMonths, 12);
-        $targetMonth = ($totalMonths % 12) + 1;
-        $daysInTargetMonth = (int) (new DateTimeImmutable(
-            sprintf('%04d-%02d-01', $targetYear, $targetMonth)
-        ))->format('t');
-        $targetDay = min($day, $daysInTargetMonth);
-
-        return new DateTimeImmutable(sprintf('%04d-%02d-%02d %s', $targetYear, $targetMonth, $targetDay, $time));
+    public static function selectionSqlWithLiteralCutoffs(
+        string $now,
+        string $cutoff1Hour,
+        string $cutoff1Day,
+        string $cutoff1Week,
+        string $cutoff1Month,
+        string $cutoff3Months,
+    ): string {
+        return self::buildSelectionSql(sprintf(
+            "SELECT
+                '%s' AS now,
+                '%s' AS cutoff_1h,
+                '%s' AS cutoff_1d,
+                '%s' AS cutoff_1w,
+                '%s' AS cutoff_1m,
+                '%s' AS cutoff_3m",
+            $now,
+            $cutoff1Hour,
+            $cutoff1Day,
+            $cutoff1Week,
+            $cutoff1Month,
+            $cutoff3Months,
+        ));
     }
 
-    private function selectionSql(): string
+    private static function buildSelectionSql(string $nowValuesSelect): string
     {
-        return <<<'SQL'
+        return <<<SQL
+            WITH
+                now_values AS (
+                    {$nowValuesSelect}
+                )
             SELECT
                 online_id,
                 account_id
@@ -99,9 +105,10 @@ final class PlayerScanQueueSelector
                 FROM
                     player p
                     JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
                 WHERE
                     (pr.ranking <= 100 OR pr.rarity_ranking <= 100 OR pr.in_game_rarity_ranking <= 100)
-                    AND p.last_updated_date < :cutoff_1h
+                    AND p.last_updated_date < nv.cutoff_1h
 
                 UNION ALL
 
@@ -113,6 +120,7 @@ final class PlayerScanQueueSelector
                 FROM
                     player p
                     JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
                 WHERE
                     (
                         pr.ranking <= 1000 OR
@@ -122,7 +130,7 @@ final class PlayerScanQueueSelector
                         (pr.rarity_ranking BETWEEN 9750 AND 10250) OR
                         (pr.in_game_rarity_ranking BETWEEN 9750 AND 10250)
                     )
-                    AND p.last_updated_date < :cutoff_1d
+                    AND p.last_updated_date < nv.cutoff_1d
 
                 UNION ALL
 
@@ -134,9 +142,10 @@ final class PlayerScanQueueSelector
                 FROM
                     player p
                     JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
                 WHERE
                     (pr.ranking <= 10000 OR pr.rarity_ranking <= 10000 OR pr.in_game_rarity_ranking <= 10000)
-                    AND p.last_updated_date < :cutoff_1w
+                    AND p.last_updated_date < nv.cutoff_1w
 
                 UNION ALL
 
@@ -147,9 +156,10 @@ final class PlayerScanQueueSelector
                     p.account_id
                 FROM
                     player p
+                    JOIN now_values nv
                 WHERE
                     p.status = 5
-                    AND p.last_updated_date < :cutoff_1d
+                    AND p.last_updated_date < nv.cutoff_1d
 
                 UNION ALL
 
@@ -161,9 +171,10 @@ final class PlayerScanQueueSelector
                 FROM
                     player p
                     LEFT JOIN player_ranking pr ON pr.account_id = p.account_id
+                    JOIN now_values nv
                 WHERE
                     p.status NOT IN (1, 3, 4, 5)
-                    AND p.last_updated_date < :cutoff_1w
+                    AND p.last_updated_date < nv.cutoff_1w
                     AND (
                         pr.account_id IS NULL
                         OR (pr.ranking IS NULL OR pr.ranking > 10000)
@@ -180,9 +191,10 @@ final class PlayerScanQueueSelector
                     p.account_id
                 FROM
                     player p
+                    JOIN now_values nv
                 WHERE
                     p.status = 3
-                    AND p.last_updated_date < :cutoff_1m
+                    AND p.last_updated_date < nv.cutoff_1m
 
                 UNION ALL
 
@@ -193,9 +205,10 @@ final class PlayerScanQueueSelector
                     p.account_id
                 FROM
                     player p
+                    JOIN now_values nv
                 WHERE
                     p.status = 4
-                    AND p.last_updated_date < :cutoff_3m
+                    AND p.last_updated_date < nv.cutoff_3m
 
                 UNION ALL
 
