@@ -17,6 +17,7 @@ require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/WorkerScanCoordinator.php';
 require_once __DIR__ . '/PlayerScanQueueSelector.php';
+require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
@@ -37,6 +38,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanQueueSelector $playerScanQueueSelector;
     private readonly TrophyTitleNameFormatter $trophyTitleNameFormatter;
     private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
+    private readonly TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
 
     public function __construct(
         private readonly PDO $database,
@@ -54,6 +56,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerScanQueueSelector $playerScanQueueSelector = null,
         ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
+        ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -78,6 +81,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $logger->log(sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $message));
             },
         );
+        $this->trophyCatalogSynchronizer = $trophyCatalogSynchronizer ?? new TrophyCatalogSynchronizer($database);
     }
 
     /**
@@ -904,14 +908,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                             $sanitizedTitleName = $this->trophyTitleNameFormatter->format($trophyTitle->name());
 
-                            $existingTitleQuery = $this->database->prepare(
-                                'SELECT name, detail, icon_url, platform, set_version
-                                FROM trophy_title
-                                WHERE np_communication_id = :np_communication_id'
-                            );
-                            $existingTitleQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-                            $existingTitleQuery->execute();
-                            $existingTitle = $existingTitleQuery->fetch(PDO::FETCH_ASSOC) ?: null;
+                            $existingTitle = $this->trophyCatalogSynchronizer->fetchExistingTrophyTitleRow($npid);
                             $isNewTitle = $existingTitle === null;
                             $incomingSetVersion = $trophyTitle->trophySetVersion();
                             $setVersionForUpdate = $this->resolveSetVersionForUpdate(
@@ -1061,15 +1058,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $trophyGroupIconUrl = (string) ($trophyGroup['trophyGroupIconUrl'] ?? '');
                                 $groupNewTrophies = false;
                                 // Add trophy group (game + dlcs) into database
-                                $existingGroupQuery = $this->database->prepare(
-                                    'SELECT name, detail, icon_url
-                                    FROM trophy_group
-                                    WHERE np_communication_id = :np_communication_id AND group_id = :group_id'
-                                );
-                                $existingGroupQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-                                $existingGroupQuery->bindValue(':group_id', $trophyGroupId, PDO::PARAM_STR);
-                                $existingGroupQuery->execute();
-                                $existingGroup = $existingGroupQuery->fetch(PDO::FETCH_ASSOC) ?: null;
+                                $existingGroup = $this->trophyCatalogSynchronizer->fetchExistingTrophyGroup($npid, $trophyGroupId);
 
                                 $previousGroupIconFilename = $existingGroup['icon_url'] ?? null;
                                 $groupIconFilename = $previousGroupIconFilename;
@@ -1090,34 +1079,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 }
 
                                 if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
-                                    $query = $this->database->prepare("INSERT INTO trophy_group(
-                                            np_communication_id,
-                                            group_id,
-                                            name,
-                                            detail,
-                                            icon_url
-                                        )
-                                        VALUES(
-                                            :np_communication_id,
-                                            :group_id,
-                                            :name,
-                                            :detail,
-                                            :icon_url
-                                        ) AS new
-                                        ON DUPLICATE KEY
-                                        UPDATE
-                                            name = new.name,
-                                            detail = new.detail,
-                                            icon_url = new.icon_url");
-                                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                    $query->bindValue(":group_id", $trophyGroupId, PDO::PARAM_STR);
-                                    $query->bindValue(":name", $trophyGroupName, PDO::PARAM_STR);
-                                    $query->bindValue(":detail", $trophyGroupDetail, PDO::PARAM_STR);
-                                    $query->bindValue(":icon_url", $groupIconFilename, PDO::PARAM_STR);
-                                    // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                                    $query->execute();
+                                    $groupAffectedRows = $this->trophyCatalogSynchronizer->upsertTrophyGroup(
+                                        $npid,
+                                        $trophyGroupId,
+                                        $trophyGroupName,
+                                        $trophyGroupDetail,
+                                        $groupIconFilename,
+                                    );
 
-                                    if ($query->rowCount() > 0) {
+                                    if ($groupAffectedRows > 0) {
                                         $groupDataChanged = true;
                                     }
                                 }
@@ -1159,18 +1129,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         continue;
                                     }
 
-                                    $existingTrophyQuery = $this->database->prepare(
-                                        'SELECT hidden, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url
-                                        FROM trophy
-                                        WHERE np_communication_id = :np_communication_id
-                                        AND group_id = :group_id
-                                        AND order_id = :order_id'
+                                    $existingTrophy = $this->trophyCatalogSynchronizer->fetchExistingTrophy(
+                                        $npid,
+                                        $trophyGroupId,
+                                        $trophyOrderId,
                                     );
-                                    $existingTrophyQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-                                    $existingTrophyQuery->bindValue(':group_id', $trophyGroupId, PDO::PARAM_STR);
-                                    $existingTrophyQuery->bindValue(':order_id', $trophyOrderId, PDO::PARAM_INT);
-                                    $existingTrophyQuery->execute();
-                                    $existingTrophy = $existingTrophyQuery->fetch(PDO::FETCH_ASSOC) ?: null;
 
                                     $trophyHidden = (int) ($trophy['trophyHidden'] ?? 0);
 
@@ -1275,61 +1238,19 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                     $trophyAffectedRows = 0;
 
                                     if ($shouldUpsertTrophy) {
-                                        $query = $this->database->prepare("INSERT INTO trophy(
-                                                np_communication_id,
-                                                group_id,
-                                                order_id,
-                                                hidden,
-                                                type,
-                                                name,
-                                                detail,
-                                                icon_url,
-                                                progress_target_value,
-                                                reward_name,
-                                                reward_image_url
-                                            )
-                                            VALUES(
-                                                :np_communication_id,
-                                                :group_id,
-                                                :order_id,
-                                                :hidden,
-                                                :type,
-                                                :name,
-                                                :detail,
-                                                :icon_url,
-                                                :progress_target_value,
-                                                :reward_name,
-                                                :reward_image_url
-                                            ) AS new
-                                            ON DUPLICATE KEY
-                                            UPDATE
-                                                hidden = new.hidden,
-                                                type = new.type,
-                                                name = new.name,
-                                                detail = new.detail,
-                                                icon_url = new.icon_url,
-                                                progress_target_value = new.progress_target_value,
-                                                reward_name = new.reward_name,
-                                                reward_image_url = new.reward_image_url");
-                                        $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                        $query->bindValue(":group_id", $trophyGroupId, PDO::PARAM_STR);
-                                        $query->bindValue(":order_id", $trophyOrderId, PDO::PARAM_INT);
-                                        $query->bindValue(":hidden", $trophyHidden, PDO::PARAM_INT);
-                                        $query->bindValue(":type", $trophyTypeEnumValue, PDO::PARAM_STR);
-                                        $query->bindValue(":name", $trophyName, PDO::PARAM_STR);
-                                        $query->bindValue(":detail", $trophyDetail, PDO::PARAM_STR);
-                                        $query->bindValue(":icon_url", $trophyIconFilename, PDO::PARAM_STR);
-                                        if ($progressTargetValue === null) {
-                                            $query->bindValue(":progress_target_value", null, PDO::PARAM_NULL);
-                                        } else {
-                                            $query->bindValue(":progress_target_value", $progressTargetValue, PDO::PARAM_INT);
-                                        }
-                                        $query->bindValue(":reward_name", $rewardName, PDO::PARAM_STR);
-                                        $query->bindValue(":reward_image_url", $rewardImageFilename, PDO::PARAM_STR);
-                                        // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                                        $query->execute();
-
-                                        $trophyAffectedRows = (int) $query->rowCount();
+                                        $trophyAffectedRows = $this->trophyCatalogSynchronizer->upsertTrophy(
+                                            $npid,
+                                            $trophyGroupId,
+                                            $trophyOrderId,
+                                            $trophyHidden,
+                                            $trophyTypeEnumValue,
+                                            $trophyName,
+                                            $trophyDetail,
+                                            $trophyIconFilename,
+                                            $progressTargetValue,
+                                            $rewardName,
+                                            $rewardImageFilename,
+                                        );
 
                                         if ($trophyAffectedRows > 0) {
                                             $trophyDataChanged = true;
