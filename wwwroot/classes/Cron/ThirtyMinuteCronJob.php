@@ -10,6 +10,8 @@ require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../TrophyImageDirectories.php';
+require_once __DIR__ . '/../TrophyImageDownloader.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -17,17 +19,14 @@ use Tustin\PlayStation\Client;
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
-    private const string TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
-    private const string GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
-    private const string TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
-    private const string REWARD_ICON_DIRECTORY = '/home/psn100/public_html/img/reward/';
-
     private readonly TrophyMetaRepository $trophyMetaRepository;
 
     private readonly AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
 
     private readonly ImageHashCalculator $imageHashCalculator;
     private readonly PsnGameLookupService $psnGameLookupService;
+    private readonly TrophyImageDirectories $imageDirectories;
+    private readonly TrophyImageDownloader $imageDownloader;
 
     public function __construct(
         private readonly PDO $database,
@@ -38,7 +37,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?TrophyMetaRepository $trophyMetaRepository = null,
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null,
-        ?PsnGameLookupService $psnGameLookupService = null
+        ?PsnGameLookupService $psnGameLookupService = null,
+        ?TrophyImageDirectories $imageDirectories = null,
+        ?TrophyImageDownloader $imageDownloader = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -46,6 +47,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
+        $this->imageDirectories = $imageDirectories ?? TrophyImageDirectories::productionDefault();
+        $this->imageDownloader = $imageDownloader ?? new TrophyImageDownloader(
+            $this->imageHashCalculator,
+            function (string $message) use ($logger): void {
+                $logger->log($message);
+            },
+        );
     }
 
     private function setWaitingScanProgress(int $workerId, string $message): void
@@ -1179,7 +1187,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
                             $titleIconFilename = $previousTitleIconFilename;
                             $titleIconMissing = $titleIconFilename === null
-                                || !file_exists(self::TITLE_ICON_DIRECTORY . $titleIconFilename);
+                                || !file_exists($this->imageDirectories->title . $titleIconFilename);
 
                             $titleNeedsUpdate = $existingTitle === null
                                 || (
@@ -1191,9 +1199,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 );
 
                             if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
-                                $titleIconFilename = $this->downloadMandatoryImage(
+                                $titleIconFilename = $this->imageDownloader->downloadMandatoryForScan(
                                     $trophyTitle->iconUrl(),
-                                    self::TITLE_ICON_DIRECTORY,
+                                    $this->imageDirectories->title,
                                     sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid),
                                     $previousTitleIconFilename
                                 );
@@ -1327,16 +1335,16 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 $previousGroupIconFilename = $existingGroup['icon_url'] ?? null;
                                 $groupIconFilename = $previousGroupIconFilename;
                                 $groupIconMissing = $groupIconFilename === null
-                                    || !file_exists(self::GROUP_ICON_DIRECTORY . $groupIconFilename);
+                                    || !file_exists($this->imageDirectories->group . $groupIconFilename);
 
                                 $groupNeedsUpdate = $existingGroup === null
                                     || $existingGroup['name'] !== $trophyGroupName
                                     || $existingGroup['detail'] !== $trophyGroupDetail;
 
                                 if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
-                                    $groupIconFilename = $this->downloadMandatoryImage(
+                                    $groupIconFilename = $this->imageDownloader->downloadMandatoryForScan(
                                         $trophyGroupIconUrl,
-                                        self::GROUP_ICON_DIRECTORY,
+                                        $this->imageDirectories->group,
                                         sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroupName, $npid, $trophyGroupId),
                                         $previousGroupIconFilename
                                     );
@@ -1473,14 +1481,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         || (!$rewardImageShouldBeNull && $existingRewardImageFilename === null);
 
                                     $iconMissing = $existingIconFilename === null
-                                        || !file_exists(self::TROPHY_ICON_DIRECTORY . $existingIconFilename);
+                                        || !file_exists($this->imageDirectories->trophy . $existingIconFilename);
 
                                     $previousIconFilename = $existingIconFilename;
 
                                     if ($existingTrophy === null || $trophyNeedsUpdate || $iconMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
-                                        $trophyIconFilename = $this->downloadMandatoryImage(
+                                        $trophyIconFilename = $this->imageDownloader->downloadMandatoryForScan(
                                             $trophyIconUrl,
-                                            self::TROPHY_ICON_DIRECTORY,
+                                            $this->imageDirectories->trophy,
                                             sprintf(
                                                 'trophy icon for "%s" (%s/%s/%d)',
                                                 $trophyName,
@@ -1500,12 +1508,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         $rewardImageFilename = null;
                                     } else {
                                         $rewardImageMissing = $existingRewardImageFilename === null
-                                            || !file_exists(self::REWARD_ICON_DIRECTORY . $existingRewardImageFilename);
+                                            || !file_exists($this->imageDirectories->reward . $existingRewardImageFilename);
 
                                         if ($existingTrophy === null || $trophyNeedsUpdate || $rewardImageMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
-                                            $rewardImageFilename = $this->downloadOptionalImage(
+                                            $rewardImageFilename = $this->imageDownloader->downloadOptionalForScan(
                                                 $rewardImageUrl === null ? '' : (string) $rewardImageUrl,
-                                                self::REWARD_ICON_DIRECTORY,
+                                                $this->imageDirectories->reward,
                                                 sprintf(
                                                     'reward image for "%s" (%s/%s/%d)',
                                                     $trophyName,
@@ -2590,122 +2598,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         return (int) $id;
     }
 
-    private function downloadMandatoryImage(
-        string $url,
-        string $directory,
-        string $description,
-        ?string $existingFilename = null
-    ): string
-    {
-        $contents = $this->fetchRemoteFile($url);
-        if ($contents === null) {
-            if ($this->shouldLogDownloadFailure($existingFilename)) {
-                $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
-            }
-
-            return '.png';
-        }
-
-        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
-
-        return $storedFilename ?? '.png';
-    }
-
-    private function downloadOptionalImage(
-        ?string $url,
-        string $directory,
-        string $description,
-        ?string $existingFilename = null
-    ): ?string
-    {
-        if ($url === null || $url === '') {
-            return null;
-        }
-
-        $contents = $this->fetchRemoteFile($url);
-        if ($contents === null) {
-            if ($this->shouldLogDownloadFailure($existingFilename)) {
-                $this->logger->log(sprintf('Unable to download %s from "%s".', $description, $url));
-            }
-
-            return '.png';
-        }
-
-        $storedFilename = $this->storeImageContents($url, $directory, $description, $contents);
-
-        return $storedFilename ?? '.png';
-    }
-
-    private function shouldLogDownloadFailure(?string $existingFilename): bool
-    {
-        if ($existingFilename === null || $existingFilename === '') {
-            return true;
-        }
-
-        return $existingFilename !== '.png';
-    }
-
-    private function storeImageContents(string $url, string $directory, string $description, string $contents): ?string
-    {
-        $filename = $this->buildFilename($url, $contents);
-        $path = $directory . $filename;
-
-        if (!file_exists($path)) {
-            if (@file_put_contents($path, $contents) === false) {
-                $this->logger->log(sprintf('Unable to save %s from "%s" to "%s".', $description, $url, $path));
-
-                return null;
-            }
-        }
-
-        return $filename;
-    }
-
     private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
     {
         $this->trophyMetaRepository->ensureExists($npCommunicationId, $groupId, $orderId);
-    }
-
-    private function fetchRemoteFile(string $url): ?string
-    {
-        if ($url === '') {
-            return null;
-        }
-
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 30,
-                    'ignore_errors' => true,
-                ],
-            ]);
-
-            $contents = @file_get_contents($url, false, $context);
-            if ($contents !== false) {
-                $statusLine = $http_response_header[0] ?? '';
-                if ($statusLine === '' || preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
-                    return $contents;
-                }
-            }
-
-            if ($attempt === 1) {
-                sleep(3);
-            }
-        }
-
-        return null;
-    }
-
-    private function buildFilename(string $url, string $contents): string
-    {
-        $hash = $this->imageHashCalculator->calculate($contents);
-        if ($hash === null) {
-            $hash = md5($contents);
-        }
-        $extensionPosition = strrpos($url, '.');
-        $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
-
-        return $hash . $extension;
     }
 
     private function sanitizeTrophyTitleName(string $name): string

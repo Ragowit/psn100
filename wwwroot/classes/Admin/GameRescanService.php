@@ -8,16 +8,14 @@ require_once __DIR__ . '/GameRescanResult.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
+require_once __DIR__ . '/../TrophyImageDirectories.php';
+require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
 
 use Tustin\PlayStation\Client;
 
 class GameRescanService
 {
-    private const TITLE_ICON_DIRECTORY = '/home/psn100/public_html/img/title/';
-    private const GROUP_ICON_DIRECTORY = '/home/psn100/public_html/img/group/';
-    private const TROPHY_ICON_DIRECTORY = '/home/psn100/public_html/img/trophy/';
-    private const REWARD_ICON_DIRECTORY = '/home/psn100/public_html/img/reward/';
     private const ORIGINAL_GAME_PREFIX = 'NPWR';
     private const LOGIN_RETRY_DELAY_SECONDS = 300;
 
@@ -30,6 +28,8 @@ class GameRescanService
 
     private ImageHashCalculator $imageHashCalculator;
     private PsnGameLookupService $psnGameLookupService;
+    private TrophyImageDirectories $imageDirectories;
+    private TrophyImageDownloader $imageDownloader;
 
     /**
      * @var \Closure(string):void|null
@@ -41,7 +41,9 @@ class GameRescanService
         TrophyCalculator $trophyCalculator,
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?ImageHashCalculator $imageHashCalculator = null,
-        ?PsnGameLookupService $psnGameLookupService = null
+        ?PsnGameLookupService $psnGameLookupService = null,
+        ?TrophyImageDirectories $imageDirectories = null,
+        ?TrophyImageDownloader $imageDownloader = null,
     )
     {
         $this->database = $database;
@@ -50,6 +52,8 @@ class GameRescanService
         $this->trophyMetaRepository = new TrophyMetaRepository($database);
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
+        $this->imageDirectories = $imageDirectories ?? TrophyImageDirectories::productionDefault();
+        $this->imageDownloader = $imageDownloader ?? new TrophyImageDownloader($this->imageHashCalculator);
     }
 
     /**
@@ -64,6 +68,12 @@ class GameRescanService
         $this->logListener = $logListener !== null
             ? \Closure::fromCallable($logListener)
             : null;
+        $previousImageDownloader = $this->imageDownloader;
+        $this->imageDownloader = $this->imageDownloader->withLogger(
+            function (string $message): void {
+                $this->logMessage($message);
+            }
+        );
 
         try {
             $differenceTracker = new GameRescanDifferenceTracker();
@@ -130,6 +140,7 @@ class GameRescanService
             return new GameRescanResult($message, $differenceTracker->getDifferences());
         } finally {
             $this->logListener = $previousLogListener;
+            $this->imageDownloader = $previousImageDownloader;
         }
     }
 
@@ -401,9 +412,9 @@ class GameRescanService
         $existingTrophyData = $this->fetchExistingTrophyData($npCommunicationId);
 
         $titleDetail = (string) $trophyTitle->detail();
-        $titleIconFilename = $this->downloadImage(
+        $titleIconFilename = $this->imageDownloader->downloadMandatoryForRescan(
             $trophyTitle->iconUrl(),
-            self::TITLE_ICON_DIRECTORY,
+            $this->imageDirectories->title,
             $existingTitleInfo['icon']
         );
         $platforms = $this->buildPlatformList($trophyTitle, $existingTitleInfo['platforms']);
@@ -451,9 +462,9 @@ class GameRescanService
                 'icon' => null,
             ];
 
-            $groupIconFilename = $this->downloadImage(
+            $groupIconFilename = $this->imageDownloader->downloadMandatoryForRescan(
                 $trophyGroup->iconUrl(),
-                self::GROUP_ICON_DIRECTORY,
+                $this->imageDirectories->group,
                 $existingGroup['icon']
             );
 
@@ -513,14 +524,14 @@ class GameRescanService
                     'reward_image' => null,
                 ];
 
-                $trophyIconFilename = $this->downloadImage(
+                $trophyIconFilename = $this->imageDownloader->downloadMandatoryForRescan(
                     $trophy->iconUrl(),
-                    self::TROPHY_ICON_DIRECTORY,
+                    $this->imageDirectories->trophy,
                     $existingTrophy['icon']
                 );
-                $rewardImageFilename = $this->downloadOptionalImage(
+                $rewardImageFilename = $this->imageDownloader->downloadOptionalForRescan(
                     $trophy->rewardImageUrl(),
-                    self::REWARD_ICON_DIRECTORY,
+                    $this->imageDirectories->reward,
                     $existingTrophy['reward_image']
                 );
 
@@ -1156,100 +1167,6 @@ class GameRescanService
         $version = (string) $version;
 
         return $version === '' ? null : $version;
-    }
-
-    private function downloadImage(string $url, string $directory, ?string $existingFilename = null): string
-    {
-        $contents = $this->fetchRemoteFile($url);
-
-        if ($contents === null) {
-            if ($existingFilename !== null && $existingFilename !== '') {
-                $this->logMessage(
-                    sprintf('Reusing cached image "%s" because "%s" is unavailable.', $existingFilename, $url)
-                );
-
-                return $existingFilename;
-            }
-
-            $this->logMessage(sprintf('Unable to download image from "%s".', $url));
-
-            throw new RuntimeException(sprintf('Unable to download image from "%s".', $url));
-        }
-
-        $filename = $this->buildFilename($url, $contents);
-        $path = $directory . $filename;
-
-        if (!file_exists($path)) {
-            file_put_contents($path, $contents);
-        }
-
-        return $filename;
-    }
-
-    private function downloadOptionalImage(?string $url, string $directory, ?string $existingFilename = null): ?string
-    {
-        if ($url === null || $url === '') {
-            return $existingFilename;
-        }
-
-        $contents = $this->fetchRemoteFile($url);
-
-        if ($contents === null) {
-            if ($existingFilename !== null && $existingFilename !== '') {
-                $this->logMessage(
-                    sprintf('Keeping cached optional image "%s" because "%s" is unavailable.', $existingFilename, $url)
-                );
-            }
-
-            return $existingFilename;
-        }
-
-        $filename = $this->buildFilename($url, $contents);
-        $path = $directory . $filename;
-
-        if (!file_exists($path)) {
-            file_put_contents($path, $contents);
-        }
-
-        return $filename;
-    }
-
-    private function fetchRemoteFile(string $url): ?string
-    {
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 30,
-                    'ignore_errors' => true,
-                ],
-            ]);
-
-            $contents = @file_get_contents($url, false, $context);
-            if ($contents !== false) {
-                $statusLine = $http_response_header[0] ?? '';
-                if ($statusLine === '' || preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
-                    return $contents;
-                }
-            }
-
-            if ($attempt === 1) {
-                sleep(3);
-            }
-        }
-
-        return null;
-    }
-
-    private function buildFilename(string $url, string $contents): string
-    {
-        $hash = $this->imageHashCalculator->calculate($contents);
-        if ($hash === null) {
-            $hash = md5($contents);
-        }
-        $extensionPosition = strrpos($url, '.');
-        $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
-
-        return $hash . $extension;
     }
 
     /**

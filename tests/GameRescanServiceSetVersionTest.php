@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/ImageHashCalculatorTest.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyImageDownloader.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameRescanDifferenceTracker.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameRescanService.php';
 
@@ -47,5 +49,33 @@ final class GameRescanServiceSetVersionTest extends TestCase
 
         $this->assertSame('01.10', $updatedVersion);
         $this->assertSame([], $differenceTracker->getDifferences());
+    }
+
+    public function testRescanPreservesInjectedImageDownloader(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE trophy_title (id INTEGER PRIMARY KEY, np_communication_id TEXT NOT NULL)');
+        $database->exec("INSERT INTO trophy_title (id, np_communication_id) VALUES (1, 'CUSA12345_00')");
+
+        $injectedDownloader = new TrophyImageDownloader(
+            new ImageHashCalculator(new FakeImageProcessor(supported: false)),
+            null,
+            static fn (string $url): ?string => null,
+        );
+
+        $service = new GameRescanService(
+            $database,
+            new TrophyCalculator($database),
+            imageDownloader: $injectedDownloader,
+        );
+
+        $result = $service->rescan(1);
+
+        $this->assertStringContainsString('Can only rescan original game entries.', $result->getMessage());
+
+        $property = new ReflectionProperty(GameRescanService::class, 'imageDownloader');
+        $property->setAccessible(true);
+        $this->assertSame($injectedDownloader, $property->getValue($service));
     }
 }
