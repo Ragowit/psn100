@@ -16,6 +16,7 @@ require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/WorkerScanCoordinator.php';
+require_once __DIR__ . '/PlayerScanQueueSelector.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
@@ -33,6 +34,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly TrophyImageDirectories $imageDirectories;
     private readonly TrophyImageDownloader $imageDownloader;
     private readonly WorkerScanCoordinator $workerScanCoordinator;
+    private readonly PlayerScanQueueSelector $playerScanQueueSelector;
     private readonly TrophyTitleNameFormatter $trophyTitleNameFormatter;
     private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
 
@@ -49,6 +51,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?TrophyImageDirectories $imageDirectories = null,
         ?TrophyImageDownloader $imageDownloader = null,
         ?WorkerScanCoordinator $workerScanCoordinator = null,
+        ?PlayerScanQueueSelector $playerScanQueueSelector = null,
         ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
     )
@@ -66,6 +69,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             },
         );
         $this->workerScanCoordinator = $workerScanCoordinator ?? new WorkerScanCoordinator($database);
+        $this->playerScanQueueSelector = $playerScanQueueSelector ?? new PlayerScanQueueSelector($database);
         $this->trophyTitleNameFormatter = $trophyTitleNameFormatter ?? new TrophyTitleNameFormatter();
         $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
             new WorkerService($database),
@@ -348,179 +352,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             }
 
             try {
-                // Get our queue.
-                // #1 - Users added from the front page, ordered by time entered
-                // #2 - Top 100 players who haven't been updated within an hour, ordered by the oldest one.
-                // #3 - Top 1000 players or +/- 250 players who are about to drop out of top 10k who haven't been updated within a day, ordered by the oldest one.
-                // #4 - Top 10000 players who haven't been updated within a week, ordered by the oldest one.
-                // #5 - Not-found players (status 5) who have not been updated within a day, oldest first.
-                // #6 - Non-cheater players outside top 10k (or missing ranking data) who have not been updated within a week, oldest first.
-                // #7 - Private players who have not been updated within a month, oldest first.
-                // #8 - Inactive players who have not been updated within three months, oldest first.
-                // #9 - Any ranked players, oldest first.
-                $query = $this->database->prepare("
-                    WITH
-                        now_values AS (
-                            SELECT
-                                NOW() AS now,
-                                NOW() - INTERVAL 1 HOUR AS cutoff_1h,
-                                NOW() - INTERVAL 1 DAY AS cutoff_1d,
-                                NOW() - INTERVAL 1 WEEK AS cutoff_1w,
-                                NOW() - INTERVAL 1 MONTH AS cutoff_1m,
-                                NOW() - INTERVAL 3 MONTH AS cutoff_3m
-                        )
-                    SELECT
-                        online_id,
-                        account_id
-                    FROM (
-                        SELECT
-                            1 AS tier,
-                            pq.online_id,
-                            pq.request_time AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player_queue pq
-                            LEFT JOIN player p ON p.online_id = pq.online_id
-
-                        UNION ALL
-
-                        SELECT
-                            2 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN player_ranking pr ON pr.account_id = p.account_id
-                            JOIN now_values nv
-                        WHERE
-                            (pr.ranking <= 100 OR pr.rarity_ranking <= 100 OR pr.in_game_rarity_ranking <= 100)
-                            AND p.last_updated_date < nv.cutoff_1h
-
-                        UNION ALL
-
-                        SELECT
-                            3 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN player_ranking pr ON pr.account_id = p.account_id
-                            JOIN now_values nv
-                        WHERE
-                            (
-                                pr.ranking <= 1000 OR
-                                pr.rarity_ranking <= 1000 OR
-                                pr.in_game_rarity_ranking <= 1000 OR
-                                (pr.ranking BETWEEN 9750 AND 10250) OR
-                                (pr.rarity_ranking BETWEEN 9750 AND 10250) OR
-                                (pr.in_game_rarity_ranking BETWEEN 9750 AND 10250)
-                            )
-                            AND p.last_updated_date < nv.cutoff_1d
-
-                        UNION ALL
-
-                        SELECT
-                            4 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN player_ranking pr ON pr.account_id = p.account_id
-                            JOIN now_values nv
-                        WHERE
-                            (pr.ranking <= 10000 OR pr.rarity_ranking <= 10000 OR pr.in_game_rarity_ranking <= 10000)
-                            AND p.last_updated_date < nv.cutoff_1w
-
-                        UNION ALL
-
-                        SELECT
-                            5 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN now_values nv
-                        WHERE
-                            p.status = 5
-                            AND p.last_updated_date < nv.cutoff_1d
-
-                        UNION ALL
-
-                        SELECT
-                            6 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            LEFT JOIN player_ranking pr ON pr.account_id = p.account_id
-                            JOIN now_values nv
-                        WHERE
-                            p.status NOT IN (1, 3, 4, 5)
-                            AND p.last_updated_date < nv.cutoff_1w
-                            AND (
-                                pr.account_id IS NULL
-                                OR (pr.ranking IS NULL OR pr.ranking > 10000)
-                                OR (pr.rarity_ranking IS NULL OR pr.rarity_ranking > 10000)
-                                OR (pr.in_game_rarity_ranking IS NULL OR pr.in_game_rarity_ranking > 10000)
-                            )
-
-                        UNION ALL
-
-                        SELECT
-                            7 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN now_values nv
-                        WHERE
-                            p.status = 3
-                            AND p.last_updated_date < nv.cutoff_1m
-
-                        UNION ALL
-
-                        SELECT
-                            8 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN now_values nv
-                        WHERE
-                            p.status = 4
-                            AND p.last_updated_date < nv.cutoff_3m
-
-                        UNION ALL
-
-                        SELECT
-                            9 AS tier,
-                            p.online_id,
-                            p.last_updated_date AS priority_timestamp,
-                            p.account_id
-                        FROM
-                            player p
-                            JOIN player_ranking pr ON pr.account_id = p.account_id
-                    ) a
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM setting s
-                        WHERE s.scanning = a.online_id AND s.id != :worker_id
-                    )
-                    ORDER BY
-                        tier,
-                        priority_timestamp,
-                        online_id
-                    LIMIT 1
-                ");
-                $query->bindValue(":worker_id", $worker["id"], PDO::PARAM_INT);
-                $query->execute();
-                $player = $query->fetch(PDO::FETCH_ASSOC);
+                $player = $this->playerScanQueueSelector->selectNextCandidate((int) $worker['id']);
                 $player = $this->workerScanCoordinator->reservePlayerForScanning((int) $worker['id'], $player);
             } catch (Exception $e) {
                 // Probably just an exception for "Integrity constraint violation: 1062 Duplicate entry 'online_id' for key 'setting.scanning'" because another thread was faster then this one
