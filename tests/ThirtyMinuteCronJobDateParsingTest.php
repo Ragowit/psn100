@@ -12,11 +12,8 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
 {
     private PDO $database;
     private ThirtyMinuteCronJob $cronJob;
-    private ReflectionMethod $gameTimestampsMatchMethod;
-    private ReflectionMethod $formatDateTimeForDatabaseMethod;
     private ReflectionMethod $determineScanStartIndexMethod;
     private ReflectionMethod $ensureValidTrophyTitleLastUpdatedDateMethod;
-    private ReflectionMethod $shouldRetryInvalidTitleLastUpdatedDateMethod;
     private ReflectionMethod $handleInvalidTitleLastUpdatedDateResponseMethod;
 
     protected function setUp(): void
@@ -38,12 +35,6 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
             1
         );
 
-        $this->gameTimestampsMatchMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'gameTimestampsMatch');
-        $this->gameTimestampsMatchMethod->setAccessible(true);
-
-        $this->formatDateTimeForDatabaseMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'formatDateTimeForDatabase');
-        $this->formatDateTimeForDatabaseMethod->setAccessible(true);
-
         $this->determineScanStartIndexMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'determineScanStartIndex');
         $this->determineScanStartIndexMethod->setAccessible(true);
 
@@ -53,102 +44,11 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         );
         $this->ensureValidTrophyTitleLastUpdatedDateMethod->setAccessible(true);
 
-        $this->shouldRetryInvalidTitleLastUpdatedDateMethod = new ReflectionMethod(
-            ThirtyMinuteCronJob::class,
-            'shouldRetryInvalidTitleLastUpdatedDate'
-        );
-        $this->shouldRetryInvalidTitleLastUpdatedDateMethod->setAccessible(true);
-
         $this->handleInvalidTitleLastUpdatedDateResponseMethod = new ReflectionMethod(
             ThirtyMinuteCronJob::class,
             'handleInvalidTitleLastUpdatedDateResponse'
         );
         $this->handleInvalidTitleLastUpdatedDateResponseMethod->setAccessible(true);
-    }
-
-    public function testGameTimestampsMatchReturnsTrueForMatchingValidDates(): void
-    {
-        $result = $this->gameTimestampsMatchMethod->invoke(
-            $this->cronJob,
-            '2024-06-15T10:30:00Z',
-            '2024-06-15 10:30:00'
-        );
-
-        $this->assertTrue($result);
-    }
-
-    public function testGameTimestampsMatchReturnsFalseForDifferentValidDates(): void
-    {
-        $result = $this->gameTimestampsMatchMethod->invoke(
-            $this->cronJob,
-            '2024-06-15T10:30:00Z',
-            '2024-06-16 10:30:00'
-        );
-
-        $this->assertFalse($result);
-    }
-
-    public function testGameTimestampsMatchReturnsFalseWhenSonyTimestampIsInvalid(): void
-    {
-        $result = $this->gameTimestampsMatchMethod->invoke(
-            $this->cronJob,
-            'not-a-valid-date',
-            'not-a-valid-date'
-        );
-
-        $this->assertFalse($result);
-    }
-
-    public function testGameTimestampsMatchReturnsFalseWhenBothInvalidButDifferentRawStrings(): void
-    {
-        $result = $this->gameTimestampsMatchMethod->invoke(
-            $this->cronJob,
-            'not-a-valid-date',
-            'also-not-valid'
-        );
-
-        $this->assertFalse($result);
-    }
-
-    public function testGameTimestampsMatchReturnsFalseWhenDatabaseTimestampIsInvalid(): void
-    {
-        $result = $this->gameTimestampsMatchMethod->invoke(
-            $this->cronJob,
-            '2024-06-15T10:30:00Z',
-            'not-a-valid-date'
-        );
-
-        $this->assertFalse($result);
-    }
-
-    public function testFormatDateTimeForDatabaseReturnsFormattedSonyTimestamp(): void
-    {
-        $result = $this->formatDateTimeForDatabaseMethod->invoke(
-            $this->cronJob,
-            '2024-06-15T10:30:00Z'
-        );
-
-        $this->assertSame('2024-06-15 10:30:00', $result);
-    }
-
-    public function testFormatDateTimeForDatabaseReturnsNullForInvalidTimestamp(): void
-    {
-        $result = $this->formatDateTimeForDatabaseMethod->invoke(
-            $this->cronJob,
-            'not-a-valid-date'
-        );
-
-        $this->assertSame(null, $result);
-    }
-
-    public function testFormatDateTimeForDatabaseReturnsNullForEmptyString(): void
-    {
-        $result = $this->formatDateTimeForDatabaseMethod->invoke(
-            $this->cronJob,
-            ''
-        );
-
-        $this->assertSame(null, $result);
     }
 
     public function testDetermineScanStartIndexRescansWhenInvalidTimestampsDiffer(): void
@@ -245,36 +145,6 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
 
         $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
         $this->assertStringContainsString('invalid last updated date', (string) $logMessage);
-    }
-
-    public function testShouldRetryInvalidTitleLastUpdatedDateReturnsTrueOnFirstAttempt(): void
-    {
-        $retryTracker = [];
-
-        $result = $this->shouldRetryInvalidTitleLastUpdatedDateMethod->invoke(
-            $this->cronJob,
-            $retryTracker,
-            'ExampleUser',
-            'NPWR12345_00'
-        );
-
-        $this->assertTrue($result);
-    }
-
-    public function testShouldRetryInvalidTitleLastUpdatedDateReturnsFalseAfterMarkedRetried(): void
-    {
-        $retryTracker = [
-            'ExampleUser:NPWR12345_00' => true,
-        ];
-
-        $result = $this->shouldRetryInvalidTitleLastUpdatedDateMethod->invoke(
-            $this->cronJob,
-            $retryTracker,
-            'ExampleUser',
-            'NPWR12345_00'
-        );
-
-        $this->assertFalse($result);
     }
 
     public function testHandleInvalidTitleLastUpdatedDateResponseDefersPlayerScan(): void

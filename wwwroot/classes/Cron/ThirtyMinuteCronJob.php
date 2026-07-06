@@ -17,6 +17,7 @@ require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/WorkerScanCoordinator.php';
 require_once __DIR__ . '/PlayerScanQueueSelector.php';
+require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
 require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 
@@ -39,6 +40,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly TrophyTitleNameFormatter $trophyTitleNameFormatter;
     private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
     private readonly TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
+    private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper;
 
     public function __construct(
         private readonly PDO $database,
@@ -57,6 +59,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
         ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
+        ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -82,6 +85,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             },
         );
         $this->trophyCatalogSynchronizer = $trophyCatalogSynchronizer ?? new TrophyCatalogSynchronizer($database);
+        $this->titleMetadataHelper = $titleMetadataHelper ?? new PlayerScanTitleMetadataHelper();
     }
 
     /**
@@ -97,7 +101,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 return (int) $index;
             }
 
-            if (!$this->gameTimestampsMatch($trophyTitle->lastUpdatedDateTime(), $gameLastUpdatedDate[$npid])) {
+            if (!$this->titleMetadataHelper->gameTimestampsMatch($trophyTitle->lastUpdatedDateTime(), $gameLastUpdatedDate[$npid])) {
                 return (int) $index;
             }
         }
@@ -255,7 +259,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $npCommunicationId = (string) $trophyTitle->npCommunicationId();
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            if ($this->isValidSonyLastUpdatedDateTime($trophyTitle->lastUpdatedDateTime())) {
+            if ($this->titleMetadataHelper->isValidSonyLastUpdatedDateTime($trophyTitle->lastUpdatedDateTime())) {
                 return $trophyTitle;
             }
 
@@ -839,8 +843,8 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             );
 
                             if ($trophyTitle === null) {
-                                if ($this->shouldRetryInvalidTitleLastUpdatedDate($invalidTitleDateRetry, $onlineId, $npid)) {
-                                    $this->markInvalidTitleLastUpdatedDateRetried($invalidTitleDateRetry, $onlineId, $npid);
+                                if ($this->titleMetadataHelper->shouldRetryInvalidTitleLastUpdatedDate($invalidTitleDateRetry, $onlineId, $npid)) {
+                                    $this->titleMetadataHelper->markInvalidTitleLastUpdatedDateRetried($invalidTitleDateRetry, $onlineId, $npid);
 
                                     $this->logger->log(sprintf(
                                         'Unable to fetch a valid last updated date for %s on title %s. Waiting 1 minute before retrying.',
@@ -883,7 +887,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             // Does this user already have the game?
                             if (
                                 isset($gameLastUpdatedDate[$npid])
-                                && $this->gameTimestampsMatch(
+                                && $this->titleMetadataHelper->gameTimestampsMatch(
                                     $trophyTitle->lastUpdatedDateTime(),
                                     $gameLastUpdatedDate[$npid]
                                 )
@@ -911,11 +915,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $existingTitle = $this->trophyCatalogSynchronizer->fetchExistingTrophyTitleRow($npid);
                             $isNewTitle = $existingTitle === null;
                             $incomingSetVersion = $trophyTitle->trophySetVersion();
-                            $setVersionForUpdate = $this->resolveSetVersionForUpdate(
+                            $setVersionForUpdate = $this->titleMetadataHelper->resolveSetVersionForUpdate(
                                 $incomingSetVersion,
                                 is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
                             );
-                            $incomingVersionIsOlderThanStored = $this->isIncomingSetVersionOlderThanStored(
+                            $incomingVersionIsOlderThanStored = $this->titleMetadataHelper->isIncomingSetVersionOlderThanStored(
                                 $incomingSetVersion,
                                 is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
                             );
@@ -1341,7 +1345,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         if ($trophy->earnedDateTime() === '') {
                                             $dtAsTextForInsert = null;
                                         } else {
-                                            $dtAsTextForInsert = $this->formatDateTimeForDatabase($trophy->earnedDateTime());
+                                            $dtAsTextForInsert = $this->titleMetadataHelper->formatDateTimeForDatabase($trophy->earnedDateTime());
                                         }
 
                                         $query = $this->database->prepare("INSERT INTO trophy_earned(
@@ -1857,7 +1861,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                     unset($missingGameDeletionCheck[$onlineId]);
                     unset($missingTrophyTitleRetry[$onlineId]);
                     unset($trophyTitleCountRetry[$onlineId]);
-                    $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
+                    $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
                 }
             } catch (NotFoundHttpException $exception) {
                 sleep(2);
@@ -1865,7 +1869,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
                 unset($trophyTitleCountRetry[$onlineId]);
-                $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
+                $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
             } catch (UnauthorizedHttpException $exception) {
@@ -1874,7 +1878,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
                 unset($trophyTitleCountRetry[$onlineId]);
-                $this->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
+                $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
             } finally {
@@ -2228,129 +2232,5 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
     {
         $this->trophyMetaRepository->ensureExists($npCommunicationId, $groupId, $orderId);
-    }
-
-    private function gameTimestampsMatch(string $sonyTimestamp, string $dbTimestamp): bool
-    {
-        $sonyLastUpdatedDate = $this->parseDateTime($sonyTimestamp);
-
-        if ($sonyLastUpdatedDate === null) {
-            return false;
-        }
-
-        $dbLastUpdatedDate = $this->parseDateTime($dbTimestamp);
-
-        if ($dbLastUpdatedDate === null) {
-            return false;
-        }
-
-        return $sonyLastUpdatedDate == $dbLastUpdatedDate;
-    }
-
-    private function isValidSonyLastUpdatedDateTime(string $value): bool
-    {
-        return $this->formatDateTimeForDatabase($value) !== null;
-    }
-
-    private function buildInvalidTitleDateRetryKey(string $onlineId, string $npCommunicationId): string
-    {
-        return $onlineId . ':' . $npCommunicationId;
-    }
-
-    /**
-     * @param array<string, bool> $retryTracker
-     */
-    private function shouldRetryInvalidTitleLastUpdatedDate(
-        array $retryTracker,
-        string $onlineId,
-        string $npCommunicationId
-    ): bool {
-        return !($retryTracker[$this->buildInvalidTitleDateRetryKey($onlineId, $npCommunicationId)] ?? false);
-    }
-
-    /**
-     * @param array<string, bool> $retryTracker
-     */
-    private function markInvalidTitleLastUpdatedDateRetried(
-        array &$retryTracker,
-        string $onlineId,
-        string $npCommunicationId
-    ): void {
-        $retryTracker[$this->buildInvalidTitleDateRetryKey($onlineId, $npCommunicationId)] = true;
-    }
-
-    /**
-     * @param array<string, bool> $retryTracker
-     */
-    private function clearInvalidTitleDateRetriesForPlayer(array &$retryTracker, string $onlineId): void
-    {
-        $prefix = $onlineId . ':';
-
-        foreach (array_keys($retryTracker) as $retryKey) {
-            if (str_starts_with($retryKey, $prefix)) {
-                unset($retryTracker[$retryKey]);
-            }
-        }
-    }
-
-    private function formatDateTimeForDatabase(?string $value): ?string
-    {
-        $dateTime = $this->parseDateTime($value);
-
-        return $dateTime?->format('Y-m-d H:i:s');
-    }
-
-    private function parseDateTime(?string $value): ?DateTimeImmutable
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        try {
-            return new DateTimeImmutable($value);
-        } catch (Exception) {
-            return null;
-        }
-    }
-
-    private function isIncomingSetVersionOlderThanStored(string $newVersion, mixed $currentVersion): bool
-    {
-        $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
-
-        if ($normalizedCurrentVersion === null) {
-            return false;
-        }
-
-        return version_compare(trim($newVersion), $normalizedCurrentVersion, '<');
-    }
-
-    private function resolveSetVersionForUpdate(string $newVersion, mixed $currentVersion): string
-    {
-        $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
-
-        if ($normalizedCurrentVersion === null) {
-            return trim($newVersion);
-        }
-
-        if (version_compare(trim($newVersion), $normalizedCurrentVersion, '<')) {
-            return $normalizedCurrentVersion;
-        }
-
-        return trim($newVersion);
-    }
-
-    private function normalizeSetVersion(mixed $version): ?string
-    {
-        if (!is_string($version)) {
-            return null;
-        }
-
-        $trimmedVersion = trim($version);
-
-        if ($trimmedVersion === '') {
-            return null;
-        }
-
-        return $trimmedVersion;
     }
 }
