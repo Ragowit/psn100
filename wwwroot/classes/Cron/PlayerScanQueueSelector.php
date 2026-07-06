@@ -46,9 +46,31 @@ final class PlayerScanQueueSelector
             ':cutoff_1h' => $referenceTime->modify('-1 hour')->format('Y-m-d H:i:s'),
             ':cutoff_1d' => $referenceTime->modify('-1 day')->format('Y-m-d H:i:s'),
             ':cutoff_1w' => $referenceTime->modify('-1 week')->format('Y-m-d H:i:s'),
-            ':cutoff_1m' => $referenceTime->modify('-1 month')->format('Y-m-d H:i:s'),
-            ':cutoff_3m' => $referenceTime->modify('-3 months')->format('Y-m-d H:i:s'),
+            ':cutoff_1m' => $this->subtractMySqlMonths($referenceTime, 1)->format('Y-m-d H:i:s'),
+            ':cutoff_3m' => $this->subtractMySqlMonths($referenceTime, 3)->format('Y-m-d H:i:s'),
         ];
+    }
+
+    /**
+     * Mirrors MySQL `reference_time - INTERVAL n MONTH`, clamping to the last day
+     * of the target month when the source day does not exist (e.g. Mar 31 -> Feb 28).
+     */
+    private function subtractMySqlMonths(DateTimeImmutable $referenceTime, int $months): DateTimeImmutable
+    {
+        $year = (int) $referenceTime->format('Y');
+        $month = (int) $referenceTime->format('m');
+        $day = (int) $referenceTime->format('d');
+        $time = $referenceTime->format('H:i:s');
+
+        $totalMonths = ($year * 12 + ($month - 1)) - $months;
+        $targetYear = intdiv($totalMonths, 12);
+        $targetMonth = ($totalMonths % 12) + 1;
+        $daysInTargetMonth = (int) (new DateTimeImmutable(
+            sprintf('%04d-%02d-01', $targetYear, $targetMonth)
+        ))->format('t');
+        $targetDay = min($day, $daysInTargetMonth);
+
+        return new DateTimeImmutable(sprintf('%04d-%02d-%02d %s', $targetYear, $targetMonth, $targetDay, $time));
     }
 
     private function selectionSql(): string

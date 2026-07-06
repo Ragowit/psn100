@@ -135,6 +135,28 @@ final class PlayerScanQueueSelectorTest extends TestCase
         $this->assertSame('older-queue', $result['online_id']);
     }
 
+    public function testSelectNextCandidateUsesMysqlCompatibleOneMonthCutoffOnMonthEndDates(): void
+    {
+        $referenceTime = new DateTimeImmutable('2026-03-31 12:00:00');
+        $this->insertPlayer(900, 'too-recent-private', '2026-03-02 10:00:00', 3);
+        $this->insertPlayer(901, 'stale-private', '2026-02-27 10:00:00', 3);
+
+        $result = $this->selector->selectNextCandidate(1, $referenceTime);
+
+        $this->assertSame('stale-private', $result['online_id']);
+    }
+
+    public function testSelectNextCandidateUsesMysqlCompatibleThreeMonthCutoffOnMonthEndDates(): void
+    {
+        $referenceTime = new DateTimeImmutable('2026-05-31 12:00:00');
+        $this->insertPlayer(910, 'too-recent-inactive', '2026-03-02 10:00:00', 4);
+        $this->insertPlayer(911, 'stale-inactive', '2026-02-27 10:00:00', 4);
+
+        $result = $this->selector->selectNextCandidate(1, $referenceTime);
+
+        $this->assertSame('stale-inactive', $result['online_id']);
+    }
+
     private function insertPlayer(int $accountId, string $onlineId, string $lastUpdatedDate, int $status): void
     {
         $statement = $this->database->prepare(
