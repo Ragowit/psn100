@@ -10,6 +10,7 @@ require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
+require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
 require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/WorkerService.php';
@@ -33,6 +34,7 @@ class GameRescanService
     private TrophyImageDirectories $imageDirectories;
     private TrophyImageDownloader $imageDownloader;
     private PlayStationWorkerAuthenticator $workerAuthenticator;
+    private TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
 
     /**
      * @var \Closure(string):void|null
@@ -48,6 +50,7 @@ class GameRescanService
         ?TrophyImageDirectories $imageDirectories = null,
         ?TrophyImageDownloader $imageDownloader = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
+        ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
     )
     {
         $this->database = $database;
@@ -58,6 +61,7 @@ class GameRescanService
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
         $this->imageDirectories = $imageDirectories ?? TrophyImageDirectories::productionDefault();
         $this->imageDownloader = $imageDownloader ?? new TrophyImageDownloader($this->imageHashCalculator);
+        $this->trophyCatalogSynchronizer = $trophyCatalogSynchronizer ?? new TrophyCatalogSynchronizer($database);
         $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
             new WorkerService($database),
         );
@@ -341,7 +345,7 @@ class GameRescanService
         ?GameRescanProgressListener $progressListener,
         GameRescanDifferenceTracker $differenceTracker
     ): array {
-        $existingTitleInfo = $this->fetchExistingTrophyTitleInfo($npCommunicationId);
+        $existingTitleInfo = $this->trophyCatalogSynchronizer->fetchExistingTrophyTitleInfo($npCommunicationId);
 
         if (!self::isSetVersionAtLeastCurrent((string) $trophyTitle->trophySetVersion(), $existingTitleInfo['set_version'])) {
             $this->notifyProgress($progressListener, 70, 'Skipping trophy refresh because incoming set version is lower.');
@@ -349,8 +353,8 @@ class GameRescanService
             return [];
         }
 
-        $existingGroupData = $this->fetchExistingTrophyGroupData($npCommunicationId);
-        $existingTrophyData = $this->fetchExistingTrophyData($npCommunicationId);
+        $existingGroupData = $this->trophyCatalogSynchronizer->fetchExistingTrophyGroupData($npCommunicationId);
+        $existingTrophyData = $this->trophyCatalogSynchronizer->fetchExistingTrophyData($npCommunicationId);
 
         $titleDetail = (string) $trophyTitle->detail();
         $titleIconFilename = $this->imageDownloader->downloadMandatoryForRescan(
@@ -430,7 +434,14 @@ class GameRescanService
                 $groupIconFilename
             );
 
-            $this->upsertTrophyGroup($npCommunicationId, $trophyGroup, $groupIconFilename);
+            $this->trophyCatalogSynchronizer->upsertTrophyGroup(
+                $npCommunicationId,
+                (string) $trophyGroup->id(),
+                $trophyGroup->name(),
+                (string) $trophyGroup->detail(),
+                $groupIconFilename,
+                false,
+            );
 
             $processedGroups++;
             $currentStep++;
@@ -566,13 +577,18 @@ class GameRescanService
                     $rewardImageFilename
                 );
 
-                $this->upsertTrophy(
+                $this->trophyCatalogSynchronizer->upsertTrophy(
                     $npCommunicationId,
-                    $trophyGroup->id(),
-                    $trophy,
+                    (string) $trophyGroup->id(),
+                    (int) $trophy->id(),
+                    (int) $trophy->hidden(),
+                    $trophy->type()->value,
+                    $trophy->name(),
+                    $trophy->detail(),
                     $trophyIconFilename,
+                    $normalizedProgressTargetValue,
+                    $normalizedRewardName,
                     $rewardImageFilename,
-                    $normalizedProgressTargetValue
                 );
                 $this->trophyMetaRepository->ensureExists($npCommunicationId, $trophyGroup->id(), (int) $trophy->id());
 
@@ -800,118 +816,6 @@ class GameRescanService
         $this->notifyProgress($progressListener, 84, $baseMessage);
     }
 
-    private function upsertTrophyGroup(string $npCommunicationId, object $trophyGroup, string $iconFilename): void
-    {
-        $query = $this->database->prepare(
-            'INSERT INTO trophy_group (
-                np_communication_id,
-                group_id,
-                name,
-                detail,
-                icon_url
-            )
-            VALUES (
-                :np_communication_id,
-                :group_id,
-                :name,
-                :detail,
-                :icon_url
-            ) AS new
-            ON DUPLICATE KEY UPDATE
-                detail = new.detail,
-                icon_url = new.icon_url'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':group_id', $trophyGroup->id(), PDO::PARAM_STR);
-        $query->bindValue(':name', $trophyGroup->name(), PDO::PARAM_STR);
-        $query->bindValue(':detail', $trophyGroup->detail(), PDO::PARAM_STR);
-        $query->bindValue(':icon_url', $iconFilename, PDO::PARAM_STR);
-        $query->execute();
-    }
-
-    private function upsertTrophy(
-        string $npCommunicationId,
-        string $groupId,
-        object $trophy,
-        string $iconFilename,
-        ?string $rewardImageFilename,
-        ?int $progressTargetValue
-    ): void {
-        $query = $this->database->prepare(
-            'INSERT INTO trophy (
-                np_communication_id,
-                group_id,
-                order_id,
-                hidden,
-                type,
-                name,
-                detail,
-                icon_url,
-                progress_target_value,
-                reward_name,
-                reward_image_url
-            )
-            VALUES (
-                :np_communication_id,
-                :group_id,
-                :order_id,
-                :hidden,
-                :type,
-                :name,
-                :detail,
-                :icon_url,
-                :progress_target_value,
-                :reward_name,
-                :reward_image_url
-            ) AS new
-            ON DUPLICATE KEY UPDATE
-                hidden = new.hidden,
-                type = new.type,
-                name = new.name,
-                detail = new.detail,
-                icon_url = new.icon_url,
-                progress_target_value = new.progress_target_value,
-                reward_name = new.reward_name,
-                reward_image_url = new.reward_image_url'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
-        $query->bindValue(':order_id', $trophy->id(), PDO::PARAM_INT);
-        $query->bindValue(':hidden', (int) $trophy->hidden(), PDO::PARAM_INT);
-        $query->bindValue(':type', $trophy->type()->value, PDO::PARAM_STR);
-        $query->bindValue(':name', $trophy->name(), PDO::PARAM_STR);
-        $query->bindValue(':detail', $trophy->detail(), PDO::PARAM_STR);
-        $query->bindValue(':icon_url', $iconFilename, PDO::PARAM_STR);
-
-        if ($progressTargetValue === null) {
-            $query->bindValue(':progress_target_value', null, PDO::PARAM_NULL);
-        } else {
-            $query->bindValue(':progress_target_value', $progressTargetValue, PDO::PARAM_INT);
-        }
-
-        $rewardName = $trophy->rewardName();
-        if ($rewardName === '') {
-            $this->bindNullable($query, ':reward_name', null);
-        } else {
-            $query->bindValue(':reward_name', $rewardName, PDO::PARAM_STR);
-        }
-
-        $this->bindNullable($query, ':reward_image_url', $rewardImageFilename);
-
-        $query->execute();
-    }
-
-    private function bindNullable(PDOStatement $query, string $parameter, ?string $value): void
-    {
-        if ($value === null) {
-            $query->bindValue($parameter, null, PDO::PARAM_NULL);
-
-            return;
-        }
-
-        $query->bindValue($parameter, $value, PDO::PARAM_STR);
-    }
-
     private function recalculateParentTitles(
         string $childNpCommunicationId,
         string $lastUpdatedDateTime,
@@ -996,99 +900,6 @@ class GameRescanService
         );
         $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         $query->execute();
-    }
-
-    /**
-     * @return array{detail: ?string, icon: ?string, platform: string, platforms: array<int, string>, set_version: ?string}
-     */
-    private function fetchExistingTrophyTitleInfo(string $npCommunicationId): array
-    {
-        $query = $this->database->prepare(
-            'SELECT detail, icon_url, platform, set_version FROM trophy_title WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        $row = $query->fetch(PDO::FETCH_ASSOC);
-
-        if ($row === false) {
-            return [
-                'detail' => null,
-                'icon' => null,
-                'platform' => '',
-                'platforms' => [],
-                'set_version' => null,
-            ];
-        }
-
-        $platform = isset($row['platform']) ? (string) $row['platform'] : '';
-        $platforms = array_values(array_filter(array_map(
-            'trim',
-            $platform === '' ? [] : explode(',', $platform)
-        ), static fn(string $value): bool => $value !== ''));
-
-        return [
-            'detail' => $row['detail'] === null ? null : (string) $row['detail'],
-            'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
-            'platform' => $platform,
-            'platforms' => $platforms,
-            'set_version' => $row['set_version'] === null ? null : (string) $row['set_version'],
-        ];
-    }
-
-    /**
-     * @return array<string, array<string, string|null>>
-     */
-    private function fetchExistingTrophyGroupData(string $npCommunicationId): array
-    {
-        $query = $this->database->prepare(
-            'SELECT group_id, name, detail, icon_url FROM trophy_group WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        $groups = [];
-        while (($row = $query->fetch(PDO::FETCH_ASSOC)) !== false) {
-            $groupId = (string) $row['group_id'];
-            $groups[$groupId] = [
-                'name' => $row['name'] === null ? null : (string) $row['name'],
-                'detail' => $row['detail'] === null ? null : (string) $row['detail'],
-                'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
-            ];
-        }
-
-        return $groups;
-    }
-
-    /**
-     * @return array<string, array<int, array<string, string|null>>>
-     */
-    private function fetchExistingTrophyData(string $npCommunicationId): array
-    {
-        $query = $this->database->prepare(
-            'SELECT group_id, order_id, hidden, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url'
-            . ' FROM trophy WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        $trophies = [];
-        while (($row = $query->fetch(PDO::FETCH_ASSOC)) !== false) {
-            $groupId = (string) $row['group_id'];
-            $orderId = (int) $row['order_id'];
-            $trophies[$groupId][$orderId] = [
-                'hidden' => $row['hidden'] === null ? null : (string) $row['hidden'],
-                'type' => $row['type'] === null ? null : (string) $row['type'],
-                'name' => $row['name'] === null ? null : (string) $row['name'],
-                'detail' => $row['detail'] === null ? null : (string) $row['detail'],
-                'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
-                'progress_target_value' => $row['progress_target_value'] === null ? null : (string) $row['progress_target_value'],
-                'reward_name' => $row['reward_name'] === null ? null : (string) $row['reward_name'],
-                'reward_image' => $row['reward_image_url'] === null ? null : (string) $row['reward_image_url'],
-            ];
-        }
-
-        return $trophies;
     }
 
     private function fetchCurrentTrophySetVersion(string $npCommunicationId): ?string
