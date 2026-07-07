@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
+
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\PlayStation\Client;
 
@@ -408,7 +410,7 @@ final class PlayerScanProfileSynchronizer
         try {
             $profile = $client->get($path, $query, ['content-type' => 'application/json']);
         } catch (Throwable $exception) {
-            if ($this->determineStatusCode($exception) === 404) {
+            if (PsnHttpExceptionClassifier::determineStatusCode($exception) === 404) {
                 return null;
             }
 
@@ -569,78 +571,6 @@ final class PlayerScanProfileSynchronizer
         );
 
         sleep(60);
-    }
-
-    private function determineStatusCode(Throwable $exception): ?int
-    {
-        $response = $this->findResponseFromThrowable($exception);
-
-        if ($response !== null) {
-            $status = $this->extractStatusCodeFromResponse($response);
-
-            if ($status !== null) {
-                return $status;
-            }
-        }
-
-        return $this->extractStatusCodeFromThrowable($exception);
-    }
-
-    private function findResponseFromThrowable(Throwable $exception): ?object
-    {
-        if (method_exists($exception, 'getResponse')) {
-            $response = $exception->getResponse();
-
-            if (is_object($response)) {
-                return $response;
-            }
-        }
-
-        $previous = $exception->getPrevious();
-
-        if ($previous instanceof Throwable) {
-            return $this->findResponseFromThrowable($previous);
-        }
-
-        return null;
-    }
-
-    private function extractStatusCodeFromResponse(object $response): ?int
-    {
-        if (method_exists($response, 'getStatusCode')) {
-            $statusCode = $response->getStatusCode();
-
-            if (is_int($statusCode)) {
-                return $statusCode;
-            }
-        }
-
-        if (method_exists($response, 'getStatus')) {
-            $status = $response->getStatus();
-
-            if (is_int($status)) {
-                return $status;
-            }
-        }
-
-        return null;
-    }
-
-    private function extractStatusCodeFromThrowable(Throwable $exception): ?int
-    {
-        $code = $exception->getCode();
-
-        if (is_int($code) && $code > 0) {
-            return $code;
-        }
-
-        $previous = $exception->getPrevious();
-
-        if ($previous instanceof Throwable) {
-            return $this->extractStatusCodeFromThrowable($previous);
-        }
-
-        return null;
     }
 
     private function normalizePlayerProfileResponse(mixed $profile): array
