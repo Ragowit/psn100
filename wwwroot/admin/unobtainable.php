@@ -11,11 +11,13 @@ ExecutionEnvironmentConfigurator::create()
     ->configure();
 
 require_once __DIR__ . '/bootstrap.php';
+require_once("../classes/Admin/TrophyStatusInputParser.php");
 require_once("../classes/Admin/TrophyStatusService.php");
 require_once("../classes/Admin/TrophyStatusPage.php");
 
+$trophyStatusInputParser = new TrophyStatusInputParser($database);
 $trophyStatusService = new TrophyStatusService($database);
-$trophyStatusPage = new TrophyStatusPage($trophyStatusService);
+$trophyStatusPage = new TrophyStatusPage($trophyStatusInputParser, $trophyStatusService);
 
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $postData = $_POST ?? [];
