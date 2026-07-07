@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
+require_once __DIR__ . '/TrophyGroupConflictResolver.php';
 
 class GameCopyService
 {
@@ -187,10 +188,16 @@ class GameCopyService
 
     private TrophyHistoryRecorder $historyRecorder;
 
-    public function __construct(PDO $database, ?TrophyHistoryRecorder $historyRecorder = null)
-    {
+    private TrophyGroupConflictResolver $groupConflictResolver;
+
+    public function __construct(
+        PDO $database,
+        ?TrophyHistoryRecorder $historyRecorder = null,
+        ?TrophyGroupConflictResolver $groupConflictResolver = null
+    ) {
         $this->database = $database;
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
+        $this->groupConflictResolver = $groupConflictResolver ?? new TrophyGroupConflictResolver();
     }
 
     public function copyChildToParent(
@@ -422,7 +429,7 @@ class GameCopyService
         while (($groupId = $query->fetchColumn()) !== false) {
             $groupId = (string) $groupId;
 
-            if ($this->parseNumericGroupId($groupId) === null) {
+            if ($this->groupConflictResolver->parseNumericGroupId($groupId) === null) {
                 continue;
             }
 
@@ -448,7 +455,7 @@ class GameCopyService
 
         if ($forcedGroupIds !== []) {
             foreach ($forcedGroupIds as $groupId) {
-                if ($this->parseNumericGroupId($groupId) === null) {
+                if ($this->groupConflictResolver->parseNumericGroupId($groupId) === null) {
                     continue;
                 }
 
@@ -474,8 +481,8 @@ class GameCopyService
             $usedParentGroups[(string) $parentGroupId] = true;
         }
 
-        $groupOffset = $this->determineGroupOffset($existingGroupIds);
-        $preferredOffset = $this->determinePreferredGroupOffset($existingGroupMappings);
+        $groupOffset = $this->groupConflictResolver->determineGroupOffset($existingGroupIds);
+        $preferredOffset = $this->groupConflictResolver->determinePreferredGroupOffset($existingGroupMappings);
 
         $select = $this->database->prepare(
             'SELECT group_id, name, detail, icon_url, bronze, silver, gold, platinum
@@ -527,7 +534,7 @@ class GameCopyService
                 continue;
             }
 
-            $numericGroupId = $this->parseNumericGroupId($groupId);
+            $numericGroupId = $this->groupConflictResolver->parseNumericGroupId($groupId);
 
             if ($numericGroupId === null) {
                 $select->closeCursor();
@@ -537,7 +544,7 @@ class GameCopyService
             $targetGroupId = $groupIdMapping[$groupId] ?? null;
 
             if ($targetGroupId === null) {
-                $targetGroupId = $this->findMatchingParentGroupId(
+                $targetGroupId = $this->groupConflictResolver->findMatchingParentGroupId(
                     $groupId,
                     $childGroupTrophyNames,
                     $parentGroupTrophyNames,
@@ -546,20 +553,17 @@ class GameCopyService
             }
 
             if ($targetGroupId === null) {
-                $candidateOffset = $preferredOffset ?? $groupOffset;
-                $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
+                $allocation = $this->groupConflictResolver->allocateNonConflictingGroupId(
+                    $numericGroupId,
+                    (string) $group['group_id'],
+                    $existingGroupIds,
+                    $preferredOffset,
+                    $groupOffset
+                );
 
-                while (isset($existingGroupIds[$newGroupId])) {
-                    if ($preferredOffset !== null) {
-                        $preferredOffset = null;
-                    }
-
-                    $candidateOffset += 100;
-                    $newGroupId = $this->formatGroupId($numericGroupId + $candidateOffset, (string) $group['group_id']);
-                }
-
-                $groupOffset = $candidateOffset;
-                $targetGroupId = $newGroupId;
+                $preferredOffset = $allocation['preferredOffset'];
+                $groupOffset = $allocation['groupOffset'];
+                $targetGroupId = $allocation['groupId'];
             }
 
             $this->upsertTrophyGroup(
@@ -805,7 +809,7 @@ class GameCopyService
         while (($groupId = $query->fetchColumn()) !== false) {
             $groupId = (string) $groupId;
 
-            if ($this->parseNumericGroupId($groupId) === null) {
+            if ($this->groupConflictResolver->parseNumericGroupId($groupId) === null) {
                 continue;
             }
 
@@ -948,42 +952,6 @@ class GameCopyService
         unset($groupNames);
 
         return $names;
-    }
-
-    /**
-     * @param array<string, string[]> $childGroupTrophyNames
-     * @param array<string, string[]> $parentGroupTrophyNames
-     * @param array<string, bool> $usedParentGroups
-     */
-    private function findMatchingParentGroupId(
-        string $childGroupId,
-        array $childGroupTrophyNames,
-        array $parentGroupTrophyNames,
-        array $usedParentGroups
-    ): ?string {
-        $childNames = $childGroupTrophyNames[$childGroupId] ?? null;
-
-        if ($childNames === null || $childNames === []) {
-            return null;
-        }
-
-        foreach ($parentGroupTrophyNames as $parentGroupId => $parentNames) {
-            $parentGroupIdString = (string) $parentGroupId;
-
-            if ($parentGroupIdString === $childGroupId) {
-                continue;
-            }
-
-            if (isset($usedParentGroups[$parentGroupIdString])) {
-                continue;
-            }
-
-            if ($parentNames === $childNames) {
-                return $parentGroupIdString;
-            }
-        }
-
-        return null;
     }
 
     private function upsertTrophyGroup(PDOStatement $statement, string $parentNpCommunicationId, string $groupId, array $group): void
@@ -1149,78 +1117,6 @@ class GameCopyService
         ]);
 
         $statement->closeCursor();
-    }
-
-    /**
-     * @param array<string, string> $existingGroupMappings
-     */
-    private function determinePreferredGroupOffset(array $existingGroupMappings): ?int
-    {
-        foreach ($existingGroupMappings as $parentGroupId) {
-            $numericGroupId = $this->parseNumericGroupId($parentGroupId);
-
-            if ($numericGroupId === null) {
-                continue;
-            }
-
-            $block = intdiv($numericGroupId, 100);
-
-            return $block * 100;
-        }
-
-        return null;
-    }
-
-    /**
-     * @param array<string, bool> $existingGroupIds
-     */
-    private function determineGroupOffset(array $existingGroupIds): int
-    {
-        $maxBlock = -1;
-
-        foreach ($existingGroupIds as $groupId => $_) {
-            $groupId = (string) $groupId;
-
-            $numericGroupId = $this->parseNumericGroupId($groupId);
-
-            if ($numericGroupId === null) {
-                continue;
-            }
-
-            $block = intdiv($numericGroupId, 100);
-
-            if ($block > $maxBlock) {
-                $maxBlock = $block;
-            }
-        }
-
-        if ($maxBlock < 0) {
-            $maxBlock = 0;
-        }
-
-        return ($maxBlock + 1) * 100;
-    }
-
-    private function parseNumericGroupId(string $groupId): ?int
-    {
-        if (!ctype_digit($groupId)) {
-            return null;
-        }
-
-        $trimmed = ltrim($groupId, '0');
-
-        if ($trimmed === '') {
-            return 0;
-        }
-
-        return (int) $trimmed;
-    }
-
-    private function formatGroupId(int $numericValue, string $originalGroupId): string
-    {
-        $length = max(strlen($originalGroupId), 3);
-
-        return str_pad((string) $numericValue, $length, '0', STR_PAD_LEFT);
     }
 
     private function getNextOrderId(string $npCommunicationId): int
