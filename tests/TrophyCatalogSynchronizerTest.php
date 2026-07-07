@@ -147,4 +147,12 @@ final class TrophyCatalogSynchronizerTest extends TestCase
         $this->assertSame('silver', $trophy['type']);
         $this->assertSame('three.png', $trophy['icon_url']);
     }
+
+    public function testUpsertTrophyTitleMethodAcceptsCatalogFields(): void
+    {
+        $method = new ReflectionMethod(TrophyCatalogSynchronizer::class, 'upsertTrophyTitle');
+
+        $this->assertSame(7, $method->getNumberOfParameters());
+        $this->assertSame('int', (string) $method->getReturnType());
+    }
 }
