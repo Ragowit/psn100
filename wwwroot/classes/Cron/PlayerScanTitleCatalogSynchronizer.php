@@ -93,49 +93,17 @@ final class PlayerScanTitleCatalogSynchronizer
         }
 
         if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
-            $query = $this->database->prepare("INSERT INTO trophy_title(
-                    np_communication_id,
-                    name,
-                    detail,
-                    icon_url,
-                    platform,
-                    set_version
-                )
-                VALUES(
-                    :np_communication_id,
-                    :name,
-                    :detail,
-                    :icon_url,
-                    :platform,
-                    :set_version
-                ) AS new
-                ON DUPLICATE KEY
-                UPDATE
-                    detail = CASE
-                        WHEN :incoming_version_is_older = 1 THEN trophy_title.detail
-                        ELSE new.detail
-                    END,
-                    icon_url = new.icon_url,
-                    set_version = CASE
-                        WHEN trophy_title.set_version IS NULL OR TRIM(trophy_title.set_version) = '' THEN new.set_version
-                        WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
-                            > CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED) THEN new.set_version
-                        WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
-                            = CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED)
-                            AND CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', -1) AS UNSIGNED)
-                                >= CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', -1) AS UNSIGNED) THEN new.set_version
-                        ELSE trophy_title.set_version
-                    END");
-            $query->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-            $query->bindValue(':name', $sanitizedTitleName, PDO::PARAM_STR);
-            $query->bindValue(':detail', $trophyTitle->detail(), PDO::PARAM_STR);
-            $query->bindValue(':icon_url', $titleIconFilename, PDO::PARAM_STR);
-            $query->bindValue(':platform', $platforms, PDO::PARAM_STR);
-            $query->bindValue(':set_version', $setVersionForUpdate, PDO::PARAM_STR);
-            $query->bindValue(':incoming_version_is_older', $incomingVersionIsOlderThanStored ? 1 : 0, PDO::PARAM_INT);
-            $query->execute();
+            $titleAffectedRows = $this->catalogSynchronizer()->upsertTrophyTitle(
+                $npid,
+                $sanitizedTitleName,
+                $trophyTitle->detail(),
+                $titleIconFilename,
+                $platforms,
+                $setVersionForUpdate,
+                $incomingVersionIsOlderThanStored,
+            );
 
-            if ($query->rowCount() > 0) {
+            if ($titleAffectedRows > 0) {
                 $titleDataChanged = true;
             }
         }

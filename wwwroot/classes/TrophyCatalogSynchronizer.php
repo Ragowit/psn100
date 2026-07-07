@@ -164,6 +164,60 @@ final class TrophyCatalogSynchronizer
         return $row === false ? null : $row;
     }
 
+    public function upsertTrophyTitle(
+        string $npCommunicationId,
+        string $name,
+        string $detail,
+        string $iconFilename,
+        string $platform,
+        string $setVersion,
+        bool $incomingVersionIsOlderThanStored,
+    ): int {
+        $query = $this->database->prepare("INSERT INTO trophy_title(
+                np_communication_id,
+                name,
+                detail,
+                icon_url,
+                platform,
+                set_version
+            )
+            VALUES(
+                :np_communication_id,
+                :name,
+                :detail,
+                :icon_url,
+                :platform,
+                :set_version
+            ) AS new
+            ON DUPLICATE KEY
+            UPDATE
+                detail = CASE
+                    WHEN :incoming_version_is_older = 1 THEN trophy_title.detail
+                    ELSE new.detail
+                END,
+                icon_url = new.icon_url,
+                set_version = CASE
+                    WHEN trophy_title.set_version IS NULL OR TRIM(trophy_title.set_version) = '' THEN new.set_version
+                    WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
+                        > CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED) THEN new.set_version
+                    WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
+                        = CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED)
+                        AND CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', -1) AS UNSIGNED)
+                            >= CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', -1) AS UNSIGNED) THEN new.set_version
+                    ELSE trophy_title.set_version
+                END");
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':name', $name, PDO::PARAM_STR);
+        $query->bindValue(':detail', $detail, PDO::PARAM_STR);
+        $query->bindValue(':icon_url', $iconFilename, PDO::PARAM_STR);
+        $query->bindValue(':platform', $platform, PDO::PARAM_STR);
+        $query->bindValue(':set_version', $setVersion, PDO::PARAM_STR);
+        $query->bindValue(':incoming_version_is_older', $incomingVersionIsOlderThanStored ? 1 : 0, PDO::PARAM_INT);
+        $query->execute();
+
+        return (int) $query->rowCount();
+    }
+
     public function upsertTrophyGroup(
         string $npCommunicationId,
         string $groupId,
