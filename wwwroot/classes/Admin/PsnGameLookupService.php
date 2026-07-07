@@ -6,6 +6,7 @@ require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/PsnGameLookupException.php';
+require_once __DIR__ . '/PsnTrophyApiPayloadInspector.php';
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 
 use Tustin\PlayStation\Client;
@@ -13,6 +14,7 @@ use Tustin\PlayStation\Client;
 final class PsnGameLookupService
 {
     private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
+    private readonly PsnTrophyApiPayloadInspector $payloadInspector;
 
     public function __construct(
         private readonly PDO $database,
@@ -20,12 +22,14 @@ final class PsnGameLookupService
         ?callable $clientFactory = null,
         ?callable $refreshTokenSaver = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
+        ?PsnTrophyApiPayloadInspector $payloadInspector = null,
     ) {
         $this->workerAuthenticator = $workerAuthenticator ?? new PlayStationWorkerAuthenticator(
             $workerFetcher,
             $clientFactory,
             $refreshTokenSaver,
         );
+        $this->payloadInspector = $payloadInspector ?? new PsnTrophyApiPayloadInspector();
     }
 
     public static function fromDatabase(PDO $database): self
@@ -90,8 +94,8 @@ final class PsnGameLookupService
                 ),
                 $preferredNpServiceName
             );
-            $normalizedResponse = $this->normalizeResponse($trophyRequestResult['payload']);
-            $this->assertPayloadMatchesRequestedNpCommunicationId(
+            $normalizedResponse = $this->payloadInspector->normalize($trophyRequestResult['payload']);
+            $this->payloadInspector->assertMatchesRequested(
                 $normalizedNpCommunicationId,
                 $normalizedResponse,
                 'all/trophies'
@@ -109,8 +113,8 @@ final class PsnGameLookupService
                     null,
                     $trophyRequestResult['query']
                 );
-                $normalizedGroupResponse = $this->normalizeResponse($trophyGroupRequestResult['payload']);
-                $this->assertPayloadMatchesRequestedNpCommunicationId(
+                $normalizedGroupResponse = $this->payloadInspector->normalize($trophyGroupRequestResult['payload']);
+                $this->payloadInspector->assertMatchesRequested(
                     $normalizedNpCommunicationId,
                     $normalizedGroupResponse,
                     'trophyGroups'
@@ -138,8 +142,8 @@ final class PsnGameLookupService
                     null,
                     $fallbackQuery
                 );
-                $normalizedResponse = $this->normalizeResponse($trophyRequestResult['payload']);
-                $this->assertPayloadMatchesRequestedNpCommunicationId(
+                $normalizedResponse = $this->payloadInspector->normalize($trophyRequestResult['payload']);
+                $this->payloadInspector->assertMatchesRequested(
                     $normalizedNpCommunicationId,
                     $normalizedResponse,
                     'all/trophies'
@@ -151,8 +155,8 @@ final class PsnGameLookupService
                     null,
                     $fallbackQuery
                 );
-                $normalizedGroupResponse = $this->normalizeResponse($trophyGroupRequestResult['payload']);
-                $this->assertPayloadMatchesRequestedNpCommunicationId(
+                $normalizedGroupResponse = $this->payloadInspector->normalize($trophyGroupRequestResult['payload']);
+                $this->payloadInspector->assertMatchesRequested(
                     $normalizedNpCommunicationId,
                     $normalizedGroupResponse,
                     'trophyGroups'
@@ -453,181 +457,4 @@ final class PsnGameLookupService
         return null;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function normalizeResponse(mixed $response): array
-    {
-        if (is_array($response)) {
-            return $response;
-        }
-
-        if (is_object($response)) {
-            try {
-                $encoded = json_encode($response, JSON_THROW_ON_ERROR);
-                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
-
-                if (is_array($decoded)) {
-                    return $decoded;
-                }
-            } catch (JsonException) {
-            }
-
-            return get_object_vars($response);
-        }
-
-        return [];
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function extractNpCommunicationIdsFromPayload(array $payload): array
-    {
-        $detected = [];
-        $seen = [];
-
-        $this->addNpCommunicationIdCandidates(
-            $this->extractNpCommunicationIdFromArray($payload),
-            $detected,
-            $seen
-        );
-
-        $this->addNpCommunicationIdCandidates(
-            $this->extractNpCommunicationIdFromTrophies($payload['trophies'] ?? null),
-            $detected,
-            $seen
-        );
-
-        $trophyGroups = $payload['trophyGroups'] ?? null;
-        if (!is_array($trophyGroups)) {
-            return $detected;
-        }
-
-        foreach ($trophyGroups as $trophyGroup) {
-            if (!is_array($trophyGroup)) {
-                continue;
-            }
-
-            $this->addNpCommunicationIdCandidates(
-                $this->extractNpCommunicationIdFromArray($trophyGroup),
-                $detected,
-                $seen
-            );
-
-            $this->addNpCommunicationIdCandidates(
-                $this->extractNpCommunicationIdFromTrophies($trophyGroup['trophies'] ?? null),
-                $detected,
-                $seen
-            );
-        }
-
-        return $detected;
-    }
-
-    private function extractNpCommunicationIdFromTrophies(mixed $trophies): array
-    {
-        if (!is_array($trophies) || $trophies === []) {
-            return [];
-        }
-
-        $detected = [];
-        $seen = [];
-
-        foreach ($trophies as $trophy) {
-            if (!is_array($trophy)) {
-                continue;
-            }
-
-            $this->addNpCommunicationIdCandidates(
-                $this->extractNpCommunicationIdFromArray($trophy),
-                $detected,
-                $seen
-            );
-
-            $trophyIconUrl = $trophy['trophyIconUrl'] ?? null;
-            if (!is_string($trophyIconUrl) || trim($trophyIconUrl) === '') {
-                continue;
-            }
-
-            if (preg_match('/\/(NP[A-Z0-9]{2}[0-9]{5}_[0-9]{2})_/i', $trophyIconUrl, $matches) !== 1) {
-                continue;
-            }
-
-            $this->addNpCommunicationIdCandidates($matches[1], $detected, $seen);
-        }
-
-        return $detected;
-    }
-
-    /**
-     * @param list<string>|string|null $candidates
-     * @param list<string>             $detected
-     * @param array<string, true>      $seen
-     */
-    private function addNpCommunicationIdCandidates(array|string|null $candidates, array &$detected, array &$seen): void
-    {
-        if ($candidates === null) {
-            return;
-        }
-
-        if (is_string($candidates)) {
-            $candidates = [$candidates];
-        }
-
-        foreach ($candidates as $candidate) {
-            if (!is_string($candidate) || trim($candidate) === '') {
-                continue;
-            }
-
-            $normalizedCandidate = strtoupper(trim($candidate));
-            if (isset($seen[$normalizedCandidate])) {
-                continue;
-            }
-
-            $detected[] = $normalizedCandidate;
-            $seen[$normalizedCandidate] = true;
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function extractNpCommunicationIdFromArray(array $payload): ?string
-    {
-        $topLevelCandidateKeys = ['npCommunicationId', 'np_communication_id'];
-        foreach ($topLevelCandidateKeys as $candidateKey) {
-            $candidate = $payload[$candidateKey] ?? null;
-            if (is_string($candidate) && trim($candidate) !== '') {
-                return $candidate;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function assertPayloadMatchesRequestedNpCommunicationId(string $requested, array $payload, string $endpointLabel): void
-    {
-        $detected = $this->extractNpCommunicationIdsFromPayload($payload);
-        if ($detected === []) {
-            return;
-        }
-
-        $normalizedRequested = strtoupper(trim($requested));
-        foreach ($detected as $normalizedDetected) {
-            if ($normalizedDetected === $normalizedRequested) {
-                continue;
-            }
-
-            throw new PsnGameLookupException(sprintf(
-                'PSN response integrity check failed for endpoint "%s": requested npCommunicationId "%s" but received "%s".',
-                $endpointLabel,
-                $normalizedRequested,
-                $normalizedDetected
-            ));
-        }
-    }
 }
