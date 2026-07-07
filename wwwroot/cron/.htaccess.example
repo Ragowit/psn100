@@ -1,0 +1,11 @@
+# Copy to .htaccess on the production server and replace the placeholder IP with the
+# address of the host that runs scheduled cron jobs.
+#
+# Apache 2.4+:
+Require all denied
+Require ip 127.0.0.1
+#
+# Apache 2.2 (legacy) equivalent:
+# Order deny,allow
+# Deny from all
+# Allow from 127.0.0.1

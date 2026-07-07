@@ -59,6 +59,20 @@ php -r "echo password_hash('your-password', PASSWORD_DEFAULT), PHP_EOL;"
 INSERT INTO admin_user (username, password_hash) VALUES ('admin', '$2y$10$...');
 ```
 
+### Protecting `/admin` and `/cron`
+
+Production should layer Apache rules on top of the application:
+
+- **`wwwroot/admin/.htaccess.example`** — HTTP Basic authentication in front of the admin UI.
+  Copy to `admin/.htaccess` and set `AuthUserFile` to your server password file.
+- **`wwwroot/cron/.htaccess.example`** — deny all web clients except the host that runs
+  scheduled jobs. Copy to `cron/.htaccess` and replace `127.0.0.1` with that server's IP.
+
+Cron entry scripts also refuse non-CLI execution in PHP (`CronCliAccessGuard`), which
+protects environments where `.htaccess` is not applied (for example the PHP built-in
+development server). Admin remains reachable in dev so you can exercise the login flow;
+use the Basic-auth template only on production Apache hosts.
+
 ## Merge Guideline Priorities
 1. Available > Delisted
 2. English language > Other language

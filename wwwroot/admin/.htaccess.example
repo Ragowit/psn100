@@ -1,0 +1,8 @@
+# Copy to .htaccess on the production server and adjust paths before enabling.
+# Apache 2.4+ (see cron/.htaccess.example for IP allowlisting used by cron jobs).
+
+AuthName "Admin"
+AuthType Basic
+AuthUserFile "/path/to/.htpasswds/admin/passwd"
+AuthGroupFile /dev/null
+Require valid-user

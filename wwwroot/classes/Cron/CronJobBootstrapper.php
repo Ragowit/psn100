@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CronCliAccessGuard.php';
 require_once __DIR__ . '/CronJobApplication.php';
 
 final class CronJobBootstrapper
@@ -25,6 +26,8 @@ final class CronJobBootstrapper
 
     public function bootstrap(bool $loadComposerAutoload = false): void
     {
+        CronCliAccessGuard::requireCliExecution();
+
         $this->application->configureEnvironment();
 
         if ($loadComposerAutoload) {
