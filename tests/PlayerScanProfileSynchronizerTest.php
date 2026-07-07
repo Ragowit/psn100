@@ -6,7 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Psn100Logger.php';
 require_once __DIR__ . '/../wwwroot/classes/ImageHashCalculator.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/WorkerScanCoordinator.php';
-require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanProfileSyncResult.php';
+require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerAvatarSynchronizer.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanProfileSynchronizer.php';
 
 final class PlayerScanProfileSynchronizerTest extends TestCase
@@ -34,7 +34,6 @@ final class PlayerScanProfileSynchronizerTest extends TestCase
 
         $this->synchronizer = new PlayerScanProfileSynchronizer(
             $database,
-            new ImageHashCalculator(),
             $logger,
             new WorkerScanCoordinator($database),
         );

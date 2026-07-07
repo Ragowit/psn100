@@ -19,6 +19,7 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
 require_once __DIR__ . '/PlayerScanQueueSelector.php';
 require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
 require_once __DIR__ . '/PlayerScanProfileSyncResult.php';
+require_once __DIR__ . '/PlayerAvatarSynchronizer.php';
 require_once __DIR__ . '/PlayerScanProfileSynchronizer.php';
 require_once __DIR__ . '/PlayerScanCompletionResult.php';
 require_once __DIR__ . '/PlayerScanCompletionService.php';
@@ -102,9 +103,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $this->titleMetadataHelper = $titleMetadataHelper ?? new PlayerScanTitleMetadataHelper();
         $this->profileSynchronizer = $profileSynchronizer ?? new PlayerScanProfileSynchronizer(
             $database,
-            $this->imageHashCalculator,
             $logger,
             $this->workerScanCoordinator,
+            new PlayerAvatarSynchronizer($database, $this->imageHashCalculator),
         );
         $this->scanCompletionService = $scanCompletionService ?? new PlayerScanCompletionService($database);
         $this->earnedTrophyPersister = $earnedTrophyPersister ?? new PlayerEarnedTrophyPersister(

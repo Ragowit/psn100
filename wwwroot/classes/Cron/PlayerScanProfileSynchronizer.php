@@ -3,27 +3,34 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
+require_once __DIR__ . '/PlayerAvatarSynchronizer.php';
+require_once __DIR__ . '/../ImageHashCalculator.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\PlayStation\Client;
 
 /**
- * Resolves PSN profile data, synchronizes avatars, and upserts player rows during scans.
+ * Resolves PSN profile data and upserts player rows during scans.
  *
- * Encapsulates profile lookup, country resolution, avatar caching, and player persistence
- * that were previously embedded in ThirtyMinuteCronJob.
+ * Encapsulates profile lookup, country resolution, and player persistence that were
+ * previously embedded in ThirtyMinuteCronJob.
  */
 final class PlayerScanProfileSynchronizer
 {
     private const MAX_INVALID_API_RESPONSE_ATTEMPTS = 2;
 
+    private readonly PlayerAvatarSynchronizer $avatarSynchronizer;
+
     public function __construct(
         private readonly PDO $database,
-        private readonly ImageHashCalculator $imageHashCalculator,
         private readonly Psn100Logger $logger,
         private readonly WorkerScanCoordinator $workerScanCoordinator,
-        private readonly string $avatarStorageDirectory = '/home/psn100/public_html/img/avatar/',
+        ?PlayerAvatarSynchronizer $avatarSynchronizer = null,
     ) {
+        $this->avatarSynchronizer = $avatarSynchronizer ?? new PlayerAvatarSynchronizer(
+            $database,
+            new ImageHashCalculator(),
+        );
     }
 
     /**
@@ -58,7 +65,7 @@ final class PlayerScanProfileSynchronizer
             sprintf('Updating avatar for %s.', $displayOnlineId)
         );
 
-        $avatarFilename = $this->synchronizeAvatar($user);
+        $avatarFilename = $this->avatarSynchronizer->synchronizeFromPsnUser($user);
         $this->upsertPlayerRecord($user, $country, $avatarFilename);
 
         return PlayerScanProfileSyncResult::success($resolved->player, $user, $country);
@@ -277,87 +284,6 @@ final class PlayerScanProfileSynchronizer
         }
 
         return PlayerScanProfileSyncResult::skipPlayer();
-    }
-
-    private function synchronizeAvatar(object $user): string
-    {
-        $avatarUrls = $user->avatarUrls();
-        $avatarFilename = '';
-
-        for ($i = 0; $i < 4; $i++) {
-            switch ($i) {
-                case 0:
-                    $size = 'xl';
-                    break;
-                case 1:
-                    $size = 'l';
-                    break;
-                case 2:
-                    $size = 'm';
-                    break;
-                case 3:
-                    $size = 's';
-                    break;
-                default:
-                    $size = 'xl';
-            }
-
-            $avatarUrl = $avatarUrls[$size];
-
-            $query = $this->database->prepare(
-                'SELECT md5_hash, extension FROM psn100_avatars WHERE avatar_url = :avatar_url'
-            );
-            $query->bindValue(':avatar_url', $avatarUrl, PDO::PARAM_STR);
-            $query->execute();
-            $result = $query->fetch();
-
-            if (!$result) {
-                $avatarContents = @file_get_contents($avatarUrl);
-                if ($avatarContents === false) {
-                    continue;
-                }
-
-                $newPHash = $this->imageHashCalculator->calculatePHash($avatarContents);
-                if ($newPHash === null) {
-                    continue;
-                }
-
-                $query = $this->database->prepare('SELECT DISTINCT md5_hash FROM psn100_avatars');
-                $query->execute();
-                $existingPHashes = $query->fetchAll(PDO::FETCH_COLUMN);
-
-                foreach ($existingPHashes as $existingPHash) {
-                    if ($this->imageHashCalculator->getHammingDistance($newPHash, $existingPHash) <= 10) {
-                        $newPHash = $existingPHash;
-                        break;
-                    }
-                }
-
-                $extension = strtolower(pathinfo($avatarUrl, PATHINFO_EXTENSION));
-                $avatarFilename = $newPHash . '.' . $extension;
-                $avatarPath = $this->avatarStorageDirectory . $avatarFilename;
-
-                if (!file_exists($avatarPath)) {
-                    file_put_contents($avatarPath, $avatarContents);
-                }
-
-                $query = $this->database->prepare(
-                    'INSERT INTO psn100_avatars(size, avatar_url, md5_hash, extension)
-                    VALUES(:size, :avatar_url, :md5_hash, :extension)'
-                );
-                $query->bindValue(':size', $size, PDO::PARAM_STR);
-                $query->bindValue(':avatar_url', $avatarUrl, PDO::PARAM_STR);
-                $query->bindValue(':md5_hash', $newPHash, PDO::PARAM_STR);
-                $query->bindValue(':extension', $extension, PDO::PARAM_STR);
-                $query->execute();
-            } else {
-                $avatarFilename = $result['md5_hash'] . '.' . $result['extension'];
-            }
-
-            break;
-        }
-
-        return $avatarFilename;
     }
 
     private function upsertPlayerRecord(object $user, string $country, string $avatarFilename): void
