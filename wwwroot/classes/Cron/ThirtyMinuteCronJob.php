@@ -23,6 +23,7 @@ require_once __DIR__ . '/PlayerScanProfileSynchronizer.php';
 require_once __DIR__ . '/PlayerScanCompletionResult.php';
 require_once __DIR__ . '/PlayerScanCompletionService.php';
 require_once __DIR__ . '/PlayerEarnedTrophyPersister.php';
+require_once __DIR__ . '/PlayerScanStaleGameDeletionService.php';
 require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 
@@ -49,6 +50,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanProfileSynchronizer $profileSynchronizer;
     private readonly PlayerScanCompletionService $scanCompletionService;
     private readonly PlayerEarnedTrophyPersister $earnedTrophyPersister;
+    private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService;
 
     public function __construct(
         private readonly PDO $database,
@@ -71,6 +73,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerScanProfileSynchronizer $profileSynchronizer = null,
         ?PlayerScanCompletionService $scanCompletionService = null,
         ?PlayerEarnedTrophyPersister $earnedTrophyPersister = null,
+        ?PlayerScanStaleGameDeletionService $staleGameDeletionService = null,
     )
     {
         $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
@@ -108,6 +111,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $database,
             $this->titleMetadataHelper,
         );
+        $this->staleGameDeletionService = $staleGameDeletionService ?? new PlayerScanStaleGameDeletionService($database);
     }
 
     /**
@@ -129,18 +133,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return count($trophyTitles);
-    }
-
-    /**
-     * @param list<string> $scannedGames
-     */
-    private function shouldDeleteMissingZeroPercentGames(int $psnGameCount, int $ourGameCount, array $scannedGames): bool
-    {
-        if ($psnGameCount <= 0 || $scannedGames === []) {
-            return false;
-        }
-
-        return $psnGameCount !== $ourGameCount;
     }
 
     /**
@@ -1140,12 +1132,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         // Delete missing 0% games (and this will also delete hidden games, and any trophies for those hidden games)
-                        $query = $this->database->prepare("SELECT COUNT(ttp.np_communication_id)
-                            FROM   trophy_title_player ttp
-                            WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
-                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                        $query->execute();
-                        $ourGameCount = $query->fetchColumn();
+                        $ourGameCount = $this->staleGameDeletionService->countLocalGames((int) $user->accountId());
 
                         $scanReachedEnd = $currentScanPosition === $totalGamesToProcess;
                         $scanCompletedCleanly = $trophyTitleFetchCompleted
@@ -1153,19 +1140,19 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             && !$restartScan
                             && $recheck === '';
 
-                        $shouldDeleteMissingGames = $this->shouldDeleteMissingZeroPercentGames(
+                        $shouldDeleteMissingGames = $this->staleGameDeletionService->shouldDeleteMissingZeroPercentGames(
                             (int) $psnGameCount,
-                            (int) $ourGameCount,
+                            $ourGameCount,
                             $scannedGames
                         );
 
                         $gameCountDelta = $psnGameCount - $ourGameCount;
 
-                        if (
-                            $shouldDeleteMissingGames
-                            && $gameCountDelta <= -50
-                            && !$scanCompletedCleanly
-                        ) {
+                        if ($this->staleGameDeletionService->shouldSuppressDeletionForIncompleteScan(
+                            $shouldDeleteMissingGames,
+                            $gameCountDelta,
+                            $scanCompletedCleanly,
+                        )) {
                             // $this->logger->log(sprintf(
                             //     'Skipping deletion for %s (%d) because the scan did not complete cleanly (psn=%d, local=%d).',
                             //     (string) $player['online_id'],
@@ -1189,84 +1176,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 continue;
                             }
 
-                            $query = $this->database->prepare("SELECT ttp.np_communication_id
-                                FROM   trophy_title_player ttp
-                                WHERE  ttp.account_id = :account_id AND ttp.np_communication_id LIKE 'N%'");
-                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                            $query->execute();
-                            $playerGames = $query->fetchAll();
-
-                            foreach ($playerGames as $playerGame) {
-                                $game = $playerGame["np_communication_id"];
-                                if (!in_array($game, $scannedGames)) {
-                                    $query = $this->database->prepare("SELECT ttm.parent_np_communication_id
-                                        FROM   trophy_title_meta ttm
-                                        WHERE  ttm.np_communication_id = :np_communication_id");
-                                    $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
-                                    $query->execute();
-                                    $mergedGame = $query->fetchColumn(); // MERGE_...
-                                    if ($mergedGame) {
-                                        $query = $this->database->prepare("SELECT ttm.np_communication_id
-                                            FROM   trophy_title_meta ttm
-                                            WHERE  ttm.parent_np_communication_id = :parent_np_communication_id AND ttm.np_communication_id != :np_communication_id");
-                                        $query->bindValue(":parent_np_communication_id", $mergedGame, PDO::PARAM_STR);
-                                        $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
-                                        $query->execute();
-                                        $stackedGames = $query->fetchAll();
-
-                                        $anotherStackExists = false;
-
-                                        foreach ($stackedGames as $stackedGame) {
-                                            $stackedGameId = $stackedGame["np_communication_id"];
-
-                                            $query = $this->database->prepare("SELECT ttp.np_communication_id
-                                                FROM   trophy_title_player ttp
-                                                WHERE  ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
-                                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                            $query->bindValue(":np_communication_id", $stackedGameId, PDO::PARAM_STR);
-                                            $query->execute();
-                                            $stackedGameExists = $query->fetchColumn();
-
-                                            if ($stackedGameExists) {
-                                                $anotherStackExists = true;
-                                            }
-                                        }
-
-                                        if (!$anotherStackExists) {
-                                            $query = $this->database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
-                                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                            $query->bindValue(":np_communication_id", $mergedGame, PDO::PARAM_STR);
-                                            $query->execute();
-
-                                            $query = $this->database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
-                                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                            $query->bindValue(":np_communication_id", $mergedGame, PDO::PARAM_STR);
-                                            $query->execute();
-
-                                            $query = $this->database->prepare("DELETE FROM trophy_earned te WHERE te.account_id = :account_id AND te.np_communication_id = :np_communication_id");
-                                            $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                            $query->bindValue(":np_communication_id", $mergedGame, PDO::PARAM_STR);
-                                            $query->execute();
-                                        }
-                                    }
-
-                                    $query = $this->database->prepare("DELETE FROM trophy_group_player tgp WHERE tgp.account_id = :account_id AND tgp.np_communication_id = :np_communication_id");
-                                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                    $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
-                                    $query->execute();
-
-                                    $query = $this->database->prepare("DELETE FROM trophy_title_player ttp WHERE ttp.account_id = :account_id AND ttp.np_communication_id = :np_communication_id");
-                                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                    $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
-                                    $query->execute();
-
-                                    $query = $this->database->prepare("DELETE FROM trophy_earned te WHERE te.account_id = :account_id AND te.np_communication_id = :np_communication_id");
-                                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                                    $query->bindValue(":np_communication_id", $game, PDO::PARAM_STR);
-                                    $query->execute();
-                                }
-                            }
-                        } elseif ($psnGameCount === 0 && $ourGameCount > 0) {
+                            $this->staleGameDeletionService->deleteMissingZeroPercentGames(
+                                (int) $user->accountId(),
+                                $scannedGames,
+                            );
+                        } elseif ($this->staleGameDeletionService->shouldRetryWhenSonyReturnsNoGames((int) $psnGameCount, $ourGameCount)) {
                             if (!($missingTrophyTitleRetry[$onlineId] ?? false)) {
                                 $missingTrophyTitleRetry[$onlineId] = true;
 
