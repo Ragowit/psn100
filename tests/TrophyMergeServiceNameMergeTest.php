@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../wwwroot/classes/TrophyMergeService.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMergeMappingService.php';
 
 final class TrophyMergeServiceNameMergeTest extends TestCase
 {
@@ -25,12 +25,9 @@ final class TrophyMergeServiceNameMergeTest extends TestCase
         ];
 
         $database = new NameMappingPDO($childTrophies, $parentTrophy);
-        $service = new TrophyMergeService($database);
+        $service = new TrophyMergeMappingService($database);
 
-        $method = new ReflectionMethod(TrophyMergeService::class, 'insertMappingsByName');
-        $method->setAccessible(true);
-
-        $message = $method->invoke($service, 1, 2);
+        $message = $service->insertMappingsByName(1, 2);
 
         $this->assertSame('', $message, 'Expected name-based merge to succeed without warnings.');
 
