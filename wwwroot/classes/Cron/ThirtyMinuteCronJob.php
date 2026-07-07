@@ -23,6 +23,7 @@ require_once __DIR__ . '/PlayerEarnedTrophyPersister.php';
 require_once __DIR__ . '/PlayerScanStaleGameDeletionService.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSynchronizer.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
+require_once __DIR__ . '/PlayerScanTrophyProgressSynchronizer.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -42,6 +43,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerEarnedTrophyPersister $earnedTrophyPersister;
     private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService;
     private readonly PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer;
+    private readonly PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer;
 
     public function __construct(
         private readonly PDO $database,
@@ -60,6 +62,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerEarnedTrophyPersister $earnedTrophyPersister = null,
         ?PlayerScanStaleGameDeletionService $staleGameDeletionService = null,
         ?PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer = null,
+        ?PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer = null,
     )
     {
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
@@ -92,6 +95,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $logger,
             historyRecorder: $historyRecorder,
             automaticTrophyTitleMergeService: $this->automaticTrophyTitleMergeService,
+        );
+        $this->trophyProgressSynchronizer = $trophyProgressSynchronizer ?? new PlayerScanTrophyProgressSynchronizer(
+            $database,
+            $trophyCalculator,
+            $logger,
+            $this->earnedTrophyPersister,
+            $this->automaticTrophyTitleMergeService,
         );
     }
 
@@ -163,40 +173,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         );
 
         sleep(60);
-    }
-
-    /**
-     * @template T
-     * @param callable():T $operation
-     * @return T
-     */
-    private function retryNotFound(callable $operation, string $description)
-    {
-        $attempt = 0;
-        $delay = 2;
-        $maxAttempts = 5;
-
-        while (true) {
-            try {
-                return $operation();
-            } catch (NotFoundHttpException $exception) {
-                $attempt++;
-
-                if ($attempt >= $maxAttempts) {
-                    $this->logger->log(sprintf(
-                        '%s failed with %s after %d attempts. Aborting retries.',
-                        $description,
-                        $exception->getMessage(),
-                        $attempt
-                    ));
-
-                    throw $exception;
-                }
-
-                sleep($delay);
-                $delay = min($delay * 2, 60);
-            }
-        }
     }
 
     private function ensureTrophyTitleIcon(
@@ -623,61 +599,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             $newTrophies = $catalogSyncResult->newTrophies;
                             $mergeParentsToRecompute = $catalogSyncResult->mergeParentsToRecompute;
 
-                            // Fetch user trophies
-                            $trophyGroups = $this->retryNotFound(
-                                fn () => $trophyTitle->trophyGroups(),
-                                sprintf('Fetching trophy groups for %s (%s)', $trophyTitle->name(), $npid)
+                            $this->trophyProgressSynchronizer->synchronizeTrophyProgress(
+                                $user,
+                                $trophyTitle,
+                                $npid,
+                                $newTrophies,
+                                $mergeParentsToRecompute,
                             );
-
-                            foreach ($trophyGroups as $trophyGroup) {
-                                $groupTrophies = $this->retryNotFound(
-                                    fn () => $trophyGroup->trophies(),
-                                    sprintf(
-                                        'Fetching trophies for %s (%s/%s)',
-                                        $trophyTitle->name(),
-                                        $npid,
-                                        $trophyGroup->id()
-                                    )
-                                );
-
-                                foreach ($groupTrophies as $trophy) {
-                                    $trophyEarned = $trophy->earned();
-                                    $progress = (clone $trophy)->progress();
-                                    if ($trophyEarned || ($progress != '' && intval($progress) > 0)) {
-                                        $this->earnedTrophyPersister->persistEarnedTrophy(
-                                            $npid,
-                                            $trophyGroup->id(),
-                                            (int) $trophy->id(),
-                                            (string) $user->accountId(),
-                                            $trophyEarned,
-                                            $progress,
-                                            $trophy->earnedDateTime(),
-                                        );
-                                    }
-                                }
-
-                                // Recalculate trophies for trophy group and player
-                                $this->trophyCalculator->recalculateTrophyGroup($npid, $trophyGroup->id(), (int) $user->accountId());
-                            }
-
-                            // Recalculate trophies for trophy title and player
-                            $this->trophyCalculator->recalculateTrophyTitle($npid, $trophyTitle->lastUpdatedDateTime(), $newTrophies, (int) $user->accountId(), false);
-
-                            // Game Merge stuff
-                            $query = $this->database->prepare("SELECT DISTINCT parent_np_communication_id, 
-                                                parent_group_id 
-                                FROM   trophy_merge 
-                                WHERE  child_np_communication_id = :child_np_communication_id ");
-                            $query->bindValue(":child_np_communication_id", $npid, PDO::PARAM_STR);
-                            $query->execute();
-                            while ($row = $query->fetch()) {
-                                $this->trophyCalculator->recalculateTrophyGroup($row["parent_np_communication_id"], $row["parent_group_id"], (int) $user->accountId());
-                                $this->trophyCalculator->recalculateTrophyTitle($row["parent_np_communication_id"], $trophyTitle->lastUpdatedDateTime(), false, (int) $user->accountId(), true);
-                            }
-
-                            foreach ($mergeParentsToRecompute as $mergeParent) {
-                                $this->automaticTrophyTitleMergeService->recomputeMergeProgressByParent($mergeParent);
-                            }
                         }
 
                         if ($restartScan) {
