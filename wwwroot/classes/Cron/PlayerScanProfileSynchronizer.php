@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 require_once __DIR__ . '/PlayerAvatarSynchronizer.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
+require_once __DIR__ . '/PlayerScanPrivacyService.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\PlayStation\Client;
@@ -20,16 +21,22 @@ final class PlayerScanProfileSynchronizer
     private const MAX_INVALID_API_RESPONSE_ATTEMPTS = 2;
 
     private readonly PlayerAvatarSynchronizer $avatarSynchronizer;
+    private readonly PlayerScanPrivacyService $privacyService;
 
     public function __construct(
         private readonly PDO $database,
         private readonly Psn100Logger $logger,
         private readonly WorkerScanCoordinator $workerScanCoordinator,
         ?PlayerAvatarSynchronizer $avatarSynchronizer = null,
+        ?PlayerScanPrivacyService $privacyService = null,
     ) {
         $this->avatarSynchronizer = $avatarSynchronizer ?? new PlayerAvatarSynchronizer(
             $database,
             new ImageHashCalculator(),
+        );
+        $this->privacyService = $privacyService ?? new PlayerScanPrivacyService(
+            $database,
+            $workerScanCoordinator,
         );
     }
 
@@ -161,7 +168,7 @@ final class PlayerScanProfileSynchronizer
                     $profile = $profileLookup['profile'] ?? null;
 
                     if (!is_array($profile)) {
-                        $this->markPlayerAsPrivate($originalOnlineId);
+                        $this->privacyService->markAsPrivateByOnlineId($originalOnlineId);
 
                         return PlayerScanProfileSyncResult::skipPlayer();
                     }
@@ -169,7 +176,7 @@ final class PlayerScanProfileSynchronizer
                     $profileAccountId = $profile['accountId'] ?? null;
 
                     if (!is_string($profileAccountId) || $profileAccountId === '') {
-                        $this->markPlayerAsPrivate($originalOnlineId);
+                        $this->privacyService->markAsPrivateByOnlineId($originalOnlineId);
 
                         return PlayerScanProfileSyncResult::skipPlayer();
                     }
@@ -211,7 +218,7 @@ final class PlayerScanProfileSynchronizer
                     }
                 } else {
                     if ($existingAccountId === null) {
-                        $this->markPlayerAsPrivate($originalOnlineId);
+                        $this->privacyService->markAsPrivateByOnlineId($originalOnlineId);
 
                         return PlayerScanProfileSyncResult::skipPlayer();
                     }
@@ -346,21 +353,6 @@ final class PlayerScanProfileSynchronizer
         $normalized = $this->normalizePlayerProfileResponse($profile);
 
         return is_array($normalized) ? $normalized : null;
-    }
-
-    private function markPlayerAsPrivate(string $onlineId): void
-    {
-        $query = $this->database->prepare(
-            'UPDATE player
-            SET `status` = 3, last_updated_date = NOW()
-            WHERE online_id = :online_id AND `status` != 1'
-        );
-        $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
-        $query->execute();
-
-        $query = $this->database->prepare('DELETE FROM player_queue WHERE online_id = :online_id');
-        $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
-        $query->execute();
     }
 
     private function updateQueuedOnlineId(int $workerId, string $previousOnlineId, string $newOnlineId): void

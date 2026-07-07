@@ -24,6 +24,8 @@ require_once __DIR__ . '/PlayerScanStaleGameDeletionService.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSynchronizer.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 require_once __DIR__ . '/PlayerScanTrophyProgressSynchronizer.php';
+require_once __DIR__ . '/PlayerScanPrivacyService.php';
+require_once __DIR__ . '/PlayerScanTrophySummaryAccessResult.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -44,6 +46,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService;
     private readonly PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer;
     private readonly PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer;
+    private readonly PlayerScanPrivacyService $privacyService;
 
     public function __construct(
         private readonly PDO $database,
@@ -63,6 +66,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerScanStaleGameDeletionService $staleGameDeletionService = null,
         ?PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer = null,
         ?PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer = null,
+        ?PlayerScanPrivacyService $privacyService = null,
     )
     {
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
@@ -102,6 +106,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $logger,
             $this->earnedTrophyPersister,
             $this->automaticTrophyTitleMergeService,
+        );
+        $this->privacyService = $privacyService ?? new PlayerScanPrivacyService(
+            $database,
+            $this->workerScanCoordinator,
         );
     }
 
@@ -385,60 +393,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 break;
             }
 
-            $privateUser = false;
-            try {
-                $level = 0;
-                $level = $user->trophySummary()->level();
-            } catch (TypeError $e) {
-                // Rare error, wait 1 minute to not hammer Sony and try again.
-                $this->workerScanCoordinator->setWaitingScanProgress(
-                    (int) $worker['id'],
-                    'Encountered a problem while scanning. Waiting 1 minute before retrying.'
-                );
-                sleep(60 * 1);
+            $trophySummaryAccess = $this->privacyService->resolveTrophySummaryLevel($user, (int) $worker['id']);
+
+            if ($trophySummaryAccess->shouldAbortScan()) {
                 break;
-            } catch (Exception $e) {
-                // Potentially private profile, wait 1 minute and retry before updating the status.
-                $this->workerScanCoordinator->setWaitingScanProgress(
-                    (int) $worker['id'],
-                    'Profile scan failed, waiting 1 minute before confirming privacy.'
-                );
-                sleep(60 * 1);
-
-                try {
-                    $level = 0;
-                    $level = $user->trophySummary()->level();
-                } catch (TypeError $retryException) {
-                    // Rare error, wait 1 minute to not hammer Sony and try again.
-                    $this->workerScanCoordinator->setWaitingScanProgress(
-                        (int) $worker['id'],
-                        'Encountered a problem while scanning. Waiting 1 minute before retrying.'
-                    );
-                    sleep(60 * 1);
-                    break;
-                } catch (Exception $retryException) {
-                    // Profile seem to be private, set status to 3 to hide all trophies.
-                    $query = $this->database->prepare("UPDATE
-                            player
-                        SET
-                            status = 3,
-                            last_updated_date = NOW()
-                        WHERE
-                            account_id = :account_id
-                            AND status != 1
-                    ");
-                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
-                    $query->execute();
-
-                    // Delete user from the queue
-                    $query = $this->database->prepare("DELETE FROM player_queue
-                        WHERE  online_id = :online_id ");
-                    $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
-                    $query->execute();
-
-                    $privateUser = true;
-                }
             }
+
+            $privateUser = $trophySummaryAccess->isPrivateProfile();
+            $level = $trophySummaryAccess->isAccessible() ? $trophySummaryAccess->level : 0;
 
             try {
                 if (!$privateUser) {
