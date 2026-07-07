@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Admin/GameCopyService.php';
 require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
+require_once __DIR__ . '/TrophyMergeMappingService.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressUpdater.php';
 
 class TrophyMergeService
@@ -14,6 +15,8 @@ class TrophyMergeService
     private PDO $database;
 
     private NestedDatabaseTransactionRunner $transactionRunner;
+
+    private ?TrophyMergeMappingService $mappingService = null;
 
     private ?TrophyMergePlayerProgressUpdater $playerProgressUpdater = null;
 
@@ -113,15 +116,15 @@ class TrophyMergeService
             switch ($method) {
                 case 'name':
                     $this->notifyProgress($progressListener, 30, 'Matching trophies by name…');
-                    $message .= $this->insertMappingsByName($childGameId, $parentGameId);
+                    $message .= $this->mappingService()->insertMappingsByName($childGameId, $parentGameId);
                     break;
                 case 'icon':
                     $this->notifyProgress($progressListener, 30, 'Matching trophies by icon…');
-                    $message .= $this->insertMappingsByIcon($childGameId, $parentGameId);
+                    $message .= $this->mappingService()->insertMappingsByIcon($childGameId, $parentGameId);
                     break;
                 case 'order':
                     $this->notifyProgress($progressListener, 30, 'Matching trophies by list order…');
-                    $this->insertMappingsByOrder($childGameId, $parentGameId);
+                    $this->mappingService()->insertMappingsByOrder($childGameId, $parentGameId);
                     break;
                 default:
                     throw new InvalidArgumentException('Wrong input');
@@ -555,6 +558,11 @@ SQL
         $this->playerProgressUpdater()->updateTrophyTitlePlayer($childGameId);
     }
 
+    private function mappingService(): TrophyMergeMappingService
+    {
+        return $this->mappingService ??= new TrophyMergeMappingService($this->database);
+    }
+
     private function playerProgressUpdater(): TrophyMergePlayerProgressUpdater
     {
         return $this->playerProgressUpdater ??= new TrophyMergePlayerProgressUpdater($this->database);
@@ -890,218 +898,6 @@ SQL
         $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
         $query->bindValue(':param_1', $param1, PDO::PARAM_INT);
         $query->bindValue(':param_2', $param2, PDO::PARAM_INT);
-        $query->execute();
-    }
-
-    private function normalizeTrophyName(string $name): string
-    {
-        $name = trim($name);
-
-        return mb_strtolower($name, 'UTF-8');
-    }
-
-    private function insertMappingsByName(int $childGameId, int $parentGameId): string
-    {
-        $message = '';
-
-        $childTrophies = $this->database->prepare(
-            <<<'SQL'
-            SELECT np_communication_id,
-                   group_id,
-                   order_id,
-                   name
-            FROM   trophy
-            WHERE  np_communication_id = (SELECT np_communication_id
-                                          FROM   trophy_title
-                                          WHERE  id = :child_game_id)
-SQL
-        );
-        $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
-        $childTrophies->execute();
-
-        $parentTrophies = $this->database->prepare(
-            <<<'SQL'
-            SELECT np_communication_id,
-                   group_id,
-                   order_id,
-                   name
-            FROM   trophy
-            WHERE  np_communication_id = (SELECT np_communication_id
-                                          FROM   trophy_title
-                                          WHERE  id = :parent_game_id)
-SQL
-        );
-        $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
-        $parentTrophies->execute();
-
-        $parentTrophyByName = [];
-
-        while ($parentTrophy = $parentTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $name = $this->normalizeTrophyName((string) $parentTrophy['name']);
-            $parentTrophyByName[$name][] = $parentTrophy;
-        }
-
-        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $childName = $this->normalizeTrophyName((string) $childTrophy['name']);
-            $parentTrophy = $parentTrophyByName[$childName] ?? [];
-
-            if (count($parentTrophy) === 1) {
-                $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
-            } else {
-                $message .= $childTrophy['name'] . " couldn't be merged.<br>";
-            }
-        }
-
-        return $message;
-    }
-
-    private function insertMappingsByIcon(int $childGameId, int $parentGameId): string
-    {
-        $message = '';
-
-        $childTrophies = $this->database->prepare(
-            <<<'SQL'
-            SELECT
-                t.np_communication_id,
-                t.group_id,
-                t.order_id,
-                t.name,
-                t.icon_url,
-                tc.counter
-            FROM
-                trophy t,
-                (
-                SELECT
-                    icon_url,
-                    COUNT(icon_url) AS counter
-                FROM
-                    trophy
-                WHERE
-                    np_communication_id =(
-                    SELECT
-                        np_communication_id
-                    FROM
-                        trophy_title
-                    WHERE
-                        id = :child_game_id
-                )
-            GROUP BY
-                icon_url
-            ) AS tc
-            WHERE
-                t.icon_url = tc.icon_url AND t.np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :child_game_id
-            );
-SQL
-        );
-        $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
-        $childTrophies->execute();
-
-        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $parentTrophies = $this->database->prepare(
-                <<<'SQL'
-                SELECT np_communication_id,
-                       group_id,
-                       order_id
-                FROM   trophy
-                WHERE  np_communication_id = (SELECT np_communication_id
-                                              FROM   trophy_title
-                                              WHERE  id = :parent_game_id)
-                       AND icon_url = :icon_url
-SQL
-            );
-            $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
-            $parentTrophies->bindValue(':icon_url', $childTrophy['icon_url'], PDO::PARAM_STR);
-            $parentTrophies->execute();
-
-            $parentTrophy = $parentTrophies->fetchAll(PDO::FETCH_ASSOC);
-
-            if ((int) $childTrophy['counter'] === 1 && count($parentTrophy) === 1) {
-                $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
-            } else {
-                $message .= $childTrophy['name'] . " couldn't be merged.<br>";
-            }
-        }
-
-        return $message;
-    }
-
-    private function insertMappingsByOrder(int $childGameId, int $parentGameId): void
-    {
-        $query = $this->database->prepare(
-            <<<'SQL'
-            INSERT IGNORE
-            into   trophy_merge
-                   (
-                          child_np_communication_id,
-                          child_group_id,
-                          child_order_id,
-                          parent_np_communication_id,
-                          parent_group_id,
-                          parent_order_id
-                   )
-            SELECT     child.np_communication_id,
-                       child.group_id,
-                       child.order_id,
-                       parent.np_communication_id,
-                       parent.group_id,
-                       parent.order_id
-            FROM       trophy child
-            INNER JOIN trophy parent
-            USING      (group_id, order_id)
-            WHERE      child.np_communication_id =
-                       (
-                              SELECT np_communication_id
-                              FROM   trophy_title
-                              WHERE  id = :child_game_id)
-            AND        parent.np_communication_id =
-                       (
-                              SELECT np_communication_id
-                              FROM   trophy_title
-                              WHERE  id = :parent_game_id)
-SQL
-        );
-        $query->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
-        $query->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
-        $query->execute();
-    }
-
-    private function insertDirectMapping(array $childTrophy, array $parentTrophy): void
-    {
-        $query = $this->database->prepare(
-            <<<'SQL'
-            INSERT IGNORE
-            into   trophy_merge
-                   (
-                          child_np_communication_id,
-                          child_group_id,
-                          child_order_id,
-                          parent_np_communication_id,
-                          parent_group_id,
-                          parent_order_id
-                   )
-                   VALUES
-                   (
-                          :child_np_communication_id,
-                          :child_group_id,
-                          :child_order_id,
-                          :parent_np_communication_id,
-                          :parent_group_id,
-                          :parent_order_id
-                   )
-SQL
-        );
-        $query->bindValue(':child_np_communication_id', $childTrophy['np_communication_id'], PDO::PARAM_STR);
-        $query->bindValue(':child_group_id', $childTrophy['group_id'], PDO::PARAM_STR);
-        $query->bindValue(':child_order_id', (int) $childTrophy['order_id'], PDO::PARAM_INT);
-        $query->bindValue(':parent_np_communication_id', $parentTrophy['np_communication_id'], PDO::PARAM_STR);
-        $query->bindValue(':parent_group_id', $parentTrophy['group_id'], PDO::PARAM_STR);
-        $query->bindValue(':parent_order_id', (int) $parentTrophy['order_id'], PDO::PARAM_INT);
         $query->execute();
     }
 
