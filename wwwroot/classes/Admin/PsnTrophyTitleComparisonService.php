@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/PsnTrophyTitleComparisonException.php';
+require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 
 use Tustin\PlayStation\Client;
 
@@ -212,7 +213,7 @@ final class PsnTrophyTitleComparisonService
             } catch (Throwable $exception) {
                 throw new PsnTrophyTitleComparisonException(
                     'Failed to retrieve trophy titles from the direct endpoint.',
-                    $this->determineStatusCode($exception),
+                    PsnHttpExceptionClassifier::determineStatusCode($exception),
                     $exception
                 );
             }
@@ -292,7 +293,7 @@ final class PsnTrophyTitleComparisonService
         } catch (Throwable $exception) {
             throw new PsnTrophyTitleComparisonException(
                 'Failed to retrieve trophy titles via tustin/psn-php.',
-                $this->determineStatusCode($exception),
+                PsnHttpExceptionClassifier::determineStatusCode($exception),
                 $exception
             );
         }
@@ -302,23 +303,6 @@ final class PsnTrophyTitleComparisonService
             'count' => $count,
             'durationMs' => round(($endTime - $startTime) * 1000, 2),
         ];
-    }
-
-    private function determineStatusCode(Throwable $exception): ?int
-    {
-        $code = $exception->getCode();
-
-        if (is_int($code) && $code > 0) {
-            return $code;
-        }
-
-        $previous = $exception->getPrevious();
-
-        if ($previous instanceof Throwable) {
-            return $this->determineStatusCode($previous);
-        }
-
-        return null;
     }
 
     /**

@@ -6,6 +6,7 @@ require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/PsnGameLookupException.php';
+require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 
 use Tustin\PlayStation\Client;
 
@@ -115,7 +116,7 @@ final class PsnGameLookupService
                     'trophyGroups'
                 );
             } catch (Throwable $trophyGroupsException) {
-                if (!$this->shouldRetryWithDifferentServiceName($trophyGroupsException)) {
+                if (!PsnHttpExceptionClassifier::shouldRetryWithDifferentServiceName($trophyGroupsException)) {
                     throw $trophyGroupsException;
                 }
 
@@ -162,7 +163,7 @@ final class PsnGameLookupService
                 throw $exception;
             }
 
-            $statusCode = $this->determineStatusCode($exception);
+            $statusCode = PsnHttpExceptionClassifier::determineStatusCode($exception);
 
             throw new PsnGameLookupException(
                 'Failed to retrieve trophy data from PlayStation Network. Please try again later.',
@@ -398,7 +399,7 @@ final class PsnGameLookupService
             } catch (Throwable $exception) {
                 $lastException = $exception;
 
-                if ($pinnedQuery !== null || !$this->shouldRetryWithDifferentServiceName($exception)) {
+                if ($pinnedQuery !== null || !PsnHttpExceptionClassifier::shouldRetryWithDifferentServiceName($exception)) {
                     throw $exception;
                 }
             }
@@ -447,116 +448,6 @@ final class PsnGameLookupService
             if ($queryVariant !== $winningQuery) {
                 return $queryVariant;
             }
-        }
-
-        return null;
-    }
-
-    private function shouldRetryWithDifferentServiceName(Throwable $exception): bool
-    {
-        $statusCode = $this->determineStatusCode($exception);
-
-        if ($statusCode === 400 || $statusCode === 403 || $statusCode === 404) {
-            return true;
-        }
-
-        if ($statusCode !== null) {
-            return false;
-        }
-
-        return $this->isRetryableKnownHttpException($exception);
-    }
-
-    private function isRetryableKnownHttpException(Throwable $exception): bool
-    {
-        $retryableExceptionClasses = [
-            'Tustin\\Haste\\Exception\\ApiException',
-            'Tustin\\Haste\\Exception\\AccessDeniedHttpException',
-            'Tustin\\Haste\\Exception\\NotFoundHttpException',
-        ];
-
-        foreach ($retryableExceptionClasses as $retryableExceptionClass) {
-            if ($exception instanceof $retryableExceptionClass) {
-                return true;
-            }
-        }
-
-        $previous = $exception->getPrevious();
-
-        if ($previous instanceof Throwable) {
-            return $this->isRetryableKnownHttpException($previous);
-        }
-
-        return false;
-    }
-
-    private function determineStatusCode(Throwable $exception): ?int
-    {
-        $response = $this->findResponse($exception);
-
-        if ($response !== null) {
-            $statusCode = $this->extractStatusCodeFromResponse($response);
-
-            if ($statusCode !== null) {
-                return $statusCode;
-            }
-        }
-
-        return $this->extractStatusCodeFromThrowable($exception);
-    }
-
-    private function findResponse(Throwable $exception): ?object
-    {
-        if (method_exists($exception, 'getResponse')) {
-            $response = $exception->getResponse();
-
-            if (is_object($response)) {
-                return $response;
-            }
-        }
-
-        $previous = $exception->getPrevious();
-
-        if ($previous instanceof Throwable) {
-            return $this->findResponse($previous);
-        }
-
-        return null;
-    }
-
-    private function extractStatusCodeFromResponse(object $response): ?int
-    {
-        if (method_exists($response, 'getStatusCode')) {
-            $statusCode = $response->getStatusCode();
-
-            if (is_int($statusCode)) {
-                return $statusCode;
-            }
-        }
-
-        if (method_exists($response, 'getStatus')) {
-            $status = $response->getStatus();
-
-            if (is_int($status)) {
-                return $status;
-            }
-        }
-
-        return null;
-    }
-
-    private function extractStatusCodeFromThrowable(Throwable $exception): ?int
-    {
-        $code = $exception->getCode();
-
-        if (is_int($code) && $code > 0) {
-            return $code;
-        }
-
-        $previous = $exception->getPrevious();
-
-        if ($previous instanceof Throwable) {
-            return $this->extractStatusCodeFromThrowable($previous);
         }
 
         return null;
