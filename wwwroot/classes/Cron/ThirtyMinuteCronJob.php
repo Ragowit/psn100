@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
-require_once __DIR__ . '/../Admin/PsnGameLookupService.php';
 require_once __DIR__ . '/../Admin/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/../Admin/Worker.php';
 require_once __DIR__ . '/../Admin/WorkerService.php';
@@ -12,9 +11,6 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
-require_once __DIR__ . '/../TrophyMetaRepository.php';
-require_once __DIR__ . '/../TrophyImageDirectories.php';
-require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/WorkerScanCoordinator.php';
 require_once __DIR__ . '/PlayerScanQueueSelector.php';
 require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
@@ -25,8 +21,8 @@ require_once __DIR__ . '/PlayerScanCompletionResult.php';
 require_once __DIR__ . '/PlayerScanCompletionService.php';
 require_once __DIR__ . '/PlayerEarnedTrophyPersister.php';
 require_once __DIR__ . '/PlayerScanStaleGameDeletionService.php';
-require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
-require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
+require_once __DIR__ . '/PlayerScanTitleCatalogSynchronizer.php';
+require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -34,24 +30,18 @@ use Tustin\PlayStation\Client;
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
-    private readonly TrophyMetaRepository $trophyMetaRepository;
-
     private readonly AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
 
     private readonly ImageHashCalculator $imageHashCalculator;
-    private readonly PsnGameLookupService $psnGameLookupService;
-    private readonly TrophyImageDirectories $imageDirectories;
-    private readonly TrophyImageDownloader $imageDownloader;
     private readonly WorkerScanCoordinator $workerScanCoordinator;
     private readonly PlayerScanQueueSelector $playerScanQueueSelector;
-    private readonly TrophyTitleNameFormatter $trophyTitleNameFormatter;
     private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
-    private readonly TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
     private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper;
     private readonly PlayerScanProfileSynchronizer $profileSynchronizer;
     private readonly PlayerScanCompletionService $scanCompletionService;
     private readonly PlayerEarnedTrophyPersister $earnedTrophyPersister;
     private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService;
+    private readonly PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer;
 
     public function __construct(
         private readonly PDO $database,
@@ -59,39 +49,24 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         private readonly Psn100Logger $logger,
         private readonly TrophyHistoryRecorder $historyRecorder,
         private readonly int $workerId,
-        ?TrophyMetaRepository $trophyMetaRepository = null,
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null,
-        ?PsnGameLookupService $psnGameLookupService = null,
-        ?TrophyImageDirectories $imageDirectories = null,
-        ?TrophyImageDownloader $imageDownloader = null,
         ?WorkerScanCoordinator $workerScanCoordinator = null,
         ?PlayerScanQueueSelector $playerScanQueueSelector = null,
-        ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
-        ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
         ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
         ?PlayerScanProfileSynchronizer $profileSynchronizer = null,
         ?PlayerScanCompletionService $scanCompletionService = null,
         ?PlayerEarnedTrophyPersister $earnedTrophyPersister = null,
         ?PlayerScanStaleGameDeletionService $staleGameDeletionService = null,
+        ?PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer = null,
     )
     {
-        $this->trophyMetaRepository = $trophyMetaRepository ?? new TrophyMetaRepository($database);
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
-        $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);
-        $this->imageDirectories = $imageDirectories ?? TrophyImageDirectories::productionDefault();
-        $this->imageDownloader = $imageDownloader ?? new TrophyImageDownloader(
-            $this->imageHashCalculator,
-            function (string $message) use ($logger): void {
-                $logger->log($message);
-            },
-        );
         $this->workerScanCoordinator = $workerScanCoordinator ?? new WorkerScanCoordinator($database);
         $this->playerScanQueueSelector = $playerScanQueueSelector ?? new PlayerScanQueueSelector($database);
-        $this->trophyTitleNameFormatter = $trophyTitleNameFormatter ?? new TrophyTitleNameFormatter();
         $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
             new WorkerService($database),
             null,
@@ -99,7 +74,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $logger->log(sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $message));
             },
         );
-        $this->trophyCatalogSynchronizer = $trophyCatalogSynchronizer ?? new TrophyCatalogSynchronizer($database);
         $this->titleMetadataHelper = $titleMetadataHelper ?? new PlayerScanTitleMetadataHelper();
         $this->profileSynchronizer = $profileSynchronizer ?? new PlayerScanProfileSynchronizer(
             $database,
@@ -113,6 +87,12 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $this->titleMetadataHelper,
         );
         $this->staleGameDeletionService = $staleGameDeletionService ?? new PlayerScanStaleGameDeletionService($database);
+        $this->titleCatalogSynchronizer = $titleCatalogSynchronizer ?? new PlayerScanTitleCatalogSynchronizer(
+            $database,
+            $logger,
+            historyRecorder: $historyRecorder,
+            automaticTrophyTitleMergeService: $this->automaticTrophyTitleMergeService,
+        );
     }
 
     /**
@@ -621,11 +601,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 );
                             }
 
-                            $newTrophies = false;
-                            $titleDataChanged = false;
-                            $groupDataChanged = false;
-                            $trophyDataChanged = false;
-
                             // Does this user already have the game?
                             if (
                                 isset($gameLastUpdatedDate[$npid])
@@ -638,430 +613,15 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 continue;
                             }
 
-                            // Add trophy title (game) information into database
-                            $titleId = null;
-
-                            $platforms = "";
-                            foreach ($trophyTitle->platform() as $platform) {
-                                $platformValue = $platform->value;
-                                if ($platformValue === 'PSPC') {
-                                    $platformValue = 'PC';
-                                }
-
-                                $platforms .= $platformValue .",";
-                            }
-                            $platforms = rtrim($platforms, ",");
-
-                            $sanitizedTitleName = $this->trophyTitleNameFormatter->format($trophyTitle->name());
-
-                            $existingTitle = $this->trophyCatalogSynchronizer->fetchExistingTrophyTitleRow($npid);
-                            $isNewTitle = $existingTitle === null;
-                            $incomingSetVersion = $trophyTitle->trophySetVersion();
-                            $setVersionForUpdate = $this->titleMetadataHelper->resolveSetVersionForUpdate(
-                                $incomingSetVersion,
-                                is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
-                            );
-                            $incomingVersionIsOlderThanStored = $this->titleMetadataHelper->isIncomingSetVersionOlderThanStored(
-                                $incomingSetVersion,
-                                is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
-                            );
-
-                            $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
-                            $titleIconFilename = $previousTitleIconFilename;
-                            $titleIconMissing = $titleIconFilename === null
-                                || !file_exists($this->imageDirectories->title . $titleIconFilename);
-
-                            $titleNeedsUpdate = $existingTitle === null
-                                || (
-                                    !$incomingVersionIsOlderThanStored
-                                    && (
-                                        $existingTitle['detail'] !== $trophyTitle->detail()
-                                        || $existingTitle['set_version'] !== $setVersionForUpdate
-                                    )
-                                );
-
-                            if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
-                                $titleIconFilename = $this->imageDownloader->downloadMandatoryForScan(
-                                    $trophyTitle->iconUrl(),
-                                    $this->imageDirectories->title,
-                                    sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid),
-                                    $previousTitleIconFilename
-                                );
-                            }
-
-                            if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
-                                $query = $this->database->prepare("INSERT INTO trophy_title(
-                                        np_communication_id,
-                                        name,
-                                        detail,
-                                        icon_url,
-                                        platform,
-                                        set_version
-                                    )
-                                    VALUES(
-                                        :np_communication_id,
-                                        :name,
-                                        :detail,
-                                        :icon_url,
-                                        :platform,
-                                        :set_version
-                                    ) AS new
-                                    ON DUPLICATE KEY
-                                    UPDATE
-                                        detail = CASE
-                                            WHEN :incoming_version_is_older = 1 THEN trophy_title.detail
-                                            ELSE new.detail
-                                        END,
-                                        icon_url = new.icon_url,
-                                        set_version = CASE
-                                            WHEN trophy_title.set_version IS NULL OR TRIM(trophy_title.set_version) = '' THEN new.set_version
-                                            WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
-                                                > CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED) THEN new.set_version
-                                            WHEN CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', 1) AS UNSIGNED)
-                                                = CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', 1) AS UNSIGNED)
-                                                AND CAST(SUBSTRING_INDEX(TRIM(new.set_version), '.', -1) AS UNSIGNED)
-                                                    >= CAST(SUBSTRING_INDEX(TRIM(trophy_title.set_version), '.', -1) AS UNSIGNED) THEN new.set_version
-                                            ELSE trophy_title.set_version
-                                        END");
-                                $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                $query->bindValue(":name", $sanitizedTitleName, PDO::PARAM_STR);
-                                $query->bindValue(":detail", $trophyTitle->detail(), PDO::PARAM_STR);
-                                $query->bindValue(":icon_url", $titleIconFilename, PDO::PARAM_STR);
-                                $query->bindValue(":platform", $platforms, PDO::PARAM_STR);
-                                $query->bindValue(":set_version", $setVersionForUpdate, PDO::PARAM_STR);
-                                $query->bindValue(":incoming_version_is_older", $incomingVersionIsOlderThanStored ? 1 : 0, PDO::PARAM_INT);
-                                // Don't insert platinum/gold/silver/bronze here since our site recalculate this.
-                                $query->execute();
-
-                                if ($query->rowCount() > 0) {
-                                    $titleDataChanged = true;
-                                }
-                            }
-
-                            $metaQuery = $this->database->prepare("INSERT IGNORE INTO trophy_title_meta (
-                                    np_communication_id,
-                                    message
-                                )
-                                VALUES (
-                                    :np_communication_id,
-                                    :message
-                                )");
-                            $metaQuery->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                            $metaQuery->bindValue(":message", '', PDO::PARAM_STR);
-                            $metaQuery->execute();
-
-                            // Get "groups" (game and DLCs)
-                            try {
-                                $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npid, $client);
-                            } catch (Throwable $exception) {
-                                $this->logger->log(sprintf(
-                                    'Unable to fetch trophy data for %s (%s): %s',
-                                    $trophyTitle->name(),
-                                    $npid,
-                                    $exception->getMessage()
-                                ));
+                            $catalogSyncResult = $this->titleCatalogSynchronizer->synchronizeCatalog($trophyTitle, $client);
+                            if ($catalogSyncResult->restartScan) {
                                 $restartScan = true;
 
                                 break;
                             }
 
-                            $trophyGroups = $trophyData['trophyGroups'] ?? [];
-                            if (!is_array($trophyGroups)) {
-                                $trophyGroups = [];
-                            }
-
-                            $topLevelTrophies = $trophyData['trophies'] ?? [];
-                            if (!is_array($topLevelTrophies)) {
-                                $topLevelTrophies = [];
-                            }
-
-                            $fallbackGroupTrophies = [];
-                            foreach ($topLevelTrophies as $topLevelTrophy) {
-                                if (!is_array($topLevelTrophy)) {
-                                    continue;
-                                }
-
-                                $topLevelTrophyGroupId = (string) ($topLevelTrophy['trophyGroupId'] ?? '');
-                                if ($topLevelTrophyGroupId === '') {
-                                    continue;
-                                }
-
-                                $fallbackGroupTrophies[$topLevelTrophyGroupId][] = $topLevelTrophy;
-                            }
-
-                            foreach ($trophyGroups as $trophyGroup) {
-                                if (!is_array($trophyGroup)) {
-                                    continue;
-                                }
-
-                                $trophyGroupId = (string) ($trophyGroup['trophyGroupId'] ?? '');
-                                if ($trophyGroupId === '') {
-                                    continue;
-                                }
-
-                                $trophyGroupName = (string) ($trophyGroup['trophyGroupName'] ?? '');
-                                $trophyGroupDetail = (string) ($trophyGroup['trophyGroupDetail'] ?? '');
-                                $trophyGroupIconUrl = (string) ($trophyGroup['trophyGroupIconUrl'] ?? '');
-                                $groupNewTrophies = false;
-                                // Add trophy group (game + dlcs) into database
-                                $existingGroup = $this->trophyCatalogSynchronizer->fetchExistingTrophyGroup($npid, $trophyGroupId);
-
-                                $previousGroupIconFilename = $existingGroup['icon_url'] ?? null;
-                                $groupIconFilename = $previousGroupIconFilename;
-                                $groupIconMissing = $groupIconFilename === null
-                                    || !file_exists($this->imageDirectories->group . $groupIconFilename);
-
-                                $groupNeedsUpdate = $existingGroup === null
-                                    || $existingGroup['name'] !== $trophyGroupName
-                                    || $existingGroup['detail'] !== $trophyGroupDetail;
-
-                                if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
-                                    $groupIconFilename = $this->imageDownloader->downloadMandatoryForScan(
-                                        $trophyGroupIconUrl,
-                                        $this->imageDirectories->group,
-                                        sprintf('trophy group icon for "%s" (%s/%s)', $trophyGroupName, $npid, $trophyGroupId),
-                                        $previousGroupIconFilename
-                                    );
-                                }
-
-                                if ($existingGroup === null || $groupNeedsUpdate || $groupIconMissing || $titleNeedsUpdate) {
-                                    $groupAffectedRows = $this->trophyCatalogSynchronizer->upsertTrophyGroup(
-                                        $npid,
-                                        $trophyGroupId,
-                                        $trophyGroupName,
-                                        $trophyGroupDetail,
-                                        $groupIconFilename,
-                                    );
-
-                                    if ($groupAffectedRows > 0) {
-                                        $groupDataChanged = true;
-                                    }
-                                }
-
-                                $groupTrophies = $trophyGroup['trophies'] ?? [];
-                                if (!is_array($groupTrophies)) {
-                                    $groupTrophies = [];
-                                }
-
-                                if ($groupTrophies === [] && isset($fallbackGroupTrophies[$trophyGroupId])) {
-                                    $groupTrophies = $fallbackGroupTrophies[$trophyGroupId];
-                                }
-
-                                if ($groupTrophies === []) {
-                                    $this->logger->log(sprintf(
-                                        'Unable to sync trophies for %s (%s/%s): trophy group payload did not include any trophies.',
-                                        $trophyTitle->name(),
-                                        $npid,
-                                        $trophyGroupId
-                                    ));
-                                    $restartScan = true;
-
-                                    break;
-                                }
-
-                                // Add trophies into database
-                                foreach ($groupTrophies as $trophy) {
-                                    if (!is_array($trophy)) {
-                                        continue;
-                                    }
-
-                                    $rawTrophyOrderId = $trophy['trophyId'] ?? null;
-                                    if (!is_numeric($rawTrophyOrderId)) {
-                                        continue;
-                                    }
-
-                                    $trophyOrderId = (int) $rawTrophyOrderId;
-                                    if ($trophyOrderId < 0) {
-                                        continue;
-                                    }
-
-                                    $existingTrophy = $this->trophyCatalogSynchronizer->fetchExistingTrophy(
-                                        $npid,
-                                        $trophyGroupId,
-                                        $trophyOrderId,
-                                    );
-
-                                    $trophyHidden = (int) ($trophy['trophyHidden'] ?? 0);
-
-                                    $rawProgressTargetValue = $trophy['trophyProgressTargetValue'] ?? null;
-
-                                    $existingProgressTargetValue = null;
-                                    $existingRewardName = null;
-                                    $existingRewardImageFilename = null;
-                                    $existingIconFilename = null;
-
-                                    if ($existingTrophy !== null) {
-                                        $existingProgressTargetValue = $existingTrophy['progress_target_value'] === null
-                                            ? null
-                                            : (int) $existingTrophy['progress_target_value'];
-                                        $existingRewardName = $existingTrophy['reward_name'];
-                                        $existingRewardImageFilename = $existingTrophy['reward_image_url'];
-                                        $existingIconFilename = $existingTrophy['icon_url'];
-                                    }
-
-                                    $progressTargetValue = $rawProgressTargetValue === null || $rawProgressTargetValue === ''
-                                        ? null
-                                        : (int) $rawProgressTargetValue;
-
-                                    $rewardName = (string) ($trophy['trophyRewardName'] ?? '');
-                                    $rewardName = $rewardName === '' ? null : $rewardName;
-
-                                    $rewardImageUrl = $trophy['trophyRewardImageUrl'] ?? null;
-                                    $rewardImageShouldBeNull = $rewardImageUrl === null || $rewardImageUrl === '';
-
-                                    $trophyTypeEnumValue = strtolower((string) ($trophy['trophyType'] ?? ''));
-                                    if ($trophyTypeEnumValue === '') {
-                                        $trophyTypeEnumValue = 'bronze';
-                                    }
-
-                                    $trophyName = (string) ($trophy['trophyName'] ?? '');
-                                    $trophyDetail = (string) ($trophy['trophyDetail'] ?? '');
-                                    $trophyIconUrl = (string) ($trophy['trophyIconUrl'] ?? '');
-
-                                    $trophyNeedsUpdate = $existingTrophy === null
-                                        || (int) ($existingTrophy['hidden'] ?? -1) !== $trophyHidden
-                                        || ($existingTrophy['type'] ?? '') !== $trophyTypeEnumValue
-                                        || ($existingTrophy['name'] ?? '') !== $trophyName
-                                        || ($existingTrophy['detail'] ?? '') !== $trophyDetail
-                                        || $existingProgressTargetValue !== $progressTargetValue
-                                        || ($existingRewardName !== $rewardName)
-                                        || ($rewardImageShouldBeNull && $existingRewardImageFilename !== null)
-                                        || (!$rewardImageShouldBeNull && $existingRewardImageFilename === null);
-
-                                    $iconMissing = $existingIconFilename === null
-                                        || !file_exists($this->imageDirectories->trophy . $existingIconFilename);
-
-                                    $previousIconFilename = $existingIconFilename;
-
-                                    if ($existingTrophy === null || $trophyNeedsUpdate || $iconMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
-                                        $trophyIconFilename = $this->imageDownloader->downloadMandatoryForScan(
-                                            $trophyIconUrl,
-                                            $this->imageDirectories->trophy,
-                                            sprintf(
-                                                'trophy icon for "%s" (%s/%s/%d)',
-                                                $trophyName,
-                                                $npid,
-                                                $trophyGroupId,
-                                                $trophyOrderId
-                                            ),
-                                            $previousIconFilename
-                                        );
-                                    } else {
-                                        $trophyIconFilename = $existingIconFilename;
-                                    }
-
-                                    $rewardImageMissing = false;
-
-                                    if ($rewardImageShouldBeNull) {
-                                        $rewardImageFilename = null;
-                                    } else {
-                                        $rewardImageMissing = $existingRewardImageFilename === null
-                                            || !file_exists($this->imageDirectories->reward . $existingRewardImageFilename);
-
-                                        if ($existingTrophy === null || $trophyNeedsUpdate || $rewardImageMissing || $groupNeedsUpdate || $titleNeedsUpdate) {
-                                            $rewardImageFilename = $this->imageDownloader->downloadOptionalForScan(
-                                                $rewardImageUrl === null ? '' : (string) $rewardImageUrl,
-                                                $this->imageDirectories->reward,
-                                                sprintf(
-                                                    'reward image for "%s" (%s/%s/%d)',
-                                                    $trophyName,
-                                                    $npid,
-                                                    $trophyGroupId,
-                                                    $trophyOrderId
-                                                ),
-                                                $existingRewardImageFilename
-                                            );
-                                        } else {
-                                            $rewardImageFilename = $existingRewardImageFilename;
-                                        }
-                                    }
-
-                                    $shouldUpsertTrophy = $existingTrophy === null
-                                        || $trophyNeedsUpdate
-                                        || $iconMissing
-                                        || (!$rewardImageShouldBeNull && $rewardImageMissing);
-
-                                    $trophyAffectedRows = 0;
-
-                                    if ($shouldUpsertTrophy) {
-                                        $trophyAffectedRows = $this->trophyCatalogSynchronizer->upsertTrophy(
-                                            $npid,
-                                            $trophyGroupId,
-                                            $trophyOrderId,
-                                            $trophyHidden,
-                                            $trophyTypeEnumValue,
-                                            $trophyName,
-                                            $trophyDetail,
-                                            $trophyIconFilename,
-                                            $progressTargetValue,
-                                            $rewardName,
-                                            $rewardImageFilename,
-                                        );
-
-                                        if ($trophyAffectedRows > 0) {
-                                            $trophyDataChanged = true;
-                                        }
-
-                                        if ($trophyAffectedRows === 1) {
-                                            $newTrophies = true;
-                                            $groupNewTrophies = true;
-                                        }
-                                    }
-
-                                    $this->ensureTrophyMetaRow(
-                                        $npid,
-                                        $trophyGroupId,
-                                        $trophyOrderId
-                                    );
-                                }
-
-                                if ($groupNewTrophies) {
-                                    $query = $this->database->prepare("SELECT status
-                                        FROM   trophy_title_meta
-                                        WHERE  np_communication_id = :np_communication_id ");
-                                    $query->bindValue(":np_communication_id", $npid, PDO::PARAM_STR);
-                                    $query->execute();
-                                    $status = $query->fetchColumn();
-                                    if ($status == 2) { // A "Merge Title" have gotten new trophies. Add a log about it so admin can check it out later and fix this.
-                                        $this->logger->log("New trophies added for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroupId .", ". $trophyGroupName);
-                                    } else {
-                                        $this->logger->log("SET VERSION for ". $trophyTitle->name() .". ". $npid . ", ". $trophyGroupId .", ". $trophyGroupName);
-                                    }
-                                }
-                            }
-
-                            if ($restartScan) {
-                                break;
-                            }
-
-                            if ($titleDataChanged || $groupDataChanged || $trophyDataChanged) {
-                                if ($titleId === null) {
-                                    $titleId = $this->findTrophyTitleId($npid);
-                                }
-
-                                if ($titleId !== null) {
-                                    $this->historyRecorder->recordByTitleId($titleId);
-                                }
-                            }
-
-                            $mergeParentsToRecompute = [];
-                            if ($isNewTitle) {
-                                $mergeParentsToRecompute = $this->automaticTrophyTitleMergeService->handleNewTitle($npid);
-                            }
-
-                            if ($newTrophies) {
-                                if ($titleId === null) {
-                                    $titleId = $this->findTrophyTitleId($npid);
-                                }
-
-                                if ($titleId === null) {
-                                    continue;
-                                }
-
-                                $query = $this->database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
-                                $query->bindValue(":param_1", $titleId, PDO::PARAM_INT);
-                                $query->execute();
-                            }
+                            $newTrophies = $catalogSyncResult->newTrophies;
+                            $mergeParentsToRecompute = $catalogSyncResult->mergeParentsToRecompute;
 
                             // Fetch user trophies
                             $trophyGroups = $this->retryNotFound(
@@ -1257,27 +817,5 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $this->workerScanCoordinator->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
-    }
-
-    private function findTrophyTitleId(string $npCommunicationId): ?int
-    {
-        $query = $this->database->prepare(
-            'SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        $id = $query->fetchColumn();
-
-        if ($id === false) {
-            return null;
-        }
-
-        return (int) $id;
-    }
-
-    private function ensureTrophyMetaRow(string $npCommunicationId, string $groupId, int $orderId): void
-    {
-        $this->trophyMetaRepository->ensureExists($npCommunicationId, $groupId, $orderId);
     }
 }
