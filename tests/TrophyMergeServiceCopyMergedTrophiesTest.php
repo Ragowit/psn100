@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../wwwroot/classes/TrophyMergeService.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMergeEarnedCopier.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyMergeProgressListener.php';
 
 final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
@@ -10,12 +10,10 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
     public function testCopyMergedTrophiesBulkCopiesEarnedProgressWithMergeSourceCte(): void
     {
         $pdo = new RecordingPDO(2);
-        $service = new TrophyMergeService($pdo);
+        $copier = new TrophyMergeEarnedCopier($pdo);
         $progress = new RecordingProgressListener();
 
-        $reflection = new ReflectionMethod(TrophyMergeService::class, 'copyMergedTrophies');
-        $reflection->setAccessible(true);
-        $reflection->invoke($service, 'NP_CHILD', $progress);
+        $copier->copyMergedTrophies('NP_CHILD', $progress);
 
         $this->assertSame(1, $pdo->insertExecutions, 'Expected a single bulk insert operation.');
         $this->assertSame(1, $pdo->updateExecutions, 'Expected a single synchronization update.');
