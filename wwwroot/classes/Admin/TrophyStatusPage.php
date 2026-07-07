@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyStatusInputParser.php';
 require_once __DIR__ . '/TrophyStatusService.php';
 
 class TrophyStatusPageResult
@@ -42,10 +43,15 @@ class TrophyStatusPageResult
 
 class TrophyStatusPage
 {
+    private TrophyStatusInputParser $trophyStatusInputParser;
+
     private TrophyStatusService $trophyStatusService;
 
-    public function __construct(TrophyStatusService $trophyStatusService)
-    {
+    public function __construct(
+        TrophyStatusInputParser $trophyStatusInputParser,
+        TrophyStatusService $trophyStatusService,
+    ) {
+        $this->trophyStatusInputParser = $trophyStatusInputParser;
         $this->trophyStatusService = $trophyStatusService;
     }
 
@@ -76,11 +82,11 @@ class TrophyStatusPage
                     }
 
                     $gameId = (int) $gameValue;
-                    $trophyIds = $this->trophyStatusService->getTrophyIdsForGame($gameId);
+                    $trophyIds = $this->trophyStatusInputParser->getTrophyIdsForGame($gameId);
                     $trophyInput = implode(',', array_map('strval', $trophyIds));
                 } else {
                     $trophyInput = (string) ($postData['trophy'] ?? '');
-                    $trophyIds = $this->trophyStatusService->parseTrophyIds($trophyInput);
+                    $trophyIds = $this->trophyStatusInputParser->parseTrophyIds($trophyInput);
                 }
 
                 $result = $this->trophyStatusService->updateTrophies($trophyIds, $status);
