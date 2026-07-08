@@ -321,19 +321,7 @@ class PlayerQueueManager {
         const request = new XMLHttpRequest();
 
         request.onreadystatechange = () => {
-            if (request.readyState === XMLHttpRequest.DONE) {
-                if (request.status >= 200 && request.status < 300) {
-                    const response = this.parseResponse(request.responseText);
-
-                    if (response !== null) {
-                        onSuccess(response);
-                    } else {
-                        this.handleError();
-                    }
-                } else {
-                    this.handleError();
-                }
-            }
+            this.handleCompletedRequest(request, onSuccess);
         };
 
         request.onerror = () => this.handleError();
@@ -348,19 +336,7 @@ class PlayerQueueManager {
         const request = new XMLHttpRequest();
 
         request.onreadystatechange = () => {
-            if (request.readyState === XMLHttpRequest.DONE) {
-                if (request.status >= 200 && request.status < 300) {
-                    const response = this.parseResponse(request.responseText);
-
-                    if (response !== null) {
-                        onSuccess(response);
-                    } else {
-                        this.handleError();
-                    }
-                } else {
-                    this.handleError();
-                }
-            }
+            this.handleCompletedRequest(request, onSuccess);
         };
 
         request.onerror = () => this.handleError();
@@ -368,6 +344,32 @@ class PlayerQueueManager {
         request.open('GET', url, true);
         request.setRequestHeader('Accept', 'application/json');
         request.send();
+    }
+
+    handleCompletedRequest(request, onSuccess) {
+        if (request.readyState !== XMLHttpRequest.DONE) {
+            return;
+        }
+
+        const response = this.parseResponse(request.responseText);
+
+        if (response !== null) {
+            if (request.status >= 200 && request.status < 300) {
+                onSuccess(response);
+                return;
+            }
+
+            this.updateQueueResult(response);
+            this.stopPolling(true);
+            return;
+        }
+
+        if (request.status >= 200 && request.status < 300) {
+            this.handleError();
+            return;
+        }
+
+        this.handleError();
     }
 
     parseResponse(responseText) {
