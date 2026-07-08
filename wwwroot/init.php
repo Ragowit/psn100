@@ -14,7 +14,7 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: SAMEORIGIN');
 header(
     "Content-Security-Policy-Report-Only: default-src 'self'; "
-    . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com; "
+    . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
     . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     . "img-src 'self' data: https:; "
     . "font-src 'self' https://cdn.jsdelivr.net; "
