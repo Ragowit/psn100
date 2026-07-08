@@ -14,10 +14,10 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: SAMEORIGIN');
 header(
     "Content-Security-Policy-Report-Only: default-src 'self'; "
-    . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-    . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    . "script-src 'self' 'unsafe-inline'; "
+    . "style-src 'self' 'unsafe-inline'; "
     . "img-src 'self' data: https:; "
-    . "font-src 'self' https://cdn.jsdelivr.net; "
+    . "font-src 'self'; "
     . "connect-src 'self'; "
     . "frame-ancestors 'self'; "
     . "base-uri 'self'; "

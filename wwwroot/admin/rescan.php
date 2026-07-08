@@ -12,7 +12,7 @@ require_once '../classes/StaticAsset.php';
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
         <?php AdminBootstrap::renderCsrfMetaTag(); ?>
         <title>Admin ~ Rescan Game</title>
         <link rel="stylesheet" href="<?= htmlspecialchars(StaticAsset::url('/css/admin-rescan.css'), ENT_QUOTES, 'UTF-8'); ?>">
