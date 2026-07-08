@@ -98,7 +98,8 @@ the non-obvious steps to actually run the services.
   `/js/changelog-date-grouping.js`; homepage queue polling uses
   `/js/player-queue-manager.js`; about-page scan log polling uses
   `/js/scan-log-renderer.js`; admin reported-player deletes use
-  `/js/admin-report-delete.js`.
+  `/js/admin-report-delete.js`; admin log bulk actions use
+  `/js/admin-log-bulk-actions.js`.
 
 ### Composer
 
