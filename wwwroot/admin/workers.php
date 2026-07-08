@@ -153,9 +153,8 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                         <time
                                             class="js-localized-datetime"
                                             datetime="<?= htmlspecialchars($scanStart->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-show-timezone="1"
                                         >
-                                            <?= htmlspecialchars($scanStart->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= htmlspecialchars($scanStart->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?>
                                         </time>
                                     </td>
                                     <td>

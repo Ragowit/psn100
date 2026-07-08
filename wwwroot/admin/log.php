@@ -97,8 +97,8 @@ if ($pageResult->getTotalPages() > 1) {
                                         <td class="text-nowrap">#<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <?php $time = $entry->getTime(); ?>
-                                            <time class="small text-body-secondary js-localized-datetime" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>" data-show-timezone="1">
-                                                <?= htmlspecialchars($time->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
+                                            <time class="small text-body-secondary js-localized-datetime" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
+                                                <?= htmlspecialchars($time->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?>
                                             </time>
                                         </td>
                                         <td><?= $entry->getFormattedMessage(); ?></td>
