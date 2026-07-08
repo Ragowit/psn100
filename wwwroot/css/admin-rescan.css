@@ -1,0 +1,48 @@
+.diff-card .card-header {
+    font-weight: 600;
+}
+
+.diff-entry + .diff-entry {
+    margin-top: 1rem;
+}
+
+.diff-metadata {
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.diff-pane {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    padding: 0.75rem;
+    background-color: var(--bs-body-bg);
+    min-height: 120px;
+}
+
+.diff-pane-old {
+    border-color: rgba(220, 53, 69, 0.4);
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.diff-pane-new {
+    border-color: rgba(25, 135, 84, 0.4);
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+.diff-pane-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    color: var(--bs-secondary-color);
+}
+
+.diff-pre {
+    margin-bottom: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.875rem;
+}

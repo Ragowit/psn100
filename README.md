@@ -118,6 +118,8 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 - Admin reported-players delete confirmation moved to `admin-report-delete.js`.
 - Admin log bulk delete and shift-select handling moved to `admin-log-bulk-actions.js`.
 - Admin game merge streaming UI moved to `admin-merge-form.js`.
+- Admin game rescan streaming UI moved to `admin-rescan-form.js` with diff styles in
+  `admin-rescan.css`.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
