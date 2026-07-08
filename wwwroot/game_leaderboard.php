@@ -113,6 +113,7 @@ require_once("header.php");
                                         <span
                                             class="js-leaderboard-date"
                                             data-timestamp="<?= htmlspecialchars($row->getLastKnownDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-line-break="1"
                                         ></span>
                                     </td>
 
