@@ -1,55 +1,48 @@
 # PSN 100% <[https://psn100.net](https://psn100.net)>
 
 ## What is PSN 100%?
+
 PSN 100% is a trophy tracking platform dedicated to creating the ultimate 'clean' trophy list. By merging game stacks and filtering out unobtainable trophies, we provide a unified list of unique, earnable trophies. This ensures every user competes on a level playing field, without the need to replay titles or miss out due to technical issues or retired services.
 
 To maintain a competitive edge, PSN 100% calculates statistics exclusively from the top 10,000 players, offering more accurate benchmarks for dedicated hunters. Built by trophy hunters, for trophy hunters.
 
 ## What isn't PSN 100%?
+
 PSN 100% is not a community for discussion (forum), gaming/boosting sessions or trophy guides. Other sites already handle this with greatness, please use them.
 
-## Technology stack
+## Stack
+
 - **PHP:** 8.5
 - **MySQL:** 8.4
 
-## Deployment notes
+## Configuration
 
-### Database environment variables
+### Database
 
-The application reads MySQL credentials from `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`.
-Values are read from `$_ENV` when populated, and fall back to `getenv()` when they are not.
+The app connects using `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`. Values are read
+from `$_ENV` when populated, and fall back to `getenv()` otherwise. Missing configuration
+throws `DatabaseConnectionException` instead of attempting a connection with empty credentials.
 
-When using PHP's built-in development server, either export the variables in your shell or pass
-`-d variables_order=EGPCS` so `$_ENV` is populated:
+When using PHP's built-in server, pass `-d variables_order=EGPCS` (or export the variables in
+your shell) so `$_ENV` is populated. See `AGENTS.md` for a full local dev setup.
 
-```bash
-cd wwwroot && DB_HOST=127.0.0.1 DB_NAME=psn100 DB_USER=psn100 DB_PASSWORD=psn100 \
-php -d variables_order=EGPCS -S 0.0.0.0:8000 /tmp/psn100-router.php
-```
+### Reverse proxies
 
-If configuration is missing, the app throws a clear `DatabaseConnectionException` instead of
-attempting a connection with empty credentials.
+Queue submissions and player reports rate-limit by client IP using `REMOTE_ADDR` by default.
 
-### Reverse proxies and client IP limits
-
-Queue submissions and player reports rate-limit by client IP. By default the app uses
-`REMOTE_ADDR` only.
-
-If the app runs behind a trusted reverse proxy, set `TRUSTED_PROXY_IPS` to a comma-separated
-list of proxy addresses that may append `X-Forwarded-For`. When the direct client is a listed
-proxy, the leftmost valid IP from `X-Forwarded-For` is used for rate limiting.
-
-Example:
+Behind a trusted reverse proxy, set `TRUSTED_PROXY_IPS` to a comma-separated list of proxy
+addresses. When the direct client is listed, the leftmost valid `X-Forwarded-For` address is
+used. Only enable this when the proxy strips untrusted `X-Forwarded-For` values from clients.
 
 ```bash
 export TRUSTED_PROXY_IPS=127.0.0.1,10.0.0.1
 ```
 
-Only enable this when the proxy strips untrusted `X-Forwarded-For` values from clients.
+## Deployment
 
 ### Admin access
 
-Admin pages require a row in the `admin_user` table. Create an account with a bcrypt hash:
+Admin pages require a row in `admin_user`. Create an account with a bcrypt hash:
 
 ```bash
 php -r "echo password_hash('your-password', PASSWORD_DEFAULT), PHP_EOL;"
@@ -59,7 +52,7 @@ php -r "echo password_hash('your-password', PASSWORD_DEFAULT), PHP_EOL;"
 INSERT INTO admin_user (username, password_hash) VALUES ('admin', '$2y$10$...');
 ```
 
-### Protecting `/admin` and `/cron`
+### Apache hardening
 
 Production should layer Apache rules on top of the application:
 
@@ -68,73 +61,38 @@ Production should layer Apache rules on top of the application:
 - **`wwwroot/cron/.htaccess.example`** — deny all web clients except the host that runs
   scheduled jobs. Copy to `cron/.htaccess` and replace `127.0.0.1` with that server's IP.
 
-Cron entry scripts also refuse non-CLI execution in PHP (`CronCliAccessGuard`), which
-protects environments where `.htaccess` is not applied (for example the PHP built-in
-development server). Admin remains reachable in dev so you can exercise the login flow;
-use the Basic-auth template only on production Apache hosts.
+Cron scripts also refuse non-CLI execution in PHP (`CronCliAccessGuard`), which protects
+environments where `.htaccess` is not applied (for example the PHP built-in server).
 
-### Abuse resistance (queue polling, scan log, admin login)
+### Schema updates
 
-Existing deployments need the new tables from `database/psn100.sql`:
+Import `database/psn100.sql` on fresh databases. Existing deployments need these tables
+for abuse controls:
 
 - `ip_rate_limit` — fixed-window IP rate limits for public JSON endpoints
 - `admin_login_throttle` — failed admin login tracking and temporary lockouts
 
-Queue status polling (`check_queue_position.php`) requires a `poll_token` issued by the
-CSRF-protected `add_to_queue.php` response and stored in the visitor session. Poll
-requests are limited to 60 per IP per minute; `scan_log_poll.php` is limited to 30 per
-IP per minute. Admin login locks an IP for 15 minutes after five failed attempts.
+Queue polling (`check_queue_position.php`) requires a `poll_token` from the CSRF-protected
+`add_to_queue.php` response (60 requests per IP per minute). `scan_log_poll.php` allows 30
+per IP per minute. Admin login locks an IP for 15 minutes after five failed attempts.
 
-### Security hardening (Phase 3)
+## Security
 
-- Queue and report submissions return a friendly busy message (HTTP 503) when the MySQL
-  per-IP advisory lock cannot be acquired, instead of an uncaught 500.
-- Homepage queue polling renders structured `messageParts` with DOM APIs instead of
-  `innerHTML` for server responses.
-- Admin logout requires POST + CSRF and calls `session_destroy()`.
-- Worker refresh tokens can be edited from the admin Workers page (alongside NPSSO).
-- Player and game URLs use `rawurlencode()` consistently via `PlayerUrlBuilder`.
-- `Html::escape()` is the shared HTML-escaping helper for new code.
-- `Content-Security-Policy` is enforced from `init.php` via `ContentSecurityPolicy`.
+`init.php` sends standard security headers including an enforced `Content-Security-Policy`
+(see `ContentSecurityPolicy`). Scripts and styles are served from `'self'`; Bootstrap and
+Popper are vendored under `wwwroot/lib/`. User-facing output escaping uses `Html::escape()`.
+Admin logout requires POST with CSRF validation and calls `session_destroy()`.
 
-### Security hardening (Phase 4)
+## Tests
 
-- Unified date localization via `localized-date-formatter.js` removes per-row inline
-  scripts from game, trophy, player, and about pages.
-- Changelog regrouping moved to `changelog-date-grouping.js` with `cloneNode` instead
-  of `innerHTML` round-trips.
-- Class-layer HTML escaping migrated to `Html::escape()` in changelog, game header,
-  history, and message sanitizer code paths.
+Run the suite with `php tests/run.php` (custom runner, no PHPUnit). Most tests use in-memory
+SQLite and do not need MySQL.
 
-### Security hardening (Phase 5)
+Optional integration tests (including IP lock acquisition) run when `PSN100_INTEGRATION_TEST_DB=1`
+and a reachable `DB_*` configuration are available.
 
-- Removed unused jQuery from the public footer and dropped `code.jquery.com` from the
-  CSP Report-Only allowlist.
-- Homepage queue polling and popular-games filter logic moved to
-  `player-queue-manager.js`, removing the large inline script from `home.php`.
-- About-page scan log polling moved to `scan-log-renderer.js` with row-entry
-  animation styles in `scan-log-renderer.css`.
-- Admin reported-players delete confirmation moved to `admin-report-delete.js`.
-- Admin log bulk delete and shift-select handling moved to `admin-log-bulk-actions.js`.
-- Admin game merge streaming UI moved to `admin-merge-form.js`.
-- Admin game rescan streaming UI moved to `admin-rescan-form.js` with diff styles in
-  `admin-rescan.css`.
-- Bootstrap 5.3.8 and Popper 2.11.8 are self-hosted under `wwwroot/lib/` via
-  `BootstrapAssets`, removing `cdn.jsdelivr.net` from templates and the CSP
-  Report-Only allowlist.
-- Player page templates and `PlayerHeaderViewModel` now use `Html::escape()` instead
-  of `htmlentities()`.
-- Game page templates (`game.php`, `game_header.php`, `game_history.php`, `games.php`,
-  `trophy.php`, `trophies.php`, `home.php`) and `TrophyPage` use `Html::escape()`.
-- Admin templates and admin request handlers use `Html::escape()` instead of
-  `htmlentities()`.
-- CSP is enforced (no longer Report-Only); policy values live in
-  `ContentSecurityPolicy`.
+## Merge guideline priorities
 
-Optional MySQL integration tests (including IP lock acquisition) run when
-`PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
-
-## Merge Guideline Priorities
 1. Available > Delisted
 2. English language > Other language
 3. Digital > Physical
@@ -143,9 +101,11 @@ Optional MySQL integration tests (including IP lock acquisition) run when
 6. Collection/Bundle > Single entry
 
 ## Thanks
+
 - PSNP+ <[https://psnp-plus.netlify.app/](https://psnp-plus.netlify.app/)> ([HusKy](https://forum.psnprofiles.com/profile/229685-husky/)) for allowing PSN100 to use the "Unobtainable Trophies Master List" data.
 
 ## Other sites
+
 - PSN Profiles <[https://psnprofiles.com/](https://psnprofiles.com/)>
 - PlaystationTrophies <[https://www.playstationtrophies.org/](https://www.playstationtrophies.org/)>
 - PSN Trophy Leaders <[https://psntrophyleaders.com/](https://psntrophyleaders.com/)>
