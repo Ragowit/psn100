@@ -9,6 +9,8 @@ readonly class PlayerQueueResponse implements \JsonSerializable
     private function __construct(
         private PlayerQueueStatus $status,
         private string $message,
+        private ?string $pollToken = null,
+        private int $httpStatusCode = 200,
     ) {}
 
     public static function queued(string $message): self
@@ -26,6 +28,21 @@ readonly class PlayerQueueResponse implements \JsonSerializable
         return new self(PlayerQueueStatus::ERROR, $message);
     }
 
+    public static function rateLimited(string $message): self
+    {
+        return new self(PlayerQueueStatus::ERROR, $message, null, 429);
+    }
+
+    public function withPollToken(string $pollToken): self
+    {
+        return new self(
+            $this->status,
+            $this->message,
+            $pollToken,
+            $this->httpStatusCode,
+        );
+    }
+
     public function getStatusEnum(): PlayerQueueStatus
     {
         return $this->status;
@@ -41,6 +58,16 @@ readonly class PlayerQueueResponse implements \JsonSerializable
         return $this->message;
     }
 
+    public function getPollToken(): ?string
+    {
+        return $this->pollToken;
+    }
+
+    public function getHttpStatusCode(): int
+    {
+        return $this->httpStatusCode;
+    }
+
     public function shouldPoll(): bool
     {
         return $this->status === PlayerQueueStatus::QUEUED;
@@ -51,11 +78,17 @@ readonly class PlayerQueueResponse implements \JsonSerializable
      */
     public function toArray(): array
     {
-        return [
+        $payload = [
             'status' => $this->getStatus(),
             'message' => $this->getMessage(),
             'shouldPoll' => $this->shouldPoll(),
         ];
+
+        if ($this->pollToken !== null) {
+            $payload['pollToken'] = $this->pollToken;
+        }
+
+        return $payload;
     }
 
     #[\Override]

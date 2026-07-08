@@ -6,6 +6,16 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueRequest.php';
 
 final class PlayerQueueRequestTest extends TestCase
 {
+    public function testFromArraysReadsPollToken(): void
+    {
+        $request = PlayerQueueRequest::fromArrays(
+            ['q' => 'ExamplePlayer', 'poll_token' => ' poll-token '],
+            ['REMOTE_ADDR' => '127.0.0.1']
+        );
+
+        $this->assertSame('poll-token', $request->getPollToken());
+    }
+
     public function testFromArraysTrimsAndNormalizesValues(): void
     {
         $request = PlayerQueueRequest::fromArrays(

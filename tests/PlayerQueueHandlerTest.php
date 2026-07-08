@@ -8,6 +8,8 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueRequest.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponseFactory.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueService.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerQueuePollTokenManager.php';
+require_once __DIR__ . '/../wwwroot/classes/SessionManager.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerScanProgress.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerScanStatus.php';
 
@@ -177,6 +179,40 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
 
 final class PlayerQueueHandlerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+        session_start();
+        $_SESSION = [];
+    }
+
+    protected function tearDown(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
+            session_destroy();
+        }
+    }
+
+    private function createPollToken(string $playerName): string
+    {
+        return (new PlayerQueuePollTokenManager())->issue($playerName);
+    }
+
+    private function createQueuePositionRequest(string $playerName, string $ipAddress): PlayerQueueRequest
+    {
+        return PlayerQueueRequest::fromArrays(
+            [
+                'q' => $playerName,
+                'poll_token' => $this->createPollToken($playerName),
+            ],
+            ['REMOTE_ADDR' => $ipAddress]
+        );
+    }
+
     public function testHandleAddToQueueRequestReturnsErrorForEmptyName(): void
     {
         $service = new ConfigurablePlayerQueueServiceStub();
@@ -262,12 +298,28 @@ final class PlayerQueueHandlerTest extends TestCase
 
         $this->assertSame('queued', $response->getStatus());
         $this->assertTrue($response->shouldPoll());
+        $this->assertTrue($response->getPollToken() !== null);
         $this->assertStringContainsString('is being added to the queue', $response->getMessage());
         $this->assertSame(
             [
                 ['playerName' => 'ValidUser', 'ipAddress' => '192.168.0.1'],
             ],
             $service->getQueuedPlayers()
+        );
+    }
+
+    public function testHandleQueuePositionRequestReturnsErrorWhenPollTokenMissing(): void
+    {
+        $service = new ConfigurablePlayerQueueServiceStub();
+        $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
+        $request = PlayerQueueRequest::fromArrays(['q' => 'QueueUser'], ['REMOTE_ADDR' => '10.0.0.7']);
+
+        $response = $handler->handleQueuePositionRequest($request);
+
+        $this->assertSame('error', $response->getStatus());
+        $this->assertSame(
+            'Your session has expired. Please reload the page and try again.',
+            $response->getMessage()
         );
     }
 
@@ -288,7 +340,7 @@ final class PlayerQueueHandlerTest extends TestCase
         $service = new ConfigurablePlayerQueueServiceStub();
         $service->setIsValidPlayerName(false);
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
-        $request = PlayerQueueRequest::fromArrays(['q' => 'invalid name'], ['REMOTE_ADDR' => '10.0.0.4']);
+        $request = $this->createQueuePositionRequest('invalid name', '10.0.0.4');
 
         $response = $handler->handleQueuePositionRequest($request);
 
@@ -308,7 +360,7 @@ final class PlayerQueueHandlerTest extends TestCase
             'status' => PlayerQueueService::CHEATER_STATUS,
         ]);
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
-        $request = PlayerQueueRequest::fromArrays(['q' => 'Cheater'], ['REMOTE_ADDR' => '10.0.0.5']);
+        $request = $this->createQueuePositionRequest('Cheater', '10.0.0.5');
 
         $response = $handler->handleQueuePositionRequest($request);
 
@@ -329,7 +381,7 @@ final class PlayerQueueHandlerTest extends TestCase
             'title' => 'Game <Title>',
         ]);
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
-        $request = PlayerQueueRequest::fromArrays(['q' => 'ScanningUser'], ['REMOTE_ADDR' => '10.0.0.6']);
+        $request = $this->createQueuePositionRequest('ScanningUser', '10.0.0.6');
 
         $response = $handler->handleQueuePositionRequest($request);
 
@@ -349,7 +401,7 @@ final class PlayerQueueHandlerTest extends TestCase
         ]);
         $service->setQueuePosition(5);
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
-        $request = PlayerQueueRequest::fromArrays(['q' => 'QueueUser'], ['REMOTE_ADDR' => '10.0.0.7']);
+        $request = $this->createQueuePositionRequest('QueueUser', '10.0.0.7');
 
         $response = $handler->handleQueuePositionRequest($request);
 
@@ -362,7 +414,7 @@ final class PlayerQueueHandlerTest extends TestCase
     {
         $service = new ConfigurablePlayerQueueServiceStub();
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
-        $request = PlayerQueueRequest::fromArrays(['q' => 'UnknownUser'], ['REMOTE_ADDR' => '10.0.0.8']);
+        $request = $this->createQueuePositionRequest('UnknownUser', '10.0.0.8');
 
         $response = $handler->handleQueuePositionRequest($request);
 
@@ -378,7 +430,7 @@ final class PlayerQueueHandlerTest extends TestCase
             'status' => null,
         ]);
         $handler = new PlayerQueueHandler($service, new PlayerQueueResponseFactory($service));
-        $request = PlayerQueueRequest::fromArrays(['q' => 'FinishedUser'], ['REMOTE_ADDR' => '10.0.0.9']);
+        $request = $this->createQueuePositionRequest('FinishedUser', '10.0.0.9');
 
         $response = $handler->handleQueuePositionRequest($request);
 

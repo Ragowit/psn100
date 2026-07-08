@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/../classes/IpAddressResolver.php';
 require_once __DIR__ . '/../classes/SessionManager.php';
 require_once __DIR__ . '/../classes/CsrfTokenManager.php';
 require_once __DIR__ . '/../classes/Admin/AdminBootstrap.php';
@@ -27,10 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
     $password = is_string($_POST['password'] ?? null) ? (string) $_POST['password'] : '';
+    $ipAddress = IpAddressResolver::resolveFromServer($_SERVER ?? []);
 
     if (!$authService->isConfigured()) {
         $errorMessage = 'Admin access is not configured. Add at least one row to the admin_user table.';
-    } elseif ($authService->login($username, $password)) {
+    } elseif ($authService->isLoginLocked($ipAddress)) {
+        $remainingMinutes = (int) ceil($authService->getLoginLockoutRemainingSeconds($ipAddress) / 60);
+        $errorMessage = sprintf(
+            'Too many failed login attempts. Please try again in %d minute%s.',
+            max($remainingMinutes, 1),
+            $remainingMinutes === 1 ? '' : 's'
+        );
+    } elseif ($authService->login($username, $password, $ipAddress)) {
         header('Location: /admin/', true, 303);
         exit;
     } else {

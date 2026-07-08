@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../CsrfTokenManager.php';
 require_once __DIR__ . '/../SessionManager.php';
 require_once __DIR__ . '/AdminAuthService.php';
+require_once __DIR__ . '/AdminLoginThrottleService.php';
 require_once __DIR__ . '/AdminUserRepository.php';
 
 final class AdminBootstrap
@@ -31,7 +32,12 @@ final class AdminBootstrap
 
     public static function createAuthService(): AdminAuthService
     {
-        return new AdminAuthService(new AdminUserRepository(self::requireDatabase()));
+        $database = self::requireDatabase();
+
+        return new AdminAuthService(
+            new AdminUserRepository($database),
+            new AdminLoginThrottleService($database),
+        );
     }
 
     public static function getCsrfToken(): string

@@ -73,6 +73,18 @@ protects environments where `.htaccess` is not applied (for example the PHP buil
 development server). Admin remains reachable in dev so you can exercise the login flow;
 use the Basic-auth template only on production Apache hosts.
 
+### Abuse resistance (queue polling, scan log, admin login)
+
+Existing deployments need the new tables from `database/psn100.sql`:
+
+- `ip_rate_limit` — fixed-window IP rate limits for public JSON endpoints
+- `admin_login_throttle` — failed admin login tracking and temporary lockouts
+
+Queue status polling (`check_queue_position.php`) requires a `poll_token` issued by the
+CSRF-protected `add_to_queue.php` response and stored in the visitor session. Poll
+requests are limited to 60 per IP per minute; `scan_log_poll.php` is limited to 30 per
+IP per minute. Admin login locks an IP for 15 minutes after five failed attempts.
+
 ## Merge Guideline Priorities
 1. Available > Delisted
 2. English language > Other language

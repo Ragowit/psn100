@@ -241,6 +241,7 @@ class PlayerQueueManager {
         this.messageElement = document.getElementById(messageElementId);
         this.pollInterval = pollInterval;
         this.timerId = null;
+        this.pollToken = null;
     }
 
     initialize() {
@@ -271,10 +272,14 @@ class PlayerQueueManager {
         this.sendPostRequest('add_to_queue.php', body, (response) => {
             this.updateQueueResult(response.message);
 
+            if (typeof response.pollToken === 'string' && response.pollToken !== '') {
+                this.pollToken = response.pollToken;
+            }
+
             if (response.shouldPoll) {
                 this.startPolling(player);
             } else {
-                this.stopPolling();
+                this.stopPolling(true);
             }
         });
     }
@@ -285,21 +290,30 @@ class PlayerQueueManager {
     }
 
     checkQueuePosition(player) {
-        const url = `check_queue_position.php?q=${encodeURIComponent(player)}`;
+        const url = new URL('check_queue_position.php', window.location.href);
+        url.searchParams.set('q', player);
 
-        this.sendRequest(url, (response) => {
+        if (typeof this.pollToken === 'string' && this.pollToken !== '') {
+            url.searchParams.set('poll_token', this.pollToken);
+        }
+
+        this.sendRequest(url.toString(), (response) => {
             this.updateQueueResult(response.message);
 
             if (!response.shouldPoll) {
-                this.stopPolling();
+                this.stopPolling(true);
             }
         });
     }
 
-    stopPolling() {
+    stopPolling(clearPollToken = false) {
         if (this.timerId !== null) {
             window.clearInterval(this.timerId);
             this.timerId = null;
+        }
+
+        if (clearPollToken) {
+            this.pollToken = null;
         }
     }
 
@@ -371,8 +385,9 @@ class PlayerQueueManager {
             const message = typeof data.message === 'string' ? data.message : '';
             const shouldPoll = typeof data.shouldPoll === 'boolean' ? data.shouldPoll : false;
             const status = typeof data.status === 'string' ? data.status : 'error';
+            const pollToken = typeof data.pollToken === 'string' ? data.pollToken : '';
 
-            return { message, shouldPoll, status };
+            return { message, shouldPoll, status, pollToken };
         } catch (error) {
             return null;
         }
@@ -394,7 +409,7 @@ class PlayerQueueManager {
 
     handleError() {
         this.updateQueueResult('An error occurred while contacting the server. Please try again later.');
-        this.stopPolling();
+        this.stopPolling(true);
     }
 }
 
