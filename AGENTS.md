@@ -64,7 +64,9 @@ the non-obvious steps to actually run the services.
     php -d variables_order=EGPCS -S 0.0.0.0:8000 /tmp/psn100-router.php
   ```
 - The "Update" box on the homepage submits a PSN name to `add_to_queue.php?q=<name>`
-  (param key is `q`); valid names match `^[\w\-]{3,16}$` and are inserted into
+  (param key is `q`); valid names must match `PlayerQueueService::ONLINE_ID_PATTERN`
+  (`^[a-zA-Z][a-zA-Z0-9_-]{2,15}$` — 3–16 characters, starting with a letter;
+  letters, numbers, hyphens, and underscores allowed) and are inserted into
   `player_queue`. This is a quick way to exercise a real DB write.
 
 ### `/admin` and `/cron` access control
