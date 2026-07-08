@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/GameListItem.php';
 require_once __DIR__ . '/GameListPageResult.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
+require_once __DIR__ . '/PlayerQueueService.php';
 
 class GameListService
 {
@@ -23,7 +24,7 @@ class GameListService
         }
 
         $onlineId = trim($onlineId);
-        if ($onlineId === '') {
+        if ($onlineId === '' || !PlayerQueueService::isValidOnlineId($onlineId)) {
             return null;
         }
 
