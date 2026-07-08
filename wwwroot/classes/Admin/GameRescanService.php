@@ -14,6 +14,7 @@ require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
 require_once __DIR__ . '/PsnTrophyLookupGroupDataProvider.php';
+require_once __DIR__ . '/GameRescanPsnAccessor.php';
 require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/WorkerService.php';
 
@@ -21,9 +22,6 @@ use Tustin\PlayStation\Client;
 
 class GameRescanService
 {
-    private const ORIGINAL_GAME_PREFIX = 'NPWR';
-    private const LOGIN_RETRY_DELAY_SECONDS = 300;
-
     private PDO $database;
     private TrophyCalculator $trophyCalculator;
     private TrophyMetaRepository $trophyMetaRepository;
@@ -35,7 +33,7 @@ class GameRescanService
     private PsnTrophyLookupGroupDataProvider $trophyLookupGroupDataProvider;
     private TrophyImageDirectories $imageDirectories;
     private TrophyImageDownloader $imageDownloader;
-    private PlayStationWorkerAuthenticator $workerAuthenticator;
+    private GameRescanPsnAccessor $psnAccessor;
     private TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
 
     /**
@@ -53,6 +51,7 @@ class GameRescanService
         ?TrophyImageDirectories $imageDirectories = null,
         ?TrophyImageDownloader $imageDownloader = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
+        ?GameRescanPsnAccessor $psnAccessor = null,
         ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
     )
     {
@@ -67,9 +66,10 @@ class GameRescanService
         $this->imageDirectories = $imageDirectories ?? TrophyImageDirectories::productionDefault();
         $this->imageDownloader = $imageDownloader ?? new TrophyImageDownloader($this->imageHashCalculator);
         $this->trophyCatalogSynchronizer = $trophyCatalogSynchronizer ?? new TrophyCatalogSynchronizer($database);
-        $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
+        $workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
             new WorkerService($database),
         );
+        $this->psnAccessor = $psnAccessor ?? new GameRescanPsnAccessor($database, $workerAuthenticator);
     }
 
     /**
@@ -95,11 +95,11 @@ class GameRescanService
             $differenceTracker = new GameRescanDifferenceTracker();
             $progressReporter = new GameRescanProgressReporter($progressListener);
             $progressReporter->notify(5, 'Validating game id…');
-            $npCommunicationId = $this->getGameNpCommunicationId($gameId);
+            $npCommunicationId = $this->psnAccessor->getGameNpCommunicationId($gameId);
 
             $progressReporter->notify(10, 'Checking game entry…');
 
-            if (!$this->isOriginalGame($npCommunicationId)) {
+            if (!$this->psnAccessor->isOriginalGame($npCommunicationId)) {
                 return new GameRescanResult(
                     'Can only rescan original game entries.',
                     $differenceTracker->getDifferences()
@@ -107,15 +107,19 @@ class GameRescanService
             }
 
             $progressReporter->notify(15, 'Signing in to worker account…');
-            $client = $this->loginToWorker();
+            $client = $this->psnAccessor->loginToWorker(
+                function (int $workerId, Throwable $exception): void {
+                    $this->logMessage("Can't login with worker " . $workerId);
+                },
+            );
             $progressReporter->notify(20, 'Locating accessible player…');
-            $user = $this->findAccessibleUserWithGame($client, $npCommunicationId);
+            $user = $this->psnAccessor->findAccessibleUserWithGame($client, $npCommunicationId);
 
             if ($user === null) {
                 throw new RuntimeException('Unable to find accessible player for the specified game.');
             }
 
-            $trophyTitle = $this->findTrophyTitleForUser($user, $npCommunicationId);
+            $trophyTitle = $this->psnAccessor->findTrophyTitleForUser($user, $npCommunicationId);
 
             if ($trophyTitle === null) {
                 throw new RuntimeException('Unable to find trophy title for the specified game.');
@@ -160,38 +164,6 @@ class GameRescanService
         }
     }
 
-    private function getGameNpCommunicationId(int $gameId): string
-    {
-        $query = $this->database->prepare('SELECT np_communication_id FROM trophy_title WHERE id = :id');
-        $query->bindValue(':id', $gameId, PDO::PARAM_INT);
-        $query->execute();
-
-        $npCommunicationId = $query->fetchColumn();
-        if ($npCommunicationId === false) {
-            throw new RuntimeException('Unable to find the specified game.');
-        }
-
-        return (string) $npCommunicationId;
-    }
-
-    private function isOriginalGame(string $npCommunicationId): bool
-    {
-        return str_starts_with($npCommunicationId, self::ORIGINAL_GAME_PREFIX);
-    }
-
-    private function loginToWorker(): Client
-    {
-        /** @var Client $client */
-        $client = $this->workerAuthenticator->authenticateWithRetry(
-            self::LOGIN_RETRY_DELAY_SECONDS,
-            function (int $workerId, Throwable $exception): void {
-                $this->logMessage("Can't login with worker " . $workerId);
-            },
-        );
-
-        return $client;
-    }
-
     private function logMessage(string $message): void
     {
         if ($this->logListener !== null) {
@@ -203,46 +175,6 @@ class GameRescanService
         $query = $this->database->prepare('INSERT INTO log(message) VALUES(:message)');
         $query->bindValue(':message', $message, PDO::PARAM_STR);
         $query->execute();
-    }
-
-    private function findAccessibleUserWithGame(Client $client, string $npCommunicationId): ?object
-    {
-        $query = $this->database->prepare(
-            'SELECT account_id
-            FROM trophy_title_player ttp
-            JOIN player p USING(account_id)
-            WHERE ttp.np_communication_id = :np_communication_id
-            ORDER BY ttp.last_updated_date DESC'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        while (($accountId = $query->fetchColumn()) !== false) {
-            $user = $client->users()->find((string) $accountId);
-
-            try {
-                $user->trophySummary()->level();
-
-                return $user;
-            } catch (TypeError $exception) {
-                // Something odd, try next player.
-            } catch (Exception $exception) {
-                // Player probably private, try next player.
-            }
-        }
-
-        return null;
-    }
-
-    private function findTrophyTitleForUser(object $user, string $npCommunicationId): ?object
-    {
-        foreach ($user->trophyTitles() as $trophyTitle) {
-            if ($trophyTitle->npCommunicationId() === $npCommunicationId) {
-                return $trophyTitle;
-            }
-        }
-
-        return null;
     }
 
     private function updateTrophyTitle(
