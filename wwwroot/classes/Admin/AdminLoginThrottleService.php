@@ -44,24 +44,15 @@ final class AdminLoginThrottleService
             return;
         }
 
-        $row = $this->fetchRow($ipAddress);
-        $now = $this->formatTimestamp($this->clock());
-        $failureCount = $row === null ? 1 : (int) ($row['failure_count'] ?? 0) + 1;
-        $lockedUntil = null;
+        $lastAttemptAt = $this->formatTimestamp($this->clock());
 
-        if ($failureCount >= self::MAX_FAILURES) {
-            $lockedUntil = $this->formatTimestamp(
-                $this->clock()->modify('+' . self::LOCK_SECONDS . ' seconds')
-            );
-        }
-
-        if ($row === null) {
-            $this->insertRow($ipAddress, $failureCount, $lockedUntil, $now);
+        if ($this->isSqlite()) {
+            $this->recordFailureSqlite($ipAddress, $lastAttemptAt);
 
             return;
         }
 
-        $this->updateRow($ipAddress, $failureCount, $lockedUntil, $now);
+        $this->recordFailureMysql($ipAddress, $lastAttemptAt);
     }
 
     public function recordSuccess(string $ipAddress): void
@@ -77,9 +68,9 @@ final class AdminLoginThrottleService
         $statement->execute();
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
+  /**
+   * @return array<string, mixed>|null
+   */
     private function fetchRow(string $ipAddress): ?array
     {
         $statement = $this->database->prepare(
@@ -102,58 +93,59 @@ final class AdminLoginThrottleService
         return is_array($row) ? $row : null;
     }
 
-    private function insertRow(
-        string $ipAddress,
-        int $failureCount,
-        ?string $lockedUntil,
-        string $lastAttemptAt,
-    ): void {
+    private function recordFailureMysql(string $ipAddress, string $lastAttemptAt): void
+    {
         $statement = $this->database->prepare(
             <<<'SQL'
             INSERT INTO admin_login_throttle (ip_address, failure_count, locked_until, last_attempt_at)
-            VALUES (:ip_address, :failure_count, :locked_until, :last_attempt_at)
+            VALUES (:ip_address, 1, NULL, :last_attempt_at)
+            AS new_values
+            ON DUPLICATE KEY UPDATE
+                failure_count = admin_login_throttle.failure_count + 1,
+                last_attempt_at = new_values.last_attempt_at,
+                locked_until = IF(
+                    admin_login_throttle.failure_count + 1 >= :max_failures,
+                    CURRENT_TIMESTAMP + INTERVAL :lock_seconds SECOND,
+                    admin_login_throttle.locked_until
+                )
             SQL
         );
         $statement->bindValue(':ip_address', $ipAddress, PDO::PARAM_STR);
-        $statement->bindValue(':failure_count', $failureCount, PDO::PARAM_INT);
-        $this->bindNullableTimestamp($statement, ':locked_until', $lockedUntil);
         $statement->bindValue(':last_attempt_at', $lastAttemptAt, PDO::PARAM_STR);
+        $statement->bindValue(':max_failures', self::MAX_FAILURES, PDO::PARAM_INT);
+        $statement->bindValue(':lock_seconds', self::LOCK_SECONDS, PDO::PARAM_INT);
         $statement->execute();
     }
 
-    private function updateRow(
-        string $ipAddress,
-        int $failureCount,
-        ?string $lockedUntil,
-        string $lastAttemptAt,
-    ): void {
+    private function recordFailureSqlite(string $ipAddress, string $lastAttemptAt): void
+    {
+        $lockedUntil = $this->formatTimestamp(
+            $this->clock()->modify('+' . self::LOCK_SECONDS . ' seconds')
+        );
+
         $statement = $this->database->prepare(
             <<<'SQL'
-            UPDATE admin_login_throttle
-            SET
-                failure_count = :failure_count,
-                locked_until = :locked_until,
-                last_attempt_at = :last_attempt_at
-            WHERE
-                ip_address = :ip_address
+            INSERT INTO admin_login_throttle (ip_address, failure_count, locked_until, last_attempt_at)
+            VALUES (:ip_address, 1, NULL, :last_attempt_at)
+            ON CONFLICT(ip_address) DO UPDATE SET
+                failure_count = failure_count + 1,
+                last_attempt_at = excluded.last_attempt_at,
+                locked_until = CASE
+                    WHEN failure_count + 1 >= :max_failures THEN :locked_until
+                    ELSE locked_until
+                END
             SQL
         );
         $statement->bindValue(':ip_address', $ipAddress, PDO::PARAM_STR);
-        $statement->bindValue(':failure_count', $failureCount, PDO::PARAM_INT);
-        $this->bindNullableTimestamp($statement, ':locked_until', $lockedUntil);
         $statement->bindValue(':last_attempt_at', $lastAttemptAt, PDO::PARAM_STR);
+        $statement->bindValue(':max_failures', self::MAX_FAILURES, PDO::PARAM_INT);
+        $statement->bindValue(':locked_until', $lockedUntil, PDO::PARAM_STR);
         $statement->execute();
     }
 
-    private function bindNullableTimestamp(PDOStatement $statement, string $parameter, ?string $value): void
+    private function isSqlite(): bool
     {
-        if ($value === null) {
-            $statement->bindValue($parameter, null, PDO::PARAM_NULL);
-
-            return;
-        }
-
-        $statement->bindValue($parameter, $value, PDO::PARAM_STR);
+        return $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
     }
 
     private function parseTimestamp(mixed $value): ?DateTimeImmutable
