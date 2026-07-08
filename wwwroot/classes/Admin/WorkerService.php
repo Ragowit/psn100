@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Worker.php';
+require_once __DIR__ . '/WorkerCredentialField.php';
 require_once __DIR__ . '/CommandExecutionResult.php';
 require_once __DIR__ . '/CommandExecutorInterface.php';
 require_once __DIR__ . '/SystemCommandExecutor.php';
@@ -105,6 +106,31 @@ final class WorkerService
         $statement->execute();
 
         return $statement->rowCount() > 0;
+    }
+
+    public function fetchWorkerCredential(int $workerId, WorkerCredentialField $field): ?string
+    {
+        $query = match ($field) {
+            WorkerCredentialField::RefreshToken => 'SELECT refresh_token FROM setting WHERE id = :id',
+            WorkerCredentialField::Npsso => 'SELECT npsso FROM setting WHERE id = :id',
+        };
+
+        $statement = $this->database->prepare($query);
+
+        if ($statement === false) {
+            return null;
+        }
+
+        $statement->bindValue(':id', $workerId, PDO::PARAM_INT);
+        $statement->execute();
+
+        $credential = $statement->fetchColumn();
+
+        if ($credential === false) {
+            return null;
+        }
+
+        return (string) $credential;
     }
 
     public function restartWorker(int $workerId): CommandExecutionResult
