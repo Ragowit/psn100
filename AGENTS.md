@@ -97,7 +97,8 @@ the non-obvious steps to actually run the services.
 - Date localization uses `/js/localized-date-formatter.js`; changelog grouping uses
   `/js/changelog-date-grouping.js`; homepage queue polling uses
   `/js/player-queue-manager.js`; about-page scan log polling uses
-  `/js/scan-log-renderer.js`.
+  `/js/scan-log-renderer.js`; admin reported-player deletes use
+  `/js/admin-report-delete.js`.
 
 ### Composer
 
