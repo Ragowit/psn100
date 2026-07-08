@@ -62,6 +62,37 @@ final class AdminLoginThrottleServiceTest extends TestCase
         $this->assertTrue($this->service->isLocked($ipAddress));
     }
 
+    public function testResetsFailureCountAfterLockoutExpires(): void
+    {
+        $ipAddress = '192.0.2.23';
+
+        for ($index = 0; $index < AdminLoginThrottleService::MAX_FAILURES; $index++) {
+            $this->service->recordFailure($ipAddress);
+        }
+
+        $this->assertTrue($this->service->isLocked($ipAddress));
+
+        $statement = $this->pdo->prepare(
+            'UPDATE admin_login_throttle SET locked_until = :locked_until WHERE ip_address = :ip_address'
+        );
+        $statement->bindValue(':locked_until', '2020-01-01 00:00:00', PDO::PARAM_STR);
+        $statement->bindValue(':ip_address', $ipAddress, PDO::PARAM_STR);
+        $statement->execute();
+
+        $this->assertFalse($this->service->isLocked($ipAddress));
+
+        $this->service->recordFailure($ipAddress);
+        $this->assertFalse($this->service->isLocked($ipAddress));
+
+        for ($index = 0; $index < AdminLoginThrottleService::MAX_FAILURES - 2; $index++) {
+            $this->service->recordFailure($ipAddress);
+            $this->assertFalse($this->service->isLocked($ipAddress));
+        }
+
+        $this->service->recordFailure($ipAddress);
+        $this->assertTrue($this->service->isLocked($ipAddress));
+    }
+
     public function testRecordSuccessClearsThrottleState(): void
     {
         $ipAddress = '192.0.2.21';

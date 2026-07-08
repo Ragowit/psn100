@@ -46,13 +46,31 @@ final class AdminLoginThrottleService
 
         $lastAttemptAt = $this->formatTimestamp($this->clock());
 
-        if ($this->isSqlite()) {
-            $this->recordFailureSqlite($ipAddress, $lastAttemptAt);
-
-            return;
+        $startedTransaction = false;
+        if (!$this->database->inTransaction()) {
+            $this->database->beginTransaction();
+            $startedTransaction = true;
         }
 
-        $this->recordFailureMysql($ipAddress, $lastAttemptAt);
+        try {
+            $this->clearExpiredLockout($ipAddress, $lastAttemptAt);
+
+            if ($this->isSqlite()) {
+                $this->recordFailureSqlite($ipAddress, $lastAttemptAt);
+            } else {
+                $this->recordFailureMysql($ipAddress, $lastAttemptAt);
+            }
+
+            if ($startedTransaction) {
+                $this->database->commit();
+            }
+        } catch (Throwable $exception) {
+            if ($startedTransaction && $this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function recordSuccess(string $ipAddress): void
@@ -91,6 +109,22 @@ final class AdminLoginThrottleService
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
+    }
+
+    private function clearExpiredLockout(string $ipAddress, string $now): void
+    {
+        $statement = $this->database->prepare(
+            <<<'SQL'
+            DELETE FROM admin_login_throttle
+            WHERE
+                ip_address = :ip_address
+                AND locked_until IS NOT NULL
+                AND locked_until <= :now
+            SQL
+        );
+        $statement->bindValue(':ip_address', $ipAddress, PDO::PARAM_STR);
+        $statement->bindValue(':now', $now, PDO::PARAM_STR);
+        $statement->execute();
     }
 
     private function recordFailureMysql(string $ipAddress, string $lastAttemptAt): void
