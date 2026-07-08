@@ -101,6 +101,9 @@ the non-obvious steps to actually run the services.
   `/js/admin-report-delete.js`; admin log bulk actions use
   `/js/admin-log-bulk-actions.js`; admin game merge UI uses `/js/admin-merge-form.js`;
   admin game rescan UI uses `/js/admin-rescan-form.js`.
+- Player page templates (`player.php`, `player_header.php`, `player_log.php`,
+  `player_advisor.php`, `player_random.php`, `player_report.php`) and
+  `PlayerHeaderViewModel` use `Html::escape()` for output escaping.
 
 ### Composer
 
