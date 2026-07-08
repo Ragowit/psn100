@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesPageContext.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
+require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
