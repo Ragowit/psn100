@@ -5,16 +5,22 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerQueueRequest.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerQueueResponseFactory.php';
+require_once __DIR__ . '/PlayerQueuePollTokenManager.php';
+require_once __DIR__ . '/IpRateLimitService.php';
 
 class PlayerQueueHandler
 {
     private readonly PlayerQueueResponseFactory $responseFactory;
 
+    private readonly PlayerQueuePollTokenManager $pollTokenManager;
+
     public function __construct(
         private readonly PlayerQueueService $service,
         ?PlayerQueueResponseFactory $responseFactory = null,
+        ?PlayerQueuePollTokenManager $pollTokenManager = null,
     ) {
         $this->responseFactory = $responseFactory ?? new PlayerQueueResponseFactory($service);
+        $this->pollTokenManager = $pollTokenManager ?? new PlayerQueuePollTokenManager();
     }
 
     public function handleAddToQueueRequest(PlayerQueueRequest $request): PlayerQueueResponse
@@ -39,7 +45,13 @@ class PlayerQueueHandler
             return $this->responseFactory->createQueueLimitResponse();
         }
 
-        return $this->responseFactory->createQueuedForAdditionResponse($playerName);
+        $response = $this->responseFactory->createQueuedForAdditionResponse($playerName);
+
+        if ($response->shouldPoll()) {
+            return $response->withPollToken($this->pollTokenManager->issue($playerName));
+        }
+
+        return $response;
     }
 
     public function handleQueuePositionRequest(PlayerQueueRequest $request): PlayerQueueResponse
@@ -52,6 +64,12 @@ class PlayerQueueHandler
 
         if (!$this->service->isValidPlayerName($playerName)) {
             return $this->responseFactory->createInvalidNameResponse();
+        }
+
+        if (!$this->pollTokenManager->validate($playerName, $request->getPollToken())) {
+            return PlayerQueueResponse::error(
+                'Your session has expired. Please reload the page and try again.'
+            );
         }
 
         $playerData = $this->service->getPlayerStatusData($playerName);

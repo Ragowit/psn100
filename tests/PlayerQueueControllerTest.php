@@ -7,6 +7,7 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueController.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueHandler.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueRequest.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
+require_once __DIR__ . '/../wwwroot/classes/IpRateLimitService.php';
 
 final class PlayerQueueHandlerSpy extends PlayerQueueHandler
 {
@@ -32,6 +33,12 @@ final class PlayerQueueHandlerSpy extends PlayerQueueHandler
     public function getHandledMethod(): ?string
     {
         return $this->handledMethod;
+    }
+
+    public function resetCapturedState(): void
+    {
+        $this->capturedRequest = null;
+        $this->handledMethod = null;
     }
 
     public function handleAddToQueueRequest(PlayerQueueRequest $request): PlayerQueueResponse
@@ -101,5 +108,34 @@ final class PlayerQueueControllerTest extends TestCase
         $this->assertTrue($capturedRequest instanceof PlayerQueueRequest);
         $this->assertSame('QueueUser', $capturedRequest->getPlayerName());
         $this->assertSame('198.51.100.23', $capturedRequest->getIpAddress());
+    }
+
+    public function testHandleQueuePositionReturnsRateLimitedResponseWhenIpLimitExceeded(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(
+            <<<'SQL'
+            CREATE TABLE ip_rate_limit (
+                bucket_key TEXT PRIMARY KEY,
+                window_start TEXT NOT NULL,
+                request_count INTEGER NOT NULL
+            )
+            SQL
+        );
+
+        $rateLimitService = new IpRateLimitService($pdo);
+        $handler = new PlayerQueueHandlerSpy(PlayerQueueResponse::complete('unused'));
+        $controller = new PlayerQueueController($handler, $rateLimitService);
+
+        for ($index = 0; $index < 60; $index++) {
+            $controller->handleQueuePosition(['q' => 'QueueUser', 'poll_token' => 'token'], ['REMOTE_ADDR' => '192.0.2.44']);
+        }
+
+        $handler->resetCapturedState();
+        $result = $controller->handleQueuePosition(['q' => 'QueueUser', 'poll_token' => 'token'], ['REMOTE_ADDR' => '192.0.2.44']);
+
+        $this->assertSame(429, $result->getHttpStatusCode());
+        $this->assertSame(null, $handler->getHandledMethod());
     }
 }

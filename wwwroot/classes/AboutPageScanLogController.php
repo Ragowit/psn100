@@ -6,6 +6,8 @@ require_once __DIR__ . '/AboutPageService.php';
 require_once __DIR__ . '/AboutPageScanSummary.php';
 require_once __DIR__ . '/AboutPagePlayerArraySerializer.php';
 require_once __DIR__ . '/JsonResponseEmitter.php';
+require_once __DIR__ . '/IpRateLimitService.php';
+require_once __DIR__ . '/IpAddressResolver.php';
 
 final class AboutPageScanLogController
 {
@@ -15,6 +17,7 @@ final class AboutPageScanLogController
 
     private AboutPageService $aboutPageService;
     private JsonResponseEmitter $jsonResponder;
+    private ?IpRateLimitService $rateLimitService;
     private int $defaultLimit;
     private int $minLimit;
     private int $maxLimit;
@@ -22,27 +25,50 @@ final class AboutPageScanLogController
     public function __construct(
         AboutPageService $aboutPageService,
         JsonResponseEmitter $jsonResponder,
+        ?IpRateLimitService $rateLimitService = null,
         int $defaultLimit = self::DEFAULT_LIMIT,
         int $minLimit = self::MIN_LIMIT,
         int $maxLimit = self::MAX_LIMIT
     ) {
         $this->aboutPageService = $aboutPageService;
         $this->jsonResponder = $jsonResponder;
+        $this->rateLimitService = $rateLimitService;
         $this->defaultLimit = $defaultLimit;
         $this->minLimit = $minLimit;
         $this->maxLimit = $maxLimit;
     }
 
-    public static function create(AboutPageService $aboutPageService, JsonResponseEmitter $jsonResponder): self
-    {
-        return new self($aboutPageService, $jsonResponder);
+    public static function create(
+        AboutPageService $aboutPageService,
+        JsonResponseEmitter $jsonResponder,
+        ?IpRateLimitService $rateLimitService = null,
+    ): self {
+        return new self($aboutPageService, $jsonResponder, $rateLimitService);
     }
 
     /**
      * @param array<string, mixed> $queryParameters
+     * @param array<string, mixed> $serverParameters
      */
-    public function handle(array $queryParameters = []): void
+    public function handle(array $queryParameters = [], array $serverParameters = []): void
     {
+        if ($this->rateLimitService !== null) {
+            $ipAddress = IpAddressResolver::resolveFromServer($serverParameters);
+            if (
+                !$this->rateLimitService->checkAndRecord(
+                    $ipAddress,
+                    IpRateLimitService::BUCKET_SCAN_LOG_POLL
+                )
+            ) {
+                $this->jsonResponder->respond([
+                    'status' => 'error',
+                    'message' => 'Too many scan log requests. Please wait a moment and try again.',
+                ], 429);
+
+                return;
+            }
+        }
+
         $limit = $this->resolveLimit($queryParameters['limit'] ?? null);
 
         try {

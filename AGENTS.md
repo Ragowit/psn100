@@ -77,6 +77,9 @@ the non-obvious steps to actually run the services.
   Admin is intentionally left reachable in dev for login testing.
 - Cron jobs must be run via CLI, e.g. `php wwwroot/cron/hourly.php`. Each script in
   `wwwroot/cron/` loads `cron/bootstrap.php` first to reject HTTP execution.
+- Queue polling and admin login abuse controls use `ip_rate_limit` and
+  `admin_login_throttle` tables (see `database/psn100.sql`). Import the schema on
+  fresh VMs; existing production DBs need those tables added before deploying Phase 2.
 
 ### Tests
 

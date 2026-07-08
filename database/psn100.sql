@@ -29,6 +29,31 @@ CREATE TABLE `admin_user` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `admin_login_throttle`
+--
+
+CREATE TABLE `admin_login_throttle` (
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `failure_count` smallint UNSIGNED NOT NULL DEFAULT '0',
+  `locked_until` timestamp NULL DEFAULT NULL,
+  `last_attempt_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ip_rate_limit`
+--
+
+CREATE TABLE `ip_rate_limit` (
+  `bucket_key` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `window_start` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `request_count` int UNSIGNED NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `log`
 --
 
@@ -429,6 +454,18 @@ CREATE TABLE `trophy_title_player` (
 --
 ALTER TABLE `admin_user`
   ADD PRIMARY KEY (`username`);
+
+--
+-- Indexes for table `admin_login_throttle`
+--
+ALTER TABLE `admin_login_throttle`
+  ADD PRIMARY KEY (`ip_address`);
+
+--
+-- Indexes for table `ip_rate_limit`
+--
+ALTER TABLE `ip_rate_limit`
+  ADD PRIMARY KEY (`bucket_key`);
 
 --
 -- Indexes for table `log`

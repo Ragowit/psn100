@@ -10,6 +10,7 @@ require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayer.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayerArraySerializer.php';
 require_once __DIR__ . '/../wwwroot/classes/Utility.php';
 require_once __DIR__ . '/../wwwroot/classes/JsonResponseEmitter.php';
+require_once __DIR__ . '/../wwwroot/classes/IpRateLimitService.php';
 
 final class FakeAboutPageService extends AboutPageService
 {
@@ -119,6 +120,50 @@ final class AboutPageScanLogControllerTest extends TestCase
         ob_end_clean();
 
         $this->assertSame(5, $service->getCapturedLimit());
+    }
+
+    public function testHandleRespondsWithErrorWhenRateLimitExceeded(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(
+            <<<'SQL'
+            CREATE TABLE ip_rate_limit (
+                bucket_key TEXT PRIMARY KEY,
+                window_start TEXT NOT NULL,
+                request_count INTEGER NOT NULL
+            )
+            SQL
+        );
+
+        $utility = new Utility();
+        $players = [
+            new AboutPagePlayer($utility, 'SoloPlayer', 'gb', 'avatar3.png', '2024-01-03 08:30:00', 75, '90', 0, 0, 1, 1, 5),
+        ];
+        $summary = new AboutPageScanSummary(3, 1);
+        $service = new FakeAboutPageService($summary, $players);
+        $controller = new AboutPageScanLogController(
+            $service,
+            new JsonResponseEmitter(),
+            new IpRateLimitService($pdo)
+        );
+
+        for ($index = 0; $index < 30; $index++) {
+            header_remove();
+            ob_start();
+            $controller->handle([], ['REMOTE_ADDR' => '192.0.2.50']);
+            ob_end_clean();
+        }
+
+        header_remove();
+        ob_start();
+        $controller->handle([], ['REMOTE_ADDR' => '192.0.2.50']);
+        $output = ob_get_clean();
+
+        $this->assertSame(429, http_response_code());
+        $decodedOutput = json_decode((string) $output, true);
+        $this->assertTrue(is_array($decodedOutput));
+        $this->assertSame('error', $decodedOutput['status'] ?? null);
     }
 
     public function testHandleRespondsWithErrorWhenExceptionThrown(): void

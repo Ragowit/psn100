@@ -7,6 +7,30 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueStatus.php';
 
 final class PlayerQueueResponseTest extends TestCase
 {
+    public function testRateLimitedResponseUsesHttpStatus429(): void
+    {
+        $response = PlayerQueueResponse::rateLimited('Too many requests.');
+
+        $this->assertSame('error', $response->getStatus());
+        $this->assertSame(429, $response->getHttpStatusCode());
+        $this->assertFalse($response->shouldPoll());
+    }
+
+    public function testQueuedResponseCanIncludePollToken(): void
+    {
+        $response = PlayerQueueResponse::queued('Queued for processing')->withPollToken('poll-token');
+
+        $this->assertSame(
+            [
+                'status' => 'queued',
+                'message' => 'Queued for processing',
+                'shouldPoll' => true,
+                'pollToken' => 'poll-token',
+            ],
+            $response->toArray()
+        );
+    }
+
     public function testQueuedResponseIncludesShouldPollTrue(): void
     {
         $response = PlayerQueueResponse::queued('Queued for processing');

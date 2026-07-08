@@ -9,14 +9,16 @@ readonly class PlayerQueueRequest
     private function __construct(
         private string $playerName,
         private string $ipAddress,
+        private string $pollToken,
     ) {}
 
     public static function fromArrays(array $requestData, array $serverData): self
     {
         $playerName = self::sanitizeValue($requestData['q'] ?? '');
         $ipAddress = IpAddressResolver::resolveFromServer($serverData);
+        $pollToken = self::sanitizeValue($requestData['poll_token'] ?? $requestData['pollToken'] ?? '');
 
-        return new self($playerName, $ipAddress);
+        return new self($playerName, $ipAddress, $pollToken);
     }
 
     public function getPlayerName(): string
@@ -27,6 +29,11 @@ readonly class PlayerQueueRequest
     public function getIpAddress(): string
     {
         return $this->ipAddress;
+    }
+
+    public function getPollToken(): string
+    {
+        return $this->pollToken;
     }
 
     public function isPlayerNameEmpty(): bool

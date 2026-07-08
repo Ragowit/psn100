@@ -36,13 +36,13 @@ class PlayerQueueEndpoint
     {
         $response = $this->controller->handleAddToQueue($requestData, $serverData);
 
-        $this->jsonResponder->respond($response);
+        $this->jsonResponder->respond($response->toArray(), $response->getHttpStatusCode());
     }
 
     public function handleQueuePosition(array $requestData, array $serverData): void
     {
         $response = $this->controller->handleQueuePosition($requestData, $serverData);
 
-        $this->jsonResponder->respond($response);
+        $this->jsonResponder->respond($response->toArray(), $response->getHttpStatusCode());
     }
 }
