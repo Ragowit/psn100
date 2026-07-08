@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once 'classes/Leaderboard/RarityLeaderboardPageContext.php';
+require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
 $rarityLeaderboardPageContext = RarityLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
 $title = $rarityLeaderboardPageContext->getTitle();
@@ -68,7 +69,7 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
                                             </div>
 
                                             <div>
-                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/player/<?= htmlspecialchars($row->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($row->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
+                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars(PlayerUrlBuilder::playerPath($row->getOnlineId()), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($row->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
                                             </div>
 
                                             <div class="ms-auto">

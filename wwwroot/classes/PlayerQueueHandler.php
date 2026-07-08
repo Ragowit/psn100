@@ -7,6 +7,7 @@ require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerQueueResponseFactory.php';
 require_once __DIR__ . '/PlayerQueuePollTokenManager.php';
 require_once __DIR__ . '/IpRateLimitService.php';
+require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
 
 class PlayerQueueHandler
 {
@@ -41,8 +42,12 @@ class PlayerQueueHandler
             return $this->responseFactory->createInvalidNameResponse();
         }
 
-        if (!$this->service->addPlayerToQueue($playerName, $ipAddress)) {
-            return $this->responseFactory->createQueueLimitResponse();
+        try {
+            if (!$this->service->addPlayerToQueue($playerName, $ipAddress)) {
+                return $this->responseFactory->createQueueLimitResponse();
+            }
+        } catch (IpSubmissionLockUnavailableException) {
+            return $this->responseFactory->createBusyResponse();
         }
 
         $response = $this->responseFactory->createQueuedForAdditionResponse($playerName);

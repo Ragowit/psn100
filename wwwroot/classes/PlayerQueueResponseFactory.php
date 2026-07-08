@@ -6,12 +6,16 @@ require_once __DIR__ . '/PlayerQueueService.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
 require_once __DIR__ . '/PlayerScanProgress.php';
+require_once __DIR__ . '/PlayerQueueMessageBuilder.php';
+require_once __DIR__ . '/PlayerUrlBuilder.php';
 
 final class PlayerQueueResponseFactory
 {
     private const string EMPTY_NAME_MESSAGE = "PSN name can't be empty.";
 
     private const string INVALID_NAME_MESSAGE = "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
+
+    private const string BUSY_MESSAGE = 'The server is busy processing another request. Please try again in a moment.';
 
     public function __construct(private readonly PlayerQueueService $service)
     {
@@ -32,14 +36,31 @@ final class PlayerQueueResponseFactory
         return PlayerQueueResponse::error($this->createQueueLimitMessage());
     }
 
+    public function createBusyResponse(): PlayerQueueResponse
+    {
+        return PlayerQueueResponse::busy(self::BUSY_MESSAGE);
+    }
+
     public function createCheaterResponse(string $playerName, ?string $accountId): PlayerQueueResponse
     {
-        return PlayerQueueResponse::error($this->createCheaterMessage($playerName, $accountId));
+        $messageParts = PlayerQueueMessageBuilder::create()
+            ->text("Player '")
+            ->playerLink($playerName)
+            ->text("' is tagged as a cheater and won't be scanned. ")
+            ->link(PlayerStatusNotice::createDisputeUrl($playerName, $accountId), 'Dispute')
+            ->text('?')
+            ->build();
+
+        return PlayerQueueResponse::error($this->buildPlainText($messageParts), $messageParts);
     }
 
     public function createQueuedForAdditionResponse(string $playerName): PlayerQueueResponse
     {
-        $message = $this->createPlayerLink($playerName) . ' is being added to the queue.';
+        $message = PlayerQueueMessageBuilder::create()
+            ->playerLink($playerName)
+            ->text(' is being added to the queue.')
+            ->spinner()
+            ->build();
 
         return $this->createQueuedResponse($message);
     }
@@ -48,97 +69,122 @@ final class PlayerQueueResponseFactory
         string $playerName,
         ?PlayerScanProgress $scanProgress = null
     ): PlayerQueueResponse {
-        $message = $this->createPlayerLink($playerName) . ' is currently being scanned.';
+        $builder = PlayerQueueMessageBuilder::create()
+            ->playerLink($playerName)
+            ->text(' is currently being scanned.');
 
         if ($scanProgress !== null) {
-            $message .= $this->createScanProgressMessage($scanProgress);
+            $this->appendScanProgressParts($builder, $scanProgress);
         }
 
-        return $this->createQueuedResponse($message);
+        $builder->spinner();
+
+        return $this->createQueuedResponse($builder->build());
     }
 
     public function createQueuePositionResponse(string $playerName, int|string $position): PlayerQueueResponse
     {
-        $positionText = $this->service->escapeHtml((string) $position);
-        $message = $this->createPlayerLink($playerName)
-            . ' is in the update queue, currently in position '
-            . $positionText . '.';
+        $message = PlayerQueueMessageBuilder::create()
+            ->playerLink($playerName)
+            ->text(' is in the update queue, currently in position ' . (string) $position . '.')
+            ->spinner()
+            ->build();
 
         return $this->createQueuedResponse($message);
     }
 
     public function createQueueCompleteResponse(string $playerName): PlayerQueueResponse
     {
-        $playerLink = $this->createPlayerLink($playerName);
+        $message = PlayerQueueMessageBuilder::create()
+            ->playerLink($playerName)
+            ->text(' has been updated!')
+            ->build();
 
-        return PlayerQueueResponse::complete($playerLink . ' has been updated!');
+        return PlayerQueueResponse::complete($this->buildPlainText($message), $message);
     }
 
     public function createPlayerNotFoundResponse(string $playerName): PlayerQueueResponse
     {
-        $playerLink = $this->createPlayerLink($playerName);
+        $message = PlayerQueueMessageBuilder::create()
+            ->playerLink($playerName)
+            ->text(' was not found. Please check the spelling and try again.')
+            ->build();
 
-        return PlayerQueueResponse::error($playerLink . ' was not found. Please check the spelling and try again.');
+        return PlayerQueueResponse::error($this->buildPlainText($message), $message);
     }
 
-    private function createQueuedResponse(string $message): PlayerQueueResponse
+    /**
+     * @param list<array<string, mixed>> $messageParts
+     */
+    private function createQueuedResponse(array $messageParts): PlayerQueueResponse
     {
-        return PlayerQueueResponse::queued($this->createSpinnerMessage($message));
+        return PlayerQueueResponse::queued($this->buildPlainText($messageParts), $messageParts);
     }
 
-    private function createPlayerLink(string $playerName): string
+  /**
+   * @param list<array<string, mixed>> $messageParts
+   */
+    private function buildPlainText(array $messageParts): string
     {
-        $escapedPlayerName = $this->service->escapeHtml($playerName);
-        $playerUrl = '/player/' . rawurlencode($playerName);
-        $escapedPlayerUrl = $this->service->escapeHtml($playerUrl);
+        $builder = PlayerQueueMessageBuilder::create();
 
-        return '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="'
-            . $escapedPlayerUrl . '">' . $escapedPlayerName . '</a>';
-    }
+        foreach ($messageParts as $part) {
+            $type = $part['type'] ?? '';
 
-    private function createSpinnerMessage(string $message): string
-    {
-        return $message
-            . "\n<div class=\"spinner-border\" role=\"status\">\n    <span class=\"visually-hidden\">Loading...</span>\n</div>";
-    }
-
-    private function createScanProgressMessage(PlayerScanProgress $progress): string
-    {
-        $parts = [];
-
-        $title = $progress->getTitle();
-        if ($title !== null) {
-            $progressTitle = $this->formatProgressTitle($title);
-
-            if ($progressTitle !== '') {
-                $parts[] = $progressTitle;
+            if ($type === 'text') {
+                $builder->text((string) ($part['value'] ?? ''));
+            } elseif ($type === 'link') {
+                $builder->link(
+                    (string) ($part['href'] ?? ''),
+                    (string) ($part['label'] ?? '')
+                );
+            } elseif ($type === 'emphasis') {
+                $builder->emphasis((string) ($part['value'] ?? ''));
+            } elseif ($type === 'progress') {
+                $builder->progress(
+                    (int) ($part['percentage'] ?? 0),
+                    isset($part['title']) ? (string) $part['title'] : null,
+                    isset($part['summary']) ? (string) $part['summary'] : null,
+                );
             }
         }
 
+        return $builder->toPlainText();
+    }
+
+    private function appendScanProgressParts(PlayerQueueMessageBuilder $builder, PlayerScanProgress $progress): void
+    {
+        $title = $progress->getTitle();
         $summary = $progress->getProgressSummary();
-        if ($summary !== null) {
-            $parts[] = $summary;
-        }
-
-        if ($parts === []) {
-            return '';
-        }
-
-        $message = ' ' . implode(' ', $parts) . '.';
-
         $percentage = $progress->getPercentage();
+        $formattedTitle = $title !== null ? $this->formatProgressTitle($title) : '';
+
+        if ($formattedTitle !== '') {
+            if (
+                $title !== null
+                && !$this->isErrorProgressTitle($title)
+                && preg_match('/^(Updating|Fetching)\b/i', $title) !== 1
+            ) {
+                $normalizedTitle = preg_replace('/\s+for\s+[^.]+\.?$/i', '', trim($title)) ?? '';
+                $normalizedTitle = rtrim($normalizedTitle, " .\t\n\r\0\v");
+                $builder->text(' Working on ');
+                $builder->emphasis($normalizedTitle);
+            } else {
+                $builder->text(' ' . $formattedTitle);
+            }
+        }
+
+        if ($summary !== null) {
+            $builder->text(' ' . $summary);
+        }
+
+        if ($formattedTitle !== '' || $summary !== null) {
+            $builder->text('.');
+        }
 
         if ($percentage !== null) {
-            $message .= sprintf(
-                '<div class="progress mt-2" role="progressbar" aria-valuenow="%d" aria-valuemin="0" aria-valuemax="100">'
-                . '<div class="progress-bar bg-primary" style="width: %d%%;"></div>'
-                . '</div>',
-                $percentage,
-                $percentage
-            );
+            $builder->progress($percentage, $formattedTitle !== '' ? $formattedTitle : null, $summary);
         }
-
-        return $message;
     }
 
     private function formatProgressTitle(string $title): string
@@ -151,32 +197,19 @@ final class PlayerQueueResponseFactory
         }
 
         if (preg_match('/^(Updating|Fetching)\b/i', $normalizedTitle) === 1) {
-            $actionText = strtolower($normalizedTitle);
-            $escapedActionText = $this->service->escapeHtml($actionText);
-
-            return ucfirst($escapedActionText);
+            return ucfirst(strtolower($normalizedTitle));
         }
 
         if ($this->isErrorProgressTitle($normalizedTitle)) {
-            return $this->service->escapeHtml($normalizedTitle);
+            return $normalizedTitle;
         }
 
-        return 'Working on <strong>' . $this->service->escapeHtml($normalizedTitle) . '</strong>';
+        return 'Working on ' . $normalizedTitle;
     }
 
     private function isErrorProgressTitle(string $title): bool
     {
         return preg_match('/\\b(failed|error|problem|unable|denied|unavailable|timeout)\\b/i', $title) === 1;
-    }
-
-    private function createCheaterMessage(string $playerName, ?string $accountId): string
-    {
-        $playerLink = $this->createPlayerLink($playerName);
-        $disputeUrl = PlayerStatusNotice::createDisputeUrl($playerName, $accountId);
-        $disputeLink = '<a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="'
-            . $this->service->escapeHtml($disputeUrl) . '">Dispute</a>';
-
-        return "Player '{$playerLink}' is tagged as a cheater and won't be scanned. {$disputeLink}?";
     }
 
     private function createQueueLimitMessage(): string

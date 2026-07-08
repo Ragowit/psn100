@@ -86,6 +86,13 @@ the non-obvious steps to actually run the services.
 - Run the full suite with `php tests/run.php` (custom runner, no PHPUnit). It does not
   need MySQL — DB-backed tests use in-memory SQLite, so `php8.5-sqlite3` must be
   installed (it is, in the image).
+- Optional MySQL integration tests are skipped unless `PSN100_INTEGRATION_TEST_DB=1` and
+  `DB_HOST` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` point at a reachable database.
+
+### Security headers
+
+- `init.php` sends `Content-Security-Policy-Report-Only` alongside existing security
+  headers. Enforcement is deferred until inline scripts/CDN usage are migrated.
 
 ### Composer
 

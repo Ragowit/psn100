@@ -69,6 +69,35 @@ final class PlayerQueueResponseTest extends TestCase
         $this->assertSame($response->toArray(), $response->jsonSerialize());
     }
 
+    public function testBusyResponseUsesHttpStatus503(): void
+    {
+        $response = PlayerQueueResponse::busy('Server busy.');
+
+        $this->assertSame('error', $response->getStatus());
+        $this->assertSame(503, $response->getHttpStatusCode());
+        $this->assertFalse($response->shouldPoll());
+    }
+
+    public function testQueuedResponseIncludesMessagePartsInPayload(): void
+    {
+        $parts = [
+            ['type' => 'text', 'value' => 'Hello'],
+            ['type' => 'spinner'],
+        ];
+        $response = PlayerQueueResponse::queued('Hello', $parts);
+
+        $this->assertSame($parts, $response->getMessageParts());
+        $this->assertSame(
+            [
+                'status' => 'queued',
+                'message' => 'Hello',
+                'shouldPoll' => true,
+                'messageParts' => $parts,
+            ],
+            $response->toArray()
+        );
+    }
+
     public function testErrorResponseIncludesShouldPollFalse(): void
     {
         $response = PlayerQueueResponse::error('An error occurred');

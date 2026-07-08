@@ -85,6 +85,22 @@ CSRF-protected `add_to_queue.php` response and stored in the visitor session. Po
 requests are limited to 60 per IP per minute; `scan_log_poll.php` is limited to 30 per
 IP per minute. Admin login locks an IP for 15 minutes after five failed attempts.
 
+### Security hardening (Phase 3)
+
+- Queue and report submissions return a friendly busy message (HTTP 503) when the MySQL
+  per-IP advisory lock cannot be acquired, instead of an uncaught 500.
+- Homepage queue polling renders structured `messageParts` with DOM APIs instead of
+  `innerHTML` for server responses.
+- Admin logout requires POST + CSRF and calls `session_destroy()`.
+- Worker refresh tokens can be edited from the admin Workers page (alongside NPSSO).
+- Player and game URLs use `rawurlencode()` consistently via `PlayerUrlBuilder`.
+- `Html::escape()` is the shared HTML-escaping helper for new code.
+- `Content-Security-Policy-Report-Only` is sent from `init.php` to collect violations
+  before enforcing a stricter policy.
+
+Optional MySQL integration tests (including IP lock acquisition) run when
+`PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
+
 ## Merge Guideline Priorities
 1. Available > Delisted
 2. English language > Other language

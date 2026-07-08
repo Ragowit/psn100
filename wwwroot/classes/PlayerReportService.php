@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerReportResult.php';
 require_once __DIR__ . '/IpSubmissionLockExecutor.php';
+require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
 
 class PlayerReportService
 {
@@ -31,30 +32,36 @@ class PlayerReportService
             );
         }
 
-        $outcome = $this->getIpSubmissionLockExecutor()->execute(
-            $ipAddress,
-            function () use ($accountId, $ipAddress, $explanation): string {
-                if ($this->hasExistingReport($accountId, $ipAddress)) {
-                    return self::SUBMIT_OUTCOME_DUPLICATE;
-                }
-
-                if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
-                    return self::SUBMIT_OUTCOME_LIMIT;
-                }
-
-                try {
-                    $this->insertReport($accountId, $ipAddress, $explanation);
-                } catch (PDOException $exception) {
-                    if ($this->isDuplicateReportException($exception)) {
+        try {
+            $outcome = $this->getIpSubmissionLockExecutor()->execute(
+                $ipAddress,
+                function () use ($accountId, $ipAddress, $explanation): string {
+                    if ($this->hasExistingReport($accountId, $ipAddress)) {
                         return self::SUBMIT_OUTCOME_DUPLICATE;
                     }
 
-                    throw $exception;
-                }
+                    if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
+                        return self::SUBMIT_OUTCOME_LIMIT;
+                    }
 
-                return self::SUBMIT_OUTCOME_SUCCESS;
-            }
-        );
+                    try {
+                        $this->insertReport($accountId, $ipAddress, $explanation);
+                    } catch (PDOException $exception) {
+                        if ($this->isDuplicateReportException($exception)) {
+                            return self::SUBMIT_OUTCOME_DUPLICATE;
+                        }
+
+                        throw $exception;
+                    }
+
+                    return self::SUBMIT_OUTCOME_SUCCESS;
+                }
+            );
+        } catch (IpSubmissionLockUnavailableException) {
+            return PlayerReportResult::error(
+                'The server is busy processing another request. Please try again in a moment.'
+            );
+        }
 
         return match ($outcome) {
             self::SUBMIT_OUTCOME_SUCCESS => PlayerReportResult::success('Player reported successfully.'),

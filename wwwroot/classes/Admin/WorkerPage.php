@@ -57,6 +57,7 @@ final class WorkerPage
 
         return match ($action) {
             'update_npsso' => $this->processUpdateNpsso($request),
+            'update_refresh_token' => $this->processUpdateRefreshToken($request),
             'restart_worker' => $this->processRestartWorker($request),
             'restart_all_workers' => $this->processRestartAllWorkers(),
             default => [null, 'Unsupported action requested.'],
@@ -95,6 +96,40 @@ final class WorkerPage
         }
 
         return [null, 'Unable to update NPSSO. Please verify the worker still exists.'];
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function processUpdateRefreshToken(AdminRequest $request): array
+    {
+        $workerId = $request->getPostPositiveInt('worker_id');
+
+        if ($workerId === null) {
+            return [null, 'Invalid worker selected.'];
+        }
+
+        $refreshToken = $request->getPostString('refresh_token');
+
+        if ($refreshToken === '') {
+            return [null, 'The refresh token cannot be empty.'];
+        }
+
+        if (strlen($refreshToken) > 36) {
+            return [null, 'The refresh token must be 36 characters or fewer.'];
+        }
+
+        try {
+            $updated = $this->workerService->updateWorkerRefreshToken($workerId, $refreshToken);
+        } catch (Throwable $exception) {
+            return [null, 'An unexpected error occurred while updating the refresh token.'];
+        }
+
+        if ($updated) {
+            return ['Worker refresh token updated successfully.', null];
+        }
+
+        return [null, 'Unable to update refresh token. Please verify the worker still exists.'];
     }
 
     /**

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-final class IpSubmissionLockExecutor
+require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
+
+class IpSubmissionLockExecutor
 {
     private const string LOCK_NAME_PREFIX = 'psn100:ip:';
 
@@ -30,7 +32,7 @@ final class IpSubmissionLockExecutor
 
         $lockAcquired = (int) ($lockStatement->fetchColumn() ?? 0) === 1;
         if (!$lockAcquired) {
-            throw new RuntimeException('Unable to acquire IP submission lock.');
+            throw new IpSubmissionLockUnavailableException('Unable to acquire IP submission lock.');
         }
 
         try {

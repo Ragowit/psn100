@@ -270,7 +270,7 @@ class PlayerQueueManager {
         });
 
         this.sendPostRequest('add_to_queue.php', body, (response) => {
-            this.updateQueueResult(response.message);
+            this.updateQueueResult(response);
 
             if (typeof response.pollToken === 'string' && response.pollToken !== '') {
                 this.pollToken = response.pollToken;
@@ -298,7 +298,7 @@ class PlayerQueueManager {
         }
 
         this.sendRequest(url.toString(), (response) => {
-            this.updateQueueResult(response.message);
+            this.updateQueueResult(response);
 
             if (!response.shouldPoll) {
                 this.stopPolling(true);
@@ -386,19 +386,86 @@ class PlayerQueueManager {
             const shouldPoll = typeof data.shouldPoll === 'boolean' ? data.shouldPoll : false;
             const status = typeof data.status === 'string' ? data.status : 'error';
             const pollToken = typeof data.pollToken === 'string' ? data.pollToken : '';
+            const messageParts = Array.isArray(data.messageParts) ? data.messageParts : [];
 
-            return { message, shouldPoll, status, pollToken };
+            return { message, shouldPoll, status, pollToken, messageParts };
         } catch (error) {
             return null;
         }
     }
 
-    updateQueueResult(message) {
-        if (this.messageElement) {
-            this.messageElement.innerHTML = message;
+    updateQueueResult(response) {
+        if (!this.messageElement) {
+            return;
+        }
+
+        if (response && Array.isArray(response.messageParts) && response.messageParts.length > 0) {
+            this.renderMessageParts(response.messageParts);
+        } else {
+            this.messageElement.textContent = response?.message ?? '';
         }
 
         this.showQueueResult();
+    }
+
+    renderMessageParts(parts) {
+        this.messageElement.replaceChildren();
+
+        parts.forEach((part) => {
+            if (!part || typeof part !== 'object') {
+                return;
+            }
+
+            switch (part.type) {
+                case 'text':
+                    this.messageElement.appendChild(document.createTextNode(part.value ?? ''));
+                    break;
+                case 'link': {
+                    const anchor = document.createElement('a');
+                    anchor.className = 'link-underline link-underline-opacity-0 link-underline-opacity-100-hover';
+                    anchor.href = typeof part.href === 'string' ? part.href : '#';
+                    anchor.textContent = part.label ?? '';
+                    this.messageElement.appendChild(anchor);
+                    break;
+                }
+                case 'emphasis': {
+                    const emphasis = document.createElement('strong');
+                    emphasis.textContent = part.value ?? '';
+                    this.messageElement.appendChild(emphasis);
+                    break;
+                }
+                case 'spinner': {
+                    this.messageElement.appendChild(document.createElement('br'));
+                    const spinner = document.createElement('div');
+                    spinner.className = 'spinner-border';
+                    spinner.setAttribute('role', 'status');
+                    const hidden = document.createElement('span');
+                    hidden.className = 'visually-hidden';
+                    hidden.textContent = 'Loading...';
+                    spinner.appendChild(hidden);
+                    this.messageElement.appendChild(spinner);
+                    break;
+                }
+                case 'progress': {
+                    const progress = document.createElement('div');
+                    progress.className = 'progress mt-2';
+                    progress.setAttribute('role', 'progressbar');
+                    const percentage = Number(part.percentage ?? 0);
+                    progress.setAttribute('aria-valuenow', String(percentage));
+                    progress.setAttribute('aria-valuemin', '0');
+                    progress.setAttribute('aria-valuemax', '100');
+
+                    const bar = document.createElement('div');
+                    bar.className = 'progress-bar bg-primary';
+                    bar.style.width = `${percentage}%`;
+                    progress.appendChild(bar);
+                    this.messageElement.appendChild(progress);
+                    break;
+                }
+                default:
+                    break;
+            }
+        });
     }
 
     showQueueResult() {
@@ -408,7 +475,10 @@ class PlayerQueueManager {
     }
 
     handleError() {
-        this.updateQueueResult('An error occurred while contacting the server. Please try again later.');
+        this.updateQueueResult({
+            message: 'An error occurred while contacting the server. Please try again later.',
+            messageParts: [],
+        });
         this.stopPolling(true);
     }
 }

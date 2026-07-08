@@ -82,6 +82,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                         <?php } ?>
                                     </a>
                                 </th>
+                                <th scope="col" style="width: 18rem;">Refresh Token</th>
                                 <th scope="col" style="width: 18rem;">NPSSO</th>
                                 <th scope="col" style="width: 16rem;">Scanning</th>
                                 <th scope="col" style="width: 16rem;">
@@ -107,6 +108,21 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                 ?>
                                 <tr>
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>
+                                        <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
+                                            <input type="hidden" name="action" value="update_refresh_token">
+                                            <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input
+                                                type="text"
+                                                name="refresh_token"
+                                                class="form-control form-control-sm"
+                                                value="<?= htmlspecialchars($worker->getRefreshToken(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                maxlength="36"
+                                            >
+                                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                        </form>
+                                    </td>
                                     <td>
                                         <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
                     <?php AdminBootstrap::renderCsrfField(); ?>

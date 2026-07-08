@@ -10,6 +10,7 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueService.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueuePollTokenManager.php';
 require_once __DIR__ . '/../wwwroot/classes/SessionManager.php';
+require_once __DIR__ . '/../wwwroot/classes/IpSubmissionLockUnavailableException.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerScanProgress.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerScanStatus.php';
 
@@ -32,6 +33,8 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
     private bool $playerBeingScanned = false;
 
     private ?PlayerScanProgress $scanProgress = null;
+
+    private bool $throwLockUnavailable = false;
 
     public function __construct()
     {
@@ -68,8 +71,17 @@ final class ConfigurablePlayerQueueServiceStub extends PlayerQueueService
         return $this->isValidPlayerName;
     }
 
+    public function setThrowLockUnavailable(bool $throwLockUnavailable): void
+    {
+        $this->throwLockUnavailable = $throwLockUnavailable;
+    }
+
     public function addPlayerToQueue(string $playerName, string $ipAddress): bool
     {
+        if ($this->throwLockUnavailable) {
+            throw new IpSubmissionLockUnavailableException('Unable to acquire IP submission lock.');
+        }
+
         if ($this->hasReachedIpLimit && !$this->isPlayerInQueue($playerName)) {
             return false;
         }
@@ -368,6 +380,20 @@ final class PlayerQueueHandlerTest extends TestCase
         $this->assertStringContainsString('tagged as a cheater', $response->getMessage());
     }
 
+    public function testHandleAddToQueueRequestReturnsBusyResponseWhenLockUnavailable(): void
+    {
+        $service = new ConfigurablePlayerQueueServiceStub();
+        $service->setThrowLockUnavailable(true);
+        $handler = new PlayerQueueHandler($service);
+        $request = PlayerQueueRequest::fromArrays(['q' => 'QueueUser'], ['REMOTE_ADDR' => '192.0.2.40']);
+
+        $response = $handler->handleAddToQueueRequest($request);
+
+        $this->assertSame('error', $response->getStatus());
+        $this->assertSame(503, $response->getHttpStatusCode());
+        $this->assertStringContainsString('busy', strtolower($response->getMessage()));
+    }
+
     public function testHandleQueuePositionRequestReturnsQueuedForScanWhenPlayerBeingScanned(): void
     {
         $service = new ConfigurablePlayerQueueServiceStub();
@@ -388,8 +414,13 @@ final class PlayerQueueHandlerTest extends TestCase
         $this->assertSame('queued', $response->getStatus());
         $this->assertTrue($response->shouldPoll());
         $this->assertStringContainsString('is currently being scanned.', $response->getMessage());
-        $this->assertStringContainsString('Working on <strong>Game &lt;Title&gt;</strong> (3/10).', $response->getMessage());
-        $this->assertStringContainsString('class="progress mt-2"', $response->getMessage());
+        $this->assertStringContainsString('Working on Game <Title> (3/10)', $response->getMessage());
+
+        $parts = $response->getMessageParts();
+        $this->assertTrue(is_array($parts));
+        $progressParts = array_values(array_filter($parts, static fn (array $part): bool => ($part['type'] ?? '') === 'progress'));
+        $this->assertSame(1, count($progressParts));
+        $this->assertSame(30, $progressParts[0]['percentage'] ?? null);
     }
 
     public function testHandleQueuePositionRequestReturnsQueuePositionWhenAvailable(): void

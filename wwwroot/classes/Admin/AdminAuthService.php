@@ -75,5 +75,9 @@ final class AdminAuthService
     public function logout(): void
     {
         unset($_SESSION[self::SESSION_AUTHENTICATED_KEY], $_SESSION[self::SESSION_USERNAME_KEY]);
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
     }
 }

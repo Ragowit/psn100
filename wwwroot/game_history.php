@@ -27,6 +27,8 @@ try {
 }
 
 $game = $gameHistoryPage->getGame();
+$gameSlug = $game->getId() . '-' . $utility->slugify($game->getName());
+$encodedGamePlayer = isset($player) ? '/' . rawurlencode((string) $player) : '';
 $gameHeaderData = $gameHistoryPage->getGameHeaderData();
 $historyEntries = $gameHistoryPage->getHistoryEntries();
 $metaData = $gameHistoryPage->createMetaData();
@@ -91,10 +93,10 @@ require_once 'header.php';
 
             <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= isset($player) ? '/' . $player : ''; ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= isset($player) ? '/' . $player : ''; ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= isset($player) ? '/' . $player : ''; ?>">Recent Players</a>
-                    <a class="btn btn-primary active" href="/game-history/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= isset($player) ? '/' . $player : ''; ?>">History</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Recent Players</a>
+                    <a class="btn btn-primary active" href="/game-history/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">History</a>
                 </div>
             </div>
 

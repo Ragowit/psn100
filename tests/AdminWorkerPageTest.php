@@ -82,6 +82,21 @@ final class AdminWorkerPageTest extends TestCase
         $this->assertSame(null, $result->getErrorMessage());
     }
 
+    public function testHandleProcessesUpdateRefreshTokenRequests(): void
+    {
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (7, 'old-token', 'np', 'Worker', '2024-01-01 00:00:00', null)");
+
+        $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, '')));
+        $page = new WorkerPage($service);
+
+        $request = new AdminRequest('POST', ['action' => 'update_refresh_token', 'worker_id' => '7', 'refresh_token' => 'new-refresh-token-value']);
+        $result = $page->handle([], $request);
+
+        $this->assertSame('Worker refresh token updated successfully.', $result->getSuccessMessage());
+        $this->assertSame(null, $result->getErrorMessage());
+        $this->assertSame('new-refresh-token-value', $result->getWorkers()[0]->getRefreshToken());
+    }
+
     public function testHandleProcessesRestartAllWorkersFailure(): void
     {
         $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (1, '', 'np', 'Worker', '2024-01-01 00:00:00', null)");
