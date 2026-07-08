@@ -6,6 +6,7 @@ require_once __DIR__ . '/classes/PageMetaData.php';
 require_once __DIR__ . '/classes/PageMetaDataRenderer.php';
 require_once __DIR__ . '/classes/SessionManager.php';
 require_once __DIR__ . '/classes/CsrfTokenManager.php';
+require_once __DIR__ . '/classes/StaticAsset.php';
 
 SessionManager::ensureStarted();
 $publicCsrfToken = htmlspecialchars(CsrfTokenManager::getToken('public'), ENT_QUOTES, 'UTF-8');
@@ -161,7 +162,7 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
             }
         </style>
 
-        <script src="/js/localized-date-formatter.js" defer></script>
+        <script src="<?= htmlspecialchars(StaticAsset::url('/js/localized-date-formatter.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
         <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></title>
     </head>

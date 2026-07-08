@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
+require_once '../classes/StaticAsset.php';
 require_once '../classes/Admin/LogEntry.php';
 require_once '../classes/Admin/LogEntryFormatter.php';
 require_once '../classes/Admin/LogService.php';
@@ -33,7 +34,7 @@ if ($pageResult->getTotalPages() > 1) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
         <title>Admin ~ Logs</title>
-        <script src="/js/localized-date-formatter.js" defer></script>
+        <script src="<?= htmlspecialchars(StaticAsset::url('/js/localized-date-formatter.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     </head>
     <body>
         <div class="container py-4">
