@@ -75,7 +75,8 @@ the non-obvious steps to actually run the services.
 - The PHP built-in server does not read `.htaccess`. Cron scripts are still blocked
   over HTTP because `CronCliAccessGuard` runs in `init.php` and `CronJobBootstrapper`.
   Admin is intentionally left reachable in dev for login testing.
-- Cron jobs must be run via CLI, e.g. `php wwwroot/cron/hourly.php`.
+- Cron jobs must be run via CLI, e.g. `php wwwroot/cron/hourly.php`. Each script in
+  `wwwroot/cron/` loads `cron/bootstrap.php` first to reject HTTP execution.
 
 ### Tests
 

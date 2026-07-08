@@ -40,4 +40,24 @@ final class CronCliAccessGuardTest extends TestCase
 
         $this->assertTrue(true);
     }
+
+    public function testCronEntryScriptsRequireBootstrapGuard(): void
+    {
+        $entryScripts = glob(__DIR__ . '/../wwwroot/cron/*.php') ?: [];
+
+        foreach ($entryScripts as $scriptPath) {
+            if (str_ends_with($scriptPath, '/bootstrap.php')) {
+                continue;
+            }
+
+            $source = file_get_contents($scriptPath);
+            $this->assertTrue(is_string($source));
+
+            $this->assertStringContainsString(
+                "require_once __DIR__ . '/bootstrap.php'",
+                $source,
+                basename($scriptPath) . ' must load cron/bootstrap.php before other bootstrap logic.'
+            );
+        }
+    }
 }
