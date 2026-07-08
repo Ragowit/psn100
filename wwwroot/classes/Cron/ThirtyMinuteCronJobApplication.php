@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CronCliAccessGuard.php';
 require_once __DIR__ . '/CronJobEntryPoint.php';
 require_once __DIR__ . '/CronJobCliArguments.php';
 require_once __DIR__ . '/../TrophyCalculator.php';
@@ -33,6 +34,8 @@ final class ThirtyMinuteCronJobApplication
 
     public function run(): void
     {
+        CronCliAccessGuard::requireCliExecution();
+
         $workerId = $this->cliArguments->getWorkerId();
         if ($workerId <= 0) {
             throw new InvalidArgumentException(sprintf(

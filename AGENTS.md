@@ -67,6 +67,17 @@ the non-obvious steps to actually run the services.
   (param key is `q`); valid names match `^[\w\-]{3,16}$` and are inserted into
   `player_queue`. This is a quick way to exercise a real DB write.
 
+### `/admin` and `/cron` access control
+
+- Production Apache hosts should copy the templates in `wwwroot/admin/.htaccess.example`
+  and `wwwroot/cron/.htaccess.example` to `.htaccess` in those directories (adjust
+  `AuthUserFile` and the allowed cron IP before enabling).
+- The PHP built-in server does not read `.htaccess`. Cron scripts are still blocked
+  over HTTP because `CronCliAccessGuard` runs in `init.php` and `CronJobBootstrapper`.
+  Admin is intentionally left reachable in dev for login testing.
+- Cron jobs must be run via CLI, e.g. `php wwwroot/cron/hourly.php`. Each script in
+  `wwwroot/cron/` loads `cron/bootstrap.php` first to reject HTTP execution.
+
 ### Tests
 
 - Run the full suite with `php tests/run.php` (custom runner, no PHPUnit). It does not
