@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/classes/GameMessageSanitizer.php';
 
@@ -23,7 +25,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
             ?>
             <div class="col-12">
                 <div class="alert alert-warning" role="alert">
-                    This game has been merged into <a href="/game/<?= $parentLink; ?>"><?= htmlentities($parentGame->getName()); ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
+                    This game has been merged into <a href="/game/<?= $parentLink; ?>"><?= Html::escape($parentGame->getName()); ?></a>. Earned trophies in this entry will not be accounted for on any leaderboard.
                 </div>
             </div>
             <?php
@@ -64,8 +66,8 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
 
             $replacementLinks[] = sprintf(
                 '<a href="%s">%s</a>',
-                htmlentities($replacementLink, ENT_QUOTES, 'UTF-8'),
-                htmlentities($replacement->getName(), ENT_QUOTES, 'UTF-8')
+                Html::escape($replacementLink),
+                Html::escape($replacement->getName())
             );
         }
 
@@ -136,14 +138,14 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                     : '../missing-ps4-game.png')
                 : $gameIconUrl;
             ?>
-            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName()); ?>">
+            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($game->getName()); ?>">
         </div>
 
         <div class="col-12 col-lg-6">
             <div class="vstack gap-3">
                 <div class="hstack">
                     <div>
-                        <h1><?= htmlentities($game->getName()); ?></h1>
+                        <h1><?= Html::escape($game->getName()); ?></h1>
                     </div>
 
                     <?php
@@ -167,12 +169,12 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                                     ?>
                                     <li class="dropdown-item">
                                         <a class="dropdown-item" href="/game/<?= $stackLink; ?>">
-                                            <?= htmlentities($stack->getName()); ?>
-                                            <span class="badge rounded-pill text-bg-primary"><?= htmlentities($stack->getPlatform()); ?></span>
+                                            <?= Html::escape($stack->getName()); ?>
+                                            <span class="badge rounded-pill text-bg-primary"><?= Html::escape($stack->getPlatform()); ?></span>
                                             <?php
                                             if ($region !== null) {
                                                 ?>
-                                                <span class="badge rounded-pill text-bg-primary"><?= htmlentities($region); ?></span>
+                                                <span class="badge rounded-pill text-bg-primary"><?= Html::escape($region); ?></span>
                                                 <?php
                                             }
                                             ?>
@@ -200,8 +202,8 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                     <?php
                     $region = $game->getRegion();
                     ?>
-                    Version: <?= htmlentities($game->getSetVersion(), ENT_QUOTES, 'UTF-8'); ?>
-                    <?= ($region === null ? '' : " <span class=\"badge rounded-pill text-bg-primary\">" . htmlentities($region, ENT_QUOTES, 'UTF-8') . '</span>') ?>
+                    Version: <?= Html::escape($game->getSetVersion()); ?>
+                    <?= ($region === null ? '' : " <span class=\"badge rounded-pill text-bg-primary\">" . Html::escape($region) . '</span>') ?>
                 </div>
 
                 <div>

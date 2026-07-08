@@ -104,6 +104,8 @@ the non-obvious steps to actually run the services.
 - Player page templates (`player.php`, `player_header.php`, `player_log.php`,
   `player_advisor.php`, `player_random.php`, `player_report.php`) and
   `PlayerHeaderViewModel` use `Html::escape()` for output escaping.
+- Game page templates (`game.php`, `game_header.php`, `game_history.php`, `games.php`,
+  `trophy.php`, `trophies.php`, `home.php`) and `TrophyPage` use `Html::escape()`.
 
 ### Composer
 

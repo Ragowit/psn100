@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/GameListFilter.php';
 require_once __DIR__ . '/classes/GameListService.php';
 require_once __DIR__ . '/classes/GameListPage.php';
@@ -33,8 +35,8 @@ require_once("header.php");
             <form>
                 <div class="input-group d-flex justify-content-end">
                     <input type="hidden" name="page" value="<?= $gameListPage->getCurrentPage(); ?>">
-                    <input type="hidden" name="search" value="<?= htmlentities($filter->getSearch(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="text" name="player" class="form-control rounded-start" maxlength="16" placeholder="View as player..." value="<?= htmlentities($filter->getPlayer() ?? '', ENT_QUOTES, 'UTF-8'); ?>" aria-label="Text input to show completed games for specified player">
+                    <input type="hidden" name="search" value="<?= Html::escape($filter->getSearch()); ?>">
+                    <input type="text" name="player" class="form-control rounded-start" maxlength="16" placeholder="View as player..." value="<?= Html::escape($filter->getPlayer() ?? ''); ?>" aria-label="Text input to show completed games for specified player">
 
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                     <ul class="dropdown-menu p-2">
@@ -152,11 +154,11 @@ require_once("header.php");
                             <div class="card">
                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
                                     <a href="/game/<?= $gameLink; ?>">
-                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName()); ?>">
+                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($game->getName()); ?>">
                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                             <?php
                                             foreach ($platforms as $platform) {
-                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
+                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . Html::escape($platform) . "</span> ";
                                             }
                                             ?>
                                         </div>
@@ -173,7 +175,7 @@ require_once("header.php");
                         <!-- name -->
                         <div class="text-center">
                             <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $gameLink; ?>">
-                                <?= htmlentities($game->getName()); ?>
+                                <?= Html::escape($game->getName()); ?>
                             </a>
                         </div>
 

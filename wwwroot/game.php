@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/GamePage.php';
 require_once __DIR__ . '/classes/GameTrophyFilter.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
@@ -125,12 +127,12 @@ require_once("header.php");
                                     <th scope="col" colspan="5" class="bg-dark-subtle">
                                         <div class="hstack gap-3">
                                             <div>
-                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= htmlspecialchars($trophyGroup->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophyGroup->getName()); ?>">
+                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= htmlspecialchars($trophyGroup->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($trophyGroup->getName()); ?>">
                                             </div>
                                             
                                             <div>
-                                                <b><?= htmlentities($trophyGroup->getName()); ?></b><br>
-                                                <?= nl2br(htmlentities($trophyGroup->getDetail(), ENT_QUOTES, 'UTF-8')); ?>
+                                                <b><?= Html::escape($trophyGroup->getName()); ?></b><br>
+                                                <?= nl2br(Html::escape($trophyGroup->getDetail())); ?>
                                             </div>
 
                                             <div class="ms-auto">
@@ -228,7 +230,7 @@ require_once("header.php");
                                                     class="card-img object-fit-scale"
                                                     style="height: 5rem;"
                                                     src="/img/trophy/<?= htmlspecialchars($trophyRow->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                    alt="<?= htmlentities($trophyRow->getName()); ?>"
+                                                    alt="<?= Html::escape($trophyRow->getName()); ?>"
                                                 >
                                             </div>
                                         </td>
@@ -240,10 +242,10 @@ require_once("header.php");
                                                         class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
                                                         href="<?= htmlspecialchars($trophyLink, ENT_QUOTES, 'UTF-8'); ?>"
                                                     >
-                                                        <b><?= htmlentities($trophyRow->getName()); ?></b>
+                                                        <b><?= Html::escape($trophyRow->getName()); ?></b>
                                                     </a>
                                                 </span>
-                                                <?= nl2br(htmlentities($trophyRow->getDetail(), ENT_QUOTES, 'UTF-8')); ?>
+                                                <?= nl2br(Html::escape($trophyRow->getDetail())); ?>
                                                 <?php
                                                 $progressDisplay = $trophyRow->getProgressDisplay();
                                                 if ($progressDisplay !== null) {
