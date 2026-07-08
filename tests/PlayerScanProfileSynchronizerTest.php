@@ -22,7 +22,7 @@ final class PlayerScanProfileSynchronizerTest extends TestCase
         $database->exec('CREATE TABLE player_queue (online_id TEXT PRIMARY KEY)');
         $database->exec(
             'CREATE TABLE player (
-                account_id INTEGER PRIMARY KEY,
+                account_id TEXT PRIMARY KEY,
                 online_id TEXT NOT NULL,
                 country TEXT,
                 status INTEGER NOT NULL DEFAULT 99,
@@ -107,5 +107,42 @@ final class PlayerScanProfileSynchronizerTest extends TestCase
         $this->assertFalse($success->shouldSkipPlayer());
         $this->assertFalse($skip->isSuccess());
         $this->assertTrue($skip->shouldSkipPlayer());
+    }
+
+    public function testCountryHelpersAcceptStringAccountIds(): void
+    {
+        $largeAccountId = '9223372036854775808';
+        $statement = $this->synchronizerDatabase()->prepare(
+            'INSERT INTO player (account_id, online_id, country, status) VALUES (:account_id, :online_id, :country, :status)'
+        );
+        $statement->bindValue(':account_id', $largeAccountId, PDO::PARAM_STR);
+        $statement->bindValue(':online_id', 'large-id-player', PDO::PARAM_STR);
+        $statement->bindValue(':country', 'se', PDO::PARAM_STR);
+        $statement->bindValue(':status', 0, PDO::PARAM_INT);
+        $statement->execute();
+
+        $fetchStoredCountry = new ReflectionMethod(PlayerScanProfileSynchronizer::class, 'fetchStoredCountryByAccountId');
+        $fetchStoredCountry->setAccessible(true);
+        $this->assertSame('se', $fetchStoredCountry->invoke($this->synchronizer, $largeAccountId));
+
+        $updatePlayerCountry = new ReflectionMethod(PlayerScanProfileSynchronizer::class, 'updatePlayerCountry');
+        $updatePlayerCountry->setAccessible(true);
+        $updatePlayerCountry->invoke($this->synchronizer, $largeAccountId, 'no');
+
+        $country = $this->synchronizerDatabase()
+            ->query("SELECT country FROM player WHERE account_id = '{$largeAccountId}'")
+            ->fetchColumn();
+        $this->assertSame('no', $country);
+    }
+
+    private function synchronizerDatabase(): PDO
+    {
+        $property = new ReflectionProperty(PlayerScanProfileSynchronizer::class, 'database');
+        $property->setAccessible(true);
+
+        /** @var PDO $database */
+        $database = $property->getValue($this->synchronizer);
+
+        return $database;
     }
 }

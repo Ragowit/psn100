@@ -203,7 +203,7 @@ final class PlayerScanProfileSynchronizer
                     $country = $countryFromProfile;
 
                     if ($country === null || strtolower($country) === 'zz') {
-                        $storedCountry = $this->fetchStoredCountryByAccountId((int) $profileAccountId);
+                        $storedCountry = $this->fetchStoredCountryByAccountId($profileAccountId);
 
                         if (is_string($storedCountry) && $storedCountry !== '') {
                             $country = $storedCountry;
@@ -216,11 +216,11 @@ final class PlayerScanProfileSynchronizer
 
                             if ($resolvedCountry !== null) {
                                 $country = $resolvedCountry;
-                                $this->updatePlayerCountry((int) $profileAccountId, $resolvedCountry);
+                                $this->updatePlayerCountry($profileAccountId, $resolvedCountry);
                             }
                         }
                     } else {
-                        $this->updatePlayerCountry((int) $profileAccountId, $country);
+                        $this->updatePlayerCountry($profileAccountId, $country);
                     }
                 } else {
                     if ($existingAccountId === null) {
@@ -241,7 +241,7 @@ final class PlayerScanProfileSynchronizer
                         $player['online_id'] = $originalOnlineId;
                     }
 
-                    $storedCountry = $this->fetchStoredCountryByAccountId((int) $existingAccountId);
+                    $storedCountry = $this->fetchStoredCountryByAccountId($existingAccountId);
 
                     if (is_string($storedCountry) && $storedCountry !== '') {
                         $country = $storedCountry;
@@ -252,7 +252,7 @@ final class PlayerScanProfileSynchronizer
 
                         if ($resolvedCountry !== null) {
                             $country = $resolvedCountry;
-                            $this->updatePlayerCountry((int) $existingAccountId, $resolvedCountry);
+                            $this->updatePlayerCountry($existingAccountId, $resolvedCountry);
                         }
                     }
                 }
