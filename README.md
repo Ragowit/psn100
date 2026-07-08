@@ -111,6 +111,8 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 
 - Removed unused jQuery from the public footer and dropped `code.jquery.com` from the
   CSP Report-Only allowlist.
+- Homepage queue polling and popular-games filter logic moved to
+  `player-queue-manager.js`, removing the large inline script from `home.php`.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
