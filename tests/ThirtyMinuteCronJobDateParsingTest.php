@@ -13,7 +13,6 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
     private PDO $database;
     private ThirtyMinuteCronJob $cronJob;
     private ReflectionMethod $determineScanStartIndexMethod;
-    private ReflectionMethod $ensureValidTrophyTitleLastUpdatedDateMethod;
     private ReflectionMethod $handleInvalidTitleLastUpdatedDateResponseMethod;
 
     protected function setUp(): void
@@ -37,12 +36,6 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
 
         $this->determineScanStartIndexMethod = new ReflectionMethod(ThirtyMinuteCronJob::class, 'determineScanStartIndex');
         $this->determineScanStartIndexMethod->setAccessible(true);
-
-        $this->ensureValidTrophyTitleLastUpdatedDateMethod = new ReflectionMethod(
-            ThirtyMinuteCronJob::class,
-            'ensureValidTrophyTitleLastUpdatedDate'
-        );
-        $this->ensureValidTrophyTitleLastUpdatedDateMethod->setAccessible(true);
 
         $this->handleInvalidTitleLastUpdatedDateResponseMethod = new ReflectionMethod(
             ThirtyMinuteCronJob::class,
@@ -88,63 +81,6 @@ final class ThirtyMinuteCronJobDateParsingTest extends TestCase
         );
 
         $this->assertSame(0, $result);
-    }
-
-    public function testEnsureValidTrophyTitleLastUpdatedDateReturnsTitleWhenDateIsValid(): void
-    {
-        $title = new ThirtyMinuteCronJobDateParsingTestTrophyTitle('NPWR12345_00', '2024-06-15T10:30:00Z', 'Example Game');
-        $user = new ThirtyMinuteCronJobDateParsingTestUser([]);
-
-        $result = $this->ensureValidTrophyTitleLastUpdatedDateMethod->invoke(
-            $this->cronJob,
-            $user,
-            $title,
-            'ExampleUser'
-        );
-
-        $this->assertSame($title, $result);
-        $this->assertSame(0, $user->getFetchCount());
-    }
-
-    public function testEnsureValidTrophyTitleLastUpdatedDateRefetchesSonyDataWhenDateIsInvalid(): void
-    {
-        $invalidTitle = new ThirtyMinuteCronJobDateParsingTestTrophyTitle('NPWR12345_00', 'not-a-valid-date', 'Example Game');
-        $validTitle = new ThirtyMinuteCronJobDateParsingTestTrophyTitle('NPWR12345_00', '2024-06-15T10:30:00Z', 'Example Game');
-        $user = new ThirtyMinuteCronJobDateParsingTestUser([
-            [new ThirtyMinuteCronJobDateParsingTestTrophyTitle('NPWR12345_00', '2024-06-15T10:30:00Z', 'Example Game')],
-        ]);
-
-        $result = $this->ensureValidTrophyTitleLastUpdatedDateMethod->invoke(
-            $this->cronJob,
-            $user,
-            $invalidTitle,
-            'ExampleUser'
-        );
-
-        $this->assertSame('2024-06-15T10:30:00Z', $result->lastUpdatedDateTime());
-        $this->assertSame(1, $user->getFetchCount());
-        $this->assertSame($validTitle->lastUpdatedDateTime(), $result->lastUpdatedDateTime());
-    }
-
-    public function testEnsureValidTrophyTitleLastUpdatedDateReturnsNullWhenRefetchStillInvalid(): void
-    {
-        $invalidTitle = new ThirtyMinuteCronJobDateParsingTestTrophyTitle('NPWR12345_00', 'not-a-valid-date', 'Example Game');
-        $user = new ThirtyMinuteCronJobDateParsingTestUser([
-            [new ThirtyMinuteCronJobDateParsingTestTrophyTitle('NPWR12345_00', 'still-not-valid', 'Example Game')],
-        ]);
-
-        $result = $this->ensureValidTrophyTitleLastUpdatedDateMethod->invoke(
-            $this->cronJob,
-            $user,
-            $invalidTitle,
-            'ExampleUser'
-        );
-
-        $this->assertSame(null, $result);
-        $this->assertSame(1, $user->getFetchCount());
-
-        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
-        $this->assertStringContainsString('invalid last updated date', (string) $logMessage);
     }
 
     public function testHandleInvalidTitleLastUpdatedDateResponseDefersPlayerScan(): void
@@ -193,46 +129,5 @@ final class ThirtyMinuteCronJobDateParsingTestTrophyTitle
     public function name(): string
     {
         return $this->name;
-    }
-}
-
-final class ThirtyMinuteCronJobDateParsingTestUser
-{
-    /** @var list<list<ThirtyMinuteCronJobDateParsingTestTrophyTitle>> */
-    private array $fetchResults;
-    private int $fetchCount = 0;
-
-    /**
-     * @param list<list<ThirtyMinuteCronJobDateParsingTestTrophyTitle>> $fetchResults
-     */
-    public function __construct(array $fetchResults)
-    {
-        $this->fetchResults = $fetchResults;
-    }
-
-    public function trophyTitles(): ThirtyMinuteCronJobDateParsingTestTrophyTitleCollection
-    {
-        $titles = $this->fetchResults[$this->fetchCount] ?? $this->fetchResults[array_key_last($this->fetchResults)] ?? [];
-        $this->fetchCount++;
-
-        return new ThirtyMinuteCronJobDateParsingTestTrophyTitleCollection($titles);
-    }
-
-    public function getFetchCount(): int
-    {
-        return $this->fetchCount;
-    }
-}
-
-final class ThirtyMinuteCronJobDateParsingTestTrophyTitleCollection implements IteratorAggregate
-{
-    /** @param list<ThirtyMinuteCronJobDateParsingTestTrophyTitle> $titles */
-    public function __construct(private readonly array $titles)
-    {
-    }
-
-    public function getIterator(): Traversable
-    {
-        return new ArrayIterator($this->titles);
     }
 }

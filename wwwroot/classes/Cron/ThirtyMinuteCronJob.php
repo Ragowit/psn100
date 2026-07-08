@@ -26,6 +26,7 @@ require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 require_once __DIR__ . '/PlayerScanTrophyProgressSynchronizer.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
 require_once __DIR__ . '/PlayerScanTrophySummaryAccessResult.php';
+require_once __DIR__ . '/PlayerScanTrophyTitleRefresher.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -47,6 +48,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer;
     private readonly PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer;
     private readonly PlayerScanPrivacyService $privacyService;
+    private readonly PlayerScanTrophyTitleRefresher $trophyTitleRefresher;
 
     public function __construct(
         private readonly PDO $database,
@@ -67,6 +69,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer = null,
         ?PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer = null,
         ?PlayerScanPrivacyService $privacyService = null,
+        ?PlayerScanTrophyTitleRefresher $trophyTitleRefresher = null,
     )
     {
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
@@ -109,6 +112,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         );
         $this->privacyService = $privacyService ?? new PlayerScanPrivacyService(
             $database,
+            $this->workerScanCoordinator,
+        );
+        $this->trophyTitleRefresher = $trophyTitleRefresher ?? new PlayerScanTrophyTitleRefresher(
+            $logger,
+            $this->titleMetadataHelper,
             $this->workerScanCoordinator,
         );
     }
@@ -168,109 +176,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         );
 
         $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
-    }
-
-    private function pauseBeforeRetryingInvalidApiResponse(int $workerId, string $onlineId): void
-    {
-        $this->workerScanCoordinator->setWaitingScanProgress(
-            $workerId,
-            sprintf(
-                'Encountered an invalid response from the PlayStation API while scanning %s. Waiting 1 minute before retrying.',
-                $onlineId
-            )
-        );
-
-        sleep(60);
-    }
-
-    private function ensureTrophyTitleIcon(
-        object $user,
-        object $trophyTitle,
-        string $onlineId
-    ): ?object {
-        $maxAttempts = 2;
-        $npCommunicationId = (string) $trophyTitle->npCommunicationId();
-
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            $iconUrl = trim((string) $trophyTitle->iconUrl());
-
-            if ($iconUrl !== '') {
-                return $trophyTitle;
-            }
-
-            if ($attempt === $maxAttempts) {
-                $titleName = trim((string) $trophyTitle->name());
-                $titleNameForLog = $titleName === '' ? $npCommunicationId : $titleName;
-
-                $this->logger->log(sprintf(
-                    'Trophy title "%s" (%s) is missing an icon while processing user %s (attempt %d/%d).',
-                    $titleNameForLog,
-                    $npCommunicationId,
-                    $onlineId,
-                    $attempt,
-                    $maxAttempts
-                ));
-
-                break;
-            }
-
-            sleep(2);
-
-            $trophyTitleCollection = $user->trophyTitles();
-
-            foreach ($trophyTitleCollection as $refreshedTitle) {
-                if ((string) $refreshedTitle->npCommunicationId() === $npCommunicationId) {
-                    $trophyTitle = $refreshedTitle;
-                    break;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private function ensureValidTrophyTitleLastUpdatedDate(
-        object $user,
-        object $trophyTitle,
-        string $onlineId
-    ): ?object {
-        $maxAttempts = 2;
-        $npCommunicationId = (string) $trophyTitle->npCommunicationId();
-
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            if ($this->titleMetadataHelper->isValidSonyLastUpdatedDateTime($trophyTitle->lastUpdatedDateTime())) {
-                return $trophyTitle;
-            }
-
-            if ($attempt === $maxAttempts) {
-                $titleName = trim((string) $trophyTitle->name());
-                $titleNameForLog = $titleName === '' ? $npCommunicationId : $titleName;
-
-                $this->logger->log(sprintf(
-                    'Trophy title "%s" (%s) has an invalid last updated date while processing user %s (attempt %d/%d).',
-                    $titleNameForLog,
-                    $npCommunicationId,
-                    $onlineId,
-                    $attempt,
-                    $maxAttempts
-                ));
-
-                break;
-            }
-
-            sleep(2);
-
-            $trophyTitleCollection = $user->trophyTitles();
-
-            foreach ($trophyTitleCollection as $refreshedTitle) {
-                if ((string) $refreshedTitle->npCommunicationId() === $npCommunicationId) {
-                    $trophyTitle = $refreshedTitle;
-                    break;
-                }
-            }
-        }
-
-        return null;
     }
 
     #[\Override]
@@ -480,7 +385,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 continue;
                             }
 
-                            $trophyTitle = $this->ensureTrophyTitleIcon(
+                            $trophyTitle = $this->trophyTitleRefresher->ensureTrophyTitleIcon(
                                 $user,
                                 $trophyTitle,
                                 (string) $player['online_id']
@@ -496,7 +401,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 break;
                             }
 
-                            $trophyTitle = $this->ensureValidTrophyTitleLastUpdatedDate(
+                            $trophyTitle = $this->trophyTitleRefresher->ensureValidTrophyTitleLastUpdatedDate(
                                 $user,
                                 $trophyTitle,
                                 (string) $player['online_id']
@@ -511,7 +416,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                         (string) $player['online_id'],
                                         $npid
                                     ));
-                                    $this->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
+                                    $this->trophyTitleRefresher->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
                                     $restartScan = true;
 
                                     break;
