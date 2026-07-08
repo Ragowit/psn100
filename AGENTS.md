@@ -79,6 +79,27 @@ the non-obvious steps to actually run the services.
   Admin is intentionally left reachable in dev for login testing.
 - Cron jobs must be run via CLI, e.g. `php wwwroot/cron/hourly.php`. Each script in
   `wwwroot/cron/` loads `cron/bootstrap.php` first to reject HTTP execution.
+
+### Cron job retry loops
+
+Cron jobs are **intentionally written with infinite retry loops** (`while (true)` with
+`sleep` / backoff between attempts). The site depends on these jobs eventually
+succeeding — player scans, rankings, trophy metadata, and related data go stale or stop
+updating if a cron run gives up.
+
+- Do **not** cap retries, add `maxAttempts`, or refactor infinite loops into "fail
+  fast" error handling unless explicitly asked. That pattern is deliberate, not a bug.
+- Examples: `HourlyCronJob`, `DailyCronJob`, and `WeeklyCronJob` use
+  `executeWithRetry()`; `ThirtyMinuteCronJob` and `PlayerRankingUpdater` retry PSN/API
+  and database failures indefinitely; `PlayerScanTrophyProgressSynchronizer::retryNotFound()`
+  retries 404s from Sony's API.
+- Tests such as `WeeklyCronJobTest` and `PlayerRankingUpdaterTest` assert that
+  `while (true)` remains and that there is no `maxAttempt` cap — keep those guarantees
+  when touching cron code.
+- When improving cron code, preserve or strengthen retry behavior (e.g. better logging,
+  backoff tuning). Only exit a loop after success or when the work item is definitively
+  unrecoverable (e.g. invalid player data), not on transient errors.
+
 - Queue polling and admin login abuse controls use `ip_rate_limit` and
   `admin_login_throttle` tables (see `database/psn100.sql`). Import the schema on
   fresh VMs; existing production DBs need those tables added before deploying Phase 2.
