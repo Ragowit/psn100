@@ -194,7 +194,7 @@ require_once("header.php");
                         'pollIntervalMs' => 5000,
                     ];
                     ?>
-                    <script type="application/json" id="scan-log-config"><?= json_encode($scanLogConfig, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+                    <script type="application/json" id="scan-log-config"><?= json_encode($scanLogConfig, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
                     <script src="<?= htmlspecialchars(StaticAsset::url('/js/scan-log-renderer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
                 <?php } ?>
             </div>
