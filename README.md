@@ -98,6 +98,15 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 - `Content-Security-Policy-Report-Only` is sent from `init.php` to collect violations
   before enforcing a stricter policy.
 
+### Security hardening (Phase 4)
+
+- Unified date localization via `localized-date-formatter.js` removes per-row inline
+  scripts from game, trophy, player, and about pages.
+- Changelog regrouping moved to `changelog-date-grouping.js` with `cloneNode` instead
+  of `innerHTML` round-trips.
+- Class-layer HTML escaping migrated to `Html::escape()` in changelog, game header,
+  history, and message sanitizer code paths.
+
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
 

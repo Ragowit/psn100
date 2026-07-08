@@ -266,14 +266,16 @@ require_once("header.php");
                                             if ($accountId !== null && $trophyRow->isEarned()) {
                                                 $earnedElementId = $trophyRow->getEarnedElementId();
                                                 ?>
-                                                <span id="<?= htmlspecialchars($earnedElementId, ENT_QUOTES, 'UTF-8'); ?>" style="text-wrap: nowrap;"></span>
-                                                <script>
+                                                <span
+                                                    class="js-localized-date"
+                                                    style="text-wrap: nowrap;"
                                                     <?php if ($trophyRow->hasRecordedEarnedDate()) { ?>
-                                                        document.getElementById(<?= json_encode($earnedElementId); ?>).innerHTML = new Date(<?= json_encode($trophyRow->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
+                                                    data-timestamp="<?= htmlspecialchars($trophyRow->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-line-break="1"
                                                     <?php } elseif ($trophyRow->shouldDisplayNoTimestampMessage()) { ?>
-                                                        document.getElementById(<?= json_encode($earnedElementId); ?>).innerHTML = 'No Timestamp';
+                                                    data-fallback="No Timestamp"
                                                     <?php } ?>
-                                                </script>
+                                                ></span>
                                                 <?php
                                                 if (
                                                     $sort == "date"

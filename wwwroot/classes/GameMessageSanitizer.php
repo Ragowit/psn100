@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Html.php';
+
 final class GameMessageSanitizer
 {
     public static function sanitize(string $message): string
@@ -32,12 +34,12 @@ final class GameMessageSanitizer
 
                 $sanitized .= sprintf(
                     '<a href="%s"%s>%s</a>',
-                    htmlentities((string) $validatedUrl, ENT_QUOTES, 'UTF-8'),
+                    Html::escape((string) $validatedUrl),
                     $targetAttributes,
                     self::sanitizeLinkText($linkContent)
                 );
             } else {
-                $sanitized .= htmlentities($matchText, ENT_QUOTES, 'UTF-8');
+                $sanitized .= Html::escape($matchText);
             }
 
             $offset = $matchPosition + strlen($matchText);
@@ -67,12 +69,12 @@ final class GameMessageSanitizer
             $matchText = $matches[0][0];
             $matchPosition = $matches[0][1];
 
-            $sanitized .= htmlentities(substr($text, $offset, $matchPosition - $offset), ENT_QUOTES, 'UTF-8');
+            $sanitized .= Html::escape(substr($text, $offset, $matchPosition - $offset));
             $sanitized .= '<br>';
             $offset = $matchPosition + strlen($matchText);
         }
 
-        $sanitized .= htmlentities(substr($text, $offset), ENT_QUOTES, 'UTF-8');
+        $sanitized .= Html::escape(substr($text, $offset));
 
         return $sanitized;
     }
@@ -99,7 +101,7 @@ final class GameMessageSanitizer
 
     private static function sanitizeLinkText(string $content): string
     {
-        return htmlentities(self::decodeHtmlEntities(strip_tags($content)), ENT_QUOTES, 'UTF-8');
+        return Html::escape(self::decodeHtmlEntities(strip_tags($content)));
     }
 
     private static function decodeHtmlEntities(string $value): string

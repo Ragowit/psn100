@@ -142,10 +142,11 @@ require_once("header.php");
                                                         }
                                                         ?>
                                                         <div>
-                                                            <span class="badge rounded-pill text-bg-success" id="<?= htmlspecialchars($badgeElementId, ENT_QUOTES, 'UTF-8'); ?>"></span>
-                                                            <script>
-                                                                document.getElementById(<?= json_encode($badgeElementId); ?>).innerHTML = 'Earned ' + new Date(<?= json_encode($trophy->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE');
-                                                            </script>
+                                                            <span
+                                                                class="badge rounded-pill text-bg-success js-localized-date"
+                                                                data-prefix="Earned "
+                                                                data-timestamp="<?= htmlspecialchars($trophy->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                            ></span>
                                                         </div>
                                                     </div>
                                                 </div>

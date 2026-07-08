@@ -33,6 +33,7 @@ if ($pageResult->getTotalPages() > 1) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
         <title>Admin ~ Logs</title>
+        <script src="/js/localized-date-formatter.js" defer></script>
     </head>
     <body>
         <div class="container py-4">
@@ -95,7 +96,7 @@ if ($pageResult->getTotalPages() > 1) {
                                         <td class="text-nowrap">#<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <?php $time = $entry->getTime(); ?>
-                                            <time class="small text-body-secondary js-localized-datetime" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <time class="small text-body-secondary js-localized-datetime" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>" data-show-timezone="1">
                                                 <?= htmlspecialchars($time->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
                                             </time>
                                         </td>
@@ -123,65 +124,6 @@ if ($pageResult->getTotalPages() > 1) {
             <?php } ?>
         </div>
         <script>
-            class LocalizedDateTimeFormatter {
-                constructor(selector = '.js-localized-datetime') {
-                    this.selector = selector;
-                    this.timeZone = '';
-                }
-
-                initialize() {
-                    if (!this.isSupported()) {
-                        return;
-                    }
-
-                    this.timeZone = this.resolveTimeZone();
-                    const elements = Array.from(document.querySelectorAll(this.selector));
-
-                    elements.forEach((element) => this.formatElement(element));
-                }
-
-                isSupported() {
-                    return typeof Intl === 'object' && typeof Intl.DateTimeFormat === 'function';
-                }
-
-                resolveTimeZone() {
-                    try {
-                        return Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
-                    } catch (error) {
-                        return '';
-                    }
-                }
-
-                formatElement(element) {
-                    if (!(element instanceof HTMLElement)) {
-                        return;
-                    }
-
-                    const isoString = element.getAttribute('datetime');
-
-                    if (!isoString) {
-                        return;
-                    }
-
-                    const date = new Date(isoString);
-
-                    if (Number.isNaN(date.getTime())) {
-                        return;
-                    }
-
-                    const formattedDate = `${date.getFullYear()}-${this.pad(date.getMonth() + 1)}-${this.pad(date.getDate())}`;
-                    const formattedTime = `${this.pad(date.getHours())}:${this.pad(date.getMinutes())}:${this.pad(date.getSeconds())}`;
-                    const suffix = this.timeZone !== '' ? ` ${this.timeZone}` : '';
-
-                    element.textContent = `${formattedDate} ${formattedTime}${suffix}`;
-                    element.setAttribute('data-timezone', this.timeZone);
-                }
-
-                pad(value) {
-                    return value.toString().padStart(2, '0');
-                }
-            }
-
             class LogEntriesBulkActionManager {
                 constructor({
                     formId = 'log-entries-form',
@@ -366,9 +308,6 @@ if ($pageResult->getTotalPages() > 1) {
             }
 
             document.addEventListener('DOMContentLoaded', () => {
-                const dateFormatter = new LocalizedDateTimeFormatter('.js-localized-datetime');
-                dateFormatter.initialize();
-
                 const bulkActionManager = new LogEntriesBulkActionManager();
                 bulkActionManager.initialize();
             });

@@ -134,13 +134,6 @@ require_once("header.php");
     </div>
 </main>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const formatter = new LocalizedDateFormatter('.js-recent-player-date');
-    formatter.initialize();
-});
-</script>
-
 <?php
 require_once("footer.php");
 ?>

@@ -135,16 +135,13 @@ require_once("header.php");
                                                 }
                                                 ?>
                                             </th>
-                                            <td class="align-middle text-center" id="<?= htmlspecialchars($lastUpdateElementId, ENT_QUOTES, 'UTF-8'); ?>"></td>
-                                            <?php
-                                            if ($lastUpdatedDate !== null) {
-                                                ?>
-                                                <script>
-                                                    document.getElementById(<?= json_encode($lastUpdateElementId); ?>).innerHTML = new Date(<?= json_encode($lastUpdatedDate . ' UTC'); ?>).toLocaleString('sv-SE', {timeStyle: 'medium'});
-                                                </script>
-                                                <?php
-                                            }
-                                            ?>
+                                            <td
+                                                class="align-middle text-center js-localized-date"
+                                                <?php if ($lastUpdatedDate !== null) { ?>
+                                                data-timestamp="<?= htmlspecialchars($lastUpdatedDate, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-time-style="medium"
+                                                <?php } ?>
+                                            ></td>
                                             <td class="align-middle">
                                                 <div class="hstack gap-3">
                                                     <div>

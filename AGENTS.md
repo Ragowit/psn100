@@ -92,7 +92,10 @@ the non-obvious steps to actually run the services.
 ### Security headers
 
 - `init.php` sends `Content-Security-Policy-Report-Only` alongside existing security
-  headers. Enforcement is deferred until inline scripts/CDN usage are migrated.
+  headers. Enforcement is deferred until remaining inline scripts (home queue manager,
+  about scan log, admin pages) are extracted to external files.
+- Date localization uses `/js/localized-date-formatter.js`; changelog grouping uses
+  `/js/changelog-date-grouping.js`.
 
 ### Composer
 

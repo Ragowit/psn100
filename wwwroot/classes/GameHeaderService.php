@@ -8,6 +8,7 @@ require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
 require_once __DIR__ . '/Game/GameHeaderStack.php';
 require_once __DIR__ . '/PsnpPlusClient.php';
+require_once __DIR__ . '/Html.php';
 
 class GameHeaderService
 {
@@ -306,7 +307,7 @@ class GameHeaderService
             $matchText = $matches[0][0];
             $matchPosition = $matches[0][1];
 
-            $formatted .= htmlentities(substr($note, $offset, $matchPosition - $offset), ENT_QUOTES, 'UTF-8');
+            $formatted .= Html::escape(substr($note, $offset, $matchPosition - $offset));
 
             $url = trim($matches['url'][0]);
             $linkText = $matches['text'][0];
@@ -315,17 +316,17 @@ class GameHeaderService
             if ($validatedUrl !== false && preg_match('/^https?:\/\//i', $validatedUrl) === 1) {
                 $formatted .= sprintf(
                     '<a href="%s" target="_blank" rel="noopener">%s</a>',
-                    htmlentities($validatedUrl, ENT_QUOTES, 'UTF-8'),
-                    htmlentities($linkText, ENT_QUOTES, 'UTF-8')
+                    Html::escape($validatedUrl),
+                    Html::escape($linkText)
                 );
             } else {
-                $formatted .= htmlentities($matchText, ENT_QUOTES, 'UTF-8');
+                $formatted .= Html::escape($matchText);
             }
 
             $offset = $matchPosition + strlen($matchText);
         }
 
-        $formatted .= htmlentities(substr($note, $offset), ENT_QUOTES, 'UTF-8');
+        $formatted .= Html::escape(substr($note, $offset));
 
         return $formatted;
     }
