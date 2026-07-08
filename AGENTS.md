@@ -91,9 +91,8 @@ the non-obvious steps to actually run the services.
 
 ### Security headers
 
-- `init.php` sends `Content-Security-Policy-Report-Only` alongside existing security
-  headers. Public and admin page scripts are now externalized; Bootstrap and Popper are
-  self-hosted under `wwwroot/lib/`; CSP enforcement is the next Phase 5 step.
+- `init.php` sends an enforced `Content-Security-Policy` header (via
+  `ContentSecurityPolicy`) alongside existing security headers.
 - Date localization uses `/js/localized-date-formatter.js`; changelog grouping uses
   `/js/changelog-date-grouping.js`; homepage queue polling uses
   `/js/player-queue-manager.js`; about-page scan log polling uses
