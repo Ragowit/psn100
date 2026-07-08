@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerRandomGamesPageContext.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
@@ -80,11 +82,11 @@ require_once("header.php");
                                 <div class="card">
                                     <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
                                         <a href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
-                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($game->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($game->getName()); ?>">
+                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($game->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($game->getName()); ?>">
                                             <div class="card-img-overlay d-flex align-items-end p-2">
                                                 <?php
                                                 foreach ($game->getPlatforms() as $platform) {
-                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
+                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . Html::escape($platform) . "</span> ";
                                                 }
                                                 ?>
                                             </div>
@@ -101,7 +103,7 @@ require_once("header.php");
                             <!-- name -->
                             <div class="text-center">
                                 <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
-                                    <?= htmlentities($game->getName()); ?>
+                                    <?= Html::escape($game->getName()); ?>
                                 </a>
                             </div>
 

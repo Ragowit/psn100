@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerAdvisorPageContext.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
@@ -104,7 +106,7 @@ require_once("header.php");
                                     <tr>
                                         <td scope="row" class="text-center align-middle">
                                             <a href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <?php $gameName = htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>
+                                                <?php $gameName = Html::escape($trophy->getGameName()); ?>
                                                 <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= $gameName; ?>" title="<?= $gameName; ?>" style="width: 10rem;" />
                                             </a>
                                         </td>
@@ -112,7 +114,7 @@ require_once("header.php");
                                             <div class="hstack gap-3">
                                                 <div class="d-flex align-items-center justify-content-center">
                                                     <a href="/trophy/<?= htmlspecialchars($trophyLink, ENT_QUOTES, 'UTF-8'); ?>">
-                                                        <?php $trophyName = htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?php $trophyName = Html::escape($trophy->getTrophyName()); ?>
                                                         <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= $trophyName; ?>" title="<?= $trophyName; ?>" style="width: 5rem;" />
                                                     </a>
                                                 </div>
@@ -124,14 +126,14 @@ require_once("header.php");
                                                                 <b><?= $trophyName; ?></b>
                                                             </a>
                                                         </span>
-                                                        <?= nl2br(htmlentities($trophy->getTrophyDetail(), ENT_QUOTES, 'UTF-8')); ?>
+                                                        <?= nl2br(Html::escape($trophy->getTrophyDetail())); ?>
                                                         <?php
                                                         if ($progressLabel !== null) {
                                                             echo '<br><b>' . htmlspecialchars($progressLabel, ENT_QUOTES, 'UTF-8') . '</b>';
                                                         }
 
                                                         if ($trophy->hasReward()) {
-                                                            $rewardName = htmlentities((string) $trophy->getRewardName(), ENT_QUOTES, 'UTF-8');
+                                                            $rewardName = Html::escape((string) $trophy->getRewardName());
                                                             $rewardImage = htmlspecialchars((string) $trophy->getRewardImageUrl(), ENT_QUOTES, 'UTF-8');
                                                             echo "<br>Reward: <a href='/img/reward/{$rewardImage}'>{$rewardName}</a>";
                                                         }
@@ -144,7 +146,7 @@ require_once("header.php");
                                             <div class="vstack gap-1">
                                                 <?php
                                                 foreach ($trophy->getPlatforms() as $platform) {
-                                                    echo '<span class="badge rounded-pill text-bg-primary p-2">' . htmlentities($platform, ENT_QUOTES, 'UTF-8') . '</span> ';
+                                                    echo '<span class="badge rounded-pill text-bg-primary p-2">' . Html::escape($platform) . '</span> ';
                                                 }
                                                 ?>
                                             </div>

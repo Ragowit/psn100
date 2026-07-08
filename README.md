@@ -123,6 +123,8 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 - Bootstrap 5.3.8 and Popper 2.11.8 are self-hosted under `wwwroot/lib/` via
   `BootstrapAssets`, removing `cdn.jsdelivr.net` from templates and the CSP
   Report-Only allowlist.
+- Player page templates and `PlayerHeaderViewModel` now use `Html::escape()` instead
+  of `htmlentities()`.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
