@@ -130,7 +130,7 @@ final class PlayerScanCompletionServiceTest extends TestCase
             VALUES (9, 'NPWR00003_00', 1, 1)"
         );
 
-        $result = $this->service->recalculatePlayerTrophyStatsAndStatus(9, 5, 'recheck');
+        $result = $this->service->recalculatePlayerTrophyStatsAndStatus('9', 5, 'recheck');
 
         $this->assertTrue($result->shouldContinueScan());
         $npwrCount = $this->database->query('SELECT trophy_count_npwr FROM player WHERE account_id = 9')->fetchColumn();
@@ -147,7 +147,7 @@ final class PlayerScanCompletionServiceTest extends TestCase
             ) VALUES (9, 'NPWR00003_00', 1, datetime('now'))"
         );
 
-        $result = $this->service->recalculatePlayerTrophyStatsAndStatus(9, 5, 'recheck');
+        $result = $this->service->recalculatePlayerTrophyStatsAndStatus('9', 5, 'recheck');
 
         $this->assertTrue($result->shouldContinueScan());
     }
@@ -164,7 +164,7 @@ final class PlayerScanCompletionServiceTest extends TestCase
     {
         $this->database->exec("INSERT INTO player (account_id, status, rarity_points) VALUES (15, 1, 0)");
 
-        $this->service->updateRarityPointsForActivePlayer(15);
+        $this->service->updateRarityPointsForActivePlayer('15');
 
         $rarityPoints = $this->database->query('SELECT rarity_points FROM player WHERE account_id = 15')->fetchColumn();
         $this->assertSame(0, (int) $rarityPoints);

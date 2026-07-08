@@ -74,7 +74,7 @@ final class PlayerScanPrivacyServiceTest extends TestCase
         );
         $this->database->exec("INSERT INTO player_queue (online_id) VALUES ('queue-name')");
 
-        $this->service->markAsPrivateByAccountId(200, 'queue-name');
+        $this->service->markAsPrivateByAccountId('200', 'queue-name');
 
         $status = $this->database->query('SELECT status FROM player WHERE account_id = 200')->fetchColumn();
         $queueCount = $this->database->query('SELECT COUNT(*) FROM player_queue')->fetchColumn();
@@ -113,9 +113,9 @@ final class PlayerScanPrivacyServiceTest extends TestCase
         $user = new class {
             public int $attempts = 0;
 
-            public function accountId(): int
+            public function accountId(): string
             {
-                return 300;
+                return '300';
             }
 
             public function onlineId(): string

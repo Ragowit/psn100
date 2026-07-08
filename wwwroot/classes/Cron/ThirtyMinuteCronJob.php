@@ -316,7 +316,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                                 last_updated_date
                             FROM   trophy_title_player
                             WHERE  account_id = :account_id AND np_communication_id LIKE 'N%'");
-                        $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                        $query->bindValue(":account_id", (string) $user->accountId(), PDO::PARAM_STR);
                         $query->execute();
                         $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -488,7 +488,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         }
 
                         // Delete missing 0% games (and this will also delete hidden games, and any trophies for those hidden games)
-                        $ourGameCount = $this->staleGameDeletionService->countLocalGames((int) $user->accountId());
+                        $ourGameCount = $this->staleGameDeletionService->countLocalGames((string) $user->accountId());
 
                         $scanReachedEnd = $currentScanPosition === $totalGamesToProcess;
                         $scanCompletedCleanly = $trophyTitleFetchCompleted
@@ -533,7 +533,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             }
 
                             $this->staleGameDeletionService->deleteMissingZeroPercentGames(
-                                (int) $user->accountId(),
+                                (string) $user->accountId(),
                                 $scannedGames,
                             );
                         } elseif ($this->staleGameDeletionService->shouldRetryWhenSonyReturnsNoGames((int) $psnGameCount, $ourGameCount)) {
@@ -552,14 +552,14 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                             }
 
                             $this->logger->log(sprintf(
-                                'Skipped deleting missing games for %s (%d) because no trophy titles were returned.',
+                                'Skipped deleting missing games for %s (%s) because no trophy titles were returned.',
                                 (string) $player['online_id'],
-                                (int) $user->accountId()
+                                (string) $user->accountId()
                             ));
                         }
 
                         $completionResult = $this->scanCompletionService->recalculatePlayerTrophyStatsAndStatus(
-                            (int) $user->accountId(),
+                            (string) $user->accountId(),
                             $totalTrophiesStart,
                             $recheck,
                         );
@@ -569,13 +569,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                         }
                     }
 
-                    $this->scanCompletionService->updateRarityPointsForActivePlayer((int) $user->accountId());
+                    $this->scanCompletionService->updateRarityPointsForActivePlayer((string) $user->accountId());
 
                     // Done with the user, update the date
                     $query = $this->database->prepare("UPDATE player
                         SET    last_updated_date = Now()
                         WHERE  account_id = :account_id ");
-                    $query->bindValue(":account_id", $user->accountId(), PDO::PARAM_INT);
+                    $query->bindValue(":account_id", (string) $user->accountId(), PDO::PARAM_STR);
                     $query->execute();
 
                     // Delete user from the queue

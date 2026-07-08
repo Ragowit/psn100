@@ -92,7 +92,7 @@ final class TrophyCalculator
         return $this->clampProgress($progress);
     }
 
-    public function recalculateTrophyGroup(string $npCommunicationId, string $groupId, int $accountId): void
+    public function recalculateTrophyGroup(string $npCommunicationId, string $groupId, string $accountId): void
     {
         $query = $this->database->prepare(
             'SELECT t.type, COUNT(*) AS count
@@ -144,7 +144,7 @@ final class TrophyCalculator
                 AND tm.status = 0
             GROUP BY t.type'
         );
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $query->execute();
@@ -184,7 +184,7 @@ final class TrophyCalculator
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':bronze', $earnedTrophyTypes['bronze'], PDO::PARAM_INT);
         $query->bindValue(':silver', $earnedTrophyTypes['silver'], PDO::PARAM_INT);
         $query->bindValue(':gold', $earnedTrophyTypes['gold'], PDO::PARAM_INT);
@@ -193,7 +193,7 @@ final class TrophyCalculator
         $query->execute();
     }
 
-    public function recalculateTrophyTitle(string $npCommunicationId, string $lastUpdateDate, bool $newTrophies, int $accountId, bool $merge): void
+    public function recalculateTrophyTitle(string $npCommunicationId, string $lastUpdateDate, bool $newTrophies, string $accountId, bool $merge): void
     {
         $query = $this->database->prepare(
             'SELECT SUM(bronze) AS bronze,
@@ -239,7 +239,7 @@ final class TrophyCalculator
                     AND account_id != :account_id'
             );
             $select->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-            $select->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $select->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $select->execute();
 
             $updateProgress = $this->database->prepare(
@@ -259,7 +259,7 @@ final class TrophyCalculator
 
                 $updateProgress->bindValue(':progress', $progress, PDO::PARAM_INT);
                 $updateProgress->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-                $updateProgress->bindValue(':account_id', (int) $row['account_id'], PDO::PARAM_INT);
+                $updateProgress->bindValue(':account_id', (string) $row['account_id'], PDO::PARAM_STR);
                 $updateProgress->execute();
             }
         }
@@ -273,7 +273,7 @@ final class TrophyCalculator
             WHERE account_id = :account_id
                 AND np_communication_id = :np_communication_id'
         );
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
         /** @var array<string, int|string|null>|false $playerTrophiesRow */
@@ -297,7 +297,7 @@ final class TrophyCalculator
         $query = $this->database->prepare(sprintf(self::TROPHY_TITLE_PLAYER_UPSERT_TEMPLATE, $lastUpdatedDateExpression));
 
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':bronze', $playerTrophies['bronze'], PDO::PARAM_INT);
         $query->bindValue(':silver', $playerTrophies['silver'], PDO::PARAM_INT);
         $query->bindValue(':gold', $playerTrophies['gold'], PDO::PARAM_INT);

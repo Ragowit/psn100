@@ -47,7 +47,7 @@ final class PlayerScanCompletionService
     }
 
     public function recalculatePlayerTrophyStatsAndStatus(
-        int $accountId,
+        string $accountId,
         int $totalTrophiesSony,
         string $recheck,
     ): PlayerScanCompletionResult {
@@ -60,7 +60,7 @@ final class PlayerScanCompletionService
                 JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE  ttm.status = 0
                 AND ttp.account_id = :account_id ");
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
         $trophies = $query->fetch();
         $points = $trophies['bronze'] * 15
@@ -85,23 +85,23 @@ final class PlayerScanCompletionService
         $query->bindValue(':level', $levelAndProgress['level'], PDO::PARAM_INT);
         $query->bindValue(':progress', $levelAndProgress['progress'], PDO::PARAM_INT);
         $query->bindValue(':points', $points, PDO::PARAM_INT);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
 
         $playerStatus = 0;
 
         $query = $this->database->prepare('SELECT trophy_count_npwr FROM player WHERE account_id = :account_id');
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
         $ourTotalTrophies = $query->fetchColumn();
 
         if ($ourTotalTrophies > $totalTrophiesSony) {
             $query = $this->database->prepare("UPDATE `player` SET trophy_count_npwr = (SELECT COUNT(*) FROM `trophy_earned` WHERE account_id = :account_id AND earned = 1 AND np_communication_id LIKE 'N%') WHERE account_id = :account_id");
-            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $query->execute();
 
             $query = $this->database->prepare('SELECT trophy_count_npwr FROM player WHERE account_id = :account_id');
-            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $query->execute();
             $ourTotalTrophies = $query->fetchColumn();
 
@@ -125,7 +125,7 @@ final class PlayerScanCompletionService
             WHERE
                 account_id = :account_id
             ");
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
         $withinAYear = $query->fetchColumn();
         if ($withinAYear == 0) {
@@ -143,13 +143,13 @@ final class PlayerScanCompletionService
             ");
         $query->bindValue(':status', $playerStatus, PDO::PARAM_INT);
         $query->bindValue(':trophy_count_sony', $totalTrophiesSony, PDO::PARAM_INT);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
 
         return PlayerScanCompletionResult::completed();
     }
 
-    public function updateRarityPointsForActivePlayer(int $accountId): void
+    public function updateRarityPointsForActivePlayer(string $accountId): void
     {
         $query = $this->database->prepare('SELECT
                 p.status
@@ -157,7 +157,7 @@ final class PlayerScanCompletionService
                 player p
             WHERE
                 p.account_id = :account_id');
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
         $playerStatus = $query->fetchColumn();
 
@@ -211,7 +211,7 @@ final class PlayerScanCompletionService
                     ttp.in_game_legendary = rarity.in_game_legendary
                 WHERE
                     ttp.account_id = :account_id AND ttp.np_communication_id = rarity.np_communication_id");
-            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $query->execute();
 
             $query = $this->database->prepare("WITH
@@ -253,7 +253,7 @@ final class PlayerScanCompletionService
                     p.in_game_legendary = rarity.in_game_legendary
                 WHERE
                     p.account_id = :account_id AND p.status = 0");
-            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $query->execute();
         });
     }
