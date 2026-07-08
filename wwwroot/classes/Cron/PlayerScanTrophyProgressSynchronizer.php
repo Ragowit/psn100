@@ -71,7 +71,7 @@ final class PlayerScanTrophyProgressSynchronizer
             $this->trophyCalculator->recalculateTrophyGroup(
                 $npCommunicationId,
                 $trophyGroup->id(),
-                (int) $user->accountId()
+                (string) $user->accountId()
             );
         }
 
@@ -79,7 +79,7 @@ final class PlayerScanTrophyProgressSynchronizer
             $npCommunicationId,
             $trophyTitle->lastUpdatedDateTime(),
             $newTrophies,
-            (int) $user->accountId(),
+            (string) $user->accountId(),
             false
         );
 
@@ -93,13 +93,13 @@ final class PlayerScanTrophyProgressSynchronizer
             $this->trophyCalculator->recalculateTrophyGroup(
                 $row['parent_np_communication_id'],
                 $row['parent_group_id'],
-                (int) $user->accountId()
+                (string) $user->accountId()
             );
             $this->trophyCalculator->recalculateTrophyTitle(
                 $row['parent_np_communication_id'],
                 $trophyTitle->lastUpdatedDateTime(),
                 false,
-                (int) $user->accountId(),
+                (string) $user->accountId(),
                 true
             );
         }

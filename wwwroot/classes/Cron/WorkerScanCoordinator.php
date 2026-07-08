@@ -116,7 +116,7 @@ final class WorkerScanCoordinator
                 END
                 WHERE  account_id = :account_id '
             );
-            $query->bindValue(':account_id', (int) $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', (string) $accountId, PDO::PARAM_STR);
             $query->execute();
         }
 

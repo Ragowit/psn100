@@ -136,7 +136,13 @@ final class PlayerScanProfileSynchronizer
         }
 
         if (is_float($accountId)) {
-            return (string) (int) $accountId;
+            if (!is_finite($accountId) || floor($accountId) !== $accountId) {
+                return null;
+            }
+
+            $asString = sprintf('%.0f', $accountId);
+
+            return ctype_digit($asString) ? $asString : null;
         }
 
         if (is_numeric($accountId)) {
@@ -320,7 +326,7 @@ final class PlayerScanProfileSynchronizer
                 plus = new.plus,
                 about_me = new.about_me'
         );
-        $query->bindValue(':account_id', $user->accountId(), PDO::PARAM_INT);
+        $query->bindValue(':account_id', (string) $user->accountId(), PDO::PARAM_STR);
         $query->bindValue(':online_id', $user->onlineId(), PDO::PARAM_STR);
         $query->bindValue(':country', strtolower($country), PDO::PARAM_STR);
         $query->bindValue(':avatar_url', $avatarFilename, PDO::PARAM_STR);
@@ -372,10 +378,10 @@ final class PlayerScanProfileSynchronizer
         $query->execute();
     }
 
-    private function fetchStoredCountryByAccountId(int $accountId): ?string
+    private function fetchStoredCountryByAccountId(string $accountId): ?string
     {
         $query = $this->database->prepare('SELECT country FROM player WHERE account_id = :account_id');
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
 
         $country = $query->fetchColumn();
@@ -423,13 +429,13 @@ final class PlayerScanProfileSynchronizer
         return null;
     }
 
-    private function updatePlayerCountry(int $accountId, string $country): void
+    private function updatePlayerCountry(string $accountId, string $country): void
     {
         $query = $this->database->prepare(
             'UPDATE player SET country = :country WHERE account_id = :account_id'
         );
         $query->bindValue(':country', strtolower($country), PDO::PARAM_STR);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
     }
 
@@ -472,7 +478,7 @@ final class PlayerScanProfileSynchronizer
                 $query = $this->database->prepare(
                     'UPDATE player SET `status` = 5, last_updated_date = NOW() WHERE account_id = :account_id'
                 );
-                $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+                $query->bindValue(':account_id', (string) $accountId, PDO::PARAM_STR);
                 $query->execute();
             }
         }

@@ -19,7 +19,7 @@ final class TrophyCalculatorTest extends TestCase
     {
         $npCommunicationId = 'NPWR99999';
         $groupId = '000';
-        $accountId = 42;
+        $accountId = '42';
 
         $this->database->setTrophyGroup($npCommunicationId, $groupId);
 
@@ -49,7 +49,7 @@ final class TrophyCalculatorTest extends TestCase
     {
         $npCommunicationId = 'NPWR88888';
         $groupId = '000';
-        $accountId = 99;
+        $accountId = '99';
 
         $this->database->setTrophyGroup($npCommunicationId, $groupId);
 
@@ -82,7 +82,7 @@ final class TrophyCalculatorTest extends TestCase
     {
         $npCommunicationId = 'NPWR77777';
         $groupId = '100';
-        $accountId = 7;
+        $accountId = '7';
 
         $this->database->setTrophyGroup($npCommunicationId, $groupId);
 
@@ -103,6 +103,23 @@ final class TrophyCalculatorTest extends TestCase
         $this->assertSame(0, $playerProgress['gold']);
         $this->assertSame(0, $playerProgress['platinum']);
     }
+
+    public function testRecalculateTrophyGroupPreservesAccountIdsAbovePhpIntMax(): void
+    {
+        $npCommunicationId = 'NPWR66666';
+        $groupId = '000';
+        $accountId = '9223372036854775808';
+
+        $this->database->setTrophyGroup($npCommunicationId, $groupId);
+        $this->database->addTrophy($npCommunicationId, $groupId, 1, 'bronze');
+        $this->database->addEarnedTrophy($npCommunicationId, $groupId, 1, $accountId);
+
+        $this->calculator->recalculateTrophyGroup($npCommunicationId, $groupId, $accountId);
+
+        $playerProgress = $this->database->getTrophyGroupPlayer($npCommunicationId, $groupId, $accountId);
+        $this->assertTrue($playerProgress !== null);
+        $this->assertSame($accountId, $playerProgress['account_id']);
+    }
 }
 
 final class FakePDO extends PDO
@@ -115,11 +132,11 @@ final class FakePDO extends PDO
      */
     public array $trophyGroups = [];
 
-    /** @var list<array{np_communication_id:string,group_id:string,order_id:int,account_id:int,earned:int}> */
+    /** @var list<array{np_communication_id:string,group_id:string,order_id:int,account_id:string,earned:int}> */
     public array $trophyEarned = [];
 
     /**
-     * @var array<string, array{np_communication_id:string,group_id:string,account_id:int,bronze:int,silver:int,gold:int,platinum:int,progress:int}>
+     * @var array<string, array{np_communication_id:string,group_id:string,account_id:string,bronze:int,silver:int,gold:int,platinum:int,progress:int}>
      */
     public array $trophyGroupPlayers = [];
 
@@ -155,7 +172,7 @@ final class FakePDO extends PDO
         ];
     }
 
-    public function addEarnedTrophy(string $npCommunicationId, string $groupId, int $orderId, int $accountId, int $earned = 1): void
+    public function addEarnedTrophy(string $npCommunicationId, string $groupId, int $orderId, string $accountId, int $earned = 1): void
     {
         $this->trophyEarned[] = [
             'np_communication_id' => $npCommunicationId,
@@ -175,9 +192,9 @@ final class FakePDO extends PDO
     }
 
     /**
-     * @return array{np_communication_id:string,group_id:string,account_id:int,bronze:int,silver:int,gold:int,platinum:int,progress:int}|null
+     * @return array{np_communication_id:string,group_id:string,account_id:string,bronze:int,silver:int,gold:int,platinum:int,progress:int}|null
      */
-    public function getTrophyGroupPlayer(string $npCommunicationId, string $groupId, int $accountId): ?array
+    public function getTrophyGroupPlayer(string $npCommunicationId, string $groupId, string $accountId): ?array
     {
         return $this->trophyGroupPlayers[$this->buildGroupPlayerKey($npCommunicationId, $groupId, $accountId)] ?? null;
     }
@@ -196,7 +213,7 @@ final class FakePDO extends PDO
         $this->trophyGroups[$key]['platinum'] = $platinum;
     }
 
-    public function saveTrophyGroupPlayer(string $npCommunicationId, string $groupId, int $accountId, int $bronze, int $silver, int $gold, int $platinum, int $progress): void
+    public function saveTrophyGroupPlayer(string $npCommunicationId, string $groupId, string $accountId, int $bronze, int $silver, int $gold, int $platinum, int $progress): void
     {
         $this->trophyGroupPlayers[$this->buildGroupPlayerKey($npCommunicationId, $groupId, $accountId)] = [
             'np_communication_id' => $npCommunicationId,
@@ -230,7 +247,7 @@ final class FakePDO extends PDO
         return $npCommunicationId . '|' . $groupId;
     }
 
-    private function buildGroupPlayerKey(string $npCommunicationId, string $groupId, int $accountId): string
+    private function buildGroupPlayerKey(string $npCommunicationId, string $groupId, string $accountId): string
     {
         return $npCommunicationId . '|' . $groupId . '|' . $accountId;
     }
@@ -358,7 +375,7 @@ final class FakePDOStatement extends PDOStatement
     {
         $npCommunicationId = (string) $this->parameters[':np_communication_id'];
         $groupId = (string) $this->parameters[':group_id'];
-        $accountId = (int) $this->parameters[':account_id'];
+        $accountId = (string) $this->parameters[':account_id'];
 
         $counts = [];
 
@@ -390,7 +407,7 @@ final class FakePDOStatement extends PDOStatement
         $this->database->saveTrophyGroupPlayer(
             (string) $this->parameters[':np_communication_id'],
             (string) $this->parameters[':group_id'],
-            (int) $this->parameters[':account_id'],
+            (string) $this->parameters[':account_id'],
             (int) $this->parameters[':bronze'],
             (int) $this->parameters[':silver'],
             (int) $this->parameters[':gold'],

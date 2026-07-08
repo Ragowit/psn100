@@ -137,7 +137,7 @@ class GameRescanService
             $this->recalculateTrophies(
                 $trophyTitle,
                 $npCommunicationId,
-                (int) $user->accountId(),
+                (string) $user->accountId(),
                 $trophyGroups,
                 $progressReporter
             );
@@ -459,7 +459,7 @@ class GameRescanService
     private function recalculateTrophies(
         object $trophyTitle,
         string $npCommunicationId,
-        int $accountId,
+        string $accountId,
         array $trophyGroups,
         GameRescanProgressReporter $progressReporter
     ): void {
@@ -503,7 +503,7 @@ class GameRescanService
     private function recalculateParentTitles(
         string $childNpCommunicationId,
         string $lastUpdatedDateTime,
-        int $accountId,
+        string $accountId,
         GameRescanProgressReporter $progressReporter
     ): void {
         $query = $this->database->prepare(

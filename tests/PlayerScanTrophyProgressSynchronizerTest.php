@@ -36,7 +36,7 @@ final class PlayerScanTrophyProgressSynchronizerTest extends TestCase
             new AutomaticTrophyTitleMergeService($mergeDatabase, $mergeService),
         );
 
-        $user = new PlayerScanTrophyProgressSynchronizerTestUser(42);
+        $user = new PlayerScanTrophyProgressSynchronizerTestUser('42');
         $trophyTitle = new PlayerScanTrophyProgressSynchronizerTestTrophyTitle(
             'NPWR12345_00',
             'Example Game',
@@ -57,10 +57,55 @@ final class PlayerScanTrophyProgressSynchronizerTest extends TestCase
         $this->assertSame(1, $earnedDatabase->upsertExecutions, 'Only earned trophies should be persisted.');
         $this->assertSame('42', $earnedDatabase->upsertParameters[0][':account_id']);
         $this->assertTrue(
-            $calculatorDatabase->getTrophyGroupPlayer('NPWR12345_00', 'default', 42) !== null,
+            $calculatorDatabase->getTrophyGroupPlayer('NPWR12345_00', 'default', '42') !== null,
             'Group progress should be recalculated.'
         );
         $this->assertSame([], $mergeService->recomputedParents);
+    }
+
+    public function testSynchronizeTrophyProgressPreservesAccountIdsAbovePhpIntMax(): void
+    {
+        $largeAccountId = '9223372036854775808';
+        $mergeDatabase = new PlayerScanTrophyProgressSynchronizerMergePDO([]);
+        $earnedDatabase = new PlayerEarnedTrophyPersisterRecordingPDO(null);
+        $calculatorDatabase = new PlayerScanTrophyProgressSynchronizerCalculatorPDO();
+        $calculatorDatabase->setTrophyGroup('NPWR12345_00', 'default');
+        $calculatorDatabase->addTrophy('NPWR12345_00', 'default', 1, 'bronze');
+
+        $loggerDatabase = new PDO('sqlite::memory:');
+        $loggerDatabase->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $loggerDatabase->exec('CREATE TABLE log (message TEXT NOT NULL)');
+
+        $synchronizer = new PlayerScanTrophyProgressSynchronizer(
+            $mergeDatabase,
+            new TrophyCalculator($calculatorDatabase),
+            new Psn100Logger($loggerDatabase),
+            new PlayerEarnedTrophyPersister($earnedDatabase),
+            new AutomaticTrophyTitleMergeService($mergeDatabase, new RecordingTrophyMergeService($mergeDatabase)),
+        );
+
+        $user = new PlayerScanTrophyProgressSynchronizerTestUser($largeAccountId);
+        $trophyTitle = new PlayerScanTrophyProgressSynchronizerTestTrophyTitle(
+            'NPWR12345_00',
+            'Example Game',
+            '2024-06-15T10:30:00Z',
+            [
+                new PlayerScanTrophyProgressSynchronizerTestTrophyGroup(
+                    'default',
+                    [
+                        new PlayerScanTrophyProgressSynchronizerTestTrophy(1, true, '', '2024-06-15T10:30:00Z'),
+                    ],
+                ),
+            ],
+        );
+
+        $synchronizer->synchronizeTrophyProgress($user, $trophyTitle, 'NPWR12345_00', false, []);
+
+        $this->assertSame($largeAccountId, $earnedDatabase->upsertParameters[0][':account_id'] ?? null);
+        $this->assertTrue(
+            $calculatorDatabase->getTrophyGroupPlayer('NPWR12345_00', 'default', $largeAccountId) !== null,
+            'Group progress should be recalculated for large account IDs.'
+        );
     }
 
     public function testSynchronizeTrophyProgressRecalculatesMergeParentsFromDatabaseAndCatalog(): void
@@ -89,7 +134,7 @@ final class PlayerScanTrophyProgressSynchronizerTest extends TestCase
             new AutomaticTrophyTitleMergeService($mergeDatabase, $mergeService),
         );
 
-        $user = new PlayerScanTrophyProgressSynchronizerTestUser(7);
+        $user = new PlayerScanTrophyProgressSynchronizerTestUser('7');
         $trophyTitle = new PlayerScanTrophyProgressSynchronizerTestTrophyTitle(
             'NPWR12345_00',
             'Example Game',
@@ -113,7 +158,7 @@ final class PlayerScanTrophyProgressSynchronizerTest extends TestCase
             'Catalog merge parents should be recomputed via merge service.'
         );
         $this->assertTrue(
-            $calculatorDatabase->getTrophyGroupPlayer('NPWR99999_00', 'default', 7) !== null,
+            $calculatorDatabase->getTrophyGroupPlayer('NPWR99999_00', 'default', '7') !== null,
             'Merge parent group progress should be recalculated.'
         );
     }
@@ -206,15 +251,15 @@ final class PlayerScanTrophyProgressSynchronizerCalculatorPDO extends PDO
         $this->delegate->addTrophy($npCommunicationId, $groupId, $orderId, $type, $status);
     }
 
-    public function addEarnedTrophy(string $npCommunicationId, string $groupId, int $orderId, int $accountId, int $earned = 1): void
+    public function addEarnedTrophy(string $npCommunicationId, string $groupId, int $orderId, string $accountId, int $earned = 1): void
     {
         $this->delegate->addEarnedTrophy($npCommunicationId, $groupId, $orderId, $accountId, $earned);
     }
 
     /**
-     * @return array{np_communication_id:string,group_id:string,account_id:int,bronze:int,silver:int,gold:int,platinum:int,progress:int}|null
+     * @return array{np_communication_id:string,group_id:string,account_id:string,bronze:int,silver:int,gold:int,platinum:int,progress:int}|null
      */
-    public function getTrophyGroupPlayer(string $npCommunicationId, string $groupId, int $accountId): ?array
+    public function getTrophyGroupPlayer(string $npCommunicationId, string $groupId, string $accountId): ?array
     {
         return $this->delegate->getTrophyGroupPlayer($npCommunicationId, $groupId, $accountId);
     }
@@ -318,11 +363,11 @@ final class PlayerScanTrophyProgressSynchronizerMergeStatement extends PDOStatem
 
 final class PlayerScanTrophyProgressSynchronizerTestUser
 {
-    public function __construct(private readonly int $accountId)
+    public function __construct(private readonly string $accountId)
     {
     }
 
-    public function accountId(): int
+    public function accountId(): string
     {
         return $this->accountId;
     }

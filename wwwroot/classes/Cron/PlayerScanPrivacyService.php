@@ -44,7 +44,7 @@ final class PlayerScanPrivacyService
         $query->execute();
     }
 
-    public function markAsPrivateByAccountId(int $accountId, string $queueOnlineId): void
+    public function markAsPrivateByAccountId(string $accountId, string $queueOnlineId): void
     {
         $privateStatus = PlayerStatus::PRIVATE_PROFILE->value;
 
@@ -54,7 +54,7 @@ final class PlayerScanPrivacyService
             WHERE account_id = :account_id AND `status` != :flagged_status'
         );
         $query->bindValue(':status', $privateStatus, PDO::PARAM_INT);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':flagged_status', PlayerStatus::FLAGGED->value, PDO::PARAM_INT);
         $query->execute();
 
@@ -85,7 +85,7 @@ final class PlayerScanPrivacyService
 
                 return PlayerScanTrophySummaryAccessResult::abortScan();
             } catch (Exception) {
-                $this->markAsPrivateByAccountId((int) $user->accountId(), (string) $user->onlineId());
+                $this->markAsPrivateByAccountId((string) $user->accountId(), (string) $user->onlineId());
 
                 return PlayerScanTrophySummaryAccessResult::privateProfile();
             }
