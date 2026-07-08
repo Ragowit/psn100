@@ -107,6 +107,11 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 - Class-layer HTML escaping migrated to `Html::escape()` in changelog, game header,
   history, and message sanitizer code paths.
 
+### Security hardening (Phase 5)
+
+- Removed unused jQuery from the public footer and dropped `code.jquery.com` from the
+  CSP Report-Only allowlist.
+
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
 
