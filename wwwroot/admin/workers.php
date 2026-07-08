@@ -84,8 +84,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                         <?php } ?>
                                     </a>
                                 </th>
-                                <th scope="col" style="width: 18rem;">Refresh Token</th>
-                                <th scope="col" style="width: 18rem;">NPSSO</th>
+                                <th scope="col" style="width: 24rem;">Credentials</th>
                                 <th scope="col" style="width: 16rem;">Scanning</th>
                                 <th scope="col" style="width: 16rem;">
                                     <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($scanStartSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
@@ -111,34 +110,42 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                 <tr>
                                     <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
-                                        <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
-                    <?php AdminBootstrap::renderCsrfField(); ?>
-                                            <input type="hidden" name="action" value="update_refresh_token">
-                                            <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
-                                            <input
-                                                type="text"
-                                                name="refresh_token"
-                                                class="form-control form-control-sm"
-                                                value="<?= htmlspecialchars($worker->getRefreshToken(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                maxlength="36"
-                                            >
-                                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                        </form>
-                                    </td>
-                                    <td>
-                                        <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
-                    <?php AdminBootstrap::renderCsrfField(); ?>
-                                            <input type="hidden" name="action" value="update_npsso">
-                                            <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
-                                            <input
-                                                type="text"
-                                                name="npsso"
-                                                class="form-control form-control-sm"
-                                                value="<?= htmlspecialchars($worker->getNpsso(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                maxlength="64"
-                                            >
-                                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                        </form>
+                                        <div class="vstack gap-2">
+                                            <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
+                                                <?php AdminBootstrap::renderCsrfField(); ?>
+                                                <input type="hidden" name="action" value="update_refresh_token">
+                                                <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                                <label class="form-label small text-body-secondary mb-0 text-nowrap" for="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                                    Refresh Token
+                                                </label>
+                                                <input
+                                                    id="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    type="text"
+                                                    name="refresh_token"
+                                                    class="form-control form-control-sm"
+                                                    value="<?= htmlspecialchars($worker->getRefreshToken(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    maxlength="36"
+                                                >
+                                                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                            </form>
+                                            <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
+                                                <?php AdminBootstrap::renderCsrfField(); ?>
+                                                <input type="hidden" name="action" value="update_npsso">
+                                                <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                                <label class="form-label small text-body-secondary mb-0 text-nowrap" for="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                                    NPSSO
+                                                </label>
+                                                <input
+                                                    id="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    type="text"
+                                                    name="npsso"
+                                                    class="form-control form-control-sm"
+                                                    value="<?= htmlspecialchars($worker->getNpsso(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    maxlength="64"
+                                                >
+                                                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                            </form>
+                                        </div>
                                     </td>
                                     <td class="text-nowrap">
                                         <?php if ($scanningLink !== null) { ?>
