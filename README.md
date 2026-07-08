@@ -115,6 +115,7 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
   `player-queue-manager.js`, removing the large inline script from `home.php`.
 - About-page scan log polling moved to `scan-log-renderer.js` with row-entry
   animation styles in `scan-log-renderer.css`.
+- Admin reported-players delete confirmation moved to `admin-report-delete.js`.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
