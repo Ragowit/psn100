@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once 'classes/HomepageController.php';
 require_once 'classes/HomepagePopularGamesFilter.php';
 
@@ -55,11 +57,11 @@ require_once("header.php");
                                             <div class="card">
                                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
                                                     <a href="<?= $gameUrl; ?>">
-                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="<?= $game->getIconPath(); ?>" alt="<?= htmlentities($game->getName()); ?>">
+                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="<?= $game->getIconPath(); ?>" alt="<?= Html::escape($game->getName()); ?>">
                                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                                             <?php
                                                             foreach ($game->getPlatforms() as $platform) {
-                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
+                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . Html::escape($platform) . "</span> ";
                                                             }
                                                             ?>
                                                         </div>
@@ -76,7 +78,7 @@ require_once("header.php");
                                         <!-- name -->
                                         <div class="text-center">
                                             <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $gameUrl; ?>">
-                                                <?= htmlentities($game->getName()); ?>
+                                                <?= Html::escape($game->getName()); ?>
                                             </a>
                                         </div>
                                     </div>
@@ -106,11 +108,11 @@ require_once("header.php");
                                             <div class="card">
                                                 <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
                                                     <a href="<?= $dlcUrl; ?>">
-                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="<?= $dlc->getIconPath(); ?>" alt="<?= htmlentities($dlc->getGroupName()); ?>">
+                                                        <img class="card-img object-fit-scale" style="height: 11.5rem;" src="<?= $dlc->getIconPath(); ?>" alt="<?= Html::escape($dlc->getGroupName()); ?>">
                                                         <div class="card-img-overlay d-flex align-items-end p-2">
                                                             <?php
                                                             foreach ($dlc->getPlatforms() as $platform) {
-                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . htmlentities($platform) . "</span> ";
+                                                                echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . Html::escape($platform) . "</span> ";
                                                             }
                                                             ?>
                                                         </div>
@@ -127,7 +129,7 @@ require_once("header.php");
                                         <!-- name -->
                                         <div class="text-center">
                                             <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $dlcUrl; ?>">
-                                                <small><?= htmlentities($dlc->getName()); ?></small><br><?= htmlentities($dlc->getGroupName()); ?>
+                                                <small><?= Html::escape($dlc->getName()); ?></small><br><?= Html::escape($dlc->getGroupName()); ?>
                                             </a>
                                         </div>
                                     </div>
@@ -153,8 +155,8 @@ require_once("header.php");
                                     <?php
                                     foreach (HomepagePopularGamesFilter::getPlatformOptions() as $platformValue => $platformLabel) {
                                         ?>
-                                        <option value="<?= htmlentities($platformValue, ENT_QUOTES, 'UTF-8'); ?>"<?= ($popularGamesFilter->isPlatformSelected($platformValue) ? ' selected' : ''); ?>>
-                                            <?= htmlentities($platformLabel); ?>
+                                        <option value="<?= Html::escape($platformValue); ?>"<?= ($popularGamesFilter->isPlatformSelected($platformValue) ? ' selected' : ''); ?>>
+                                            <?= Html::escape($platformLabel); ?>
                                         </option>
                                         <?php
                                     }
@@ -181,7 +183,7 @@ require_once("header.php");
                             <div class="card">
                                 <div class="d-flex justify-content-center align-items-center" style="height: 7rem;">
                                     <a href="<?= $gameUrl; ?>">
-                                        <img class="card-img object-fit-cover" style="height: 7rem;" src="<?= $game->getIconPath(); ?>" alt="<?= htmlentities($game->getName()); ?>">
+                                        <img class="card-img object-fit-cover" style="height: 7rem;" src="<?= $game->getIconPath(); ?>" alt="<?= Html::escape($game->getName()); ?>">
                                     </a>
                                 </div>
                             </div>
@@ -193,7 +195,7 @@ require_once("header.php");
                                 <div class="row">
                                     <div class="col">
                                         <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $gameUrl; ?>">
-                                            <?= htmlentities($game->getName()); ?>
+                                            <?= Html::escape($game->getName()); ?>
                                         </a>
                                     </div>
                                 </div>
@@ -201,7 +203,7 @@ require_once("header.php");
                                     <div class="col">
                                         <?php
                                         foreach ($game->getPlatforms() as $platform) {
-                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2 mt-2\">" . htmlentities($platform) . "</span> ";
+                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2 mt-2\">" . Html::escape($platform) . "</span> ";
                                         }
                                         ?>
                                     </div>

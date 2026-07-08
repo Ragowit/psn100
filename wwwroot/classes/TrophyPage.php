@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Html.php';
+
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/TrophyService.php';
 require_once __DIR__ . '/TrophyRarityFormatter.php';
@@ -83,7 +85,7 @@ class TrophyPage
         $trophyName = $trophy->getName();
         $metaData = (new PageMetaData())
             ->withTitle($trophyName . ' Trophy')
-            ->withDescription(htmlentities($trophy->getDetail(), ENT_QUOTES, 'UTF-8'))
+            ->withDescription(Html::escape($trophy->getDetail()))
             ->withImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())
             ->withUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
 

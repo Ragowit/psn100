@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/TrophyListFilter.php';
 require_once __DIR__ . '/classes/TrophyListPage.php';
 require_once __DIR__ . '/classes/TrophyListService.php';
@@ -48,14 +50,14 @@ require_once('header.php');
                                 <tr>
                                     <td scope="row" class="text-center align-middle">
                                         <a href="<?= $gameUrl; ?>">
-                                            <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 10rem;" />
+                                            <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($trophy->getGameName()); ?>" title="<?= Html::escape($trophy->getGameName()); ?>" style="width: 10rem;" />
                                         </a>
                                     </td>
                                     <td class="align-middle">
                                         <div class="hstack gap-3">
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <a href="<?= $trophyUrl; ?>">
-                                                    <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlentities($trophy->getTrophyName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
+                                                    <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($trophy->getTrophyName()); ?>" title="<?= Html::escape($trophy->getTrophyName()); ?>" style="width: 5rem;" />
                                                 </a>
                                             </div>
 
@@ -63,10 +65,10 @@ require_once('header.php');
                                                 <div class="vstack">
                                                     <span>
                                                         <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= $trophyUrl; ?>">
-                                                            <b><?= htmlentities($trophy->getTrophyName()); ?></b>
+                                                            <b><?= Html::escape($trophy->getTrophyName()); ?></b>
                                                         </a>
                                                     </span>
-                                                    <?= nl2br(htmlentities($trophy->getTrophyDetail(), ENT_QUOTES, 'UTF-8')); ?>
+                                                    <?= nl2br(Html::escape($trophy->getTrophyDetail())); ?>
                                                     <?php
                                                     $progressTargetValue = $trophy->getProgressTargetValue();
                                                     if ($progressTargetValue !== null) {
@@ -90,7 +92,7 @@ require_once('header.php');
                                             <?php
                                             foreach ($trophy->getPlatforms() as $platform) {
                                                 echo '<span class="badge rounded-pill text-bg-primary p-2">'
-                                                    . htmlentities($platform, ENT_QUOTES, 'UTF-8') . '</span> ';
+                                                    . Html::escape($platform) . '</span> ';
                                             }
                                             ?>
                                         </div>

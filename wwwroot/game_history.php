@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/GameHistoryPage.php';
 require_once __DIR__ . '/classes/GameHistoryRenderer.php';
 
@@ -123,7 +125,7 @@ require_once 'header.php';
                                 $titleFieldDiffs = $entry['titleFieldDiffs'] ?? [];
                                 ?>
                                 <span class="fw-semibold">
-                                    Version <?= htmlentities($setVersion ?? 'Unknown', ENT_QUOTES, 'UTF-8'); ?>
+                                    Version <?= Html::escape($setVersion ?? 'Unknown'); ?>
                                     <?php if ($titleHighlights['set_version'] ?? false) { ?>
                                         <span class="badge text-bg-success ms-2">New</span>
                                     <?php } ?>
@@ -131,7 +133,7 @@ require_once 'header.php';
                             </div>
                             <?php $discoveredAt = $entry['discoveredAt']; ?>
                             <time class="text-body-secondary small js-localized-datetime" datetime="<?= htmlspecialchars($discoveredAt->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>" data-show-timezone="1">
-                                <?= htmlentities($discoveredAt->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?> UTC
+                                <?= Html::escape($discoveredAt->format('Y-m-d H:i:s')); ?> UTC
                             </time>
                         </div>
                         <div class="card-body">
@@ -173,7 +175,7 @@ require_once 'header.php';
                                                     ?>
                                                     <tr class="<?= $groupIsNewRow ? 'table-success' : ''; ?>">
                                                         <td>
-                                                            <span class="badge text-bg-secondary"><?= htmlentities($groupChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                            <span class="badge text-bg-secondary"><?= Html::escape($groupChange['group_id']); ?></span>
                                                         </td>
                                                         <td>
                                                             <?php if ($groupIsNewRow) { ?>
@@ -235,7 +237,7 @@ require_once 'header.php';
                                                     ?>
                                                     <tr class="<?= $trophyIsNewRow ? 'table-success' : ''; ?>">
                                                         <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
-                                                            <span class="badge text-bg-secondary"><?= htmlentities($trophyChange['group_id'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                            <span class="badge text-bg-secondary"><?= Html::escape($trophyChange['group_id']); ?></span>
                                                         </td>
                                                         <td class="<?= ($trophyChange['isNewRow'] ?? false) ? 'table-success' : ''; ?>">
                                                             <?php if ($trophyChange['is_unobtainable'] ?? false) { ?>

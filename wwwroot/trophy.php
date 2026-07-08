@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once 'classes/TrophyPage.php';
 require_once 'classes/TrophyRarityFormatter.php';
 
@@ -76,7 +78,7 @@ require_once("header.php");
                                             <div class="vstack gap-1">
                                                 <div class="hstack gap-3">
                                                     <div>
-                                                        <b><?= htmlentities($trophy->getName()); ?></b>
+                                                        <b><?= Html::escape($trophy->getName()); ?></b>
                                                     </div>
 
                                                     <?php
@@ -100,7 +102,7 @@ require_once("header.php");
                                                 </div>
 
                                                 <div>
-                                                    <?= nl2br(htmlentities($trophy->getDetail(), ENT_QUOTES, "UTF-8")); ?>
+                                                    <?= nl2br(Html::escape($trophy->getDetail())); ?>
                                                     <?php
                                                     $progressTargetValue = $trophy->getProgressTargetValue();
                                                     if ($progressTargetValue !== null) {
@@ -124,11 +126,11 @@ require_once("header.php");
                                                     <div class="hstack gap-1">
                                                         <?php
                                                         foreach ($trophy->getPlatforms() as $platform) {
-                                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . htmlentities($platform) . "</span> ";
+                                                            echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . Html::escape($platform) . "</span> ";
                                                         }
                                                         ?>
 
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($trophy->getGameLink($utility, $playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlentities($trophy->getGameName()); ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($trophy->getGameLink($utility, $playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>"><?= Html::escape($trophy->getGameName()); ?></a>
                                                     </div>
                                                 </div>
                                             </div>
