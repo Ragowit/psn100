@@ -74,6 +74,11 @@ final class AdminBootstrap
         return is_string($method) && strtoupper($method) === 'POST';
     }
 
+    public static function requireValidPostCsrfToken(): void
+    {
+        self::validateCsrfToken();
+    }
+
     private static function validateCsrfToken(): void
     {
         $submittedToken = $_POST['_csrf_token'] ?? '';

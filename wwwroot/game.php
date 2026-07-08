@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/GamePage.php';
 require_once __DIR__ . '/classes/GameTrophyFilter.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
+require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -32,6 +33,8 @@ try {
 }
 
 $game = $gamePage->getGame();
+$gameSlug = $game->getId() . '-' . $utility->slugify($game->getName());
+$encodedGamePlayer = isset($player) ? '/' . rawurlencode((string) $player) : '';
 $gameHeaderData = $gamePage->getGameHeaderData();
 $sort = $gamePage->getSort();
 $accountId = $gamePage->getPlayerAccountId();
@@ -55,10 +58,10 @@ require_once("header.php");
 
             <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-primary active" href="/game/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
-                    <a class="btn btn-outline-primary" href="/game-history/<?= $game->getId() . '-' . $utility->slugify($game->getName()); ?><?= (isset($player) ? '/' . $player : ''); ?>">History</a>
+                    <a class="btn btn-primary active" href="/game/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game-history/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">History</a>
                 </div>
             </div>
 

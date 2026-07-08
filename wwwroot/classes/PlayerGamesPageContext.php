@@ -13,6 +13,7 @@ require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerStatus.php';
+require_once __DIR__ . '/PlayerUrlBuilder.php';
 
 final class PlayerGamesPageContext
 {
@@ -218,7 +219,7 @@ final class PlayerGamesPageContext
         $metaData = (new PageMetaData())
             ->withTitle($this->buildTitle($playerData))
             ->withImage('https://psn100.net/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
-            ->withUrl('https://psn100.net/player/' . $this->extractString($playerData['online_id'] ?? ''));
+            ->withUrl('https://psn100.net' . PlayerUrlBuilder::playerPath($this->extractString($playerData['online_id'] ?? '')));
 
         $status = self::extractPlayerStatus($playerData);
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerReportService.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerReportResult.php';
+require_once __DIR__ . '/../wwwroot/classes/IpSubmissionLockExecutor.php';
+require_once __DIR__ . '/../wwwroot/classes/IpSubmissionLockUnavailableException.php';
 
 final class PlayerReportServiceTest extends TestCase
 {
@@ -131,6 +133,16 @@ final class PlayerReportServiceTest extends TestCase
         }
     }
 
+    public function testSubmitReportReturnsBusyMessageWhenLockIsUnavailable(): void
+    {
+        $service = new PlayerReportService($this->pdo, new UnavailableIpSubmissionLockExecutor());
+        $result = $service->submitReport(123, '198.51.100.10', 'Cheating behavior');
+
+        $this->assertFalse($result->isSuccess());
+        $this->assertStringContainsString('busy', strtolower($result->getMessage()));
+        $this->assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM player_report')->fetchColumn());
+    }
+
     public function testSubmitReportPerformsDuplicateCheckInsideIpLock(): void
     {
         $source = file_get_contents(__DIR__ . '/../wwwroot/classes/PlayerReportService.php');
@@ -146,5 +158,18 @@ final class PlayerReportServiceTest extends TestCase
         $this->assertTrue($lockPos !== false);
         $this->assertTrue($duplicatePos !== false);
         $this->assertTrue($duplicatePos > $lockPos);
+    }
+}
+
+final class UnavailableIpSubmissionLockExecutor extends IpSubmissionLockExecutor
+{
+    public function __construct()
+    {
+        parent::__construct(new PDO('sqlite::memory:'));
+    }
+
+    public function execute(string $ipAddress, callable $callback): mixed
+    {
+        throw new IpSubmissionLockUnavailableException('Unable to acquire IP submission lock.');
     }
 }

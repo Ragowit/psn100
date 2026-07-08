@@ -20,7 +20,10 @@ $navigationItems = $navigation->getItems();
     <body>
         <div class="p-4">
             <p>
-                <a href="/admin/logout.php">Log out</a>
+                <form method="post" action="/admin/logout.php" class="d-inline">
+                    <?php AdminBootstrap::renderCsrfField(); ?>
+                    <button type="submit" class="btn btn-link p-0 align-baseline">Log out</button>
+                </form>
                 <?php
                 $authenticatedUsername = AdminBootstrap::createAuthService()->getAuthenticatedUsername();
                 if ($authenticatedUsername !== null) {

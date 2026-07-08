@@ -12,6 +12,17 @@ header("Expires: 0");
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: SAMEORIGIN');
+header(
+    "Content-Security-Policy-Report-Only: default-src 'self'; "
+    . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com; "
+    . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    . "img-src 'self' data: https:; "
+    . "font-src 'self' https://cdn.jsdelivr.net; "
+    . "connect-src 'self'; "
+    . "frame-ancestors 'self'; "
+    . "base-uri 'self'; "
+    . "form-action 'self'"
+);
 
 require_once __DIR__ . '/classes/ApplicationBootstrapper.php';
 

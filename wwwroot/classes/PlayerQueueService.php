@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerScanProgress.php';
 require_once __DIR__ . '/PlayerScanStatus.php';
 require_once __DIR__ . '/IpSubmissionLockExecutor.php';
+require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
+require_once __DIR__ . '/Html.php';
 
 class PlayerQueueService
 {
@@ -208,7 +210,7 @@ class PlayerQueueService
 
     public function escapeHtml(string $value): string
     {
-        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return Html::escape($value);
     }
 
     public function isPlayerBeingScanned(string $playerName): bool

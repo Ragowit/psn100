@@ -97,6 +97,7 @@ final class AdminAuthServiceTest extends TestCase
 
         $this->assertFalse($service->isAuthenticated());
         $this->assertSame(null, $service->getAuthenticatedUsername());
+        $this->assertSame(PHP_SESSION_NONE, session_status());
     }
 
     public function testLoginIsBlockedWhenIpAddressIsLocked(): void

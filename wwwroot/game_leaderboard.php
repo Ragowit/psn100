@@ -27,6 +27,7 @@ $totalPagesCount = $pageContext->getTotalPagesCount();
 $rows = $pageContext->getRows();
 $accountId = $pageContext->getPlayerAccountId();
 $gameSlug = $pageContext->getGameSlug();
+$encodedGamePlayer = isset($player) ? '/' . rawurlencode((string) $player) : '';
 
 $title = $pageContext->getTitle();
 require_once("header.php");
@@ -44,10 +45,10 @@ require_once("header.php");
 
             <div class="col-6 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Trophies</a>
-                    <a class="btn btn-primary active" href="/game-leaderboard/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">Recent Players</a>
-                    <a class="btn btn-outline-primary" href="/game-history/<?= $gameSlug; ?><?= (isset($player) ? '/' . $player : ''); ?>">History</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Trophies</a>
+                    <a class="btn btn-primary active" href="/game-leaderboard/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game-history/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">History</a>
                 </div>
             </div>
 

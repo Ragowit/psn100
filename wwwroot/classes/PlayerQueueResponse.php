@@ -6,31 +6,46 @@ require_once __DIR__ . '/PlayerQueueStatus.php';
 
 readonly class PlayerQueueResponse implements \JsonSerializable
 {
+    /**
+     * @param list<array<string, mixed>>|null $messageParts
+     */
     private function __construct(
         private PlayerQueueStatus $status,
         private string $message,
+        private ?array $messageParts = null,
         private ?string $pollToken = null,
         private int $httpStatusCode = 200,
     ) {}
 
-    public static function queued(string $message): self
+    /**
+     * @param list<array<string, mixed>>|null $messageParts
+     */
+    public static function queued(string $message, ?array $messageParts = null): self
     {
-        return new self(PlayerQueueStatus::QUEUED, $message);
+        return new self(PlayerQueueStatus::QUEUED, $message, $messageParts);
     }
 
-    public static function complete(string $message): self
+    /**
+     * @param list<array<string, mixed>>|null $messageParts
+     */
+    public static function complete(string $message, ?array $messageParts = null): self
     {
-        return new self(PlayerQueueStatus::COMPLETE, $message);
+        return new self(PlayerQueueStatus::COMPLETE, $message, $messageParts);
     }
 
-    public static function error(string $message): self
+    public static function error(string $message, ?array $messageParts = null): self
     {
-        return new self(PlayerQueueStatus::ERROR, $message);
+        return new self(PlayerQueueStatus::ERROR, $message, $messageParts);
+    }
+
+    public static function busy(string $message): self
+    {
+        return new self(PlayerQueueStatus::ERROR, $message, null, null, 503);
     }
 
     public static function rateLimited(string $message): self
     {
-        return new self(PlayerQueueStatus::ERROR, $message, null, 429);
+        return new self(PlayerQueueStatus::ERROR, $message, null, null, 429);
     }
 
     public function withPollToken(string $pollToken): self
@@ -38,6 +53,7 @@ readonly class PlayerQueueResponse implements \JsonSerializable
         return new self(
             $this->status,
             $this->message,
+            $this->messageParts,
             $pollToken,
             $this->httpStatusCode,
         );
@@ -58,6 +74,14 @@ readonly class PlayerQueueResponse implements \JsonSerializable
         return $this->message;
     }
 
+    /**
+     * @return list<array<string, mixed>>|null
+     */
+    public function getMessageParts(): ?array
+    {
+        return $this->messageParts;
+    }
+
     public function getPollToken(): ?string
     {
         return $this->pollToken;
@@ -74,7 +98,7 @@ readonly class PlayerQueueResponse implements \JsonSerializable
     }
 
     /**
-     * @return array<string, string|bool>
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -83,6 +107,10 @@ readonly class PlayerQueueResponse implements \JsonSerializable
             'message' => $this->getMessage(),
             'shouldPoll' => $this->shouldPoll(),
         ];
+
+        if ($this->messageParts !== null) {
+            $payload['messageParts'] = $this->messageParts;
+        }
 
         if ($this->pollToken !== null) {
             $payload['pollToken'] = $this->pollToken;
