@@ -32,18 +32,18 @@ $errorMessage = $handledRequest->getErrorMessage();
                 <div class="mb-2">
                     <label for="gameId" class="form-label">PSN100 Game ID</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="gameId" name="gameId" value="<?= htmlentities($gameId, ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 12345" autocomplete="off" inputmode="numeric">
+                        <input type="text" class="form-control" id="gameId" name="gameId" value="<?= Html::escape($gameId); ?>" placeholder="e.g. 12345" autocomplete="off" inputmode="numeric">
                         <button class="btn btn-primary" type="submit">Lookup</button>
                     </div>
                 </div>
             </form>
             <?php if ($errorMessage !== null) { ?>
                 <div class="alert alert-warning" role="alert">
-                    <?= htmlentities($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($errorMessage); ?>
                 </div>
             <?php } elseif ($normalizedGameId !== '' && $result === null) { ?>
                 <div class="alert alert-info" role="alert">
-                    No trophy data was returned for game ID "<?= htmlentities($normalizedGameId, ENT_QUOTES, 'UTF-8'); ?>".
+                    No trophy data was returned for game ID "<?= Html::escape($normalizedGameId); ?>".
                 </div>
             <?php } ?>
             <?php if (is_array($result)) { ?>
@@ -51,7 +51,7 @@ $errorMessage = $handledRequest->getErrorMessage();
                     <div class="card-body">
                         <pre class="mb-0 text-white-50"><?php
                             $json = json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                            echo htmlentities($json === false ? 'Unable to encode response.' : $json, ENT_QUOTES, 'UTF-8');
+                            echo Html::escape($json === false ? 'Unable to encode response.' : $json);
                         ?></pre>
                     </div>
                 </div>

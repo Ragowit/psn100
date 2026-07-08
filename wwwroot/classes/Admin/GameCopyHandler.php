@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../Html.php';
+
 class GameCopyHandler
 {
     public function __construct(private readonly GameCopyService $gameCopyService)
@@ -77,6 +79,6 @@ class GameCopyHandler
 
     private function escape(string $value): string
     {
-        return htmlentities($value, ENT_QUOTES, 'UTF-8');
+        return Html::escape($value);
     }
 }

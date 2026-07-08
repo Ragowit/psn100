@@ -127,6 +127,8 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
   of `htmlentities()`.
 - Game page templates (`game.php`, `game_header.php`, `game_history.php`, `games.php`,
   `trophy.php`, `trophies.php`, `home.php`) and `TrophyPage` use `Html::escape()`.
+- Admin templates and admin request handlers use `Html::escape()` instead of
+  `htmlentities()`.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../Html.php';
+
 require_once __DIR__ . '/TrophyMergeProgressListener.php';
 
 class TrophyMergeRequestHandler
@@ -145,6 +147,6 @@ class TrophyMergeRequestHandler
 
     private function escape(string $value): string
     {
-        return htmlentities($value, ENT_QUOTES, 'UTF-8');
+        return Html::escape($value);
     }
 }

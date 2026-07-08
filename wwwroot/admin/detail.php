@@ -38,9 +38,9 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
             <a href="/admin/">Back</a><br><br>
             <form method="get" autocomplete="off">
                 Game ID:<br>
-                <input type="number" name="game" value="<?= htmlentities($requestedGameId, ENT_QUOTES, 'UTF-8'); ?>"><br>
+                <input type="number" name="game" value="<?= Html::escape($requestedGameId); ?>"><br>
                 NP Communication ID:<br>
-                <input type="text" name="np_communication_id" style="width: 300px;" value="<?= htmlentities($requestedNpCommunicationId, ENT_QUOTES, 'UTF-8'); ?>"><br>
+                <input type="text" name="np_communication_id" style="width: 300px;" value="<?= Html::escape($requestedNpCommunicationId); ?>"><br>
                 <small>Examples: NPWR10853_00, MERGE_048500</small><br>
                 <input type="submit" value="Fetch">
             </form>
@@ -52,8 +52,8 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                 ?>
                 <p>
                     Game page:
-                    <a href="<?= htmlentities($gameUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
-                        <?= htmlentities($gameUrl, ENT_QUOTES, 'UTF-8'); ?>
+                    <a href="<?= Html::escape($gameUrl); ?>" target="_blank" rel="noopener">
+                        <?= Html::escape($gameUrl); ?>
                     </a>
                 </p>
                 <form method="post" autocomplete="off">
@@ -61,9 +61,9 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <input type="hidden" name="action" value="update-detail">
                     <input type="hidden" name="game" value="<?= $gameDetail->getId(); ?>"><br>
                     Name:<br>
-                    <input type="text" name="name" style="width: 859px;" value="<?= htmlentities($gameDetail->getName(), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <input type="text" name="name" style="width: 859px;" value="<?= Html::escape($gameDetail->getName()); ?>"><br>
                     Icon URL:<br>
-                    <input type="text" name="icon_url" style="width: 859px;" value="<?= htmlentities($gameDetail->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <input type="text" name="icon_url" style="width: 859px;" value="<?= Html::escape($gameDetail->getIconUrl()); ?>"><br>
                     <?php
                     $selectedPlatforms = [];
                     foreach (explode(',', $gameDetail->getPlatform()) as $platformValue) {
@@ -88,25 +88,25 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                                     type="checkbox"
                                     id="platform-<?= $lowerCasePlatform; ?>"
                                     name="platform[]"
-                                    value="<?= htmlentities($platformOption, ENT_QUOTES, 'UTF-8'); ?>"
+                                    value="<?= Html::escape($platformOption); ?>"
                                     <?= $isChecked; ?>
                                 >
                                 <label class="form-check-label" for="platform-<?= $lowerCasePlatform; ?>">
-                                    <?= htmlentities($platformOption, ENT_QUOTES, 'UTF-8'); ?>
+                                    <?= Html::escape($platformOption); ?>
                                 </label>
                             </div>
                         <?php } ?>
                     </fieldset>
                     Set Version:<br>
-                    <input type="text" name="set_version" style="width: 859px;" value="<?= htmlentities($gameDetail->getSetVersion(), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <input type="text" name="set_version" style="width: 859px;" value="<?= Html::escape($gameDetail->getSetVersion()); ?>"><br>
                     Region:<br>
-                    <input type="text" name="region" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getRegion() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <input type="text" name="region" style="width: 859px;" value="<?= Html::escape((string) ($gameDetail->getRegion() ?? '')); ?>"><br>
                     NP Communication ID:<br>
-                    <input type="text" name="np_communication_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getNpCommunicationId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>" readonly><br>
+                    <input type="text" name="np_communication_id" style="width: 859px;" value="<?= Html::escape((string) ($gameDetail->getNpCommunicationId() ?? '')); ?>" readonly><br>
                     PSNProfiles ID:<br>
-                    <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getPsnprofilesId() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <input type="text" name="psnprofiles_id" style="width: 859px;" value="<?= Html::escape((string) ($gameDetail->getPsnprofilesId() ?? '')); ?>"><br>
                     Obsolete Game IDs:<br>
-                    <input type="text" name="obsolete_ids" style="width: 859px;" value="<?= htmlentities((string) ($gameDetail->getObsoleteIds() ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><br>
+                    <input type="text" name="obsolete_ids" style="width: 859px;" value="<?= Html::escape((string) ($gameDetail->getObsoleteIds() ?? '')); ?>"><br>
                     <small>Comma separated trophy_title.id values.</small><br>
                     Message:<br>
                     <textarea name="message" rows="6" cols="120"><?= GameMessageSanitizer::escapeTextareaContent($gameDetail->getMessage()); ?></textarea><br><br>
@@ -114,8 +114,8 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <select id="status" name="status" class="form-select" style="max-width: 300px;">
                         <?php foreach ($statusOptions as $value => $label) { ?>
                             <?php $selected = $gameDetail->getStatus()->value === $value ? 'selected' : ''; ?>
-                            <option value="<?= htmlentities((string) $value, ENT_QUOTES, 'UTF-8'); ?>" <?= $selected; ?>>
-                                <?= htmlentities($label, ENT_QUOTES, 'UTF-8'); ?>
+                            <option value="<?= Html::escape((string) $value); ?>" <?= $selected; ?>>
+                                <?= Html::escape($label); ?>
                             </option>
                         <?php } ?>
                     </select><br><br>
