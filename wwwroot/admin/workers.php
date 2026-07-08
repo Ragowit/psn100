@@ -38,6 +38,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
             crossorigin="anonymous"
         >
         <title>Admin ~ Workers</title>
+        <script src="/js/localized-date-formatter.js" defer></script>
     </head>
     <body>
         <div class="container py-4">
@@ -151,6 +152,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                         <time
                                             class="js-localized-datetime"
                                             datetime="<?= htmlspecialchars($scanStart->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-show-timezone="1"
                                         >
                                             <?= htmlspecialchars($scanStart->format('Y-m-d H:i:s T'), ENT_QUOTES, 'UTF-8'); ?>
                                         </time>
@@ -212,36 +214,5 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                 </div>
             <?php } ?>
         </div>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                if (typeof Intl !== 'object' || typeof Intl.DateTimeFormat !== 'function') {
-                    return;
-                }
-
-                const pad = (value) => value.toString().padStart(2, '0');
-                document.querySelectorAll('.js-localized-datetime').forEach((element) => {
-                    if (!(element instanceof HTMLElement)) {
-                        return;
-                    }
-
-                    const isoString = element.getAttribute('datetime');
-
-                    if (!isoString) {
-                        return;
-                    }
-
-                    const date = new Date(isoString);
-
-                    if (Number.isNaN(date.getTime())) {
-                        return;
-                    }
-
-                    const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-                    const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-                    element.textContent = `${formattedDate} ${formattedTime}`;
-                    element.removeAttribute('data-timezone');
-                });
-            });
-        </script>
     </body>
 </html>

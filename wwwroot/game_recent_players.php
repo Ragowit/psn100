@@ -106,6 +106,7 @@ require_once("header.php");
                                         <span
                                             class="js-recent-player-date"
                                             data-timestamp="<?= htmlspecialchars($recentPlayer->getLastKnownDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-line-break="1"
                                         ></span>
                                     </td>
 
@@ -133,13 +134,6 @@ require_once("header.php");
         </div>
     </div>
 </main>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const formatter = new LocalizedDateFormatter('.js-recent-player-date');
-    formatter.initialize();
-});
-</script>
 
 <?php
 require_once("footer.php");

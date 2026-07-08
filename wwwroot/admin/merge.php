@@ -463,7 +463,9 @@ $message = $requestHandler->handle($_POST ?? []);
                     alert.setAttribute('role', 'alert');
 
                     if (allowHtml) {
-                        alert.innerHTML = message ?? '';
+                        const template = document.createElement('template');
+                        template.innerHTML = message ?? '';
+                        alert.replaceChildren(...template.content.childNodes);
                     } else {
                         alert.textContent = message ?? '';
                     }
@@ -488,9 +490,7 @@ $message = $requestHandler->handle($_POST ?? []);
                         return '';
                     }
 
-                    const container = document.createElement('div');
-                    container.innerHTML = value;
-                    return container.textContent ?? '';
+                    return new DOMParser().parseFromString(value, 'text/html').body.textContent ?? '';
                 }
             }
 

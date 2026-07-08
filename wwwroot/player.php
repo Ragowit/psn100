@@ -153,10 +153,10 @@ require_once("header.php");
                                                         </a>
                                                     </span>
 
-                                                    <span id="<?= $playerGame->getId(); ?>"></span>
-                                                    <script>
-                                                        document.getElementById(<?= json_encode((string) $playerGame->getId()); ?>).innerHTML = new Date(<?= json_encode($playerGame->getLastUpdatedDate() . ' UTC'); ?>).toLocaleString('sv-SE');
-                                                    </script>
+                                                    <span
+                                                        class="js-localized-date"
+                                                        data-timestamp="<?= htmlspecialchars($playerGame->getLastUpdatedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    ></span>
 
                                                     <?php
                                                     $completionLabel = $playerGame->getCompletionDurationLabel();

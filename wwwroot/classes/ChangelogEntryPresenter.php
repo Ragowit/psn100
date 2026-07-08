@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/Utility.php';
+require_once __DIR__ . '/Html.php';
 
 readonly class ChangelogEntryPresenter
 {
@@ -121,7 +122,7 @@ readonly class ChangelogEntryPresenter
         $badges = array_map(
             static fn(string $platform): string => sprintf(
                 '<span class="badge rounded-pill text-bg-primary">%s</span>',
-                htmlentities($platform, ENT_QUOTES, 'UTF-8')
+                Html::escape($platform)
             ),
             $platforms
         );
@@ -137,7 +138,7 @@ readonly class ChangelogEntryPresenter
 
         return sprintf(
             ' <span class="badge rounded-pill text-bg-primary">%s</span>',
-            htmlentities($region, ENT_QUOTES, 'UTF-8')
+            Html::escape($region)
         );
     }
 
@@ -149,8 +150,8 @@ readonly class ChangelogEntryPresenter
 
         return sprintf(
             '<a href="%s">%s</a>',
-            htmlentities($url, ENT_QUOTES, 'UTF-8'),
-            htmlentities($name, ENT_QUOTES, 'UTF-8')
+            Html::escape($url),
+            Html::escape($name)
         );
     }
 
@@ -171,6 +172,6 @@ readonly class ChangelogEntryPresenter
 
     private function escape(?string $value): string
     {
-        return htmlentities($value ?? '', ENT_QUOTES, 'UTF-8');
+        return Html::escape($value ?? '');
     }
 }

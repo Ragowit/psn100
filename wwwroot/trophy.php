@@ -84,14 +84,15 @@ require_once("header.php");
                                                         $earnedDate = $playerTrophy->getEarnedDate();
                                                         ?>
                                                         <div>
-                                                            <span class="badge rounded-pill text-bg-success" id="earnedTrophy"></span>
-                                                            <script>
+                                                            <span
+                                                                class="badge rounded-pill text-bg-success js-localized-date"
                                                                 <?php if ($earnedDate !== null) { ?>
-                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned ' + new Date(<?= json_encode($earnedDate . ' UTC'); ?>).toLocaleString('sv-SE');
+                                                                data-prefix="Earned "
+                                                                data-timestamp="<?= htmlspecialchars($earnedDate, ENT_QUOTES, 'UTF-8'); ?>"
                                                                 <?php } else { ?>
-                                                                document.getElementById("earnedTrophy").innerHTML = 'Earned';
+                                                                data-fallback="Earned"
                                                                 <?php } ?>
-                                                            </script>
+                                                            ></span>
                                                         </div>
                                                         <?php
                                                     }
@@ -210,12 +211,8 @@ require_once("header.php");
                                                     ?>
                                                 </div>
                                             </td>
-                                            <td id="faDate<?= $count; ?>" class="align-middle text-center" style="white-space: nowrap;">
+                                            <td class="align-middle text-center js-localized-date" style="white-space: nowrap;" data-timestamp="<?= htmlspecialchars($result->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>" data-line-break="1">
                                             </td>
-
-                                            <script>
-                                                document.getElementById("faDate<?= $count; ?>").innerHTML = new Date(<?= json_encode($result->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
-                                            </script>
                                         </tr>
                                         <?php
                                     }
@@ -267,12 +264,8 @@ require_once("header.php");
                                                     ?>
                                                 </div>
                                             </td>
-                                            <td id="laDate<?= $count; ?>" class="align-middle text-center" style="white-space: nowrap;">
+                                            <td class="align-middle text-center js-localized-date" style="white-space: nowrap;" data-timestamp="<?= htmlspecialchars($result->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>" data-line-break="1">
                                             </td>
-
-                                            <script>
-                                                document.getElementById("laDate<?= $count; ?>").innerHTML = new Date(<?= json_encode($result->getEarnedDate() . ' UTC'); ?>).toLocaleString('sv-SE').replace(' ', '<br>');
-                                            </script>
                                         </tr>
                                         <?php
                                     }

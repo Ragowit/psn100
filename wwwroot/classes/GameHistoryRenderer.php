@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
+require_once __DIR__ . '/Html.php';
 
 /**
  * Utility responsible for rendering the visual diff blocks that appear on the
@@ -115,7 +116,7 @@ final class GameHistoryRenderer
 
         return '<div class="text-center">'
             . '<img class="' . $objectFit . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
-            . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">'
+            . Html::escape($resolvedPath) . '" alt="' . Html::escape($name ?? '') . '">'
             . '</div>';
     }
 
@@ -141,7 +142,7 @@ final class GameHistoryRenderer
             return '<span class="history-diff__empty">&mdash;</span>';
         }
 
-        $escaped = htmlentities($value, ENT_QUOTES, 'UTF-8');
+        $escaped = Html::escape($value);
 
         return $isMultiline ? nl2br($escaped) : $escaped;
     }
@@ -152,7 +153,7 @@ final class GameHistoryRenderer
             return '<span class="history-diff__empty">&mdash;</span>';
         }
 
-        return htmlentities((string) $value, ENT_QUOTES, 'UTF-8');
+        return Html::escape((string) $value);
     }
 
     /**
@@ -302,7 +303,7 @@ final class GameHistoryRenderer
 
         foreach ($tokens as $token) {
             $isWhitespace = trim($token['value']) === '';
-            $escaped = htmlentities($token['value'], ENT_QUOTES, 'UTF-8');
+            $escaped = Html::escape($token['value']);
 
             if ($isWhitespace && $isMultiline) {
                 $escaped = str_replace(["\r\n", "\n", "\r"], '<br>', $escaped);
@@ -376,8 +377,8 @@ final class GameHistoryRenderer
 
         return '<div class="text-center">'
             . '<img class="' . $objectFit . ' border border-2 ' . $borderClass . ' rounded" style="height: ' . $height . 'rem;" src="/img/'
-            . $directory . '/' . htmlentities($resolvedPath, ENT_QUOTES, 'UTF-8')
-            . '" alt="' . htmlentities($name ?? '', ENT_QUOTES, 'UTF-8') . '">'
+            . $directory . '/' . Html::escape($resolvedPath)
+            . '" alt="' . Html::escape($name ?? '') . '">'
             . '</div>';
     }
 }
