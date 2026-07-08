@@ -279,7 +279,7 @@ class PlayerQueueManager {
             if (response.shouldPoll) {
                 this.startPolling(player);
             } else {
-                this.stopPolling();
+                this.stopPolling(true);
             }
         });
     }
@@ -301,18 +301,20 @@ class PlayerQueueManager {
             this.updateQueueResult(response.message);
 
             if (!response.shouldPoll) {
-                this.stopPolling();
+                this.stopPolling(true);
             }
         });
     }
 
-    stopPolling() {
+    stopPolling(clearPollToken = false) {
         if (this.timerId !== null) {
             window.clearInterval(this.timerId);
             this.timerId = null;
         }
 
-        this.pollToken = null;
+        if (clearPollToken) {
+            this.pollToken = null;
+        }
     }
 
     sendPostRequest(url, body, onSuccess) {
@@ -407,7 +409,7 @@ class PlayerQueueManager {
 
     handleError() {
         this.updateQueueResult('An error occurred while contacting the server. Please try again later.');
-        this.stopPolling();
+        this.stopPolling(true);
     }
 }
 
