@@ -48,7 +48,7 @@ final class MaintenancePage
             'Check your leaderboard position against other PlayStation trophy hunters!',
             "Markus 'Ragowit' Persson, and other contributors via GitHub project",
             'The site is undergoing some maintenance. Should be back soon!',
-            [MaintenancePageStylesheet::bootstrapCdn()]
+            [MaintenancePageStylesheet::bootstrap()]
         );
     }
 

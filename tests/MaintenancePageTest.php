@@ -26,16 +26,10 @@ final class MaintenancePageTest extends TestCase
         $this->assertCount(1, $stylesheets);
 
         $stylesheet = $stylesheets[0];
-        $this->assertSame(
-            'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
-            $stylesheet->getHref()
-        );
+        $this->assertStringContainsString('/lib/bootstrap/5.3.8/css/bootstrap.min.css?v=', $stylesheet->getHref());
         $this->assertSame('stylesheet', $stylesheet->getRel());
-        $this->assertSame(
-            'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
-            $stylesheet->getIntegrity()
-        );
-        $this->assertSame('anonymous', $stylesheet->getCrossorigin());
+        $this->assertSame(null, $stylesheet->getIntegrity());
+        $this->assertSame(null, $stylesheet->getCrossorigin());
     }
 
     public function testWithMessageReturnsClonedInstanceWithUpdatedMessage(): void
@@ -62,27 +56,21 @@ final class MaintenancePageTest extends TestCase
         $this->assertSame('hash', $custom->getIntegrity());
         $this->assertSame('use-credentials', $custom->getCrossorigin());
 
-        $bootstrap = MaintenancePageStylesheet::bootstrapCdn('5.3.0');
+        $bootstrap = MaintenancePageStylesheet::bootstrap();
 
-        $this->assertSame(
-            'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-            $bootstrap->getHref()
-        );
+        $this->assertStringContainsString('/lib/bootstrap/5.3.8/css/bootstrap.min.css?v=', $bootstrap->getHref());
         $this->assertSame('stylesheet', $bootstrap->getRel());
-        $this->assertSame(
-            'sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM',
-            $bootstrap->getIntegrity()
-        );
-        $this->assertSame('anonymous', $bootstrap->getCrossorigin());
+        $this->assertSame(null, $bootstrap->getIntegrity());
+        $this->assertSame(null, $bootstrap->getCrossorigin());
     }
 
-    public function testBootstrapCdnThrowsForUnsupportedVersion(): void
+    public function testBootstrapThrowsForUnsupportedVersion(): void
     {
         try {
-            MaintenancePageStylesheet::bootstrapCdn('4.6.2');
+            MaintenancePageStylesheet::bootstrap('5.3.0');
             $this->fail('Expected InvalidArgumentException for unsupported Bootstrap version.');
         } catch (InvalidArgumentException $exception) {
-            $this->assertSame('Unsupported Bootstrap CDN version: 4.6.2', $exception->getMessage());
+            $this->assertSame('Unsupported Bootstrap version: 5.3.0', $exception->getMessage());
         }
     }
 }

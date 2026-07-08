@@ -120,6 +120,9 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 - Admin game merge streaming UI moved to `admin-merge-form.js`.
 - Admin game rescan streaming UI moved to `admin-rescan-form.js` with diff styles in
   `admin-rescan.css`.
+- Bootstrap 5.3.8 and Popper 2.11.8 are self-hosted under `wwwroot/lib/` via
+  `BootstrapAssets`, removing `cdn.jsdelivr.net` from templates and the CSP
+  Report-Only allowlist.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.

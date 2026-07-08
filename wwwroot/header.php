@@ -7,6 +7,7 @@ require_once __DIR__ . '/classes/PageMetaDataRenderer.php';
 require_once __DIR__ . '/classes/SessionManager.php';
 require_once __DIR__ . '/classes/CsrfTokenManager.php';
 require_once __DIR__ . '/classes/StaticAsset.php';
+require_once __DIR__ . '/classes/BootstrapAssets.php';
 
 SessionManager::ensureStarted();
 $publicCsrfToken = htmlspecialchars(CsrfTokenManager::getToken('public'), ENT_QUOTES, 'UTF-8');
@@ -37,7 +38,7 @@ if (isset($metaData) && $metaData instanceof PageMetaData) {
         <link rel="manifest" href="/site.webmanifest">
         <link rel="icon" href="/img/favicon.ico">
         <!-- Bootstrap CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
 
         <style>
             .trophy-bronze {

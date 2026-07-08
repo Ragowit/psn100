@@ -20,10 +20,11 @@ final class MaintenancePageRendererTest extends TestCase
             $html
         );
         $this->assertStringContainsString(
-            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" '
-            . 'integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">',
+            '<link rel="stylesheet" href="/lib/bootstrap/5.3.8/css/bootstrap.min.css?v=',
             $html
         );
+        $this->assertFalse(str_contains($html, 'integrity='));
+        $this->assertFalse(str_contains($html, 'crossorigin='));
         $this->assertStringContainsString('Hello &amp; welcome!<br />
 Line &lt;two&gt;', $html);
         $this->assertTrue(str_ends_with($html, "\n"), 'Rendered HTML should end with a newline.');

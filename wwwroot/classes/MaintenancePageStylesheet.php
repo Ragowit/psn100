@@ -2,14 +2,10 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/BootstrapAssets.php';
+
 final class MaintenancePageStylesheet
 {
-    /** @var array<string, string> */
-    private const array BOOTSTRAP_INTEGRITY_HASHES = [
-        '5.3.0' => 'sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM',
-        '5.3.8' => 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
-    ];
-
     private string $href;
 
     private string $rel;
@@ -31,17 +27,21 @@ final class MaintenancePageStylesheet
         return new self($href, $rel, $integrity, $crossorigin);
     }
 
-    public static function bootstrapCdn(string $version = '5.3.8'): self
+    public static function bootstrap(string $version = BootstrapAssets::VERSION): self
     {
-        $integrity = self::BOOTSTRAP_INTEGRITY_HASHES[$version] ?? null;
-        if ($integrity === null) {
-            throw new InvalidArgumentException(sprintf('Unsupported Bootstrap CDN version: %s', $version));
+        if ($version !== BootstrapAssets::VERSION) {
+            throw new InvalidArgumentException(sprintf('Unsupported Bootstrap version: %s', $version));
         }
 
-        $href = sprintf('https://cdn.jsdelivr.net/npm/bootstrap@%s/dist/css/bootstrap.min.css', $version);
-        $crossorigin = 'anonymous';
+        return new self(BootstrapAssets::stylesheetUrl());
+    }
 
-        return new self($href, 'stylesheet', $integrity, $crossorigin);
+    /**
+     * @deprecated Use bootstrap() for the self-hosted stylesheet.
+     */
+    public static function bootstrapCdn(string $version = BootstrapAssets::VERSION): self
+    {
+        return self::bootstrap($version);
     }
 
     public function getHref(): string
