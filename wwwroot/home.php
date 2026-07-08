@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/Html.php';
+require_once __DIR__ . '/classes/PlayerQueueService.php';
 
 require_once 'classes/HomepageController.php';
 require_once 'classes/HomepagePopularGamesFilter.php';
@@ -25,7 +26,7 @@ require_once("header.php");
         <div class="row row-cols">
             <div class="col">
                 <div class="input-group mb-1">
-                    <input type="text" class="form-control" placeholder="PSN name..." id="player" maxlength="16" aria-label="PSN name..." aria-describedby="player-button">
+                    <input type="text" class="form-control" placeholder="PSN name..." id="player" minlength="3" maxlength="16" pattern="<?= Html::escape(PlayerQueueService::ONLINE_ID_HTML_PATTERN); ?>" aria-label="PSN name..." aria-describedby="player-button">
                     <button class="btn btn-primary" type="button" id="player-button">Update</button>
                 </div>
             </div>

@@ -12,7 +12,9 @@ class PlayerQueueService
 {
     public const int MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
     public const int CHEATER_STATUS = 1;
-    private const string PLAYER_NAME_PATTERN = '/^[\\w\-]{3,16}$/';
+    public const string ONLINE_ID_HTML_PATTERN = '[A-Za-z][A-Za-z0-9_-]{2,15}';
+    public const string INVALID_ONLINE_ID_MESSAGE = 'PSN name must contain between three and 16 characters, start with a letter, and can consist of letters, numbers, hyphens (-) and underscores (_). Letters are not case-sensitive.';
+    private const string ONLINE_ID_PATTERN = '/^[a-zA-Z][a-zA-Z0-9_-]{2,15}$/';
     private const string SQL_IP_SUBMISSION_COUNT = <<<'SQL'
         SELECT
             COUNT(*)
@@ -200,7 +202,7 @@ class PlayerQueueService
 
     public static function isValidOnlineId(string $playerName): bool
     {
-        return $playerName !== '' && preg_match(self::PLAYER_NAME_PATTERN, $playerName) === 1;
+        return $playerName !== '' && preg_match(self::ONLINE_ID_PATTERN, $playerName) === 1;
     }
 
     public function isValidPlayerName(string $playerName): bool

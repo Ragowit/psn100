@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/Html.php';
+require_once __DIR__ . '/classes/PlayerQueueService.php';
 
 require_once __DIR__ . '/classes/GameListFilter.php';
 require_once __DIR__ . '/classes/GameListService.php';
@@ -36,7 +37,7 @@ require_once("header.php");
                 <div class="input-group d-flex justify-content-end">
                     <input type="hidden" name="page" value="<?= $gameListPage->getCurrentPage(); ?>">
                     <input type="hidden" name="search" value="<?= Html::escape($filter->getSearch()); ?>">
-                    <input type="text" name="player" class="form-control rounded-start" maxlength="16" placeholder="View as player..." value="<?= Html::escape($filter->getPlayer() ?? ''); ?>" aria-label="Text input to show completed games for specified player">
+                    <input type="text" name="player" class="form-control rounded-start" minlength="3" maxlength="16" pattern="<?= Html::escape(PlayerQueueService::ONLINE_ID_HTML_PATTERN); ?>" placeholder="View as player..." value="<?= Html::escape($filter->getPlayer() ?? ''); ?>" aria-label="Text input to show completed games for specified player">
 
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
                     <ul class="dropdown-menu p-2">

@@ -13,7 +13,6 @@ final class PlayerQueueResponseFactory
 {
     private const string EMPTY_NAME_MESSAGE = "PSN name can't be empty.";
 
-    private const string INVALID_NAME_MESSAGE = "PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) and underscores (_).";
 
     private const string BUSY_MESSAGE = 'The server is busy processing another request. Please try again in a moment.';
 
@@ -28,7 +27,7 @@ final class PlayerQueueResponseFactory
 
     public function createInvalidNameResponse(): PlayerQueueResponse
     {
-        return PlayerQueueResponse::error(self::INVALID_NAME_MESSAGE);
+        return PlayerQueueResponse::error(PlayerQueueService::INVALID_ONLINE_ID_MESSAGE);
     }
 
     public function createQueueLimitResponse(): PlayerQueueResponse

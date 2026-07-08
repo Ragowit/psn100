@@ -293,11 +293,7 @@ final class PlayerQueueHandlerTest extends TestCase
         $response = $handler->handleAddToQueueRequest($request);
 
         $this->assertSame('error', $response->getStatus());
-        $this->assertSame(
-            'PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) '
-            . 'and underscores (_).',
-            $response->getMessage()
-        );
+        $this->assertSame(PlayerQueueService::INVALID_ONLINE_ID_MESSAGE, $response->getMessage());
     }
 
     public function testHandleAddToQueueRequestQueuesPlayerWhenValidationPasses(): void
@@ -357,11 +353,7 @@ final class PlayerQueueHandlerTest extends TestCase
         $response = $handler->handleQueuePositionRequest($request);
 
         $this->assertSame('error', $response->getStatus());
-        $this->assertSame(
-            'PSN name must contain between three and 16 characters, and can consist of letters, numbers, hyphens (-) '
-            . 'and underscores (_).',
-            $response->getMessage()
-        );
+        $this->assertSame(PlayerQueueService::INVALID_ONLINE_ID_MESSAGE, $response->getMessage());
     }
 
     public function testHandleQueuePositionRequestReturnsCheaterResponseWhenStatusMatches(): void
