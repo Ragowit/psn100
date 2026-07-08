@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/classes/Cron/CronCliAccessGuard.php';
+require_once __DIR__ . '/classes/ContentSecurityPolicy.php';
 
 CronCliAccessGuard::denyWebCronScriptAccess($_SERVER ?? []);
 
@@ -12,17 +13,7 @@ header("Expires: 0");
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: SAMEORIGIN');
-header(
-    "Content-Security-Policy-Report-Only: default-src 'self'; "
-    . "script-src 'self' 'unsafe-inline'; "
-    . "style-src 'self' 'unsafe-inline'; "
-    . "img-src 'self' data: https:; "
-    . "font-src 'self'; "
-    . "connect-src 'self'; "
-    . "frame-ancestors 'self'; "
-    . "base-uri 'self'; "
-    . "form-action 'self'"
-);
+header(ContentSecurityPolicy::HEADER_NAME . ': ' . ContentSecurityPolicy::value());
 
 require_once __DIR__ . '/classes/ApplicationBootstrapper.php';
 

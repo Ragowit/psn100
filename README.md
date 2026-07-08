@@ -95,8 +95,7 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
 - Worker refresh tokens can be edited from the admin Workers page (alongside NPSSO).
 - Player and game URLs use `rawurlencode()` consistently via `PlayerUrlBuilder`.
 - `Html::escape()` is the shared HTML-escaping helper for new code.
-- `Content-Security-Policy-Report-Only` is sent from `init.php` to collect violations
-  before enforcing a stricter policy.
+- `Content-Security-Policy` is enforced from `init.php` via `ContentSecurityPolicy`.
 
 ### Security hardening (Phase 4)
 
@@ -129,6 +128,8 @@ IP per minute. Admin login locks an IP for 15 minutes after five failed attempts
   `trophy.php`, `trophies.php`, `home.php`) and `TrophyPage` use `Html::escape()`.
 - Admin templates and admin request handlers use `Html::escape()` instead of
   `htmlentities()`.
+- CSP is enforced (no longer Report-Only); policy values live in
+  `ContentSecurityPolicy`.
 
 Optional MySQL integration tests (including IP lock acquisition) run when
 `PSN100_INTEGRATION_TEST_DB=1` and a reachable `DB_*` configuration are available.
