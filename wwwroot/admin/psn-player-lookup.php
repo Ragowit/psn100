@@ -49,18 +49,18 @@ if (is_array($earnedTrophies)) {
                 <div class="mb-2">
                     <label for="onlineId" class="form-label">Online ID</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="onlineId" name="onlineId" value="<?= htmlentities($onlineId, ENT_QUOTES, 'UTF-8'); ?>" maxlength="16" placeholder="PSN online ID" autocomplete="off">
+                        <input type="text" class="form-control" id="onlineId" name="onlineId" value="<?= Html::escape($onlineId); ?>" maxlength="16" placeholder="PSN online ID" autocomplete="off">
                         <button class="btn btn-primary" type="submit">Lookup</button>
                     </div>
                 </div>
             </form>
             <?php if ($errorMessage !== null) { ?>
                 <div class="alert alert-warning" role="alert">
-                    <?= htmlentities($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($errorMessage); ?>
                 </div>
             <?php } elseif ($normalizedOnlineId !== '' && $result === null) { ?>
                 <div class="alert alert-info" role="alert">
-                    No profile data was returned for "<?= htmlentities($normalizedOnlineId, ENT_QUOTES, 'UTF-8'); ?>".
+                    No profile data was returned for "<?= Html::escape($normalizedOnlineId); ?>".
                 </div>
             <?php } ?>
             <?php if ($decodedNpId !== null || $npCountry !== null) { ?>
@@ -69,11 +69,11 @@ if (is_array($earnedTrophies)) {
                         <dl class="row mb-0">
                             <?php if ($decodedNpId !== null) { ?>
                                 <dt class="col-sm-3">Decoded NP ID</dt>
-                                <dd class="col-sm-9"><code><?= htmlentities($decodedNpId, ENT_QUOTES, 'UTF-8'); ?></code></dd>
+                                <dd class="col-sm-9"><code><?= Html::escape($decodedNpId); ?></code></dd>
                             <?php } ?>
                             <?php if ($npCountry !== null) { ?>
                                 <dt class="col-sm-3">Country</dt>
-                                <dd class="col-sm-9"><?= htmlentities($npCountry, ENT_QUOTES, 'UTF-8'); ?></dd>
+                                <dd class="col-sm-9"><?= Html::escape($npCountry); ?></dd>
                             <?php } ?>
                         </dl>
                     </div>
@@ -105,7 +105,7 @@ if (is_array($earnedTrophies)) {
                     <div class="card-body">
                         <pre class="mb-0 text-white-50"><?php
                             $json = json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                            echo htmlentities($json === false ? 'Unable to encode response.' : $json, ENT_QUOTES, 'UTF-8');
+                            echo Html::escape($json === false ? 'Unable to encode response.' : $json);
                         ?></pre>
                     </div>
                 </div>

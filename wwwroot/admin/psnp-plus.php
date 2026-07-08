@@ -54,13 +54,13 @@ try {
 
             <?php foreach ($successMessages as $successMessage) { ?>
                 <div class="alert alert-success" role="alert">
-                    <?= htmlentities($successMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($successMessage); ?>
                 </div>
             <?php } ?>
 
             <?php foreach ($errorMessages as $errorMessage) { ?>
                 <div class="alert alert-danger" role="alert">
-                    <?= htmlentities($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($errorMessage); ?>
                 </div>
             <?php } ?>
 
@@ -69,7 +69,7 @@ try {
                     <div class="mb-3">
                         <?php foreach ($psnpPlusReport->getMissingGames() as $missingGame) { ?>
                             <p>
-                                PSNProfiles ID <a href="<?= htmlentities($missingGame->getPsnprofilesUrl(), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?= htmlentities((string) $missingGame->getPsnprofilesId(), ENT_QUOTES, 'UTF-8'); ?></a> not in our database.
+                                PSNProfiles ID <a href="<?= Html::escape($missingGame->getPsnprofilesUrl()); ?>" target="_blank" rel="noopener"><?= Html::escape((string) $missingGame->getPsnprofilesId()); ?></a> not in our database.
                             </p>
                         <?php } ?>
                     </div>
@@ -79,16 +79,16 @@ try {
                     <div class="mb-3">
                         <strong>
                             <a href="../game/<?= $difference->getGameId(); ?>" target="_blank" rel="noopener">
-                                <?= htmlentities($difference->getGameName(), ENT_QUOTES, 'UTF-8'); ?>
+                                <?= Html::escape($difference->getGameName()); ?>
                             </a>
                         </strong><br>
 
                         <?php if ($difference->hasUnobtainable()) { ?>
-                            <a href="unobtainable.php?status=1&amp;trophy=<?= $difference->getUnobtainableTrophyIdQuery(); ?>">Unobtainable</a>: <?= htmlentities($difference->getUnobtainableOrderList(), ENT_QUOTES, 'UTF-8'); ?><br>
+                            <a href="unobtainable.php?status=1&amp;trophy=<?= $difference->getUnobtainableTrophyIdQuery(); ?>">Unobtainable</a>: <?= Html::escape($difference->getUnobtainableOrderList()); ?><br>
                         <?php } ?>
 
                         <?php if ($difference->hasObtainable()) { ?>
-                            <a href="unobtainable.php?status=0&amp;trophy=<?= $difference->getObtainableTrophyIdQuery(); ?>">Obtainable</a>: <?= htmlentities($difference->getObtainableOrderList(), ENT_QUOTES, 'UTF-8'); ?><br>
+                            <a href="unobtainable.php?status=0&amp;trophy=<?= $difference->getObtainableTrophyIdQuery(); ?>">Obtainable</a>: <?= Html::escape($difference->getObtainableOrderList()); ?><br>
                         <?php } ?>
                     </div>
                 <?php } ?>
@@ -99,12 +99,12 @@ try {
                     <div class="mb-3">
                         <strong>
                             <a href="../game/<?= $fixedGame->getGameId(); ?>" target="_blank" rel="noopener">
-                                <?= htmlentities($fixedGame->getGameName(), ENT_QUOTES, 'UTF-8'); ?>
+                                <?= Html::escape($fixedGame->getGameName()); ?>
                             </a>
                         </strong><br>
 
                         <?php if ($fixedGame->hasTrophies()) { ?>
-                            <a href="unobtainable.php?status=0&amp;trophy=<?= $fixedGame->getTrophyIdQuery(); ?>">Obtainable</a>: <?= htmlentities($fixedGame->getTrophyIdList(), ENT_QUOTES, 'UTF-8'); ?><br>
+                            <a href="unobtainable.php?status=0&amp;trophy=<?= $fixedGame->getTrophyIdQuery(); ?>">Obtainable</a>: <?= Html::escape($fixedGame->getTrophyIdList()); ?><br>
                         <?php } ?>
                     </div>
                 <?php } ?>

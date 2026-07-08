@@ -36,7 +36,7 @@ $errorMessage = $handledRequest->getErrorMessage();
                 <div class="mb-2">
                     <label for="accountId" class="form-label">Account ID</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="accountId" name="accountId" value="<?= htmlentities($accountId, ENT_QUOTES, 'UTF-8'); ?>" placeholder="e.g. 1234567890123456789" autocomplete="off" inputmode="numeric">
+                        <input type="text" class="form-control" id="accountId" name="accountId" value="<?= Html::escape($accountId); ?>" placeholder="e.g. 1234567890123456789" autocomplete="off" inputmode="numeric">
                         <button class="btn btn-primary" type="submit">Fetch</button>
                     </div>
                 </div>
@@ -53,11 +53,11 @@ $errorMessage = $handledRequest->getErrorMessage();
             </form>
             <?php if ($errorMessage !== null) { ?>
                 <div class="alert alert-warning" role="alert">
-                    <?= htmlentities($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($errorMessage); ?>
                 </div>
             <?php } elseif ($normalizedAccountId !== '' && $result === null) { ?>
                 <div class="alert alert-info" role="alert">
-                    No data was returned for account ID "<?= htmlentities($normalizedAccountId, ENT_QUOTES, 'UTF-8'); ?>".
+                    No data was returned for account ID "<?= Html::escape($normalizedAccountId); ?>".
                 </div>
             <?php } ?>
             <?php if (is_array($result)) { ?>
@@ -68,15 +68,15 @@ $errorMessage = $handledRequest->getErrorMessage();
                                 <h2 class="h5"><?= $normalizedSource === PsnTrophyTitleComparisonService::SOURCE_DIRECT ? 'Direct endpoint' : 'tustin/psn-php'; ?></h2>
                                 <dl class="row mb-0">
                                     <dt class="col-sm-5">Titles fetched</dt>
-                                    <dd class="col-sm-7"><?= htmlentities((string) ($result['result']['count'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></dd>
+                                    <dd class="col-sm-7"><?= Html::escape((string) ($result['result']['count'] ?? 0)); ?></dd>
                                     <?php if ($normalizedSource === PsnTrophyTitleComparisonService::SOURCE_DIRECT) { ?>
                                         <dt class="col-sm-5">Pages fetched</dt>
-                                        <dd class="col-sm-7"><?= htmlentities((string) ($result['result']['pagesFetched'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></dd>
+                                        <dd class="col-sm-7"><?= Html::escape((string) ($result['result']['pagesFetched'] ?? 0)); ?></dd>
                                         <dt class="col-sm-5">Total item count</dt>
-                                        <dd class="col-sm-7"><?= htmlentities((string) ($result['result']['totalItemCount'] ?? 'n/a'), ENT_QUOTES, 'UTF-8'); ?></dd>
+                                        <dd class="col-sm-7"><?= Html::escape((string) ($result['result']['totalItemCount'] ?? 'n/a')); ?></dd>
                                     <?php } ?>
                                     <dt class="col-sm-5">Duration (ms)</dt>
-                                    <dd class="col-sm-7"><?= htmlentities((string) ($result['result']['durationMs'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></dd>
+                                    <dd class="col-sm-7"><?= Html::escape((string) ($result['result']['durationMs'] ?? 0)); ?></dd>
                                 </dl>
                             </div>
                         </div>

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../Html.php';
+
 require_once __DIR__ . '/GameDetailService.php';
 require_once __DIR__ . '/GameDetailPageResult.php';
 require_once __DIR__ . '/../GameStatusService.php';
@@ -92,7 +94,7 @@ class GameDetailPage
                 }
             }
         } catch (Throwable $exception) {
-            $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+            $error = '<p>' . Html::escape($exception->getMessage()) . '</p>';
         }
 
         return new GameDetailPageResult($gameDetail, $success, $error);
@@ -131,7 +133,7 @@ class GameDetailPage
                 $statusText = $this->gameStatusService->updateGameStatus($gameId, $status);
                 $successMessages[] = $this->formatStatusSuccessMessage($gameId, $statusText);
             } catch (InvalidArgumentException $exception) {
-                $error = '<p>' . htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+                $error = '<p>' . Html::escape($exception->getMessage()) . '</p>';
             } catch (Throwable $exception) {
                 $error = '<p>Failed to update game status. Please try again.</p>';
             }
@@ -165,7 +167,7 @@ class GameDetailPage
         try {
             $statusText = $this->gameStatusService->updateGameStatus($gameId, $status);
         } catch (InvalidArgumentException $exception) {
-            $message = htmlentities($exception->getMessage(), ENT_QUOTES, 'UTF-8');
+            $message = Html::escape($exception->getMessage());
 
             return [
                 $this->gameDetailService->getGameDetail($gameId),
@@ -371,7 +373,7 @@ class GameDetailPage
 
     private function formatStatusSuccessMessage(int $gameId, string $statusText): string
     {
-        $escapedStatus = htmlentities($statusText, ENT_QUOTES, 'UTF-8');
+        $escapedStatus = Html::escape($statusText);
 
         return sprintf(
             '<p>Game %d is now set as %s. All affected players will be updated soon, and ranks updated the next whole hour.</p>',

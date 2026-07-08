@@ -106,6 +106,8 @@ the non-obvious steps to actually run the services.
   `PlayerHeaderViewModel` use `Html::escape()` for output escaping.
 - Game page templates (`game.php`, `game_header.php`, `game_history.php`, `games.php`,
   `trophy.php`, `trophies.php`, `home.php`) and `TrophyPage` use `Html::escape()`.
+- Admin templates load `Html.php` via `admin/bootstrap.php`; admin request handlers
+  (`GameDetailPage`, `CheaterRequestHandler`, etc.) use `Html::escape()`.
 
 ### Composer
 

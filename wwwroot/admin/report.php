@@ -29,21 +29,21 @@ $errorMessage = $pageResult->getErrorMessage();
             <a href="/admin/">Back</a><br><br>
             <?php if ($successMessage !== null) { ?>
                 <div class="alert alert-success" role="alert">
-                    <?= htmlentities($successMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($successMessage); ?>
                 </div>
             <?php } ?>
             <?php if ($errorMessage !== null) { ?>
                 <div class="alert alert-warning" role="alert">
-                    <?= htmlentities($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($errorMessage); ?>
                 </div>
             <?php } ?>
             <?php foreach ($reportedPlayers as $reportedPlayer) { ?>
                 <div class="mb-3">
-                    <a href="/player/<?= htmlentities($reportedPlayer->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>">
-                        <?= htmlentities($reportedPlayer->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>
+                    <a href="/player/<?= Html::escape($reportedPlayer->getOnlineId()); ?>">
+                        <?= Html::escape($reportedPlayer->getOnlineId()); ?>
                     </a>
                     <div class="mt-2">
-                        <?= nl2br(htmlentities($reportedPlayer->getExplanation(), ENT_QUOTES, 'UTF-8')); ?>
+                        <?= nl2br(Html::escape($reportedPlayer->getExplanation())); ?>
                     </div>
                     <div class="mt-2">
                         <form method="post" class="d-inline js-report-delete-form">
