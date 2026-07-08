@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
+require_once '../classes/StaticAsset.php';
 require_once '../classes/Admin/AdminRequest.php';
 require_once '../classes/Admin/WorkerService.php';
 require_once '../classes/Admin/WorkerPage.php';
@@ -38,7 +39,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
             crossorigin="anonymous"
         >
         <title>Admin ~ Workers</title>
-        <script src="/js/localized-date-formatter.js" defer></script>
+        <script src="<?= htmlspecialchars(StaticAsset::url('/js/localized-date-formatter.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     </head>
     <body>
         <div class="container py-4">

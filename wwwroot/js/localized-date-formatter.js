@@ -102,6 +102,12 @@ class LocalizedDateFormatter {
 
 window.LocalizedDateFormatter = LocalizedDateFormatter;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initializeLocalizedDates() {
     LocalizedDateFormatter.initializeAll();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeLocalizedDates);
+} else {
+    initializeLocalizedDates();
+}
