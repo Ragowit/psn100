@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
 require_once __DIR__ . '/../Admin/PlayStationWorkerAuthenticator.php';
-require_once __DIR__ . '/../Admin/Worker.php';
 require_once __DIR__ . '/../Admin/WorkerService.php';
 require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
+require_once __DIR__ . '/CronWorkerLoginSession.php';
 require_once __DIR__ . '/WorkerScanCoordinator.php';
 require_once __DIR__ . '/PlayerScanQueueSelector.php';
 require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
@@ -38,6 +38,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
     private readonly ImageHashCalculator $imageHashCalculator;
     private readonly WorkerScanCoordinator $workerScanCoordinator;
+    private readonly CronWorkerLoginSession $workerLoginSession;
     private readonly PlayerScanQueueSelector $playerScanQueueSelector;
     private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
     private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper;
@@ -59,6 +60,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?WorkerScanCoordinator $workerScanCoordinator = null,
+        ?CronWorkerLoginSession $workerLoginSession = null,
         ?PlayerScanQueueSelector $playerScanQueueSelector = null,
         ?PlayStationWorkerAuthenticator $workerAuthenticator = null,
         ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
@@ -76,7 +78,6 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             ?? new AutomaticTrophyTitleMergeService($database, new TrophyMergeService($database));
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->workerScanCoordinator = $workerScanCoordinator ?? new WorkerScanCoordinator($database);
-        $this->playerScanQueueSelector = $playerScanQueueSelector ?? new PlayerScanQueueSelector($database);
         $this->workerAuthenticator = $workerAuthenticator ?? PlayStationWorkerAuthenticator::fromWorkerService(
             new WorkerService($database),
             null,
@@ -84,6 +85,13 @@ final class ThirtyMinuteCronJob implements CronJobInterface
                 $logger->log(sprintf('Failed to persist refresh token for worker %d: %s', $workerId, $message));
             },
         );
+        $this->workerLoginSession = $workerLoginSession ?? new CronWorkerLoginSession(
+            $database,
+            $this->workerAuthenticator,
+            $this->workerScanCoordinator,
+            $logger,
+        );
+        $this->playerScanQueueSelector = $playerScanQueueSelector ?? new PlayerScanQueueSelector($database);
         $this->titleMetadataHelper = $titleMetadataHelper ?? new PlayerScanTitleMetadataHelper();
         $this->profileSynchronizer = $profileSynchronizer ?? new PlayerScanProfileSynchronizer(
             $database,
@@ -188,60 +196,9 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $invalidTitleDateRetry = [];
 
         while (true) {
-            // Login with a token
-            $loggedIn = false;
-            while (!$loggedIn) {
-                $query = $this->database->prepare("SELECT
-                    id,
-                    refresh_token,
-                    npsso,
-                    scanning
-                FROM
-                    setting
-                WHERE
-                    id = :id");
-                $query->bindValue(":id", $this->workerId, PDO::PARAM_INT);
-                $query->execute();
-                $worker = $query->fetch(PDO::FETCH_ASSOC);
-
-                if ($worker === false) {
-                    $message = sprintf(
-                        'Worker %d not found in setting table',
-                        $this->workerId
-                    );
-                    $this->logger->log($message);
-
-                    throw new RuntimeException($message);
-                }
-
-                try {
-                    $workerAccount = new Worker(
-                        (int) $worker['id'],
-                        (string) ($worker['refresh_token'] ?? ''),
-                        (string) ($worker['npsso'] ?? ''),
-                        '',
-                        new DateTimeImmutable('1970-01-01 00:00:00'),
-                        null,
-                    );
-                    $client = $this->workerAuthenticator->authenticateWorker($workerAccount);
-                    $loggedIn = true;
-                } catch (TypeError $e) {
-                    // Something odd, let's wait a minute
-                    $this->workerScanCoordinator->setWaitingScanProgress(
-                        (int) $worker['id'],
-                        'Encountered a login problem. Waiting 1 minute before retrying.'
-                    );
-                    sleep(60 * 1);
-                } catch (Exception $e) {
-                    $this->logger->log("Can't login with worker ". $worker["id"]);
-
-                    // Something went wrong, 'release' the current scanning profile so other workers can pick it up.
-                    $this->workerScanCoordinator->releaseWorkerFromCurrentScan((int) $worker['id']);
-
-                    // Wait 30 minutes to not hammer login
-                    sleep(60 * 30);
-                }
-            }
+            $loginResult = $this->workerLoginSession->authenticate($this->workerId);
+            $client = $loginResult['client'];
+            $worker = $loginResult['worker'];
 
             try {
                 $player = $this->playerScanQueueSelector->selectNextCandidate((int) $worker['id']);
