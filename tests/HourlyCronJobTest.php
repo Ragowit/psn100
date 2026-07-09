@@ -12,16 +12,18 @@ final class HourlyCronJobTest extends TestCase
         $class = new ReflectionClass(HourlyCronJob::class);
         $createBatchTableQuery = $this->readPrivateConstantValue($class, 'CREATE_BATCH_TEMP_TABLE_QUERY');
         $createStatsTableQuery = $this->readPrivateConstantValue($class, 'CREATE_STATS_TEMP_TABLE_QUERY');
-        $insertStatsQuery = $this->readPrivateConstantValue($class, 'INSERT_STATS_QUERY');
+        $populateAllStatsQuery = $this->readPrivateConstantValue($class, 'POPULATE_ALL_STATS_QUERY');
         $updateMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_META_QUERY');
 
         $this->assertStringContainsString('COLLATE utf8mb4_0900_ai_ci', $createBatchTableQuery);
         $this->assertStringContainsString('COLLATE utf8mb4_0900_ai_ci', $createStatsTableQuery);
-        $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $insertStatsQuery);
-        $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id', $insertStatsQuery);
-        $this->assertStringContainsString('COUNT(*) AS owners', $insertStatsQuery);
-        $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $insertStatsQuery);
-        $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $insertStatsQuery);
+        $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $populateAllStatsQuery);
+        $this->assertStringContainsString('FROM trophy_title_player ttp', $populateAllStatsQuery);
+        $this->assertStringContainsString('JOIN player_ranking pr ON pr.account_id = ttp.account_id AND pr.ranking <= 10000', $populateAllStatsQuery);
+        $this->assertStringContainsString('COUNT(*) AS owners', $populateAllStatsQuery);
+        $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $populateAllStatsQuery);
+        $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $populateAllStatsQuery);
+        $this->assertFalse(str_contains($populateAllStatsQuery, 'tmp_hourly_batch'));
 
         $this->assertStringContainsString('UPDATE trophy_title_meta ttm', $updateMetaQuery);
         $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttm.np_communication_id', $updateMetaQuery);
@@ -48,9 +50,28 @@ final class HourlyCronJobTest extends TestCase
         $this->assertTrue(is_string($source));
 
         $this->assertStringContainsString("DELETE FROM tmp_hourly_batch", $source);
-        $this->assertStringContainsString("DELETE FROM tmp_hourly_stats", $source);
+        $this->assertFalse(str_contains($source, 'DELETE FROM tmp_hourly_stats'));
         $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_batch'));
         $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_stats'));
+    }
+
+    public function testPopulatesAllStatisticsOnceBeforeBatchUpdates(): void
+    {
+        $class = new ReflectionClass(HourlyCronJob::class);
+
+        $this->assertTrue($class->hasMethod('populateAllStatistics'));
+        $this->assertFalse(str_contains(
+            $this->readMethodSource($class, 'updateStatisticsForBatch'),
+            'POPULATE_ALL_STATS_QUERY'
+        ));
+
+        $updateSource = $this->readMethodSource($class, 'updateTrophyTitleStatistics');
+        $this->assertStringContainsString('$this->populateAllStatistics();', $updateSource);
+        $populatePosition = strpos($updateSource, '$this->populateAllStatistics();');
+        $loopPosition = strpos($updateSource, 'while (true)');
+        $this->assertTrue(is_int($populatePosition));
+        $this->assertTrue(is_int($loopPosition));
+        $this->assertTrue($populatePosition < $loopPosition);
     }
 
     public function testNoDynamicUnionAllSelectBatchPathExists(): void
@@ -82,5 +103,18 @@ final class HourlyCronJobTest extends TestCase
         $this->assertTrue(is_string($value));
 
         return $value;
+    }
+
+    private function readMethodSource(ReflectionClass $class, string $methodName): string
+    {
+        $method = $class->getMethod($methodName);
+        $source = file_get_contents((string) $class->getFileName());
+        $this->assertTrue(is_string($source));
+
+        $lines = explode("\n", $source);
+        $startLine = $method->getStartLine() - 1;
+        $lineCount = $method->getEndLine() - $method->getStartLine() + 1;
+
+        return implode("\n", array_slice($lines, $startLine, $lineCount));
     }
 }
