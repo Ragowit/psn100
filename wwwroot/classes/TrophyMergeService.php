@@ -7,13 +7,12 @@ require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/TrophyMergeEarnedCopier.php';
 require_once __DIR__ . '/TrophyMergeMappingService.php';
+require_once __DIR__ . '/TrophyMergeMetadataRepository.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressUpdater.php';
 require_once __DIR__ . '/TrophyTitleCloneService.php';
 
 class TrophyMergeService
 {
-    private const PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];
-
     private PDO $database;
 
     private NestedDatabaseTransactionRunner $transactionRunner;
@@ -21,6 +20,8 @@ class TrophyMergeService
     private ?TrophyMergeEarnedCopier $earnedCopier = null;
 
     private ?TrophyMergeMappingService $mappingService = null;
+
+    private ?TrophyMergeMetadataRepository $metadataRepository = null;
 
     private ?TrophyMergePlayerProgressUpdater $playerProgressUpdater = null;
 
@@ -70,7 +71,7 @@ class TrophyMergeService
                 $childTrophy = $childData['trophy'];
 
                 $this->insertTrophyMergeMappingFromIds($childTrophyId, $parentTrophyId);
-                $this->markGameAsMergedByNpId($childTrophy['np_communication_id']);
+                $this->metadataRepository()->markGameAsMergedByNpId($childTrophy['np_communication_id']);
 
                 $childGameId = $this->getGameIdByTrophyId($childTrophyId);
 
@@ -143,7 +144,7 @@ class TrophyMergeService
             $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');
             $this->notifyProgress($progressListener, 60, 'Preparing to mark child game as merged…');
             $this->notifyProgress($progressListener, 62, 'Marking child game as merged…');
-            $this->markGameAsMergedById($childGameId);
+            $this->metadataRepository()->markGameAsMergedById($childGameId);
             $this->notifyProgress($progressListener, 65, 'Child game marked as merged.');
             $this->notifyProgress($progressListener, 70, 'Preparing to copy merged trophies…');
             $this->notifyProgress($progressListener, 72, 'Copying merged trophies…');
@@ -156,10 +157,10 @@ class TrophyMergeService
             $this->updateTrophyTitlePlayer($childGameId);
             $this->notifyProgress($progressListener, 92, 'Player trophy titles updated.');
             $this->notifyProgress($progressListener, 94, 'Updating parent relationship…');
-            $this->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
+            $this->metadataRepository()->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
             $this->notifyProgress($progressListener, 96, 'Parent relationship updated.');
             $this->notifyProgress($progressListener, 98, 'Logging merge activity…');
-            $this->logChange('GAME_MERGE', $childGameId, $parentGameId);
+            $this->metadataRepository()->logChange('GAME_MERGE', $childGameId, $parentGameId);
             $this->notifyProgress($progressListener, 100, 'Merge process complete.');
         });
 
@@ -265,6 +266,14 @@ SQL
         return $this->mappingService ??= new TrophyMergeMappingService($this->database);
     }
 
+    private function metadataRepository(): TrophyMergeMetadataRepository
+    {
+        return $this->metadataRepository ??= new TrophyMergeMetadataRepository(
+            $this->database,
+            $this->transactionRunner
+        );
+    }
+
     private function playerProgressUpdater(): TrophyMergePlayerProgressUpdater
     {
         return $this->playerProgressUpdater ??= new TrophyMergePlayerProgressUpdater($this->database);
@@ -306,190 +315,6 @@ SQL
             $query->bindValue(':parent_trophy_id', $parentTrophyId, PDO::PARAM_INT);
             $query->execute();
         });
-    }
-
-    private function markGameAsMergedByNpId(string $npCommunicationId): void
-    {
-        $this->transactionRunner->execute(function () use ($npCommunicationId): void {
-            $query = $this->database->prepare(
-                <<<'SQL'
-                UPDATE trophy_title_meta
-                SET    status = 2
-                WHERE  np_communication_id = :child_np_communication_id
-                SQL
-            );
-            $query->bindValue(':child_np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-        });
-    }
-
-    private function markGameAsMergedById(int $gameId): void
-    {
-        $this->transactionRunner->execute(function () use ($gameId): void {
-            $lookup = $this->database->prepare(
-                <<<'SQL'
-                SELECT np_communication_id
-                FROM   trophy_title
-                WHERE  id = :game_id
-                SQL
-            );
-            $lookup->bindValue(':game_id', $gameId, PDO::PARAM_INT);
-            $lookup->execute();
-
-            $npCommunicationId = $lookup->fetchColumn();
-
-            if ($npCommunicationId === false || $npCommunicationId === null) {
-                return;
-            }
-
-            $query = $this->database->prepare(
-                <<<'SQL'
-                UPDATE trophy_title_meta
-                SET    status = 2
-                WHERE  np_communication_id = :np_communication_id
-                SQL
-            );
-            $query->bindValue(':np_communication_id', (string) $npCommunicationId, PDO::PARAM_STR);
-            $query->execute();
-        });
-    }
-
-    private function updateParentRelationship(string $childNpCommunicationId, string $parentNpCommunicationId): void
-    {
-        $query = $this->database->prepare(
-            "UPDATE trophy_title_meta SET parent_np_communication_id = :parent_np_communication_id WHERE np_communication_id = :np_communication_id"
-        );
-        $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        if ($query->rowCount() === 0) {
-            $metaExists = $this->database->prepare(
-                'SELECT 1 FROM trophy_title_meta WHERE np_communication_id = :np_communication_id'
-            );
-            $metaExists->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-            $metaExists->execute();
-
-            if ($metaExists->fetchColumn() === false) {
-                $metaInsert = $this->database->prepare(
-                    <<<'SQL'
-                    INSERT INTO trophy_title_meta (
-                        np_communication_id,
-                        message,
-                        parent_np_communication_id,
-                        status
-                    ) VALUES (
-                        :np_communication_id,
-                        '',
-                        :parent_np_communication_id,
-                        2
-                    )
-SQL
-                );
-                $metaInsert->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-                $metaInsert->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
-                $metaInsert->execute();
-            }
-        }
-
-        $this->updateParentPlatform($parentNpCommunicationId, $childNpCommunicationId);
-    }
-
-    private function updateParentPlatform(string $parentNpCommunicationId, string $childNpCommunicationId): void
-    {
-        $parentPlatforms = $this->getPlatformsByNpCommunicationId($parentNpCommunicationId);
-        $childPlatforms = $this->getPlatformsByNpCommunicationId($childNpCommunicationId);
-
-        if ($childPlatforms === []) {
-            return;
-        }
-
-        $platformLookup = [];
-        foreach ($parentPlatforms as $platform) {
-            if ($platform === '') {
-                continue;
-            }
-
-            $platformLookup[$platform] = true;
-        }
-
-        $updated = false;
-
-        foreach ($childPlatforms as $platform) {
-            if ($platform === '') {
-                continue;
-            }
-
-            if (!isset($platformLookup[$platform])) {
-                $platformLookup[$platform] = true;
-                $updated = true;
-            }
-        }
-
-        if (!$updated) {
-            return;
-        }
-
-        $sortedPlatforms = $this->sortPlatforms(array_keys($platformLookup));
-
-        $query = $this->database->prepare(
-            'UPDATE trophy_title SET platform = :platform WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':platform', implode(',', $sortedPlatforms), PDO::PARAM_STR);
-        $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-    }
-
-    private function getPlatformsByNpCommunicationId(string $npCommunicationId): array
-    {
-        $query = $this->database->prepare(
-            'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        $platforms = $query->fetchColumn();
-
-        if ($platforms === false || $platforms === null || $platforms === '') {
-            return [];
-        }
-
-        $platforms = array_map('trim', explode(',', (string) $platforms));
-        $platforms = array_filter($platforms, static fn(string $platform): bool => $platform !== '');
-
-        return array_values($platforms);
-    }
-
-    private function sortPlatforms(array $platforms): array
-    {
-        $order = array_flip(self::PLATFORM_ORDER);
-
-        usort(
-            $platforms,
-            static function (string $left, string $right) use ($order): int {
-                $leftOrder = $order[$left] ?? PHP_INT_MAX;
-                $rightOrder = $order[$right] ?? PHP_INT_MAX;
-
-                if ($leftOrder === $rightOrder) {
-                    return strcmp($left, $right);
-                }
-
-                return $leftOrder <=> $rightOrder;
-            }
-        );
-
-        return $platforms;
-    }
-
-    private function logChange(string $changeType, int $param1, int $param2): void
-    {
-        $query = $this->database->prepare(
-            "INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES (:change_type, :param_1, :param_2)"
-        );
-        $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
-        $query->bindValue(':param_1', $param1, PDO::PARAM_INT);
-        $query->bindValue(':param_2', $param2, PDO::PARAM_INT);
-        $query->execute();
     }
 
     private function getGameNpCommunicationId(int $gameId): string
