@@ -2,48 +2,7 @@
 
 declare(strict_types=1);
 
-class TrophyStatusUpdateResult
-{
-    /** @var string[] */
-    private array $trophyNames;
-
-    private string $statusText;
-
-    /**
-     * @param string[] $trophyNames
-     */
-    public function __construct(array $trophyNames, string $statusText)
-    {
-        $this->trophyNames = $trophyNames;
-        $this->statusText = $statusText;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getTrophyNames(): array
-    {
-        return $this->trophyNames;
-    }
-
-    public function getStatusText(): string
-    {
-        return $this->statusText;
-    }
-
-    public function toHtml(): string
-    {
-        $html = '<p>';
-
-        foreach ($this->trophyNames as $trophyName) {
-            $html .= 'Trophy ID ' . htmlspecialchars($trophyName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '<br>';
-        }
-
-        $html .= 'is now set as ' . htmlspecialchars($this->statusText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
-
-        return $html;
-    }
-}
+require_once __DIR__ . '/TrophyStatusUpdateResult.php';
 
 class TrophyStatusService
 {
