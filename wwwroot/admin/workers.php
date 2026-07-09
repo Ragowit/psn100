@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/StaticAsset.php';
 require_once '../classes/Admin/AdminRequest.php';
+require_once '../classes/Admin/WorkerCredentialMasker.php';
 require_once '../classes/Admin/WorkerService.php';
 require_once '../classes/Admin/WorkerPage.php';
 
@@ -32,9 +33,11 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="csrf-token" content="<?= Html::escape(AdminBootstrap::getCsrfToken()); ?>">
         <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
         <title>Admin ~ Workers</title>
         <script src="<?= htmlspecialchars(StaticAsset::url('/js/localized-date-formatter.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <script src="<?= htmlspecialchars(StaticAsset::url('/js/admin-worker-credentials.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     </head>
     <body>
         <div class="container py-4">
@@ -113,14 +116,28 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                 <label class="form-label small text-body-secondary mb-0 text-nowrap" for="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                                     Refresh Token
                                                 </label>
-                                                <input
-                                                    id="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                    type="text"
-                                                    name="refresh_token"
-                                                    class="form-control form-control-sm"
-                                                    value="<?= htmlspecialchars($worker->getRefreshToken(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                    maxlength="36"
-                                                >
+                                                <div class="d-flex gap-2 flex-grow-1" data-worker-credential-field>
+                                                    <input
+                                                        id="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        type="password"
+                                                        name="refresh_token"
+                                                        class="form-control form-control-sm"
+                                                        placeholder="<?= Html::escape(WorkerCredentialMasker::mask($worker->getRefreshToken())); ?>"
+                                                        maxlength="36"
+                                                        autocomplete="off"
+                                                        data-worker-credential-input
+                                                        data-worker-credential="refresh_token"
+                                                        data-worker-id="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    >
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm btn-outline-secondary text-nowrap"
+                                                        data-worker-credential-toggle
+                                                        aria-pressed="false"
+                                                    >
+                                                        Reveal
+                                                    </button>
+                                                </div>
                                                 <button type="submit" class="btn btn-sm btn-primary">Save</button>
                                             </form>
                                             <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
@@ -130,14 +147,28 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                 <label class="form-label small text-body-secondary mb-0 text-nowrap" for="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                                     NPSSO
                                                 </label>
-                                                <input
-                                                    id="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                    type="text"
-                                                    name="npsso"
-                                                    class="form-control form-control-sm"
-                                                    value="<?= htmlspecialchars($worker->getNpsso(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                    maxlength="64"
-                                                >
+                                                <div class="d-flex gap-2 flex-grow-1" data-worker-credential-field>
+                                                    <input
+                                                        id="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        type="password"
+                                                        name="npsso"
+                                                        class="form-control form-control-sm"
+                                                        placeholder="<?= Html::escape(WorkerCredentialMasker::mask($worker->getNpsso())); ?>"
+                                                        maxlength="64"
+                                                        autocomplete="off"
+                                                        data-worker-credential-input
+                                                        data-worker-credential="npsso"
+                                                        data-worker-id="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    >
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm btn-outline-secondary text-nowrap"
+                                                        data-worker-credential-toggle
+                                                        aria-pressed="false"
+                                                    >
+                                                        Reveal
+                                                    </button>
+                                                </div>
                                                 <button type="submit" class="btn btn-sm btn-primary">Save</button>
                                             </form>
                                         </div>

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPage.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPageResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPageSortLink.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerService.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerCredentialField.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/CommandExecutionResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/CommandExecutorInterface.php';
@@ -109,6 +110,32 @@ final class AdminWorkerPageTest extends TestCase
 
         $this->assertSame(null, $result->getSuccessMessage());
         $this->assertSame('Unable to restart all workers (exit code 2). error', $result->getErrorMessage());
+    }
+
+    public function testWorkersTemplateMasksCredentialsInsteadOfRenderingValues(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/admin/workers.php');
+
+        $this->assertTrue(is_string($source));
+        $this->assertTrue(str_contains($source, 'WorkerCredentialMasker::mask'));
+        $this->assertTrue(str_contains($source, 'admin-worker-credentials.js'));
+        $this->assertFalse(str_contains($source, 'getRefreshToken(), ENT_QUOTES'));
+        $this->assertFalse(str_contains($source, 'getNpsso(), ENT_QUOTES'));
+
+        $scriptSource = file_get_contents(__DIR__ . '/../wwwroot/js/admin-worker-credentials.js');
+        $this->assertTrue(is_string($scriptSource));
+        $this->assertTrue(str_contains($scriptSource, 'worker-credential.php'));
+    }
+
+    public function testWorkerServiceFetchWorkerCredentialReturnsStoredValue(): void
+    {
+        $this->database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start, scan_progress) VALUES (4, 'secret-refresh', 'secret-npsso', '', '2024-01-01 00:00:00', null)");
+
+        $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, '')));
+
+        $this->assertSame('secret-refresh', $service->fetchWorkerCredential(4, WorkerCredentialField::RefreshToken));
+        $this->assertSame('secret-npsso', $service->fetchWorkerCredential(4, WorkerCredentialField::Npsso));
+        $this->assertSame(null, $service->fetchWorkerCredential(99, WorkerCredentialField::Npsso));
     }
 
     private PDO $database;
