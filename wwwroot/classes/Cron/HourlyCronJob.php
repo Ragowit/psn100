@@ -23,7 +23,7 @@ final readonly class HourlyCronJob implements CronJobInterface
         )
         SQL;
 
-    private const INSERT_STATS_QUERY = <<<'SQL'
+    private const POPULATE_ALL_STATS_QUERY = <<<'SQL'
         INSERT INTO tmp_hourly_stats (np_communication_id, owners, owners_completed, recent_players)
         SELECT
             ttp.np_communication_id,
@@ -31,7 +31,6 @@ final readonly class HourlyCronJob implements CronJobInterface
             SUM(ttp.progress = 100) AS owners_completed,
             SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players
         FROM trophy_title_player ttp
-        JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id
         JOIN player_ranking pr ON pr.account_id = ttp.account_id AND pr.ranking <= 10000
         GROUP BY ttp.np_communication_id
         SQL;
@@ -68,6 +67,8 @@ final readonly class HourlyCronJob implements CronJobInterface
         $this->initializeTemporaryTables();
 
         try {
+            $this->populateAllStatistics();
+
             while (true) {
                 $batchIds = $this->getBatchNpCommunicationIds($lastId, self::BATCH_SIZE);
 
@@ -93,6 +94,12 @@ final readonly class HourlyCronJob implements CronJobInterface
         }
     }
 
+    private function populateAllStatistics(): void
+    {
+        $query = $this->database->prepare(self::POPULATE_ALL_STATS_QUERY);
+        $query->execute();
+    }
+
     private function getBatchNpCommunicationIds(?string $lastId, int $limit): array
     {
         $baseQuery = 'SELECT np_communication_id FROM trophy_title_meta %s ORDER BY np_communication_id LIMIT :limit';
@@ -114,10 +121,6 @@ final readonly class HourlyCronJob implements CronJobInterface
     {
         $this->database->exec('DELETE FROM tmp_hourly_batch');
         $this->insertBatchIdsIntoTemporaryTable($batchIds);
-
-        $this->database->exec('DELETE FROM tmp_hourly_stats');
-        $insertStatsQuery = $this->database->prepare(self::INSERT_STATS_QUERY);
-        $insertStatsQuery->execute();
 
         $updateMetaQuery = $this->database->prepare(self::UPDATE_META_QUERY);
         $updateMetaQuery->execute();
