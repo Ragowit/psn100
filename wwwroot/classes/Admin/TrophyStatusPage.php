@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyStatusInputParser.php';
 require_once __DIR__ . '/TrophyStatusService.php';
+require_once __DIR__ . '/TrophyStatusUpdateResultPresenter.php';
 
 class TrophyStatusPageResult
 {
@@ -47,12 +48,16 @@ class TrophyStatusPage
 
     private TrophyStatusService $trophyStatusService;
 
+    private TrophyStatusUpdateResultPresenter $trophyStatusUpdateResultPresenter;
+
     public function __construct(
         TrophyStatusInputParser $trophyStatusInputParser,
         TrophyStatusService $trophyStatusService,
+        ?TrophyStatusUpdateResultPresenter $trophyStatusUpdateResultPresenter = null,
     ) {
         $this->trophyStatusInputParser = $trophyStatusInputParser;
         $this->trophyStatusService = $trophyStatusService;
+        $this->trophyStatusUpdateResultPresenter = $trophyStatusUpdateResultPresenter ?? new TrophyStatusUpdateResultPresenter();
     }
 
     /**
@@ -90,7 +95,7 @@ class TrophyStatusPage
                 }
 
                 $result = $this->trophyStatusService->updateTrophies($trophyIds, $status);
-                $message = $result->toHtml();
+                $message = $this->trophyStatusUpdateResultPresenter->renderToHtml($result);
             } catch (\Throwable $exception) {
                 $message = '<p>' . htmlspecialchars($exception->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
             }
