@@ -11,8 +11,6 @@ require_once __DIR__ . '/PlayerScanCompletionService.php';
 require_once __DIR__ . '/PlayerScanTrophyTitleRefresher.php';
 require_once __DIR__ . '/WorkerScanCoordinator.php';
 
-use Tustin\PlayStation\Client;
-
 /**
  * Fetches and synchronizes a player's trophy titles during a worker scan.
  *
@@ -43,7 +41,7 @@ final class PlayerScanTrophyTitleLoop
      * @param array<string, bool> $invalidTitleDateRetry
      */
     public function processAccessibleTrophyTitles(
-        Client $client,
+        object $client,
         object $user,
         array $player,
         array $worker,
