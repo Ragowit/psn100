@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PsnGameLookupService.php';
+require_once __DIR__ . '/GameRescanGroupDataFetcher.php';
 require_once __DIR__ . '/PsnTrophyApiAdapter.php';
 require_once __DIR__ . '/PsnTrophyGroupApiAdapter.php';
 
@@ -11,7 +12,7 @@ use Tustin\PlayStation\Client;
 /**
  * Fetches PSN trophy group data and adapts raw API payloads to objects used during game rescans.
  */
-final class PsnTrophyLookupGroupDataProvider
+final class PsnTrophyLookupGroupDataProvider implements GameRescanGroupDataFetcher
 {
     public function __construct(
         private readonly PsnGameLookupService $psnGameLookupService,
