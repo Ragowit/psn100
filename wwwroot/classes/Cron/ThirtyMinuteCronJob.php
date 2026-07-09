@@ -27,10 +27,11 @@ require_once __DIR__ . '/PlayerScanTrophyProgressSynchronizer.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
 require_once __DIR__ . '/PlayerScanTrophySummaryAccessResult.php';
 require_once __DIR__ . '/PlayerScanTrophyTitleRefresher.php';
+require_once __DIR__ . '/PlayerScanTrophyTitleLoop.php';
+require_once __DIR__ . '/PlayerScanTrophyTitleLoopResult.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
-use Tustin\PlayStation\Client;
 
 final class ThirtyMinuteCronJob implements CronJobInterface
 {
@@ -50,6 +51,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer;
     private readonly PlayerScanPrivacyService $privacyService;
     private readonly PlayerScanTrophyTitleRefresher $trophyTitleRefresher;
+    private readonly PlayerScanTrophyTitleLoop $trophyTitleLoop;
 
     public function __construct(
         private readonly PDO $database,
@@ -72,6 +74,7 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         ?PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer = null,
         ?PlayerScanPrivacyService $privacyService = null,
         ?PlayerScanTrophyTitleRefresher $trophyTitleRefresher = null,
+        ?PlayerScanTrophyTitleLoop $trophyTitleLoop = null,
     )
     {
         $this->automaticTrophyTitleMergeService = $automaticTrophyTitleMergeService
@@ -127,63 +130,17 @@ final class ThirtyMinuteCronJob implements CronJobInterface
             $this->titleMetadataHelper,
             $this->workerScanCoordinator,
         );
-    }
-
-    /**
-     * @param array<int, object> $trophyTitles
-     * @param array<string, string> $gameLastUpdatedDate
-     */
-    private function determineScanStartIndex(array $trophyTitles, array $gameLastUpdatedDate): int
-    {
-        foreach ($trophyTitles as $index => $trophyTitle) {
-            $npid = $trophyTitle->npCommunicationId();
-
-            if (!isset($gameLastUpdatedDate[$npid])) {
-                return (int) $index;
-            }
-
-            if (!$this->titleMetadataHelper->gameTimestampsMatch($trophyTitle->lastUpdatedDateTime(), $gameLastUpdatedDate[$npid])) {
-                return (int) $index;
-            }
-        }
-
-        return count($trophyTitles);
-    }
-
-    /**
-     * @param array<string, mixed> $player
-     */
-    private function handleInvalidApiResponse(array $player, int $workerId, Throwable $exception): void
-    {
-        // Middleware/type mismatches from the PSN client are treated as temporary API failures, not permanent "player not found" states.
-        $this->logger->log(
-            sprintf(
-                'Failed to scan %s because the PlayStation API returned an invalid response: %s',
-                (string) ($player['online_id'] ?? ''),
-                $exception->getMessage()
-            )
+        $this->trophyTitleLoop = $trophyTitleLoop ?? new PlayerScanTrophyTitleLoop(
+            $database,
+            $logger,
+            $this->workerScanCoordinator,
+            $this->titleMetadataHelper,
+            $this->titleCatalogSynchronizer,
+            $this->trophyProgressSynchronizer,
+            $this->staleGameDeletionService,
+            $this->scanCompletionService,
+            $this->trophyTitleRefresher,
         );
-
-        $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
-    }
-
-    /**
-     * @param array<string, mixed> $player
-     */
-    private function handleInvalidTitleLastUpdatedDateResponse(
-        array $player,
-        int $workerId,
-        string $npCommunicationId
-    ): void {
-        $this->logger->log(
-            sprintf(
-                'Failed to scan %s because trophy title %s still has an invalid last updated date after retrying.',
-                (string) ($player['online_id'] ?? ''),
-                $npCommunicationId
-            )
-        );
-
-        $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
     }
 
     #[\Override]
@@ -266,262 +223,21 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
             try {
                 if (!$privateUser) {
-                    $totalTrophiesStart = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
-
                     if ($level !== 0) {
-                        $query = $this->database->prepare("SELECT np_communication_id,
-                                last_updated_date
-                            FROM   trophy_title_player
-                            WHERE  account_id = :account_id AND np_communication_id LIKE 'N%'");
-                        $query->bindValue(":account_id", (string) $user->accountId(), PDO::PARAM_STR);
-                        $query->execute();
-                        $gameLastUpdatedDate = $query->fetchAll(PDO::FETCH_KEY_PAIR);
-
-                        $this->workerScanCoordinator->setWaitingScanProgress(
-                            (int) $worker['id'],
-                            sprintf('Fetching game list for %s.', $onlineId)
-                        );
-
-                        $trophyTitleFetchCompleted = false;
-                        try {
-                            $trophyTitleCollection = $user->trophyTitles();
-                            $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
-                        } catch (TypeError $exception) {
-                            // Unable to fetch trophy titles for player['online_id'] due to unexpected response.
-                            sleep(5);
-
-                            continue;
-                        }
-
-                        $trophyTitleFetchCompleted = true;
-                        $psnGameCount = count($trophyTitles);
-                        $localGameCount = count($gameLastUpdatedDate);
-                        $gameCountDelta = $psnGameCount - $localGameCount;
-
-                        if ($gameCountDelta <= -50) {
-                            if (!($trophyTitleCountRetry[$onlineId] ?? false)) {
-                                $trophyTitleCountRetry[$onlineId] = true;
-
-                                $this->workerScanCoordinator->setWaitingScanProgress(
-                                    (int) $worker['id'],
-                                    'Trophy title count lower than expected. Waiting 1 minute before retrying.'
-                                );
-
-                                sleep(60 * 1);
-                                $recheck = '';
-
-                                continue;
-                            }
-                        }
-                        usort(
-                            $trophyTitles,
-                            function ($left, $right): int {
-                                $leftTimestamp = strtotime($left->lastUpdatedDateTime());
-                                $rightTimestamp = strtotime($right->lastUpdatedDateTime());
-
-                                if ($leftTimestamp === false || $rightTimestamp === false) {
-                                    return strcmp($left->lastUpdatedDateTime(), $right->lastUpdatedDateTime());
-                                }
-
-                                return $leftTimestamp <=> $rightTimestamp;
-                            }
-                        );
-
-                        $scanStartIndex = $this->determineScanStartIndex($trophyTitles, $gameLastUpdatedDate);
-                        $totalGamesToProcess = max(0, count($trophyTitles) - $scanStartIndex);
-                        $currentScanPosition = 0;
-                        $scannedGames = array();
-                        $restartScan = false;
-
-                        // Look through each and every game
-                        foreach ($trophyTitles as $index => $trophyTitle) {
-                            $npid = $trophyTitle->npCommunicationId();
-                            array_push($scannedGames, $npid);
-
-                            if ($index < $scanStartIndex) {
-                                continue;
-                            }
-
-                            $trophyTitle = $this->trophyTitleRefresher->ensureTrophyTitleIcon(
-                                $user,
-                                $trophyTitle,
-                                (string) $player['online_id']
-                            );
-
-                            if ($trophyTitle === null) {
-                                $this->logger->log(sprintf(
-                                    'Unable to fetch trophy title icon for %s. Restarting scan.',
-                                    (string) $player['online_id']
-                                ));
-                                $restartScan = true;
-
-                                break;
-                            }
-
-                            $trophyTitle = $this->trophyTitleRefresher->ensureValidTrophyTitleLastUpdatedDate(
-                                $user,
-                                $trophyTitle,
-                                (string) $player['online_id']
-                            );
-
-                            if ($trophyTitle === null) {
-                                if ($this->titleMetadataHelper->shouldRetryInvalidTitleLastUpdatedDate($invalidTitleDateRetry, $onlineId, $npid)) {
-                                    $this->titleMetadataHelper->markInvalidTitleLastUpdatedDateRetried($invalidTitleDateRetry, $onlineId, $npid);
-
-                                    $this->logger->log(sprintf(
-                                        'Unable to fetch a valid last updated date for %s on title %s. Waiting 1 minute before retrying.',
-                                        (string) $player['online_id'],
-                                        $npid
-                                    ));
-                                    $this->trophyTitleRefresher->pauseBeforeRetryingInvalidApiResponse((int) $worker['id'], $onlineId);
-                                    $restartScan = true;
-
-                                    break;
-                                }
-
-                                $this->handleInvalidTitleLastUpdatedDateResponse(
-                                    $player,
-                                    (int) $worker['id'],
-                                    $npid
-                                );
-
-                                continue 2;
-                            }
-
-                            if ($totalGamesToProcess > 0) {
-                                $currentScanPosition++;
-                                $this->workerScanCoordinator->setWorkerScanProgress(
-                                    (int) $worker['id'],
-                                    [
-                                        'current' => $currentScanPosition,
-                                        'total' => $totalGamesToProcess,
-                                        'title' => $trophyTitle->name(),
-                                        'npCommunicationId' => $npid,
-                                    ]
-                                );
-                            }
-
-                            // Does this user already have the game?
-                            if (
-                                isset($gameLastUpdatedDate[$npid])
-                                && $this->titleMetadataHelper->gameTimestampsMatch(
-                                    $trophyTitle->lastUpdatedDateTime(),
-                                    $gameLastUpdatedDate[$npid]
-                                )
-                            ) {
-                                // Game seems scanned already, skip to next.
-                                continue;
-                            }
-
-                            $catalogSyncResult = $this->titleCatalogSynchronizer->synchronizeCatalog($trophyTitle, $client);
-                            if ($catalogSyncResult->restartScan) {
-                                $restartScan = true;
-
-                                break;
-                            }
-
-                            $newTrophies = $catalogSyncResult->newTrophies;
-                            $mergeParentsToRecompute = $catalogSyncResult->mergeParentsToRecompute;
-
-                            $this->trophyProgressSynchronizer->synchronizeTrophyProgress(
-                                $user,
-                                $trophyTitle,
-                                $npid,
-                                $newTrophies,
-                                $mergeParentsToRecompute,
-                            );
-                        }
-
-                        if ($restartScan) {
-                            $recheck = '';
-
-                            continue;
-                        }
-
-                        $totalTrophiesEnd = $user->trophySummary()->platinum() + $user->trophySummary()->gold() + $user->trophySummary()->silver() + $user->trophySummary()->bronze();
-                        if ($totalTrophiesStart != $totalTrophiesEnd) { // New trophies during the scan, restart and get them as well.
-                            $recheck = "";
-                            continue;
-                        }
-
-                        // Delete missing 0% games (and this will also delete hidden games, and any trophies for those hidden games)
-                        $ourGameCount = $this->staleGameDeletionService->countLocalGames((string) $user->accountId());
-
-                        $scanReachedEnd = $currentScanPosition === $totalGamesToProcess;
-                        $scanCompletedCleanly = $trophyTitleFetchCompleted
-                            && $scanReachedEnd
-                            && !$restartScan
-                            && $recheck === '';
-
-                        $shouldDeleteMissingGames = $this->staleGameDeletionService->shouldDeleteMissingZeroPercentGames(
-                            (int) $psnGameCount,
-                            $ourGameCount,
-                            $scannedGames
-                        );
-
-                        $gameCountDelta = $psnGameCount - $ourGameCount;
-
-                        if ($this->staleGameDeletionService->shouldSuppressDeletionForIncompleteScan(
-                            $shouldDeleteMissingGames,
-                            $gameCountDelta,
-                            $scanCompletedCleanly,
-                        )) {
-                            // $this->logger->log(sprintf(
-                            //     'Skipping deletion for %s (%d) because the scan did not complete cleanly (psn=%d, local=%d).',
-                            //     (string) $player['online_id'],
-                            //     (int) $user->accountId(),
-                            //     (int) $psnGameCount,
-                            //     (int) $ourGameCount
-                            // ));
-                            $shouldDeleteMissingGames = false;
-                        }
-
-                        if ($shouldDeleteMissingGames) {
-                            if (!($missingGameDeletionCheck[$onlineId] ?? false)) {
-                                $missingGameDeletionCheck[$onlineId] = true;
-                                $this->workerScanCoordinator->setWaitingScanProgress(
-                                    (int) $worker['id'],
-                                    'Waiting 5 minutes before retrying because of game deletion check.'
-                                );
-                                sleep(60 * 5);
-                                $recheck = '';
-
-                                continue;
-                            }
-
-                            $this->staleGameDeletionService->deleteMissingZeroPercentGames(
-                                (string) $user->accountId(),
-                                $scannedGames,
-                            );
-                        } elseif ($this->staleGameDeletionService->shouldRetryWhenSonyReturnsNoGames((int) $psnGameCount, $ourGameCount)) {
-                            if (!($missingTrophyTitleRetry[$onlineId] ?? false)) {
-                                $missingTrophyTitleRetry[$onlineId] = true;
-
-                                $this->workerScanCoordinator->setWaitingScanProgress(
-                                    (int) $worker['id'],
-                                    'No trophy titles returned. Waiting 1 minute before retrying.'
-                                );
-
-                                sleep(60 * 1);
-                                $recheck = '';
-
-                                continue;
-                            }
-
-                            $this->logger->log(sprintf(
-                                'Skipped deleting missing games for %s (%s) because no trophy titles were returned.',
-                                (string) $player['online_id'],
-                                (string) $user->accountId()
-                            ));
-                        }
-
-                        $completionResult = $this->scanCompletionService->recalculatePlayerTrophyStatsAndStatus(
-                            (string) $user->accountId(),
-                            $totalTrophiesStart,
+                        $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+                            $client,
+                            $user,
+                            $player,
+                            $worker,
+                            $onlineId,
                             $recheck,
+                            $missingGameDeletionCheck,
+                            $missingTrophyTitleRetry,
+                            $trophyTitleCountRetry,
+                            $invalidTitleDateRetry,
                         );
 
-                        if ($completionResult->shouldContinueScan()) {
+                        if ($loopResult->shouldContinueLoop()) {
                             continue;
                         }
                     }
