@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyMergeService.php';
+require_once __DIR__ . '/TrophySetComparator.php';
 
 final class AutomaticTrophyTitleMergeService
 {
@@ -10,13 +11,19 @@ final class AutomaticTrophyTitleMergeService
 
     private TrophyMergeService $trophyMergeService;
 
+    private TrophySetComparator $trophySetComparator;
+
     /** @var array<string, list<array{group_id:string, order_id:int, name:string, detail:string}>> */
     private array $trophyCache = [];
 
-    public function __construct(PDO $database, TrophyMergeService $trophyMergeService)
-    {
+    public function __construct(
+        PDO $database,
+        TrophyMergeService $trophyMergeService,
+        ?TrophySetComparator $trophySetComparator = null,
+    ) {
         $this->database = $database;
         $this->trophyMergeService = $trophyMergeService;
+        $this->trophySetComparator = $trophySetComparator ?? new TrophySetComparator();
     }
 
     /**
@@ -48,7 +55,7 @@ final class AutomaticTrophyTitleMergeService
                 return [];
             }
 
-            $mergeMethod = $this->selectMergeMethod($comparison);
+            $mergeMethod = $this->trophySetComparator->selectMergeMethod($comparison);
 
             if ($mergeMethod === null) {
                 $this->logAmbiguousNameMerge(
@@ -100,7 +107,7 @@ final class AutomaticTrophyTitleMergeService
                 continue;
             }
 
-            $mergeMethod = $this->selectMergeMethod($comparison);
+            $mergeMethod = $this->trophySetComparator->selectMergeMethod($comparison);
 
             if ($mergeMethod === null) {
                 $this->logAmbiguousNameMerge(
@@ -295,127 +302,14 @@ final class AutomaticTrophyTitleMergeService
     }
 
     /**
-     * @param string $leftNpCommunicationId
-     * @param string $rightNpCommunicationId
      * @return array{matches:bool, orderMatches:bool, nameMatches:bool}
      */
     private function compareTrophies(string $leftNpCommunicationId, string $rightNpCommunicationId): array
     {
-        $leftTrophies = $this->getTrophiesByNpCommunicationId($leftNpCommunicationId);
-        $rightTrophies = $this->getTrophiesByNpCommunicationId($rightNpCommunicationId);
-
-        if (count($leftTrophies) !== count($rightTrophies)) {
-            return ['matches' => false, 'orderMatches' => false, 'nameMatches' => false];
-        }
-
-        if ($leftTrophies === [] && $rightTrophies === []) {
-            return ['matches' => true, 'orderMatches' => true, 'nameMatches' => true];
-        }
-
-        $leftCounts = $this->createNameDetailCounter($leftTrophies);
-        $rightCounts = $this->createNameDetailCounter($rightTrophies);
-
-        if ($leftCounts !== $rightCounts) {
-            return ['matches' => false, 'orderMatches' => false, 'nameMatches' => false];
-        }
-
-        $orderMatches = $this->trophiesMatchByOrder($leftTrophies, $rightTrophies);
-        $nameMatches = $this->trophiesMatchByName($leftTrophies, $rightTrophies);
-
-        return ['matches' => true, 'orderMatches' => $orderMatches, 'nameMatches' => $nameMatches];
-    }
-
-    /**
-     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $left
-     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $right
-     */
-    private function trophiesMatchByOrder(array $left, array $right): bool
-    {
-        $lookup = [];
-
-        foreach ($left as $trophy) {
-            $key = $this->createOrderKey($trophy['group_id'], $trophy['order_id']);
-            $lookup[$key] = $this->createTrophyKey($trophy['name'], $trophy['detail']);
-        }
-
-        foreach ($right as $trophy) {
-            $key = $this->createOrderKey($trophy['group_id'], $trophy['order_id']);
-            $value = $this->createTrophyKey($trophy['name'], $trophy['detail']);
-
-            if (!isset($lookup[$key]) || $lookup[$key] !== $value) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $trophies
-     * @return array<string,int>
-     */
-    private function createNameDetailCounter(array $trophies): array
-    {
-        $counts = [];
-
-        foreach ($trophies as $trophy) {
-            $key = $this->createTrophyKey($trophy['name'], $trophy['detail']);
-            $counts[$key] = ($counts[$key] ?? 0) + 1;
-        }
-
-        ksort($counts);
-
-        return $counts;
-    }
-
-    /**
-     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $left
-     * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $right
-     */
-    private function trophiesMatchByName(array $left, array $right): bool
-    {
-        $leftNames = array_map(fn(array $trophy): string => $this->normalizeString($trophy['name']), $left);
-        $rightNames = array_map(fn(array $trophy): string => $this->normalizeString($trophy['name']), $right);
-
-        sort($leftNames);
-        sort($rightNames);
-
-        if ($leftNames !== $rightNames) {
-            return false;
-        }
-
-        return count($leftNames) === count(array_unique($leftNames));
-    }
-
-    private function createTrophyKey(string $name, string $detail): string
-    {
-        return $this->normalizeString($name) . "\0" . $this->normalizeString($detail);
-    }
-
-    private function createOrderKey(string $groupId, int $orderId): string
-    {
-        return $groupId . '|' . $orderId;
-    }
-
-    private function normalizeString(string $value): string
-    {
-        return mb_strtolower($value, 'UTF-8');
-    }
-
-    /**
-     * @param array{matches:bool, orderMatches:bool, nameMatches:bool} $comparison
-     */
-    private function selectMergeMethod(array $comparison): ?string
-    {
-        if ($comparison['orderMatches']) {
-            return 'order';
-        }
-
-        if ($comparison['nameMatches']) {
-            return 'name';
-        }
-
-        return null;
+        return $this->trophySetComparator->compare(
+            $this->getTrophiesByNpCommunicationId($leftNpCommunicationId),
+            $this->getTrophiesByNpCommunicationId($rightNpCommunicationId),
+        );
     }
 
     private function logAmbiguousNameMerge(string $childNpCommunicationId, string $parentNpCommunicationId): void
