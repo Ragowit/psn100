@@ -149,6 +149,30 @@ final class PlayerScanCompletionService
         return PlayerScanCompletionResult::completed();
     }
 
+    public function finalizeSuccessfulScan(string $accountId, string $currentOnlineId): void
+    {
+        $this->updatePlayerLastScannedAt($accountId);
+        $this->removePlayerFromScanQueue($currentOnlineId);
+    }
+
+    public function updatePlayerLastScannedAt(string $accountId): void
+    {
+        $query = $this->database->prepare("UPDATE player
+            SET    last_updated_date = Now()
+            WHERE  account_id = :account_id ");
+        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    public function removePlayerFromScanQueue(string $currentOnlineId): void
+    {
+        $query = $this->database->prepare("DELETE FROM player_queue
+            WHERE  online_id = :online_id ");
+        // Use the current PSN name; profile sync may have updated the queue row after a rename.
+        $query->bindValue(':online_id', $currentOnlineId, PDO::PARAM_STR);
+        $query->execute();
+    }
+
     public function updateRarityPointsForActivePlayer(string $accountId): void
     {
         $query = $this->database->prepare('SELECT

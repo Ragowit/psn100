@@ -571,19 +571,10 @@ final class ThirtyMinuteCronJob implements CronJobInterface
 
                     $this->scanCompletionService->updateRarityPointsForActivePlayer((string) $user->accountId());
 
-                    // Done with the user, update the date
-                    $query = $this->database->prepare("UPDATE player
-                        SET    last_updated_date = Now()
-                        WHERE  account_id = :account_id ");
-                    $query->bindValue(":account_id", (string) $user->accountId(), PDO::PARAM_STR);
-                    $query->execute();
-
-                    // Delete user from the queue
-                    $query = $this->database->prepare("DELETE FROM player_queue
-                        WHERE  online_id = :online_id ");
-                    // Don't use $user->onlineId(), since the user can have changed its name from what was entered into the queue.
-                    $query->bindValue(":online_id", $user->onlineId(), PDO::PARAM_STR);
-                    $query->execute();
+                    $this->scanCompletionService->finalizeSuccessfulScan(
+                        (string) $user->accountId(),
+                        $user->onlineId(),
+                    );
 
                     unset($missingGameDeletionCheck[$onlineId]);
                     unset($missingTrophyTitleRetry[$onlineId]);

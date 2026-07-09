@@ -44,6 +44,11 @@ final class PlayerScanCompletionServiceTest extends TestCase
             )'
         );
         $this->database->exec(
+            'CREATE TABLE player_queue (
+                online_id TEXT PRIMARY KEY
+            )'
+        );
+        $this->database->exec(
             'CREATE TABLE trophy_title (
                 id INTEGER PRIMARY KEY,
                 np_communication_id TEXT NOT NULL UNIQUE
@@ -158,6 +163,27 @@ final class PlayerScanCompletionServiceTest extends TestCase
 
         $this->assertStringContainsString('INTERVAL 1 YEAR', $source);
         $this->assertStringContainsString('AND p.status != 1', $source);
+    }
+
+    public function testRemovePlayerFromScanQueueDeletesOnlyMatchingOnlineId(): void
+    {
+        $this->database->exec("INSERT INTO player_queue (online_id) VALUES ('CurrentPsnName')");
+        $this->database->exec("INSERT INTO player_queue (online_id) VALUES ('SomeoneElse')");
+
+        $this->service->removePlayerFromScanQueue('CurrentPsnName');
+
+        $remainingQueueEntries = $this->database->query('SELECT online_id FROM player_queue ORDER BY online_id')->fetchAll(
+            PDO::FETCH_COLUMN
+        );
+        $this->assertSame(['SomeoneElse'], $remainingQueueEntries);
+    }
+
+    public function testFinalizeSuccessfulScanSourceUsesMysqlTimestampUpdate(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/PlayerScanCompletionService.php');
+
+        $this->assertStringContainsString('last_updated_date = Now()', $source);
+        $this->assertStringContainsString('DELETE FROM player_queue', $source);
     }
 
     public function testUpdateRarityPointsForActivePlayerSkipsNonActiveStatuses(): void
