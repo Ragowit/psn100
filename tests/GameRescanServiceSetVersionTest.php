@@ -6,13 +6,14 @@ require_once __DIR__ . '/ImageHashCalculatorTest.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyCalculator.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyImageDownloader.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameRescanDifferenceTracker.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/GameRescanCatalogUpdater.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameRescanService.php';
 
 final class GameRescanServiceSetVersionTest extends TestCase
 {
     public function testIsSetVersionAtLeastCurrentReturnsFalseForLowerVersion(): void
     {
-        $method = new ReflectionMethod(GameRescanService::class, 'isSetVersionAtLeastCurrent');
+        $method = new ReflectionMethod(GameRescanCatalogUpdater::class, 'isSetVersionAtLeastCurrent');
         $method->setAccessible(true);
 
         $result = $method->invoke(null, '01.09', '01.10');
@@ -22,7 +23,7 @@ final class GameRescanServiceSetVersionTest extends TestCase
 
     public function testIsSetVersionAtLeastCurrentAllowsEqualOrGreaterVersions(): void
     {
-        $method = new ReflectionMethod(GameRescanService::class, 'isSetVersionAtLeastCurrent');
+        $method = new ReflectionMethod(GameRescanCatalogUpdater::class, 'isSetVersionAtLeastCurrent');
         $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, '01.10', '01.10'));
