@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PossibleCheaterRuleConditionParser.php';
 require_once __DIR__ . '/PossibleCheaterRulesCatalog.php';
 require_once __DIR__ . '/PossibleCheaterReport.php';
 
@@ -9,36 +10,34 @@ class PossibleCheaterService
 {
     private PDO $database;
     private PossibleCheaterRulesCatalog $rulesCatalog;
+    private PossibleCheaterRuleConditionParser $conditionParser;
 
-    public function __construct(PDO $database, ?PossibleCheaterRulesCatalog $rulesCatalog = null)
-    {
+    public function __construct(
+        PDO $database,
+        ?PossibleCheaterRulesCatalog $rulesCatalog = null,
+        ?PossibleCheaterRuleConditionParser $conditionParser = null
+    ) {
         $this->database = $database;
         $this->rulesCatalog = $rulesCatalog ?? new PossibleCheaterRulesCatalog();
+        $this->conditionParser = $conditionParser ?? new PossibleCheaterRuleConditionParser();
     }
 
     public function createReport(): PossibleCheaterReport
     {
-        return new PossibleCheaterReport(
-            $this->buildGeneralReportEntries(),
-            $this->buildSectionReports()
-        );
-    }
+        $this->beginReadOnlyTransaction();
 
-    private function buildGeneralWhereClause(): string
-    {
-        $conditions = [];
+        try {
+            $report = new PossibleCheaterReport(
+                $this->buildGeneralReportEntries(),
+                $this->buildSectionReports()
+            );
+            $this->commitReadOnlyTransaction();
 
-        foreach ($this->rulesCatalog->getGeneralRuleGroups() as $group) {
-            foreach ($group->getRules() as $rule) {
-                $conditions[] = '(' . $rule->getCondition() . ')';
-            }
+            return $report;
+        } catch (Throwable $exception) {
+            $this->rollbackReadOnlyTransaction();
+            throw $exception;
         }
-
-        if ($conditions === []) {
-            return '()';
-        }
-
-        return '(' . implode(' OR ', $conditions) . ')';
     }
 
     /**
@@ -87,9 +86,11 @@ class PossibleCheaterService
      */
     private function fetchGeneralPossibleCheaterRows(): array
     {
-        $whereClause = $this->buildGeneralWhereClause();
+        $ruleDerivedTable = $this->conditionParser->buildRuleDerivedTableSql(
+            $this->rulesCatalog->getGeneralRuleGroups()
+        );
 
-        $sql = <<<'SQL'
+        $sql = <<<SQL
         SELECT
             first_games.account_id,
             first_games.player_name,
@@ -102,11 +103,21 @@ class PossibleCheaterService
                 MIN(tt.np_communication_id) AS first_np_communication_id
             FROM
                 trophy_earned te
+            INNER JOIN (
+                {$ruleDerivedTable}
+            ) cheat_rules ON
+                te.np_communication_id = cheat_rules.np_communication_id
+                AND te.order_id = cheat_rules.order_id
+                AND (
+                    cheat_rules.date_operator IS NULL
+                    OR (cheat_rules.date_operator = '>=' AND te.earned_date >= cheat_rules.date_value)
+                    OR (cheat_rules.date_operator = '<=' AND te.earned_date <= cheat_rules.date_value)
+                    OR (cheat_rules.date_operator = '<' AND te.earned_date < cheat_rules.date_value)
+                )
             JOIN player p ON p.account_id = te.account_id
             JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id
             WHERE
-                __WHERE_CLAUSE__
-                AND p.status != 1
+                p.status != 1
             GROUP BY
                 p.account_id,
                 p.online_id
@@ -115,8 +126,6 @@ class PossibleCheaterService
         ORDER BY
             first_games.player_name
         SQL;
-
-        $sql = str_replace('__WHERE_CLAUSE__', $whereClause, $sql);
 
         $rows = $this->fetchAll($sql);
 
@@ -142,5 +151,32 @@ class PossibleCheaterService
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
+    }
+
+    private function beginReadOnlyTransaction(): void
+    {
+        if ($this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return;
+        }
+
+        $this->database->exec('START TRANSACTION READ ONLY');
+    }
+
+    private function commitReadOnlyTransaction(): void
+    {
+        if ($this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return;
+        }
+
+        $this->database->exec('COMMIT');
+    }
+
+    private function rollbackReadOnlyTransaction(): void
+    {
+        if ($this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return;
+        }
+
+        $this->database->exec('ROLLBACK');
     }
 }
