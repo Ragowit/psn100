@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Html.php';
 
+require_once __DIR__ . '/GameDetailFormParser.php';
 require_once __DIR__ . '/GameDetailService.php';
 require_once __DIR__ . '/GameDetailPageResult.php';
 require_once __DIR__ . '/../GameStatusService.php';
@@ -11,24 +12,20 @@ require_once __DIR__ . '/../GameAvailabilityStatus.php';
 
 class GameDetailPage
 {
-    private const array PLATFORM_OPTIONS = [
-        'PS3',
-        'PSVITA',
-        'PS4',
-        'PSVR',
-        'PS5',
-        'PSVR2',
-        'PC',
-    ];
-
     private GameDetailService $gameDetailService;
 
     private GameStatusService $gameStatusService;
 
-    public function __construct(GameDetailService $gameDetailService, GameStatusService $gameStatusService)
-    {
+    private GameDetailFormParser $formParser;
+
+    public function __construct(
+        GameDetailService $gameDetailService,
+        GameStatusService $gameStatusService,
+        ?GameDetailFormParser $formParser = null,
+    ) {
         $this->gameDetailService = $gameDetailService;
         $this->gameStatusService = $gameStatusService;
+        $this->formParser = $formParser ?? new GameDetailFormParser();
     }
 
     /**
@@ -50,7 +47,7 @@ class GameDetailPage
      */
     public function getPlatformOptions(): array
     {
-        return self::PLATFORM_OPTIONS;
+        return $this->formParser->getPlatformOptions();
     }
 
     /**
@@ -68,7 +65,7 @@ class GameDetailPage
             $method = strtoupper((string) ($serverParameters['REQUEST_METHOD'] ?? 'GET'));
 
             if ($method === 'POST') {
-                $action = $this->parseAction($postData['action'] ?? null);
+                $action = $this->formParser->parseAction($postData['action'] ?? null);
 
                 if ($action === 'update-status') {
                     [$gameDetail, $success, $error] = $this->handleStatusUpdate($postData);
@@ -77,12 +74,12 @@ class GameDetailPage
                 }
             } elseif ($method === 'GET') {
                 $npCommunicationId = null;
-                $gameId = $this->parseGameId($queryParameters['game'] ?? null);
+                $gameId = $this->formParser->parseGameId($queryParameters['game'] ?? null);
 
                 if ($gameId !== null) {
                     $gameDetail = $this->gameDetailService->getGameDetail($gameId);
                 } else {
-                    $npCommunicationId = $this->parseNpCommunicationId($queryParameters['np_communication_id'] ?? null);
+                    $npCommunicationId = $this->formParser->parseNpCommunicationId($queryParameters['np_communication_id'] ?? null);
 
                     if ($npCommunicationId !== null) {
                         $gameDetail = $this->gameDetailService->getGameDetailByNpCommunicationId($npCommunicationId);
@@ -106,13 +103,13 @@ class GameDetailPage
      */
     private function handleDetailUpdate(array $postData): array
     {
-        $gameId = $this->parseGameId($postData['game'] ?? null);
+        $gameId = $this->formParser->parseGameId($postData['game'] ?? null);
 
         if ($gameId === null) {
             return [null, null, '<p>Invalid game ID provided.</p>'];
         }
 
-        $status = $this->parseStatus($postData['status'] ?? null);
+        $status = $this->formParser->parseStatus($postData['status'] ?? null);
         if ($status === null) {
             return [
                 $this->gameDetailService->getGameDetail($gameId),
@@ -122,7 +119,7 @@ class GameDetailPage
         }
 
         $gameDetail = $this->gameDetailService->updateGameDetail(
-            $this->createGameDetailFromPost($gameId, $postData, $status)
+            $this->formParser->createGameDetailFromPost($gameId, $postData, $status)
         );
 
         $successMessages = [sprintf('<p>Game ID %d is updated.</p>', $gameDetail->getId())];
@@ -150,12 +147,12 @@ class GameDetailPage
      */
     private function handleStatusUpdate(array $postData): array
     {
-        $gameId = $this->parseGameId($postData['game'] ?? null);
+        $gameId = $this->formParser->parseGameId($postData['game'] ?? null);
         if ($gameId === null) {
             return [null, null, '<p>Invalid game ID provided.</p>'];
         }
 
-        $status = $this->parseStatus($postData['status'] ?? null);
+        $status = $this->formParser->parseStatus($postData['status'] ?? null);
         if ($status === null) {
             return [
                 $this->gameDetailService->getGameDetail($gameId),
@@ -196,179 +193,6 @@ class GameDetailPage
             $this->formatStatusSuccessMessage($gameId, $statusText),
             null,
         ];
-    }
-
-    private function parseNpCommunicationId(mixed $value): ?string
-    {
-        if (!is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
-    }
-
-    private function parseGameId(mixed $value): ?int
-    {
-        if (is_int($value)) {
-            return $value >= 0 ? $value : null;
-        }
-
-        if (!is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-        if ($trimmed === '') {
-            return null;
-        }
-
-        if ($trimmed[0] === '-') {
-            return null;
-        }
-
-        if (!ctype_digit($trimmed)) {
-            return null;
-        }
-
-        return (int) $trimmed;
-    }
-
-    private function parseAction(mixed $value): string
-    {
-        if (!is_string($value)) {
-            return '';
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? '' : strtolower($trimmed);
-    }
-
-    private function parseStatus(mixed $value): ?GameAvailabilityStatus
-    {
-        if (is_int($value)) {
-            return GameAvailabilityStatus::tryFrom($value);
-        }
-
-        if (!is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-        if ($trimmed === '' || $trimmed[0] === '-') {
-            return null;
-        }
-
-        if (!ctype_digit($trimmed)) {
-            return null;
-        }
-
-        return GameAvailabilityStatus::tryFrom((int) $trimmed);
-    }
-
-    /**
-     * @param array<string, mixed> $postData
-     */
-    private function createGameDetailFromPost(int $gameId, array $postData, GameAvailabilityStatus $status): GameDetail
-    {
-        $npCommunicationId = $this->normalizeOptionalString($postData['np_communication_id'] ?? null);
-        $region = $this->normalizeOptionalString($postData['region'] ?? null);
-        $psnprofilesId = $this->normalizeOptionalString($postData['psnprofiles_id'] ?? null);
-        $obsoleteIds = $this->normalizeObsoleteIds($postData['obsolete_ids'] ?? null);
-
-        return new GameDetail(
-            $gameId,
-            $npCommunicationId,
-            (string) ($postData['name'] ?? ''),
-            (string) ($postData['icon_url'] ?? ''),
-            $this->normalizePlatforms($postData['platform'] ?? null),
-            (string) ($postData['message'] ?? ''),
-            (string) ($postData['set_version'] ?? ''),
-            $region,
-            $psnprofilesId,
-            $status,
-            $obsoleteIds
-        );
-    }
-
-    private function normalizePlatforms(mixed $value): string
-    {
-        $candidates = [];
-
-        if (is_array($value)) {
-            $candidates = $value;
-        } elseif (is_string($value)) {
-            $candidates = explode(',', $value);
-        }
-
-        $selected = [];
-        foreach ($candidates as $candidate) {
-            if (!is_string($candidate)) {
-                continue;
-            }
-
-            $platform = strtoupper(trim($candidate));
-            if ($platform === '') {
-                continue;
-            }
-
-            $selected[$platform] = true;
-        }
-
-        $ordered = [];
-        foreach (self::PLATFORM_OPTIONS as $platform) {
-            if (isset($selected[$platform])) {
-                $ordered[] = $platform;
-            }
-        }
-
-        return implode(',', $ordered);
-    }
-
-    private function normalizeOptionalString(mixed $value): ?string
-    {
-        if (!is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
-    }
-
-    private function normalizeObsoleteIds(mixed $value): ?string
-    {
-        if (!is_string($value)) {
-            return null;
-        }
-
-        $segments = array_filter(
-            array_map(static fn(string $segment): string => trim($segment), explode(',', $value)),
-            static fn(string $segment): bool => $segment !== ''
-        );
-
-        if ($segments === []) {
-            return null;
-        }
-
-        $normalized = [];
-        foreach ($segments as $segment) {
-            if (!ctype_digit($segment)) {
-                continue;
-            }
-
-            $normalized[] = (string) (int) $segment;
-        }
-
-        if ($normalized === []) {
-            return null;
-        }
-
-        $normalized = array_values(array_unique($normalized));
-
-        return implode(',', $normalized);
     }
 
     private function formatStatusSuccessMessage(int $gameId, string $statusText): string
