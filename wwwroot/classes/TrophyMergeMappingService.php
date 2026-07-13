@@ -145,16 +145,6 @@ SQL
     {
         $query = $this->database->prepare(
             <<<'SQL'
-            WITH child_title AS (
-                SELECT np_communication_id
-                FROM trophy_title
-                WHERE id = :child_game_id
-            ),
-            parent_title AS (
-                SELECT np_communication_id
-                FROM trophy_title
-                WHERE id = :parent_game_id
-            )
             INSERT IGNORE
             into   trophy_merge
                    (
@@ -165,6 +155,16 @@ SQL
                           parent_group_id,
                           parent_order_id
                    )
+            WITH child_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :child_game_id
+            ),
+            parent_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :parent_game_id
+            )
             SELECT     child.np_communication_id,
                        child.group_id,
                        child.order_id,
