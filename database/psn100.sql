@@ -608,7 +608,7 @@ ALTER TABLE `trophy_meta`
 ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`),
-  ADD KEY `idx_trophy_title_name` (`name`);
+  ADD KEY `idx_trophy_title_name` (`name`(191));
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 
 --
