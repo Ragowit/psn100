@@ -11,6 +11,7 @@ require_once __DIR__ . '/../wwwroot/classes/AutomaticTrophyTitleMergeService.php
 require_once __DIR__ . '/../wwwroot/classes/Cron/WorkerScanCoordinator.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanTitleMetadataHelper.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerEarnedTrophyPersister.php';
+require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanCatalogSideEffects.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanTitleCatalogSynchronizer.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanTrophyProgressSynchronizer.php';
 require_once __DIR__ . '/../wwwroot/classes/Cron/PlayerScanStaleGameDeletionService.php';
@@ -52,8 +53,11 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
             new PlayerScanTitleCatalogSynchronizer(
                 $this->database,
                 $logger,
-                historyRecorder: $historyRecorder,
-                automaticTrophyTitleMergeService: $automaticTrophyTitleMergeService,
+                catalogSideEffects: new PlayerScanCatalogSideEffects(
+                    $this->database,
+                    $historyRecorder,
+                    $automaticTrophyTitleMergeService,
+                ),
             ),
             new PlayerScanTrophyProgressSynchronizer(
                 $this->database,

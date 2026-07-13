@@ -3,16 +3,14 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Admin/PsnGameLookupService.php';
-require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
-require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
-require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
+require_once __DIR__ . '/PlayerScanCatalogSideEffects.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
 
@@ -37,8 +35,7 @@ final class PlayerScanTitleCatalogSynchronizer
         private readonly ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
         private readonly ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
         private readonly ?TrophyMetaRepository $trophyMetaRepository = null,
-        private readonly ?TrophyHistoryRecorder $historyRecorder = null,
-        private readonly ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
+        private readonly ?PlayerScanCatalogSideEffects $catalogSideEffects = null,
         private readonly mixed $trophyDataFetcher = null,
     ) {
     }
@@ -389,45 +386,21 @@ final class PlayerScanTitleCatalogSynchronizer
             }
         }
 
-        if ($titleDataChanged || $groupDataChanged || $trophyDataChanged) {
-            if ($titleId === null) {
-                $titleId = $this->findTrophyTitleId($npid);
-            }
-
-            if ($titleId !== null) {
-                $this->historyRecorder()->recordByTitleId($titleId);
-            }
-        }
-
-        $mergeParentsToRecompute = [];
-        if ($isNewTitle) {
-            $mergeParentsToRecompute = $this->automaticMergeService()->handleNewTitle($npid);
-        }
-
-        if ($newTrophies) {
-            if ($titleId === null) {
-                $titleId = $this->findTrophyTitleId($npid);
-            }
-
-            if ($titleId === null) {
-                return PlayerScanTitleCatalogSyncResult::synced(
-                    $newTrophies,
-                    $isNewTitle,
-                    null,
-                    $mergeParentsToRecompute,
-                );
-            }
-
-            $query = $this->database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)");
-            $query->bindValue(':param_1', $titleId, PDO::PARAM_INT);
-            $query->execute();
-        }
+        $sideEffectResult = $this->catalogSideEffects()->applyAfterCatalogSync(
+            $npid,
+            $titleDataChanged,
+            $groupDataChanged,
+            $trophyDataChanged,
+            $isNewTitle,
+            $newTrophies,
+            $titleId,
+        );
 
         return PlayerScanTitleCatalogSyncResult::synced(
             $newTrophies,
             $isNewTitle,
-            $titleId,
-            $mergeParentsToRecompute,
+            $sideEffectResult->titleId,
+            $sideEffectResult->mergeParentsToRecompute,
         );
     }
 
@@ -461,23 +434,6 @@ final class PlayerScanTitleCatalogSynchronizer
     private function psnGameLookup(): PsnGameLookupService
     {
         return $this->psnGameLookupService ?? PsnGameLookupService::fromDatabase($this->database);
-    }
-
-    private function findTrophyTitleId(string $npCommunicationId): ?int
-    {
-        $query = $this->database->prepare(
-            'SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
-
-        $id = $query->fetchColumn();
-
-        if ($id === false) {
-            return null;
-        }
-
-        return (int) $id;
     }
 
     private function directories(): TrophyImageDirectories
@@ -515,14 +471,8 @@ final class PlayerScanTitleCatalogSynchronizer
         return $this->trophyMetaRepository ?? new TrophyMetaRepository($this->database);
     }
 
-    private function historyRecorder(): TrophyHistoryRecorder
+    private function catalogSideEffects(): PlayerScanCatalogSideEffects
     {
-        return $this->historyRecorder ?? new TrophyHistoryRecorder($this->database);
-    }
-
-    private function automaticMergeService(): AutomaticTrophyTitleMergeService
-    {
-        return $this->automaticTrophyTitleMergeService
-            ?? new AutomaticTrophyTitleMergeService($this->database, new TrophyMergeService($this->database));
+        return $this->catalogSideEffects ?? new PlayerScanCatalogSideEffects($this->database);
     }
 }
