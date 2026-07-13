@@ -34,6 +34,18 @@ class PlayerQueueController
     {
         $request = PlayerQueueRequest::fromArrays($requestData, $serverData);
 
+        if (
+            $this->rateLimitService !== null
+            && !$this->rateLimitService->checkAndRecord(
+                $request->getIpAddress(),
+                IpRateLimitService::BUCKET_QUEUE_SUBMIT
+            )
+        ) {
+            return PlayerQueueResponse::rateLimited(
+                'Too many queue submissions. Please wait a moment and try again.'
+            );
+        }
+
         return $this->handler->handleAddToQueueRequest($request);
     }
 
