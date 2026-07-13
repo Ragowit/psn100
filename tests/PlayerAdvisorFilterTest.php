@@ -80,4 +80,23 @@ final class PlayerAdvisorFilterTest extends TestCase
             'sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY,
         ], $filter->getFilterParameters());
     }
+
+    public function testWithPageReturnsCloneWithNormalizedPage(): void
+    {
+        $filter = PlayerAdvisorFilter::fromArray(['page' => '2', 'ps5' => '1']);
+
+        $updated = $filter->withPage(4);
+
+        $this->assertSame(2, $filter->getPage());
+        $this->assertSame(4, $updated->getPage());
+        $this->assertTrue($updated->isPlatformSelected('ps5'));
+        $this->assertSame(60, $updated->getOffset(20));
+    }
+
+    public function testWithPageFloorsToOne(): void
+    {
+        $filter = PlayerAdvisorFilter::fromArray(['page' => '3']);
+
+        $this->assertSame(1, $filter->withPage(0)->getPage());
+    }
 }

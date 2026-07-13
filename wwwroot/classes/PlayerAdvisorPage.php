@@ -34,9 +34,23 @@ class PlayerAdvisorPage
     ) {
         $this->playerAdvisorService = $playerAdvisorService;
         $this->playerSummaryService = $playerSummaryService;
-        $this->filter = $filter;
         $this->accountId = $accountId;
         $this->playerStatus = $playerStatus;
+
+        if ($this->shouldDisplayAdvisor()) {
+            $this->totalTrophies = $this->playerAdvisorService->countAdvisableTrophies(
+                $this->accountId,
+                $filter
+            );
+            $this->filter = $filter->withPage(
+                $this->normalizePageNumber(
+                    $filter->getPage(),
+                    $this->calculateTotalPages($this->totalTrophies)
+                )
+            );
+        } else {
+            $this->filter = $filter->withPage($this->normalizePageNumber($filter->getPage(), 0));
+        }
     }
 
     public function getPlayerSummary(): PlayerSummary
@@ -112,13 +126,7 @@ class PlayerAdvisorPage
 
     public function getTotalPages(): int
     {
-        $pageSize = $this->getPageSize();
-
-        if ($pageSize === 0) {
-            return 0;
-        }
-
-        return (int) ceil($this->getTotalTrophies() / $pageSize);
+        return $this->calculateTotalPages($this->getTotalTrophies());
     }
 
     /**
@@ -127,5 +135,23 @@ class PlayerAdvisorPage
     public function getFilterParameters(): array
     {
         return $this->filter->getFilterParameters();
+    }
+
+    private function calculateTotalPages(int $totalTrophies): int
+    {
+        $pageSize = $this->getPageSize();
+
+        if ($pageSize === 0) {
+            return 0;
+        }
+
+        return (int) ceil($totalTrophies / $pageSize);
+    }
+
+    private function normalizePageNumber(int $requestedPage, int $totalPages): int
+    {
+        $maximumPage = $totalPages > 0 ? $totalPages : 1;
+
+        return min(max($requestedPage, 1), $maximumPage);
     }
 }
