@@ -153,7 +153,7 @@ class GameMergeFormController {
                         if (finalPayload && finalPayload.success) {
                             const successMessage = finalPayload.message ?? 'The games have been merged.';
                             this.markProgressAsSuccess(successMessage);
-                            this.showAlert('success', successMessage, true);
+                            this.showAlert('success', successMessage);
 
                             return;
                         }
@@ -362,7 +362,7 @@ class GameMergeFormController {
                     this.resultContainer.replaceChildren();
                 }
 
-                showAlert(type, message, allowHtml = false) {
+                showAlert(type, message) {
                     if (!this.resultContainer) {
                         return;
                     }
@@ -370,14 +370,8 @@ class GameMergeFormController {
                     const alert = document.createElement('div');
                     alert.className = `alert alert-${type}`;
                     alert.setAttribute('role', 'alert');
-
-                    if (allowHtml) {
-                        const template = document.createElement('template');
-                        template.innerHTML = message ?? '';
-                        alert.replaceChildren(...template.content.childNodes);
-                    } else {
-                        alert.textContent = message ?? '';
-                    }
+                    alert.style.whiteSpace = 'pre-line';
+                    alert.textContent = this.toPlainText(message ?? '');
 
                     this.resultContainer.replaceChildren(alert);
                 }
@@ -399,7 +393,9 @@ class GameMergeFormController {
                         return '';
                     }
 
-                    return new DOMParser().parseFromString(value, 'text/html').body.textContent ?? '';
+                    const normalized = value.replace(/<br\s*\/?>/gi, '\n');
+
+                    return new DOMParser().parseFromString(normalized, 'text/html').body.textContent ?? '';
                 }
 }
 
