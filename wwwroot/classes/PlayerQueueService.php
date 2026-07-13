@@ -58,12 +58,32 @@ class PlayerQueueService
         SQL;
     private const string SQL_QUEUE_POSITION_MYSQL = <<<'SQL'
         SELECT
-            COUNT(*) + 1 AS position
-        FROM
-            player_queue pq_a
-            JOIN player_queue pq_b ON pq_b.online_id = :online_id
+            position
+        FROM (
+            SELECT
+                COUNT(*) + 1 AS position
+            FROM
+                player_queue pq_a
+            WHERE
+                (pq_a.request_time, pq_a.online_id) < (
+                    SELECT
+                        request_time,
+                        online_id
+                    FROM
+                        player_queue
+                    WHERE
+                        online_id = :online_id
+                )
+        ) AS counts
         WHERE
-            (pq_a.request_time, pq_a.online_id) < (pq_b.request_time, pq_b.online_id)
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    player_queue
+                WHERE
+                    online_id = :online_id
+            )
         SQL;
     private const string SQL_PLAYER_IN_QUEUE = <<<'SQL'
         SELECT

@@ -232,6 +232,27 @@ final class PlayerQueueServiceTest extends TestCase
         $this->assertSame(null, $this->service->getQueuePosition('MissingPlayer'));
     }
 
+    public function testMysqlQueuePositionSqlReturnsNoRowWhenPlayerIsNotQueued(): void
+    {
+        $reflection = new ReflectionClass(PlayerQueueService::class);
+        $sql = $reflection->getConstant('SQL_QUEUE_POSITION_MYSQL');
+
+        $this->assertTrue(is_string($sql));
+        $this->assertStringContainsString('EXISTS', $sql);
+
+        $mysqlPdo = new PlayerQueueServiceMysqlDriverPdoStub($this->pdo);
+        $service = new PlayerQueueService($mysqlPdo);
+
+        $this->assertSame(null, $service->getQueuePosition('MissingPlayer'));
+
+        $this->pdo->exec(
+            "INSERT INTO player_queue (online_id, ip_address, request_time) VALUES" .
+            " ('FirstPlayer', '1.1.1.1', '2024-01-01T00:00:01')"
+        );
+
+        $this->assertSame(1, $service->getQueuePosition('FirstPlayer'));
+    }
+
     public function testGetPlayerStatusDataReturnsNullWhenPlayerMissing(): void
     {
         $this->assertSame(null, $this->service->getPlayerStatusData('Nobody'));
@@ -257,5 +278,29 @@ final class PlayerQueueServiceTest extends TestCase
         $this->assertTrue($this->service->isCheaterStatus(PlayerQueueService::CHEATER_STATUS));
         $this->assertFalse($this->service->isCheaterStatus(null));
         $this->assertFalse($this->service->isCheaterStatus(2));
+    }
+}
+
+/**
+ * @extends PDO
+ */
+final class PlayerQueueServiceMysqlDriverPdoStub extends PDO
+{
+    public function __construct(private readonly PDO $inner)
+    {
+    }
+
+    public function getAttribute(int $attribute): mixed
+    {
+        if ($attribute === PDO::ATTR_DRIVER_NAME) {
+            return 'mysql';
+        }
+
+        return $this->inner->getAttribute($attribute);
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        return $this->inner->prepare($query, $options);
     }
 }
