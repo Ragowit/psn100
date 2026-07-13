@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/IpAddressResolver.php';
+
 /**
  * Fixed-window IP rate limiting backed by the ip_rate_limit table.
  */
@@ -31,10 +33,6 @@ final class IpRateLimitService
 
     public function isAllowed(string $ipAddress, string $bucket): bool
     {
-        if ($ipAddress === '') {
-            return true;
-        }
-
         [$maxRequests, $windowSeconds] = $this->resolveLimits($bucket);
         $bucketKey = $this->buildBucketKey($ipAddress, $bucket);
         $row = $this->fetchBucketRow($bucketKey);
@@ -60,10 +58,6 @@ final class IpRateLimitService
 
     public function checkAndRecord(string $ipAddress, string $bucket): bool
     {
-        if ($ipAddress === '') {
-            return true;
-        }
-
         [$maxRequests, $windowSeconds] = $this->resolveLimits($bucket);
         $bucketKey = $this->buildBucketKey($ipAddress, $bucket);
 
@@ -114,7 +108,9 @@ final class IpRateLimitService
 
     private function buildBucketKey(string $ipAddress, string $bucket): string
     {
-        return hash('sha256', $bucket . '|' . $ipAddress);
+        $normalizedIpAddress = IpAddressResolver::normalizeForAbuseControls($ipAddress);
+
+        return hash('sha256', $bucket . '|' . $normalizedIpAddress);
     }
 
     private function consumeSlotIfAvailable(string $bucketKey, int $maxRequests, int $windowSeconds): bool

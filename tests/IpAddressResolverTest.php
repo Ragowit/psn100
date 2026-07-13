@@ -88,4 +88,13 @@ final class IpAddressResolverTest extends TestCase
 
         $this->assertSame('198.51.100.44', $ipAddress);
     }
+
+    public function testNormalizeForAbuseControlsMapsEmptyIpToSharedIdentifier(): void
+    {
+        $this->assertSame(
+            IpAddressResolver::UNKNOWN_CLIENT_IDENTIFIER,
+            IpAddressResolver::normalizeForAbuseControls('')
+        );
+        $this->assertSame('192.0.2.1', IpAddressResolver::normalizeForAbuseControls('192.0.2.1'));
+    }
 }
