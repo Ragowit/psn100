@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyMergeService.php';
 require_once __DIR__ . '/TrophySetComparator.php';
+require_once __DIR__ . '/Cron/PlayerScanNewTitleMergeHandler.php';
 
-final class AutomaticTrophyTitleMergeService
+final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeHandler
 {
     private PDO $database;
 

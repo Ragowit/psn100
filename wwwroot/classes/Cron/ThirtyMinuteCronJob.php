@@ -22,6 +22,7 @@ require_once __DIR__ . '/PlayerScanCompletionService.php';
 require_once __DIR__ . '/PlayerEarnedTrophyPersister.php';
 require_once __DIR__ . '/PlayerScanStaleGameDeletionService.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSynchronizer.php';
+require_once __DIR__ . '/PlayerScanCatalogSideEffects.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 require_once __DIR__ . '/PlayerScanTrophyProgressSynchronizer.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
@@ -111,8 +112,11 @@ final class ThirtyMinuteCronJob implements CronJobInterface
         $this->titleCatalogSynchronizer = $titleCatalogSynchronizer ?? new PlayerScanTitleCatalogSynchronizer(
             $database,
             $logger,
-            historyRecorder: $historyRecorder,
-            automaticTrophyTitleMergeService: $this->automaticTrophyTitleMergeService,
+            catalogSideEffects: new PlayerScanCatalogSideEffects(
+                $database,
+                $historyRecorder,
+                $this->automaticTrophyTitleMergeService,
+            ),
         );
         $this->trophyProgressSynchronizer = $trophyProgressSynchronizer ?? new PlayerScanTrophyProgressSynchronizer(
             $database,
