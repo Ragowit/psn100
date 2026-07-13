@@ -79,4 +79,21 @@ final class GameListFilterTest extends TestCase
             $filter->getQueryParametersForPagination()
         );
     }
+
+    public function testWithPageReturnsCloneWithNormalizedPage(): void
+    {
+        $filter = GameListFilter::fromArray(['page' => '3']);
+        $updated = $filter->withPage(5);
+
+        $this->assertSame(3, $filter->getPage());
+        $this->assertSame(5, $updated->getPage());
+        $this->assertSame(40, $updated->getOffset(10));
+    }
+
+    public function testWithPageFloorsToOne(): void
+    {
+        $filter = GameListFilter::fromArray(['page' => '2']);
+
+        $this->assertSame(1, $filter->withPage(0)->getPage());
+    }
 }
