@@ -92,18 +92,21 @@ class GameLeaderboardPage
 
         $filter = GameLeaderboardFilter::fromArray($queryParameters);
         $limit = GameLeaderboardService::PAGE_SIZE;
-        $offset = $filter->getOffset($limit);
         $npCommunicationId = $game->getNpCommunicationId();
         $totalPlayers = $leaderboardService->getLeaderboardPlayerCount(
             $npCommunicationId,
             $filter
         );
+        $totalPagesCount = $limit > 0 ? (int) ceil($totalPlayers / $limit) : 0;
+
+        $clampedPage = self::normalizePageNumber($filter->getPage(), $totalPagesCount);
+        $filter = $filter->withPageNumber($clampedPage);
+        $offset = $filter->getOffset($limit);
         $rows = $leaderboardService->getLeaderboardRows(
             $npCommunicationId,
             $filter,
             $limit
         );
-        $totalPagesCount = $limit > 0 ? (int) ceil($totalPlayers / $limit) : 0;
 
         $gameHeaderData = $headerService->buildHeaderData($game);
 
@@ -181,5 +184,12 @@ class GameLeaderboardPage
     public function getGameSlug(Utility $utility): string
     {
         return $this->game->getId() . '-' . $utility->slugify($this->game->getName());
+    }
+
+    private static function normalizePageNumber(int $requestedPage, int $totalPages): int
+    {
+        $maximumPage = $totalPages > 0 ? $totalPages : 1;
+
+        return min(max($requestedPage, 1), $maximumPage);
     }
 }
