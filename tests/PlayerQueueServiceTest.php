@@ -59,9 +59,33 @@ final class PlayerQueueServiceTest extends TestCase
         }
     }
 
-    public function testGetIpSubmissionCountReturnsZeroWhenIpEmpty(): void
+    public function testGetIpSubmissionCountCountsSharedEmptyIpSubmissions(): void
     {
-        $this->assertSame(0, $this->service->getIpSubmissionCount(''));
+        $this->pdo->exec(
+            "INSERT INTO player_queue (online_id, ip_address, request_time) VALUES" .
+            " ('PlayerA', '', '2024-01-01T00:00:00')," .
+            " ('PlayerB', '', '2024-01-01T00:01:00')," .
+            " ('PlayerC', '10.0.0.1', '2024-01-01T00:02:00')"
+        );
+
+        $this->assertSame(2, $this->service->getIpSubmissionCount(''));
+        $this->assertSame(1, $this->service->getIpSubmissionCount('10.0.0.1'));
+    }
+
+    public function testHasReachedIpSubmissionLimitAppliesToSharedEmptyIpSubmissions(): void
+    {
+        $values = [];
+
+        for ($i = 0; $i < PlayerQueueService::MAX_QUEUE_SUBMISSIONS_PER_IP; $i++) {
+            $values[] = sprintf("('Player%d', '', '2024-01-01T00:%02d:00')", $i, $i);
+        }
+
+        $this->pdo->exec(
+            'INSERT INTO player_queue (online_id, ip_address, request_time) VALUES ' .
+            implode(', ', $values)
+        );
+
+        $this->assertTrue($this->service->hasReachedIpSubmissionLimit(''));
     }
 
     public function testGetIpSubmissionCountReturnsNumberOfMatches(): void

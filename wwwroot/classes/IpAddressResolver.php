@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 final class IpAddressResolver
 {
+    public const string UNKNOWN_CLIENT_IDENTIFIER = '__unknown__';
+
     /**
      * @param array<string, mixed> $serverParameters
      */
@@ -57,6 +59,11 @@ final class IpAddressResolver
         $validatedAddress = filter_var($ipAddress, FILTER_VALIDATE_IP);
 
         return is_string($validatedAddress) ? $validatedAddress : '';
+    }
+
+    public static function normalizeForAbuseControls(string $ipAddress): string
+    {
+        return $ipAddress !== '' ? $ipAddress : self::UNKNOWN_CLIENT_IDENTIFIER;
     }
 
     /**

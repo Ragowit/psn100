@@ -171,4 +171,33 @@ final class PlayerQueueControllerTest extends TestCase
         );
         $this->assertSame(null, $handler->getHandledMethod());
     }
+
+    public function testHandleAddToQueueRateLimitsSharedUnknownIpSubmissions(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(
+            <<<'SQL'
+            CREATE TABLE ip_rate_limit (
+                bucket_key TEXT PRIMARY KEY,
+                window_start TEXT NOT NULL,
+                request_count INTEGER NOT NULL
+            )
+            SQL
+        );
+
+        $rateLimitService = new IpRateLimitService($pdo);
+        $handler = new PlayerQueueHandlerSpy(PlayerQueueResponse::queued('unused'));
+        $controller = new PlayerQueueController($handler, $rateLimitService);
+
+        for ($index = 0; $index < 10; $index++) {
+            $controller->handleAddToQueue(['q' => 'QueueUser'], ['REMOTE_ADDR' => '']);
+        }
+
+        $handler->resetCapturedState();
+        $result = $controller->handleAddToQueue(['q' => 'QueueUser'], ['REMOTE_ADDR' => '']);
+
+        $this->assertSame(429, $result->getHttpStatusCode());
+        $this->assertSame(null, $handler->getHandledMethod());
+    }
 }

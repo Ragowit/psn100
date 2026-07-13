@@ -92,10 +92,6 @@ class PlayerQueueService
 
     public function getIpSubmissionCount(string $ipAddress): int
     {
-        if ($ipAddress === '') {
-            return 0;
-        }
-
         $count = $this->fetchSingleValue(
             self::SQL_IP_SUBMISSION_COUNT,
             [':ip_address' => [$ipAddress, PDO::PARAM_STR]]

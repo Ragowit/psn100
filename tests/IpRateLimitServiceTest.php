@@ -88,4 +88,31 @@ final class IpRateLimitServiceTest extends TestCase
             $this->service->checkAndRecord('192.0.2.14', IpRateLimitService::BUCKET_QUEUE_POLL)
         );
     }
+
+    public function testEmptyIpSharesUnknownClientRateLimitBucket(): void
+    {
+        for ($index = 0; $index < 10; $index++) {
+            $this->assertTrue(
+                $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            );
+        }
+
+        $this->assertFalse(
+            $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+        );
+    }
+
+    public function testUnknownClientBucketIsSeparateFromKnownIp(): void
+    {
+        for ($index = 0; $index < 10; $index++) {
+            $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT);
+        }
+
+        $this->assertFalse(
+            $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+        );
+        $this->assertTrue(
+            $this->service->checkAndRecord('192.0.2.15', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+        );
+    }
 }
