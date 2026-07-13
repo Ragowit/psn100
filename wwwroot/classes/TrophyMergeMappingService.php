@@ -17,14 +17,17 @@ final class TrophyMergeMappingService
 
         $childTrophies = $this->database->prepare(
             <<<'SQL'
-            SELECT np_communication_id,
-                   group_id,
-                   order_id,
-                   name
-            FROM   trophy
-            WHERE  np_communication_id = (SELECT np_communication_id
-                                          FROM   trophy_title
-                                          WHERE  id = :child_game_id)
+            WITH child_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :child_game_id
+            )
+            SELECT t.np_communication_id,
+                   t.group_id,
+                   t.order_id,
+                   t.name
+            FROM trophy t
+            INNER JOIN child_title ct ON t.np_communication_id = ct.np_communication_id
 SQL
         );
         $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
@@ -32,14 +35,17 @@ SQL
 
         $parentTrophies = $this->database->prepare(
             <<<'SQL'
-            SELECT np_communication_id,
-                   group_id,
-                   order_id,
-                   name
-            FROM   trophy
-            WHERE  np_communication_id = (SELECT np_communication_id
-                                          FROM   trophy_title
-                                          WHERE  id = :parent_game_id)
+            WITH parent_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :parent_game_id
+            )
+            SELECT t.np_communication_id,
+                   t.group_id,
+                   t.order_id,
+                   t.name
+            FROM trophy t
+            INNER JOIN parent_title pt ON t.np_communication_id = pt.np_communication_id
 SQL
         );
         $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
@@ -72,65 +78,58 @@ SQL
 
         $childTrophies = $this->database->prepare(
             <<<'SQL'
+            WITH child_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :child_game_id
+            ),
+            child_icon_counts AS (
+                SELECT t.icon_url, COUNT(*) AS counter
+                FROM trophy t
+                INNER JOIN child_title ct ON t.np_communication_id = ct.np_communication_id
+                GROUP BY t.icon_url
+            )
             SELECT
                 t.np_communication_id,
                 t.group_id,
                 t.order_id,
                 t.name,
                 t.icon_url,
-                tc.counter
-            FROM
-                trophy t,
-                (
-                SELECT
-                    icon_url,
-                    COUNT(icon_url) AS counter
-                FROM
-                    trophy
-                WHERE
-                    np_communication_id =(
-                    SELECT
-                        np_communication_id
-                    FROM
-                        trophy_title
-                    WHERE
-                        id = :child_game_id
-                )
-            GROUP BY
-                icon_url
-            ) AS tc
-            WHERE
-                t.icon_url = tc.icon_url AND t.np_communication_id =(
-                SELECT
-                    np_communication_id
-                FROM
-                    trophy_title
-                WHERE
-                    id = :child_game_id
-            );
+                cic.counter
+            FROM trophy t
+            INNER JOIN child_title ct ON t.np_communication_id = ct.np_communication_id
+            INNER JOIN child_icon_counts cic ON cic.icon_url = t.icon_url
 SQL
         );
         $childTrophies->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);
         $childTrophies->execute();
 
-        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
-            $parentTrophies = $this->database->prepare(
-                <<<'SQL'
-                SELECT np_communication_id,
-                       group_id,
-                       order_id
-                FROM   trophy
-                WHERE  np_communication_id = (SELECT np_communication_id
-                                              FROM   trophy_title
-                                              WHERE  id = :parent_game_id)
-                       AND icon_url = :icon_url
+        $parentTrophies = $this->database->prepare(
+            <<<'SQL'
+            WITH parent_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :parent_game_id
+            )
+            SELECT t.np_communication_id,
+                   t.group_id,
+                   t.order_id,
+                   t.icon_url
+            FROM trophy t
+            INNER JOIN parent_title pt ON t.np_communication_id = pt.np_communication_id
 SQL
-            );
-            $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
-            $parentTrophies->bindValue(':icon_url', $childTrophy['icon_url'], PDO::PARAM_STR);
-            $parentTrophies->execute();
+        );
+        $parentTrophies->bindValue(':parent_game_id', $parentGameId, PDO::PARAM_INT);
+        $parentTrophies->execute();
 
-            $parentTrophy = $parentTrophies->fetchAll(PDO::FETCH_ASSOC);
+        $parentTrophiesByIcon = [];
+
+        while ($parentTrophy = $parentTrophies->fetch(PDO::FETCH_ASSOC)) {
+            $parentTrophiesByIcon[(string) $parentTrophy['icon_url']][] = $parentTrophy;
+        }
+
+        while ($childTrophy = $childTrophies->fetch(PDO::FETCH_ASSOC)) {
+            $parentTrophy = $parentTrophiesByIcon[(string) $childTrophy['icon_url']] ?? [];
 
             if ((int) $childTrophy['counter'] === 1 && count($parentTrophy) === 1) {
                 $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
@@ -146,6 +145,16 @@ SQL
     {
         $query = $this->database->prepare(
             <<<'SQL'
+            WITH child_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :child_game_id
+            ),
+            parent_title AS (
+                SELECT np_communication_id
+                FROM trophy_title
+                WHERE id = :parent_game_id
+            )
             INSERT IGNORE
             into   trophy_merge
                    (
@@ -163,18 +172,10 @@ SQL
                        parent.group_id,
                        parent.order_id
             FROM       trophy child
+            INNER JOIN child_title ct ON child.np_communication_id = ct.np_communication_id
             INNER JOIN trophy parent
             USING      (group_id, order_id)
-            WHERE      child.np_communication_id =
-                       (
-                              SELECT np_communication_id
-                              FROM   trophy_title
-                              WHERE  id = :child_game_id)
-            AND        parent.np_communication_id =
-                       (
-                              SELECT np_communication_id
-                              FROM   trophy_title
-                              WHERE  id = :parent_game_id)
+            INNER JOIN parent_title pt ON parent.np_communication_id = pt.np_communication_id
 SQL
         );
         $query->bindValue(':child_game_id', $childGameId, PDO::PARAM_INT);

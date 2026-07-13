@@ -9,7 +9,7 @@ final class DailyCronJobTest extends TestCase
 {
     public function testUpdateTrophyRarityQueryUsesTopTenThousandRankingFilter(): void
     {
-        $source = $this->readMethodSource('updateTrophyRarityForGame');
+        $source = $this->readMethodSource('updateTrophyRarity');
 
         $this->assertStringContainsString('LEFT JOIN player_ranking p', $source);
         $this->assertStringContainsString('p.ranking <= 10000', $source);
@@ -18,7 +18,7 @@ final class DailyCronJobTest extends TestCase
 
     public function testUpdateTrophyRarityQueryAssignsRarityNamesFromThresholds(): void
     {
-        $source = $this->readMethodSource('updateTrophyRarityForGame');
+        $source = $this->readMethodSource('updateTrophyRarity');
 
         $this->assertStringContainsString("WHEN r.rarity_percent > 10 THEN 'COMMON'", $source);
         $this->assertStringContainsString("WHEN r.rarity_percent > 2 THEN 'UNCOMMON'", $source);
@@ -47,7 +47,7 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
         $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'updateTrophyRarityForGame\'], $npCommunicationId);',
+            '$this->executeWithRetry([$this, \'updateTrophyRarity\']);',
             $source
         );
         $this->assertStringContainsString(
@@ -56,9 +56,9 @@ final class DailyCronJobTest extends TestCase
         );
     }
 
-    public function testRunRetriesPerGameRarityUpdateUntilItSucceeds(): void
+    public function testRunRetriesTrophyRarityUpdateUntilItSucceeds(): void
     {
-        $database = new DailyCronJobPerGameRetryTestDatabase();
+        $database = new DailyCronJobRarityRetryTestDatabase();
         $sleepCalls = [];
 
         $job = new DailyCronJob(
@@ -72,7 +72,7 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([1, 1], $sleepCalls);
-        $this->assertSame(3, $database->getPerGameUpdateCount());
+        $this->assertSame(3, $database->getRarityUpdateCount());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
@@ -92,7 +92,7 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([1, 1], $sleepCalls);
-        $this->assertSame(0, $database->getPerGameUpdateCount());
+        $this->assertSame(1, $database->getRarityUpdateCount());
         $this->assertSame(3, $database->getTitlePointsUpdateCount());
     }
 
@@ -111,9 +111,9 @@ final class DailyCronJobTest extends TestCase
     }
 }
 
-final class DailyCronJobPerGameRetryTestDatabase extends PDO
+final class DailyCronJobRarityRetryTestDatabase extends PDO
 {
-    private int $perGameUpdateCount = 0;
+    private int $rarityUpdateCount = 0;
 
     private int $titlePointsUpdateCount = 0;
 
@@ -121,9 +121,9 @@ final class DailyCronJobPerGameRetryTestDatabase extends PDO
     {
     }
 
-    public function getPerGameUpdateCount(): int
+    public function getRarityUpdateCount(): int
     {
-        return $this->perGameUpdateCount;
+        return $this->rarityUpdateCount;
     }
 
     public function getTitlePointsUpdateCount(): int
@@ -133,18 +133,12 @@ final class DailyCronJobPerGameRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
-            return new DailyCronJobTestStatement(static function (): array {
-                return ['NPWR00001_00'];
-            }, isSelect: true);
-        }
-
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
             return new DailyCronJobTestStatement(function (): void {
-                $this->perGameUpdateCount++;
+                $this->rarityUpdateCount++;
 
-                if ($this->perGameUpdateCount < 3) {
-                    throw new RuntimeException('Simulated per-game rarity update failure.');
+                if ($this->rarityUpdateCount < 3) {
+                    throw new RuntimeException('Simulated trophy rarity update failure.');
                 }
             });
         }
@@ -161,7 +155,7 @@ final class DailyCronJobPerGameRetryTestDatabase extends PDO
 
 final class DailyCronJobTitleRetryTestDatabase extends PDO
 {
-    private int $perGameUpdateCount = 0;
+    private int $rarityUpdateCount = 0;
 
     private int $titlePointsUpdateCount = 0;
 
@@ -169,9 +163,9 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
     {
     }
 
-    public function getPerGameUpdateCount(): int
+    public function getRarityUpdateCount(): int
     {
-        return $this->perGameUpdateCount;
+        return $this->rarityUpdateCount;
     }
 
     public function getTitlePointsUpdateCount(): int
@@ -181,15 +175,9 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
-            return new DailyCronJobTestStatement(static function (): array {
-                return [];
-            }, isSelect: true);
-        }
-
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
             return new DailyCronJobTestStatement(function (): void {
-                $this->perGameUpdateCount++;
+                $this->rarityUpdateCount++;
             });
         }
 

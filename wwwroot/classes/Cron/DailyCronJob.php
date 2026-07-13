@@ -16,28 +16,16 @@ final readonly class DailyCronJob implements CronJobInterface
     #[\Override]
     public function run(): void
     {
-        $this->recalculateTrophyRarityForGames();
+        $this->recalculateTrophyRarity();
         $this->recalculateTitleRarityPoints();
     }
 
-    private function recalculateTrophyRarityForGames(): void
+    private function recalculateTrophyRarity(): void
     {
-        $query = $this->database->prepare(
-            'SELECT np_communication_id FROM trophy_title ORDER BY id DESC'
-        );
-        $query->execute();
-        $games = $query->fetchAll(PDO::FETCH_COLUMN);
-
-        foreach ($games as $npCommunicationId) {
-            if (!is_string($npCommunicationId)) {
-                continue;
-            }
-
-            $this->executeWithRetry([$this, 'updateTrophyRarityForGame'], $npCommunicationId);
-        }
+        $this->executeWithRetry([$this, 'updateTrophyRarity']);
     }
 
-    private function updateTrophyRarityForGame(string $npCommunicationId): void
+    private function updateTrophyRarity(): void
     {
         $query = $this->database->prepare(
             "WITH rarity AS (
@@ -58,7 +46,6 @@ final readonly class DailyCronJob implements CronJobInterface
                 LEFT JOIN player_ranking p
                     ON p.account_id = te.account_id
                         AND p.ranking <= 10000
-                WHERE t.np_communication_id = :np_communication_id
                 GROUP BY t.id
                 ORDER BY NULL
             )
@@ -95,11 +82,9 @@ final readonly class DailyCronJob implements CronJobInterface
                     WHEN r.in_game_rarity_percent <= 20 THEN 'RARE'
                     WHEN r.in_game_rarity_percent <= 60 THEN 'UNCOMMON'
                     ELSE 'COMMON'
-                END
-            WHERE t.np_communication_id = :np_communication_id"
+                END"
         );
 
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }
 
