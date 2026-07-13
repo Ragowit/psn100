@@ -10,7 +10,7 @@ class PlayerReportService
 {
     private const MAX_PENDING_REPORTS_PER_IP = 10;
 
-    private const MAX_EXPLANATION_LENGTH = 256;
+    public const MAX_EXPLANATION_LENGTH = 256;
 
     private const SUBMIT_OUTCOME_SUCCESS = 'success';
 

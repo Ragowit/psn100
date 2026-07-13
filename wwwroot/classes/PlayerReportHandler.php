@@ -32,6 +32,12 @@ class PlayerReportHandler
             return PlayerReportResult::error('Please provide an explanation for your report.');
         }
 
+        if (mb_strlen($explanation) > PlayerReportService::MAX_EXPLANATION_LENGTH) {
+            return PlayerReportResult::error(
+                'Explanation must be ' . PlayerReportService::MAX_EXPLANATION_LENGTH . ' characters or fewer.'
+            );
+        }
+
         if (
             $this->rateLimitService !== null
             && !$this->rateLimitService->checkAndRecord(

@@ -171,6 +171,26 @@ final class PlayerReportHandlerTest extends TestCase
         $this->assertSame(0, $service->submitReportCallCount);
     }
 
+    public function testHandleReportRequestReturnsErrorWhenExplanationIsTooLong(): void
+    {
+        $service = new PlayerReportServiceStub(PlayerReportResult::success('irrelevant'));
+        $handler = new PlayerReportHandler($service);
+        $request = $this->createRequestWithCsrf(
+            ['explanation' => str_repeat('a', PlayerReportService::MAX_EXPLANATION_LENGTH + 1)],
+            ['REMOTE_ADDR' => '192.0.2.1']
+        );
+
+        $result = $handler->handleReportRequest(456, $request);
+
+        $this->assertTrue($result->hasMessage());
+        $this->assertFalse($result->isSuccess());
+        $this->assertSame(
+            'Explanation must be ' . PlayerReportService::MAX_EXPLANATION_LENGTH . ' characters or fewer.',
+            $result->getMessage()
+        );
+        $this->assertSame(0, $service->submitReportCallCount);
+    }
+
     public function testHandleReportRequestDoesNotConsumeRateLimitWhenValidationFails(): void
     {
         $pdo = new PDO('sqlite::memory:');
@@ -204,6 +224,47 @@ final class PlayerReportHandlerTest extends TestCase
             $this->createRequestWithCsrf(
                 ['explanation' => 'Valid report after failed attempts'],
                 ['REMOTE_ADDR' => '192.0.2.89']
+            )
+        );
+
+        $this->assertTrue($result->isSuccess());
+        $this->assertSame(1, $service->submitReportCallCount);
+    }
+
+    public function testHandleReportRequestDoesNotConsumeRateLimitWhenExplanationIsTooLong(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(
+            <<<'SQL'
+            CREATE TABLE ip_rate_limit (
+                bucket_key TEXT PRIMARY KEY,
+                window_start TEXT NOT NULL,
+                request_count INTEGER NOT NULL
+            )
+            SQL
+        );
+
+        $rateLimitService = new IpRateLimitService($pdo);
+        $service = new PlayerReportServiceStub(PlayerReportResult::success('unused'));
+        $handler = new PlayerReportHandler($service, $rateLimitService);
+        $oversizedExplanation = str_repeat('a', PlayerReportService::MAX_EXPLANATION_LENGTH + 1);
+
+        for ($index = 0; $index < 20; $index++) {
+            $handler->handleReportRequest(
+                789,
+                $this->createRequestWithCsrf(
+                    ['explanation' => $oversizedExplanation],
+                    ['REMOTE_ADDR' => '192.0.2.90']
+                )
+            );
+        }
+
+        $result = $handler->handleReportRequest(
+            789,
+            $this->createRequestWithCsrf(
+                ['explanation' => 'Valid report after oversized attempts'],
+                ['REMOTE_ADDR' => '192.0.2.90']
             )
         );
 
