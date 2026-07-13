@@ -255,8 +255,6 @@ DELIMITER $$
 CREATE TRIGGER `after_update_trophy_earned` AFTER UPDATE ON `trophy_earned` FOR EACH ROW BEGIN
     IF OLD.earned = 0 AND NEW.earned = 1 AND NEW.np_communication_id LIKE 'NPWR%' THEN
     UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
-ELSEIF OLD.earned = 1 AND NEW.earned = 0 AND OLD.np_communication_id LIKE 'NPWR%' THEN
-    UPDATE player SET trophy_count_npwr = trophy_count_npwr - 1 WHERE account_id = OLD.account_id;
 END IF;
 END
 $$
