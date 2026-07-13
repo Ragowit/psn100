@@ -6,8 +6,11 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
-    public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
-    {
+    public function __construct(
+        private PDO $database,
+        private int $retryDelaySeconds = 3,
+        private ?\Closure $sleeper = null,
+    ) {
     }
 
     #[\Override]
@@ -134,8 +137,16 @@ final readonly class DailyCronJob implements CronJobInterface
                 $operation(...$arguments);
                 return;
             } catch (Throwable $exception) {
-                sleep($this->retryDelaySeconds);
+                ($this->getSleeper())($this->retryDelaySeconds);
             }
         }
+    }
+
+    /** @return \Closure(int): void */
+    private function getSleeper(): \Closure
+    {
+        return $this->sleeper ?? static function (int $seconds): void {
+            sleep($seconds);
+        };
     }
 }
