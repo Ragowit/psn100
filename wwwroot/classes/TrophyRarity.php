@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Html.php';
+
 final readonly class TrophyRarity
 {
     public function __construct(
@@ -43,15 +45,15 @@ final readonly class TrophyRarity
 
         if (!$this->unobtainable || $includePercentWhenUnobtainable) {
             if ($this->hasPercentage()) {
-                $parts[] = $this->percentage . '%';
+                $parts[] = Html::escape($this->percentage) . '%';
             }
         }
 
-        $parts[] = $this->label;
+        $parts[] = Html::escape($this->label);
 
         $classAttribute = '';
         if ($this->cssClass !== null && $this->cssClass !== '') {
-            $classAttribute = ' class="' . $this->cssClass . '"';
+            $classAttribute = ' class="' . Html::escape($this->cssClass) . '"';
         }
 
         return '<span' . $classAttribute . '>' . implode($separator, $parts) . '</span>';

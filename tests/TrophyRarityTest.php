@@ -32,4 +32,23 @@ final class TrophyRarityTest extends TestCase
 
         $this->assertSame('<span class="trophy-unobtainable">0.1% / Unobtainable</span>', $html);
     }
+
+    public function testRenderSpanEscapesMaliciousPercentageLabelAndCssClass(): void
+    {
+        $rarity = new TrophyRarity(
+            '<img src=x onerror=alert(1)>',
+            '"><script>alert(1)</script>',
+            '"><script>alert(1)</script>',
+            false,
+        );
+
+        $html = $rarity->renderSpan();
+
+        $this->assertSame(
+            '<span class="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;">'
+            . '&lt;img src=x onerror=alert(1)&gt;%<br>&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;'
+            . '</span>',
+            $html
+        );
+    }
 }
