@@ -69,11 +69,13 @@ final class NameMappingPDO extends PDO
     {
         $normalized = preg_replace('/\s+/', ' ', trim($statement)) ?? '';
 
-        if (str_contains($normalized, 'FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :child_game_id)')) {
+        if (str_contains($normalized, 'INNER JOIN child_title ct ON t.np_communication_id = ct.np_communication_id')
+            && str_contains($normalized, ':child_game_id')) {
             return new ChildTrophyStatement($this->childTrophies);
         }
 
-        if (str_contains($normalized, 'FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :parent_game_id)')) {
+        if (str_contains($normalized, 'INNER JOIN parent_title pt ON t.np_communication_id = pt.np_communication_id')
+            && str_contains($normalized, ':parent_game_id')) {
             return new ParentTrophyStatement([$this->parentTrophy]);
         }
 

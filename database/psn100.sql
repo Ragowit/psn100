@@ -253,7 +253,7 @@ $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_update_trophy_earned` AFTER UPDATE ON `trophy_earned` FOR EACH ROW BEGIN
-    IF OLD.earned <> NEW.earned AND NEW.np_communication_id LIKE 'NPWR%' THEN
+    IF OLD.earned = 0 AND NEW.earned = 1 AND NEW.np_communication_id LIKE 'NPWR%' THEN
     UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
 END IF;
 END
@@ -471,7 +471,8 @@ ALTER TABLE `ip_rate_limit`
 -- Indexes for table `log`
 --
 ALTER TABLE `log`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_log_time` (`time` DESC);
 
 --
 -- Indexes for table `player`
@@ -531,7 +532,8 @@ ALTER TABLE `psn100_avatars`
 -- Indexes for table `psn100_change`
 --
 ALTER TABLE `psn100_change`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_change_type_time` (`change_type`,`time` DESC);
 
 --
 -- Indexes for table `setting`
@@ -605,7 +607,8 @@ ALTER TABLE `trophy_meta`
 --
 ALTER TABLE `trophy_title`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`);
+  ADD UNIQUE KEY `u_np_communication_id` (`np_communication_id`),
+  ADD KEY `idx_trophy_title_name` (`name`(191));
 ALTER TABLE `trophy_title` ADD FULLTEXT KEY `idx_name` (`name`);
 
 --

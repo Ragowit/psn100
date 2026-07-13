@@ -106,61 +106,27 @@ class TrophyStatusService
 
         $this->executeGroupStatement(
             <<<'SQL'
-WITH bronze AS (
+WITH counts AS (
     SELECT
-      COUNT(tm.trophy_id) AS count
+      COALESCE(SUM(CASE WHEN t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
+      COALESCE(SUM(CASE WHEN t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
+      COALESCE(SUM(CASE WHEN t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
+      COALESCE(SUM(CASE WHEN t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
     FROM
       trophy t
       JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
     WHERE
       t.np_communication_id = :np_communication_id
       AND t.group_id = :group_id
-      AND t.type = 'bronze'
-  ),
-  silver AS (
-    SELECT
-      COUNT(tm.trophy_id) AS count
-    FROM
-      trophy t
-      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
-    WHERE
-      t.np_communication_id = :np_communication_id
-      AND t.group_id = :group_id
-      AND t.type = 'silver'
-  ),
-  gold AS (
-    SELECT
-      COUNT(tm.trophy_id) AS count
-    FROM
-      trophy t
-      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
-    WHERE
-      t.np_communication_id = :np_communication_id
-      AND t.group_id = :group_id
-      AND t.type = 'gold'
-  ),
-  platinum AS (
-    SELECT
-      COUNT(tm.trophy_id) AS count
-    FROM
-      trophy t
-      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
-    WHERE
-      t.np_communication_id = :np_communication_id
-      AND t.group_id = :group_id
-      AND t.type = 'platinum'
   )
   UPDATE
-    trophy_group tg,
-    bronze b,
-    silver s,
-    gold g,
-    platinum p
+    trophy_group tg
+    CROSS JOIN counts c
   SET
-    tg.bronze = b.count,
-    tg.silver = s.count,
-    tg.gold = g.count,
-    tg.platinum = p.count
+    tg.bronze = c.bronze,
+    tg.silver = c.silver,
+    tg.gold = c.gold,
+    tg.platinum = c.platinum
   WHERE
     tg.np_communication_id = :np_communication_id
     AND tg.group_id = :group_id
@@ -195,9 +161,9 @@ WITH max_score AS (
             account_id
     )
     UPDATE
-        trophy_group_player tgp,
-        max_score ms,
-        user_score us
+        trophy_group_player tgp
+        INNER JOIN user_score us ON us.account_id = tgp.account_id
+        CROSS JOIN max_score ms
     SET
         tgp.progress = IF(
             ms.points = 0,
@@ -212,7 +178,6 @@ WITH max_score AS (
     WHERE
         tgp.np_communication_id = :np_communication_id
         AND tgp.group_id = :group_id
-        AND tgp.account_id = us.account_id
 SQL,
             $npCommunicationId,
             $groupId
@@ -281,15 +246,15 @@ WITH trophy_group_count AS (
       np_communication_id = :np_communication_id
   )
   UPDATE
-    trophy_title tt,
-    trophy_group_count tgc
+    trophy_title tt
+    CROSS JOIN trophy_group_count tgc
   SET
     tt.bronze = tgc.bronze,
     tt.silver = tgc.silver,
     tt.gold = tgc.gold,
     tt.platinum = tgc.platinum
   WHERE
-    np_communication_id = :np_communication_id
+    tt.np_communication_id = :np_communication_id
 SQL
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
@@ -312,16 +277,15 @@ WITH player_trophy_count AS (
         account_id
     )
     UPDATE
-        trophy_title_player ttp,
-        player_trophy_count ptc
+        trophy_title_player ttp
+        INNER JOIN player_trophy_count ptc ON ptc.account_id = ttp.account_id
     SET
         ttp.bronze = ptc.bronze,
         ttp.silver = ptc.silver,
         ttp.gold = ptc.gold,
         ttp.platinum = ptc.platinum
     WHERE
-        ttp.account_id = ptc.account_id
-        AND ttp.np_communication_id = :np_communication_id
+        ttp.np_communication_id = :np_communication_id
 SQL
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
@@ -354,8 +318,8 @@ WITH user_score AS (
         account_id
     )
     UPDATE
-        trophy_title_player ttp,
-        user_score us
+        trophy_title_player ttp
+        INNER JOIN user_score us ON us.account_id = ttp.account_id
     SET
         ttp.progress = IF(
             :max_score = 0,
@@ -369,7 +333,6 @@ WITH user_score AS (
         )
     WHERE
         ttp.np_communication_id = :np_communication_id
-        AND ttp.account_id = us.account_id
 SQL
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);

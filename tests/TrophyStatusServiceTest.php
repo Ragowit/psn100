@@ -95,7 +95,7 @@ final class RecordingTrophyStatusPDO extends PDO
             return new RecordingExecuteOnlyStatement();
         }
 
-        if (str_contains($trimmedQuery, 'trophy_title_player ttp,') && str_contains($trimmedQuery, 'player_trophy_count ptc')) {
+        if (str_contains($trimmedQuery, 'INNER JOIN player_trophy_count ptc ON ptc.account_id = ttp.account_id')) {
             $this->titlePlayerCountQuery = $trimmedQuery;
 
             return new RecordingExecuteOnlyStatement();
