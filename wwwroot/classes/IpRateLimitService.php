@@ -13,6 +13,8 @@ final class IpRateLimitService
 
     public const string BUCKET_QUEUE_SUBMIT = 'queue_submit';
 
+    public const string BUCKET_PLAYER_REPORT = 'player_report';
+
     public const string BUCKET_SCAN_LOG_POLL = 'scan_log_poll';
 
     private const int QUEUE_POLL_MAX_REQUESTS = 60;
@@ -22,6 +24,10 @@ final class IpRateLimitService
     private const int QUEUE_SUBMIT_MAX_REQUESTS = 10;
 
     private const int QUEUE_SUBMIT_WINDOW_SECONDS = 60;
+
+    private const int PLAYER_REPORT_MAX_REQUESTS = 5;
+
+    private const int PLAYER_REPORT_WINDOW_SECONDS = 60;
 
     private const int SCAN_LOG_POLL_MAX_REQUESTS = 30;
 
@@ -101,6 +107,10 @@ final class IpRateLimitService
             self::BUCKET_QUEUE_SUBMIT => [
                 self::QUEUE_SUBMIT_MAX_REQUESTS,
                 self::QUEUE_SUBMIT_WINDOW_SECONDS,
+            ],
+            self::BUCKET_PLAYER_REPORT => [
+                self::PLAYER_REPORT_MAX_REQUESTS,
+                self::PLAYER_REPORT_WINDOW_SECONDS,
             ],
             default => throw new InvalidArgumentException(sprintf('Unknown rate-limit bucket "%s".', $bucket)),
         };

@@ -7,6 +7,7 @@ require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerReportHandler.php';
 require_once __DIR__ . '/classes/PlayerReportPage.php';
 require_once __DIR__ . '/classes/PlayerReportService.php';
+require_once __DIR__ . '/classes/IpRateLimitService.php';
 require_once __DIR__ . '/classes/PlayerSummary.php';
 require_once __DIR__ . '/classes/PlayerSummaryService.php';
 require_once __DIR__ . '/classes/PlayerNavigation.php';
@@ -17,7 +18,7 @@ $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null
 $accountId = $playerPageAccessGuard->requireAccountId();
 
 $playerReportService = new PlayerReportService($database);
-$playerReportHandler = new PlayerReportHandler($playerReportService);
+$playerReportHandler = new PlayerReportHandler($playerReportService, new IpRateLimitService($database));
 $playerSummaryService = new PlayerSummaryService($database);
 $playerReportPage = new PlayerReportPage(
     $playerReportHandler,
