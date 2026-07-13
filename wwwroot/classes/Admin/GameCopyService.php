@@ -253,7 +253,8 @@ class GameCopyService
                 FROM trophy_title
                 WHERE np_communication_id = :child_np_communication_id
             )
-            UPDATE trophy_title parent, child_title
+            UPDATE trophy_title parent
+            INNER JOIN child_title ON 1 = 1
             SET ' . implode(', ', $fields) . '
             WHERE parent.np_communication_id = :parent_np_communication_id'
         );

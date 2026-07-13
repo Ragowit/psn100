@@ -215,11 +215,10 @@ final class PlayerScanCompletionService
                         trophy_earned.account_id = :account_id AND trophy_earned.earned = 1
                     GROUP BY
                         trophy_earned.np_communication_id
-                    ORDER BY NULL
                 )
                 UPDATE
-                    trophy_title_player ttp,
-                    rarity
+                    trophy_title_player ttp
+                    INNER JOIN rarity ON ttp.np_communication_id = rarity.np_communication_id
                 SET
                     ttp.rarity_points = rarity.points,
                     ttp.in_game_rarity_points = rarity.in_game_points,
@@ -257,11 +256,10 @@ final class PlayerScanCompletionService
                         trophy_title_player
                     WHERE
                         account_id = :account_id
-                    ORDER BY NULL
                 )
                 UPDATE
-                    player p,
-                    rarity
+                    player p
+                    INNER JOIN rarity ON 1 = 1
                 SET
                     p.rarity_points = rarity.rarity_points,
                     p.common = rarity.common,
