@@ -40,6 +40,9 @@ export TRUSTED_PROXY_IPS=127.0.0.1,10.0.0.1
 
 ## Deployment
 
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the production checklist, Apache `.htaccess`
+setup for `/admin` and `/cron`, cron scheduling, and post-deploy verification.
+
 ### Admin access
 
 Admin pages require a row in `admin_user`. Create an account with a bcrypt hash:
@@ -52,17 +55,8 @@ php -r "echo password_hash('your-password', PASSWORD_DEFAULT), PHP_EOL;"
 INSERT INTO admin_user (username, password_hash) VALUES ('admin', '$2y$10$...');
 ```
 
-### Apache hardening
-
-Production should layer Apache rules on top of the application:
-
-- **`wwwroot/admin/.htaccess.example`** — HTTP Basic authentication in front of the admin UI.
-  Copy to `admin/.htaccess` and set `AuthUserFile` to your server password file.
-- **`wwwroot/cron/.htaccess.example`** — deny all web clients except the host that runs
-  scheduled jobs. Copy to `cron/.htaccess` and replace `127.0.0.1` with that server's IP.
-
-Cron scripts also refuse non-CLI execution in PHP (`CronCliAccessGuard`), which protects
-environments where `.htaccess` is not applied (for example the PHP built-in server).
+Production also requires HTTP Basic auth via `wwwroot/admin/.htaccess` (from
+`wwwroot/admin/.htaccess.example`). Full steps are in [DEPLOYMENT.md](DEPLOYMENT.md#admin-http-basic-authentication).
 
 ### Schema updates
 
