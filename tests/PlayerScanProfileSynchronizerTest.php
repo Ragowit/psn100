@@ -69,28 +69,6 @@ final class PlayerScanProfileSynchronizerTest extends TestCase
         $this->assertSame('FallbackName', $result);
     }
 
-    public function testExtractCountryFromNpIdDecodesTrailingCountryCode(): void
-    {
-        $npId = base64_encode('ExamplePlayerUS');
-
-        $result = $this->synchronizer->extractCountryFromNpId($npId);
-
-        $this->assertSame('us', $result);
-    }
-
-    public function testExtractCountryFromNpIdReturnsNullForInvalidValues(): void
-    {
-        $this->assertSame(null, $this->synchronizer->extractCountryFromNpId(''));
-        $this->assertSame(null, $this->synchronizer->extractCountryFromNpId(null));
-        $this->assertSame(null, $this->synchronizer->extractCountryFromNpId('not-valid-base64!!!'));
-    }
-
-    public function testNormalizeAccountIdValueAcceptsIntegersAndDigitStrings(): void
-    {
-        $this->assertSame('12345', $this->synchronizer->normalizeAccountIdValue(12345));
-        $this->assertSame('12345', $this->synchronizer->normalizeAccountIdValue(' 12345 '));
-    }
-
     public function testNormalizeAccountIdValueRejectsNonNumericValues(): void
     {
         $this->assertSame(null, $this->synchronizer->normalizeAccountIdValue(''));
@@ -109,40 +87,9 @@ final class PlayerScanProfileSynchronizerTest extends TestCase
         $this->assertTrue($skip->shouldSkipPlayer());
     }
 
-    public function testCountryHelpersAcceptStringAccountIds(): void
+    public function testNormalizeAccountIdValueAcceptsIntegersAndDigitStrings(): void
     {
-        $largeAccountId = '9223372036854775808';
-        $statement = $this->synchronizerDatabase()->prepare(
-            'INSERT INTO player (account_id, online_id, country, status) VALUES (:account_id, :online_id, :country, :status)'
-        );
-        $statement->bindValue(':account_id', $largeAccountId, PDO::PARAM_STR);
-        $statement->bindValue(':online_id', 'large-id-player', PDO::PARAM_STR);
-        $statement->bindValue(':country', 'se', PDO::PARAM_STR);
-        $statement->bindValue(':status', 0, PDO::PARAM_INT);
-        $statement->execute();
-
-        $fetchStoredCountry = new ReflectionMethod(PlayerScanProfileSynchronizer::class, 'fetchStoredCountryByAccountId');
-        $fetchStoredCountry->setAccessible(true);
-        $this->assertSame('se', $fetchStoredCountry->invoke($this->synchronizer, $largeAccountId));
-
-        $updatePlayerCountry = new ReflectionMethod(PlayerScanProfileSynchronizer::class, 'updatePlayerCountry');
-        $updatePlayerCountry->setAccessible(true);
-        $updatePlayerCountry->invoke($this->synchronizer, $largeAccountId, 'no');
-
-        $country = $this->synchronizerDatabase()
-            ->query("SELECT country FROM player WHERE account_id = '{$largeAccountId}'")
-            ->fetchColumn();
-        $this->assertSame('no', $country);
-    }
-
-    private function synchronizerDatabase(): PDO
-    {
-        $property = new ReflectionProperty(PlayerScanProfileSynchronizer::class, 'database');
-        $property->setAccessible(true);
-
-        /** @var PDO $database */
-        $database = $property->getValue($this->synchronizer);
-
-        return $database;
+        $this->assertSame('12345', $this->synchronizer->normalizeAccountIdValue(12345));
+        $this->assertSame('12345', $this->synchronizer->normalizeAccountIdValue(' 12345 '));
     }
 }

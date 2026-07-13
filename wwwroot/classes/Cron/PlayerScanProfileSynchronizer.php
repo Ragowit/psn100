@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 require_once __DIR__ . '/PlayerAvatarSynchronizer.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
+require_once __DIR__ . '/PlayerCountryResolver.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
@@ -21,6 +22,7 @@ final class PlayerScanProfileSynchronizer
     private const MAX_INVALID_API_RESPONSE_ATTEMPTS = 2;
 
     private readonly PlayerAvatarSynchronizer $avatarSynchronizer;
+    private readonly PlayerCountryResolver $countryResolver;
     private readonly PlayerScanPrivacyService $privacyService;
 
     public function __construct(
@@ -28,12 +30,14 @@ final class PlayerScanProfileSynchronizer
         private readonly Psn100Logger $logger,
         private readonly WorkerScanCoordinator $workerScanCoordinator,
         ?PlayerAvatarSynchronizer $avatarSynchronizer = null,
+        ?PlayerCountryResolver $countryResolver = null,
         ?PlayerScanPrivacyService $privacyService = null,
     ) {
         $this->avatarSynchronizer = $avatarSynchronizer ?? new PlayerAvatarSynchronizer(
             $database,
             new ImageHashCalculator(),
         );
+        $this->countryResolver = $countryResolver ?? new PlayerCountryResolver($database);
         $this->privacyService = $privacyService ?? new PlayerScanPrivacyService(
             $database,
             $workerScanCoordinator,
@@ -94,29 +98,6 @@ final class PlayerScanProfileSynchronizer
         }
 
         return $fallbackOnlineId;
-    }
-
-    public function extractCountryFromNpId(mixed $npId): ?string
-    {
-        if (!is_string($npId) || $npId === '') {
-            return null;
-        }
-
-        $decoded = base64_decode($npId, true);
-        if ($decoded === false || $decoded === '') {
-            return null;
-        }
-
-        $trimmed = trim($decoded);
-        if ($trimmed === '') {
-            return null;
-        }
-
-        if (strlen($trimmed) < 2) {
-            return null;
-        }
-
-        return strtolower(substr($trimmed, -2));
     }
 
     public function normalizeAccountIdValue(mixed $accountId): ?string
@@ -199,29 +180,12 @@ final class PlayerScanProfileSynchronizer
                     $player['account_id'] = $profileAccountId;
                     $user = $client->users()->find($profileAccountId);
 
-                    $countryFromProfile = $this->extractCountryFromNpId($profile['npId'] ?? null);
-                    $country = $countryFromProfile;
-
-                    if ($country === null || strtolower($country) === 'zz') {
-                        $storedCountry = $this->fetchStoredCountryByAccountId($profileAccountId);
-
-                        if (is_string($storedCountry) && $storedCountry !== '') {
-                            $country = $storedCountry;
-                        } else {
-                            $country = 'zz';
-                        }
-
-                        if (strtolower($country) === 'zz') {
-                            $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
-
-                            if ($resolvedCountry !== null) {
-                                $country = $resolvedCountry;
-                                $this->updatePlayerCountry($profileAccountId, $resolvedCountry);
-                            }
-                        }
-                    } else {
-                        $this->updatePlayerCountry($profileAccountId, $country);
-                    }
+                    $country = $this->countryResolver->resolveCountry(
+                        $client,
+                        $profileAccountId,
+                        $user->onlineId(),
+                        $this->countryResolver->extractCountryFromNpId($profile['npId'] ?? null),
+                    );
                 } else {
                     if ($existingAccountId === null) {
                         $this->privacyService->markAsPrivateByOnlineId($originalOnlineId);
@@ -241,24 +205,11 @@ final class PlayerScanProfileSynchronizer
                         $player['online_id'] = $originalOnlineId;
                     }
 
-                    $storedCountry = $this->fetchStoredCountryByAccountId($existingAccountId);
-
-                    if (is_string($storedCountry) && $storedCountry !== '') {
-                        $country = $storedCountry;
-                    }
-
-                    if (strtolower($country) === 'zz') {
-                        $resolvedCountry = $this->findPlayerCountry($client, $user->onlineId());
-
-                        if ($resolvedCountry !== null) {
-                            $country = $resolvedCountry;
-                            $this->updatePlayerCountry($existingAccountId, $resolvedCountry);
-                        }
-                    }
-                }
-
-                if (!is_string($country) || $country === '') {
-                    $country = 'zz';
+                    $country = $this->countryResolver->resolveCountry(
+                        $client,
+                        $existingAccountId,
+                        $user->onlineId(),
+                    );
                 }
 
                 $user->aboutMe();
@@ -375,67 +326,6 @@ final class PlayerScanProfileSynchronizer
         );
         $query->bindValue(':scanning', $newOnlineId, PDO::PARAM_STR);
         $query->bindValue(':worker_id', $workerId, PDO::PARAM_INT);
-        $query->execute();
-    }
-
-    private function fetchStoredCountryByAccountId(string $accountId): ?string
-    {
-        $query = $this->database->prepare('SELECT country FROM player WHERE account_id = :account_id');
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
-        $query->execute();
-
-        $country = $query->fetchColumn();
-
-        if (!is_string($country) || $country === '') {
-            return null;
-        }
-
-        return $country;
-    }
-
-    private function findPlayerCountry(Client $client, string $onlineId): ?string
-    {
-        $normalizedOnlineId = strtolower($onlineId);
-        $userCounter = 0;
-
-        try {
-            foreach ($client->users()->search($onlineId) as $result) {
-                if (strtolower($result->onlineId()) === $normalizedOnlineId) {
-                    $country = $result->country();
-
-                    if (!is_string($country) || $country === '') {
-                        return null;
-                    }
-
-                    $normalizedCountry = strtolower($country);
-
-                    if ($normalizedCountry === 'zz') {
-                        return null;
-                    }
-
-                    return $normalizedCountry;
-                }
-
-                $userCounter++;
-
-                if ($userCounter >= 50) {
-                    break;
-                }
-            }
-        } catch (Throwable) {
-            return null;
-        }
-
-        return null;
-    }
-
-    private function updatePlayerCountry(string $accountId, string $country): void
-    {
-        $query = $this->database->prepare(
-            'UPDATE player SET country = :country WHERE account_id = :account_id'
-        );
-        $query->bindValue(':country', strtolower($country), PDO::PARAM_STR);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
     }
 
