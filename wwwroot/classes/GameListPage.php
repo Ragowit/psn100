@@ -32,14 +32,24 @@ class GameListPage
     public function __construct(GameListService $gameListService, GameListFilter $filter)
     {
         $this->gameListService = $gameListService;
-        $this->filter = $filter->withPlayer($gameListService->resolvePlayer($filter->getPlayer()));
+        $resolvedFilter = $filter->withPlayer($gameListService->resolvePlayer($filter->getPlayer()));
         $this->limit = $this->gameListService->getLimit();
-        $this->offset = $this->gameListService->getOffset($this->filter);
-        $result = $this->gameListService->getGamesPage($this->filter);
+
+        $result = $this->gameListService->getGamesPage($resolvedFilter);
         $this->totalGames = $result->totalGames;
         $this->totalPages = $this->totalGames > 0
             ? (int) ceil($this->totalGames / $this->limit)
             : 0;
+
+        $clampedPage = $this->normalizePageNumber($resolvedFilter->getPage(), $this->totalPages);
+        $needsRefetch = $clampedPage !== $resolvedFilter->getPage();
+        $this->filter = $resolvedFilter->withPage($clampedPage);
+
+        if ($needsRefetch) {
+            $result = $this->gameListService->getGamesPage($this->filter);
+        }
+
+        $this->offset = $this->gameListService->getOffset($this->filter);
         $this->games = $result->games;
         $this->paginationParameters = $this->filter->getQueryParametersForPagination();
     }
@@ -193,5 +203,12 @@ class GameListPage
     public function getLastPageParameters(): array
     {
         return $this->getPageQueryParameters($this->getLastPage());
+    }
+
+    private function normalizePageNumber(int $requestedPage, int $totalPages): int
+    {
+        $maximumPage = $totalPages > 0 ? $totalPages : 1;
+
+        return min(max($requestedPage, 1), $maximumPage);
     }
 }

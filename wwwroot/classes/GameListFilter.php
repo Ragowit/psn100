@@ -104,6 +104,14 @@ class GameListFilter
         return $clone;
     }
 
+    public function withPage(int $page): self
+    {
+        $clone = clone $this;
+        $clone->page = max($page, 1);
+
+        return $clone;
+    }
+
     public function getSort(): string
     {
         return $this->sort;
