@@ -115,4 +115,31 @@ final class IpRateLimitServiceTest extends TestCase
             $this->service->checkAndRecord('192.0.2.15', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
         );
     }
+
+    public function testPlayerReportBucketAllowsFiveRequestsPerMinute(): void
+    {
+        for ($index = 0; $index < 5; $index++) {
+            $this->assertTrue(
+                $this->service->checkAndRecord('192.0.2.16', IpRateLimitService::BUCKET_PLAYER_REPORT)
+            );
+        }
+
+        $this->assertFalse(
+            $this->service->checkAndRecord('192.0.2.16', IpRateLimitService::BUCKET_PLAYER_REPORT)
+        );
+    }
+
+    public function testPlayerReportBucketTracksSeparatelyFromQueueSubmit(): void
+    {
+        for ($index = 0; $index < 5; $index++) {
+            $this->service->checkAndRecord('192.0.2.17', IpRateLimitService::BUCKET_PLAYER_REPORT);
+        }
+
+        $this->assertFalse(
+            $this->service->checkAndRecord('192.0.2.17', IpRateLimitService::BUCKET_PLAYER_REPORT)
+        );
+        $this->assertTrue(
+            $this->service->checkAndRecord('192.0.2.17', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+        );
+    }
 }
