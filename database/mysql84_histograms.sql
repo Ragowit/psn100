@@ -2,13 +2,13 @@
 -- Run after initial schema import and periodically after large data changes.
 -- AUTO UPDATE keeps histograms current when ANALYZE TABLE runs or InnoDB
 -- recalculates persistent statistics.
+--
+-- player_ranking is intentionally omitted: the table is fully rebuilt and
+-- swapped every 5 minutes (see PlayerRankingUpdater), so histograms would be
+-- stale immediately and AUTO UPDATE would rebuild them on every stats refresh.
 
 ANALYZE TABLE player
     UPDATE HISTOGRAM ON status, last_updated_date, country
-    WITH 256 BUCKETS AUTO UPDATE;
-
-ANALYZE TABLE player_ranking
-    UPDATE HISTOGRAM ON ranking, rarity_ranking, in_game_rarity_ranking
     WITH 256 BUCKETS AUTO UPDATE;
 
 ANALYZE TABLE player_queue
