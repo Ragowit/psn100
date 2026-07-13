@@ -193,7 +193,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                 <div>
                     <?php
                     foreach (explode(',', $gamePlatform) as $platform) {
-                        echo "<span class=\"badge rounded-pill text-bg-primary p-2 me-1\">" . $platform . "</span> ";
+                        echo '<span class="badge rounded-pill text-bg-primary p-2 me-1">' . Html::escape($platform) . '</span> ';
                     }
                     ?>
                 </div>
