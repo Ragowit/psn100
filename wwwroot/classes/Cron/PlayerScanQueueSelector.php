@@ -173,7 +173,7 @@ final class PlayerScanQueueSelector
                     LEFT JOIN player_ranking pr ON pr.account_id = p.account_id
                     JOIN now_values nv
                 WHERE
-                    p.status NOT IN (1, 3, 4, 5)
+                    p.status IN (0, 99)
                     AND p.last_updated_date < nv.cutoff_1w
                     AND (
                         pr.account_id IS NULL

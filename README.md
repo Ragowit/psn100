@@ -66,6 +66,26 @@ for abuse controls:
 - `ip_rate_limit` — fixed-window IP rate limits for public JSON endpoints
 - `admin_login_throttle` — failed admin login tracking and temporary lockouts
 
+On MySQL 8.4+, after importing or upgrading the schema, run the optimizer maintenance
+scripts:
+
+```bash
+mysql psn100 < database/mysql84_histograms.sql
+```
+
+Histograms use MySQL 8.4 `AUTO UPDATE` so they stay current when `ANALYZE TABLE` runs or
+InnoDB recalculates persistent statistics. Re-run after large bulk imports or major data
+migrations. `player_ranking` is intentionally excluded because that table is rebuilt and
+swapped every five minutes.
+
+Existing databases that still have legacy redundant indexes can apply:
+
+```bash
+mysql psn100 < database/mysql84_drop_redundant_indexes.sql
+```
+
+Fresh installs from the current `psn100.sql` already omit those indexes.
+
 Queue polling (`check_queue_position.php`) requires a `poll_token` from the CSRF-protected
 `add_to_queue.php` response (60 requests per IP per minute). `scan_log_poll.php` allows 30
 per IP per minute. Admin login locks an IP for 15 minutes after five failed attempts.

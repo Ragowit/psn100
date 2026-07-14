@@ -8,7 +8,7 @@
 -- stale immediately and AUTO UPDATE would rebuild them on every stats refresh.
 
 ANALYZE TABLE player
-    UPDATE HISTOGRAM ON status, last_updated_date, country
+    UPDATE HISTOGRAM ON status, last_updated_date, country, points, rarity_points, in_game_rarity_points
     WITH 256 BUCKETS AUTO UPDATE;
 
 ANALYZE TABLE player_queue
@@ -26,3 +26,19 @@ ANALYZE TABLE trophy_title_meta
 ANALYZE TABLE trophy_title
     UPDATE HISTOGRAM ON platform
     WITH 32 BUCKETS AUTO UPDATE;
+
+ANALYZE TABLE trophy_earned
+    UPDATE HISTOGRAM ON earned
+    WITH 4 BUCKETS AUTO UPDATE;
+
+ANALYZE TABLE trophy_meta
+    UPDATE HISTOGRAM ON status
+    WITH 8 BUCKETS AUTO UPDATE;
+
+ANALYZE TABLE psn100_change
+    UPDATE HISTOGRAM ON change_type, time
+    WITH 64 BUCKETS AUTO UPDATE;
+
+ANALYZE TABLE log
+    UPDATE HISTOGRAM ON time
+    WITH 64 BUCKETS AUTO UPDATE;
