@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Html.php';
+require_once __DIR__ . '/../RequestParameter.php';
 
 class GameCopyHandler
 {
@@ -69,7 +70,7 @@ class GameCopyHandler
         $value = $postData[$key];
 
         if (is_array($value)) {
-            $value = end($value);
+            $value = RequestParameter::lastScalar($value);
         }
 
         $value = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);

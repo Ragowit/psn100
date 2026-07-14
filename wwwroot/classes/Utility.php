@@ -15,26 +15,29 @@ class Utility
 
     public function slugify(?string $text): string
     {
-        $text = $text ?? '';
-
-        $normalizedWhitespace = preg_replace('/\s+/', ' ', $text) ?? $text;
-        $text = trim($normalizedWhitespace);
-        $text = str_replace(['&', '%', ' - '], ['and', 'percent', ' '], $text);
+        $text = ($text ?? '')
+            |> (fn(string $value): string => preg_replace('/\s+/', ' ', $value) ?? $value)
+            |> trim(...)
+            |> (fn(string $value): string => str_replace(['&', '%', ' - '], ['and', 'percent', ' '], $value));
 
         $slug = self::getSlugTransliterator()->transliterate($text);
         if (is_string($slug) && $slug !== '') {
             return $slug;
         }
 
-        $text = strtolower($text);
-        $slug = preg_replace('/[^a-z0-9]+/', '-', $text) ?? $text;
+        $slug = $text
+            |> strtolower(...)
+            |> (fn(string $value): string => preg_replace('/[^a-z0-9]+/', '-', $value) ?? $value)
+            |> (fn(string $value): string => trim($value, '-'));
 
-        return trim($slug, '-');
+        return $slug;
     }
 
     public function getCountryName(?string $countryCode): string
     {
-        $countryCode = strtoupper(trim((string) ($countryCode ?? '')));
+        $countryCode = ($countryCode ?? '')
+            |> trim(...)
+            |> strtoupper(...);
 
         if ($countryCode === '') {
             return 'Unknown';

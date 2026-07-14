@@ -74,10 +74,10 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
         if (count($replacementLinks) === 2) {
             $replacementText = implode(' and ', $replacementLinks);
         } elseif (count($replacementLinks) > 2) {
-            $lastLink = array_pop($replacementLinks);
-            $replacementText = implode(', ', $replacementLinks) . ', and ' . $lastLink;
+            $lastLink = array_last($replacementLinks);
+            $replacementText = implode(', ', array_slice($replacementLinks, 0, -1)) . ', and ' . $lastLink;
         } else {
-            $replacementText = $replacementLinks[0];
+            $replacementText = array_first($replacementLinks);
         }
     }
 

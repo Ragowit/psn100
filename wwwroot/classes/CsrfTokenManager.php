@@ -23,6 +23,7 @@ final class CsrfTokenManager
         return $token;
     }
 
+    #[\NoDiscard]
     public static function validate(string $scope, mixed $submittedToken): bool
     {
         SessionManager::ensureStarted();

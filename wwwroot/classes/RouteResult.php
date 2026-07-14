@@ -16,16 +16,19 @@ readonly class RouteResult
     ) {
     }
 
+    #[\NoDiscard]
     public static function include(string $file, array $variables = []): self
     {
         return new self($file, null, false, $variables);
     }
 
+    #[\NoDiscard]
     public static function redirect(string $location, int $statusCode = 303): self
     {
         return new self(null, $location, false, [], $statusCode);
     }
 
+    #[\NoDiscard]
     public static function notFound(): self
     {
         return new self(null, null, true, [], 404);

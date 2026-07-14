@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/IpAddressResolver.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 readonly class PlayerQueueRequest
 {
@@ -43,9 +44,7 @@ readonly class PlayerQueueRequest
 
     private static function sanitizeValue(mixed $value): string
     {
-        if (is_array($value)) {
-            $value = reset($value);
-        }
+        $value = RequestParameter::firstScalar($value);
 
         if (is_object($value)) {
             if (method_exists($value, '__toString')) {
