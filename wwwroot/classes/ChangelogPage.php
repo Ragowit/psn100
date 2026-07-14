@@ -7,6 +7,7 @@ require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/ChangelogEntryPresenter.php';
 require_once __DIR__ . '/ChangelogPaginator.php';
 require_once __DIR__ . '/ChangelogService.php';
+require_once __DIR__ . '/RequestParameter.php';
 require_once __DIR__ . '/Utility.php';
 
 class ChangelogPage
@@ -127,9 +128,7 @@ class ChangelogPage
 
     private static function resolvePageNumber(mixed $page): int
     {
-        if (is_array($page)) {
-            $page = reset($page);
-        }
+        $page = RequestParameter::firstScalar($page);
 
         if (!is_scalar($page)) {
             return 1;

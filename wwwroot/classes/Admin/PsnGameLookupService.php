@@ -8,6 +8,7 @@ require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
 require_once __DIR__ . '/PsnGameLookupException.php';
 require_once __DIR__ . '/PsnTrophyApiPayloadInspector.php';
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
+require_once __DIR__ . '/../CommaSeparatedValues.php';
 
 use Tustin\PlayStation\Client;
 
@@ -325,10 +326,7 @@ final class PsnGameLookupService
             return null;
         }
 
-        $platforms = array_values(array_filter(array_map(
-            static fn (string $value): string => strtoupper(trim($value)),
-            explode(',', (string) $platform)
-        ), static fn (string $value): bool => $value !== ''));
+        $platforms = CommaSeparatedValues::parseUppercaseTrimmed((string) $platform);
 
         if ($platforms === []) {
             return null;

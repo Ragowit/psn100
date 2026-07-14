@@ -28,26 +28,17 @@ final class NotFoundPage
 
     public function withHeading(string $heading): self
     {
-        $clone = clone $this;
-        $clone->heading = $heading;
-
-        return $clone;
+        return clone($this, ['heading' => $heading]);
     }
 
     public function withMessage(string $message): self
     {
-        $clone = clone $this;
-        $clone->message = $message;
-
-        return $clone;
+        return clone($this, ['message' => $message]);
     }
 
     public function withTitle(string $title): self
     {
-        $clone = clone $this;
-        $clone->title = $title;
-
-        return $clone;
+        return clone($this, ['title' => $title]);
     }
 
     public function getTitle(): string

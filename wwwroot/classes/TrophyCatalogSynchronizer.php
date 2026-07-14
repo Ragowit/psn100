@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
+
 /**
  * Persists trophy catalog rows shared between player scans and admin rescans.
  */
@@ -36,10 +38,7 @@ final class TrophyCatalogSynchronizer
         }
 
         $platform = isset($row['platform']) ? (string) $row['platform'] : '';
-        $platforms = array_values(array_filter(array_map(
-            'trim',
-            $platform === '' ? [] : explode(',', $platform)
-        ), static fn (string $value): bool => $value !== ''));
+        $platforms = CommaSeparatedValues::parseTrimmed($platform);
 
         return [
             'detail' => $row['detail'] === null ? null : (string) $row['detail'],

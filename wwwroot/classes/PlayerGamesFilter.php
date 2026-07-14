@@ -237,9 +237,6 @@ class PlayerGamesFilter
 
     public function withPageNumber(int $page): self
     {
-        $clone = clone $this;
-        $clone->page = max($page, 1);
-
-        return $clone;
+        return clone($this, ['page' => max($page, 1)]);
     }
 }

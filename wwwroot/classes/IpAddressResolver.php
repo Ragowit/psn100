@@ -42,7 +42,7 @@ final class IpAddressResolver
     public static function resolve(mixed $remoteAddr): string
     {
         if (is_array($remoteAddr)) {
-            $remoteAddr = reset($remoteAddr);
+            $remoteAddr = array_first($remoteAddr);
         }
 
         if (is_object($remoteAddr) && method_exists($remoteAddr, '__toString')) {

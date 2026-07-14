@@ -54,10 +54,7 @@ final class MaintenancePage
 
     public function withMessage(string $message): self
     {
-        $clone = clone $this;
-        $clone->message = $message;
-
-        return $clone;
+        return clone($this, ['message' => $message]);
     }
 
     public function getTitle(): string

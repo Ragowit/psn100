@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationSectionState.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final class NavigationState
 {
@@ -131,12 +132,7 @@ final class NavigationState
 
     private static function sanitizeQueryValue(mixed $value): string
     {
-        if (is_array($value)) {
-            $value = reset($value);
-            if ($value === false) {
-                $value = '';
-            }
-        }
+        $value = RequestParameter::firstScalar($value) ?? '';
 
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }

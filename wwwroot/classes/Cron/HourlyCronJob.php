@@ -86,7 +86,7 @@ final readonly class HourlyCronJob implements CronJobInterface
                     throw $exception;
                 }
 
-                $lastId = end($batchIds);
+                $lastId = array_last($batchIds);
             }
         } finally {
             $this->dropTemporaryTables();
