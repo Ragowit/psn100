@@ -7,6 +7,7 @@ require_once __DIR__ . '/PlayerAvatarSynchronizer.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/PlayerCountryResolver.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
+require_once __DIR__ . '/../PlayerRepository.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\PlayStation\Client;
@@ -24,6 +25,7 @@ final class PlayerScanProfileSynchronizer
     private readonly PlayerAvatarSynchronizer $avatarSynchronizer;
     private readonly PlayerCountryResolver $countryResolver;
     private readonly PlayerScanPrivacyService $privacyService;
+    private readonly PlayerRepository $playerRepository;
 
     public function __construct(
         private readonly PDO $database,
@@ -32,6 +34,7 @@ final class PlayerScanProfileSynchronizer
         ?PlayerAvatarSynchronizer $avatarSynchronizer = null,
         ?PlayerCountryResolver $countryResolver = null,
         ?PlayerScanPrivacyService $privacyService = null,
+        ?PlayerRepository $playerRepository = null,
     ) {
         $this->avatarSynchronizer = $avatarSynchronizer ?? new PlayerAvatarSynchronizer(
             $database,
@@ -42,6 +45,7 @@ final class PlayerScanProfileSynchronizer
             $database,
             $workerScanCoordinator,
         );
+        $this->playerRepository = $playerRepository ?? new PlayerRepository($database);
     }
 
     /**
@@ -77,7 +81,14 @@ final class PlayerScanProfileSynchronizer
         );
 
         $avatarFilename = $this->avatarSynchronizer->synchronizeFromPsnUser($user);
-        $this->upsertPlayerRecord($user, $country, $avatarFilename);
+        $this->playerRepository->upsertFromPsnProfile(
+            (string) $user->accountId(),
+            $user->onlineId(),
+            $country,
+            $avatarFilename,
+            (bool) $user->hasPlus(),
+            $user->aboutMe(),
+        );
 
         return PlayerScanProfileSyncResult::success($resolved->player, $user, $country);
     }
@@ -248,42 +259,6 @@ final class PlayerScanProfileSynchronizer
         }
 
         return PlayerScanProfileSyncResult::skipPlayer();
-    }
-
-    private function upsertPlayerRecord(object $user, string $country, string $avatarFilename): void
-    {
-        $plus = (bool) $user->hasPlus();
-
-        $query = $this->database->prepare(
-            'INSERT INTO player (
-                account_id,
-                online_id,
-                country,
-                avatar_url,
-                plus,
-                about_me
-            )
-            VALUES (
-                :account_id,
-                :online_id,
-                :country,
-                :avatar_url,
-                :plus,
-                :about_me
-            ) AS new ON DUPLICATE KEY
-            UPDATE
-                online_id = new.online_id,
-                avatar_url = new.avatar_url,
-                plus = new.plus,
-                about_me = new.about_me'
-        );
-        $query->bindValue(':account_id', (string) $user->accountId(), PDO::PARAM_STR);
-        $query->bindValue(':online_id', $user->onlineId(), PDO::PARAM_STR);
-        $query->bindValue(':country', strtolower($country), PDO::PARAM_STR);
-        $query->bindValue(':avatar_url', $avatarFilename, PDO::PARAM_STR);
-        $query->bindValue(':plus', $plus, PDO::PARAM_BOOL);
-        $query->bindValue(':about_me', $user->aboutMe(), PDO::PARAM_STR);
-        $query->execute();
     }
 
     private function lookupPlayerProfile(Client $client, string $onlineId): ?array
