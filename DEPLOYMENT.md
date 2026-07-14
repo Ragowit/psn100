@@ -207,10 +207,11 @@ every five minutes, which would invalidate histograms immediately.
 InnoDB stats refresh. Existing queries filter by `account_id` (partition key) or
 `np_communication_id` (leading primary-key column), so histograms would add little value.
 
-Older databases may still carry redundant indexes dropped from the current schema. Apply:
+Older databases may still carry redundant indexes dropped from the current schema. Apply
+(safe to re-run; skips indexes that are already absent):
 
 ```bash
 mysql "$DB_NAME" < database/mysql84_drop_redundant_indexes.sql
 ```
 
-Each dropped index is redundant with an existing primary or unique key.
+Each dropped index is redundant with an existing primary, unique, or composite key.
