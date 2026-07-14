@@ -37,8 +37,8 @@ final class PlayerScanTitleCatalogSynchronizer
         private readonly ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
         private readonly ?TrophyMetaRepository $trophyMetaRepository = null,
         private readonly ?PlayerScanCatalogSideEffects $catalogSideEffects = null,
-        private readonly ?PlayerScanTitleHeaderSynchronizer $titleHeaderSynchronizer = null,
         private readonly mixed $trophyDataFetcher = null,
+        private readonly ?PlayerScanTitleHeaderSynchronizer $titleHeaderSynchronizer = null,
     ) {
     }
 
