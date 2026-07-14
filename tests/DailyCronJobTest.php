@@ -9,16 +9,17 @@ final class DailyCronJobTest extends TestCase
 {
     public function testUpdateTrophyRarityQueryUsesTopTenThousandRankingFilter(): void
     {
-        $source = $this->readMethodSource('updateTrophyRarityForGame');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
 
         $this->assertStringContainsString('LEFT JOIN player_ranking p', $source);
         $this->assertStringContainsString('p.ranking <= 10000', $source);
         $this->assertStringContainsString('/ 10000.0) * 100 AS rarity_percent', $source);
+        $this->assertStringContainsString('WHERE t.np_communication_id = :np_communication_id', $source);
     }
 
     public function testUpdateTrophyRarityQueryAssignsRarityNamesFromThresholds(): void
     {
-        $source = $this->readMethodSource('updateTrophyRarityForGame');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
 
         $this->assertStringContainsString("WHEN r.rarity_percent > 10 THEN 'COMMON'", $source);
         $this->assertStringContainsString("WHEN r.rarity_percent > 2 THEN 'UNCOMMON'", $source);
@@ -28,9 +29,20 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString("WHEN r.in_game_rarity_percent <= 1 THEN 'LEGENDARY'", $source);
     }
 
+    public function testUpdateTrophyRarityQueryScopesTrophyEarnedByTitle(): void
+    {
+        $source = $this->readClassSource();
+
+        $this->assertStringContainsString('SELECT np_communication_id FROM trophy_title', $source);
+        $this->assertStringContainsString(
+            '$this->executeWithRetry([$this, \'updateTrophyRarityForGame\'], $npCommunicationId);',
+            $source
+        );
+    }
+
     public function testUpdateTrophyTitleRarityPointsAggregatesPerGame(): void
     {
-        $source = $this->readMethodSource('updateTrophyTitleRarityPoints');
+        $source = $this->readPrivateConstant('UPDATE_TITLE_RARITY_POINTS_QUERY');
 
         $this->assertStringContainsString('IFNULL(SUM(tm.rarity_point), 0) AS rarity_sum', $source);
         $this->assertStringContainsString('IFNULL(SUM(tm.in_game_rarity_point), 0) AS in_game_rarity_sum', $source);
@@ -41,8 +53,7 @@ final class DailyCronJobTest extends TestCase
 
     public function testExecuteWithRetryUsesInfiniteLoopWithoutMaxAttemptCap(): void
     {
-        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/DailyCronJob.php');
-        $this->assertTrue(is_string($source));
+        $source = $this->readClassSource();
 
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
@@ -96,18 +107,23 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(3, $database->getTitlePointsUpdateCount());
     }
 
-    private function readMethodSource(string $methodName): string
+    private function readClassSource(): string
     {
-        $class = new ReflectionClass(DailyCronJob::class);
-        $method = $class->getMethod($methodName);
-        $source = file_get_contents((string) $class->getFileName());
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/DailyCronJob.php');
         $this->assertTrue(is_string($source));
 
-        $lines = explode("\n", $source);
-        $startLine = $method->getStartLine() - 1;
-        $lineCount = $method->getEndLine() - $method->getStartLine() + 1;
+        return $source;
+    }
 
-        return implode("\n", array_slice($lines, $startLine, $lineCount));
+    private function readPrivateConstant(string $name): string
+    {
+        $class = new ReflectionClass(DailyCronJob::class);
+        $constant = $class->getReflectionConstant($name);
+        $this->assertTrue($constant instanceof ReflectionClassConstant);
+        $value = $constant->getValue();
+        $this->assertTrue(is_string($value));
+
+        return $value;
     }
 }
 

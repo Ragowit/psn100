@@ -482,7 +482,6 @@ ALTER TABLE `player`
   ADD UNIQUE KEY `u_online_id` (`online_id`),
   ADD KEY `idx_avatar_url` (`avatar_url`),
   ADD KEY `idx_last_updated_date` (`last_updated_date`),
-  ADD KEY `player_idx_online_id_account_id` (`online_id`,`account_id`),
   ADD KEY `player_idx_status_last_date_online_id` (`status`,`last_updated_date`,`online_id`),
   ADD KEY `idx_trophy_count_npwr` (`trophy_count_npwr`),
   ADD KEY `idx_player_ranking` (`status`,`points` DESC,`platinum` DESC,`gold` DESC,`silver` DESC),
@@ -507,7 +506,6 @@ ALTER TABLE `player_ranking`
   ADD KEY `ranking_country` (`ranking_country`),
   ADD KEY `rarity_ranking` (`rarity_ranking`),
   ADD KEY `rarity_ranking_country` (`rarity_ranking_country`),
-  ADD KEY `idx_pr_account_id_ranking` (`account_id`,`ranking`),
   ADD KEY `idx_pr_ranking_account` (`ranking`,`account_id`),
   ADD KEY `idx_pr_rarity_ranking_account` (`rarity_ranking`,`account_id`),
   ADD KEY `in_game_rarity_ranking` (`in_game_rarity_ranking`),
@@ -540,8 +538,7 @@ ALTER TABLE `psn100_change`
 --
 ALTER TABLE `setting`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `scanning` (`scanning`),
-  ADD KEY `setting_idx_scanning_id` (`scanning`,`id`);
+  ADD UNIQUE KEY `scanning` (`scanning`);
 
 --
 -- Indexes for table `trophy`
@@ -626,8 +623,7 @@ ALTER TABLE `trophy_title_meta`
   ADD PRIMARY KEY (`np_communication_id`),
   ADD KEY `idx_ttm_status` (`status`),
   ADD KEY `idx_ttm_parent_np_communication_id` (`parent_np_communication_id`),
-  ADD KEY `idx_ttm_psnprofiles_id` (`psnprofiles_id`),
-  ADD KEY `idx_ttm_np_id_owners` (`np_communication_id`,`owners`);
+  ADD KEY `idx_ttm_psnprofiles_id` (`psnprofiles_id`);
 
 --
 -- Indexes for table `trophy_title_player`
