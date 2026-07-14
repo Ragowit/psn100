@@ -6,7 +6,7 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
-    private const string UPDATE_ALL_TROPHY_RARITY_QUERY = <<<'SQL'
+    private const string UPDATE_TROPHY_RARITY_QUERY = <<<'SQL'
         WITH rarity AS (
             SELECT
                 t.id AS trophy_id,
@@ -29,6 +29,7 @@ final readonly class DailyCronJob implements CronJobInterface
             LEFT JOIN player_ranking p
                 ON p.account_id = te.account_id
                     AND p.ranking <= 10000
+            WHERE t.np_communication_id = :np_communication_id
             GROUP BY t.id, tm.status, ttm.status, ttm.owners
         )
         UPDATE trophy_meta tm
@@ -92,18 +93,31 @@ final readonly class DailyCronJob implements CronJobInterface
     #[\Override]
     public function run(): void
     {
-        $this->recalculateTrophyRarity();
+        $this->recalculateTrophyRarityForGames();
         $this->recalculateTitleRarityPoints();
     }
 
-    private function recalculateTrophyRarity(): void
+    private function recalculateTrophyRarityForGames(): void
     {
-        $this->executeWithRetry([$this, 'updateAllTrophyRarity']);
+        $query = $this->database->prepare(
+            'SELECT np_communication_id FROM trophy_title ORDER BY id DESC'
+        );
+        $query->execute();
+        $games = $query->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($games as $npCommunicationId) {
+            if (!is_string($npCommunicationId)) {
+                continue;
+            }
+
+            $this->executeWithRetry([$this, 'updateTrophyRarityForGame'], $npCommunicationId);
+        }
     }
 
-    private function updateAllTrophyRarity(): void
+    private function updateTrophyRarityForGame(string $npCommunicationId): void
     {
-        $query = $this->database->prepare(self::UPDATE_ALL_TROPHY_RARITY_QUERY);
+        $query = $this->database->prepare(self::UPDATE_TROPHY_RARITY_QUERY);
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }
 

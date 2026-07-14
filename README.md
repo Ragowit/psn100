@@ -78,6 +78,10 @@ InnoDB recalculates persistent statistics. Re-run after large bulk imports or ma
 migrations. `player_ranking` is intentionally excluded because that table is rebuilt and
 swapped every five minutes.
 
+`trophy_earned` is intentionally excluded at production scale (billions of rows,
+hundreds of GiB): `ANALYZE TABLE` would be extremely slow and `AUTO UPDATE` would add
+ongoing overhead with negligible benefit for partition- and PK-scoped lookups.
+
 Existing databases that still have legacy redundant indexes can apply:
 
 ```bash

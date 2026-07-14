@@ -202,6 +202,11 @@ bulk imports; a weekly `ANALYZE TABLE` cron is optional but reasonable on busy s
 `player_ranking` is excluded because `PlayerRankingUpdater` rebuilds and swaps that table
 every five minutes, which would invalidate histograms immediately.
 
+`trophy_earned` is excluded: at production scale (billions of rows, hundreds of GiB) an
+`ANALYZE TABLE` would run for hours and `AUTO UPDATE` would rebuild histograms on every
+InnoDB stats refresh. Existing queries filter by `account_id` (partition key) or
+`np_communication_id` (leading primary-key column), so histograms would add little value.
+
 Older databases may still carry redundant indexes dropped from the current schema. Apply:
 
 ```bash

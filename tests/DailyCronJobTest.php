@@ -9,16 +9,17 @@ final class DailyCronJobTest extends TestCase
 {
     public function testUpdateTrophyRarityQueryUsesTopTenThousandRankingFilter(): void
     {
-        $source = $this->readPrivateConstant('UPDATE_ALL_TROPHY_RARITY_QUERY');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
 
         $this->assertStringContainsString('LEFT JOIN player_ranking p', $source);
         $this->assertStringContainsString('p.ranking <= 10000', $source);
         $this->assertStringContainsString('/ 10000.0) * 100 AS rarity_percent', $source);
+        $this->assertStringContainsString('WHERE t.np_communication_id = :np_communication_id', $source);
     }
 
     public function testUpdateTrophyRarityQueryAssignsRarityNamesFromThresholds(): void
     {
-        $source = $this->readPrivateConstant('UPDATE_ALL_TROPHY_RARITY_QUERY');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
 
         $this->assertStringContainsString("WHEN r.rarity_percent > 10 THEN 'COMMON'", $source);
         $this->assertStringContainsString("WHEN r.rarity_percent > 2 THEN 'UNCOMMON'", $source);
@@ -28,13 +29,15 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString("WHEN r.in_game_rarity_percent <= 1 THEN 'LEGENDARY'", $source);
     }
 
-    public function testUpdateTrophyRarityQueryRecalculatesAllTitlesInOneStatement(): void
+    public function testUpdateTrophyRarityQueryScopesTrophyEarnedByTitle(): void
     {
         $source = $this->readClassSource();
 
-        $this->assertStringContainsString('UPDATE_ALL_TROPHY_RARITY_QUERY', $source);
-        $this->assertFalse(str_contains($source, 'np_communication_id = :np_communication_id'));
-        $this->assertFalse(str_contains($source, 'SELECT np_communication_id FROM trophy_title'));
+        $this->assertStringContainsString('SELECT np_communication_id FROM trophy_title', $source);
+        $this->assertStringContainsString(
+            '$this->executeWithRetry([$this, \'updateTrophyRarityForGame\'], $npCommunicationId);',
+            $source
+        );
     }
 
     public function testUpdateTrophyTitleRarityPointsAggregatesPerGame(): void
@@ -55,7 +58,7 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
         $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'updateAllTrophyRarity\']);',
+            '$this->executeWithRetry([$this, \'updateTrophyRarityForGame\'], $npCommunicationId);',
             $source
         );
         $this->assertStringContainsString(
@@ -64,9 +67,9 @@ final class DailyCronJobTest extends TestCase
         );
     }
 
-    public function testRunRetriesBatchRarityUpdateUntilItSucceeds(): void
+    public function testRunRetriesPerGameRarityUpdateUntilItSucceeds(): void
     {
-        $database = new DailyCronJobBatchRetryTestDatabase();
+        $database = new DailyCronJobPerGameRetryTestDatabase();
         $sleepCalls = [];
 
         $job = new DailyCronJob(
@@ -80,7 +83,7 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([1, 1], $sleepCalls);
-        $this->assertSame(3, $database->getBatchRarityUpdateCount());
+        $this->assertSame(3, $database->getPerGameUpdateCount());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
@@ -100,7 +103,7 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([1, 1], $sleepCalls);
-        $this->assertSame(1, $database->getBatchRarityUpdateCount());
+        $this->assertSame(0, $database->getPerGameUpdateCount());
         $this->assertSame(3, $database->getTitlePointsUpdateCount());
     }
 
@@ -122,25 +125,11 @@ final class DailyCronJobTest extends TestCase
 
         return $value;
     }
-
-    private function readMethodSource(string $methodName): string
-    {
-        $class = new ReflectionClass(DailyCronJob::class);
-        $method = $class->getMethod($methodName);
-        $source = file_get_contents((string) $class->getFileName());
-        $this->assertTrue(is_string($source));
-
-        $lines = explode("\n", $source);
-        $startLine = $method->getStartLine() - 1;
-        $lineCount = $method->getEndLine() - $method->getStartLine() + 1;
-
-        return implode("\n", array_slice($lines, $startLine, $lineCount));
-    }
 }
 
-final class DailyCronJobBatchRetryTestDatabase extends PDO
+final class DailyCronJobPerGameRetryTestDatabase extends PDO
 {
-    private int $batchRarityUpdateCount = 0;
+    private int $perGameUpdateCount = 0;
 
     private int $titlePointsUpdateCount = 0;
 
@@ -148,9 +137,9 @@ final class DailyCronJobBatchRetryTestDatabase extends PDO
     {
     }
 
-    public function getBatchRarityUpdateCount(): int
+    public function getPerGameUpdateCount(): int
     {
-        return $this->batchRarityUpdateCount;
+        return $this->perGameUpdateCount;
     }
 
     public function getTitlePointsUpdateCount(): int
@@ -160,12 +149,18 @@ final class DailyCronJobBatchRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return ['NPWR00001_00'];
+            }, isSelect: true);
+        }
+
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
             return new DailyCronJobTestStatement(function (): void {
-                $this->batchRarityUpdateCount++;
+                $this->perGameUpdateCount++;
 
-                if ($this->batchRarityUpdateCount < 3) {
-                    throw new RuntimeException('Simulated batch rarity update failure.');
+                if ($this->perGameUpdateCount < 3) {
+                    throw new RuntimeException('Simulated per-game rarity update failure.');
                 }
             });
         }
@@ -182,7 +177,7 @@ final class DailyCronJobBatchRetryTestDatabase extends PDO
 
 final class DailyCronJobTitleRetryTestDatabase extends PDO
 {
-    private int $batchRarityUpdateCount = 0;
+    private int $perGameUpdateCount = 0;
 
     private int $titlePointsUpdateCount = 0;
 
@@ -190,9 +185,9 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
     {
     }
 
-    public function getBatchRarityUpdateCount(): int
+    public function getPerGameUpdateCount(): int
     {
-        return $this->batchRarityUpdateCount;
+        return $this->perGameUpdateCount;
     }
 
     public function getTitlePointsUpdateCount(): int
@@ -202,9 +197,15 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return [];
+            }, isSelect: true);
+        }
+
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
             return new DailyCronJobTestStatement(function (): void {
-                $this->batchRarityUpdateCount++;
+                $this->perGameUpdateCount++;
             });
         }
 
@@ -227,12 +228,15 @@ final class DailyCronJobTestStatement extends PDOStatement
     /** @var callable(): mixed */
     private $callback;
 
+    private bool $isSelect;
+
     /**
      * @param callable(): mixed $callback
      */
-    public function __construct(callable $callback)
+    public function __construct(callable $callback, bool $isSelect = false)
     {
         $this->callback = $callback;
+        $this->isSelect = $isSelect;
     }
 
     public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
@@ -242,8 +246,21 @@ final class DailyCronJobTestStatement extends PDOStatement
 
     public function execute(?array $params = null): bool
     {
-        ($this->callback)();
+        if (!$this->isSelect) {
+            ($this->callback)();
+        }
 
         return true;
+    }
+
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    {
+        if (!$this->isSelect) {
+            return [];
+        }
+
+        $result = ($this->callback)();
+
+        return is_array($result) ? $result : [];
     }
 }

@@ -6,6 +6,11 @@
 -- player_ranking is intentionally omitted: the table is fully rebuilt and
 -- swapped every 5 minutes (see PlayerRankingUpdater), so histograms would be
 -- stale immediately and AUTO UPDATE would rebuild them on every stats refresh.
+--
+-- trophy_earned is intentionally omitted: the table is billions of rows and
+-- hundreds of GiB. ANALYZE TABLE would run for hours and AUTO UPDATE would
+-- rebuild histograms on every InnoDB stats refresh. Queries already filter by
+-- account_id (partition key) or np_communication_id (leading PK column).
 
 ANALYZE TABLE player
     UPDATE HISTOGRAM ON status, last_updated_date, country, points, rarity_points, in_game_rarity_points
@@ -26,10 +31,6 @@ ANALYZE TABLE trophy_title_meta
 ANALYZE TABLE trophy_title
     UPDATE HISTOGRAM ON platform
     WITH 32 BUCKETS AUTO UPDATE;
-
-ANALYZE TABLE trophy_earned
-    UPDATE HISTOGRAM ON earned
-    WITH 4 BUCKETS AUTO UPDATE;
 
 ANALYZE TABLE trophy_meta
     UPDATE HISTOGRAM ON status
