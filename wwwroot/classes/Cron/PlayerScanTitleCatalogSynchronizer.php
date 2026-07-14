@@ -12,6 +12,7 @@ require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 require_once __DIR__ . '/PlayerScanCatalogSideEffects.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
+require_once __DIR__ . '/PlayerScanTitleHeaderSynchronizer.php';
 require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
 
 /**
@@ -36,6 +37,7 @@ final class PlayerScanTitleCatalogSynchronizer
         private readonly ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
         private readonly ?TrophyMetaRepository $trophyMetaRepository = null,
         private readonly ?PlayerScanCatalogSideEffects $catalogSideEffects = null,
+        private readonly ?PlayerScanTitleHeaderSynchronizer $titleHeaderSynchronizer = null,
         private readonly mixed $trophyDataFetcher = null,
     ) {
     }
@@ -44,78 +46,15 @@ final class PlayerScanTitleCatalogSynchronizer
     {
         $npid = (string) $trophyTitle->npCommunicationId();
         $newTrophies = false;
-        $titleDataChanged = false;
         $groupDataChanged = false;
         $trophyDataChanged = false;
         $titleId = null;
-
-        $platforms = $this->formatPlatformListFromTitle($trophyTitle);
-
-        $sanitizedTitleName = $this->titleFormatter()->format($trophyTitle->name());
-
-        $existingTitle = $this->catalogSynchronizer()->fetchExistingTrophyTitleRow($npid);
-        $isNewTitle = $existingTitle === null;
-        $incomingSetVersion = $trophyTitle->trophySetVersion();
-        $setVersionForUpdate = $this->metadataHelper()->resolveSetVersionForUpdate(
-            $incomingSetVersion,
-            is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
-        );
-        $incomingVersionIsOlderThanStored = $this->metadataHelper()->isIncomingSetVersionOlderThanStored(
-            $incomingSetVersion,
-            is_array($existingTitle) ? ($existingTitle['set_version'] ?? null) : null
-        );
-
-        $previousTitleIconFilename = $existingTitle['icon_url'] ?? null;
-        $titleIconFilename = $previousTitleIconFilename;
         $directories = $this->directories();
-        $titleIconMissing = $titleIconFilename === null
-            || !file_exists($directories->title . $titleIconFilename);
 
-        $titleNeedsUpdate = $existingTitle === null
-            || (
-                !$incomingVersionIsOlderThanStored
-                && (
-                    $existingTitle['detail'] !== $trophyTitle->detail()
-                    || $existingTitle['set_version'] !== $setVersionForUpdate
-                )
-            );
-
-        if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
-            $titleIconFilename = $this->downloader()->downloadMandatoryForScan(
-                $trophyTitle->iconUrl(),
-                $directories->title,
-                sprintf('title icon for "%s" (%s)', $trophyTitle->name(), $npid),
-                $previousTitleIconFilename
-            );
-        }
-
-        if ($existingTitle === null || $titleNeedsUpdate || $titleIconMissing) {
-            $titleAffectedRows = $this->catalogSynchronizer()->upsertTrophyTitle(
-                $npid,
-                $sanitizedTitleName,
-                $trophyTitle->detail(),
-                $titleIconFilename,
-                $platforms,
-                $setVersionForUpdate,
-                $incomingVersionIsOlderThanStored,
-            );
-
-            if ($titleAffectedRows > 0) {
-                $titleDataChanged = true;
-            }
-        }
-
-        $metaQuery = $this->database->prepare('INSERT IGNORE INTO trophy_title_meta (
-                np_communication_id,
-                message
-            )
-            VALUES (
-                :np_communication_id,
-                :message
-            )');
-        $metaQuery->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
-        $metaQuery->bindValue(':message', '', PDO::PARAM_STR);
-        $metaQuery->execute();
+        $headerSyncResult = $this->titleHeaderSynchronizer()->sync($trophyTitle);
+        $titleDataChanged = $headerSyncResult->titleDataChanged;
+        $titleNeedsUpdate = $headerSyncResult->titleNeedsUpdate;
+        $isNewTitle = $headerSyncResult->isNewTitle;
 
         try {
             $trophyData = $this->fetchTrophyData($npid, $client);
@@ -406,17 +345,7 @@ final class PlayerScanTitleCatalogSynchronizer
 
     public function formatPlatformListFromTitle(object $trophyTitle): string
     {
-        $platforms = '';
-        foreach ($trophyTitle->platform() as $platform) {
-            $platformValue = $platform->value;
-            if ($platformValue === 'PSPC') {
-                $platformValue = 'PC';
-            }
-
-            $platforms .= $platformValue . ',';
-        }
-
-        return rtrim($platforms, ',');
+        return $this->titleHeaderSynchronizer()->formatPlatformListFromTitle($trophyTitle);
     }
 
     /**
@@ -451,19 +380,21 @@ final class PlayerScanTitleCatalogSynchronizer
         );
     }
 
-    private function titleFormatter(): TrophyTitleNameFormatter
+    private function titleHeaderSynchronizer(): PlayerScanTitleHeaderSynchronizer
     {
-        return $this->trophyTitleNameFormatter ?? new TrophyTitleNameFormatter();
+        return $this->titleHeaderSynchronizer ?? new PlayerScanTitleHeaderSynchronizer(
+            $this->database,
+            $this->catalogSynchronizer(),
+            $this->directories(),
+            $this->downloader(),
+            $this->trophyTitleNameFormatter,
+            $this->titleMetadataHelper,
+        );
     }
 
     private function catalogSynchronizer(): TrophyCatalogSynchronizer
     {
         return $this->trophyCatalogSynchronizer ?? new TrophyCatalogSynchronizer($this->database);
-    }
-
-    private function metadataHelper(): PlayerScanTitleMetadataHelper
-    {
-        return $this->titleMetadataHelper ?? new PlayerScanTitleMetadataHelper();
     }
 
     private function trophyMetaRepository(): TrophyMetaRepository
