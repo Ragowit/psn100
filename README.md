@@ -82,7 +82,8 @@ swapped every five minutes.
 hundreds of GiB): `ANALYZE TABLE` would be extremely slow and `AUTO UPDATE` would add
 ongoing overhead with negligible benefit for partition- and PK-scoped lookups.
 
-Existing databases that still have legacy redundant indexes can apply:
+Existing databases that still have legacy redundant indexes can apply (safe to re-run; skips
+indexes that are already absent):
 
 ```bash
 mysql psn100 < database/mysql84_drop_redundant_indexes.sql
