@@ -22,9 +22,16 @@ class AboutPageService implements AboutPageDataProviderInterface
         $summaryQuery = $this->database->prepare(
             <<<'SQL'
             SELECT
-                SUM(last_updated_date >= NOW() - INTERVAL 1 DAY) AS scanned_players,
-                SUM(status = 0 AND rank_last_week = 0) AS new_players
-            FROM player
+                (
+                    SELECT COUNT(*)
+                    FROM player
+                    WHERE last_updated_date >= NOW() - INTERVAL 1 DAY
+                ) AS scanned_players,
+                (
+                    SELECT COUNT(*)
+                    FROM player
+                    WHERE status = 0 AND rank_last_week = 0
+                ) AS new_players
             SQL
         );
         $summaryQuery->execute();
