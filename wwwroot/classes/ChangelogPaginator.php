@@ -25,6 +25,18 @@ final readonly class ChangelogPaginator
             : 1;
     }
 
+    /**
+     * Builds a paginator before the total row count is known.
+     *
+     * Uses a placeholder total so page offsets are computed from the requested
+     * page alone. Rebuild with the real total after the list query returns
+     * COUNT(*) OVER().
+     */
+    public static function forPageRequest(int $requestedPage, int $limit): self
+    {
+        return new self($requestedPage, PHP_INT_MAX, $limit);
+    }
+
     public function getCurrentPage(): int
     {
         return $this->currentPage;

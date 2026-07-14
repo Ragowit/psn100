@@ -42,10 +42,13 @@ class ChangelogPage
     public static function fromService(ChangelogService $service, Utility $utility, array $queryParameters): self
     {
         $requestedPage = self::resolvePageNumber($queryParameters['page'] ?? null);
-        $totalChanges = $service->getTotalChangeCount();
-        $paginator = new ChangelogPaginator($requestedPage, $totalChanges, ChangelogService::PAGE_SIZE);
-
-        $entries = $service->getChanges($paginator);
+        $queryPaginator = ChangelogPaginator::forPageRequest($requestedPage, ChangelogService::PAGE_SIZE);
+        $entries = $service->getChanges($queryPaginator);
+        $paginator = new ChangelogPaginator(
+            $requestedPage,
+            $service->getTotalChangeCount(),
+            ChangelogService::PAGE_SIZE
+        );
 
         $presenters = array_map(
             static fn(ChangelogEntry $entry): ChangelogEntryPresenter => new ChangelogEntryPresenter($entry, $utility),
