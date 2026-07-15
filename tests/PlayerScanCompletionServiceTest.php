@@ -97,30 +97,6 @@ final class PlayerScanCompletionServiceTest extends TestCase
         $this->service = new PlayerScanCompletionService($this->database);
     }
 
-    public function testCalculateLevelAndProgressUsesFirstTierFormula(): void
-    {
-        $result = $this->service->calculateLevelAndProgress(120);
-
-        $this->assertSame(3, $result['level']);
-        $this->assertSame(0, $result['progress']);
-    }
-
-    public function testCalculateLevelAndProgressUsesSecondTierFormula(): void
-    {
-        $result = $this->service->calculateLevelAndProgress(6030);
-
-        $this->assertSame(101, $result['level']);
-        $this->assertSame(0, $result['progress']);
-    }
-
-    public function testCalculateLevelAndProgressUsesThirdTierFormula(): void
-    {
-        $result = $this->service->calculateLevelAndProgress(20000);
-
-        $this->assertSame(211, $result['level']);
-        $this->assertSame(24, $result['progress']);
-    }
-
     public function testRecalculatePlayerTrophyStatsAndStatusRequestsRescanWhenNpwrCountExceedsSonyTotal(): void
     {
         $this->seedActiveTitle('NPWR00003_00');

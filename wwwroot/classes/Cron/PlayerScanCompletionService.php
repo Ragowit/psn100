@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../PlayStationTrophyLevelCalculator.php';
+
 /**
  * Recalculates player trophy totals, PSN level/progress, status, and rarity rollups
  * after a scan completes.
@@ -12,38 +14,6 @@ final class PlayerScanCompletionService
 {
     public function __construct(private readonly PDO $database)
     {
-    }
-
-    /**
-     * @return array{level: int, progress: int}
-     */
-    public function calculateLevelAndProgress(int $points): array
-    {
-        if ($points <= 5940) {
-            return [
-                'level' => (int) floor($points / 60) + 1,
-                'progress' => (int) (floor($points / 60 * 100) % 100),
-            ];
-        }
-
-        if ($points <= 14940) {
-            return [
-                'level' => (int) floor(($points - 5940) / 90) + 100,
-                'progress' => (int) (floor(($points - 5940) / 90 * 100) % 100),
-            ];
-        }
-
-        $stage = 1;
-        $leftovers = $points - 14940;
-        while ($leftovers > 45000 * $stage) {
-            $leftovers -= 45000 * $stage;
-            $stage++;
-        }
-
-        return [
-            'level' => (int) floor($leftovers / (450 * $stage)) + (100 + 100 * $stage),
-            'progress' => (int) (floor($leftovers / (450 * $stage) * 100) % 100),
-        ];
     }
 
     public function recalculatePlayerTrophyStatsAndStatus(
@@ -67,7 +37,7 @@ final class PlayerScanCompletionService
             + $trophies['silver'] * 30
             + $trophies['gold'] * 90
             + $trophies['platinum'] * 300;
-        $levelAndProgress = $this->calculateLevelAndProgress($points);
+        $levelAndProgress = PlayStationTrophyLevelCalculator::calculate($points);
 
         $query = $this->database->prepare("UPDATE player
             SET    bronze = :bronze,
