@@ -106,4 +106,20 @@ final class AdminLoginThrottleServiceTest extends TestCase
         $this->assertFalse($this->service->isLocked($ipAddress));
         $this->assertSame(0, $this->service->getLockoutRemainingSeconds($ipAddress));
     }
+
+    public function testMysqlFailureUpsertEvaluatesLockoutBeforeIncrementingFailureCount(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Admin/AdminLoginThrottleService.php');
+
+        $this->assertTrue(is_string($source));
+        $this->assertStringContainsString('locked_until = IF(', $source);
+        $this->assertStringContainsString('failure_count = admin_login_throttle.failure_count + 1', $source);
+
+        $lockoutPosition = strpos($source, 'locked_until = IF(');
+        $incrementPosition = strpos($source, 'failure_count = admin_login_throttle.failure_count + 1');
+        $this->assertTrue(
+            is_int($lockoutPosition) && is_int($incrementPosition) && $lockoutPosition < $incrementPosition,
+            'MySQL evaluates ON DUPLICATE KEY UPDATE assignments left-to-right; lockout must be decided before failure_count is incremented.'
+        );
+    }
 }

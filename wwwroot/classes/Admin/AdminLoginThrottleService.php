@@ -135,13 +135,13 @@ final class AdminLoginThrottleService
             VALUES (:ip_address, 1, NULL, :last_attempt_at)
             AS new_values
             ON DUPLICATE KEY UPDATE
-                failure_count = admin_login_throttle.failure_count + 1,
                 last_attempt_at = new_values.last_attempt_at,
                 locked_until = IF(
                     admin_login_throttle.failure_count + 1 >= :max_failures,
                     CURRENT_TIMESTAMP + INTERVAL :lock_seconds SECOND,
                     admin_login_throttle.locked_until
-                )
+                ),
+                failure_count = admin_login_throttle.failure_count + 1
             SQL
         );
         $statement->bindValue(':ip_address', $ipAddress, PDO::PARAM_STR);
