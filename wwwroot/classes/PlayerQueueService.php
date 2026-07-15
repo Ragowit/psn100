@@ -40,7 +40,7 @@ class PlayerQueueService
         WHERE
             scanning = :online_id
         SQL;
-    private const string SQL_QUEUE_POSITION_SQLITE = <<<'SQL'
+    private const string SQL_QUEUE_POSITION = <<<'SQL'
         WITH ordered_queue AS (
             SELECT
                 online_id,
@@ -55,35 +55,6 @@ class PlayerQueueService
         WHERE
             online_id = :online_id
         LIMIT 1
-        SQL;
-    private const string SQL_QUEUE_POSITION_MYSQL = <<<'SQL'
-        SELECT
-            position
-        FROM (
-            SELECT
-                COUNT(*) + 1 AS position
-            FROM
-                player_queue pq_a
-            WHERE
-                (pq_a.request_time, pq_a.online_id) < (
-                    SELECT
-                        request_time,
-                        online_id
-                    FROM
-                        player_queue
-                    WHERE
-                        online_id = :online_id
-                )
-        ) AS counts
-        WHERE
-            EXISTS (
-                SELECT
-                    1
-                FROM
-                    player_queue
-                WHERE
-                    online_id = :online_id
-            )
         SQL;
     private const string SQL_PLAYER_IN_QUEUE = <<<'SQL'
         SELECT
@@ -117,15 +88,6 @@ class PlayerQueueService
         }
 
         return $this->database;
-    }
-
-    private function queuePositionSql(): string
-    {
-        if ($this->requireDatabase()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
-            return self::SQL_QUEUE_POSITION_SQLITE;
-        }
-
-        return self::SQL_QUEUE_POSITION_MYSQL;
     }
 
     public function getIpSubmissionCount(string $ipAddress): int
@@ -291,7 +253,7 @@ class PlayerQueueService
         }
 
         $position = $this->fetchSingleValue(
-            $this->queuePositionSql(),
+            self::SQL_QUEUE_POSITION,
             [':online_id' => [$playerName, PDO::PARAM_STR]]
         );
 

@@ -190,7 +190,7 @@ class GameListService
                 %s
             %s
             LIMIT
-                :offset, :limit
+                :limit OFFSET :offset
             SQL,
             implode(', ', $columns),
             $conditions,

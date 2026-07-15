@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/ChangelogPaginator.php';
+require_once __DIR__ . '/AbstractPlayerLeaderboardService.php';
 require_once __DIR__ . '/PlayerLeaderboardDataProvider.php';
 require_once __DIR__ . '/PlayerLeaderboardFilter.php';
 
@@ -21,18 +22,29 @@ class PlayerLeaderboardPage
     {
         $this->requestedFilter = $filter;
 
-        $totalPlayers = $service->countPlayers($filter);
-        $this->paginator = new ChangelogPaginator(
-            $filter->getPage(),
-            $totalPlayers,
-            $service->getPageSize()
-        );
+        if ($filter->getPage() === 1 && $service instanceof AbstractPlayerLeaderboardService) {
+            $result = $service->getPlayersWithTotal($filter, $service->getPageSize());
+            $totalPlayers = $result->totalPlayers ?? $service->countPlayers($filter);
+            $this->paginator = new ChangelogPaginator(
+                1,
+                $totalPlayers,
+                $service->getPageSize()
+            );
+            $this->players = $result->players;
+        } else {
+            $totalPlayers = $service->countPlayers($filter);
+            $this->paginator = new ChangelogPaginator(
+                $filter->getPage(),
+                $totalPlayers,
+                $service->getPageSize()
+            );
 
-        $resolvedFilter = $this->createFilterForPage($this->paginator->getCurrentPage());
-        $this->players = $service->getPlayers(
-            $resolvedFilter,
-            $this->paginator->getLimit()
-        );
+            $resolvedFilter = $this->createFilterForPage($this->paginator->getCurrentPage());
+            $this->players = $service->getPlayers(
+                $resolvedFilter,
+                $this->paginator->getLimit()
+            );
+        }
     }
 
     /**

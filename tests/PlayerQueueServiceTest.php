@@ -232,13 +232,13 @@ final class PlayerQueueServiceTest extends TestCase
         $this->assertSame(null, $this->service->getQueuePosition('MissingPlayer'));
     }
 
-    public function testMysqlQueuePositionSqlReturnsNoRowWhenPlayerIsNotQueued(): void
+    public function testMysqlQueuePositionSqlUsesRowNumberWindowFunction(): void
     {
         $reflection = new ReflectionClass(PlayerQueueService::class);
-        $sql = $reflection->getConstant('SQL_QUEUE_POSITION_MYSQL');
+        $sql = $reflection->getConstant('SQL_QUEUE_POSITION');
 
         $this->assertTrue(is_string($sql));
-        $this->assertStringContainsString('EXISTS', $sql);
+        $this->assertStringContainsString('ROW_NUMBER() OVER', $sql);
 
         $mysqlPdo = new PlayerQueueServiceMysqlDriverPdoStub($this->pdo);
         $service = new PlayerQueueService($mysqlPdo);

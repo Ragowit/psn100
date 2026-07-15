@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLeaderboardDataProvider.php';
+require_once __DIR__ . '/PlayerLeaderboardQueryResult.php';
 
 abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeaderboardDataProvider
 {
@@ -32,16 +33,21 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
         return (int) $query->fetchColumn();
     }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
     #[\Override]
     final public function getPlayers(PlayerLeaderboardFilter $filter, int $limit = self::PAGE_SIZE): array
     {
+        return $this->getPlayersWithTotal($filter, $limit)->players;
+    }
+
+    final public function getPlayersWithTotal(
+        PlayerLeaderboardFilter $filter,
+        int $limit = self::PAGE_SIZE,
+    ): PlayerLeaderboardQueryResult {
         $sql = <<<SQL
             SELECT
                 p.*,
-                {$this->getRankingProjection()}
+                {$this->getRankingProjection()},
+                COUNT(*) OVER() AS total_rows
             FROM
                 player_ranking r
             JOIN player p ON p.account_id = r.account_id
@@ -63,7 +69,30 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
         $this->bindFilterParameters($query, $filter);
         $query->execute();
 
-        return $query->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (!is_array($rows)) {
+            return new PlayerLeaderboardQueryResult([], null);
+        }
+
+        $totalPlayers = null;
+        if ($rows !== []) {
+            $firstRow = array_first($rows);
+            if (is_numeric($firstRow['total_rows'] ?? null)) {
+                $totalPlayers = max(0, (int) $firstRow['total_rows']);
+            }
+
+            $rows = array_map(
+                static function (array $row): array {
+                    unset($row['total_rows']);
+
+                    return $row;
+                },
+                $rows
+            );
+        }
+
+        return new PlayerLeaderboardQueryResult($rows, $totalPlayers);
     }
 
     #[\Override]
