@@ -13,7 +13,7 @@ enum WorkerSortField: string
             return self::ScanStart;
         }
 
-        return self::tryFrom(strtolower(trim($value))) ?? self::ScanStart;
+        return self::tryFrom($value |> trim(...) |> strtolower(...)) ?? self::ScanStart;
     }
 
     public function toSqlColumn(): string

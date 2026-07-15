@@ -6,7 +6,7 @@ require_once __DIR__ . '/AboutPageDataProviderInterface.php';
 require_once __DIR__ . '/AboutPagePlayer.php';
 require_once __DIR__ . '/AboutPageScanSummary.php';
 
-class AboutPageService implements AboutPageDataProviderInterface
+final readonly class AboutPageService implements AboutPageDataProviderInterface
 {
     private const DEFAULT_SCAN_LOG_LIMIT = 10;
 

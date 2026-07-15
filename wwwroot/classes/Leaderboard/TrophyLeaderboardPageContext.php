@@ -10,11 +10,13 @@ class TrophyLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
     private const TITLE = 'PSN Trophy Leaderboard ~ PSN 100%';
 
+    #[\Override]
     public function getTitle(): string
     {
         return self::TITLE;
     }
 
+    #[\Override]
     protected static function createDataProvider(PDO $database): PlayerLeaderboardDataProvider
     {
         return new PlayerLeaderboardService($database);
@@ -23,6 +25,7 @@ class TrophyLeaderboardPageContext extends AbstractLeaderboardPageContext
     /**
      * @param array<string, mixed> $player
      */
+    #[\Override]
     protected function createRow(
         array $player,
         PlayerLeaderboardFilter $filter,

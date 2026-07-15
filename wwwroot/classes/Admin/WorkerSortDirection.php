@@ -13,7 +13,7 @@ enum WorkerSortDirection: string
             return self::Asc;
         }
 
-        return self::tryFrom(strtolower(trim($value))) ?? self::Asc;
+        return self::tryFrom($value |> trim(...) |> strtolower(...)) ?? self::Asc;
     }
 
     public function toSqlKeyword(): string

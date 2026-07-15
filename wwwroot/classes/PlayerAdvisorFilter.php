@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class PlayerAdvisorFilter
+readonly class PlayerAdvisorFilter
 {
     public const SORT_RARITY = 'rarity';
     public const SORT_IN_GAME_RARITY = 'in_game_rarity';
@@ -25,20 +25,14 @@ class PlayerAdvisorFilter
         'psvr2',
     ];
 
-    private int $page;
-
-    private string $sort;
-
-    /**
-     * @var array<int, string>
-     */
-    private array $platforms;
-
-    private function __construct(int $page, string $sort, array $platforms)
-    {
-        $this->page = $page;
-        $this->sort = $sort;
-        $this->platforms = $platforms;
+    private function __construct(
+        private int $page,
+        private string $sort,
+        /**
+         * @var array<int, string>
+         */
+        private array $platforms,
+    ) {
     }
 
     /**

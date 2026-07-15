@@ -34,7 +34,7 @@ require_once __DIR__ . '/PlayerScanTrophyTitleLoopResult.php';
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
 
-final class ThirtyMinuteCronJob implements CronJobInterface
+final readonly class ThirtyMinuteCronJob implements CronJobInterface
 {
     private readonly AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class PlayerLogFilter
+readonly class PlayerLogFilter
 {
     public const SORT_DATE = 'date';
     public const SORT_RARITY = 'rarity';
@@ -19,18 +19,12 @@ class PlayerLogFilter
         'psvr2',
     ];
 
-    /** @var array<int, string> */
-    private array $platforms;
-
-    private string $sort;
-
-    private int $page;
-
-    private function __construct(string $sort, int $page, array $platforms)
-    {
-        $this->sort = $this->normaliseSort($sort);
-        $this->page = max($page, 1);
-        $this->platforms = array_values(array_unique($platforms));
+    private function __construct(
+        private string $sort,
+        private int $page,
+        /** @var array<int, string> */
+        private array $platforms,
+    ) {
     }
 
     public static function fromArray(array $parameters): self
@@ -49,7 +43,11 @@ class PlayerLogFilter
             }
         }
 
-        return new self($sort, $page, $platforms);
+        return new self(
+            self::normaliseSort($sort),
+            max($page, 1),
+            array_values(array_unique($platforms)),
+        );
     }
 
     public function getSort(): string
@@ -59,7 +57,7 @@ class PlayerLogFilter
 
     public function isSort(string $sort): bool
     {
-        return $this->sort === $this->normaliseSort($sort);
+        return $this->sort === self::normaliseSort($sort);
     }
 
     public function getPage(): int
@@ -130,7 +128,7 @@ class PlayerLogFilter
         return clone($this, ['page' => max($page, 1)]);
     }
 
-    private function normaliseSort(string $sort): string
+    private static function normaliseSort(string $sort): string
     {
         if ($sort === self::SORT_RARITY) {
             return self::SORT_RARITY;

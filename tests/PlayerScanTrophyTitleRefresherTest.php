@@ -192,7 +192,7 @@ final class PlayerScanTrophyTitleRefresherTestUser
 
     public function trophyTitles(): PlayerScanTrophyTitleRefresherTestTrophyTitleCollection
     {
-        $titles = $this->fetchResults[$this->fetchCount] ?? $this->fetchResults[array_key_last($this->fetchResults)] ?? [];
+        $titles = $this->fetchResults[$this->fetchCount] ?? array_last($this->fetchResults) ?? [];
         $this->fetchCount++;
 
         return new PlayerScanTrophyTitleRefresherTestTrophyTitleCollection($titles);

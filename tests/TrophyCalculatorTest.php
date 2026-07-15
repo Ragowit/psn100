@@ -333,9 +333,7 @@ final class FakePDOStatement extends PDOStatement
             return false;
         }
 
-        $row = reset($this->result);
-
-        return $row === false ? false : $row;
+        return array_first($this->result) ?? false;
     }
 
     private function executeSelectTrophyCounts(): void

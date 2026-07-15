@@ -22,15 +22,11 @@ final class TrophyTitleNameFormatter
             return $name;
         }
 
-        $name = str_replace(['™', '®', '©'], '', $name);
-
-        // Normalize en dash to hyphen-minus to keep downstream handling consistent.
-        $name = str_replace('–', '-', $name);
-
-        // Normalize apostrophe formatting in title names
-        $name = str_replace(['’', '´', '`'], '\'', $name);
-
-        $name = preg_replace('/\s*:\s*/', ': ', $name) ?? $name;
+        $name = $name
+            |> (fn(string $value): string => str_replace(['™', '®', '©'], '', $value))
+            |> (fn(string $value): string => str_replace('–', '-', $value))
+            |> (fn(string $value): string => str_replace(['’', '´', '`'], '\'', $value))
+            |> (fn(string $value): string => preg_replace('/\s*:\s*/', ': ', $value) ?? $value);
 
         if ($name === '') {
             return $name;

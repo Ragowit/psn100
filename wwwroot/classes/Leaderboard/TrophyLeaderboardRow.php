@@ -10,6 +10,7 @@ class TrophyLeaderboardRow extends AbstractLeaderboardRow
      * @param array<string, mixed> $player
      * @param array<string, int|string> $filterParameters
      */
+    #[\Override]
     public function __construct(
         array $player,
         PlayerLeaderboardFilter $filter,
