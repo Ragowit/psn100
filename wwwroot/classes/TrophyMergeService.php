@@ -227,11 +227,10 @@ SQL
     {
         $query = $this->database->prepare(
             <<<'SQL'
-            SELECT id
-            FROM   trophy_title
-            WHERE  np_communication_id = (SELECT np_communication_id
-                                            FROM   trophy
-                                            WHERE  id = :child_trophy_id)
+            SELECT tt.id
+            FROM trophy_title tt
+            INNER JOIN trophy t ON t.np_communication_id = tt.np_communication_id
+            WHERE t.id = :child_trophy_id
 SQL
         );
         $query->bindValue(':child_trophy_id', $trophyId, PDO::PARAM_INT);

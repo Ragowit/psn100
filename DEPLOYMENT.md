@@ -195,7 +195,7 @@ mysql "$DB_NAME" < database/mysql84_histograms.sql
 ```
 
 This creates histograms with `AUTO UPDATE` on heavily filtered columns (`player.status`,
-`trophy_title_player.progress`, `trophy_title_meta.status`, and others). Histograms help the
+`trophy_title_player.progress`, `trophy_title_meta.status` and `difficulty`, and others). Histograms help the
 8.4 optimizer choose better plans for leaderboard, queue, and cron queries. Re-run after
 bulk imports; a weekly `ANALYZE TABLE` cron is optional but reasonable on busy sites.
 

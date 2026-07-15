@@ -23,14 +23,14 @@ final class MergeTrophyGroupCopier
                 np_communication_id = :child_np_communication_id
         )
         UPDATE
-            trophy_group tg,
-            tg_org
+            trophy_group tg
+            INNER JOIN tg_org ON tg.group_id = tg_org.group_id
         SET
             tg.name = tg_org.name,
             tg.detail = tg_org.detail,
             tg.icon_url = tg_org.icon_url
         WHERE
-            tg.np_communication_id = :parent_np_communication_id AND tg.group_id = tg_org.group_id
+            tg.np_communication_id = :parent_np_communication_id
         SQL;
 
     private const TROPHY_GROUP_INSERT_QUERY = <<<'SQL'
