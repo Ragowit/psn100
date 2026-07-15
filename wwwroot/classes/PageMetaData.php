@@ -23,7 +23,7 @@ final readonly class PageMetaData
 
     public function withTitle(?string $title): self
     {
-        return new self($title, $this->description, $this->image, $this->url);
+        return clone($this, ['title' => self::normalize($title)]);
     }
 
     public function getTitle(): ?string
@@ -33,7 +33,7 @@ final readonly class PageMetaData
 
     public function withDescription(?string $description): self
     {
-        return new self($this->title, $description, $this->image, $this->url);
+        return clone($this, ['description' => self::normalize($description)]);
     }
 
     public function getDescription(): ?string
@@ -43,7 +43,7 @@ final readonly class PageMetaData
 
     public function withImage(?string $image): self
     {
-        return new self($this->title, $this->description, $image, $this->url);
+        return clone($this, ['image' => self::normalize($image)]);
     }
 
     public function getImage(): ?string
@@ -53,7 +53,7 @@ final readonly class PageMetaData
 
     public function withUrl(?string $url): self
     {
-        return new self($this->title, $this->description, $this->image, $url);
+        return clone($this, ['url' => self::normalize($url)]);
     }
 
     public function getUrl(): ?string

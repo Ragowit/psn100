@@ -23,7 +23,7 @@ final class TrophyImageDownloader
 
     public function withLogger(?\Closure $logger): self
     {
-        return new self($this->imageHashCalculator, $logger, $this->remoteFileFetcher);
+        return clone($this, ['logger' => $logger]);
     }
 
     /**
@@ -154,7 +154,7 @@ final class TrophyImageDownloader
 
             $contents = @file_get_contents($url, false, $context);
             if ($contents !== false) {
-                $statusLine = $http_response_header[0] ?? '';
+                $statusLine = array_first($http_response_header) ?? '';
                 if ($statusLine === '' || preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
                     return $contents;
                 }

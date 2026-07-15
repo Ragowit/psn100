@@ -50,13 +50,7 @@ readonly class PlayerQueueResponse implements \JsonSerializable
 
     public function withPollToken(string $pollToken): self
     {
-        return new self(
-            $this->status,
-            $this->message,
-            $this->messageParts,
-            $pollToken,
-            $this->httpStatusCode,
-        );
+        return clone($this, ['pollToken' => $pollToken]);
     }
 
     public function getStatusEnum(): PlayerQueueStatus

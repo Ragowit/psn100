@@ -43,6 +43,7 @@ class Router
         ];
     }
 
+    #[\NoDiscard]
     public function dispatch(string $requestUri): RouteResult
     {
         $path = parse_url($requestUri, PHP_URL_PATH);
@@ -54,7 +55,7 @@ class Router
         }
 
         $segments = explode('/', $normalizedPath);
-        $route = $segments[0];
+        $route = array_first($segments);
         $routeSegments = array_slice($segments, 1);
 
         $handler = $this->routeHandlers[$route] ?? null;

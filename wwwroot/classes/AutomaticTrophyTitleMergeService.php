@@ -30,6 +30,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
     /**
      * @return list<string> Merge parent NP communication IDs to recompute.
      */
+    #[\Override]
     public function handleNewTitle(string $npCommunicationId): array
     {
         $newTitle = $this->getTitleByNpCommunicationId($npCommunicationId);
@@ -299,7 +300,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
             }
         }
 
-        return $eligibleGames[0] ?? null;
+        return array_first($eligibleGames);
     }
 
     /**

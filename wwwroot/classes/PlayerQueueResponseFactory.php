@@ -164,8 +164,7 @@ final class PlayerQueueResponseFactory
                 && !$this->isErrorProgressTitle($title)
                 && preg_match('/^(Updating|Fetching)\b/i', $title) !== 1
             ) {
-                $normalizedTitle = preg_replace('/\s+for\s+[^.]+\.?$/i', '', trim($title)) ?? '';
-                $normalizedTitle = rtrim($normalizedTitle, " .\t\n\r\0\v");
+                $normalizedTitle = $this->normalizeProgressTitle($title);
                 $builder->text(' Working on ');
                 $builder->emphasis($normalizedTitle);
             } else {
@@ -188,8 +187,7 @@ final class PlayerQueueResponseFactory
 
     private function formatProgressTitle(string $title): string
     {
-        $normalizedTitle = preg_replace('/\s+for\s+[^.]+\.?$/i', '', trim($title)) ?? '';
-        $normalizedTitle = rtrim($normalizedTitle, " .\t\n\r\0\v");
+        $normalizedTitle = $this->normalizeProgressTitle($title);
 
         if ($normalizedTitle === '') {
             return '';
@@ -204,6 +202,14 @@ final class PlayerQueueResponseFactory
         }
 
         return 'Working on ' . $normalizedTitle;
+    }
+
+    private function normalizeProgressTitle(string $title): string
+    {
+        return $title
+            |> trim(...)
+            |> (fn(string $value): string => preg_replace('/\s+for\s+[^.]+\.?$/i', '', $value) ?? $value)
+            |> (fn(string $value): string => rtrim($value, " .\t\n\r\0\v"));
     }
 
     private function isErrorProgressTitle(string $title): bool

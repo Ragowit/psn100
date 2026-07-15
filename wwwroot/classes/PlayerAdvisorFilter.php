@@ -73,7 +73,7 @@ class PlayerAdvisorFilter
 
     public function withPage(int $page): self
     {
-        return new self(max($page, 1), $this->sort, $this->platforms);
+        return clone($this, ['page' => max($page, 1)]);
     }
 
     public function getOffset(int $limit): int

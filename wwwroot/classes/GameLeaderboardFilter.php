@@ -34,7 +34,7 @@ final readonly class GameLeaderboardFilter extends GamePlayerFilter
 
     public function withPageNumber(int $page): self
     {
-        return new self($this->getCountry(), $this->getAvatar(), $page);
+        return clone($this, ['page' => max($page, 1)]);
     }
 
     public function getOffset(int $limit): int

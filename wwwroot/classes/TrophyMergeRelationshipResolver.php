@@ -37,7 +37,7 @@ SQL
         }
 
         if (count($parentIds) === 1) {
-            $parentNpCommunicationId = $parentIds[0];
+            $parentNpCommunicationId = array_first($parentIds);
         } else {
             $parentNpCommunicationId = $this->resolveMergeParent($childNpCommunicationId, $parentIds);
         }
@@ -86,7 +86,7 @@ SQL
 
         sort($parentIds, SORT_STRING);
 
-        return $parentIds[0];
+        return array_first($parentIds);
     }
 
     private function getParentFromMeta(string $childNpCommunicationId): ?string

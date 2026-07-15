@@ -90,7 +90,7 @@ class GameListService
 
         $totalGames = 0;
         if ($games !== []) {
-            $totalGames = (int) ($games[0]['total_games'] ?? 0);
+            $totalGames = (int) (array_first($games)['total_games'] ?? 0);
         } elseif ($this->getOffset($filter) > 0) {
             $totalGames = $this->fetchCount($filter);
         }
