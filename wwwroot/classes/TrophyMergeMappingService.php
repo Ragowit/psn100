@@ -63,7 +63,7 @@ SQL
             $parentTrophy = $parentTrophyByName[$childName] ?? [];
 
             if (count($parentTrophy) === 1) {
-                $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
+                $this->insertDirectMapping($childTrophy, array_first($parentTrophy));
             } else {
                 $message .= $childTrophy['name'] . " couldn't be merged.<br>";
             }
@@ -132,7 +132,7 @@ SQL
             $parentTrophy = $parentTrophiesByIcon[(string) $childTrophy['icon_url']] ?? [];
 
             if ((int) $childTrophy['counter'] === 1 && count($parentTrophy) === 1) {
-                $this->insertDirectMapping($childTrophy, $parentTrophy[0]);
+                $this->insertDirectMapping($childTrophy, array_first($parentTrophy));
             } else {
                 $message .= $childTrophy['name'] . " couldn't be merged.<br>";
             }

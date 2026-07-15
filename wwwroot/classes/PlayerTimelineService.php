@@ -53,8 +53,8 @@ class PlayerTimelineService
             return null;
         }
 
-        $timelineStart = new DateTimeImmutable((string) $rows[0]['timeline_start']);
-        $timelineEnd = new DateTimeImmutable((string) $rows[0]['timeline_end']);
+        $timelineStart = new DateTimeImmutable((string) array_first($rows)['timeline_start']);
+        $timelineEnd = new DateTimeImmutable((string) array_first($rows)['timeline_end']);
         $startDate = $timelineStart->modify('first day of this month');
         $endDate = $timelineEnd->modify('first day of next month');
 

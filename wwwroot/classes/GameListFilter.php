@@ -93,15 +93,12 @@ class GameListFilter
 
     public function withPlayer(?string $player): self
     {
-        $clone = clone $this;
         if ($player !== null) {
             $player = trim($player);
             $player = $player === '' ? null : $player;
         }
 
-        $clone->player = $player;
-
-        return $clone;
+        return clone($this, ['player' => $player]);
     }
 
     public function withPage(int $page): self

@@ -14,11 +14,13 @@ final class PlayerScanCompletionResult
     {
     }
 
+    #[\NoDiscard]
     public static function completed(): self
     {
         return new self(self::STATUS_COMPLETED);
     }
 
+    #[\NoDiscard]
     public static function continueScan(): self
     {
         return new self(self::STATUS_CONTINUE_SCAN);

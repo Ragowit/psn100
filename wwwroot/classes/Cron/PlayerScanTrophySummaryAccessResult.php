@@ -17,16 +17,19 @@ final class PlayerScanTrophySummaryAccessResult
     ) {
     }
 
+    #[\NoDiscard]
     public static function accessible(int $level): self
     {
         return new self(self::STATUS_ACCESSIBLE, $level);
     }
 
+    #[\NoDiscard]
     public static function privateProfile(): self
     {
         return new self(self::STATUS_PRIVATE);
     }
 
+    #[\NoDiscard]
     public static function abortScan(): self
     {
         return new self(self::STATUS_ABORT_SCAN);

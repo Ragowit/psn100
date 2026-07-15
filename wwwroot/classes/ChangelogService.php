@@ -68,8 +68,11 @@ final class ChangelogService
             return [];
         }
 
-        if ($rows !== [] && is_numeric($rows[0]['total_rows'] ?? null)) {
-            $this->cachedTotalChangeCount = max(0, (int) $rows[0]['total_rows']);
+        if ($rows !== []) {
+            $firstRow = array_first($rows);
+            if (is_numeric($firstRow['total_rows'] ?? null)) {
+                $this->cachedTotalChangeCount = max(0, (int) $firstRow['total_rows']);
+            }
         }
 
         return array_map(

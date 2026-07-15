@@ -127,7 +127,7 @@ class PlayerLogFilter
 
     public function withPageNumber(int $page): self
     {
-        return new self($this->sort, $page, $this->platforms);
+        return clone($this, ['page' => max($page, 1)]);
     }
 
     private function normaliseSort(string $sort): string

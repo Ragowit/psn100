@@ -22,6 +22,7 @@ final class PsnTrophyLookupGroupDataProvider implements GameRescanGroupDataFetch
     /**
      * @return array<int, array{group: PsnTrophyGroupApiAdapter, trophies: array<int, PsnTrophyApiAdapter>}>
      */
+    #[\Override]
     public function fetchGroupData(Client $client, string $npCommunicationId): array
     {
         $trophyData = $this->psnGameLookupService->fetchTrophyDataForNpCommunicationId($npCommunicationId, $client);

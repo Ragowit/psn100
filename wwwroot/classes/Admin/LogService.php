@@ -50,7 +50,7 @@ final class LogService
             return [];
         }
 
-        $totalRows = $rows[0]['total_rows'] ?? null;
+        $totalRows = array_first($rows)['total_rows'] ?? null;
         if (is_numeric($totalRows)) {
             $this->cachedEntryCount = max(0, (int) $totalRows);
         }

@@ -24,11 +24,13 @@ final class PlayerScanProfileSyncResult
     /**
      * @param array<string, mixed> $player
      */
+    #[\NoDiscard]
     public static function success(array $player, object $user, string $country): self
     {
         return new self(self::STATUS_SUCCESS, $player, $user, $country);
     }
 
+    #[\NoDiscard]
     public static function skipPlayer(): self
     {
         return new self(self::STATUS_SKIP_PLAYER);
