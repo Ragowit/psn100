@@ -506,7 +506,7 @@ ALTER TABLE `player_ranking`
   ADD KEY `rarity_ranking_country` (`rarity_ranking_country`),
   ADD KEY `idx_pr_ranking_account` (`ranking`,`account_id`),
   ADD KEY `idx_pr_rarity_ranking_account` (`rarity_ranking`,`account_id`),
-  ADD KEY `in_game_rarity_ranking` (`in_game_rarity_ranking`),
+  ADD KEY `idx_pr_in_game_rarity_ranking_account` (`in_game_rarity_ranking`,`account_id`),
   ADD KEY `in_game_rarity_ranking_country` (`in_game_rarity_ranking_country`);
 
 --

@@ -56,6 +56,15 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
         $this->assertSame(50, $this->service->getPageSize());
     }
 
+    public function testGetPlayersUsesPlainQueryWithoutWindowedCount(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/AbstractPlayerLeaderboardService.php');
+
+        $this->assertTrue(is_string($source));
+        $this->assertStringContainsString('fetchPlayerRows($filter, $limit, false)', $source);
+        $this->assertStringContainsString('fetchPlayerRows($filter, $limit, true)', $source);
+    }
+
     private function createSchema(): void
     {
         $this->pdo->exec(

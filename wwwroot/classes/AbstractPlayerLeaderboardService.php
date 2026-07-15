@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLeaderboardDataProvider.php';
+require_once __DIR__ . '/PlayerLeaderboardQueryResult.php';
 
 abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeaderboardDataProvider
 {
@@ -32,16 +33,53 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
         return (int) $query->fetchColumn();
     }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
     #[\Override]
     final public function getPlayers(PlayerLeaderboardFilter $filter, int $limit = self::PAGE_SIZE): array
     {
+        return $this->fetchPlayerRows($filter, $limit, false);
+    }
+
+    final public function getPlayersWithTotal(
+        PlayerLeaderboardFilter $filter,
+        int $limit = self::PAGE_SIZE,
+    ): PlayerLeaderboardQueryResult {
+        $rows = $this->fetchPlayerRows($filter, $limit, true);
+
+        if ($rows === []) {
+            return new PlayerLeaderboardQueryResult([], null);
+        }
+
+        $firstRow = array_first($rows);
+        $totalPlayers = is_numeric($firstRow['total_rows'] ?? null)
+            ? max(0, (int) $firstRow['total_rows'])
+            : null;
+
+        $players = array_map(
+            static function (array $row): array {
+                unset($row['total_rows']);
+
+                return $row;
+            },
+            $rows
+        );
+
+        return new PlayerLeaderboardQueryResult($players, $totalPlayers);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchPlayerRows(
+        PlayerLeaderboardFilter $filter,
+        int $limit,
+        bool $includeTotalCount,
+    ): array {
+        $totalCountProjection = $includeTotalCount ? ",\n                COUNT(*) OVER() AS total_rows" : '';
+
         $sql = <<<SQL
             SELECT
                 p.*,
-                {$this->getRankingProjection()}
+                {$this->getRankingProjection()}{$totalCountProjection}
             FROM
                 player_ranking r
             JOIN player p ON p.account_id = r.account_id
@@ -63,7 +101,9 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
         $this->bindFilterParameters($query, $filter);
         $query->execute();
 
-        return $query->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
     }
 
     #[\Override]
