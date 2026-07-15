@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerQueueService.php';
+require_once __DIR__ . '/PsnOnlineIdValidator.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
 require_once __DIR__ . '/PlayerScanProgress.php';
@@ -27,7 +28,7 @@ final class PlayerQueueResponseFactory
 
     public function createInvalidNameResponse(): PlayerQueueResponse
     {
-        return PlayerQueueResponse::error(PlayerQueueService::INVALID_ONLINE_ID_MESSAGE);
+        return PlayerQueueResponse::error(PsnOnlineIdValidator::INVALID_MESSAGE);
     }
 
     public function createQueueLimitResponse(): PlayerQueueResponse
