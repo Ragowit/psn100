@@ -10,7 +10,7 @@ require_once __DIR__ . '/ImageHashCalculator.php';
  * Encapsulates the remote fetch, filename hashing, and persistence rules that
  * were previously duplicated in ThirtyMinuteCronJob and GameRescanService.
  */
-final class TrophyImageDownloader
+final readonly class TrophyImageDownloader
 {
     public const string PLACEHOLDER_FILENAME = '.png';
 

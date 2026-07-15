@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageScanLogController.php';
+require_once __DIR__ . '/../wwwroot/classes/AboutPageDataProviderInterface.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageService.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageScanSummary.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayer.php';
@@ -12,7 +13,7 @@ require_once __DIR__ . '/../wwwroot/classes/Utility.php';
 require_once __DIR__ . '/../wwwroot/classes/JsonResponseEmitter.php';
 require_once __DIR__ . '/../wwwroot/classes/IpRateLimitService.php';
 
-final class FakeAboutPageService extends AboutPageService
+final class FakeAboutPageService implements AboutPageDataProviderInterface
 {
     private AboutPageScanSummary $summary;
 
@@ -53,15 +54,16 @@ final class FakeAboutPageService extends AboutPageService
     }
 }
 
-final class FailingAboutPageService extends AboutPageService
+final class FailingAboutPageService implements AboutPageDataProviderInterface
 {
-    public function __construct()
-    {
-    }
-
     public function getScanSummary(): AboutPageScanSummary
     {
         throw new \RuntimeException('Failed to load summary');
+    }
+
+    public function getScanLogPlayers(int $limit): array
+    {
+        throw new \RuntimeException('Failed to load scan log players');
     }
 }
 

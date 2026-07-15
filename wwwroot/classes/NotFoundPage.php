@@ -2,19 +2,13 @@
 
 declare(strict_types=1);
 
-final class NotFoundPage
+final readonly class NotFoundPage
 {
-    private string $title;
-
-    private string $heading;
-
-    private string $message;
-
-    private function __construct(string $title, string $heading, string $message)
-    {
-        $this->title = $title;
-        $this->heading = $heading;
-        $this->message = $message;
+    private function __construct(
+        private string $title,
+        private string $heading,
+        private string $message,
+    ) {
     }
 
     public static function createDefault(): self

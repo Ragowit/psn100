@@ -4,40 +4,19 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/MaintenancePageStylesheet.php';
 
-final class MaintenancePage
+final readonly class MaintenancePage
 {
-    private string $title;
-
-    private string $heading;
-
-    private string $description;
-
-    private string $author;
-
-    private string $message;
-
-    /**
-     * @var MaintenancePageStylesheet[]
-     */
-    private array $stylesheets;
-
     /**
      * @param MaintenancePageStylesheet[] $stylesheets
      */
     private function __construct(
-        string $title,
-        string $heading,
-        string $description,
-        string $author,
-        string $message,
-        array $stylesheets
+        private string $title,
+        private string $heading,
+        private string $description,
+        private string $author,
+        private string $message,
+        private array $stylesheets,
     ) {
-        $this->title = $title;
-        $this->heading = $heading;
-        $this->description = $description;
-        $this->author = $author;
-        $this->message = $message;
-        $this->stylesheets = $stylesheets;
     }
 
     public static function createDefault(): self

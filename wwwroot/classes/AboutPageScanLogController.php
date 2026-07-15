@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/AboutPageService.php';
+require_once __DIR__ . '/AboutPageDataProviderInterface.php';
 require_once __DIR__ . '/AboutPageScanSummary.php';
 require_once __DIR__ . '/AboutPagePlayerArraySerializer.php';
 require_once __DIR__ . '/JsonResponseEmitter.php';
@@ -15,7 +15,7 @@ final class AboutPageScanLogController
     private const MIN_LIMIT = 1;
     private const MAX_LIMIT = 100;
 
-    private AboutPageService $aboutPageService;
+    private AboutPageDataProviderInterface $aboutPageService;
     private JsonResponseEmitter $jsonResponder;
     private ?IpRateLimitService $rateLimitService;
     private int $defaultLimit;
@@ -23,7 +23,7 @@ final class AboutPageScanLogController
     private int $maxLimit;
 
     public function __construct(
-        AboutPageService $aboutPageService,
+        AboutPageDataProviderInterface $aboutPageService,
         JsonResponseEmitter $jsonResponder,
         ?IpRateLimitService $rateLimitService = null,
         int $defaultLimit = self::DEFAULT_LIMIT,
@@ -39,7 +39,7 @@ final class AboutPageScanLogController
     }
 
     public static function create(
-        AboutPageService $aboutPageService,
+        AboutPageDataProviderInterface $aboutPageService,
         JsonResponseEmitter $jsonResponder,
         ?IpRateLimitService $rateLimitService = null,
     ): self {

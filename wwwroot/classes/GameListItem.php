@@ -6,7 +6,7 @@ require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
 require_once __DIR__ . '/Utility.php';
 
-final class GameListItem
+final readonly class GameListItem
 {
     private const int COMPLETION_PERCENTAGE = 100;
     private const string MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';

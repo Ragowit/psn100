@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class HomepagePopularGamesFilter
+final readonly class HomepagePopularGamesFilter
 {
     public const PLATFORM_ALL = '';
     public const PLATFORM_PC = 'pc';
@@ -114,7 +114,7 @@ final class HomepagePopularGamesFilter
             return self::PLATFORM_ALL;
         }
 
-        $platform = strtolower(trim((string) $value));
+        $platform = ((string) $value) |> trim(...) |> strtolower(...);
 
         if ($platform === '' || !in_array($platform, self::PLATFORM_KEYS, true)) {
             return self::PLATFORM_ALL;
@@ -138,7 +138,7 @@ final class HomepagePopularGamesFilter
         }
 
         if (is_string($value)) {
-            $value = strtolower(trim($value));
+            $value = $value |> trim(...) |> strtolower(...);
 
             if ($value === '' || $value === 'false' || $value === '0') {
                 return false;

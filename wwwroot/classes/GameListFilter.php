@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class GameListFilter
+readonly class GameListFilter
 {
     public const SORT_ADDED = 'added';
     public const SORT_COMPLETION = 'completion';
@@ -300,7 +300,7 @@ class GameListFilter
 
     private static function normalizeSort(mixed $value, string $search, bool $sortSpecified): string
     {
-        $sort = is_string($value) ? strtolower(trim($value)) : '';
+        $sort = is_string($value) ? ($value |> trim(...) |> strtolower(...)) : '';
 
         return match ($sort) {
             self::SORT_ADDED,
@@ -328,7 +328,7 @@ class GameListFilter
         }
 
         if (is_string($value)) {
-            $value = strtolower(trim($value));
+            $value = $value |> trim(...) |> strtolower(...);
 
             if ($value === '' || $value === 'false' || $value === '0') {
                 return false;

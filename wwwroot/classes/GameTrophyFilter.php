@@ -5,13 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 
-class GameTrophyFilter
+readonly class GameTrophyFilter
 {
-    private bool $unearnedOnly;
-
-    private function __construct(bool $unearnedOnly)
+    private function __construct(private bool $unearnedOnly)
     {
-        $this->unearnedOnly = $unearnedOnly;
     }
 
     /**
@@ -75,7 +72,7 @@ class GameTrophyFilter
         }
 
         if (is_string($value)) {
-            $normalized = strtolower(trim($value));
+            $normalized = $value |> trim(...) |> strtolower(...);
 
             if ($normalized === '' || in_array($normalized, ['0', 'false', 'off', 'no'], true)) {
                 return false;

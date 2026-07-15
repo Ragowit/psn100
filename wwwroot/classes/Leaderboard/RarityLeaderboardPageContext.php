@@ -10,11 +10,13 @@ class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
     private const TITLE = 'PSN Rarity Leaderboard ~ PSN 100%';
 
+    #[\Override]
     public function getTitle(): string
     {
         return self::TITLE;
     }
 
+    #[\Override]
     protected static function createDataProvider(PDO $database): PlayerLeaderboardDataProvider
     {
         return new PlayerRarityLeaderboardService($database);
@@ -23,6 +25,7 @@ class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
     /**
      * @param array<string, mixed> $player
      */
+    #[\Override]
     protected function createRow(
         array $player,
         PlayerLeaderboardFilter $filter,
