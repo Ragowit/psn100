@@ -46,7 +46,12 @@ final class TrophyStatusInputParser
     public function getTrophyIdsForGame(int $gameId): array
     {
         $query = $this->database->prepare(
-            'SELECT id FROM trophy WHERE np_communication_id = (SELECT np_communication_id FROM trophy_title WHERE id = :id)'
+            <<<'SQL'
+            SELECT t.id
+            FROM trophy t
+            INNER JOIN trophy_title tt ON tt.np_communication_id = t.np_communication_id
+            WHERE tt.id = :id
+            SQL
         );
         $query->bindValue(':id', $gameId, PDO::PARAM_INT);
         $query->execute();

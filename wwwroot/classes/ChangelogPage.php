@@ -43,10 +43,19 @@ class ChangelogPage
     public static function fromService(ChangelogService $service, Utility $utility, array $queryParameters): self
     {
         $requestedPage = self::resolvePageNumber($queryParameters['page'] ?? null);
-        $totalChanges = $service->getTotalChangeCount();
-        $paginator = new ChangelogPaginator($requestedPage, $totalChanges, ChangelogService::PAGE_SIZE);
 
-        $entries = $service->getChanges($paginator);
+        if ($requestedPage === 1) {
+            // Page 1 is the common case: fetch first, then derive total from COUNT(*) OVER().
+            // Deeper pages still count first so out-of-range requests clamp before the list query.
+            $paginator = new ChangelogPaginator(1, 0, ChangelogService::PAGE_SIZE);
+            $entries = $service->getChanges($paginator);
+            $totalChanges = $service->getTotalChangeCount();
+            $paginator = new ChangelogPaginator(1, $totalChanges, ChangelogService::PAGE_SIZE);
+        } else {
+            $totalChanges = $service->getTotalChangeCount();
+            $paginator = new ChangelogPaginator($requestedPage, $totalChanges, ChangelogService::PAGE_SIZE);
+            $entries = $service->getChanges($paginator);
+        }
 
         $presenters = array_map(
             static fn(ChangelogEntry $entry): ChangelogEntryPresenter => new ChangelogEntryPresenter($entry, $utility),
