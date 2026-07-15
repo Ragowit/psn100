@@ -36,18 +36,50 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
     #[\Override]
     final public function getPlayers(PlayerLeaderboardFilter $filter, int $limit = self::PAGE_SIZE): array
     {
-        return $this->getPlayersWithTotal($filter, $limit)->players;
+        return $this->fetchPlayerRows($filter, $limit, false);
     }
 
     final public function getPlayersWithTotal(
         PlayerLeaderboardFilter $filter,
         int $limit = self::PAGE_SIZE,
     ): PlayerLeaderboardQueryResult {
+        $rows = $this->fetchPlayerRows($filter, $limit, true);
+
+        if ($rows === []) {
+            return new PlayerLeaderboardQueryResult([], null);
+        }
+
+        $firstRow = array_first($rows);
+        $totalPlayers = is_numeric($firstRow['total_rows'] ?? null)
+            ? max(0, (int) $firstRow['total_rows'])
+            : null;
+
+        $players = array_map(
+            static function (array $row): array {
+                unset($row['total_rows']);
+
+                return $row;
+            },
+            $rows
+        );
+
+        return new PlayerLeaderboardQueryResult($players, $totalPlayers);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchPlayerRows(
+        PlayerLeaderboardFilter $filter,
+        int $limit,
+        bool $includeTotalCount,
+    ): array {
+        $totalCountProjection = $includeTotalCount ? ",\n                COUNT(*) OVER() AS total_rows" : '';
+
         $sql = <<<SQL
             SELECT
                 p.*,
-                {$this->getRankingProjection()},
-                COUNT(*) OVER() AS total_rows
+                {$this->getRankingProjection()}{$totalCountProjection}
             FROM
                 player_ranking r
             JOIN player p ON p.account_id = r.account_id
@@ -71,28 +103,7 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
 
         $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
 
-        if (!is_array($rows)) {
-            return new PlayerLeaderboardQueryResult([], null);
-        }
-
-        $totalPlayers = null;
-        if ($rows !== []) {
-            $firstRow = array_first($rows);
-            if (is_numeric($firstRow['total_rows'] ?? null)) {
-                $totalPlayers = max(0, (int) $firstRow['total_rows']);
-            }
-
-            $rows = array_map(
-                static function (array $row): array {
-                    unset($row['total_rows']);
-
-                    return $row;
-                },
-                $rows
-            );
-        }
-
-        return new PlayerLeaderboardQueryResult($rows, $totalPlayers);
+        return is_array($rows) ? $rows : [];
     }
 
     #[\Override]
