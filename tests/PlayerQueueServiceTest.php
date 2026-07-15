@@ -142,21 +142,10 @@ final class PlayerQueueServiceTest extends TestCase
         $this->assertSame(null, $this->service->getCheaterAccountId('LegitPlayer'));
     }
 
-    public function testIsValidPlayerNameValidatesAllowedCharactersAndLength(): void
+    public function testIsValidPlayerNameDelegatesToPsnOnlineIdValidator(): void
     {
         $this->assertTrue($this->service->isValidPlayerName('Alpha-123'));
-        $this->assertTrue($this->service->isValidPlayerName('ABC'));
-        $this->assertTrue($this->service->isValidPlayerName('SixteenCharsHere'));
-        $this->assertTrue($this->service->isValidPlayerName('user_name'));
-        $this->assertTrue($this->service->isValidPlayerName('aBC'));
-
         $this->assertFalse($this->service->isValidPlayerName('ab'));
-        $this->assertFalse($this->service->isValidPlayerName('name with space'));
-        $this->assertFalse($this->service->isValidPlayerName('invalid!'));
-        $this->assertFalse($this->service->isValidPlayerName(str_repeat('a', 17)));
-        $this->assertFalse($this->service->isValidPlayerName('1Alpha'));
-        $this->assertFalse($this->service->isValidPlayerName('_Alpha'));
-        $this->assertFalse($this->service->isValidPlayerName('-Alpha'));
     }
 
     public function testEscapeHtmlEncodesSpecialCharacters(): void

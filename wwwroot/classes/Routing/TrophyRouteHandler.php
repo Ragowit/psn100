@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../PlayerQueueService.php';
+require_once __DIR__ . '/../PsnOnlineIdValidator.php';
 require_once __DIR__ . '/../TrophyRepository.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
@@ -30,7 +30,7 @@ final readonly class TrophyRouteHandler implements RouteHandlerInterface
         }
 
         $playerSegment = $segments[0] ?? null;
-        $player = is_string($playerSegment) && PlayerQueueService::isValidOnlineId($playerSegment)
+        $player = is_string($playerSegment) && PsnOnlineIdValidator::isValidOnlineId($playerSegment)
             ? $playerSegment
             : null;
 

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueRequest.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponseFactory.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueResponse.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueueService.php';
+require_once __DIR__ . '/../wwwroot/classes/PsnOnlineIdValidator.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerQueuePollTokenManager.php';
 require_once __DIR__ . '/../wwwroot/classes/SessionManager.php';
 require_once __DIR__ . '/../wwwroot/classes/IpSubmissionLockUnavailableException.php';
@@ -293,7 +294,7 @@ final class PlayerQueueHandlerTest extends TestCase
         $response = $handler->handleAddToQueueRequest($request);
 
         $this->assertSame('error', $response->getStatus());
-        $this->assertSame(PlayerQueueService::INVALID_ONLINE_ID_MESSAGE, $response->getMessage());
+        $this->assertSame(PsnOnlineIdValidator::INVALID_MESSAGE, $response->getMessage());
     }
 
     public function testHandleAddToQueueRequestQueuesPlayerWhenValidationPasses(): void
@@ -353,7 +354,7 @@ final class PlayerQueueHandlerTest extends TestCase
         $response = $handler->handleQueuePositionRequest($request);
 
         $this->assertSame('error', $response->getStatus());
-        $this->assertSame(PlayerQueueService::INVALID_ONLINE_ID_MESSAGE, $response->getMessage());
+        $this->assertSame(PsnOnlineIdValidator::INVALID_MESSAGE, $response->getMessage());
     }
 
     public function testHandleQueuePositionRequestReturnsCheaterResponseWhenStatusMatches(): void
