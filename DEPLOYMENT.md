@@ -186,21 +186,27 @@ Upgrades from older deployments may need these tables for abuse controls:
 
 See [README.md](README.md#schema-updates) for limits and behavior.
 
-### MySQL 8.4 optimizer statistics
+### MySQL 8.4 optimizer statistics and covering indexes
 
 After schema import or large data changes on MySQL 8.4+, run:
 
 ```bash
 mysql "$DB_NAME" < database/mysql84_histograms.sql
+mysql "$DB_NAME" < database/mysql84_covering_indexes.sql
 ```
 
-This creates histograms with `AUTO UPDATE` on heavily filtered columns (`player.status`,
-`trophy_title_player.progress`, `trophy_title_meta.status` and `difficulty`, and others). Histograms help the
-8.4 optimizer choose better plans for leaderboard, queue, and cron queries. Re-run after
-bulk imports; a weekly `ANALYZE TABLE` cron is optional but reasonable on busy sites.
+Histograms use `AUTO UPDATE` on heavily filtered columns (`player.status`,
+`trophy_title_player.progress`, `trophy_title_meta.status`/`difficulty`/`rarity_points`,
+and others). Histograms help the 8.4 optimizer choose better plans for leaderboard, queue,
+and cron queries. Re-run after bulk imports; a weekly `ANALYZE TABLE` cron is optional but
+reasonable on busy sites.
 
-`player_ranking` is excluded because `PlayerRankingUpdater` rebuilds and swaps that table
-every five minutes, which would invalidate histograms immediately.
+`mysql84_covering_indexes.sql` adds descending covering indexes for game leaderboard sorts
+and popular/game-list ordering, status CHECK constraints, and migrates
+`setting.scan_progress` to JSON. Safe to re-run on upgraded databases.
+
+`player_ranking` is excluded from histograms because `PlayerRankingUpdater` rebuilds and
+swaps that table every five minutes, which would invalidate histograms immediately.
 
 `trophy_earned` is excluded: at production scale (billions of rows, hundreds of GiB) an
 `ANALYZE TABLE` would run for hours and `AUTO UPDATE` would rebuild histograms on every

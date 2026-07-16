@@ -30,6 +30,11 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
                 && str_contains($insertStatements[0], 'FROM merge_source AS source'),
             'Insert statement should use the merge_source CTE.'
         );
+        $this->assertTrue(
+            str_contains($insertStatements[0], 'JOIN trophy_title_player AS ttp')
+                && str_contains($insertStatements[0], 'child.account_id = ttp.account_id'),
+            'Insert statement should drive trophy_earned by account_id for partition pruning.'
+        );
 
         $updateStatements = array_values(array_filter(
             $pdo->executedSql,
@@ -42,6 +47,11 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
             str_contains($updateStatements[0], 'WITH merge_source AS (')
                 && str_contains($updateStatements[0], 'JOIN merge_source AS source ON'),
             'Update statement should join from the merge_source CTE.'
+        );
+        $this->assertTrue(
+            str_contains($updateStatements[0], 'JOIN trophy_title_player AS ttp')
+                && str_contains($updateStatements[0], 'child.account_id = ttp.account_id'),
+            'Update statement should drive trophy_earned by account_id for partition pruning.'
         );
 
         $expectedParameters = [':child_np_communication_id' => 'NP_CHILD'];

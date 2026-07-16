@@ -4,18 +4,10 @@ declare(strict_types=1);
 
 use Random\Randomizer;
 
+require_once __DIR__ . '/PlatformSql.php';
+
 class PlayerRandomGamesService
 {
-    private const PLATFORM_FILTERS = [
-        'pc' => "tt.platform LIKE '%PC%'",
-        'ps3' => "tt.platform LIKE '%PS3%'",
-        'ps4' => "tt.platform LIKE '%PS4%'",
-        'ps5' => "tt.platform LIKE '%PS5%'",
-        'psvita' => "tt.platform LIKE '%PSVITA%'",
-        'psvr' => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
-        'psvr2' => "tt.platform LIKE '%PSVR2%'",
-    ];
-
     private readonly PDO $database;
 
     private readonly Utility $utility;
@@ -96,18 +88,14 @@ class PlayerRandomGamesService
 
     private function buildPlatformFilter(PlayerRandomGamesFilter $filter): string
     {
-        $conditions = [];
-        foreach (self::PLATFORM_FILTERS as $filterKey => $condition) {
+        $selected = [];
+        foreach (array_keys(PlatformSql::CONDITIONS) as $filterKey) {
             if ($filter->isPlatformSelected($filterKey)) {
-                $conditions[] = $condition;
+                $selected[] = $filterKey;
             }
         }
 
-        if ($conditions === []) {
-            return '';
-        }
-
-        return ' AND (' . implode(' OR ', $conditions) . ')';
+        return PlatformSql::buildOrClause($selected);
     }
 
     /**

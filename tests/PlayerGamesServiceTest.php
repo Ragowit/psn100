@@ -135,6 +135,28 @@ final class PlayerGamesServiceTest extends TestCase
         $this->assertSame(1, $count);
     }
 
+    public function testCountPlayerGamesSkipsBaseGroupJoinWhenBaseFilterIsOff(): void
+    {
+        $this->insertGame(
+            id: 4,
+            npCommunicationId: 'NPWR004',
+            name: 'Orphan Title Progress',
+            platform: 'PS5',
+            status: 0,
+            accountId: 42,
+            progress: 40,
+            baseProgress: 0
+        );
+        $this->pdo->exec("DELETE FROM trophy_group_player WHERE np_communication_id = 'NPWR004'");
+
+        $filter = PlayerGamesFilter::fromArray([]);
+
+        $this->assertSame(1, $this->service->countPlayerGames(42, $filter));
+
+        $baseOnly = PlayerGamesFilter::fromArray(['base' => '1']);
+        $this->assertSame(0, $this->service->countPlayerGames(42, $baseOnly));
+    }
+
     public function testGetPlayerGamesHydratesResultsAndCompletionLabel(): void
     {
         $this->insertGame(

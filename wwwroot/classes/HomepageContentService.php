@@ -8,22 +8,13 @@ require_once __DIR__ . '/Homepage/HomepageNewGame.php';
 require_once __DIR__ . '/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
 require_once __DIR__ . '/HomepagePopularGamesFilter.php';
+require_once __DIR__ . '/PlatformSql.php';
 
 class HomepageContentService
 {
     private const DEFAULT_NEW_GAME_LIMIT = 8;
     private const DEFAULT_NEW_DLCS_LIMIT = 8;
     private const DEFAULT_POPULAR_GAME_LIMIT = 10;
-
-    private const PLATFORM_CONDITIONS = [
-        HomepagePopularGamesFilter::PLATFORM_PC => "tt.platform LIKE '%PC%'",
-        HomepagePopularGamesFilter::PLATFORM_PS3 => "tt.platform LIKE '%PS3%'",
-        HomepagePopularGamesFilter::PLATFORM_PS4 => "tt.platform LIKE '%PS4%'",
-        HomepagePopularGamesFilter::PLATFORM_PS5 => "tt.platform LIKE '%PS5%'",
-        HomepagePopularGamesFilter::PLATFORM_PSVITA => "tt.platform LIKE '%PSVITA%'",
-        HomepagePopularGamesFilter::PLATFORM_PSVR => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
-        HomepagePopularGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
-    ];
 
     public function __construct(private readonly PDO $database)
     {
@@ -160,7 +151,7 @@ class HomepageContentService
         } elseif ($filter->isExclusiveOnly()) {
             $conditions[] = "tt.platform NOT LIKE '%,%'";
         } elseif ($filter->hasPlatformFilter()) {
-            $platformCondition = self::PLATFORM_CONDITIONS[$filter->getPlatform()] ?? null;
+            $platformCondition = PlatformSql::conditionFor($filter->getPlatform());
             if ($platformCondition !== null) {
                 $conditions[] = $platformCondition;
             }

@@ -40,7 +40,11 @@ final class ChangelogService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                c.*,
+                c.time,
+                c.change_type,
+                c.param_1,
+                c.param_2,
+                c.extra,
                 COUNT(*) OVER() AS total_rows,
                 tt1.name AS param_1_name,
                 tt1.platform AS param_1_platform,

@@ -51,6 +51,16 @@ final class TrophyMergePlayerProgressRecalculatorTest extends TestCase
             'Expected group progress SQL to set 100% when a group has no obtainable points.'
         );
         $this->assertTrue(
+            str_contains($database->groupPlayerMergeSql ?? '', 'accounts AS')
+                && str_contains($database->groupPlayerMergeSql ?? '', 'trophy_title_player')
+                && str_contains($database->groupPlayerMergeSql ?? '', 'te.account_id = a.account_id'),
+            'Expected group progress SQL to drive trophy_earned by account_id for partition pruning.'
+        );
+        $this->assertTrue(
+            str_contains($database->groupPlayerMergeSql ?? '', 'IN (:child_np_0, :child_np_1)'),
+            'Expected group progress SQL to scope accounts to all child titles.'
+        );
+        $this->assertTrue(
             str_contains($database->zeroProgressSql ?? '', 'IN (:child_np_0, :child_np_1)'),
             'Expected zero-progress insert to use all child placeholders.'
         );

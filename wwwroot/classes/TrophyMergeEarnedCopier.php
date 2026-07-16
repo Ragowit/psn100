@@ -66,14 +66,17 @@ final class TrophyMergeEarnedCopier
                         ELSE COALESCE(existing.earned, 0)
                     END AS earned
                 FROM
-                    trophy_earned AS child
+                    trophy_title_player AS ttp
+                JOIN trophy_earned AS child
+                    ON child.account_id = ttp.account_id
+                    AND child.np_communication_id = :child_np_communication_id
+                    AND child.order_id = :child_order_id
                 LEFT JOIN trophy_earned AS existing ON existing.np_communication_id = :parent_np_communication_id
                     AND existing.group_id = :parent_group_id
                     AND existing.order_id = :parent_order_id
                     AND existing.account_id = child.account_id
                 WHERE
-                    child.np_communication_id = :child_np_communication_id
-                    AND child.order_id = :child_order_id
+                    ttp.np_communication_id = :child_np_communication_id
             ) AS new
             ON DUPLICATE KEY
             UPDATE
@@ -121,6 +124,8 @@ SQL
             sprintf('Found %d merged trophies to copy…', $total)
         );
 
+        // Drive child trophy_earned via trophy_title_player.account_id so
+        // HASH(account_id) partition pruning applies on the large earned table.
         $mergeSourceCte = <<<'SQL'
             WITH merge_source AS (
                 SELECT
@@ -132,7 +137,11 @@ SQL
                     child.progress,
                     child.earned
                 FROM trophy_merge AS tm
-                JOIN trophy_earned AS child ON child.np_communication_id = tm.child_np_communication_id
+                JOIN trophy_title_player AS ttp
+                    ON ttp.np_communication_id = tm.child_np_communication_id
+                JOIN trophy_earned AS child
+                    ON child.account_id = ttp.account_id
+                    AND child.np_communication_id = tm.child_np_communication_id
                     AND child.group_id = tm.child_group_id
                     AND child.order_id = tm.child_order_id
                 WHERE tm.child_np_communication_id = :child_np_communication_id

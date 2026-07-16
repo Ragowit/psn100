@@ -45,7 +45,9 @@ SQL
         $groups->execute();
 
         while ($group = $groups->fetch(PDO::FETCH_ASSOC)) {
-            $query = $this->database->prepare(
+            // Drive trophy_earned from child title accounts so HASH(account_id)
+            // partition pruning applies instead of scanning all 256 partitions by title.
+            $mergeSql = sprintf(
                 <<<'SQL'
                 INSERT INTO trophy_group_player(
                     np_communication_id,
@@ -65,23 +67,34 @@ SQL
                     WHERE
                         np_communication_id = :np_communication_id AND group_id = :group_id
                 ),
+                accounts AS(
+                    SELECT DISTINCT
+                        account_id
+                    FROM
+                        trophy_title_player
+                    WHERE
+                        np_communication_id IN (%s)
+                ),
                 player AS(
                     SELECT
-                        account_id,
-                        SUM(TYPE = 'bronze') AS bronze,
-                        SUM(TYPE = 'silver') AS silver,
-                        SUM(TYPE = 'gold') AS gold,
-                        SUM(TYPE = 'platinum') AS platinum,
-                        SUM(TYPE = 'bronze') * 15 + SUM(TYPE = 'silver') * 30 + SUM(TYPE = 'gold') * 90 AS score
+                        te.account_id,
+                        SUM(t.type = 'bronze') AS bronze,
+                        SUM(t.type = 'silver') AS silver,
+                        SUM(t.type = 'gold') AS gold,
+                        SUM(t.type = 'platinum') AS platinum,
+                        SUM(t.type = 'bronze') * 15 + SUM(t.type = 'silver') * 30 + SUM(t.type = 'gold') * 90 AS score
                     FROM
-                        trophy_earned te
+                        accounts a
+                    JOIN trophy_earned te ON
+                        te.account_id = a.account_id
+                        AND te.np_communication_id = :np_communication_id
+                        AND te.group_id = :group_id
+                        AND te.earned = 1
                     JOIN trophy t ON
                         t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id
                     JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
-                    WHERE
-                        te.np_communication_id = :np_communication_id AND te.group_id = :group_id AND te.earned = 1
                     GROUP BY
-                        account_id
+                        te.account_id
                 )
                 SELECT
                     *
@@ -128,9 +141,15 @@ SQL
                     platinum = NEW.platinum,
                     progress = NEW.progress
 SQL
+                ,
+                $childListSql
             );
+            $query = $this->database->prepare($mergeSql);
             $query->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
             $query->bindValue(':group_id', $group['parent_group_id'], PDO::PARAM_STR);
+            foreach ($childNpCommunicationIds as $index => $childNpCommunicationId) {
+                $query->bindValue(':child_np_' . $index, $childNpCommunicationId, PDO::PARAM_STR);
+            }
             $query->execute();
 
             $zeroProgressSql = sprintf(
