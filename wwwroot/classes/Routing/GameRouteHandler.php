@@ -22,7 +22,7 @@ final readonly class GameRouteHandler implements RouteHandlerInterface
     #[\Override]
     public function handle(array $segments): RouteResult
     {
-        if (!isset($segments[0]) || $segments[0] === '') {
+        if ((array_first($segments) ?? '') === '') {
             if ($this->missingSegmentInclude !== null) {
                 return RouteResult::include($this->missingSegmentInclude);
             }
@@ -37,7 +37,7 @@ final readonly class GameRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect($this->redirectPath);
         }
 
-        $playerSegment = $segments[0] ?? null;
+        $playerSegment = array_first($segments);
         $player = is_string($playerSegment) && PsnOnlineIdValidator::isValidOnlineId($playerSegment)
             ? $playerSegment
             : null;

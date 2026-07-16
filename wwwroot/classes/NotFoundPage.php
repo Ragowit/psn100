@@ -20,16 +20,19 @@ final readonly class NotFoundPage
         );
     }
 
+    #[\NoDiscard]
     public function withHeading(string $heading): self
     {
         return clone($this, ['heading' => $heading]);
     }
 
+    #[\NoDiscard]
     public function withMessage(string $message): self
     {
         return clone($this, ['message' => $message]);
     }
 
+    #[\NoDiscard]
     public function withTitle(string $title): self
     {
         return clone($this, ['title' => $title]);

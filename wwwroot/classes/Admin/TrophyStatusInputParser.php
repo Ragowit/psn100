@@ -31,7 +31,9 @@ final class TrophyStatusInputParser
             $ids[] = (int) $value;
         }
 
-        $ids = array_values(array_unique($ids));
+        $ids = $ids
+            |> array_unique(...)
+            |> array_values(...);
 
         if (count($ids) === 0) {
             throw new InvalidArgumentException('No trophies were provided.');
@@ -62,8 +64,9 @@ final class TrophyStatusInputParser
             throw new InvalidArgumentException('No trophies found for the selected game.');
         }
 
-        $ids = array_map('intval', $trophies);
-
-        return array_values(array_unique($ids));
+        return $trophies
+            |> (fn(array $ids): array => array_map(intval(...), $ids))
+            |> array_unique(...)
+            |> array_values(...);
     }
 }

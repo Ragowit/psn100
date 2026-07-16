@@ -15,6 +15,17 @@ use Tustin\PlayStation\Client;
  */
 final class PlayStationWorkerAuthenticator
 {
+    private const \Closure DEFAULT_CLIENT_FACTORY = static function (): object {
+        return new Client();
+    };
+
+    private const \Closure DEFAULT_REFRESH_TOKEN_SAVER = static function (int $workerId, string $refreshToken): void {
+    };
+
+    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
+        sleep($seconds);
+    };
+
     /**
      * @var \Closure(): iterable<Worker>
      */
@@ -48,14 +59,9 @@ final class PlayStationWorkerAuthenticator
         ?callable $refreshTokenPersistenceFailureHandler = null,
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable(
-            $clientFactory ?? static fn (): object => new Client()
-        );
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? static function (int $workerId, string $refreshToken): void {
-        });
-        $this->sleeper = \Closure::fromCallable($sleeper ?? static function (int $seconds): void {
-            sleep($seconds);
-        });
+        $this->clientFactory = \Closure::fromCallable($clientFactory ?? self::DEFAULT_CLIENT_FACTORY);
+        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER);
+        $this->sleeper = \Closure::fromCallable($sleeper ?? self::DEFAULT_SLEEPER);
         $this->refreshTokenPersistenceFailureHandler = $refreshTokenPersistenceFailureHandler !== null
             ? \Closure::fromCallable($refreshTokenPersistenceFailureHandler)
             : null;

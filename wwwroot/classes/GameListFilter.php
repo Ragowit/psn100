@@ -91,6 +91,7 @@ readonly class GameListFilter
         return $this->player !== null;
     }
 
+    #[\NoDiscard]
     public function withPlayer(?string $player): self
     {
         if ($player !== null) {
@@ -101,6 +102,7 @@ readonly class GameListFilter
         return clone($this, ['player' => $player]);
     }
 
+    #[\NoDiscard]
     public function withPage(int $page): self
     {
         return clone($this, ['page' => max($page, 1)]);

@@ -22,7 +22,7 @@ final class NavigationState
 
     public static function fromGlobals(array $server, array $queryParameters): self
     {
-        $requestUri = (string) ($server['REQUEST_URI'] ?? '/');
+        $requestPath = Uri\Rfc3986\Uri::parse((string) ($server['REQUEST_URI'] ?? '/'))?->getPath() ?? '/';
 
         $sort = self::sanitizeQueryValue($queryParameters['sort'] ?? '');
         $player = self::sanitizeQueryValue($queryParameters['player'] ?? '');
@@ -34,7 +34,7 @@ final class NavigationState
             $player,
             $filter,
             $search,
-            self::determineSectionStates($requestUri)
+            self::determineSectionStates($requestPath)
         );
     }
 
@@ -113,10 +113,10 @@ final class NavigationState
     }
 
     /**
-     * @param string $requestUri
+     * @param string $requestPath
      * @return array<string, NavigationSectionState>
      */
-    private static function determineSectionStates(string $requestUri): array
+    private static function determineSectionStates(string $requestPath): array
     {
         $states = [];
 
@@ -124,7 +124,7 @@ final class NavigationState
             $states[$section->value] = new NavigationSectionState($section, false);
         }
 
-        $activeSection = self::resolveActiveSection($requestUri);
+        $activeSection = self::resolveActiveSection($requestPath);
         $states[$activeSection->value] = new NavigationSectionState($activeSection, true);
 
         return $states;
@@ -137,15 +137,15 @@ final class NavigationState
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
 
-    private static function resolveActiveSection(string $requestUri): NavigationSection
+    private static function resolveActiveSection(string $requestPath): NavigationSection
     {
         return match (true) {
-            str_starts_with($requestUri, '/leaderboard') || str_starts_with($requestUri, '/player')
+            str_starts_with($requestPath, '/leaderboard') || str_starts_with($requestPath, '/player')
                 => NavigationSection::Leaderboard,
-            str_starts_with($requestUri, '/game') => NavigationSection::Game,
-            str_starts_with($requestUri, '/trophy') => NavigationSection::Trophy,
-            str_starts_with($requestUri, '/avatar') => NavigationSection::Avatar,
-            str_starts_with($requestUri, '/about') => NavigationSection::About,
+            str_starts_with($requestPath, '/game') => NavigationSection::Game,
+            str_starts_with($requestPath, '/trophy') => NavigationSection::Trophy,
+            str_starts_with($requestPath, '/avatar') => NavigationSection::Avatar,
+            str_starts_with($requestPath, '/about') => NavigationSection::About,
             default => NavigationSection::Home,
         };
     }

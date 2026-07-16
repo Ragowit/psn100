@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
+
 final readonly class PlayerLogEntry
 {
     public function __construct(
@@ -182,17 +184,7 @@ final readonly class PlayerLogEntry
      */
     public function getPlatforms(): array
     {
-        if ($this->platforms === '') {
-            return [];
-        }
-
-        $platforms = array_map('trim', explode(',', $this->platforms));
-        $platforms = array_filter(
-            $platforms,
-            static fn(string $value): bool => $value !== ''
-        );
-
-        return array_values($platforms);
+        return CommaSeparatedValues::parseTrimmed($this->platforms);
     }
 
     public function requiresWarning(): bool

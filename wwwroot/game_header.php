@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/CommaSeparatedValues.php';
 require_once __DIR__ . '/classes/Html.php';
 
 require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
@@ -192,7 +193,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
 
                 <div>
                     <?php
-                    foreach (explode(',', $gamePlatform) as $platform) {
+                    foreach (CommaSeparatedValues::parseTrimmed($gamePlatform) as $platform) {
                         echo '<span class="badge rounded-pill text-bg-primary p-2 me-1">' . Html::escape($platform) . '</span> ';
                     }
                     ?>

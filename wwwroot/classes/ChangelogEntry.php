@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
+
 enum ChangelogEntryType: string
 {
     case GAME_CLONE = 'GAME_CLONE';
@@ -83,17 +85,11 @@ readonly class ChangelogEntry
      */
     private static function normalizePlatforms(?string $platforms): array
     {
-        if ($platforms === null || $platforms === '') {
+        if ($platforms === null) {
             return [];
         }
 
-        $parts = array_map('trim', explode(',', $platforms));
-        $parts = array_filter(
-            $parts,
-            static fn(string $platform): bool => $platform !== ''
-        );
-
-        return array_values($parts);
+        return CommaSeparatedValues::parseTrimmed($platforms);
     }
 
     public function getTime(): DateTimeImmutable

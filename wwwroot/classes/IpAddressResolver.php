@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
+
 final class IpAddressResolver
 {
     public const string UNKNOWN_CLIENT_IDENTIFIER = '__unknown__';
@@ -76,15 +78,7 @@ final class IpAddressResolver
             return [];
         }
 
-        $proxyIps = [];
-        foreach (explode(',', $value) as $proxyIp) {
-            $proxyIp = trim($proxyIp);
-            if ($proxyIp !== '') {
-                $proxyIps[] = $proxyIp;
-            }
-        }
-
-        return $proxyIps;
+        return CommaSeparatedValues::parseTrimmed($value);
     }
 
     private static function resolveForwardedClientIp(mixed $forwardedFor): string
@@ -93,8 +87,8 @@ final class IpAddressResolver
             return '';
         }
 
-        foreach (explode(',', $forwardedFor) as $candidate) {
-            $validatedAddress = self::resolve(trim($candidate));
+        foreach (CommaSeparatedValues::parseTrimmed($forwardedFor) as $candidate) {
+            $validatedAddress = self::resolve($candidate);
             if ($validatedAddress !== '') {
                 return $validatedAddress;
             }

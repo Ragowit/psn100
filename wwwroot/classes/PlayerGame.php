@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 
 class PlayerGame
@@ -84,12 +85,7 @@ class PlayerGame
      */
     public function getPlatforms(): array
     {
-        $platforms = array_map('trim', explode(',', $this->platform));
-
-        return array_filter(
-            $platforms,
-            static fn(string $platform): bool => $platform !== ''
-        );
+        return CommaSeparatedValues::parseTrimmed($this->platform);
     }
 
     public function getStatus(): int

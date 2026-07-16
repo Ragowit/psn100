@@ -17,7 +17,7 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
     #[\Override]
     public function handle(array $segments): RouteResult
     {
-        if (!isset($segments[0]) || $segments[0] === '') {
+        if ((array_first($segments) ?? '') === '') {
             return RouteResult::redirect('/leaderboard/trophy');
         }
 

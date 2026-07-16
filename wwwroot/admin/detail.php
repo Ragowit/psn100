@@ -6,6 +6,7 @@ require_once '../classes/Admin/GameDetail.php';
 require_once '../classes/Admin/GameDetailService.php';
 require_once '../classes/Admin/GameDetailPage.php';
 require_once '../classes/Admin/GameDetailPageResult.php';
+require_once '../classes/CommaSeparatedValues.php';
 require_once '../classes/GameStatusService.php';
 require_once '../classes/GameMessageSanitizer.php';
 
@@ -66,12 +67,7 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <input type="text" name="icon_url" style="width: 859px;" value="<?= Html::escape($gameDetail->getIconUrl()); ?>"><br>
                     <?php
                     $selectedPlatforms = [];
-                    foreach (explode(',', $gameDetail->getPlatform()) as $platformValue) {
-                        $normalizedPlatform = $platformValue |> trim(...) |> strtoupper(...);
-                        if ($normalizedPlatform === '') {
-                            continue;
-                        }
-
+                    foreach (CommaSeparatedValues::parseUppercaseTrimmed($gameDetail->getPlatform()) as $normalizedPlatform) {
                         $selectedPlatforms[$normalizedPlatform] = true;
                     }
                     ?>

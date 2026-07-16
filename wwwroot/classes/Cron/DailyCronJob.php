@@ -6,6 +6,10 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
+    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
+        sleep($seconds);
+    };
+
     /**
      * Recalculate rarity for one title.
      *
@@ -102,7 +106,7 @@ final readonly class DailyCronJob implements CronJobInterface
     public function __construct(
         private PDO $database,
         private int $retryDelaySeconds = 3,
-        private ?\Closure $sleeper = null,
+        private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 
@@ -155,16 +159,8 @@ final readonly class DailyCronJob implements CronJobInterface
                 $operation(...$arguments);
                 return;
             } catch (Throwable $exception) {
-                ($this->getSleeper())($this->retryDelaySeconds);
+                ($this->sleeper)($this->retryDelaySeconds);
             }
         }
-    }
-
-    /** @return \Closure(int): void */
-    private function getSleeper(): \Closure
-    {
-        return $this->sleeper ?? static function (int $seconds): void {
-            sleep($seconds);
-        };
     }
 }

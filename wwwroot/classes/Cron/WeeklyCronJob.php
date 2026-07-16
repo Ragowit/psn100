@@ -6,6 +6,10 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class WeeklyCronJob implements CronJobInterface
 {
+    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
+        sleep($seconds);
+    };
+
     private const UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
         UPDATE player p
         JOIN player_ranking r ON p.account_id = r.account_id
@@ -36,7 +40,7 @@ final readonly class WeeklyCronJob implements CronJobInterface
     public function __construct(
         private PDO $database,
         private int $retryDelaySeconds = 3,
-        private ?\Closure $sleeper = null,
+        private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 
@@ -67,16 +71,8 @@ final readonly class WeeklyCronJob implements CronJobInterface
 
                 return;
             } catch (Throwable $exception) {
-                ($this->getSleeper())($this->retryDelaySeconds);
+                ($this->sleeper)($this->retryDelaySeconds);
             }
         }
-    }
-
-    /** @return \Closure(int): void */
-    private function getSleeper(): \Closure
-    {
-        return $this->sleeper ?? static function (int $seconds): void {
-            sleep($seconds);
-        };
     }
 }

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/Utility.php';
 
 class TrophyListItem
 {
-    private const PLATFORM_SEPARATOR = ',';
     private const MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
     private const MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
     private const MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
@@ -188,9 +188,7 @@ class TrophyListItem
      */
     public function getPlatforms(): array
     {
-        $platforms = array_map('trim', explode(self::PLATFORM_SEPARATOR, $this->platform));
-
-        return array_values(array_filter($platforms, static fn (string $platform): bool => $platform !== ''));
+        return CommaSeparatedValues::parseTrimmed($this->platform);
     }
 
     public function getGameUrl(Utility $utility): string
