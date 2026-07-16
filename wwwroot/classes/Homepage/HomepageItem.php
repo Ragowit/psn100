@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../CommaSeparatedValues.php';
+
 abstract readonly class HomepageItem
 {
     private const MISSING_PS5_ICON = '/img/missing-ps5-game-and-trophy.png';
@@ -31,18 +33,7 @@ abstract readonly class HomepageItem
      */
     public function getPlatforms(): array
     {
-        if ($this->platform === '') {
-            return [];
-        }
-
-        $platforms = array_map('trim', explode(',', $this->platform));
-
-        $platforms = array_filter(
-            $platforms,
-            static fn(string $value): bool => $value !== ''
-        );
-
-        return array_values($platforms);
+        return CommaSeparatedValues::parseTrimmed($this->platform);
     }
 
     private function isPs5Title(): bool

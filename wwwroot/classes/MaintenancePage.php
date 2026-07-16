@@ -31,6 +31,7 @@ final readonly class MaintenancePage
         );
     }
 
+    #[\NoDiscard]
     public function withMessage(string $message): self
     {
         return clone($this, ['message' => $message]);

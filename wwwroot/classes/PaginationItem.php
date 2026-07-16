@@ -23,16 +23,19 @@ final readonly class PaginationItem
         return new self(null, '...', disabled: true);
     }
 
+    #[\NoDiscard]
     public function markAsActive(): self
     {
         return clone($this, ['active' => true]);
     }
 
+    #[\NoDiscard]
     public function markAsDisabled(): self
     {
         return clone($this, ['disabled' => true]);
     }
 
+    #[\NoDiscard]
     public function setAriaLabel(?string $ariaLabel): self
     {
         return clone($this, ['ariaLabel' => $ariaLabel]);

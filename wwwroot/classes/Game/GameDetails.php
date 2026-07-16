@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../CommaSeparatedValues.php';
+
 class GameDetails
 {
     private int $id;
@@ -122,21 +124,11 @@ class GameDetails
             return [];
         }
 
-        $segments = array_filter(
-            array_map(static fn(string $segment): string => trim($segment), explode(',', $value)),
-            static fn(string $segment): bool => $segment !== ''
-        );
-
-        $ids = [];
-        foreach ($segments as $segment) {
-            if (!ctype_digit($segment)) {
-                continue;
-            }
-
-            $ids[] = (int) $segment;
-        }
-
-        return array_values(array_unique($ids));
+        return CommaSeparatedValues::parseTrimmed($value)
+            |> (fn(array $segments): array => array_filter($segments, ctype_digit(...)))
+            |> (fn(array $segments): array => array_map(intval(...), $segments))
+            |> array_unique(...)
+            |> array_values(...);
     }
 
     public function getId(): int

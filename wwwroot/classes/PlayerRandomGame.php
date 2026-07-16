@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
+
 final readonly class PlayerRandomGame
 {
     private function __construct(
@@ -107,17 +109,7 @@ final readonly class PlayerRandomGame
      */
     public function getPlatforms(): array
     {
-        if ($this->platform === '') {
-            return [];
-        }
-
-        $platforms = array_map('trim', explode(',', $this->platform));
-        $platforms = array_filter(
-            $platforms,
-            static fn(string $value): bool => $value !== ''
-        );
-
-        return array_values($platforms);
+        return CommaSeparatedValues::parseTrimmed($this->platform);
     }
 
     public function getIconUrl(): string

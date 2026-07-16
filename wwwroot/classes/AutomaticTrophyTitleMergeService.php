@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/TrophyMergeService.php';
 require_once __DIR__ . '/TrophySetComparator.php';
 require_once __DIR__ . '/Cron/PlayerScanNewTitleMergeHandler.php';
@@ -418,13 +419,10 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function parsePlatforms(?string $platforms): array
     {
-        if ($platforms === null || trim($platforms) === '') {
+        if ($platforms === null) {
             return [];
         }
 
-        $parts = array_map('trim', explode(',', $platforms));
-        $parts = array_filter($parts, static fn(string $platform): bool => $platform !== '');
-
-        return array_values(array_map('strtoupper', $parts));
+        return CommaSeparatedValues::parseUppercaseTrimmed($platforms);
     }
 }

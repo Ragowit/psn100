@@ -13,6 +13,10 @@ require_once __DIR__ . '/PlayerScanTrophySummaryAccessResult.php';
  */
 final class PlayerScanPrivacyService
 {
+    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
+        sleep($seconds);
+    };
+
     private readonly \Closure $sleeper;
 
     public function __construct(
@@ -20,9 +24,7 @@ final class PlayerScanPrivacyService
         private readonly WorkerScanCoordinator $workerScanCoordinator,
         ?callable $sleeper = null,
     ) {
-        $this->sleeper = \Closure::fromCallable($sleeper ?? static function (int $seconds): void {
-            sleep($seconds);
-        });
+        $this->sleeper = \Closure::fromCallable($sleeper ?? self::DEFAULT_SLEEPER);
     }
 
     public function markAsPrivateByOnlineId(string $onlineId): void

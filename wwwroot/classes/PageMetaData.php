@@ -21,6 +21,7 @@ final readonly class PageMetaData
         $this->url = self::normalize($url);
     }
 
+    #[\NoDiscard]
     public function withTitle(?string $title): self
     {
         return clone($this, ['title' => self::normalize($title)]);
@@ -31,6 +32,7 @@ final readonly class PageMetaData
         return $this->title;
     }
 
+    #[\NoDiscard]
     public function withDescription(?string $description): self
     {
         return clone($this, ['description' => self::normalize($description)]);
@@ -41,6 +43,7 @@ final readonly class PageMetaData
         return $this->description;
     }
 
+    #[\NoDiscard]
     public function withImage(?string $image): self
     {
         return clone($this, ['image' => self::normalize($image)]);
@@ -51,6 +54,7 @@ final readonly class PageMetaData
         return $this->image;
     }
 
+    #[\NoDiscard]
     public function withUrl(?string $url): self
     {
         return clone($this, ['url' => self::normalize($url)]);

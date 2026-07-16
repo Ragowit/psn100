@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
+
 class PlayerAdvisableTrophy
 {
     private int $trophyId;
@@ -226,17 +228,7 @@ class PlayerAdvisableTrophy
 
     private function parsePlatforms(string $platformsRaw): array
     {
-        if ($platformsRaw === '') {
-            return [];
-        }
-
-        $platforms = array_map('trim', explode(',', $platformsRaw));
-        $platforms = array_filter(
-            $platforms,
-            static fn(string $value): bool => $value !== ''
-        );
-
-        return array_values($platforms);
+        return CommaSeparatedValues::parseTrimmed($platformsRaw);
     }
 
     private function usesPlayStation5Assets(): bool

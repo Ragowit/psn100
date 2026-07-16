@@ -50,4 +50,15 @@ final class NavigationStateTest extends TestCase
         $this->assertSame('', $navigationState->getFilter());
         $this->assertSame('&lt;script&gt;alert(&#039;x&#039;)&lt;/script&gt;', $navigationState->getSearch());
     }
+
+    public function testActiveSectionUsesPathAndIgnoresQueryString(): void
+    {
+        $server = ['REQUEST_URI' => '/trophy/latest?sort=date&player=example'];
+
+        $navigationState = NavigationState::fromGlobals($server, []);
+
+        $this->assertSame(' active', $navigationState->getTrophyClass());
+        $this->assertSame('', $navigationState->getHomeClass());
+        $this->assertTrue($navigationState->isSectionActive('trophy'));
+    }
 }

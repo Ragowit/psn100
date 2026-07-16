@@ -32,6 +32,7 @@ final readonly class GameLeaderboardFilter extends GamePlayerFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function withPageNumber(int $page): self
     {
         return clone($this, ['page' => max($page, 1)]);

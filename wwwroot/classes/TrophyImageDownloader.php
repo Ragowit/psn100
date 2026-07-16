@@ -21,6 +21,7 @@ final readonly class TrophyImageDownloader
     ) {
     }
 
+    #[\NoDiscard]
     public function withLogger(?\Closure $logger): self
     {
         return clone($this, ['logger' => $logger]);

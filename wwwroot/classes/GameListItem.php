@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
 require_once __DIR__ . '/Utility.php';
@@ -102,14 +103,7 @@ final readonly class GameListItem
      */
     public function getPlatforms(): array
     {
-        if ($this->platformValue === '') {
-            return [];
-        }
-
-        $platforms = array_map('trim', explode(',', $this->platformValue));
-        $platforms = array_filter($platforms, static fn(string $platform): bool => $platform !== '');
-
-        return array_values($platforms);
+        return CommaSeparatedValues::parseTrimmed($this->platformValue);
     }
 
     public function getOwners(): int

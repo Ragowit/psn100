@@ -12,6 +12,9 @@ class PlayerRankingUpdater
     private const string LOCK_NAME = 'psn100:player_ranking_recalc';
     private const int DEFAULT_RETRY_DELAY_SECONDS = 3;
     private const int DEFAULT_MAX_RETRY_DELAY_SECONDS = 60;
+    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
+        sleep($seconds);
+    };
     private const string INSERT_TEMPLATE = <<<'SQL'
 INSERT INTO %s (
     account_id,
@@ -49,31 +52,13 @@ FROM player
 WHERE `status` = 0
 SQL;
 
-    private PDO $database;
-
-    private int $retryDelaySeconds;
-
-    private int $maxRetryDelaySeconds;
-
-    private ?Psn100Logger $logger;
-
-    /** @var callable(int): void */
-    private $sleeper;
-
     public function __construct(
-        PDO $database,
-        int $retryDelaySeconds = self::DEFAULT_RETRY_DELAY_SECONDS,
-        int $maxRetryDelaySeconds = self::DEFAULT_MAX_RETRY_DELAY_SECONDS,
-        ?Psn100Logger $logger = null,
-        ?callable $sleeper = null,
+        private PDO $database,
+        private int $retryDelaySeconds = self::DEFAULT_RETRY_DELAY_SECONDS,
+        private int $maxRetryDelaySeconds = self::DEFAULT_MAX_RETRY_DELAY_SECONDS,
+        private ?Psn100Logger $logger = null,
+        private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
-        $this->database = $database;
-        $this->retryDelaySeconds = $retryDelaySeconds;
-        $this->maxRetryDelaySeconds = $maxRetryDelaySeconds;
-        $this->logger = $logger;
-        $this->sleeper = $sleeper ?? static function (int $seconds): void {
-            sleep($seconds);
-        };
     }
 
     public function recalculate(): void

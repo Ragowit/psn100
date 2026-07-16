@@ -65,6 +65,7 @@ readonly class PlayerAdvisorFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function withPage(int $page): self
     {
         return clone($this, ['page' => max($page, 1)]);

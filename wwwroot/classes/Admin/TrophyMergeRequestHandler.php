@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../CommaSeparatedValues.php';
 require_once __DIR__ . '/../Html.php';
 
 require_once __DIR__ . '/TrophyMergeProgressListener.php';
@@ -65,13 +66,8 @@ class TrophyMergeRequestHandler
     private function parseChildTrophyIds(string $childTrophies): array
     {
         $childTrophyIds = [];
-        $childTrophiesRaw = array_map('trim', explode(',', $childTrophies));
 
-        foreach ($childTrophiesRaw as $childId) {
-            if ($childId === '') {
-                continue;
-            }
-
+        foreach (CommaSeparatedValues::parseTrimmed($childTrophies) as $childId) {
             if (!$this->isNumeric($childId)) {
                 throw new InvalidArgumentException('Child trophy ids must be numeric.');
             }

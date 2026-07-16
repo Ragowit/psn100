@@ -53,6 +53,7 @@ readonly class PlayerQueueResponse implements \JsonSerializable
         return new self(PlayerQueueStatus::ERROR, $message, null, null, 429);
     }
 
+    #[\NoDiscard]
     public function withPollToken(string $pollToken): self
     {
         return clone($this, ['pollToken' => $pollToken]);

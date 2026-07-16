@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/GameDetail.php';
+require_once __DIR__ . '/../CommaSeparatedValues.php';
 require_once __DIR__ . '/../GameAvailabilityStatus.php';
 
 final class GameDetailFormParser
@@ -130,7 +131,7 @@ final class GameDetailFormParser
         if (is_array($value)) {
             $candidates = $value;
         } elseif (is_string($value)) {
-            $candidates = explode(',', $value);
+            $candidates = CommaSeparatedValues::parseUppercaseTrimmed($value);
         }
 
         $selected = [];
@@ -174,29 +175,18 @@ final class GameDetailFormParser
             return null;
         }
 
-        $segments = array_filter(
-            array_map(static fn(string $segment): string => trim($segment), explode(',', $value)),
-            static fn(string $segment): bool => $segment !== ''
-        );
-
-        if ($segments === []) {
-            return null;
-        }
-
-        $normalized = [];
-        foreach ($segments as $segment) {
-            if (!ctype_digit($segment)) {
-                continue;
-            }
-
-            $normalized[] = (string) (int) $segment;
-        }
+        $normalized = CommaSeparatedValues::parseTrimmed($value)
+            |> (fn(array $segments): array => array_filter($segments, ctype_digit(...)))
+            |> (fn(array $segments): array => array_map(
+                static fn(string $segment): string => (string) (int) $segment,
+                $segments
+            ))
+            |> array_unique(...)
+            |> array_values(...);
 
         if ($normalized === []) {
             return null;
         }
-
-        $normalized = array_values(array_unique($normalized));
 
         return implode(',', $normalized);
     }

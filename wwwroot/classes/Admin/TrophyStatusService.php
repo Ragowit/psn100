@@ -7,15 +7,12 @@ require_once __DIR__ . '/TrophyStatusProgressRecalculator.php';
 
 class TrophyStatusService
 {
-    private PDO $database;
-
     private TrophyStatusProgressRecalculator $progressRecalculator;
 
     public function __construct(
-        PDO $database,
+        private PDO $database,
         ?TrophyStatusProgressRecalculator $progressRecalculator = null,
     ) {
-        $this->database = $database;
         $this->progressRecalculator = $progressRecalculator ?? new TrophyStatusProgressRecalculator($database);
     }
 
@@ -24,7 +21,10 @@ class TrophyStatusService
      */
     public function updateTrophies(array $trophyIds, int $status): TrophyStatusUpdateResult
     {
-        $trophyIds = array_values(array_unique(array_map('intval', $trophyIds)));
+        $trophyIds = $trophyIds
+            |> (fn(array $ids): array => array_map(intval(...), $ids))
+            |> array_unique(...)
+            |> array_values(...);
 
         if (count($trophyIds) === 0) {
             throw new InvalidArgumentException('No trophies were provided.');
