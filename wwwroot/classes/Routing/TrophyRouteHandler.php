@@ -18,7 +18,7 @@ final readonly class TrophyRouteHandler implements RouteHandlerInterface
     #[\Override]
     public function handle(array $segments): RouteResult
     {
-        if (!isset($segments[0]) || $segments[0] === '') {
+        if ((array_first($segments) ?? '') === '') {
             return RouteResult::include('trophies.php');
         }
 
@@ -29,7 +29,7 @@ final readonly class TrophyRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect('/trophy/');
         }
 
-        $playerSegment = $segments[0] ?? null;
+        $playerSegment = array_first($segments);
         $player = is_string($playerSegment) && PsnOnlineIdValidator::isValidOnlineId($playerSegment)
             ? $playerSegment
             : null;

@@ -14,10 +14,6 @@ final readonly class LeaderboardRouteHandler implements RouteHandlerInterface
     #[\Override]
     public function handle(array $segments): RouteResult
     {
-        if (!isset($segments[0]) || $segments[0] === '') {
-            return RouteResult::redirect(self::DEFAULT_REDIRECT);
-        }
-
         $view = array_first($segments) ?? '';
 
         return match ($view) {
