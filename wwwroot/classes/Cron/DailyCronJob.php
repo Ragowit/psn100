@@ -86,6 +86,24 @@ final readonly class DailyCronJob implements CronJobInterface
             END
         SQL;
 
+    /**
+     * Titles with zero owners cannot produce non-zero rarity. Skip probing
+     * trophy_earned via the top-10k ranking join for that long tail.
+     */
+    private const string UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY = <<<'SQL'
+        UPDATE trophy_meta tm
+        JOIN trophy t ON t.id = tm.trophy_id
+        SET
+            tm.owners = 0,
+            tm.rarity_percent = 0,
+            tm.rarity_point = 0,
+            tm.rarity_name = 'NONE',
+            tm.in_game_rarity_percent = 0,
+            tm.in_game_rarity_point = 0,
+            tm.in_game_rarity_name = 'NONE'
+        WHERE t.np_communication_id = :np_communication_id
+        SQL;
+
     private const string UPDATE_TITLE_RARITY_POINTS_QUERY = <<<'SQL'
         WITH rarity AS (
             SELECT
@@ -136,7 +154,18 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function updateTrophyRarityForGame(string $npCommunicationId): void
     {
-        $query = $this->database->prepare(self::UPDATE_TROPHY_RARITY_QUERY);
+        $ownersQuery = $this->database->prepare(
+            'SELECT owners FROM trophy_title_meta WHERE np_communication_id = :np_communication_id'
+        );
+        $ownersQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $ownersQuery->execute();
+        $owners = $ownersQuery->fetchColumn();
+
+        $sql = ((int) $owners) === 0
+            ? self::UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY
+            : self::UPDATE_TROPHY_RARITY_QUERY;
+
+        $query = $this->database->prepare($sql);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }

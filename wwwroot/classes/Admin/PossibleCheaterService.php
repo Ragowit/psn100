@@ -108,6 +108,7 @@ class PossibleCheaterService
             ) cheat_rules ON
                 te.np_communication_id = cheat_rules.np_communication_id
                 AND te.order_id = cheat_rules.order_id
+                AND te.earned = 1
                 AND (
                     cheat_rules.date_operator IS NULL
                     OR (cheat_rules.date_operator = '>=' AND te.earned_date >= cheat_rules.date_value)

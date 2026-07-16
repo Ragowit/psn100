@@ -29,17 +29,14 @@ class PlayerAdvisorService
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt ON tt.np_communication_id = t.np_communication_id
             JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
+            LEFT JOIN trophy_earned te ON
+                te.account_id = :account_id
+                AND te.np_communication_id = t.np_communication_id
+                AND te.order_id = t.order_id
             WHERE ttp.account_id = :account_id
                 AND ttm.status = 0
                 AND tm.status = 0
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM trophy_earned te_completed
-                    WHERE te_completed.account_id = :account_id
-                        AND te_completed.np_communication_id = t.np_communication_id
-                        AND te_completed.order_id = t.order_id
-                        AND te_completed.earned = 1
-                )
+                AND (te.account_id IS NULL OR te.earned = 0)
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -72,28 +69,20 @@ class PlayerAdvisorService
                 tt.name AS game_name,
                 tt.icon_url AS game_icon,
                 tt.platform,
-                te_progress.progress
+                te.progress
             FROM trophy_title_player ttp
             JOIN trophy t ON t.np_communication_id = ttp.np_communication_id
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt ON tt.np_communication_id = t.np_communication_id
             JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
-            LEFT JOIN trophy_earned te_progress ON
-                te_progress.account_id = :account_id
-                AND te_progress.np_communication_id = t.np_communication_id
-                AND te_progress.order_id = t.order_id
-                AND te_progress.earned = 0
+            LEFT JOIN trophy_earned te ON
+                te.account_id = :account_id
+                AND te.np_communication_id = t.np_communication_id
+                AND te.order_id = t.order_id
             WHERE ttp.account_id = :account_id
                 AND ttm.status = 0
                 AND tm.status = 0
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM trophy_earned te_completed
-                    WHERE te_completed.account_id = :account_id
-                        AND te_completed.np_communication_id = t.np_communication_id
-                        AND te_completed.order_id = t.order_id
-                        AND te_completed.earned = 1
-                )
+                AND (te.account_id IS NULL OR te.earned = 0)
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);

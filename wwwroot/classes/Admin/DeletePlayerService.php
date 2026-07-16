@@ -61,9 +61,16 @@ final class DeletePlayerService
             throw new RuntimeException('Failed to start database transaction.');
         }
 
+        $skipTrophyCountEnabled = false;
+
         try {
             $player = $this->findPlayerByAccountId($accountId);
             $onlineId = $player['online_id'] ?? null;
+
+            // Avoid one player.trophy_count_npwr UPDATE per deleted NPWR row; the player
+            // row is deleted in this same transaction. Session var is honored by the
+            // trophy_earned triggers (see database/mysql84_trophy_earned_triggers.sql).
+            $skipTrophyCountEnabled = $this->setSkipTrophyCountTriggers(true);
 
             $counts = [];
             $counts['trophy_earned'] = $this->deleteByAccountId(
@@ -104,7 +111,22 @@ final class DeletePlayerService
             }
 
             throw new RuntimeException('Failed to delete player data.', 0, $exception);
+        } finally {
+            if ($skipTrophyCountEnabled) {
+                $this->setSkipTrophyCountTriggers(false);
+            }
         }
+    }
+
+    private function setSkipTrophyCountTriggers(bool $enabled): bool
+    {
+        if ($this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return false;
+        }
+
+        $this->database->exec('SET @psn100_skip_trophy_count = ' . ($enabled ? '1' : '0'));
+
+        return true;
     }
 
     private function deleteLogMessagesForAccountId(string $accountId): int

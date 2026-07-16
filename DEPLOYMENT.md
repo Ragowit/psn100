@@ -193,6 +193,7 @@ After schema import or large data changes on MySQL 8.4+, run:
 ```bash
 mysql "$DB_NAME" < database/mysql84_histograms.sql
 mysql "$DB_NAME" < database/mysql84_covering_indexes.sql
+mysql "$DB_NAME" < database/mysql84_trophy_earned_triggers.sql
 ```
 
 Histograms use `AUTO UPDATE` on heavily filtered columns (`player.status`,
@@ -202,7 +203,8 @@ and cron queries. Re-run after bulk imports; a weekly `ANALYZE TABLE` cron is op
 reasonable on busy sites.
 
 `mysql84_covering_indexes.sql` adds descending covering indexes for game leaderboard sorts
-and popular/game-list ordering, status CHECK constraints, and migrates
+and popular/game-list ordering, replaces `trophy_group_player.idx_account_id` with
+`(account_id, np_communication_id)`, status CHECK constraints, and migrates
 `setting.scan_progress` to JSON. Safe to re-run on upgraded databases.
 
 `player_ranking` is excluded from histograms because `PlayerRankingUpdater` rebuilds and
@@ -212,6 +214,11 @@ swaps that table every five minutes, which would invalidate histograms immediate
 `ANALYZE TABLE` would run for hours and `AUTO UPDATE` would rebuild histograms on every
 InnoDB stats refresh. Existing queries filter by `account_id` (partition key) or
 `np_communication_id` (leading primary-key column), so histograms would add little value.
+
+`mysql84_trophy_earned_triggers.sql` recreates the three `trophy_earned` triggers so that
+`earned` flips from `1` → `0` decrement `player.trophy_count_npwr`, and so bulk deletes can
+set `@psn100_skip_trophy_count = 1` to skip per-row counter updates (fresh installs from
+`psn100.sql` already include this). Safe to re-run; it only replaces trigger definitions.
 
 Older databases may still carry redundant indexes dropped from the current schema. Apply
 (safe to re-run; skips indexes that are already absent):

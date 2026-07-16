@@ -16,12 +16,14 @@ return [
                     fuel_end.account_id = fuel_start.account_id
                     AND fuel_end.np_communication_id = 'NPWR00481_00'
                     AND fuel_end.order_id = 34
+                    AND fuel_end.earned = 1
                 JOIN player p ON
                     p.account_id = fuel_start.account_id
                     AND p.status != 1
                 WHERE
                     fuel_start.np_communication_id = 'NPWR00481_00'
                     AND fuel_start.order_id = 33
+                    AND fuel_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -42,12 +44,14 @@ return [
                     socom_end.account_id = socom_start.account_id
                     AND socom_end.np_communication_id = 'NPWR00302_00'
                     AND socom_end.order_id = 33
+                    AND socom_end.earned = 1
                 JOIN player p ON
                     p.account_id = socom_start.account_id
                     AND p.status != 1
                 WHERE
                     socom_start.np_communication_id = 'NPWR00302_00'
                     AND socom_start.order_id = 32
+                    AND socom_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -68,12 +72,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR01103_00'
                     AND trophy_end.order_id = 48
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR01103_00'
                     AND trophy_start.order_id = 38
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 0
                 ORDER BY
@@ -94,12 +100,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR00987_00'
                     AND trophy_end.order_id = 48
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR00987_00'
                     AND trophy_start.order_id = 38
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 0
                 ORDER BY
@@ -120,12 +128,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR17582_00'
                     AND trophy_end.order_id = 51
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR17582_00'
                     AND trophy_start.order_id = 50
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 0
                 ORDER BY
@@ -146,12 +156,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR17415_00'
                     AND trophy_end.order_id = 51
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR17415_00'
                     AND trophy_start.order_id = 50
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 0
                 ORDER BY
@@ -172,12 +184,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR14836_00'
                     AND trophy_end.order_id = 51
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR14836_00'
                     AND trophy_start.order_id = 50
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 0
                 ORDER BY
@@ -198,12 +212,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR00928_00'
                     AND trophy_end.order_id = 11
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR00928_00'
                     AND trophy_start.order_id = 10
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -224,12 +240,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR00928_00'
                     AND trophy_end.order_id = 20
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR00928_00'
                     AND trophy_start.order_id = 19
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -250,12 +268,14 @@ return [
                     rer_end.account_id = rer_start.account_id
                     AND rer_end.np_communication_id = 'NPWR11777_00'
                     AND rer_end.order_id = 55
+                    AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = rer_start.account_id
                     AND p.status != 1
                 WHERE
                     rer_start.np_communication_id = 'NPWR11777_00'
                     AND rer_start.order_id = 54
+                    AND rer_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -276,12 +296,14 @@ return [
                     rer_end.account_id = rer_start.account_id
                     AND rer_end.np_communication_id = 'NPWR11777_00'
                     AND rer_end.order_id = 38
+                    AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = rer_start.account_id
                     AND p.status != 1
                 WHERE
                     rer_start.np_communication_id = 'NPWR11777_00'
                     AND rer_start.order_id = 37
+                    AND rer_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -302,12 +324,14 @@ return [
                     rer_end.account_id = rer_start.account_id
                     AND rer_end.np_communication_id = 'NPWR03903_00'
                     AND rer_end.order_id = 50
+                    AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = rer_start.account_id
                     AND p.status != 1
                 WHERE
                     rer_start.np_communication_id = 'NPWR03903_00'
                     AND rer_start.order_id = 49
+                    AND rer_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -328,12 +352,14 @@ return [
                     rer_end.account_id = rer_start.account_id
                     AND rer_end.np_communication_id = 'NPWR03903_00'
                     AND rer_end.order_id = 37
+                    AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = rer_start.account_id
                     AND p.status != 1
                 WHERE
                     rer_start.np_communication_id = 'NPWR03903_00'
                     AND rer_start.order_id = 36
+                    AND rer_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -354,12 +380,14 @@ return [
                     abt_end.account_id = abt_start.account_id
                     AND abt_end.np_communication_id = 'NPWR03771_00'
                     AND abt_end.order_id = 31
+                    AND abt_end.earned = 1
                 JOIN player p ON
                     p.account_id = abt_start.account_id
                     AND p.status != 1
                 WHERE
                     abt_start.np_communication_id = 'NPWR03771_00'
                     AND abt_start.order_id = 30
+                    AND abt_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -384,9 +412,11 @@ return [
                         marker.account_id = te.account_id
                         AND marker.np_communication_id = 'NPWR00623_00'
                         AND marker.order_id = 9
+                        AND marker.earned = 1
                     WHERE
                         te.np_communication_id = 'NPWR00623_00'
                         AND te.order_id != 9
+                        AND te.earned = 1
                         AND te.earned_date >= marker.earned_date
                     GROUP BY
                         te.account_id
@@ -414,12 +444,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR03734_00'
                     AND trophy_end.order_id = 4
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR03734_00'
                     AND trophy_start.order_id = 3
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -440,12 +472,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR09098_00'
                     AND trophy_end.order_id = 7
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR09098_00'
                     AND trophy_start.order_id = 6
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -466,12 +500,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR00626_00'
                     AND trophy_end.order_id = 32
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR00626_00'
                     AND trophy_start.order_id = 31
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -492,12 +528,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR01012_00'
                     AND trophy_end.order_id = 32
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR01012_00'
                     AND trophy_start.order_id = 31
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -518,12 +556,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR00464_00'
                     AND trophy_end.order_id = 20
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR00464_00'
                     AND trophy_start.order_id = 19
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 60
                 ORDER BY
@@ -544,12 +584,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR03139_00'
                     AND trophy_end.order_id = 37
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR03139_00'
                     AND trophy_start.order_id = 36
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 600
                 ORDER BY
@@ -570,12 +612,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR01781_00'
                     AND trophy_end.order_id = 39
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR01781_00'
                     AND trophy_start.order_id = 38
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 600
                 ORDER BY
@@ -596,12 +640,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR00737_00'
                     AND trophy_end.order_id = 26
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR00737_00'
                     AND trophy_start.order_id = 0
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 300
                 ORDER BY
@@ -622,12 +668,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR14318_00'
                     AND trophy_end.order_id = 39
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR14318_00'
                     AND trophy_start.order_id = 2
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference >= 10
                 ORDER BY
@@ -648,12 +696,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR14318_00'
                     AND trophy_end.order_id = 40
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR14318_00'
                     AND trophy_start.order_id = 2
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference >= 10
                 ORDER BY
@@ -674,12 +724,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR14318_00'
                     AND trophy_end.order_id = 41
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR14318_00'
                     AND trophy_start.order_id = 2
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference >= 10
                 ORDER BY
@@ -700,12 +752,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR05019_00'
                     AND trophy_end.order_id = 32
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR05019_00'
                     AND trophy_start.order_id = 34
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference >= 10
                 ORDER BY
@@ -726,12 +780,14 @@ return [
                     trophy_end.account_id = trophy_start.account_id
                     AND trophy_end.np_communication_id = 'NPWR18592_00'
                     AND trophy_end.order_id = 4
+                    AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = trophy_start.account_id
                     AND p.status != 1
                 WHERE
                     trophy_start.np_communication_id = 'NPWR18592_00'
                     AND trophy_start.order_id = 1
+                    AND trophy_start.earned = 1
                 HAVING
                     time_difference <= 10
                 ORDER BY
