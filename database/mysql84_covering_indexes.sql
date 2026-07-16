@@ -97,6 +97,33 @@ BEGIN
     END IF;
 END$$
 
+DROP PROCEDURE IF EXISTS psn100_drop_check_if_exists$$
+CREATE PROCEDURE psn100_drop_check_if_exists(
+    IN p_table_name VARCHAR(64),
+    IN p_constraint_name VARCHAR(64)
+)
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE table_schema = DATABASE()
+          AND table_name = p_table_name
+          AND constraint_name = p_constraint_name
+          AND constraint_type = 'CHECK'
+    ) THEN
+        SET @drop_sql = CONCAT(
+            'ALTER TABLE `',
+            REPLACE(p_table_name, '`', '``'),
+            '` DROP CHECK `',
+            REPLACE(p_constraint_name, '`', '``'),
+            '`'
+        );
+        PREPARE stmt FROM @drop_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
+
 CALL psn100_add_index_if_not_exists(
     'trophy_title_player',
     'idx_ttp_leaderboard',
@@ -136,10 +163,13 @@ CALL psn100_add_check_if_not_exists(
     'chk_player_status',
     '`status` IN (0, 1, 3, 4, 5, 99)'
 )$$
+-- Recreate so a previously-narrow chk_ttm_status (0,1,2) is replaced.
+-- GameAvailabilityStatus also uses 3 (OBSOLETE) and 4 (DELISTED_AND_OBSOLETE).
+CALL psn100_drop_check_if_exists('trophy_title_meta', 'chk_ttm_status')$$
 CALL psn100_add_check_if_not_exists(
     'trophy_title_meta',
     'chk_ttm_status',
-    '`status` IN (0, 1, 2)'
+    '`status` IN (0, 1, 2, 3, 4)'
 )$$
 CALL psn100_add_check_if_not_exists(
     'trophy_meta',
@@ -150,6 +180,7 @@ CALL psn100_add_check_if_not_exists(
 DROP PROCEDURE psn100_add_index_if_not_exists$$
 DROP PROCEDURE psn100_drop_index_if_exists$$
 DROP PROCEDURE psn100_add_check_if_not_exists$$
+DROP PROCEDURE psn100_drop_check_if_exists$$
 
 DELIMITER ;
 

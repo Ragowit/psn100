@@ -417,7 +417,7 @@ CREATE TABLE `trophy_title_meta` (
   `obsolete_ids` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
-  CONSTRAINT `chk_ttm_status` CHECK (`status` IN (0, 1, 2))
+  CONSTRAINT `chk_ttm_status` CHECK (`status` IN (0, 1, 2, 3, 4))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
