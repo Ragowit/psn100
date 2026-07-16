@@ -78,7 +78,7 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
 
         $sql = <<<SQL
             SELECT
-                p.*,
+                {$this->getPlayerProjection()},
                 {$this->getRankingProjection()}{$totalCountProjection}
             FROM
                 player_ranking r
@@ -115,6 +115,12 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
     abstract protected function getRankingProjection(): string;
 
     abstract protected function getOrderByExpression(): string;
+
+    /**
+     * Explicit player columns used by the leaderboard row mappers.
+     * Avoid SELECT p.* so about_me and unused rarity buckets are not fetched.
+     */
+    abstract protected function getPlayerProjection(): string;
 
     final protected function buildFilterSql(PlayerLeaderboardFilter $filter): string
     {

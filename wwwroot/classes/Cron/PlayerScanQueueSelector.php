@@ -5,9 +5,14 @@ declare(strict_types=1);
 /**
  * Selects the next player for a worker scan from the tiered priority queue.
  *
- * Encapsulates the 9-tier UNION query that was previously embedded in
+ * Encapsulates the tiered UNION query that was previously embedded in
  * ThirtyMinuteCronJob::run() so the main scan loop can focus on PSN API
  * orchestration.
+ *
+ * Ranking tiers are split into per-index range seeks (UNION ALL) so MySQL 8.4
+ * can use idx_pr_ranking_account / idx_pr_rarity_ranking_account /
+ * idx_pr_in_game_rarity_ranking_account instead of filtering an OR across all
+ * three ranking columns.
  *
  * Stale-player cutoffs are computed with MySQL NOW() so they stay aligned with
  * the database session clock and INTERVAL month arithmetic.
@@ -77,6 +82,39 @@ final class PlayerScanQueueSelector
 
     private static function buildSelectionSql(string $nowValuesSelect): string
     {
+        $tier2 = self::rankingTierBranches(
+            tier: 2,
+            cutoffColumn: 'cutoff_1h',
+            predicates: [
+                'pr.ranking <= 100',
+                'pr.rarity_ranking <= 100',
+                'pr.in_game_rarity_ranking <= 100',
+            ],
+        );
+
+        $tier3 = self::rankingTierBranches(
+            tier: 3,
+            cutoffColumn: 'cutoff_1d',
+            predicates: [
+                'pr.ranking <= 1000',
+                'pr.rarity_ranking <= 1000',
+                'pr.in_game_rarity_ranking <= 1000',
+                'pr.ranking BETWEEN 9750 AND 10250',
+                'pr.rarity_ranking BETWEEN 9750 AND 10250',
+                'pr.in_game_rarity_ranking BETWEEN 9750 AND 10250',
+            ],
+        );
+
+        $tier4 = self::rankingTierBranches(
+            tier: 4,
+            cutoffColumn: 'cutoff_1w',
+            predicates: [
+                'pr.ranking <= 10000',
+                'pr.rarity_ranking <= 10000',
+                'pr.in_game_rarity_ranking <= 10000',
+            ],
+        );
+
         return <<<SQL
             WITH
                 now_values AS (
@@ -97,55 +135,15 @@ final class PlayerScanQueueSelector
 
                 UNION ALL
 
-                SELECT
-                    2 AS tier,
-                    p.online_id,
-                    p.last_updated_date AS priority_timestamp,
-                    p.account_id
-                FROM
-                    player p
-                    JOIN player_ranking pr ON pr.account_id = p.account_id
-                    JOIN now_values nv
-                WHERE
-                    (pr.ranking <= 100 OR pr.rarity_ranking <= 100 OR pr.in_game_rarity_ranking <= 100)
-                    AND p.last_updated_date < nv.cutoff_1h
+                {$tier2}
 
                 UNION ALL
 
-                SELECT
-                    3 AS tier,
-                    p.online_id,
-                    p.last_updated_date AS priority_timestamp,
-                    p.account_id
-                FROM
-                    player p
-                    JOIN player_ranking pr ON pr.account_id = p.account_id
-                    JOIN now_values nv
-                WHERE
-                    (
-                        pr.ranking <= 1000 OR
-                        pr.rarity_ranking <= 1000 OR
-                        pr.in_game_rarity_ranking <= 1000 OR
-                        (pr.ranking BETWEEN 9750 AND 10250) OR
-                        (pr.rarity_ranking BETWEEN 9750 AND 10250) OR
-                        (pr.in_game_rarity_ranking BETWEEN 9750 AND 10250)
-                    )
-                    AND p.last_updated_date < nv.cutoff_1d
+                {$tier3}
 
                 UNION ALL
 
-                SELECT
-                    4 AS tier,
-                    p.online_id,
-                    p.last_updated_date AS priority_timestamp,
-                    p.account_id
-                FROM
-                    player p
-                    JOIN player_ranking pr ON pr.account_id = p.account_id
-                    JOIN now_values nv
-                WHERE
-                    (pr.ranking <= 10000 OR pr.rarity_ranking <= 10000 OR pr.in_game_rarity_ranking <= 10000)
-                    AND p.last_updated_date < nv.cutoff_1w
+                {$tier4}
 
                 UNION ALL
 
@@ -231,5 +229,32 @@ final class PlayerScanQueueSelector
                 online_id
             LIMIT 1
             SQL;
+    }
+
+    /**
+     * @param list<string> $predicates
+     */
+    private static function rankingTierBranches(int $tier, string $cutoffColumn, array $predicates): string
+    {
+        $branches = [];
+
+        foreach ($predicates as $predicate) {
+            $branches[] = <<<SQL
+                SELECT
+                    {$tier} AS tier,
+                    p.online_id,
+                    p.last_updated_date AS priority_timestamp,
+                    p.account_id
+                FROM
+                    player_ranking pr
+                    JOIN player p ON p.account_id = pr.account_id
+                    JOIN now_values nv
+                WHERE
+                    {$predicate}
+                    AND p.last_updated_date < nv.{$cutoffColumn}
+                SQL;
+        }
+
+        return implode("\n\n                UNION ALL\n\n", $branches);
     }
 }

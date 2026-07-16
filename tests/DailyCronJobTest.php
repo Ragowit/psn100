@@ -11,10 +11,21 @@ final class DailyCronJobTest extends TestCase
     {
         $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
 
-        $this->assertStringContainsString('LEFT JOIN player_ranking p', $source);
-        $this->assertStringContainsString('p.ranking <= 10000', $source);
+        $this->assertStringContainsString('JOIN player_ranking pr ON pr.ranking <= 10000', $source);
+        $this->assertStringContainsString('te.account_id = pr.account_id', $source);
         $this->assertStringContainsString('/ 10000.0) * 100 AS rarity_percent', $source);
-        $this->assertStringContainsString('WHERE t.np_communication_id = :np_communication_id', $source);
+        $this->assertStringContainsString('CAST(:np_communication_id AS CHAR(12))', $source);
+        $this->assertStringContainsString('JOIN trophy t ON t.np_communication_id = title.np_communication_id', $source);
+    }
+
+    public function testUpdateTrophyRarityQueryDrivesTrophyEarnedByAccountIdForPartitionPruning(): void
+    {
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
+
+        $this->assertStringContainsString('ranked_owners AS', $source);
+        $this->assertStringContainsString('INNER JOIN trophy_earned te', $source);
+        $this->assertStringContainsString('GROUP BY te.order_id', $source);
+        $this->assertFalse(str_contains($source, 'LEFT JOIN trophy_earned te'));
     }
 
     public function testUpdateTrophyRarityQueryAssignsRarityNamesFromThresholds(): void

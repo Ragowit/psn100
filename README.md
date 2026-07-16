@@ -82,14 +82,15 @@ swapped every five minutes.
 hundreds of GiB): `ANALYZE TABLE` would be extremely slow and `AUTO UPDATE` would add
 ongoing overhead with negligible benefit for partition- and PK-scoped lookups.
 
-Existing databases that still have legacy redundant indexes can apply (safe to re-run; skips
+Existing databases that still have legacy or unused indexes can apply (safe to re-run; skips
 indexes that are already absent):
 
 ```bash
 mysql psn100 < database/mysql84_drop_redundant_indexes.sql
 ```
 
-Fresh installs from the current `psn100.sql` already omit those indexes.
+Fresh installs from the current `psn100.sql` already omit those indexes and include the
+`chk_trophy_type` CHECK constraint. The drop script also adds that constraint when missing.
 
 Queue polling (`check_queue_position.php`) requires a `poll_token` from the CSRF-protected
 `add_to_queue.php` response (60 requests per IP per minute). `scan_log_poll.php` allows 30

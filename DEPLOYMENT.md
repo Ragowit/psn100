@@ -21,7 +21,7 @@ Apache rules should be enabled on every production server.
 - **Apache 2.4+** with `AllowOverride` enabled for `wwwroot/` so `.htaccess` files are read
 - **`mod_auth_basic`** enabled (admin HTTP Basic authentication)
 - **PHP 8.5** with extensions used by the app (`pdo_mysql`, `curl`, `gd`, `mbstring`, `intl`, `bcmath`, `gmp`, `zip`)
-- **MySQL 8.4+** (8.0 works with the committed schema)
+- **MySQL 8.4+** (production target; the structure-only schema may import on 8.0 for local smoke tests, but `database/mysql84_histograms.sql` requires 8.4 `AUTO UPDATE` histograms)
 - Paths to password files and cron runner IP addresses decided before go-live
 
 Committed templates (safe to version):
@@ -214,4 +214,6 @@ Older databases may still carry redundant indexes dropped from the current schem
 mysql "$DB_NAME" < database/mysql84_drop_redundant_indexes.sql
 ```
 
-Each dropped index is redundant with an existing primary, unique, or composite key.
+Dropped indexes are either redundant with an existing primary/unique/composite key, or
+unused by application query predicates (country ranking indexes and
+`idx_trophy_count_npwr`). The script also adds `chk_trophy_type` when missing.

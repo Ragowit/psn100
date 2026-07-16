@@ -65,6 +65,19 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
         $this->assertStringContainsString('fetchPlayerRows($filter, $limit, true)', $source);
     }
 
+    public function testGetPlayersSelectsExplicitColumnsInsteadOfPlayerStar(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/AbstractPlayerLeaderboardService.php');
+        $this->assertTrue(is_string($source));
+        $this->assertStringContainsString('getPlayerProjection()', $source);
+        $this->assertFalse(str_contains($source, 'p.*,'));
+
+        $serviceSource = file_get_contents(__DIR__ . '/../wwwroot/classes/PlayerRarityLeaderboardService.php');
+        $this->assertTrue(is_string($serviceSource));
+        $this->assertStringContainsString('p.rarity_points', $serviceSource);
+        $this->assertStringContainsString('p.legendary', $serviceSource);
+    }
+
     private function createSchema(): void
     {
         $this->pdo->exec(
@@ -72,7 +85,20 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
                 account_id TEXT PRIMARY KEY,
                 status INTEGER NOT NULL,
                 country TEXT,
-                avatar_url TEXT
+                avatar_url TEXT,
+                online_id TEXT,
+                level INTEGER NOT NULL DEFAULT 1,
+                progress INTEGER NOT NULL DEFAULT 0,
+                legendary INTEGER NOT NULL DEFAULT 0,
+                epic INTEGER NOT NULL DEFAULT 0,
+                rare INTEGER NOT NULL DEFAULT 0,
+                uncommon INTEGER NOT NULL DEFAULT 0,
+                common INTEGER NOT NULL DEFAULT 0,
+                rarity_points INTEGER NOT NULL DEFAULT 0,
+                rarity_rank_last_week INTEGER NOT NULL DEFAULT 0,
+                rarity_rank_country_last_week INTEGER NOT NULL DEFAULT 0,
+                trophy_count_npwr INTEGER NOT NULL DEFAULT 0,
+                trophy_count_sony INTEGER NOT NULL DEFAULT 0
             )'
         );
 
@@ -95,7 +121,8 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
         ];
 
         $playerStatement = $this->pdo->prepare(
-            'INSERT INTO player (account_id, status, country, avatar_url) VALUES (:account_id, :status, :country, :avatar_url)'
+            'INSERT INTO player (account_id, status, country, avatar_url, online_id)
+             VALUES (:account_id, :status, :country, :avatar_url, :online_id)'
         );
         $rankingStatement = $this->pdo->prepare(
             'INSERT INTO player_ranking (account_id, rarity_ranking, rarity_ranking_country) VALUES (:account_id, :rarity_ranking, :rarity_ranking_country)'
@@ -107,6 +134,7 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
                 ':status' => $player['status'],
                 ':country' => $player['country'],
                 ':avatar_url' => $player['avatar_url'],
+                ':online_id' => 'player-' . $player['account_id'],
             ]);
 
             $rankingStatement->execute([
