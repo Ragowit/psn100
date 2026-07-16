@@ -80,7 +80,7 @@ class TrophyListItem
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
             (float) ($data['rarity_percent'] ?? 0.0),
-            isset($data['in_game_rarity_percent']) ? (float) $data['in_game_rarity_percent'] : 0.0,
+            (float) ($data['in_game_rarity_percent'] ?? 0.0),
             isset($data['progress_target_value']) ? (int) $data['progress_target_value'] : null,
             isset($data['reward_name']) ? (string) $data['reward_name'] : null,
             isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null,

@@ -124,21 +124,20 @@ class TrophyMergeService
             $progressListener,
             &$message
         ): void {
-            switch ($method) {
-                case 'name':
-                    $this->notifyProgress($progressListener, 30, 'Matching trophies by name…');
-                    $message .= $this->mappingService()->insertMappingsByName($childGameId, $parentGameId);
-                    break;
-                case 'icon':
-                    $this->notifyProgress($progressListener, 30, 'Matching trophies by icon…');
-                    $message .= $this->mappingService()->insertMappingsByIcon($childGameId, $parentGameId);
-                    break;
-                case 'order':
-                    $this->notifyProgress($progressListener, 30, 'Matching trophies by list order…');
-                    $this->mappingService()->insertMappingsByOrder($childGameId, $parentGameId);
-                    break;
-                default:
-                    throw new InvalidArgumentException('Wrong input');
+            $this->notifyProgress($progressListener, 30, match ($method) {
+                'name' => 'Matching trophies by name…',
+                'icon' => 'Matching trophies by icon…',
+                'order' => 'Matching trophies by list order…',
+                default => throw new InvalidArgumentException('Wrong input'),
+            });
+
+            if ($method === 'order') {
+                $this->mappingService()->insertMappingsByOrder($childGameId, $parentGameId);
+            } else {
+                $message .= match ($method) {
+                    'name' => $this->mappingService()->insertMappingsByName($childGameId, $parentGameId),
+                    'icon' => $this->mappingService()->insertMappingsByIcon($childGameId, $parentGameId),
+                };
             }
 
             $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');

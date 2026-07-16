@@ -34,7 +34,7 @@ final readonly class MaintenanceMode
             return new self($default, $templatePath);
         }
 
-        $normalized = strtolower(trim((string) $serverValue));
+        $normalized = ((string) $serverValue) |> trim(...) |> strtolower(...);
 
         if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
             return self::enabled($templatePath);

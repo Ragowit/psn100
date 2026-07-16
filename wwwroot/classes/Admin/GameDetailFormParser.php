@@ -139,7 +139,7 @@ final class GameDetailFormParser
                 continue;
             }
 
-            $platform = strtoupper(trim($candidate));
+            $platform = $candidate |> trim(...) |> strtoupper(...);
             if ($platform === '') {
                 continue;
             }

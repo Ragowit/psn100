@@ -11,11 +11,13 @@ final readonly class WorkerCredentialRevealResult
     ) {
     }
 
+    #[\NoDiscard]
     public static function success(string $credential): self
     {
         return new self(true, $credential, null);
     }
 
+    #[\NoDiscard]
     public static function error(string $errorMessage): self
     {
         return new self(false, null, $errorMessage);

@@ -52,9 +52,7 @@ readonly class GameTrophyFilter
             return !$trophy->isEarned();
         }
 
-        $earned = isset($trophy['earned']) ? (int) $trophy['earned'] : 0;
-
-        return $earned !== 1;
+        return (int) ($trophy['earned'] ?? 0) !== 1;
     }
 
     private static function resolveBoolean(mixed $value): bool

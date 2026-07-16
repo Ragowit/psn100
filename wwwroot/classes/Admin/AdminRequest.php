@@ -13,7 +13,7 @@ final readonly class AdminRequest
         string $method,
         private array $postData,
     ) {
-        $normalizedMethod = strtoupper(trim($method));
+        $normalizedMethod = $method |> trim(...) |> strtoupper(...);
         $this->method = $normalizedMethod === '' ? 'GET' : $normalizedMethod;
     }
 

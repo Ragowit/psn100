@@ -49,8 +49,8 @@ readonly class ChangelogEntry
     public static function fromArray(array $row): self
     {
         return new self(
-            self::createDateTime(isset($row['time']) ? (string) $row['time'] : 'now'),
-            $changeTypeValue = isset($row['change_type']) ? (string) $row['change_type'] : '',
+            self::createDateTime((string) ($row['time'] ?? 'now')),
+            $changeTypeValue = (string) ($row['change_type'] ?? ''),
             self::normalizeChangeType($changeTypeValue),
             isset($row['param_1']) ? (int) $row['param_1'] : null,
             isset($row['param_1_name']) ? (string) $row['param_1_name'] : null,

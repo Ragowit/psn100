@@ -58,9 +58,9 @@ final class LogService
         $entries = [];
 
         foreach ($rows as $row) {
-            $id = isset($row['id']) ? (int) $row['id'] : 0;
+            $id = (int) ($row['id'] ?? 0);
             $time = $this->createDateTime($row['time'] ?? null);
-            $message = isset($row['message']) ? (string) $row['message'] : '';
+            $message = (string) ($row['message'] ?? '');
             $formattedMessage = $this->formatter->format($message);
 
             $entries[] = new LogEntry($id, $time, $formattedMessage);

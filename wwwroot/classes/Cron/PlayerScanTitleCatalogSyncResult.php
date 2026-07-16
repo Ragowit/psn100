@@ -5,20 +5,21 @@ declare(strict_types=1);
 /**
  * Outcome of synchronizing one trophy title's catalog rows during a player scan.
  */
-final class PlayerScanTitleCatalogSyncResult
+final readonly class PlayerScanTitleCatalogSyncResult
 {
     /**
      * @param list<string> $mergeParentsToRecompute
      */
     private function __construct(
-        public readonly bool $restartScan,
-        public readonly bool $newTrophies,
-        public readonly bool $isNewTitle,
-        public readonly ?int $titleId,
-        public readonly array $mergeParentsToRecompute,
+        public bool $restartScan,
+        public bool $newTrophies,
+        public bool $isNewTitle,
+        public ?int $titleId,
+        public array $mergeParentsToRecompute,
     ) {
     }
 
+    #[\NoDiscard]
     public static function restartScan(): self
     {
         return new self(true, false, false, null, []);
@@ -27,6 +28,7 @@ final class PlayerScanTitleCatalogSyncResult
     /**
      * @param list<string> $mergeParentsToRecompute
      */
+    #[\NoDiscard]
     public static function synced(
         bool $newTrophies,
         bool $isNewTitle,

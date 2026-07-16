@@ -66,7 +66,7 @@ final readonly class PlayerRandomGamesFilter
             return false;
         }
 
-        $normalized = strtolower(trim((string) $value));
+        $normalized = ((string) $value) |> trim(...) |> strtolower(...);
 
         return !in_array($normalized, ['', '0', 'false', 'off', 'no'], true);
     }

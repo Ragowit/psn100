@@ -78,17 +78,17 @@ class PlayerAdvisableTrophy
     public static function fromArray(array $data, Utility $utility): self
     {
         return new self(
-            isset($data['trophy_id']) ? (int) $data['trophy_id'] : 0,
+            (int) ($data['trophy_id'] ?? 0),
             (string) ($data['trophy_type'] ?? ''),
             (string) ($data['trophy_name'] ?? ''),
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
-            isset($data['rarity_percent']) ? (float) $data['rarity_percent'] : 0.0,
-            isset($data['in_game_rarity_percent']) ? (float) $data['in_game_rarity_percent'] : 0.0,
+            (float) ($data['rarity_percent'] ?? 0.0),
+            (float) ($data['in_game_rarity_percent'] ?? 0.0),
             isset($data['progress_target_value']) ? (int) $data['progress_target_value'] : null,
             array_key_exists('reward_name', $data) ? ($data['reward_name'] !== null ? (string) $data['reward_name'] : null) : null,
             array_key_exists('reward_image_url', $data) ? ($data['reward_image_url'] !== null ? (string) $data['reward_image_url'] : null) : null,
-            isset($data['game_id']) ? (int) $data['game_id'] : 0,
+            (int) ($data['game_id'] ?? 0),
             (string) ($data['game_name'] ?? ''),
             (string) ($data['game_icon'] ?? ''),
             (string) ($data['platform'] ?? ''),

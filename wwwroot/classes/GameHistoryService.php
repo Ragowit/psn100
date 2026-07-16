@@ -245,7 +245,7 @@ final class GameHistoryService
      */
     private static function toInt(array $row, string $key): int
     {
-        return isset($row[$key]) ? (int) $row[$key] : self::INVALID_HISTORY_ID;
+        return (int) ($row[$key] ?? self::INVALID_HISTORY_ID);
     }
 
     /**
@@ -265,7 +265,7 @@ final class GameHistoryService
      */
     private static function toString(array $row, string $key): string
     {
-        return isset($row[$key]) ? (string) $row[$key] : '';
+        return (string) ($row[$key] ?? '');
     }
 
     /**

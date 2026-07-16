@@ -25,35 +25,17 @@ final readonly class PaginationItem
 
     public function markAsActive(): self
     {
-        return new self(
-            page: $this->page,
-            label: $this->label,
-            active: true,
-            disabled: $this->disabled,
-            ariaLabel: $this->ariaLabel,
-        );
+        return clone($this, ['active' => true]);
     }
 
     public function markAsDisabled(): self
     {
-        return new self(
-            page: $this->page,
-            label: $this->label,
-            active: $this->active,
-            disabled: true,
-            ariaLabel: $this->ariaLabel,
-        );
+        return clone($this, ['disabled' => true]);
     }
 
     public function setAriaLabel(?string $ariaLabel): self
     {
-        return new self(
-            page: $this->page,
-            label: $this->label,
-            active: $this->active,
-            disabled: $this->disabled,
-            ariaLabel: $ariaLabel,
-        );
+        return clone($this, ['ariaLabel' => $ariaLabel]);
     }
 
     /**

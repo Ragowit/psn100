@@ -93,7 +93,7 @@ final class PsnTrophyTitleComparisonService
 
     public static function normalizeSource(string $source): ?string
     {
-        $normalizedSource = strtolower(trim($source));
+        $normalizedSource = $source |> trim(...) |> strtolower(...);
 
         if ($normalizedSource === self::SOURCE_DIRECT || $normalizedSource === self::SOURCE_TUSTIN) {
             return $normalizedSource;
