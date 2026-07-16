@@ -22,6 +22,7 @@ final readonly class PlayerRarityLeaderboardService extends AbstractPlayerLeader
     protected function getPlayerProjection(): string
     {
         return <<<'SQL'
+            p.account_id,
             p.online_id,
             p.avatar_url,
             p.country,
