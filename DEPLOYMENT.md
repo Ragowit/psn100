@@ -215,10 +215,10 @@ swaps that table every five minutes, which would invalidate histograms immediate
 InnoDB stats refresh. Existing queries filter by `account_id` (partition key) or
 `np_communication_id` (leading primary-key column), so histograms would add little value.
 
-`mysql84_trophy_earned_triggers.sql` recreates the three `trophy_earned` triggers so that
-`earned` flips from `1` → `0` decrement `player.trophy_count_npwr`, and so bulk deletes can
-set `@psn100_skip_trophy_count = 1` to skip per-row counter updates (fresh installs from
-`psn100.sql` already include this). Safe to re-run; it only replaces trigger definitions.
+`mysql84_trophy_earned_triggers.sql` recreates the three `trophy_earned` triggers so bulk
+deletes can set `@psn100_skip_trophy_count = 1` to skip per-row counter updates (fresh
+installs from `psn100.sql` already include this). Safe to re-run; it only replaces trigger
+definitions. (`earned` only transitions `0` → `1`, never `1` → `0`.)
 
 Older databases may still carry redundant indexes dropped from the current schema. Apply
 (safe to re-run; skips indexes that are already absent):

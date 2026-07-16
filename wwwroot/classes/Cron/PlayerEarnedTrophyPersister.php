@@ -92,7 +92,8 @@ final class PlayerEarnedTrophyPersister
             UPDATE
                 earned_date = IF(trophy_earned.earned = 0, new.earned_date, trophy_earned.earned_date),
                 progress = new.progress,
-                earned = new.earned");
+                -- earned never goes 1→0; only insert as 0/1 or promote 0→1.
+                earned = IF(trophy_earned.earned = 1, trophy_earned.earned, new.earned)");
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
