@@ -276,6 +276,26 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                 $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
+            } catch (Exception $exception) {
+                // Transient PSN/network failures (e.g. Guzzle/cURL transfer errors) should
+                // back off and keep the worker alive instead of terminating the cron job.
+                $this->logger->log(sprintf(
+                    'Encountered a problem while scanning %s: %s. Waiting 1 minute before retrying.',
+                    $onlineId,
+                    $exception->getMessage()
+                ));
+                $this->workerScanCoordinator->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'Encountered a problem while scanning. Waiting 1 minute before retrying.'
+                );
+                sleep(60 * 1);
+                $recheck = '';
+                unset($missingGameDeletionCheck[$onlineId]);
+                unset($missingTrophyTitleRetry[$onlineId]);
+                unset($trophyTitleCountRetry[$onlineId]);
+                $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
+
+                continue;
             } finally {
                 $this->workerScanCoordinator->setWorkerScanProgress((int) $worker['id'], null);
             }

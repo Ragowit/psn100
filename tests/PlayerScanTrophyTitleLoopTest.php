@@ -23,6 +23,8 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 {
     private PDO $database;
     private PlayerScanTrophyTitleLoop $trophyTitleLoop;
+    /** @var list<int> */
+    private array $sleepCalls = [];
 
     protected function setUp(): void
     {
@@ -33,7 +35,14 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $this->database->exec('CREATE TABLE player (account_id INTEGER PRIMARY KEY, online_id TEXT NOT NULL, last_updated_date TEXT)');
         $this->database->exec('CREATE TABLE setting (id INTEGER PRIMARY KEY, scanning TEXT, scan_progress TEXT)');
         $this->database->exec("INSERT INTO setting (id, scanning, scan_progress) VALUES (1, 'ExampleUser', NULL)");
+        $this->database->exec('CREATE TABLE trophy_title_player (
+            account_id TEXT NOT NULL,
+            np_communication_id TEXT NOT NULL,
+            last_updated_date TEXT,
+            PRIMARY KEY (account_id, np_communication_id)
+        )');
 
+        $this->sleepCalls = [];
         $logger = new Psn100Logger($this->database);
         $titleMetadataHelper = new PlayerScanTitleMetadataHelper();
         $workerScanCoordinator = new WorkerScanCoordinator($this->database);
@@ -69,6 +78,9 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
             new PlayerScanStaleGameDeletionService($this->database),
             new PlayerScanCompletionService($this->database),
             new PlayerScanTrophyTitleRefresher($logger, $titleMetadataHelper, $workerScanCoordinator),
+            function (int $seconds): void {
+                $this->sleepCalls[] = $seconds;
+            },
         );
     }
 
@@ -126,6 +138,123 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
         $this->assertStringContainsString('NPWR12345_00', (string) $logMessage);
+    }
+
+    public function testProcessAccessibleTrophyTitlesRetriesTransientFetchExceptions(): void
+    {
+        $recheck = 'ExampleUser';
+        $missingGameDeletionCheck = ['ExampleUser' => true, 'OtherUser' => true];
+        $missingTrophyTitleRetry = ['ExampleUser' => true];
+        $trophyTitleCountRetry = ['ExampleUser' => true];
+        $invalidTitleDateRetry = ['ExampleUser:NPWR12345_00' => true, 'OtherUser:NPWR99999_00' => true];
+
+        $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+            new stdClass(),
+            new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
+                new RuntimeException('cURL error 18: transfer closed with outstanding read data remaining')
+            ),
+            ['online_id' => 'ExampleUser'],
+            ['id' => 1],
+            'ExampleUser',
+            $recheck,
+            $missingGameDeletionCheck,
+            $missingTrophyTitleRetry,
+            $trophyTitleCountRetry,
+            $invalidTitleDateRetry,
+        );
+
+        $this->assertTrue($result->shouldContinueLoop());
+        $this->assertSame([60], $this->sleepCalls);
+        $this->assertSame('', $recheck);
+        $this->assertSame(['OtherUser' => true], $missingGameDeletionCheck);
+        $this->assertSame([], $missingTrophyTitleRetry);
+        $this->assertSame([], $trophyTitleCountRetry);
+        $this->assertSame(['OtherUser:NPWR99999_00' => true], $invalidTitleDateRetry);
+
+        $scanProgress = $this->database->query('SELECT scan_progress FROM setting WHERE id = 1')->fetchColumn();
+        $this->assertTrue(is_string($scanProgress));
+        $this->assertStringContainsString('fetching game list', $scanProgress);
+
+        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
+        $this->assertStringContainsString('cURL error 18', (string) $logMessage);
+        $this->assertStringContainsString('ExampleUser', (string) $logMessage);
+    }
+
+    public function testProcessAccessibleTrophyTitlesRetriesTypeErrorsQuickly(): void
+    {
+        $recheck = 'ExampleUser';
+        $missingGameDeletionCheck = ['ExampleUser' => true];
+        $missingTrophyTitleRetry = ['ExampleUser' => true];
+        $trophyTitleCountRetry = ['ExampleUser' => true];
+        $invalidTitleDateRetry = ['ExampleUser:NPWR12345_00' => true];
+
+        $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+            new stdClass(),
+            new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
+                new TypeError('Unexpected trophyTitles payload')
+            ),
+            ['online_id' => 'ExampleUser'],
+            ['id' => 1],
+            'ExampleUser',
+            $recheck,
+            $missingGameDeletionCheck,
+            $missingTrophyTitleRetry,
+            $trophyTitleCountRetry,
+            $invalidTitleDateRetry,
+        );
+
+        $this->assertTrue($result->shouldContinueLoop());
+        $this->assertSame([5], $this->sleepCalls);
+        $this->assertSame('', $recheck);
+        $this->assertSame([], $missingGameDeletionCheck);
+        $this->assertSame([], $missingTrophyTitleRetry);
+        $this->assertSame([], $trophyTitleCountRetry);
+        $this->assertSame([], $invalidTitleDateRetry);
+    }
+}
+
+final class PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles
+{
+    public function __construct(private readonly Throwable $exception)
+    {
+    }
+
+    public function accountId(): string
+    {
+        return '2498580493801829235';
+    }
+
+    public function trophySummary(): PlayerScanTrophyTitleLoopTestTrophySummary
+    {
+        return new PlayerScanTrophyTitleLoopTestTrophySummary();
+    }
+
+    public function trophyTitles(): never
+    {
+        throw $this->exception;
+    }
+}
+
+final class PlayerScanTrophyTitleLoopTestTrophySummary
+{
+    public function platinum(): int
+    {
+        return 0;
+    }
+
+    public function gold(): int
+    {
+        return 0;
+    }
+
+    public function silver(): int
+    {
+        return 0;
+    }
+
+    public function bronze(): int
+    {
+        return 0;
     }
 }
 

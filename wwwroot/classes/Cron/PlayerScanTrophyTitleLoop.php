@@ -19,6 +19,10 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  */
 final class PlayerScanTrophyTitleLoop
 {
+    private const DEFAULT_SLEEPER = 'sleep';
+
+    private readonly \Closure $sleeper;
+
     public function __construct(
         private readonly PDO $database,
         private readonly Psn100Logger $logger,
@@ -29,7 +33,9 @@ final class PlayerScanTrophyTitleLoop
         private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService,
         private readonly PlayerScanCompletionService $scanCompletionService,
         private readonly PlayerScanTrophyTitleRefresher $trophyTitleRefresher,
+        ?callable $sleeper = null,
     ) {
+        $this->sleeper = \Closure::fromCallable($sleeper ?? self::DEFAULT_SLEEPER);
     }
 
     /**
@@ -75,7 +81,42 @@ final class PlayerScanTrophyTitleLoop
             $trophyTitleCollection = $user->trophyTitles();
             $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
         } catch (TypeError) {
-            sleep(5);
+            // A failed fetch is not a clean confirmation of missing titles, so reset
+            // deletion/retry guards before asking the worker to try again.
+            $this->clearTitleListRetryState(
+                $onlineId,
+                $missingGameDeletionCheck,
+                $missingTrophyTitleRetry,
+                $trophyTitleCountRetry,
+                $invalidTitleDateRetry,
+            );
+            // Keep the outer recheck second-pass guard armed for the next real scan.
+            $recheck = '';
+            ($this->sleeper)(5);
+
+            return PlayerScanTrophyTitleLoopResult::continueLoop();
+        } catch (Exception $exception) {
+            // Transient PSN/network failures (e.g. cURL error 18 during paginated
+            // trophyTitles fetches) should retry instead of crashing the worker.
+            $this->logger->log(sprintf(
+                'Failed to fetch trophy titles for %s: %s. Waiting 1 minute before retrying.',
+                $onlineId,
+                $exception->getMessage()
+            ));
+            $this->workerScanCoordinator->setWaitingScanProgress(
+                (int) $worker['id'],
+                'Encountered a problem while fetching game list. Waiting 1 minute before retrying.'
+            );
+            $this->clearTitleListRetryState(
+                $onlineId,
+                $missingGameDeletionCheck,
+                $missingTrophyTitleRetry,
+                $trophyTitleCountRetry,
+                $invalidTitleDateRetry,
+            );
+            // Keep the outer recheck second-pass guard armed for the next real scan.
+            $recheck = '';
+            ($this->sleeper)(60);
 
             return PlayerScanTrophyTitleLoopResult::continueLoop();
         }
@@ -94,7 +135,7 @@ final class PlayerScanTrophyTitleLoop
                     'Trophy title count lower than expected. Waiting 1 minute before retrying.'
                 );
 
-                sleep(60 * 1);
+                ($this->sleeper)(60 * 1);
                 $recheck = '';
 
                 return PlayerScanTrophyTitleLoopResult::continueLoop();
@@ -262,7 +303,7 @@ final class PlayerScanTrophyTitleLoop
                     (int) $worker['id'],
                     'Waiting 5 minutes before retrying because of game deletion check.'
                 );
-                sleep(60 * 5);
+                ($this->sleeper)(60 * 5);
                 $recheck = '';
 
                 return PlayerScanTrophyTitleLoopResult::continueLoop();
@@ -281,7 +322,7 @@ final class PlayerScanTrophyTitleLoop
                     'No trophy titles returned. Waiting 1 minute before retrying.'
                 );
 
-                sleep(60 * 1);
+                ($this->sleeper)(60 * 1);
                 $recheck = '';
 
                 return PlayerScanTrophyTitleLoopResult::continueLoop();
@@ -345,5 +386,24 @@ final class PlayerScanTrophyTitleLoop
         );
 
         $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
+    }
+
+    /**
+     * @param array<string, bool> $missingGameDeletionCheck
+     * @param array<string, bool> $missingTrophyTitleRetry
+     * @param array<string, bool> $trophyTitleCountRetry
+     * @param array<string, bool> $invalidTitleDateRetry
+     */
+    private function clearTitleListRetryState(
+        string $onlineId,
+        array &$missingGameDeletionCheck,
+        array &$missingTrophyTitleRetry,
+        array &$trophyTitleCountRetry,
+        array &$invalidTitleDateRetry,
+    ): void {
+        unset($missingGameDeletionCheck[$onlineId]);
+        unset($missingTrophyTitleRetry[$onlineId]);
+        unset($trophyTitleCountRetry[$onlineId]);
+        $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
     }
 }
