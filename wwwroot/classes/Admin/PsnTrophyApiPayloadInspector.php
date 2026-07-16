@@ -92,7 +92,7 @@ final class PsnTrophyApiPayloadInspector
             return;
         }
 
-        $normalizedRequested = strtoupper(trim($requested));
+        $normalizedRequested = $requested |> trim(...) |> strtoupper(...);
         foreach ($detected as $normalizedDetected) {
             if ($normalizedDetected === $normalizedRequested) {
                 continue;
@@ -162,7 +162,7 @@ final class PsnTrophyApiPayloadInspector
                 continue;
             }
 
-            $normalizedCandidate = strtoupper(trim($candidate));
+            $normalizedCandidate = $candidate |> trim(...) |> strtoupper(...);
             if (isset($seen[$normalizedCandidate])) {
                 continue;
             }

@@ -20,11 +20,11 @@ readonly class HomepagePopularGame extends HomepageTitle
     public static function fromArray(array $row): self
     {
         return new self(
-            isset($row['id']) ? (int) $row['id'] : 0,
+            (int) ($row['id'] ?? 0),
             (string) ($row['name'] ?? ''),
             (string) ($row['icon_url'] ?? ''),
             (string) ($row['platform'] ?? ''),
-            isset($row['recent_players']) ? (int) $row['recent_players'] : 0
+            (int) ($row['recent_players'] ?? 0)
         );
     }
 

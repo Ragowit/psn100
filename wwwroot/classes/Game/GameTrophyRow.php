@@ -62,11 +62,9 @@ final readonly class GameTrophyRow
         $this->name = (string) ($data['name'] ?? '');
         $this->detail = (string) ($data['detail'] ?? '');
         $this->iconUrl = (string) ($data['icon_url'] ?? '');
-        $this->rarityPercent = isset($data['rarity_percent']) ? (float) $data['rarity_percent'] : 0.0;
-        $this->inGameRarityPercent = isset($data['in_game_rarity_percent'])
-            ? (float) $data['in_game_rarity_percent']
-            : 0.0;
-        $this->status = isset($data['status']) ? (int) $data['status'] : 0;
+        $this->rarityPercent = (float) ($data['rarity_percent'] ?? 0.0);
+        $this->inGameRarityPercent = (float) ($data['in_game_rarity_percent'] ?? 0.0);
+        $this->status = (int) ($data['status'] ?? 0);
         $this->progressTargetValue = isset($data['progress_target_value'])
             ? (int) $data['progress_target_value']
             : null;
@@ -83,8 +81,7 @@ final readonly class GameTrophyRow
             && $rawEarnedDate !== 'No Timestamp';
         $this->earnedDate = $this->hasRecordedEarnedTimestamp ? $rawEarnedDate : null;
 
-        $earnedValue = isset($data['earned']) ? (int) $data['earned'] : 0;
-        $this->isEarned = $earnedValue === 1;
+        $this->isEarned = (int) ($data['earned'] ?? 0) === 1;
     }
 
     public function getId(): int

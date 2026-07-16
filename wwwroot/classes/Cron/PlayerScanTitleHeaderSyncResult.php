@@ -5,12 +5,12 @@ declare(strict_types=1);
 /**
  * Outcome of synchronizing a trophy title header row during player scans.
  */
-final class PlayerScanTitleHeaderSyncResult
+final readonly class PlayerScanTitleHeaderSyncResult
 {
     public function __construct(
-        public readonly bool $titleDataChanged,
-        public readonly bool $titleNeedsUpdate,
-        public readonly bool $isNewTitle,
+        public bool $titleDataChanged,
+        public bool $titleNeedsUpdate,
+        public bool $isNewTitle,
     ) {
     }
 }

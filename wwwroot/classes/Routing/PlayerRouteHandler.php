@@ -44,21 +44,14 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
             'onlineId' => $onlineId,
         ];
 
-        switch ($view) {
-            case '':
-                return RouteResult::include('player.php', $variables);
-            case 'advisor':
-                return RouteResult::include('player_advisor.php', $variables);
-            case 'log':
-                return RouteResult::include('player_log.php', $variables);
-            case 'random':
-                return RouteResult::include('player_random.php', $variables);
-            case 'report':
-                return RouteResult::include('player_report.php', $variables);
-            case 'timeline':
-                return RouteResult::include('player_timeline.php', $variables);
-            default:
-                return RouteResult::redirect('/player/' . rawurlencode($onlineId));
-        }
+        return match ($view) {
+            '' => RouteResult::include('player.php', $variables),
+            'advisor' => RouteResult::include('player_advisor.php', $variables),
+            'log' => RouteResult::include('player_log.php', $variables),
+            'random' => RouteResult::include('player_random.php', $variables),
+            'report' => RouteResult::include('player_report.php', $variables),
+            'timeline' => RouteResult::include('player_timeline.php', $variables),
+            default => RouteResult::redirect('/player/' . rawurlencode($onlineId)),
+        };
     }
 }

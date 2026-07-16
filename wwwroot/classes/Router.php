@@ -46,8 +46,7 @@ class Router
     #[\NoDiscard]
     public function dispatch(string $requestUri): RouteResult
     {
-        $path = parse_url($requestUri, PHP_URL_PATH);
-        $path = is_string($path) ? $path : '';
+        $path = Uri\Rfc3986\Uri::parse($requestUri)?->getPath() ?? '';
         $normalizedPath = trim($path, '/');
 
         if ($normalizedPath === '') {

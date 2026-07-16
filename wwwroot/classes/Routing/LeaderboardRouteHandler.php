@@ -18,18 +18,13 @@ final readonly class LeaderboardRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect(self::DEFAULT_REDIRECT);
         }
 
-        $view = array_shift($segments) ?? '';
+        $view = array_first($segments) ?? '';
 
-        switch ($view) {
-            case 'main':
-            case 'trophy':
-                return RouteResult::include('leaderboard_main.php');
-            case 'rarity':
-                return RouteResult::include('leaderboard_rarity.php');
-            case 'in-game-rarity':
-                return RouteResult::include('leaderboard_in_game_rarity.php');
-            default:
-                return RouteResult::redirect(self::DEFAULT_REDIRECT);
-        }
+        return match ($view) {
+            'main', 'trophy' => RouteResult::include('leaderboard_main.php'),
+            'rarity' => RouteResult::include('leaderboard_rarity.php'),
+            'in-game-rarity' => RouteResult::include('leaderboard_in_game_rarity.php'),
+            default => RouteResult::redirect(self::DEFAULT_REDIRECT),
+        };
     }
 }

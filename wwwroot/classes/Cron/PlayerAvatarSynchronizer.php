@@ -25,24 +25,7 @@ final class PlayerAvatarSynchronizer
         $avatarUrls = $user->avatarUrls();
         $avatarFilename = '';
 
-        for ($i = 0; $i < 4; $i++) {
-            switch ($i) {
-                case 0:
-                    $size = 'xl';
-                    break;
-                case 1:
-                    $size = 'l';
-                    break;
-                case 2:
-                    $size = 'm';
-                    break;
-                case 3:
-                    $size = 's';
-                    break;
-                default:
-                    $size = 'xl';
-            }
-
+        foreach (['xl', 'l', 'm', 's'] as $size) {
             $avatarUrl = $avatarUrls[$size];
 
             $query = $this->database->prepare(

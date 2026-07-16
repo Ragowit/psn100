@@ -86,7 +86,7 @@ final class PlayStationGraphqlPlayerSearch
      */
     public function findExactPlayer(string $onlineId): ?array
     {
-        $normalizedId = strtolower(trim($onlineId));
+        $normalizedId = $onlineId |> trim(...) |> strtolower(...);
 
         if ($normalizedId === '') {
             return null;

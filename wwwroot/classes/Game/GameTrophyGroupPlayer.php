@@ -2,45 +2,35 @@
 
 declare(strict_types=1);
 
-final class GameTrophyGroupPlayer
+final readonly class GameTrophyGroupPlayer
 {
-    private string $npCommunicationId;
-
-    private string $groupId;
-
-    private int $accountId;
-
-    private int $bronzeCount;
-
-    private int $silverCount;
-
-    private int $goldCount;
-
-    private int $platinumCount;
-
-    private int $progress;
-
     /**
      * @param array<string, mixed> $data
      */
     public static function fromArray(array $data): self
     {
-        return new self($data);
+        return new self(
+            (string) ($data['np_communication_id'] ?? ''),
+            (string) ($data['group_id'] ?? ''),
+            (int) ($data['account_id'] ?? 0),
+            (int) ($data['bronze'] ?? 0),
+            (int) ($data['silver'] ?? 0),
+            (int) ($data['gold'] ?? 0),
+            (int) ($data['platinum'] ?? 0),
+            (int) ($data['progress'] ?? 0),
+        );
     }
 
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function __construct(array $data)
-    {
-        $this->npCommunicationId = (string) ($data['np_communication_id'] ?? '');
-        $this->groupId = (string) ($data['group_id'] ?? '');
-        $this->accountId = isset($data['account_id']) ? (int) $data['account_id'] : 0;
-        $this->bronzeCount = isset($data['bronze']) ? (int) $data['bronze'] : 0;
-        $this->silverCount = isset($data['silver']) ? (int) $data['silver'] : 0;
-        $this->goldCount = isset($data['gold']) ? (int) $data['gold'] : 0;
-        $this->platinumCount = isset($data['platinum']) ? (int) $data['platinum'] : 0;
-        $this->progress = isset($data['progress']) ? (int) $data['progress'] : 0;
+    private function __construct(
+        private string $npCommunicationId,
+        private string $groupId,
+        private int $accountId,
+        private int $bronzeCount,
+        private int $silverCount,
+        private int $goldCount,
+        private int $platinumCount,
+        private int $progress,
+    ) {
     }
 
     public function getNpCommunicationId(): string

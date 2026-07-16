@@ -33,22 +33,22 @@ final readonly class PlayerLogEntry
     public static function fromArray(array $row): self
     {
         return new self(
-            trophyId: isset($row['trophy_id']) ? (int) $row['trophy_id'] : 0,
+            trophyId: (int) ($row['trophy_id'] ?? 0),
             trophyType: (string) ($row['trophy_type'] ?? ''),
             trophyName: (string) ($row['trophy_name'] ?? ''),
             trophyDetail: (string) ($row['trophy_detail'] ?? ''),
             trophyIcon: (string) ($row['trophy_icon'] ?? ''),
             rarityPercent: self::toNullableString($row['rarity_percent'] ?? null),
             inGameRarityPercent: self::toNullableString($row['in_game_rarity_percent'] ?? null),
-            trophyStatus: isset($row['trophy_status']) ? (int) $row['trophy_status'] : 0,
+            trophyStatus: (int) ($row['trophy_status'] ?? 0),
             progressTargetValue: self::toNullableInt($row['progress_target_value'] ?? null),
             progress: self::toNullableInt($row['progress'] ?? null),
-            isEarned: isset($row['earned']) ? ((int) $row['earned'] === 1) : false,
+            isEarned: (int) ($row['earned'] ?? 0) === 1,
             rewardName: self::toNullableString($row['reward_name'] ?? null),
             rewardImageUrl: self::toNullableString($row['reward_image_url'] ?? null),
-            gameId: isset($row['game_id']) ? (int) $row['game_id'] : 0,
+            gameId: (int) ($row['game_id'] ?? 0),
             gameName: (string) ($row['game_name'] ?? ''),
-            gameStatus: isset($row['game_status']) ? (int) $row['game_status'] : 0,
+            gameStatus: (int) ($row['game_status'] ?? 0),
             gameIcon: (string) ($row['game_icon'] ?? ''),
             platforms: (string) ($row['platform'] ?? ''),
             earnedDate: (string) ($row['earned_date'] ?? '')

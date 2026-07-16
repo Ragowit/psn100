@@ -20,6 +20,7 @@ readonly class PlayerQueueResponse implements \JsonSerializable
     /**
      * @param list<array<string, mixed>>|null $messageParts
      */
+    #[\NoDiscard]
     public static function queued(string $message, ?array $messageParts = null): self
     {
         return new self(PlayerQueueStatus::QUEUED, $message, $messageParts);
@@ -28,21 +29,25 @@ readonly class PlayerQueueResponse implements \JsonSerializable
     /**
      * @param list<array<string, mixed>>|null $messageParts
      */
+    #[\NoDiscard]
     public static function complete(string $message, ?array $messageParts = null): self
     {
         return new self(PlayerQueueStatus::COMPLETE, $message, $messageParts);
     }
 
+    #[\NoDiscard]
     public static function error(string $message, ?array $messageParts = null): self
     {
         return new self(PlayerQueueStatus::ERROR, $message, $messageParts);
     }
 
+    #[\NoDiscard]
     public static function busy(string $message): self
     {
         return new self(PlayerQueueStatus::ERROR, $message, null, null, 503);
     }
 
+    #[\NoDiscard]
     public static function rateLimited(string $message): self
     {
         return new self(PlayerQueueStatus::ERROR, $message, null, null, 429);

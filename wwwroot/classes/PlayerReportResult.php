@@ -8,16 +8,19 @@ readonly class PlayerReportResult
     {
     }
 
+    #[\NoDiscard]
     public static function success(string $message): self
     {
         return new self(true, true, $message);
     }
 
+    #[\NoDiscard]
     public static function error(string $message): self
     {
         return new self(true, false, $message);
     }
 
+    #[\NoDiscard]
     public static function empty(): self
     {
         return new self(false, false, '');

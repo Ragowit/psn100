@@ -67,7 +67,7 @@ $requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_G
                     <?php
                     $selectedPlatforms = [];
                     foreach (explode(',', $gameDetail->getPlatform()) as $platformValue) {
-                        $normalizedPlatform = strtoupper(trim($platformValue));
+                        $normalizedPlatform = $platformValue |> trim(...) |> strtoupper(...);
                         if ($normalizedPlatform === '') {
                             continue;
                         }

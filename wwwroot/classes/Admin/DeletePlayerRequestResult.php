@@ -13,21 +13,25 @@ final readonly class DeletePlayerRequestResult
     ) {
     }
 
+    #[\NoDiscard]
     public static function empty(): self
     {
         return new self(null, null, null);
     }
 
+    #[\NoDiscard]
     public static function success(string $message): self
     {
         return new self($message, null, null);
     }
 
+    #[\NoDiscard]
     public static function error(string $message): self
     {
         return new self(null, $message, null);
     }
 
+    #[\NoDiscard]
     public static function confirmation(DeletePlayerConfirmation $confirmation): self
     {
         return new self(null, null, $confirmation);

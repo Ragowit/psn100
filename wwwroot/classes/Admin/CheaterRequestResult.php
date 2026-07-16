@@ -10,16 +10,19 @@ final readonly class CheaterRequestResult
     ) {
     }
 
+    #[\NoDiscard]
     public static function success(string $message): self
     {
         return new self($message, null);
     }
 
+    #[\NoDiscard]
     public static function error(string $message): self
     {
         return new self(null, $message);
     }
 
+    #[\NoDiscard]
     public static function empty(): self
     {
         return new self(null, null);
