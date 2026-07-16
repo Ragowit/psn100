@@ -217,6 +217,17 @@ final class TrophyImageDownloaderTest extends TestCase
         $this->assertSame('/home/psn100/public_html/img/reward/', $directories->reward);
     }
 
+    public function testFetchRemoteFileUsesHttpGetLastResponseHeadersApi(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/TrophyImageDownloader.php');
+        $this->assertTrue(is_string($source));
+        $this->assertStringContainsString('http_get_last_response_headers()', $source);
+        $this->assertStringContainsString('http_clear_last_response_headers()', $source);
+        if (str_contains($source, '$http_response_header')) {
+            $this->fail('TrophyImageDownloader must not use deprecated $http_response_header.');
+        }
+    }
+
     private function createDownloader(?\Closure $remoteFileFetcher): TrophyImageDownloader
     {
         return new TrophyImageDownloader(

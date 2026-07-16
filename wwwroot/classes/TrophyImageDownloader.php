@@ -153,9 +153,10 @@ final readonly class TrophyImageDownloader
                 ],
             ]);
 
+            http_clear_last_response_headers();
             $contents = @file_get_contents($url, false, $context);
             if ($contents !== false) {
-                $statusLine = array_first($http_response_header) ?? '';
+                $statusLine = array_first(http_get_last_response_headers() ?? []) ?? '';
                 if ($statusLine === '' || preg_match('/^HTTP\/\S+\s+2\d\d\b/', $statusLine)) {
                     return $contents;
                 }
