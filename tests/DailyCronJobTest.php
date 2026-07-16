@@ -33,7 +33,10 @@ final class DailyCronJobTest extends TestCase
         $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY');
 
         $this->assertStringContainsString('UPDATE trophy_meta tm', $source);
-        $this->assertStringContainsString("tm.rarity_name = 'NONE'", $source);
+        $this->assertStringContainsString('JOIN trophy_title_meta ttm', $source);
+        $this->assertStringContainsString('IF(tm.status = 0 AND ttm.status = 0, 10000, 0)', $source);
+        $this->assertStringContainsString("IF(tm.status = 0 AND ttm.status = 0, 'LEGENDARY', 'NONE')", $source);
+        $this->assertStringContainsString('tm.in_game_rarity_point = 0', $source);
         $this->assertFalse(str_contains($source, 'trophy_earned'));
         $this->assertFalse(str_contains($source, 'player_ranking'));
     }

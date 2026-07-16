@@ -87,20 +87,23 @@ final readonly class DailyCronJob implements CronJobInterface
         SQL;
 
     /**
-     * Titles with zero owners cannot produce non-zero rarity. Skip probing
-     * trophy_earned via the top-10k ranking join for that long tail.
+     * Titles with zero owners have zero trophy_owners in the top-10k join, so
+     * rarity_percent is always 0. Skip probing trophy_earned, but keep the same
+     * zero-percent scoring as UPDATE_TROPHY_RARITY_QUERY (10000 / LEGENDARY for
+     * obtainable trophies; in-game points stay 0 when title owners are 0).
      */
     private const string UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY = <<<'SQL'
         UPDATE trophy_meta tm
         JOIN trophy t ON t.id = tm.trophy_id
+        JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
         SET
             tm.owners = 0,
             tm.rarity_percent = 0,
-            tm.rarity_point = 0,
-            tm.rarity_name = 'NONE',
+            tm.rarity_point = IF(tm.status = 0 AND ttm.status = 0, 10000, 0),
+            tm.rarity_name = IF(tm.status = 0 AND ttm.status = 0, 'LEGENDARY', 'NONE'),
             tm.in_game_rarity_percent = 0,
             tm.in_game_rarity_point = 0,
-            tm.in_game_rarity_name = 'NONE'
+            tm.in_game_rarity_name = IF(tm.status = 0 AND ttm.status = 0, 'LEGENDARY', 'NONE')
         WHERE t.np_communication_id = :np_communication_id
         SQL;
 
