@@ -6,31 +6,47 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
+    /**
+     * Recalculate rarity for one title.
+     *
+     * Owners are counted by driving from player_ranking (top 10k) into
+     * trophy_earned on account_id so HASH(account_id) partition pruning applies.
+     * The aggregated derived table is materialized once per title instead of
+     * scanning trophy_earned by np_communication_id across all 256 partitions.
+     */
     private const string UPDATE_TROPHY_RARITY_QUERY = <<<'SQL'
-        WITH rarity AS (
+        WITH title AS (
+            SELECT CAST(:np_communication_id AS CHAR(12)) AS np_communication_id
+        ),
+        ranked_owners AS (
+            SELECT
+                te.order_id,
+                COUNT(*) AS trophy_owners
+            FROM title
+            JOIN player_ranking pr ON pr.ranking <= 10000
+            INNER JOIN trophy_earned te
+                ON te.account_id = pr.account_id
+                AND te.np_communication_id = title.np_communication_id
+                AND te.earned = 1
+            GROUP BY te.order_id
+        ),
+        rarity AS (
             SELECT
                 t.id AS trophy_id,
                 tm.status AS meta_status,
                 ttm.status AS title_status,
                 ttm.owners AS title_owners,
-                COUNT(p.account_id) AS trophy_owners,
-                (COUNT(p.account_id) / 10000.0) * 100 AS rarity_percent,
+                IFNULL(owners.trophy_owners, 0) AS trophy_owners,
+                (IFNULL(owners.trophy_owners, 0) / 10000.0) * 100 AS rarity_percent,
                 CASE
                     WHEN ttm.owners = 0 THEN 0
-                    ELSE LEAST((COUNT(p.account_id) / ttm.owners) * 100, 100.0)
+                    ELSE LEAST((IFNULL(owners.trophy_owners, 0) / ttm.owners) * 100, 100.0)
                 END AS in_game_rarity_percent
-            FROM trophy t
+            FROM title
+            JOIN trophy t ON t.np_communication_id = title.np_communication_id
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
-            LEFT JOIN trophy_earned te
-                ON te.np_communication_id = t.np_communication_id
-                    AND te.order_id = t.order_id
-                    AND te.earned = 1
-            LEFT JOIN player_ranking p
-                ON p.account_id = te.account_id
-                    AND p.ranking <= 10000
-            WHERE t.np_communication_id = :np_communication_id
-            GROUP BY t.id, tm.status, ttm.status, ttm.owners
+            LEFT JOIN ranked_owners owners ON owners.order_id = t.order_id
         )
         UPDATE trophy_meta tm
         JOIN rarity r ON tm.trophy_id = r.trophy_id

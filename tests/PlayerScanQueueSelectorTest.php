@@ -175,6 +175,36 @@ final class PlayerScanQueueSelectorTest extends TestCase
         $this->assertSame('stale-inactive', $result['online_id']);
     }
 
+    public function testSelectNextCandidateSelectsPlayerViaRarityRankingOnlyBranch(): void
+    {
+        $selector = $this->createSelectorWithDefaultCutoffs();
+        $this->insertPlayer(920, 'rarity-only', '2024-06-15 10:00:00', 99);
+        $this->insertRanking(920, 5000, 50, 5000);
+
+        $result = $selector->selectNextCandidate(1);
+
+        $this->assertSame('rarity-only', $result['online_id']);
+    }
+
+    public function testMysqlSelectionSqlSplitsRankingOrsIntoIndexFriendlyUnions(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/PlayerScanQueueSelector.php');
+        $this->assertTrue(is_string($source));
+
+        $this->assertStringContainsString('FROM' . "\n" . '                    player_ranking pr', $source);
+        $this->assertStringContainsString('pr.ranking <= 100', $source);
+        $this->assertStringContainsString('pr.rarity_ranking <= 100', $source);
+        $this->assertStringContainsString('pr.in_game_rarity_ranking <= 100', $source);
+        $this->assertFalse(str_contains(
+            $source,
+            'pr.ranking <= 100 OR pr.rarity_ranking <= 100 OR pr.in_game_rarity_ranking <= 100'
+        ));
+        $this->assertFalse(str_contains(
+            $source,
+            'pr.ranking <= 10000 OR pr.rarity_ranking <= 10000 OR pr.in_game_rarity_ranking <= 10000'
+        ));
+    }
+
     private function createSelectorWithDefaultCutoffs(): PlayerScanQueueSelector
     {
         return $this->createSelector(

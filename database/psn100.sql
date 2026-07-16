@@ -211,7 +211,8 @@ CREATE TABLE `trophy` (
   `icon_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `progress_target_value` int UNSIGNED DEFAULT NULL,
   `reward_name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
-  `reward_image_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
+  `reward_image_url` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  CONSTRAINT `chk_trophy_type` CHECK (`type` IN ('bronze', 'silver', 'gold', 'platinum'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -483,7 +484,6 @@ ALTER TABLE `player`
   ADD KEY `idx_avatar_url` (`avatar_url`),
   ADD KEY `idx_last_updated_date` (`last_updated_date`),
   ADD KEY `player_idx_status_last_date_online_id` (`status`,`last_updated_date`,`online_id`),
-  ADD KEY `idx_trophy_count_npwr` (`trophy_count_npwr`),
   ADD KEY `idx_player_ranking` (`status`,`points` DESC,`platinum` DESC,`gold` DESC,`silver` DESC),
   ADD KEY `player_idx_status_rank_last_week` (`status`,`rank_last_week`),
   ADD KEY `idx_player_status_avatar_account` (`status`,`avatar_url`,`account_id`),
@@ -502,12 +502,9 @@ ALTER TABLE `player_queue`
 --
 ALTER TABLE `player_ranking`
   ADD PRIMARY KEY (`account_id`),
-  ADD KEY `ranking_country` (`ranking_country`),
-  ADD KEY `rarity_ranking_country` (`rarity_ranking_country`),
   ADD KEY `idx_pr_ranking_account` (`ranking`,`account_id`),
   ADD KEY `idx_pr_rarity_ranking_account` (`rarity_ranking`,`account_id`),
-  ADD KEY `idx_pr_in_game_rarity_ranking_account` (`in_game_rarity_ranking`,`account_id`),
-  ADD KEY `in_game_rarity_ranking_country` (`in_game_rarity_ranking_country`);
+  ADD KEY `idx_pr_in_game_rarity_ranking_account` (`in_game_rarity_ranking`,`account_id`);
 
 --
 -- Indexes for table `player_report`

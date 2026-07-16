@@ -130,6 +130,8 @@ class TrophyService
             ? 'ORDER BY te.earned_date DESC'
             : 'ORDER BY te.earned_date IS NULL, te.earned_date';
 
+        // Drive from player_ranking so trophy_earned is probed by account_id
+        // (HASH partition key) instead of scanning all partitions by title.
         $sql = <<<SQL
             SELECT
                 p.avatar_url,
@@ -138,14 +140,15 @@ class TrophyService
                 p.trophy_count_sony,
                 IFNULL(te.earned_date, 'No Timestamp') AS earned_date
             FROM
-                trophy_earned te
-                JOIN player_ranking r ON te.account_id = r.account_id
+                player_ranking r
+                JOIN trophy_earned te
+                    ON te.account_id = r.account_id
+                    AND te.np_communication_id = :np_communication_id
+                    AND te.order_id = :order_id
+                    AND te.earned = 1
                 JOIN player p ON r.account_id = p.account_id
             WHERE
-                te.np_communication_id = :np_communication_id
-                AND te.order_id = :order_id
-                AND te.earned = 1
-                AND r.ranking <= 10000
+                r.ranking <= 10000
             %s
             LIMIT 50
         SQL;
