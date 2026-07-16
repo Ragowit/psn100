@@ -89,4 +89,19 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
             $message !== false ? (string) $message : ''
         );
     }
+
+    public function testRunCatchesTransientScanExceptionsInsteadOfTerminating(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php');
+
+        $this->assertStringContainsString('} catch (Exception $exception) {', $source);
+        $this->assertStringContainsString(
+            'Transient PSN/network failures (e.g. Guzzle/cURL transfer errors)',
+            $source
+        );
+        $this->assertStringContainsString(
+            'Encountered a problem while scanning %s: %s. Waiting 1 minute before retrying.',
+            $source
+        );
+    }
 }
