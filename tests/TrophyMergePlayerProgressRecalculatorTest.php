@@ -12,20 +12,24 @@ final class TrophyMergePlayerProgressRecalculatorTest extends TestCase
     {
         $recalculator = new TrophyMergePlayerProgressRecalculator(new RecordingMergeProgressPDO());
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unable to locate child trophy titles.');
-
-        $recalculator->recalculateGroupPlayer('MERGE_000010', []);
+        try {
+            $recalculator->recalculateGroupPlayer('MERGE_000010', []);
+            $this->fail('Expected RuntimeException when child list is empty.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Unable to locate child trophy titles.', $exception->getMessage());
+        }
     }
 
     public function testRecalculateTitlePlayerRejectsEmptyChildren(): void
     {
         $recalculator = new TrophyMergePlayerProgressRecalculator(new RecordingMergeProgressPDO());
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unable to locate child trophy titles.');
-
-        $recalculator->recalculateTitlePlayer('MERGE_000010', []);
+        try {
+            $recalculator->recalculateTitlePlayer('MERGE_000010', []);
+            $this->fail('Expected RuntimeException when child list is empty.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Unable to locate child trophy titles.', $exception->getMessage());
+        }
     }
 
     public function testRecalculateGroupPlayerBuildsProgressAndZeroInsertSql(): void
@@ -85,9 +89,12 @@ final class TrophyMergePlayerProgressRecalculatorTest extends TestCase
     {
         $recalculator = new RecordingTrophyMergePlayerProgressRecalculator();
         $updater = new TrophyMergePlayerProgressUpdater(
-            new GameIdLookupPDO('NP_CHILD_2'),
-            new StubTrophyMergeRelationshipResolver('MERGE_000010', ['NP_CHILD_1', 'NP_CHILD_2']),
-            $recalculator,
+            new RelationshipLookupPDO(
+                childNpCommunicationId: 'NP_CHILD_2',
+                parentNpCommunicationId: 'MERGE_000010',
+                childNpCommunicationIds: ['NP_CHILD_1', 'NP_CHILD_2'],
+            ),
+            progressRecalculator: $recalculator,
         );
 
         $updater->updateTrophyGroupPlayer(42);
@@ -103,9 +110,12 @@ final class TrophyMergePlayerProgressRecalculatorTest extends TestCase
     {
         $recalculator = new RecordingTrophyMergePlayerProgressRecalculator();
         $updater = new TrophyMergePlayerProgressUpdater(
-            new GameIdLookupPDO('NP_CHILD_2'),
-            new StubTrophyMergeRelationshipResolver('MERGE_000010', ['NP_CHILD_1', 'NP_CHILD_2']),
-            $recalculator,
+            new RelationshipLookupPDO(
+                childNpCommunicationId: 'NP_CHILD_2',
+                parentNpCommunicationId: 'MERGE_000010',
+                childNpCommunicationIds: ['NP_CHILD_1', 'NP_CHILD_2'],
+            ),
+            progressRecalculator: $recalculator,
         );
 
         $updater->updateTrophyTitlePlayer(42);
@@ -121,9 +131,12 @@ final class TrophyMergePlayerProgressRecalculatorTest extends TestCase
     {
         $recalculator = new RecordingTrophyMergePlayerProgressRecalculator();
         $updater = new TrophyMergePlayerProgressUpdater(
-            new GameIdLookupPDO('NP_CHILD_2'),
-            new StubTrophyMergeRelationshipResolver('MERGE_000010', ['NP_CHILD_1', 'NP_CHILD_2']),
-            $recalculator,
+            new RelationshipLookupPDO(
+                childNpCommunicationId: 'NP_CHILD_2',
+                parentNpCommunicationId: 'MERGE_000010',
+                childNpCommunicationIds: ['NP_CHILD_1', 'NP_CHILD_2'],
+            ),
+            progressRecalculator: $recalculator,
         );
 
         $updater->recomputeByParent('MERGE_000010');
@@ -150,7 +163,7 @@ final class RecordingTrophyMergePlayerProgressRecalculator extends TrophyMergePl
     public function __construct()
     {
         // Parent requires a PDO, but this stub never uses it.
-        parent::__construct(new GameIdLookupPDO('unused'));
+        parent::__construct(new RelationshipLookupPDO('unused', 'unused', []));
     }
 
     public function recalculateGroupPlayer(string $parentNpCommunicationId, array $childNpCommunicationIds): void
@@ -164,48 +177,41 @@ final class RecordingTrophyMergePlayerProgressRecalculator extends TrophyMergePl
     }
 }
 
-final class StubTrophyMergeRelationshipResolver extends TrophyMergeRelationshipResolver
+final class RelationshipLookupPDO extends PDO
 {
     /**
      * @param list<string> $childNpCommunicationIds
      */
     public function __construct(
+        private string $childNpCommunicationId,
         private string $parentNpCommunicationId,
         private array $childNpCommunicationIds,
     ) {
-        // Parent requires a PDO, but this stub never uses it.
-        parent::__construct(new GameIdLookupPDO('unused'));
-    }
-
-    public function getMergeParentAndChildren(string $childNpCommunicationId): array
-    {
-        return [
-            'parent_np_communication_id' => $this->parentNpCommunicationId,
-            'child_np_communication_ids' => $this->childNpCommunicationIds,
-        ];
-    }
-
-    public function getMergeChildrenByParent(string $parentNpCommunicationId): array
-    {
-        return $this->childNpCommunicationIds;
-    }
-}
-
-final class GameIdLookupPDO extends PDO
-{
-    public function __construct(private string $npCommunicationId)
-    {
     }
 
     public function prepare(string $statement, array $options = []): PDOStatement
     {
-        return new GameIdLookupStatement($this->npCommunicationId);
+        $normalized = preg_replace('/\s+/', ' ', trim($statement)) ?? '';
+
+        if (str_starts_with($normalized, 'SELECT np_communication_id FROM trophy_title')) {
+            return new RelationshipLookupScalarStatement($this->childNpCommunicationId);
+        }
+
+        if (str_starts_with($normalized, 'SELECT DISTINCT parent_np_communication_id FROM trophy_merge')) {
+            return new RelationshipLookupColumnStatement([$this->parentNpCommunicationId]);
+        }
+
+        if (str_starts_with($normalized, 'SELECT DISTINCT child_np_communication_id FROM trophy_merge')) {
+            return new RelationshipLookupColumnStatement($this->childNpCommunicationIds);
+        }
+
+        throw new RuntimeException('Unexpected SQL statement: ' . $statement);
     }
 }
 
-final class GameIdLookupStatement extends PDOStatement
+final class RelationshipLookupScalarStatement extends PDOStatement
 {
-    public function __construct(private string $npCommunicationId)
+    public function __construct(private string $value)
     {
     }
 
@@ -221,7 +227,30 @@ final class GameIdLookupStatement extends PDOStatement
 
     public function fetchColumn(int $column = 0): string
     {
-        return $this->npCommunicationId;
+        return $this->value;
+    }
+}
+
+final class RelationshipLookupColumnStatement extends PDOStatement
+{
+    /** @param list<string> $rows */
+    public function __construct(private array $rows)
+    {
+    }
+
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+    {
+        return true;
+    }
+
+    public function execute(?array $params = null): bool
+    {
+        return true;
+    }
+
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    {
+        return $this->rows;
     }
 }
 

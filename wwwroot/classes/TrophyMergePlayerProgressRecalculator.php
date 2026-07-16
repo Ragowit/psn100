@@ -9,7 +9,7 @@ declare(strict_types=1);
  * TrophyMergePlayerProgressUpdater so that updater can focus on resolving
  * parent/child relationships and orchestrating recalculation.
  */
-final class TrophyMergePlayerProgressRecalculator
+class TrophyMergePlayerProgressRecalculator
 {
     public function __construct(
         private readonly PDO $database,
