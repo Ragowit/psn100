@@ -4,43 +4,105 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyStatusService.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyStatusProgressRecalculator.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyStatusUpdateResult.php';
 
 final class TrophyStatusServiceTest extends TestCase
 {
-    public function testUpdateTrophiesCountsOnlyEarnedTrophiesForAllTypes(): void
+    public function testUpdateTrophiesRejectsEmptyTrophyList(): void
     {
-        $database = new RecordingTrophyStatusPDO();
-        $service = new TrophyStatusService($database);
+        $database = new RecordingTrophyStatusServicePDO();
+        $service = new TrophyStatusService($database, new RecordingTrophyStatusProgressRecalculator());
 
-        $service->updateTrophies([10], 1);
+        try {
+            $service->updateTrophies([], 1);
+            $this->fail('Expected InvalidArgumentException for an empty trophy list.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame('No trophies were provided.', $exception->getMessage());
+        }
+    }
 
-        $this->assertSame(1, count($database->playerTrophyCountQueries));
-        $query = $database->playerTrophyCountQueries[0];
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze"));
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver"));
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold"));
-        $this->assertTrue(str_contains($query, "COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum"));
-        $this->assertTrue(str_contains($query, 'FROM
-            temp_impacted_accounts tia'));
-        $this->assertTrue(str_contains($query, 'LEFT JOIN trophy_earned te ON te.account_id = tia.account_id'));
-        $this->assertTrue(str_contains($query, 'AND te.earned = 1'));
-        $this->assertTrue(str_contains($query, 'AND tm.status = 0'));
-        $this->assertTrue(str_contains($query, 'AND aggregate.account_id IS NOT NULL'));
+    public function testUpdateTrophiesDelegatesGroupAndTitleRecalculation(): void
+    {
+        $database = new RecordingTrophyStatusServicePDO();
+        $recalculator = new RecordingTrophyStatusProgressRecalculator();
+        $service = new TrophyStatusService($database, $recalculator);
 
-        $this->assertTrue(
-            str_contains($database->titlePlayerCountQuery ?? '', 'trophy_group_player'),
-            'Expected title-player recalculation to aggregate from trophy_group_player.'
+        $result = $service->updateTrophies([10, 10], 1);
+
+        $this->assertSame(['10 (Test Trophy)'], $result->getTrophyNames());
+        $this->assertSame('unobtainable', $result->getStatusText());
+
+        $this->assertSame(
+            [
+                [
+                    'np_communication_id' => 'NPWR00001_00',
+                    'group_id' => 'default',
+                    'trophy_ids' => [10],
+                ],
+            ],
+            $recalculator->groupCalls
         );
+        $this->assertSame(
+            [
+                [
+                    'np_communication_id' => 'NPWR00001_00',
+                    'status' => 1,
+                    'trophy_ids' => [10],
+                ],
+            ],
+            $recalculator->titleCalls
+        );
+    }
+
+    public function testUpdateTrophiesUsesObtainableStatusText(): void
+    {
+        $database = new RecordingTrophyStatusServicePDO();
+        $recalculator = new RecordingTrophyStatusProgressRecalculator();
+        $service = new TrophyStatusService($database, $recalculator);
+
+        $result = $service->updateTrophies([10], 0);
+
+        $this->assertSame('obtainable', $result->getStatusText());
+        $this->assertSame(0, $recalculator->titleCalls[0]['status']);
     }
 }
 
-final class RecordingTrophyStatusPDO extends PDO
+final class RecordingTrophyStatusProgressRecalculator extends TrophyStatusProgressRecalculator
 {
-    /** @var list<string> */
-    public array $playerTrophyCountQueries = [];
+    /** @var list<array{np_communication_id: string, group_id: string, trophy_ids: list<int>}> */
+    public array $groupCalls = [];
 
-    public ?string $titlePlayerCountQuery = null;
+    /** @var list<array{np_communication_id: string, status: int, trophy_ids: list<int>}> */
+    public array $titleCalls = [];
 
+    public function __construct()
+    {
+        // Parent requires a PDO, but this stub never uses it.
+        parent::__construct(new RecordingTrophyStatusServicePDO());
+    }
+
+    public function recalculateGroup(string $npCommunicationId, string $groupId, array $affectedTrophyIds): void
+    {
+        $this->groupCalls[] = [
+            'np_communication_id' => $npCommunicationId,
+            'group_id' => $groupId,
+            'trophy_ids' => $affectedTrophyIds,
+        ];
+    }
+
+    public function recalculateTitle(string $npCommunicationId, int $status, array $affectedTrophyIds): void
+    {
+        $this->titleCalls[] = [
+            'np_communication_id' => $npCommunicationId,
+            'status' => $status,
+            'trophy_ids' => $affectedTrophyIds,
+        ];
+    }
+}
+
+final class RecordingTrophyStatusServicePDO extends PDO
+{
     private bool $inTransaction = false;
 
     public function __construct()
@@ -78,49 +140,22 @@ final class RecordingTrophyStatusPDO extends PDO
         $trimmedQuery = trim($query);
 
         if (str_starts_with($trimmedQuery, 'UPDATE trophy_meta SET status = :status WHERE trophy_id = :trophy_id')) {
-            return new RecordingExecuteOnlyStatement();
+            return new RecordingTrophyStatusServiceExecuteOnlyStatement();
         }
 
         if (str_starts_with($trimmedQuery, 'SELECT np_communication_id, group_id, name FROM trophy WHERE id = :trophy_id')) {
-            return new RecordingFetchAssocStatement([
+            return new RecordingTrophyStatusServiceFetchAssocStatement([
                 'np_communication_id' => 'NPWR00001_00',
                 'group_id' => 'default',
                 'name' => 'Test Trophy',
             ]);
         }
 
-        if (str_starts_with($trimmedQuery, 'UPDATE') && str_contains($trimmedQuery, 'LEFT JOIN (') && str_contains($trimmedQuery, 'trophy_earned te')) {
-            $this->playerTrophyCountQueries[] = $trimmedQuery;
-
-            return new RecordingExecuteOnlyStatement();
-        }
-
-        if (str_contains($trimmedQuery, 'INNER JOIN player_trophy_count ptc ON ptc.account_id = ttp.account_id')) {
-            $this->titlePlayerCountQuery = $trimmedQuery;
-
-            return new RecordingExecuteOnlyStatement();
-        }
-
-        if (str_starts_with($trimmedQuery, 'SELECT')) {
-            if (str_contains($trimmedQuery, 'AS max_score')) {
-                return new RecordingFetchColumnStatement(100);
-            }
-
-            if (str_contains($trimmedQuery, 'SELECT id FROM trophy_title WHERE np_communication_id = :np_communication_id')) {
-                return new RecordingFetchColumnStatement(false);
-            }
-        }
-
-        return new RecordingExecuteOnlyStatement();
-    }
-
-    public function exec(string $statement): int|false
-    {
-        return 0;
+        return new RecordingTrophyStatusServiceExecuteOnlyStatement();
     }
 }
 
-final class RecordingExecuteOnlyStatement extends PDOStatement
+final class RecordingTrophyStatusServiceExecuteOnlyStatement extends PDOStatement
 {
     public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
@@ -133,7 +168,7 @@ final class RecordingExecuteOnlyStatement extends PDOStatement
     }
 }
 
-final class RecordingFetchAssocStatement extends PDOStatement
+final class RecordingTrophyStatusServiceFetchAssocStatement extends PDOStatement
 {
     /** @var array<string, string>|null */
     private ?array $row;
@@ -164,30 +199,5 @@ final class RecordingFetchAssocStatement extends PDOStatement
         $this->row = null;
 
         return $row;
-    }
-}
-
-final class RecordingFetchColumnStatement extends PDOStatement
-{
-    private string|int|bool|null $value;
-
-    public function __construct(string|int|bool|null $value)
-    {
-        $this->value = $value;
-    }
-
-    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
-    {
-        return true;
-    }
-
-    public function execute(?array $params = null): bool
-    {
-        return true;
-    }
-
-    public function fetchColumn(int $column = 0): string|int|false|null
-    {
-        return $this->value;
     }
 }
