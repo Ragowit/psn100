@@ -265,10 +265,10 @@ final class PlayerAdvisorServiceTest extends TestCase
 
     public function testAdvisorQueriesUseNotExistsAntiJoinForUnearnedTrophies(): void
     {
-        $source = file_get_contents(__DIR__ . '/../wwwroot/classes/PlayerAdvisorService.php');
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/PlayerAdvisorService.php');
 
         $this->assertStringContainsString('AND NOT EXISTS (', $source);
         $this->assertStringContainsString('FROM trophy_title_player ttp', $source);
-        $this->assertStringNotContainsString('LEFT JOIN trophy_earned te_completed', $source);
+        $this->assertFalse(str_contains($source, 'LEFT JOIN trophy_earned te_completed'));
     }
 }

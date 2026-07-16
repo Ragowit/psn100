@@ -9,24 +9,24 @@ final class PlatformSqlTest extends TestCase
 {
     public function testBuildOrExpressionReturnsNullForUnknownPlatforms(): void
     {
-        $this->assertNull(PlatformSql::buildOrExpression(['unknown']));
+        $this->assertSame(null, PlatformSql::buildOrExpression(['unknown']));
     }
 
     public function testBuildOrClausePrefixesAndForKnownPlatforms(): void
     {
         $clause = PlatformSql::buildOrClause(['ps4', 'psvr']);
 
-        $this->assertStringStartsWith(' AND (', $clause);
+        $this->assertTrue(str_starts_with($clause, ' AND ('));
         $this->assertStringContainsString("tt.platform LIKE '%PS4%'", $clause);
         $this->assertStringContainsString(PlatformSql::PSVR_TOKEN_MATCH, $clause);
-        $this->assertStringNotContainsString('REGEXP_LIKE', $clause);
+        $this->assertFalse(str_contains($clause, 'REGEXP_LIKE'));
     }
 
     public function testPsvrPredicateDoesNotSubstringMatchPsvr2(): void
     {
         $psvr = PlatformSql::conditionFor('psvr');
-        $this->assertNotNull($psvr);
-        $this->assertStringContainsString("LIKE '%,PSVR,%'", $psvr);
-        $this->assertStringNotContainsString('%PSVR%', $psvr);
+        $this->assertTrue($psvr !== null);
+        $this->assertStringContainsString("LIKE '%,PSVR,%'", (string) $psvr);
+        $this->assertFalse(str_contains((string) $psvr, "LIKE '%PSVR%'"));
     }
 }
