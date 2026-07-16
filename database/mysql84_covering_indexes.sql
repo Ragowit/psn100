@@ -158,13 +158,9 @@ CALL psn100_add_index_if_not_exists(
 )$$
 CALL psn100_drop_index_if_exists('trophy_title_meta', 'idx_ttm_status')$$
 
--- Scan/stale-delete paths filter trophy_group_player by (account_id, np_communication_id).
-CALL psn100_add_index_if_not_exists(
-    'trophy_group_player',
-    'idx_tgp_account_np',
-    '`account_id`, `np_communication_id`'
-)$$
-CALL psn100_drop_index_if_exists('trophy_group_player', 'idx_account_id')$$
+-- trophy_group_player index swap is intentionally NOT here: at production scale
+-- (~200M+ rows / tens of GiB) that online ALTER should be scheduled separately.
+-- See database/mysql84_trophy_group_player_index.sql.
 
 CALL psn100_add_check_if_not_exists(
     'player',

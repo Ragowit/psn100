@@ -48,8 +48,7 @@ class GameResetService
                 'DELETE FROM trophy_merge WHERE parent_np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
-            // Drive trophy_earned deletes from trophy_title_player.account_id so
-            // HASH(account_id) partition pruning applies on the multi-billion-row table.
+            // Per-partition deletes on trophy_earned (see deleteTrophyEarnedForTitle).
             $this->deleteTrophyEarnedForTitle($npCommunicationId);
             $this->executeStatement(
                 'DELETE FROM trophy_group_player WHERE np_communication_id = :np_communication_id',
@@ -87,8 +86,7 @@ class GameResetService
                 'DELETE FROM trophy WHERE np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
-            // Drive trophy_earned deletes from trophy_title_player.account_id so
-            // HASH(account_id) partition pruning applies on the multi-billion-row table.
+            // Per-partition deletes on trophy_earned (see deleteTrophyEarnedForTitle).
             $this->deleteTrophyEarnedForTitle($npCommunicationId);
             $this->executeStatement(
                 'DELETE FROM trophy_group_player WHERE np_communication_id = :np_communication_id',

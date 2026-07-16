@@ -203,9 +203,18 @@ and cron queries. Re-run after bulk imports; a weekly `ANALYZE TABLE` cron is op
 reasonable on busy sites.
 
 `mysql84_covering_indexes.sql` adds descending covering indexes for game leaderboard sorts
-and popular/game-list ordering, replaces `trophy_group_player.idx_account_id` with
-`(account_id, np_communication_id)`, status CHECK constraints, and migrates
+and popular/game-list ordering, status CHECK constraints, and migrates
 `setting.scan_progress` to JSON. Safe to re-run on upgraded databases.
+
+`trophy_group_player` (~227M rows / ~24 GiB) and `trophy_title_player` (~123M rows /
+~33 GiB) are large enough that index builds are scheduled ops, not routine deploys.
+Fresh installs from `psn100.sql` already use `trophy_group_player.idx_tgp_account_np`
+`(account_id, np_communication_id)`. Upgrades that still have `idx_account_id` can apply
+the optional online swap when disk/IO allow:
+
+```bash
+mysql "$DB_NAME" < database/mysql84_trophy_group_player_index.sql
+```
 
 `player_ranking` is excluded from histograms because `PlayerRankingUpdater` rebuilds and
 swaps that table every five minutes, which would invalidate histograms immediately.
