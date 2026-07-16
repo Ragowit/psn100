@@ -66,7 +66,11 @@ final class PlayerScanCompletionService
         $ourTotalTrophies = $query->fetchColumn();
 
         if ($ourTotalTrophies > $totalTrophiesSony) {
-            $query = $this->database->prepare("UPDATE `player` SET trophy_count_npwr = (SELECT COUNT(*) FROM `trophy_earned` WHERE account_id = :account_id AND earned = 1 AND np_communication_id LIKE 'N%') WHERE account_id = :account_id");
+            // Prefer NPWR% over N%: same rows today (ids are NPWR… or MERGE…), matches
+            // trophy_earned triggers, and documents that MERGE titles are excluded.
+            // On (account_id, np_communication_id, …) both are prefix ranges with no
+            // meaningful speed difference when every N* value is NPWR*.
+            $query = $this->database->prepare("UPDATE `player` SET trophy_count_npwr = (SELECT COUNT(*) FROM `trophy_earned` WHERE account_id = :account_id AND earned = 1 AND np_communication_id LIKE 'NPWR%') WHERE account_id = :account_id");
             $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $query->execute();
 
@@ -86,7 +90,7 @@ final class PlayerScanCompletionService
 
         $query = $this->database->prepare("SELECT
                 IF(
-                MAX(last_updated_date) >= DATE(NOW()) - INTERVAL 1 YEAR,
+                MAX(last_updated_date) >= (NOW() - INTERVAL 1 YEAR),
                 TRUE,
                 FALSE
                 ) AS within_a_year

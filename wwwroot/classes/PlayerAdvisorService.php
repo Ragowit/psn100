@@ -3,21 +3,12 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerAdvisableTrophy.php';
+require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/Utility.php';
 
 class PlayerAdvisorService
 {
     public const PAGE_SIZE = 50;
-
-    private const PLATFORM_FILTERS = [
-        'pc' => "tt.platform LIKE '%PC%'",
-        'ps3' => "tt.platform LIKE '%PS3%'",
-        'ps4' => "tt.platform LIKE '%PS4%'",
-        'ps5' => "tt.platform LIKE '%PS5%'",
-        'psvita' => "tt.platform LIKE '%PSVITA%'",
-        'psvr' => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
-        'psvr2' => "tt.platform LIKE '%PSVR2%'",
-    ];
 
     private PDO $database;
 
@@ -33,21 +24,22 @@ class PlayerAdvisorService
     {
         $sql = <<<'SQL'
             SELECT COUNT(*)
-            FROM trophy t
+            FROM trophy_title_player ttp
+            JOIN trophy t ON t.np_communication_id = ttp.np_communication_id
             JOIN trophy_meta tm ON tm.trophy_id = t.id
-            JOIN trophy_title tt USING (np_communication_id)
-            JOIN trophy_title_meta ttm USING (np_communication_id)
-            JOIN trophy_title_player ttp ON
-                t.np_communication_id = ttp.np_communication_id
-                AND ttp.account_id = :account_id
-            LEFT JOIN trophy_earned te_completed ON
-                te_completed.np_communication_id = t.np_communication_id
-                AND te_completed.order_id = t.order_id
-                AND te_completed.account_id = :account_id
-                AND te_completed.earned = 1
-            WHERE te_completed.account_id IS NULL
+            JOIN trophy_title tt ON tt.np_communication_id = t.np_communication_id
+            JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
+            WHERE ttp.account_id = :account_id
                 AND ttm.status = 0
                 AND tm.status = 0
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM trophy_earned te_completed
+                    WHERE te_completed.account_id = :account_id
+                        AND te_completed.np_communication_id = t.np_communication_id
+                        AND te_completed.order_id = t.order_id
+                        AND te_completed.earned = 1
+                )
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -81,26 +73,27 @@ class PlayerAdvisorService
                 tt.icon_url AS game_icon,
                 tt.platform,
                 te_progress.progress
-            FROM trophy t
+            FROM trophy_title_player ttp
+            JOIN trophy t ON t.np_communication_id = ttp.np_communication_id
             JOIN trophy_meta tm ON tm.trophy_id = t.id
-            JOIN trophy_title tt USING (np_communication_id)
-            JOIN trophy_title_meta ttm USING (np_communication_id)
+            JOIN trophy_title tt ON tt.np_communication_id = t.np_communication_id
+            JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
             LEFT JOIN trophy_earned te_progress ON
-                t.np_communication_id = te_progress.np_communication_id
-                AND t.order_id = te_progress.order_id
-                AND te_progress.account_id = :account_id
+                te_progress.account_id = :account_id
+                AND te_progress.np_communication_id = t.np_communication_id
+                AND te_progress.order_id = t.order_id
                 AND te_progress.earned = 0
-            JOIN trophy_title_player ttp ON
-                t.np_communication_id = ttp.np_communication_id
-                AND ttp.account_id = :account_id
-            LEFT JOIN trophy_earned te_completed ON
-                te_completed.np_communication_id = t.np_communication_id
-                AND te_completed.order_id = t.order_id
-                AND te_completed.account_id = :account_id
-                AND te_completed.earned = 1
-            WHERE te_completed.account_id IS NULL
+            WHERE ttp.account_id = :account_id
                 AND ttm.status = 0
                 AND tm.status = 0
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM trophy_earned te_completed
+                    WHERE te_completed.account_id = :account_id
+                        AND te_completed.np_communication_id = t.np_communication_id
+                        AND te_completed.order_id = t.order_id
+                        AND te_completed.earned = 1
+                )
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -132,19 +125,7 @@ class PlayerAdvisorService
             return '';
         }
 
-        $clauses = [];
-
-        foreach ($filter->getPlatforms() as $platform) {
-            if (isset(self::PLATFORM_FILTERS[$platform])) {
-                $clauses[] = self::PLATFORM_FILTERS[$platform];
-            }
-        }
-
-        if ($clauses === []) {
-            return '';
-        }
-
-        return ' AND (' . implode(' OR ', $clauses) . ')';
+        return PlatformSql::buildOrClause($filter->getPlatforms());
     }
 
     private function buildOrderByClause(PlayerAdvisorFilter $filter): string

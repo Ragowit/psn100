@@ -4,20 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerGame.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
+require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 
 final class PlayerGamesService
 {
-    private const array PLATFORM_CONDITIONS = [
-        PlayerGamesFilter::PLATFORM_PC => "tt.platform LIKE '%PC%'",
-        PlayerGamesFilter::PLATFORM_PS3 => "tt.platform LIKE '%PS3%'",
-        PlayerGamesFilter::PLATFORM_PS4 => "tt.platform LIKE '%PS4%'",
-        PlayerGamesFilter::PLATFORM_PS5 => "tt.platform LIKE '%PS5%'",
-        PlayerGamesFilter::PLATFORM_PSVITA => "tt.platform LIKE '%PSVITA%'",
-        PlayerGamesFilter::PLATFORM_PSVR => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
-        PlayerGamesFilter::PLATFORM_PSVR2 => "tt.platform LIKE '%PSVR2%'",
-    ];
-
     public function __construct(
         private readonly PDO $database,
         private readonly SearchQueryHelper $searchQueryHelper
@@ -31,8 +22,9 @@ final class PlayerGamesService
             FROM trophy_title_player ttp
                 JOIN trophy_title tt USING (np_communication_id)
                 JOIN trophy_title_meta ttm USING (np_communication_id)
-                JOIN trophy_group_player tgp USING (account_id, np_communication_id)
+                %s
             WHERE %s',
+            $this->buildBaseGameJoin($filter),
             $this->buildWhereClause($filter)
         );
 
@@ -81,11 +73,12 @@ final class PlayerGamesService
             FROM trophy_title_player ttp
                 JOIN trophy_title tt USING (np_communication_id)
                 JOIN trophy_title_meta ttm USING (np_communication_id)
-                JOIN trophy_group_player tgp USING (account_id, np_communication_id)
+                %s
             WHERE %s
             %s
             LIMIT :offset, :limit',
             implode(', ', $columns),
+            $this->buildBaseGameJoin($filter),
             $this->buildWhereClause($filter),
             $this->buildOrderByClause($filter)
         );
@@ -113,12 +106,22 @@ final class PlayerGamesService
         return $games;
     }
 
+    private function buildBaseGameJoin(PlayerGamesFilter $filter): string
+    {
+        if (!$filter->isBaseSelected()) {
+            return '';
+        }
+
+        return "JOIN trophy_group_player tgp ON tgp.account_id = ttp.account_id
+                AND tgp.np_communication_id = ttp.np_communication_id
+                AND tgp.group_id = 'default'";
+    }
+
     private function buildWhereClause(PlayerGamesFilter $filter): string
     {
         $conditions = [
             'ttm.status != 2',
             'ttp.account_id = :account_id',
-            "tgp.group_id = 'default'",
         ];
 
         $conditions = $this->searchQueryHelper->appendFulltextCondition(
@@ -141,16 +144,9 @@ final class PlayerGamesService
         }
 
         if ($filter->hasPlatformFilters()) {
-            $platformConditions = [];
-            foreach ($filter->getPlatforms() as $platformKey) {
-                $condition = self::PLATFORM_CONDITIONS[$platformKey] ?? null;
-                if ($condition !== null) {
-                    $platformConditions[] = $condition;
-                }
-            }
-
-            if ($platformConditions !== []) {
-                $conditions[] = '(' . implode(' OR ', $platformConditions) . ')';
+            $platformExpression = PlatformSql::buildOrExpression($filter->getPlatforms());
+            if ($platformExpression !== null) {
+                $conditions[] = $platformExpression;
             }
         }
 

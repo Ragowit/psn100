@@ -3,20 +3,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLogEntry.php';
+require_once __DIR__ . '/PlatformSql.php';
 
 class PlayerLogService
 {
     public const PAGE_SIZE = 50;
-
-    private const PLATFORM_FILTERS = [
-        'pc' => "tt.platform LIKE '%PC%'",
-        'ps3' => "tt.platform LIKE '%PS3%'",
-        'ps4' => "tt.platform LIKE '%PS4%'",
-        'ps5' => "tt.platform LIKE '%PS5%'",
-        'psvita' => "tt.platform LIKE '%PSVITA%'",
-        'psvr' => "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'",
-        'psvr2' => "tt.platform LIKE '%PSVR2%'",
-    ];
 
     public function __construct(private readonly PDO $database)
     {
@@ -53,7 +44,9 @@ class PlayerLogService
     {
         $sql = <<<'SQL'
             SELECT
-                te.*,
+                te.earned,
+                te.progress,
+                te.earned_date,
                 t.id AS trophy_id,
                 t.type AS trophy_type,
                 t.name AS trophy_name,
@@ -108,17 +101,7 @@ class PlayerLogService
             return '';
         }
 
-        $platforms = array_intersect($filter->getPlatforms(), array_keys(self::PLATFORM_FILTERS));
-        $clauses = array_map(
-            static fn(string $platform): string => self::PLATFORM_FILTERS[$platform],
-            $platforms
-        );
-
-        if ($clauses === []) {
-            return '';
-        }
-
-        return PHP_EOL . '                AND (' . implode(' OR ', $clauses) . ')';
+        return PlatformSql::buildOrClause($filter->getPlatforms());
     }
 
     private function buildOrderByClause(PlayerLogFilter $filter): string

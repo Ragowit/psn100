@@ -71,6 +71,7 @@ scripts:
 
 ```bash
 mysql psn100 < database/mysql84_histograms.sql
+mysql psn100 < database/mysql84_covering_indexes.sql
 ```
 
 Histograms use MySQL 8.4 `AUTO UPDATE` so they stay current when `ANALYZE TABLE` runs or
@@ -82,6 +83,10 @@ swapped every five minutes.
 hundreds of GiB): `ANALYZE TABLE` would be extremely slow and `AUTO UPDATE` would add
 ongoing overhead with negligible benefit for partition- and PK-scoped lookups.
 
+`mysql84_covering_indexes.sql` adds descending covering indexes for game leaderboard and
+game-list/popular sorts, status CHECK constraints, and migrates `setting.scan_progress` to
+JSON. Safe to re-run.
+
 Existing databases that still have legacy or unused indexes can apply (safe to re-run; skips
 indexes that are already absent):
 
@@ -89,8 +94,9 @@ indexes that are already absent):
 mysql psn100 < database/mysql84_drop_redundant_indexes.sql
 ```
 
-Fresh installs from the current `psn100.sql` already omit those indexes and include the
-`chk_trophy_type` CHECK constraint. The drop script also adds that constraint when missing.
+Fresh installs from the current `psn100.sql` already include the covering indexes and status
+CHECK constraints (`chk_trophy_type`, `chk_player_status`, `chk_ttm_status`, `chk_tm_status`).
+The drop script also adds `chk_trophy_type` when missing.
 
 Queue polling (`check_queue_position.php`) requires a `poll_token` from the CSRF-protected
 `add_to_queue.php` response (60 requests per IP per minute). `scan_log_poll.php` allows 30

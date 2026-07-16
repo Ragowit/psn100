@@ -104,7 +104,8 @@ CREATE TABLE `player` (
   `in_game_uncommon` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_rare` mediumint UNSIGNED NOT NULL DEFAULT '0',
   `in_game_epic` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_legendary` mediumint UNSIGNED NOT NULL DEFAULT '0'
+  `in_game_legendary` mediumint UNSIGNED NOT NULL DEFAULT '0',
+  CONSTRAINT `chk_player_status` CHECK (`status` IN (0, 1, 3, 4, 5, 99))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -190,7 +191,7 @@ CREATE TABLE `setting` (
   `npsso` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `scanning` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `scan_start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `scan_progress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
+  `scan_progress` json DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -357,7 +358,8 @@ CREATE TABLE `trophy_meta` (
   `rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `in_game_rarity_percent` decimal(5,2) UNSIGNED NOT NULL DEFAULT '0.00',
   `in_game_rarity_point` mediumint UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NONE'
+  `in_game_rarity_name` enum('LEGENDARY','EPIC','RARE','UNCOMMON','COMMON','NONE') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NONE',
+  CONSTRAINT `chk_tm_status` CHECK (`status` IN (0, 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -414,7 +416,8 @@ CREATE TABLE `trophy_title_meta` (
   `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `obsolete_ids` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
-  `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0'
+  `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
+  CONSTRAINT `chk_ttm_status` CHECK (`status` IN (0, 1, 2))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -616,7 +619,11 @@ ALTER TABLE `trophy_title_history`
 --
 ALTER TABLE `trophy_title_meta`
   ADD PRIMARY KEY (`np_communication_id`),
-  ADD KEY `idx_ttm_status` (`status`),
+  ADD KEY `idx_ttm_status_recent_players` (`status`,`recent_players` DESC),
+  ADD KEY `idx_ttm_status_difficulty_owners` (`status`,`difficulty` DESC,`owners` DESC),
+  ADD KEY `idx_ttm_status_owners` (`status`,`owners` DESC),
+  ADD KEY `idx_ttm_status_rarity_owners` (`status`,`rarity_points` DESC,`owners` DESC),
+  ADD KEY `idx_ttm_status_igrp_owners` (`status`,`in_game_rarity_points` DESC,`owners` DESC),
   ADD KEY `idx_ttm_parent_np_communication_id` (`parent_np_communication_id`),
   ADD KEY `idx_ttm_psnprofiles_id` (`psnprofiles_id`);
 
@@ -625,7 +632,7 @@ ALTER TABLE `trophy_title_meta`
 --
 ALTER TABLE `trophy_title_player`
   ADD PRIMARY KEY (`np_communication_id`,`account_id`) USING BTREE,
-  ADD KEY `idx_npcid_progress` (`np_communication_id`,`progress`),
+  ADD KEY `idx_ttp_leaderboard` (`np_communication_id`,`progress` DESC,`platinum` DESC,`gold` DESC,`silver` DESC,`bronze` DESC,`last_updated_date`),
   ADD KEY `idx_npcid_lupdate` (`np_communication_id`,`last_updated_date`),
   ADD KEY `idx_ttp_account_id_progress_updated` (`account_id`,`progress`,`last_updated_date`);
 

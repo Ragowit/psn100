@@ -25,7 +25,7 @@ ANALYZE TABLE trophy_title_player
     WITH 256 BUCKETS AUTO UPDATE;
 
 ANALYZE TABLE trophy_title_meta
-    UPDATE HISTOGRAM ON status, recent_players, owners, difficulty
+    UPDATE HISTOGRAM ON status, recent_players, owners, difficulty, rarity_points, in_game_rarity_points
     WITH 256 BUCKETS AUTO UPDATE;
 
 ANALYZE TABLE trophy_title

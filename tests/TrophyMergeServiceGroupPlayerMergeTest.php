@@ -45,6 +45,16 @@ final class TrophyMergeServiceGroupPlayerMergeTest extends TestCase
             str_contains($pdo->groupPlayerMergeSql ?? '', '100,'),
             'Expected merge progress SQL to set 100% when a group has no obtainable points.'
         );
+        $this->assertTrue(
+            str_contains($pdo->groupPlayerMergeSql ?? '', 'accounts AS')
+                && str_contains($pdo->groupPlayerMergeSql ?? '', 'trophy_title_player')
+                && str_contains($pdo->groupPlayerMergeSql ?? '', 'te.account_id = a.account_id'),
+            'Expected merge progress SQL to drive trophy_earned by account_id for partition pruning.'
+        );
+        $this->assertTrue(
+            str_contains($pdo->groupPlayerMergeSql ?? '', 'IN (:child_np_0, :child_np_1)'),
+            'Expected merge progress SQL to scope accounts to all child titles.'
+        );
     }
 }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GameListItem.php';
 require_once __DIR__ . '/GameListPageResult.php';
+require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PsnOnlineIdValidator.php';
 
@@ -257,21 +258,6 @@ class GameListService
             return null;
         }
 
-        $conditions = array_map(
-            static function (string $platform): string {
-                if ($platform === GameListFilter::PLATFORM_PSVR) {
-                    return "REGEXP_LIKE(tt.platform, '(^|,)PSVR(,|$)')";
-                }
-
-                return sprintf("tt.platform LIKE '%%%s%%'", strtoupper($platform));
-            },
-            $filter->getSelectedPlatforms()
-        );
-
-        if ($conditions === []) {
-            return null;
-        }
-
-        return '(' . implode(' OR ', $conditions) . ')';
+        return PlatformSql::buildOrExpression($filter->getSelectedPlatforms());
     }
 }
