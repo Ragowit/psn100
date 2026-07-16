@@ -81,6 +81,15 @@ final class PlayerScanTrophyTitleLoop
             $trophyTitleCollection = $user->trophyTitles();
             $trophyTitles = iterator_to_array($trophyTitleCollection->getIterator());
         } catch (TypeError) {
+            // A failed fetch is not a clean confirmation of missing titles, so reset
+            // deletion/retry guards before asking the worker to try again.
+            $this->clearTitleListRetryState(
+                $onlineId,
+                $missingGameDeletionCheck,
+                $missingTrophyTitleRetry,
+                $trophyTitleCountRetry,
+                $invalidTitleDateRetry,
+            );
             ($this->sleeper)(5);
 
             return PlayerScanTrophyTitleLoopResult::continueLoop();
@@ -95,6 +104,13 @@ final class PlayerScanTrophyTitleLoop
             $this->workerScanCoordinator->setWaitingScanProgress(
                 (int) $worker['id'],
                 'Encountered a problem while fetching game list. Waiting 1 minute before retrying.'
+            );
+            $this->clearTitleListRetryState(
+                $onlineId,
+                $missingGameDeletionCheck,
+                $missingTrophyTitleRetry,
+                $trophyTitleCountRetry,
+                $invalidTitleDateRetry,
             );
             ($this->sleeper)(60);
 
@@ -366,5 +382,24 @@ final class PlayerScanTrophyTitleLoop
         );
 
         $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
+    }
+
+    /**
+     * @param array<string, bool> $missingGameDeletionCheck
+     * @param array<string, bool> $missingTrophyTitleRetry
+     * @param array<string, bool> $trophyTitleCountRetry
+     * @param array<string, bool> $invalidTitleDateRetry
+     */
+    private function clearTitleListRetryState(
+        string $onlineId,
+        array &$missingGameDeletionCheck,
+        array &$missingTrophyTitleRetry,
+        array &$trophyTitleCountRetry,
+        array &$invalidTitleDateRetry,
+    ): void {
+        unset($missingGameDeletionCheck[$onlineId]);
+        unset($missingTrophyTitleRetry[$onlineId]);
+        unset($trophyTitleCountRetry[$onlineId]);
+        $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
     }
 }

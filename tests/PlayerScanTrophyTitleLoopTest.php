@@ -143,10 +143,10 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
     public function testProcessAccessibleTrophyTitlesRetriesTransientFetchExceptions(): void
     {
         $recheck = '';
-        $missingGameDeletionCheck = [];
-        $missingTrophyTitleRetry = [];
-        $trophyTitleCountRetry = [];
-        $invalidTitleDateRetry = [];
+        $missingGameDeletionCheck = ['ExampleUser' => true, 'OtherUser' => true];
+        $missingTrophyTitleRetry = ['ExampleUser' => true];
+        $trophyTitleCountRetry = ['ExampleUser' => true];
+        $invalidTitleDateRetry = ['ExampleUser:NPWR12345_00' => true, 'OtherUser:NPWR99999_00' => true];
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
@@ -165,6 +165,10 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $this->assertTrue($result->shouldContinueLoop());
         $this->assertSame([60], $this->sleepCalls);
+        $this->assertSame(['OtherUser' => true], $missingGameDeletionCheck);
+        $this->assertSame([], $missingTrophyTitleRetry);
+        $this->assertSame([], $trophyTitleCountRetry);
+        $this->assertSame(['OtherUser:NPWR99999_00' => true], $invalidTitleDateRetry);
 
         $scanProgress = $this->database->query('SELECT scan_progress FROM setting WHERE id = 1')->fetchColumn();
         $this->assertTrue(is_string($scanProgress));
@@ -178,10 +182,10 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
     public function testProcessAccessibleTrophyTitlesRetriesTypeErrorsQuickly(): void
     {
         $recheck = '';
-        $missingGameDeletionCheck = [];
-        $missingTrophyTitleRetry = [];
-        $trophyTitleCountRetry = [];
-        $invalidTitleDateRetry = [];
+        $missingGameDeletionCheck = ['ExampleUser' => true];
+        $missingTrophyTitleRetry = ['ExampleUser' => true];
+        $trophyTitleCountRetry = ['ExampleUser' => true];
+        $invalidTitleDateRetry = ['ExampleUser:NPWR12345_00' => true];
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
@@ -200,6 +204,10 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $this->assertTrue($result->shouldContinueLoop());
         $this->assertSame([5], $this->sleepCalls);
+        $this->assertSame([], $missingGameDeletionCheck);
+        $this->assertSame([], $missingTrophyTitleRetry);
+        $this->assertSame([], $trophyTitleCountRetry);
+        $this->assertSame([], $invalidTitleDateRetry);
     }
 }
 
