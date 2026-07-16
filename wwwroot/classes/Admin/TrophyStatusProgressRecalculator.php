@@ -281,7 +281,7 @@ SQL;
         $this->database->exec('DROP TEMPORARY TABLE IF EXISTS temp_impacted_accounts');
         $this->database->exec('CREATE TEMPORARY TABLE temp_impacted_accounts (account_id BIGINT UNSIGNED PRIMARY KEY)');
 
-        if (count($affectedTrophyIds) === 0) {
+        if ($affectedTrophyIds === []) {
             return;
         }
 

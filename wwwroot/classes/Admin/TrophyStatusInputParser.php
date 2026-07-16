@@ -35,7 +35,7 @@ final class TrophyStatusInputParser
             |> array_unique(...)
             |> array_values(...);
 
-        if (count($ids) === 0) {
+        if ($ids === []) {
             throw new InvalidArgumentException('No trophies were provided.');
         }
 
@@ -60,7 +60,7 @@ final class TrophyStatusInputParser
 
         $trophies = $query->fetchAll(PDO::FETCH_COLUMN);
 
-        if ($trophies === false || count($trophies) === 0) {
+        if ($trophies === false || $trophies === []) {
             throw new InvalidArgumentException('No trophies found for the selected game.');
         }
 

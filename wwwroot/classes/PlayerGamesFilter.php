@@ -81,7 +81,7 @@ class PlayerGamesFilter
         if ($sort !== '' && in_array($sort, self::ALLOWED_SORTS, true)) {
             $filter->sort = $sort;
             $filter->sortProvided = true;
-        } elseif (!empty($filter->search)) {
+        } elseif ($filter->search !== '') {
             $filter->sort = self::SORT_SEARCH;
         }
 
@@ -116,7 +116,7 @@ class PlayerGamesFilter
 
     public function hasSearchTerm(): bool
     {
-        return !empty($this->search);
+        return $this->search !== '';
     }
 
     public function shouldApplyFulltextCondition(): bool

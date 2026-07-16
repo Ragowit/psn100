@@ -25,7 +25,7 @@ require_once("header.php");
                 <div class="col-12">
                     <h2>
                         <?php if ($entries !== []) { ?>
-                            <?php $firstEntry = $entries[0]; ?>
+                            <?php $firstEntry = array_first($entries); ?>
                             <time
                                 class="js-localized-changelog-date"
                                 datetime="<?= htmlspecialchars($firstEntry->getIsoTimestamp(), ENT_QUOTES, 'UTF-8'); ?>"

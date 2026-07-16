@@ -47,7 +47,7 @@ class PsnpPlusClient
                 $trophies = [];
             }
 
-            $trophiesById[$psnprofilesId] = array_map('intval', $trophies);
+            $trophiesById[$psnprofilesId] = array_map(intval(...), $trophies);
         }
 
         return $trophiesById;

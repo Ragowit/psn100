@@ -86,7 +86,7 @@ final class SearchQueryHelper
             );
 
             if (count($scoreExpressions) === 1) {
-                $columns[] = sprintf('%s AS score', $scoreExpressions[0]);
+                $columns[] = sprintf('%s AS score', array_first($scoreExpressions));
             } else {
                 $columns[] = sprintf('GREATEST(%s) AS score', implode(', ', $scoreExpressions));
             }

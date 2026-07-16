@@ -7,13 +7,11 @@ require_once __DIR__ . '/HomepagePage.php';
 require_once __DIR__ . '/HomepageViewModel.php';
 require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
-final class HomepageController
+final readonly class HomepageController
 {
-    private HomepagePage $homepagePage;
-
-    public function __construct(HomepagePage $homepagePage)
-    {
-        $this->homepagePage = $homepagePage;
+    public function __construct(
+        private HomepagePage $homepagePage,
+    ) {
     }
 
     public static function fromDatabase(PDO $database): self
@@ -24,39 +22,44 @@ final class HomepageController
         return new self($homepagePage);
     }
 
+    #[\NoDiscard]
     public function withTitle(string $title): self
     {
-        $this->homepagePage->setTitle($title);
-
-        return $this;
+        return clone($this, [
+            'homepagePage' => $this->homepagePage->withTitle($title),
+        ]);
     }
 
+    #[\NoDiscard]
     public function withNewGamesLimit(int $limit): self
     {
-        $this->homepagePage->setNewGamesLimit($limit);
-
-        return $this;
+        return clone($this, [
+            'homepagePage' => $this->homepagePage->withNewGamesLimit($limit),
+        ]);
     }
 
+    #[\NoDiscard]
     public function withNewDlcsLimit(int $limit): self
     {
-        $this->homepagePage->setNewDlcsLimit($limit);
-
-        return $this;
+        return clone($this, [
+            'homepagePage' => $this->homepagePage->withNewDlcsLimit($limit),
+        ]);
     }
 
+    #[\NoDiscard]
     public function withPopularGamesLimit(int $limit): self
     {
-        $this->homepagePage->setPopularGamesLimit($limit);
-
-        return $this;
+        return clone($this, [
+            'homepagePage' => $this->homepagePage->withPopularGamesLimit($limit),
+        ]);
     }
 
+    #[\NoDiscard]
     public function withPopularGamesFilter(HomepagePopularGamesFilter $filter): self
     {
-        $this->homepagePage->setPopularGamesFilter($filter);
-
-        return $this;
+        return clone($this, [
+            'homepagePage' => $this->homepagePage->withPopularGamesFilter($filter),
+        ]);
     }
 
     public function getViewModel(): HomepageViewModel

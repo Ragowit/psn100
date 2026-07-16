@@ -114,7 +114,9 @@ class PlayerRandomGamesService
             return [];
         }
 
-        return array_values(array_map('intval', $results));
+        return $results
+            |> (fn(array $ids): array => array_map(intval(...), $ids))
+            |> array_values(...);
     }
 
     /**
@@ -227,7 +229,10 @@ class PlayerRandomGamesService
             return [];
         }
 
-        $seenIds = array_values(array_unique(array_map('intval', $seenIds)));
+        $seenIds = $seenIds
+            |> (fn(array $ids): array => array_map(intval(...), $ids))
+            |> array_unique(...)
+            |> array_values(...);
 
         if ($limit <= 25) {
             return $this->fetchFallbackRowsWithRandomOrder($accountId, $filter, $limit, $seenIds);

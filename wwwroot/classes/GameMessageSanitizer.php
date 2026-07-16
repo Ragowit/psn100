@@ -25,16 +25,15 @@ final class GameMessageSanitizer
             $attributes = $matches[1][0];
             $linkContent = $matches[2][0];
             $href = self::extractHref($attributes);
-            $validatedUrl = $href !== null ? filter_var($href, FILTER_VALIDATE_URL) : false;
 
-            if ($validatedUrl !== false && preg_match('/^https?:\/\//i', (string) $validatedUrl) === 1) {
+            if ($href !== null && self::isSafeHttpUrl($href)) {
                 $targetAttributes = self::hasTargetBlank($attributes)
                     ? ' target="_blank" rel="noopener noreferrer"'
                     : '';
 
                 $sanitized .= sprintf(
                     '<a href="%s"%s>%s</a>',
-                    Html::escape((string) $validatedUrl),
+                    Html::escape($href),
                     $targetAttributes,
                     self::sanitizeLinkText($linkContent)
                 );
@@ -101,7 +100,17 @@ final class GameMessageSanitizer
 
     private static function sanitizeLinkText(string $content): string
     {
-        return Html::escape(self::decodeHtmlEntities(strip_tags($content)));
+        return $content
+            |> strip_tags(...)
+            |> self::decodeHtmlEntities(...)
+            |> Html::escape(...);
+    }
+
+    private static function isSafeHttpUrl(string $url): bool
+    {
+        $scheme = Uri\Rfc3986\Uri::parse($url)?->getScheme();
+
+        return $scheme === 'http' || $scheme === 'https';
     }
 
     private static function decodeHtmlEntities(string $value): string

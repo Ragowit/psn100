@@ -14,7 +14,7 @@ readonly class PsnpPlusFixedGame
         private string $gameName,
         array $trophyIds
     ) {
-        $this->trophyIds = array_map('intval', $trophyIds);
+        $this->trophyIds = array_map(intval(...), $trophyIds);
     }
 
     public function getGameId(): int
@@ -47,7 +47,7 @@ readonly class PsnpPlusFixedGame
 
     public function getTrophyIdQuery(): string
     {
-        return implode(',', array_map('strval', $this->trophyIds));
+        return implode(',', array_map(strval(...), $this->trophyIds));
     }
 
     /**
@@ -55,6 +55,6 @@ readonly class PsnpPlusFixedGame
      */
     private function formatList(array $values): string
     {
-        return implode(', ', array_map('strval', $values));
+        return implode(', ', array_map(strval(...), $values));
     }
 }

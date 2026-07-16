@@ -6,12 +6,12 @@ require_once __DIR__ . '/HomepageContentService.php';
 require_once __DIR__ . '/HomepageViewModel.php';
 require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
-class HomepagePage
+final readonly class HomepagePage
 {
     private const DEFAULT_TITLE = 'PSN 100% ~ PlayStation Leaderboards & Trophies';
 
     public function __construct(
-        private readonly HomepageContentService $contentService,
+        private HomepageContentService $contentService,
         private string $title = self::DEFAULT_TITLE,
         private ?int $newGamesLimit = null,
         private ?int $newDlcsLimit = null,
@@ -20,42 +20,40 @@ class HomepagePage
     ) {
     }
 
-    public function setTitle(string $title): self
+    #[\NoDiscard]
+    public function withTitle(string $title): self
     {
-        $this->title = $title;
-
-        return $this;
+        return clone($this, ['title' => $title]);
     }
 
-    public function setNewGamesLimit(int $limit): self
+    #[\NoDiscard]
+    public function withNewGamesLimit(int $limit): self
     {
-        $this->assertPositiveLimit($limit);
-        $this->newGamesLimit = $limit;
+        self::assertPositiveLimit($limit);
 
-        return $this;
+        return clone($this, ['newGamesLimit' => $limit]);
     }
 
-    public function setNewDlcsLimit(int $limit): self
+    #[\NoDiscard]
+    public function withNewDlcsLimit(int $limit): self
     {
-        $this->assertPositiveLimit($limit);
-        $this->newDlcsLimit = $limit;
+        self::assertPositiveLimit($limit);
 
-        return $this;
+        return clone($this, ['newDlcsLimit' => $limit]);
     }
 
-    public function setPopularGamesLimit(int $limit): self
+    #[\NoDiscard]
+    public function withPopularGamesLimit(int $limit): self
     {
-        $this->assertPositiveLimit($limit);
-        $this->popularGamesLimit = $limit;
+        self::assertPositiveLimit($limit);
 
-        return $this;
+        return clone($this, ['popularGamesLimit' => $limit]);
     }
 
-    public function setPopularGamesFilter(HomepagePopularGamesFilter $filter): self
+    #[\NoDiscard]
+    public function withPopularGamesFilter(HomepagePopularGamesFilter $filter): self
     {
-        $this->popularGamesFilter = $filter;
-
-        return $this;
+        return clone($this, ['popularGamesFilter' => $filter]);
     }
 
     public function buildViewModel(): HomepageViewModel
@@ -77,7 +75,7 @@ class HomepagePage
         return new HomepageViewModel($this->title, $newGames, $newDlcs, $popularGames, $popularGamesFilter);
     }
 
-    private function assertPositiveLimit(int $limit): void
+    private static function assertPositiveLimit(int $limit): void
     {
         if ($limit < 1) {
             throw new InvalidArgumentException('Limit must be greater than or equal to 1.');
