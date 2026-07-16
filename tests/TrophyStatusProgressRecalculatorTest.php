@@ -27,7 +27,7 @@ final class TrophyStatusProgressRecalculatorTest extends TestCase
         $this->assertTrue(str_contains($query, 'AND tm.status = 0'));
         $this->assertTrue(str_contains($query, 'AND aggregate.account_id IS NOT NULL'));
 
-        $this->assertNotNull($database->impactedAccountsQuery);
+        $this->assertTrue($database->impactedAccountsQuery !== null);
         $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'te.order_id IN ('));
         $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'AND te.earned = 1'));
         $this->assertFalse(str_contains((string) $database->impactedAccountsQuery, 'INNER JOIN trophy t ON'));
