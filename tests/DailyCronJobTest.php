@@ -41,6 +41,17 @@ final class DailyCronJobTest extends TestCase
         $this->assertFalse(str_contains($source, 'player_ranking'));
     }
 
+    public function testZeroOwnersFastPathUsesLiveRankedOwnerCheckNotCachedMeta(): void
+    {
+        $source = $this->readClassSource();
+
+        $this->assertStringContainsString('SELECT EXISTS (', $source);
+        $this->assertStringContainsString('FROM trophy_title_player ttp', $source);
+        $this->assertStringContainsString('INNER JOIN player_ranking pr', $source);
+        $this->assertStringContainsString('pr.ranking <= 10000', $source);
+        $this->assertFalse(str_contains($source, 'SELECT owners FROM trophy_title_meta'));
+    }
+
     public function testUpdateTrophyRarityQueryAssignsRarityNamesFromThresholds(): void
     {
         $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
@@ -179,11 +190,11 @@ final class DailyCronJobPerGameRetryTestDatabase extends PDO
             }, isSelect: true);
         }
 
-        if (str_contains($query, 'SELECT owners FROM trophy_title_meta')) {
-            // Non-zero owners force the full ranked trophy_earned rarity path.
+        if (str_contains($query, 'SELECT EXISTS (') && str_contains($query, 'trophy_title_player ttp')) {
+            // Ranked owners present => full ranked trophy_earned rarity path.
             return new DailyCronJobTestStatement(static function (): int {
-                return 10;
-            }, isSelect: true, fetchColumnValue: 10);
+                return 1;
+            }, isSelect: true, fetchColumnValue: 1);
         }
 
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
@@ -234,7 +245,7 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
             }, isSelect: true);
         }
 
-        if (str_contains($query, 'SELECT owners FROM trophy_title_meta')) {
+        if (str_contains($query, 'SELECT EXISTS (') && str_contains($query, 'trophy_title_player ttp')) {
             return new DailyCronJobTestStatement(static function (): int {
                 return 0;
             }, isSelect: true, fetchColumnValue: 0);

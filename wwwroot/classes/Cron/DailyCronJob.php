@@ -157,14 +157,26 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function updateTrophyRarityForGame(string $npCommunicationId): void
     {
-        $ownersQuery = $this->database->prepare(
-            'SELECT owners FROM trophy_title_meta WHERE np_communication_id = :np_communication_id'
+        // Do not trust trophy_title_meta.owners alone: hourly cache can lag behind
+        // freshly scanned trophy_title_player / trophy_earned rows. Match the rarity
+        // query's top-10k definition before taking the zero-owners fast path.
+        $hasRankedOwnersQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT EXISTS (
+                SELECT 1
+                FROM trophy_title_player ttp
+                INNER JOIN player_ranking pr
+                    ON pr.account_id = ttp.account_id
+                   AND pr.ranking <= 10000
+                WHERE ttp.np_communication_id = :np_communication_id
+            )
+            SQL
         );
-        $ownersQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $ownersQuery->execute();
-        $owners = $ownersQuery->fetchColumn();
+        $hasRankedOwnersQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $hasRankedOwnersQuery->execute();
+        $hasRankedOwners = (int) $hasRankedOwnersQuery->fetchColumn();
 
-        $sql = ((int) $owners) === 0
+        $sql = $hasRankedOwners === 0
             ? self::UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY
             : self::UPDATE_TROPHY_RARITY_QUERY;
 
