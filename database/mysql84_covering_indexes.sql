@@ -185,6 +185,24 @@ DROP PROCEDURE psn100_drop_check_if_exists$$
 DELIMITER ;
 
 -- Prefer JSON for scan_progress payloads written by WorkerScanCoordinator.
+-- Null non-JSON legacy/corrupt values first: MODIFY ... JSON rejects invalid rows,
+-- and app readers already treat malformed scan_progress as null.
+SET @scan_progress_sanitize := (
+    SELECT IF(
+        DATA_TYPE = 'json',
+        'DO 0',
+        'UPDATE `setting` SET `scan_progress` = NULL WHERE `scan_progress` IS NOT NULL AND JSON_VALID(`scan_progress`) = 0'
+    )
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = 'setting'
+      AND column_name = 'scan_progress'
+);
+
+PREPARE scan_progress_sanitize_stmt FROM @scan_progress_sanitize;
+EXECUTE scan_progress_sanitize_stmt;
+DEALLOCATE PREPARE scan_progress_sanitize_stmt;
+
 SET @scan_progress_json := (
     SELECT IF(
         DATA_TYPE = 'json',
