@@ -26,7 +26,7 @@ class TrophyStatusService
             |> array_unique(...)
             |> array_values(...);
 
-        if (count($trophyIds) === 0) {
+        if ($trophyIds === []) {
             throw new InvalidArgumentException('No trophies were provided.');
         }
 

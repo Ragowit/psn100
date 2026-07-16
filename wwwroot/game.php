@@ -293,7 +293,7 @@ require_once("header.php");
                                                         $first = -1;
                                                         $second = -1;
                                                         for ($i = 0; $i < count($completionTimes); $i++) {
-                                                            if ($completionTimes[$i][0] == "0") {
+                                                            if ($completionTimes[$i][0] === '0') {
                                                                 continue;
                                                             }
 

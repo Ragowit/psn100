@@ -39,7 +39,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                     </blockquote>
                     <?php
                     $aboutMe = $playerHeaderViewModel->getAboutMe();
-                    if (!empty($aboutMe)) {
+                    if ($aboutMe !== '') {
                         ?>
                         <figcaption class="blockquote-footer">
                             <?= $aboutMe; ?>

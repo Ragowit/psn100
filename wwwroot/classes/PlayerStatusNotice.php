@@ -14,6 +14,7 @@ readonly class PlayerStatusNotice
         private string $message,
     ) {}
 
+    #[\NoDiscard]
     public static function flagged(string $onlineId, ?string $accountId): self
     {
         $disputeUrl = self::createDisputeUrl($onlineId, $accountId);
@@ -25,6 +26,7 @@ readonly class PlayerStatusNotice
         return new self(self::TYPE_FLAGGED, $message);
     }
 
+    #[\NoDiscard]
     public static function privateProfile(): self
     {
         $message = sprintf(
@@ -35,11 +37,20 @@ readonly class PlayerStatusNotice
         return new self(self::TYPE_PRIVATE, $message);
     }
 
+    #[\NoDiscard]
     public static function createDisputeUrl(string $onlineId, ?string $accountId): string
     {
-        $query = ['q' => self::buildDisputeQuery($onlineId, $accountId)];
+        $query = http_build_query(
+            ['q' => self::buildDisputeQuery($onlineId, $accountId)],
+            '',
+            '&',
+            PHP_QUERY_RFC3986
+        );
 
-        return self::DISPUTE_BASE_URL . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        return Uri\Rfc3986\Uri::parse(self::DISPUTE_BASE_URL)
+            ?->withQuery($query)
+            ->toRawString()
+            ?? self::DISPUTE_BASE_URL . '?' . $query;
     }
 
     public function getMessage(): string

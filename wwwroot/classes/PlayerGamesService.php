@@ -291,16 +291,17 @@ final class PlayerGamesService
         $formatted = $interval->format('%y years, %m months, %d days, %h hours, %i minutes, %s seconds');
         $parts = explode(', ', $formatted);
 
-        $nonZeroParts = array_values(array_filter(
-            $parts,
-            static fn(string $part): bool => $part !== '' && $part[0] !== '0'
-        ));
+        $summary = $parts
+            |> (fn(array $parts): array => array_filter(
+                $parts,
+                static fn(string $part): bool => $part !== '' && $part[0] !== '0'
+            ))
+            |> array_values(...)
+            |> (fn(array $parts): array => array_slice($parts, 0, 2));
 
-        if ($nonZeroParts === []) {
+        if ($summary === []) {
             return null;
         }
-
-        $summary = array_slice($nonZeroParts, 0, 2);
 
         return 'Completed in ' . implode(', ', $summary);
     }

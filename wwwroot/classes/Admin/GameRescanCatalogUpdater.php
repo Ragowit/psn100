@@ -328,13 +328,15 @@ final class GameRescanCatalogUpdater
             $platforms[] = $platform->value;
         }
 
-        $platforms = array_values(array_filter($platforms, static fn(string $platform): bool => $platform !== ''));
-        $platforms = array_values(array_unique($platforms));
+        $platforms = $platforms
+            |> (fn(array $items): array => array_filter($items, static fn(string $platform): bool => $platform !== ''))
+            |> array_unique(...)
+            |> array_values(...);
 
-        $existingPlatforms = array_values(array_unique(array_filter(
-            $existingPlatforms,
-            static fn(string $platform): bool => $platform !== ''
-        )));
+        $existingPlatforms = $existingPlatforms
+            |> (fn(array $items): array => array_filter($items, static fn(string $platform): bool => $platform !== ''))
+            |> array_unique(...)
+            |> array_values(...);
 
         if (in_array('PSVR2', $existingPlatforms, true)) {
             if (!in_array('PSVR2', $platforms, true)) {

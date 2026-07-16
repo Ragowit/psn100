@@ -39,7 +39,7 @@ class TrophyMergeService
 
     public function mergeSpecificTrophies(int $parentTrophyId, array $childTrophyIds): string
     {
-        if (empty($childTrophyIds)) {
+        if ($childTrophyIds === []) {
             throw new InvalidArgumentException('At least one child trophy is required.');
         }
 

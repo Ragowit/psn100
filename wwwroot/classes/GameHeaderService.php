@@ -311,12 +311,12 @@ class GameHeaderService
 
             $url = trim($matches['url'][0]);
             $linkText = $matches['text'][0];
-            $validatedUrl = filter_var($url, FILTER_VALIDATE_URL);
+            $scheme = Uri\Rfc3986\Uri::parse($url)?->getScheme();
 
-            if ($validatedUrl !== false && preg_match('/^https?:\/\//i', $validatedUrl) === 1) {
+            if ($scheme === 'http' || $scheme === 'https') {
                 $formatted .= sprintf(
                     '<a href="%s" target="_blank" rel="noopener">%s</a>',
-                    Html::escape($validatedUrl),
+                    Html::escape($url),
                     Html::escape($linkText)
                 );
             } else {

@@ -55,7 +55,7 @@ class PsnpPlusService
             $foundNpCommunicationIds[] = $game->getNpCommunicationId();
 
             $psnpTrophies = $trophies;
-            if ($psnpTrophies !== [] && $psnpTrophies[0] === 0) {
+            if ($psnpTrophies !== [] && array_first($psnpTrophies) === 0) {
                 $psnpTrophies = $this->findTrophyOrderNumbers($game->getNpCommunicationId(), false);
             }
 
@@ -132,7 +132,7 @@ class PsnpPlusService
 
         $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        return array_map('intval', $rows === false ? [] : $rows);
+        return array_map(intval(...), $rows === false ? [] : $rows);
     }
 
     /**
@@ -188,7 +188,7 @@ class PsnpPlusService
 
         $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        return array_map('strval', $rows === false ? [] : $rows);
+        return array_map(strval(...), $rows === false ? [] : $rows);
     }
 
     private function findGameByNpCommunicationId(string $npCommunicationId): ?PsnpPlusGame
@@ -274,6 +274,6 @@ class PsnpPlusService
 
         $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        return array_map('intval', $rows === false ? [] : $rows);
+        return array_map(intval(...), $rows === false ? [] : $rows);
     }
 }

@@ -79,16 +79,15 @@ class TrophyStatusPage
             $statusInput = (string) $status;
 
             try {
-                if (!empty($postData['game'])) {
-                    $gameValue = (string) $postData['game'];
-
+                $gameValue = trim((string) ($postData['game'] ?? ''));
+                if ($gameValue !== '') {
                     if (!ctype_digit($gameValue)) {
                         throw new \InvalidArgumentException('Game ID must be numeric.');
                     }
 
                     $gameId = (int) $gameValue;
                     $trophyIds = $this->trophyStatusInputParser->getTrophyIdsForGame($gameId);
-                    $trophyInput = implode(',', array_map('strval', $trophyIds));
+                    $trophyInput = implode(',', array_map(strval(...), $trophyIds));
                 } else {
                     $trophyInput = (string) ($postData['trophy'] ?? '');
                     $trophyIds = $this->trophyStatusInputParser->parseTrophyIds($trophyInput);

@@ -182,7 +182,7 @@ require_once("header.php");
                         </table>
                     </div>
                 </div>
-                <?php if (!empty($scanLogPlayersData)) { ?>
+                <?php if ($scanLogPlayersData !== []) { ?>
                     <link rel="stylesheet" href="<?= htmlspecialchars(StaticAsset::url('/css/scan-log-renderer.css'), ENT_QUOTES, 'UTF-8'); ?>">
                     <?php
                     $scanLogConfig = [

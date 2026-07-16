@@ -45,10 +45,10 @@ class PsnpPlusGameDifference
         $this->gameName = $gameName;
         $this->npCommunicationId = $npCommunicationId;
         $this->psnprofilesId = $psnprofilesId;
-        $this->unobtainableOrders = array_map('intval', $unobtainableOrders);
-        $this->unobtainableTrophyIds = array_map('intval', $unobtainableTrophyIds);
-        $this->obtainableOrders = array_map('intval', $obtainableOrders);
-        $this->obtainableTrophyIds = array_map('intval', $obtainableTrophyIds);
+        $this->unobtainableOrders = array_map(intval(...), $unobtainableOrders);
+        $this->unobtainableTrophyIds = array_map(intval(...), $unobtainableTrophyIds);
+        $this->obtainableOrders = array_map(intval(...), $obtainableOrders);
+        $this->obtainableTrophyIds = array_map(intval(...), $obtainableTrophyIds);
     }
 
     public function getGameId(): int
@@ -138,7 +138,7 @@ class PsnpPlusGameDifference
      */
     private function formatList(array $values): string
     {
-        return implode(', ', array_map('strval', $values));
+        return implode(', ', array_map(strval(...), $values));
     }
 
     /**
@@ -146,6 +146,6 @@ class PsnpPlusGameDifference
      */
     private function formatQuery(array $values): string
     {
-        return implode(',', array_map('strval', $values));
+        return implode(',', array_map(strval(...), $values));
     }
 }
