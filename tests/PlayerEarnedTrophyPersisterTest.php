@@ -29,6 +29,14 @@ final class PlayerEarnedTrophyPersisterTest extends TestCase
             str_contains($pdo->upsertSql[0], 'IF(trophy_earned.earned = 0, new.earned_date, trophy_earned.earned_date)'),
             'Child upsert should use child-specific earned_date merge rule.'
         );
+        $this->assertTrue(
+            str_contains($pdo->upsertSql[0], 'IF(trophy_earned.earned = 1, trophy_earned.earned, new.earned)'),
+            'Child upsert must never allow earned to go from 1 to 0.'
+        );
+        $this->assertFalse(
+            str_contains($pdo->upsertSql[0], 'earned = new.earned'),
+            'Child upsert must not overwrite earned unconditionally.'
+        );
 
         $this->assertSame([
             ':np_communication_id' => 'NPWR12345_00',

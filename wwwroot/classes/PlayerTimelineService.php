@@ -27,6 +27,7 @@ class PlayerTimelineService
                 JOIN trophy_earned te
                     ON te.np_communication_id = ttp.np_communication_id
                     AND te.account_id = ttp.account_id
+                    AND te.earned = 1
                 JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = ttp.np_communication_id
                 WHERE ttp.account_id = :account_id

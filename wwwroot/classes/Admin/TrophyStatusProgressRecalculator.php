@@ -285,32 +285,60 @@ SQL;
             return;
         }
 
-        $placeholders = implode(',', array_fill(0, count($affectedTrophyIds), '?'));
+        $orderIds = $this->resolveOrderIds($affectedTrophyIds);
+        if ($orderIds === []) {
+            return;
+        }
+
+        // Resolve order_ids from the small trophy table first, then probe
+        // trophy_earned via (np_communication_id, order_id, earned) — the leading
+        // columns of idx_te_npcomm_order_earned_date — instead of joining trophy
+        // into the multi-billion-row scan.
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
         $sql = 'INSERT IGNORE INTO temp_impacted_accounts (account_id)
             SELECT DISTINCT te.account_id
             FROM trophy_earned te
-            INNER JOIN trophy t ON t.np_communication_id = te.np_communication_id
-                AND t.group_id = te.group_id
-                AND t.order_id = te.order_id
             WHERE te.np_communication_id = ?
+              AND te.order_id IN (' . $placeholders . ')
               AND te.earned = 1';
 
         if ($groupId !== null) {
             $sql .= ' AND te.group_id = ?';
         }
 
-        $sql .= ' AND t.id IN (' . $placeholders . ')';
-
         $statement = $this->database->prepare($sql);
         $parameterIndex = 1;
         $statement->bindValue($parameterIndex++, $npCommunicationId, PDO::PARAM_STR);
+        foreach ($orderIds as $orderId) {
+            $statement->bindValue($parameterIndex++, $orderId, PDO::PARAM_INT);
+        }
         if ($groupId !== null) {
             $statement->bindValue($parameterIndex++, $groupId, PDO::PARAM_STR);
         }
-        foreach ($affectedTrophyIds as $trophyId) {
-            $statement->bindValue($parameterIndex++, (int) $trophyId, PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    /**
+     * @param int[] $affectedTrophyIds
+     * @return list<int>
+     */
+    private function resolveOrderIds(array $affectedTrophyIds): array
+    {
+        $placeholders = implode(',', array_fill(0, count($affectedTrophyIds), '?'));
+        $statement = $this->database->prepare(
+            'SELECT DISTINCT order_id FROM trophy WHERE id IN (' . $placeholders . ')'
+        );
+        foreach (array_values($affectedTrophyIds) as $index => $trophyId) {
+            $statement->bindValue($index + 1, (int) $trophyId, PDO::PARAM_INT);
         }
         $statement->execute();
+
+        $orderIds = [];
+        foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $orderId) {
+            $orderIds[] = (int) $orderId;
+        }
+
+        return $orderIds;
     }
 
     private function findGameId(string $npCommunicationId): ?int

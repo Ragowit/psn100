@@ -72,6 +72,7 @@ scripts:
 ```bash
 mysql psn100 < database/mysql84_histograms.sql
 mysql psn100 < database/mysql84_covering_indexes.sql
+mysql psn100 < database/mysql84_trophy_earned_triggers.sql
 ```
 
 Histograms use MySQL 8.4 `AUTO UPDATE` so they stay current when `ANALYZE TABLE` runs or
@@ -86,6 +87,15 @@ ongoing overhead with negligible benefit for partition- and PK-scoped lookups.
 `mysql84_covering_indexes.sql` adds descending covering indexes for game leaderboard and
 game-list/popular sorts, status CHECK constraints, and migrates `setting.scan_progress` to
 JSON. Safe to re-run.
+
+`mysql84_trophy_earned_triggers.sql` recreates the `trophy_earned` triggers so bulk deletes
+can set `@psn100_skip_trophy_count = 1` to skip per-row counter updates. Safe to re-run;
+does not alter the multi-billion-row table itself. (`earned` only transitions `0` → `1`.)
+
+`trophy_group_player` / `trophy_title_player` are large (~227M / ~24 GiB and ~123M / ~33 GiB).
+The optional `mysql84_trophy_group_player_index.sql` swaps `idx_account_id` for
+`idx_tgp_account_np`; schedule that online ALTER separately (fresh `psn100.sql` installs
+already have it).
 
 Existing databases that still have legacy or unused indexes can apply (safe to re-run; skips
 indexes that are already absent):

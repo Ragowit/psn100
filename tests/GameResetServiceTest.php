@@ -26,9 +26,9 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-OTHER', 5, 2, 'MERGE-123')");
 
         $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-123')");
-        $this->database->exec("INSERT INTO trophy_earned (np_communication_id) VALUES ('MERGE-123')");
+        $this->database->exec("INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES ('MERGE-123', 1001)");
+        $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-123', 1001)");
         $this->database->exec("INSERT INTO trophy_group_player (np_communication_id) VALUES ('MERGE-123')");
-        $this->database->exec("INSERT INTO trophy_title_player (np_communication_id) VALUES ('MERGE-123')");
 
         $message = $this->service->process(1, 0);
 
@@ -76,28 +76,27 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (2, 'NPWR-OTHER', 'Child Game')");
         $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-OTHER', 5, 2, 'MERGE-456')");
 
-        $tables = [
-            'trophy_merge' => 'parent_np_communication_id',
-            'trophy' => 'np_communication_id',
-            'trophy_earned' => 'np_communication_id',
-            'trophy_group_player' => 'np_communication_id',
-            'trophy_title_player' => 'np_communication_id',
-            'trophy_group' => 'np_communication_id',
-        ];
+        $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-456')");
+        $this->database->exec("INSERT INTO trophy (np_communication_id) VALUES ('MERGE-456')");
+        $this->database->exec("INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES ('MERGE-456', 1002)");
+        $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-456', 1002)");
+        $this->database->exec("INSERT INTO trophy_group_player (np_communication_id) VALUES ('MERGE-456')");
+        $this->database->exec("INSERT INTO trophy_group (np_communication_id) VALUES ('MERGE-456')");
 
-        foreach ($tables as $table => $column) {
-            $this->database->exec(sprintf(
-                "INSERT INTO %s (%s) VALUES ('MERGE-456')",
-                $table,
-                $column
-            ));
-        }
+        $tables = [
+            'trophy_merge',
+            'trophy',
+            'trophy_earned',
+            'trophy_group_player',
+            'trophy_title_player',
+            'trophy_group',
+        ];
 
         $message = $this->service->process(1, 1);
 
         $this->assertSame('Game 1 was deleted.', $message);
 
-        foreach (array_keys($tables) as $table) {
+        foreach ($tables as $table) {
             $this->assertSame(0, (int) $this->database->query(sprintf('SELECT COUNT(*) FROM %s', $table))->fetchColumn());
         }
 
@@ -165,6 +164,22 @@ final class GameResetServiceTest extends TestCase
         }
     }
 
+    public function testProcessDeletesAllTrophyEarnedRowsForTitleIncludingOrphans(): void
+    {
+        $this->insertMergedGame('MERGE-ACC', 11, 'Merged Game', 3, 1);
+        $this->database->exec("INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES ('MERGE-ACC', 2001)");
+        $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-ACC', 2001)");
+        // Orphan row without trophy_title_player must still be removed on reset/delete.
+        $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-ACC', 2002)");
+
+        $this->service->process(11, 0);
+
+        $this->assertSame(
+            0,
+            (int) $this->database->query("SELECT COUNT(*) FROM trophy_earned WHERE np_communication_id = 'MERGE-ACC'")->fetchColumn()
+        );
+    }
+
     public function testProcessRollsBackWhenStatementFails(): void
     {
         $this->insertMergedGame('MERGE-999', 9, 'Merge Failure Game', 33, 12);
@@ -207,7 +222,10 @@ final class GameResetServiceTest extends TestCase
             psnprofiles_id TEXT NULL
         )');
         $this->database->exec('CREATE TABLE trophy_merge (parent_np_communication_id TEXT)');
-        $this->database->exec('CREATE TABLE trophy_earned (np_communication_id TEXT)');
+        $this->database->exec('CREATE TABLE trophy_earned (
+            np_communication_id TEXT,
+            account_id INTEGER
+        )');
         $this->database->exec('CREATE TABLE trophy_group_player (np_communication_id TEXT)');
         $this->database->exec('CREATE TABLE trophy_title_player (
             np_communication_id TEXT,

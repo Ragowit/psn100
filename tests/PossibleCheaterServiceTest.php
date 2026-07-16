@@ -90,6 +90,13 @@ final class PossibleCheaterServiceTest extends TestCase
         $this->service = new PossibleCheaterService($this->database, $rulesCatalog);
     }
 
+    public function testGeneralCheaterQueryRequiresEarnedTrophies(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterService.php');
+
+        $this->assertStringContainsString('AND te.earned = 1', $source);
+    }
+
     public function testCreateReportFindsMatchingGeneralCheaters(): void
     {
         $this->database->exec(

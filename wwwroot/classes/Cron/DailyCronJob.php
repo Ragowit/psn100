@@ -86,6 +86,27 @@ final readonly class DailyCronJob implements CronJobInterface
             END
         SQL;
 
+    /**
+     * Titles with zero owners have zero trophy_owners in the top-10k join, so
+     * rarity_percent is always 0. Skip probing trophy_earned, but keep the same
+     * zero-percent scoring as UPDATE_TROPHY_RARITY_QUERY (10000 / LEGENDARY for
+     * obtainable trophies; in-game points stay 0 when title owners are 0).
+     */
+    private const string UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY = <<<'SQL'
+        UPDATE trophy_meta tm
+        JOIN trophy t ON t.id = tm.trophy_id
+        JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
+        SET
+            tm.owners = 0,
+            tm.rarity_percent = 0,
+            tm.rarity_point = IF(tm.status = 0 AND ttm.status = 0, 10000, 0),
+            tm.rarity_name = IF(tm.status = 0 AND ttm.status = 0, 'LEGENDARY', 'NONE'),
+            tm.in_game_rarity_percent = 0,
+            tm.in_game_rarity_point = 0,
+            tm.in_game_rarity_name = IF(tm.status = 0 AND ttm.status = 0, 'LEGENDARY', 'NONE')
+        WHERE t.np_communication_id = :np_communication_id
+        SQL;
+
     private const string UPDATE_TITLE_RARITY_POINTS_QUERY = <<<'SQL'
         WITH rarity AS (
             SELECT
@@ -136,7 +157,30 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function updateTrophyRarityForGame(string $npCommunicationId): void
     {
-        $query = $this->database->prepare(self::UPDATE_TROPHY_RARITY_QUERY);
+        // Do not trust trophy_title_meta.owners alone: hourly cache can lag behind
+        // freshly scanned trophy_title_player / trophy_earned rows. Match the rarity
+        // query's top-10k definition before taking the zero-owners fast path.
+        $hasRankedOwnersQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT EXISTS (
+                SELECT 1
+                FROM trophy_title_player ttp
+                INNER JOIN player_ranking pr
+                    ON pr.account_id = ttp.account_id
+                   AND pr.ranking <= 10000
+                WHERE ttp.np_communication_id = :np_communication_id
+            )
+            SQL
+        );
+        $hasRankedOwnersQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $hasRankedOwnersQuery->execute();
+        $hasRankedOwners = (int) $hasRankedOwnersQuery->fetchColumn();
+
+        $sql = $hasRankedOwners === 0
+            ? self::UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY
+            : self::UPDATE_TROPHY_RARITY_QUERY;
+
+        $query = $this->database->prepare($sql);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }

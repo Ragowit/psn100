@@ -263,12 +263,15 @@ final class PlayerAdvisorServiceTest extends TestCase
         $this->assertSame(25.0, $trophies[0]->getInGameRarityPercent());
     }
 
-    public function testAdvisorQueriesUseNotExistsAntiJoinForUnearnedTrophies(): void
+    public function testAdvisorQueriesUseSingleTrophyEarnedLeftJoinForUnearnedTrophies(): void
     {
         $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/PlayerAdvisorService.php');
 
-        $this->assertStringContainsString('AND NOT EXISTS (', $source);
+        $this->assertStringContainsString('LEFT JOIN trophy_earned te ON', $source);
+        $this->assertStringContainsString('AND (te.account_id IS NULL OR te.earned = 0)', $source);
         $this->assertStringContainsString('FROM trophy_title_player ttp', $source);
-        $this->assertFalse(str_contains($source, 'LEFT JOIN trophy_earned te_completed'));
+        $this->assertFalse(str_contains($source, 'AND NOT EXISTS ('));
+        $this->assertFalse(str_contains($source, 'te_completed'));
+        $this->assertFalse(str_contains($source, 'te_progress'));
     }
 }

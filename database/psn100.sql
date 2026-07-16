@@ -239,25 +239,33 @@ PARTITIONS 256;
 --
 DELIMITER $$
 CREATE TRIGGER `after_delete_trophy_earned` AFTER DELETE ON `trophy_earned` FOR EACH ROW BEGIN
-    IF OLD.earned = 1 AND OLD.np_communication_id LIKE 'NPWR%' THEN
-    UPDATE player SET trophy_count_npwr = trophy_count_npwr - 1 WHERE account_id = OLD.account_id;
-END IF;
+    IF IFNULL(@psn100_skip_trophy_count, 0) = 0
+        AND OLD.earned = 1
+        AND OLD.np_communication_id LIKE 'NPWR%' THEN
+        UPDATE player SET trophy_count_npwr = trophy_count_npwr - 1 WHERE account_id = OLD.account_id;
+    END IF;
 END
 $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_insert_trophy_earned` AFTER INSERT ON `trophy_earned` FOR EACH ROW BEGIN
-    IF NEW.earned = 1 AND NEW.np_communication_id LIKE 'NPWR%' THEN
-    UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
-END IF;
+    IF IFNULL(@psn100_skip_trophy_count, 0) = 0
+        AND NEW.earned = 1
+        AND NEW.np_communication_id LIKE 'NPWR%' THEN
+        UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
+    END IF;
 END
 $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_update_trophy_earned` AFTER UPDATE ON `trophy_earned` FOR EACH ROW BEGIN
-    IF OLD.earned = 0 AND NEW.earned = 1 AND NEW.np_communication_id LIKE 'NPWR%' THEN
-    UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
-END IF;
+    -- earned only transitions 0→1 (never 1→0); inserts handle the initial value.
+    IF IFNULL(@psn100_skip_trophy_count, 0) = 0
+        AND OLD.earned = 0
+        AND NEW.earned = 1
+        AND NEW.np_communication_id LIKE 'NPWR%' THEN
+        UPDATE player SET trophy_count_npwr = trophy_count_npwr + 1 WHERE account_id = NEW.account_id;
+    END IF;
 END
 $$
 DELIMITER ;
@@ -573,7 +581,7 @@ ALTER TABLE `trophy_group_history`
 --
 ALTER TABLE `trophy_group_player`
   ADD PRIMARY KEY (`np_communication_id`,`group_id`,`account_id`) USING BTREE,
-  ADD KEY `idx_account_id` (`account_id`);
+  ADD KEY `idx_tgp_account_np` (`account_id`,`np_communication_id`);
 
 --
 -- Indexes for table `trophy_history`

@@ -26,6 +26,12 @@ final class TrophyStatusProgressRecalculatorTest extends TestCase
         $this->assertTrue(str_contains($query, 'AND te.earned = 1'));
         $this->assertTrue(str_contains($query, 'AND tm.status = 0'));
         $this->assertTrue(str_contains($query, 'AND aggregate.account_id IS NOT NULL'));
+
+        $this->assertTrue($database->impactedAccountsQuery !== null);
+        $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'te.order_id IN ('));
+        $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'AND te.earned = 1'));
+        $this->assertFalse(str_contains((string) $database->impactedAccountsQuery, 'INNER JOIN trophy t ON'));
+        $this->assertSame('SELECT DISTINCT order_id FROM trophy WHERE id IN (?)', $database->orderIdsQuery);
     }
 
     public function testRecalculateTitleAggregatesFromTrophyGroupPlayer(): void
@@ -73,6 +79,10 @@ final class RecordingTrophyStatusProgressPDO extends PDO
 
     public ?string $titlePlayerCountQuery = null;
 
+    public ?string $impactedAccountsQuery = null;
+
+    public ?string $orderIdsQuery = null;
+
     public string|int|false|null $gameId = false;
 
     public ?string $insertedChangeType = null;
@@ -86,6 +96,18 @@ final class RecordingTrophyStatusProgressPDO extends PDO
     public function prepare(string $query, array $options = []): PDOStatement
     {
         $trimmedQuery = trim($query);
+
+        if (str_starts_with($trimmedQuery, 'SELECT DISTINCT order_id FROM trophy WHERE id IN')) {
+            $this->orderIdsQuery = $trimmedQuery;
+
+            return new RecordingTrophyStatusProgressFetchAllStatement([7]);
+        }
+
+        if (str_starts_with($trimmedQuery, 'INSERT IGNORE INTO temp_impacted_accounts')) {
+            $this->impactedAccountsQuery = $trimmedQuery;
+
+            return new RecordingTrophyStatusProgressExecuteOnlyStatement();
+        }
 
         if (str_starts_with($trimmedQuery, 'UPDATE') && str_contains($trimmedQuery, 'LEFT JOIN (') && str_contains($trimmedQuery, 'trophy_earned te')) {
             $this->playerTrophyCountQueries[] = $trimmedQuery;
@@ -192,5 +214,28 @@ final class RecordingTrophyStatusProgressFetchColumnStatement extends PDOStateme
     public function fetchColumn(int $column = 0): string|int|false|null
     {
         return $this->value;
+    }
+}
+
+final class RecordingTrophyStatusProgressFetchAllStatement extends PDOStatement
+{
+    /** @param list<int|string> $values */
+    public function __construct(private readonly array $values)
+    {
+    }
+
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+    {
+        return true;
+    }
+
+    public function execute(?array $params = null): bool
+    {
+        return true;
+    }
+
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    {
+        return $this->values;
     }
 }
