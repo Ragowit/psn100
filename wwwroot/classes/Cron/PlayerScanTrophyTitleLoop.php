@@ -90,6 +90,8 @@ final class PlayerScanTrophyTitleLoop
                 $trophyTitleCountRetry,
                 $invalidTitleDateRetry,
             );
+            // Keep the outer recheck second-pass guard armed for the next real scan.
+            $recheck = '';
             ($this->sleeper)(5);
 
             return PlayerScanTrophyTitleLoopResult::continueLoop();
@@ -112,6 +114,8 @@ final class PlayerScanTrophyTitleLoop
                 $trophyTitleCountRetry,
                 $invalidTitleDateRetry,
             );
+            // Keep the outer recheck second-pass guard armed for the next real scan.
+            $recheck = '';
             ($this->sleeper)(60);
 
             return PlayerScanTrophyTitleLoopResult::continueLoop();

@@ -142,7 +142,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
     public function testProcessAccessibleTrophyTitlesRetriesTransientFetchExceptions(): void
     {
-        $recheck = '';
+        $recheck = 'ExampleUser';
         $missingGameDeletionCheck = ['ExampleUser' => true, 'OtherUser' => true];
         $missingTrophyTitleRetry = ['ExampleUser' => true];
         $trophyTitleCountRetry = ['ExampleUser' => true];
@@ -165,6 +165,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $this->assertTrue($result->shouldContinueLoop());
         $this->assertSame([60], $this->sleepCalls);
+        $this->assertSame('', $recheck);
         $this->assertSame(['OtherUser' => true], $missingGameDeletionCheck);
         $this->assertSame([], $missingTrophyTitleRetry);
         $this->assertSame([], $trophyTitleCountRetry);
@@ -181,7 +182,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
     public function testProcessAccessibleTrophyTitlesRetriesTypeErrorsQuickly(): void
     {
-        $recheck = '';
+        $recheck = 'ExampleUser';
         $missingGameDeletionCheck = ['ExampleUser' => true];
         $missingTrophyTitleRetry = ['ExampleUser' => true];
         $trophyTitleCountRetry = ['ExampleUser' => true];
@@ -204,6 +205,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $this->assertTrue($result->shouldContinueLoop());
         $this->assertSame([5], $this->sleepCalls);
+        $this->assertSame('', $recheck);
         $this->assertSame([], $missingGameDeletionCheck);
         $this->assertSame([], $missingTrophyTitleRetry);
         $this->assertSame([], $trophyTitleCountRetry);
