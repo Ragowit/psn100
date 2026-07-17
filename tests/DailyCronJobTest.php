@@ -41,14 +41,15 @@ final class DailyCronJobTest extends TestCase
         $this->assertFalse(str_contains($source, 'player_ranking'));
     }
 
-    public function testZeroOwnersFastPathUsesLiveRankedOwnerCheckNotCachedMeta(): void
+    public function testZeroOwnersFastPathUsesBatchedLiveRankedOwnerLookupNotCachedMeta(): void
     {
         $source = $this->readClassSource();
 
-        $this->assertStringContainsString('SELECT EXISTS (', $source);
-        $this->assertStringContainsString('FROM trophy_title_player ttp', $source);
-        $this->assertStringContainsString('INNER JOIN player_ranking pr', $source);
-        $this->assertStringContainsString('pr.ranking <= 10000', $source);
+        $this->assertStringContainsString('SELECT DISTINCT ttp.np_communication_id', $source);
+        $this->assertStringContainsString('FROM player_ranking pr', $source);
+        $this->assertStringContainsString('JOIN trophy_title_player ttp ON ttp.account_id = pr.account_id', $source);
+        $this->assertStringContainsString('WHERE pr.ranking <= 10000', $source);
+        $this->assertFalse(str_contains($source, 'SELECT EXISTS ('));
         $this->assertFalse(str_contains($source, 'SELECT owners FROM trophy_title_meta'));
     }
 
@@ -69,10 +70,8 @@ final class DailyCronJobTest extends TestCase
         $source = $this->readClassSource();
 
         $this->assertStringContainsString('SELECT np_communication_id FROM trophy_title', $source);
-        $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'updateTrophyRarityForGame\'], $npCommunicationId);',
-            $source
-        );
+        $this->assertStringContainsString('fetchTopTenThousandOwnerTitleLookup', $source);
+        $this->assertStringContainsString('isset($rankedOwnerTitles[$npCommunicationId])', $source);
     }
 
     public function testUpdateTrophyTitleRarityPointsAggregatesPerGame(): void
@@ -92,14 +91,8 @@ final class DailyCronJobTest extends TestCase
 
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
-        $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'updateTrophyRarityForGame\'], $npCommunicationId);',
-            $source
-        );
-        $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'updateTrophyTitleRarityPoints\']);',
-            $source
-        );
+        $this->assertStringContainsString('updateTrophyRarityForGame', $source);
+        $this->assertStringContainsString('updateTrophyTitleRarityPoints', $source);
     }
 
     public function testRunRetriesPerGameRarityUpdateUntilItSucceeds(): void
@@ -140,6 +133,27 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame([1, 1], $sleepCalls);
         $this->assertSame(0, $database->getPerGameUpdateCount());
         $this->assertSame(3, $database->getTitlePointsUpdateCount());
+    }
+
+
+    public function testRunFetchesRankedOwnerLookupOnceAndChoosesRarityQueryPerTitle(): void
+    {
+        $database = new DailyCronJobRankedOwnerLookupTestDatabase();
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds): void {
+                throw new RuntimeException('Sleeper should not be called.');
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame(1, $database->getRankedOwnerLookupCount());
+        $this->assertSame(['NPWR00001_00'], $database->getFullRarityUpdates());
+        $this->assertSame(['NPWR00002_00'], $database->getZeroOwnerRarityUpdates());
+        $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
     private function readClassSource(): string
@@ -190,11 +204,11 @@ final class DailyCronJobPerGameRetryTestDatabase extends PDO
             }, isSelect: true);
         }
 
-        if (str_contains($query, 'SELECT EXISTS (') && str_contains($query, 'trophy_title_player ttp')) {
+        if (str_contains($query, 'SELECT DISTINCT ttp.np_communication_id')) {
             // Ranked owners present => full ranked trophy_earned rarity path.
-            return new DailyCronJobTestStatement(static function (): int {
-                return 1;
-            }, isSelect: true, fetchColumnValue: 1);
+            return new DailyCronJobTestStatement(static function (): array {
+                return ['NPWR00001_00'];
+            }, isSelect: true);
         }
 
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
@@ -245,10 +259,10 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
             }, isSelect: true);
         }
 
-        if (str_contains($query, 'SELECT EXISTS (') && str_contains($query, 'trophy_title_player ttp')) {
-            return new DailyCronJobTestStatement(static function (): int {
-                return 0;
-            }, isSelect: true, fetchColumnValue: 0);
+        if (str_contains($query, 'SELECT DISTINCT ttp.np_communication_id')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return [];
+            }, isSelect: true);
         }
 
         if (str_contains($query, 'UPDATE trophy_meta tm')) {
@@ -271,17 +285,101 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
     }
 }
 
+
+final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
+{
+    private int $rankedOwnerLookupCount = 0;
+
+    /** @var list<string> */
+    private array $fullRarityUpdates = [];
+
+    /** @var list<string> */
+    private array $zeroOwnerRarityUpdates = [];
+
+    private int $titlePointsUpdateCount = 0;
+
+    public function __construct()
+    {
+    }
+
+    public function getRankedOwnerLookupCount(): int
+    {
+        return $this->rankedOwnerLookupCount;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getFullRarityUpdates(): array
+    {
+        return $this->fullRarityUpdates;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getZeroOwnerRarityUpdates(): array
+    {
+        return $this->zeroOwnerRarityUpdates;
+    }
+
+    public function getTitlePointsUpdateCount(): int
+    {
+        return $this->titlePointsUpdateCount;
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return ['NPWR00001_00', 'NPWR00002_00'];
+            }, isSelect: true);
+        }
+
+        if (str_contains($query, 'SELECT DISTINCT ttp.np_communication_id')) {
+            return new DailyCronJobTestStatement(function (): array {
+                $this->rankedOwnerLookupCount++;
+
+                return ['NPWR00001_00'];
+            }, isSelect: true);
+        }
+
+        if (str_contains($query, 'ranked_owners AS')) {
+            return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
+                $this->fullRarityUpdates[] = $boundValues[':np_communication_id'] ?? '';
+            });
+        }
+
+        if (str_contains($query, 'UPDATE trophy_meta tm')) {
+            return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
+                $this->zeroOwnerRarityUpdates[] = $boundValues[':np_communication_id'] ?? '';
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->titlePointsUpdateCount++;
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
 final class DailyCronJobTestStatement extends PDOStatement
 {
-    /** @var callable(): mixed */
+    /** @var callable */
     private $callback;
 
     private bool $isSelect;
 
     private mixed $fetchColumnValue;
 
+    /** @var array<string|int, mixed> */
+    private array $boundValues = [];
+
     /**
-     * @param callable(): mixed $callback
+     * @param callable $callback
      */
     public function __construct(callable $callback, bool $isSelect = false, mixed $fetchColumnValue = null)
     {
@@ -292,13 +390,15 @@ final class DailyCronJobTestStatement extends PDOStatement
 
     public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
+        $this->boundValues[$param] = $value;
+
         return true;
     }
 
     public function execute(?array $params = null): bool
     {
         if (!$this->isSelect) {
-            ($this->callback)();
+            ($this->callback)($params, $this->boundValues);
         }
 
         return true;
