@@ -83,6 +83,14 @@ final class GameRescanPsnAccessorTest extends TestCase
         $this->assertSame('200', $user->accountId());
     }
 
+    public function testFindAccessibleUserWithGameBoundsPlayerProbe(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Admin/GameRescanPsnAccessor.php');
+
+        $this->assertTrue(str_contains($source, 'ACCESSIBLE_PLAYER_PROBE_LIMIT'));
+        $this->assertTrue(str_contains($source, 'LIMIT \' . self::ACCESSIBLE_PLAYER_PROBE_LIMIT'));
+    }
+
     public function testLoginToWorkerDelegatesToAuthenticator(): void
     {
         $worker = new Worker(5, 'refresh-token', '', '', new DateTimeImmutable('2024-01-01'), null);

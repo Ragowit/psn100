@@ -28,8 +28,11 @@ final class TrophyStatusProgressRecalculatorTest extends TestCase
         $this->assertTrue(str_contains($query, 'AND aggregate.account_id IS NOT NULL'));
 
         $this->assertTrue($database->impactedAccountsQuery !== null);
+        $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'FROM trophy_title_player ttp'));
+        $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'te.account_id = ttp.account_id'));
         $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'te.order_id IN ('));
         $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'AND te.earned = 1'));
+        $this->assertTrue(str_contains((string) $database->impactedAccountsQuery, 'WHERE ttp.np_communication_id = ?'));
         $this->assertFalse(str_contains((string) $database->impactedAccountsQuery, 'INNER JOIN trophy t ON'));
         $this->assertSame('SELECT DISTINCT order_id FROM trophy WHERE id IN (?)', $database->orderIdsQuery);
     }

@@ -228,40 +228,37 @@ final class TrophyCalculator
         $maxScore = $this->calculateScore($trophies);
 
         if ($newTrophies) {
-            $select = $this->database->prepare(
-                'SELECT account_id,
-                    bronze,
-                    silver,
-                    gold,
-                    platinum
-                FROM trophy_title_player
+            // Set-based refresh for other owners when the title's max score changes.
+            // Mirrors calculateProgress() / clampProgress() without per-row round-trips.
+            $updateProgress = $this->database->prepare(
+                'UPDATE trophy_title_player
+                SET progress = CASE
+                    WHEN :max_score = 0 THEN 100
+                    ELSE LEAST(
+                        100,
+                        GREATEST(
+                            0,
+                            CASE
+                                WHEN (bronze * 15 + silver * 30 + gold * 90) != 0
+                                    AND FLOOR((bronze * 15 + silver * 30 + gold * 90) / :max_score * 100) = 0
+                                THEN 1
+                                WHEN FLOOR((bronze * 15 + silver * 30 + gold * 90) / :max_score * 100) = 100
+                                    AND :title_have_platinum = 1
+                                    AND platinum = 0
+                                THEN 99
+                                ELSE FLOOR((bronze * 15 + silver * 30 + gold * 90) / :max_score * 100)
+                            END
+                        )
+                    )
+                END
                 WHERE np_communication_id = :np_communication_id
                     AND account_id != :account_id'
             );
-            $select->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-            $select->bindValue(':account_id', $accountId, PDO::PARAM_STR);
-            $select->execute();
-
-            $updateProgress = $this->database->prepare(
-                'UPDATE trophy_title_player
-                SET progress = :progress
-                WHERE np_communication_id = :np_communication_id
-                    AND account_id = :account_id'
-            );
-
-            while ($row = $select->fetch(PDO::FETCH_ASSOC)) {
-                if (!is_array($row)) {
-                    continue;
-                }
-
-                $rowTrophyTypes = $this->normalizeTrophyTypes($row);
-                $progress = $this->calculateProgress($rowTrophyTypes, $maxScore, $titleHavePlatinum);
-
-                $updateProgress->bindValue(':progress', $progress, PDO::PARAM_INT);
-                $updateProgress->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-                $updateProgress->bindValue(':account_id', (string) $row['account_id'], PDO::PARAM_STR);
-                $updateProgress->execute();
-            }
+            $updateProgress->bindValue(':max_score', $maxScore, PDO::PARAM_INT);
+            $updateProgress->bindValue(':title_have_platinum', $titleHavePlatinum ? 1 : 0, PDO::PARAM_INT);
+            $updateProgress->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+            $updateProgress->bindValue(':account_id', $accountId, PDO::PARAM_STR);
+            $updateProgress->execute();
         }
 
         $query = $this->database->prepare(

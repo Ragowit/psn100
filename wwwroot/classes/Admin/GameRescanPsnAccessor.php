@@ -14,6 +14,7 @@ final class GameRescanPsnAccessor
 {
     private const ORIGINAL_GAME_PREFIX = 'NPWR';
     private const LOGIN_RETRY_DELAY_SECONDS = 300;
+    private const int ACCESSIBLE_PLAYER_PROBE_LIMIT = 100;
 
     public function __construct(
         private PDO $database,
@@ -53,12 +54,16 @@ final class GameRescanPsnAccessor
 
     public function findAccessibleUserWithGame(object $client, string $npCommunicationId): ?object
     {
+        // Bound the probe: idx_npcid_lupdate serves the sort, but popular titles
+        // can have hundreds of thousands of owners. Fresh recent players are enough
+        // to find a public profile for catalog access.
         $query = $this->database->prepare(
             'SELECT account_id
             FROM trophy_title_player ttp
             JOIN player p USING(account_id)
             WHERE ttp.np_communication_id = :np_communication_id
-            ORDER BY ttp.last_updated_date DESC'
+            ORDER BY ttp.last_updated_date DESC
+            LIMIT ' . self::ACCESSIBLE_PLAYER_PROBE_LIMIT
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();

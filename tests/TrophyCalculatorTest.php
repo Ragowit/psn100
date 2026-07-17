@@ -120,6 +120,16 @@ final class TrophyCalculatorTest extends TestCase
         $this->assertTrue($playerProgress !== null);
         $this->assertSame($accountId, $playerProgress['account_id']);
     }
+
+    public function testRecalculateTrophyTitleUsesSetBasedProgressUpdateWhenNewTrophies(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/TrophyCalculator.php');
+
+        $this->assertTrue(str_contains($source, 'SET progress = CASE'));
+        $this->assertTrue(str_contains($source, 'WHEN :max_score = 0 THEN 100'));
+        $this->assertTrue(str_contains($source, 'AND account_id != :account_id'));
+        $this->assertFalse(str_contains($source, 'while ($row = $select->fetch(PDO::FETCH_ASSOC))'));
+    }
 }
 
 final class FakePDO extends PDO

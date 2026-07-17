@@ -97,7 +97,13 @@ class GameRecentPlayersService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                *
+                np_communication_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress
             FROM
                 trophy_title_player
             WHERE
