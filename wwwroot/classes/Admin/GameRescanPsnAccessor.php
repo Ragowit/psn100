@@ -65,7 +65,7 @@ final class GameRescanPsnAccessor
                 FROM trophy_title_player ttp
                 JOIN player p USING(account_id)
                 WHERE ttp.np_communication_id = :np_communication_id
-                ORDER BY ttp.last_updated_date DESC
+                ORDER BY ttp.last_updated_date DESC, ttp.account_id DESC
                 LIMIT ' . self::ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE . ' OFFSET ' . $offset
             );
             $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);

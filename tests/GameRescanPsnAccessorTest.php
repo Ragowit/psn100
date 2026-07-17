@@ -89,6 +89,7 @@ final class GameRescanPsnAccessorTest extends TestCase
 
         $this->assertTrue(str_contains($source, 'ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE'));
         $this->assertTrue(str_contains($source, 'LIMIT \' . self::ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE . \' OFFSET \' . $offset'));
+        $this->assertTrue(str_contains($source, 'ORDER BY ttp.last_updated_date DESC, ttp.account_id DESC'));
         $this->assertFalse(str_contains($source, 'ACCESSIBLE_PLAYER_PROBE_LIMIT'));
     }
 
