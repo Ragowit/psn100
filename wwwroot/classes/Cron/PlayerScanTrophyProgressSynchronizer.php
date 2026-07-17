@@ -54,7 +54,7 @@ final class PlayerScanTrophyProgressSynchronizer
 
             foreach ($groupTrophies as $trophy) {
                 $trophyEarned = $trophy->earned();
-                $progress = clone($trophy)->progress();
+                $progress = (clone($trophy))->progress();
                 if ($trophyEarned || ($progress !== '' && (int) $progress > 0)) {
                     $this->earnedTrophyPersister->persistEarnedTrophy(
                         $npCommunicationId,
