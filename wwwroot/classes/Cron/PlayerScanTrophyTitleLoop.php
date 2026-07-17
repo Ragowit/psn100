@@ -99,13 +99,13 @@ final class PlayerScanTrophyTitleLoop
             // Transient PSN/network failures (e.g. cURL error 18 during paginated
             // trophyTitles fetches) should retry instead of crashing the worker.
             $this->logger->log(sprintf(
-                'Failed to fetch trophy titles for %s: %s. Waiting 1 minute before retrying.',
+                'Failed to fetch trophy titles for %s: %s. Waiting 5 seconds before retrying.',
                 $onlineId,
                 $exception->getMessage()
             ));
             $this->workerScanCoordinator->setWaitingScanProgress(
                 (int) $worker['id'],
-                'Encountered a problem while fetching game list. Waiting 1 minute before retrying.'
+                'Encountered a problem while fetching game list. Waiting 5 seconds before retrying.'
             );
             $this->clearTitleListRetryState(
                 $onlineId,
@@ -116,7 +116,7 @@ final class PlayerScanTrophyTitleLoop
             );
             // Keep the outer recheck second-pass guard armed for the next real scan.
             $recheck = '';
-            ($this->sleeper)(60);
+            ($this->sleeper)(5);
 
             return PlayerScanTrophyTitleLoopResult::continueLoop();
         }
