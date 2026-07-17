@@ -145,38 +145,52 @@ final readonly class DailyCronJob implements CronJobInterface
         );
         $query->execute();
         $games = $query->fetchAll(PDO::FETCH_COLUMN);
+        $rankedOwnerTitles = $this->executeWithRetry([$this, 'fetchTopTenThousandOwnerTitleLookup']);
 
         foreach ($games as $npCommunicationId) {
             if (!is_string($npCommunicationId)) {
                 continue;
             }
 
-            $this->executeWithRetry([$this, 'updateTrophyRarityForGame'], $npCommunicationId);
+            $this->executeWithRetry(
+                [$this, 'updateTrophyRarityForGame'],
+                $npCommunicationId,
+                isset($rankedOwnerTitles[$npCommunicationId]),
+            );
         }
     }
 
-    private function updateTrophyRarityForGame(string $npCommunicationId): void
+    /**
+     * @return array<string, true>
+     */
+    private function fetchTopTenThousandOwnerTitleLookup(): array
     {
         // Do not trust trophy_title_meta.owners alone: hourly cache can lag behind
         // freshly scanned trophy_title_player / trophy_earned rows. Match the rarity
         // query's top-10k definition before taking the zero-owners fast path.
-        $hasRankedOwnersQuery = $this->database->prepare(
+        $query = $this->database->prepare(
             <<<'SQL'
-            SELECT EXISTS (
-                SELECT 1
-                FROM trophy_title_player ttp
-                INNER JOIN player_ranking pr
-                    ON pr.account_id = ttp.account_id
-                   AND pr.ranking <= 10000
-                WHERE ttp.np_communication_id = :np_communication_id
-            )
+            SELECT DISTINCT ttp.np_communication_id
+            FROM player_ranking pr
+            JOIN trophy_title_player ttp ON ttp.account_id = pr.account_id
+            WHERE pr.ranking <= 10000
             SQL
         );
-        $hasRankedOwnersQuery->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $hasRankedOwnersQuery->execute();
-        $hasRankedOwners = (int) $hasRankedOwnersQuery->fetchColumn();
+        $query->execute();
 
-        $sql = $hasRankedOwners === 0
+        $rankedOwnerTitles = [];
+        foreach ($query->fetchAll(PDO::FETCH_COLUMN) as $npCommunicationId) {
+            if (is_string($npCommunicationId)) {
+                $rankedOwnerTitles[$npCommunicationId] = true;
+            }
+        }
+
+        return $rankedOwnerTitles;
+    }
+
+    private function updateTrophyRarityForGame(string $npCommunicationId, bool $hasRankedOwners): void
+    {
+        $sql = !$hasRankedOwners
             ? self::UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY
             : self::UPDATE_TROPHY_RARITY_QUERY;
 
@@ -196,12 +210,11 @@ final readonly class DailyCronJob implements CronJobInterface
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation, mixed ...$arguments): void
+    private function executeWithRetry(callable $operation, mixed ...$arguments): mixed
     {
         while (true) {
             try {
-                $operation(...$arguments);
-                return;
+                return $operation(...$arguments);
             } catch (Throwable $exception) {
                 ($this->sleeper)($this->retryDelaySeconds);
             }
