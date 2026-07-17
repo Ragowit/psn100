@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 readonly class PlayerStatusNotice
 {
-    private const TYPE_FLAGGED = 'flagged';
-    private const TYPE_PRIVATE = 'private';
-    private const DISPUTE_BASE_URL = 'https://github.com/Ragowit/psn100/issues';
-    private const PRIVATE_PROFILE_URL = 'https://www.playstation.com/en-us/support/account/privacy-settings-psn/';
+    private const string TYPE_FLAGGED = 'flagged';
+    private const string TYPE_PRIVATE = 'private';
+    private const string DISPUTE_BASE_URL = 'https://github.com/Ragowit/psn100/issues';
+    private const string PRIVATE_PROFILE_URL = 'https://www.playstation.com/en-us/support/account/privacy-settings-psn/';
 
     private function __construct(
         private string $type,

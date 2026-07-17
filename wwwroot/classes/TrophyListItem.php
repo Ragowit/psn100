@@ -5,70 +5,28 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/Utility.php';
 
-class TrophyListItem
+final readonly class TrophyListItem
 {
-    private const MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
-    private const MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
-    private const MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
-
-    private int $trophyId;
-
-    private string $trophyType;
-
-    private string $trophyName;
-
-    private string $trophyDetail;
-
-    private string $trophyIcon;
-
-    private float $rarityPercent;
-
-    private ?float $inGameRarityPercent;
-
-    private ?int $progressTargetValue;
-
-    private ?string $rewardName;
-
-    private ?string $rewardImageUrl;
-
-    private int $gameId;
-
-    private string $gameName;
-
-    private string $gameIcon;
-
-    private string $platform;
+    private const string MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
+    private const string MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
+    private const string MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
 
     public function __construct(
-        int $trophyId,
-        string $trophyType,
-        string $trophyName,
-        string $trophyDetail,
-        string $trophyIcon,
-        float $rarityPercent,
-        ?float $inGameRarityPercent,
-        ?int $progressTargetValue,
-        ?string $rewardName,
-        ?string $rewardImageUrl,
-        int $gameId,
-        string $gameName,
-        string $gameIcon,
-        string $platform
+        private int $trophyId,
+        private string $trophyType,
+        private string $trophyName,
+        private string $trophyDetail,
+        private string $trophyIcon,
+        private float $rarityPercent,
+        private ?float $inGameRarityPercent,
+        private ?int $progressTargetValue,
+        private ?string $rewardName,
+        private ?string $rewardImageUrl,
+        private int $gameId,
+        private string $gameName,
+        private string $gameIcon,
+        private string $platform,
     ) {
-        $this->trophyId = $trophyId;
-        $this->trophyType = $trophyType;
-        $this->trophyName = $trophyName;
-        $this->trophyDetail = $trophyDetail;
-        $this->trophyIcon = $trophyIcon;
-        $this->rarityPercent = $rarityPercent;
-        $this->inGameRarityPercent = $inGameRarityPercent;
-        $this->progressTargetValue = $progressTargetValue;
-        $this->rewardName = $rewardName;
-        $this->rewardImageUrl = $rewardImageUrl;
-        $this->gameId = $gameId;
-        $this->gameName = $gameName;
-        $this->gameIcon = $gameIcon;
-        $this->platform = $platform;
     }
 
     public static function fromArray(array $data): self

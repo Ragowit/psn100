@@ -19,10 +19,10 @@ readonly class GamePlayerFilter
      */
     public static function fromArray(array $queryParameters): self
     {
-        $country = self::readOptionalString($queryParameters, 'country');
-        $avatar = self::readOptionalString($queryParameters, 'avatar');
-
-        return new self($country, $avatar);
+        return new self(
+            self::readOptionalString($queryParameters, 'country'),
+            self::readOptionalString($queryParameters, 'avatar'),
+        );
     }
 
     public function getCountry(): ?string

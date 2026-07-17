@@ -7,9 +7,9 @@ require_once __DIR__ . '/Utility.php';
 
 readonly class TrophyDetails
 {
-    private const MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
-    private const MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
-    private const MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
+    private const string MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
+    private const string MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
+    private const string MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
 
     public function __construct(
         private int $id,

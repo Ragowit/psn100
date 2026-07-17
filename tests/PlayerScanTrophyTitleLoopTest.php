@@ -164,7 +164,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         );
 
         $this->assertTrue($result->shouldContinueLoop());
-        $this->assertSame([60], $this->sleepCalls);
+        $this->assertSame([5], $this->sleepCalls);
         $this->assertSame('', $recheck);
         $this->assertSame(['OtherUser' => true], $missingGameDeletionCheck);
         $this->assertSame([], $missingTrophyTitleRetry);

@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-class GameObsoleteReplacement
+final readonly class GameObsoleteReplacement
 {
-    private int $id;
-
-    private string $name;
-
-    private function __construct(int $id, string $name)
-    {
-        $this->id = $id;
-        $this->name = $name;
+    private function __construct(
+        private int $id,
+        private string $name,
+    ) {
     }
 
     /**

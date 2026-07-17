@@ -2,19 +2,14 @@
 
 declare(strict_types=1);
 
-class GameHeaderStack
+final readonly class GameHeaderStack
 {
-    private int $id;
-    private string $name;
-    private string $platform;
-    private ?string $region;
-
-    private function __construct(int $id, string $name, string $platform, ?string $region)
-    {
-        $this->id = $id;
-        $this->name = $name;
-        $this->platform = $platform;
-        $this->region = $region;
+    private function __construct(
+        private int $id,
+        private string $name,
+        private string $platform,
+        private ?string $region,
+    ) {
     }
 
     /**

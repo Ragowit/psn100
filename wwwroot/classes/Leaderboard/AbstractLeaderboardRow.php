@@ -7,7 +7,7 @@ require_once __DIR__ . '/../Utility.php';
 
 abstract class AbstractLeaderboardRow
 {
-    private const NEW_PLAYER_RANK_VALUE = 16777215;
+    private const int NEW_PLAYER_RANK_VALUE = 16777215;
 
     /**
      * @var array<string, mixed>

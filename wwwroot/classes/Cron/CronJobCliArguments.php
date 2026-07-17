@@ -2,15 +2,18 @@
 
 declare(strict_types=1);
 
-final class CronJobCliArguments
+final readonly class CronJobCliArguments
 {
-    private array $arguments;
-
-    private function __construct(array $arguments)
+    /**
+     * @param array<string, mixed> $arguments
+     */
+    private function __construct(private array $arguments)
     {
-        $this->arguments = $arguments;
     }
 
+    /**
+     * @param list<string> $argv
+     */
     public static function fromArgv(array $argv): self
     {
         $arguments = [];

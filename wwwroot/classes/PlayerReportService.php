@@ -8,15 +8,15 @@ require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
 
 class PlayerReportService
 {
-    private const MAX_PENDING_REPORTS_PER_IP = 10;
+    private const int MAX_PENDING_REPORTS_PER_IP = 10;
 
-    public const MAX_EXPLANATION_LENGTH = 256;
+    public const int MAX_EXPLANATION_LENGTH = 256;
 
-    private const SUBMIT_OUTCOME_SUCCESS = 'success';
+    private const string SUBMIT_OUTCOME_SUCCESS = 'success';
 
-    private const SUBMIT_OUTCOME_DUPLICATE = 'duplicate';
+    private const string SUBMIT_OUTCOME_DUPLICATE = 'duplicate';
 
-    private const SUBMIT_OUTCOME_LIMIT = 'limit';
+    private const string SUBMIT_OUTCOME_LIMIT = 'limit';
 
     public function __construct(
         private readonly PDO $database,

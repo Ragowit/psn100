@@ -2,15 +2,12 @@
 
 declare(strict_types=1);
 
-class GameHeaderParent
+final readonly class GameHeaderParent
 {
-    private int $id;
-    private string $name;
-
-    private function __construct(int $id, string $name)
-    {
-        $this->id = $id;
-        $this->name = $name;
+    private function __construct(
+        private int $id,
+        private string $name,
+    ) {
     }
 
     /**

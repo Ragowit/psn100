@@ -4,55 +4,34 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../CommaSeparatedValues.php';
 
-class GameDetails
+final readonly class GameDetails
 {
-    private int $id;
-
-    private string $name;
-
-    private string $npCommunicationId;
-
-    private ?string $parentNpCommunicationId;
-
-    private ?int $psnprofilesId;
-
-    private string $platform;
-
-    private string $iconUrl;
-
-    private string $setVersion;
-
-    private ?string $region;
-
-    private ?string $message;
-
-    private int $platinum;
-
-    private int $gold;
-
-    private int $silver;
-
-    private int $bronze;
-
-    private int $ownersCompleted;
-
-    private int $owners;
-
-    private string $difficulty;
-
-    private int $status;
-
-    private int $rarityPoints;
-
-    private int $inGameRarityPoints;
-
     /**
-     * @var int[]
+     * @param int[] $obsoleteGameIds
      */
-    private array $obsoleteGameIds;
-
-    private function __construct()
-    {
+    private function __construct(
+        private int $id,
+        private string $name,
+        private string $npCommunicationId,
+        private ?string $parentNpCommunicationId,
+        private ?int $psnprofilesId,
+        private string $platform,
+        private string $iconUrl,
+        private string $setVersion,
+        private ?string $region,
+        private ?string $message,
+        private int $platinum,
+        private int $gold,
+        private int $silver,
+        private int $bronze,
+        private int $ownersCompleted,
+        private int $owners,
+        private string $difficulty,
+        private int $status,
+        private int $rarityPoints,
+        private int $inGameRarityPoints,
+        private array $obsoleteGameIds,
+    ) {
     }
 
     /**
@@ -60,33 +39,31 @@ class GameDetails
      */
     public static function fromArray(array $row): self
     {
-        $game = new self();
-
-        $game->id = (int) ($row['id'] ?? 0);
-        $game->name = (string) ($row['name'] ?? '');
-        $game->npCommunicationId = (string) ($row['np_communication_id'] ?? '');
-        $game->parentNpCommunicationId = isset($row['parent_np_communication_id'])
-            ? self::toNullableString($row['parent_np_communication_id'])
-            : null;
-        $game->psnprofilesId = self::toNullableInt($row['psnprofiles_id'] ?? null);
-        $game->platform = (string) ($row['platform'] ?? '');
-        $game->iconUrl = (string) ($row['icon_url'] ?? '');
-        $game->setVersion = (string) ($row['set_version'] ?? '');
-        $game->region = self::toNullableString($row['region'] ?? null);
-        $game->message = self::toNullableString($row['message'] ?? null);
-        $game->platinum = (int) ($row['platinum'] ?? 0);
-        $game->gold = (int) ($row['gold'] ?? 0);
-        $game->silver = (int) ($row['silver'] ?? 0);
-        $game->bronze = (int) ($row['bronze'] ?? 0);
-        $game->ownersCompleted = (int) ($row['owners_completed'] ?? 0);
-        $game->owners = (int) ($row['owners'] ?? 0);
-        $game->difficulty = (string) ($row['difficulty'] ?? '0');
-        $game->status = (int) ($row['status'] ?? 0);
-        $game->rarityPoints = (int) ($row['rarity_points'] ?? 0);
-        $game->inGameRarityPoints = (int) ($row['in_game_rarity_points'] ?? 0);
-        $game->obsoleteGameIds = self::parseObsoleteIds($row['obsolete_ids'] ?? null);
-
-        return $game;
+        return new self(
+            (int) ($row['id'] ?? 0),
+            (string) ($row['name'] ?? ''),
+            (string) ($row['np_communication_id'] ?? ''),
+            isset($row['parent_np_communication_id'])
+                ? self::toNullableString($row['parent_np_communication_id'])
+                : null,
+            self::toNullableInt($row['psnprofiles_id'] ?? null),
+            (string) ($row['platform'] ?? ''),
+            (string) ($row['icon_url'] ?? ''),
+            (string) ($row['set_version'] ?? ''),
+            self::toNullableString($row['region'] ?? null),
+            self::toNullableString($row['message'] ?? null),
+            (int) ($row['platinum'] ?? 0),
+            (int) ($row['gold'] ?? 0),
+            (int) ($row['silver'] ?? 0),
+            (int) ($row['bronze'] ?? 0),
+            (int) ($row['owners_completed'] ?? 0),
+            (int) ($row['owners'] ?? 0),
+            (string) ($row['difficulty'] ?? '0'),
+            (int) ($row['status'] ?? 0),
+            (int) ($row['rarity_points'] ?? 0),
+            (int) ($row['in_game_rarity_points'] ?? 0),
+            self::parseObsoleteIds($row['obsolete_ids'] ?? null),
+        );
     }
 
     private static function toNullableString(mixed $value): ?string
@@ -254,4 +231,3 @@ class GameDetails
         return $this->obsoleteGameIds !== [];
     }
 }
-
