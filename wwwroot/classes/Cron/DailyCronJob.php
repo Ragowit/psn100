@@ -6,6 +6,8 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
+    private const int RANKED_OWNER_TITLE_BATCH_SIZE = 100;
+
     private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
         sleep($seconds);
     };
@@ -51,6 +53,89 @@ final readonly class DailyCronJob implements CronJobInterface
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
             LEFT JOIN ranked_owners owners ON owners.order_id = t.order_id
+        )
+        UPDATE trophy_meta tm
+        JOIN rarity r ON tm.trophy_id = r.trophy_id
+        SET
+            tm.rarity_percent = r.rarity_percent,
+            tm.owners = r.trophy_owners,
+            tm.rarity_point = IF(
+                r.meta_status = 0 AND r.title_status = 0,
+                IF(r.rarity_percent = 0, 10000, FLOOR(1 / (r.rarity_percent / 100) - 1)),
+                0
+            ),
+            tm.rarity_name = CASE
+                WHEN r.meta_status != 0 OR r.title_status != 0 THEN 'NONE'
+                WHEN r.rarity_percent > 10 THEN 'COMMON'
+                WHEN r.rarity_percent > 2 THEN 'UNCOMMON'
+                WHEN r.rarity_percent > 0.2 THEN 'RARE'
+                WHEN r.rarity_percent > 0.02 THEN 'EPIC'
+                ELSE 'LEGENDARY'
+            END,
+            tm.in_game_rarity_percent = r.in_game_rarity_percent,
+            tm.in_game_rarity_point = IF(
+                r.meta_status = 0 AND r.title_status = 0 AND r.title_owners > 0,
+                IF(r.in_game_rarity_percent = 0, 0, FLOOR(1 / (r.in_game_rarity_percent / 100) - 1)),
+                0
+            ),
+            tm.in_game_rarity_name = CASE
+                WHEN r.meta_status != 0 OR r.title_status != 0 THEN 'NONE'
+                WHEN r.in_game_rarity_percent <= 1 THEN 'LEGENDARY'
+                WHEN r.in_game_rarity_percent <= 5 THEN 'EPIC'
+                WHEN r.in_game_rarity_percent <= 20 THEN 'RARE'
+                WHEN r.in_game_rarity_percent <= 60 THEN 'UNCOMMON'
+                ELSE 'COMMON'
+            END
+        SQL;
+
+
+    /**
+     * Recalculate rarity for a bounded batch of titles with ranked owners.
+     *
+     * The JSON_TABLE CTE materializes the selected np_communication_id values
+     * once, then the owner aggregation stays scoped to those titles while still
+     * driving from player_ranking into trophy_earned by account_id.
+     */
+    private const string UPDATE_TROPHY_RARITY_BATCH_QUERY = <<<'SQL'
+        WITH selected_titles AS (
+            SELECT np_communication_id
+            FROM JSON_TABLE(
+                :np_communication_ids,
+                '$[*]' COLUMNS (np_communication_id CHAR(12) PATH '$')
+            ) AS selected
+        ),
+        ranked_owners AS (
+            SELECT
+                te.np_communication_id,
+                te.order_id,
+                COUNT(*) AS trophy_owners
+            FROM selected_titles title
+            JOIN player_ranking pr ON pr.ranking <= 10000
+            INNER JOIN trophy_earned te
+                ON te.account_id = pr.account_id
+                AND te.np_communication_id = title.np_communication_id
+                AND te.earned = 1
+            GROUP BY te.np_communication_id, te.order_id
+        ),
+        rarity AS (
+            SELECT
+                t.id AS trophy_id,
+                tm.status AS meta_status,
+                ttm.status AS title_status,
+                ttm.owners AS title_owners,
+                IFNULL(owners.trophy_owners, 0) AS trophy_owners,
+                (IFNULL(owners.trophy_owners, 0) / 10000.0) * 100 AS rarity_percent,
+                CASE
+                    WHEN ttm.owners = 0 THEN 0
+                    ELSE LEAST((IFNULL(owners.trophy_owners, 0) / ttm.owners) * 100, 100.0)
+                END AS in_game_rarity_percent
+            FROM selected_titles title
+            JOIN trophy t ON t.np_communication_id = title.np_communication_id
+            JOIN trophy_meta tm ON tm.trophy_id = t.id
+            JOIN trophy_title_meta ttm ON ttm.np_communication_id = t.np_communication_id
+            LEFT JOIN ranked_owners owners
+                ON owners.np_communication_id = t.np_communication_id
+                AND owners.order_id = t.order_id
         )
         UPDATE trophy_meta tm
         JOIN rarity r ON tm.trophy_id = r.trophy_id
@@ -147,16 +232,33 @@ final readonly class DailyCronJob implements CronJobInterface
         $games = $query->fetchAll(PDO::FETCH_COLUMN);
         $rankedOwnerTitles = $this->executeWithRetry([$this, 'fetchTopTenThousandOwnerTitleLookup']);
 
+        $rankedOwnerBatch = [];
+
         foreach ($games as $npCommunicationId) {
             if (!is_string($npCommunicationId)) {
                 continue;
             }
 
-            $this->executeWithRetry(
-                [$this, 'updateTrophyRarityForGame'],
-                $npCommunicationId,
-                isset($rankedOwnerTitles[$npCommunicationId]),
-            );
+            if (!isset($rankedOwnerTitles[$npCommunicationId])) {
+                if ($rankedOwnerBatch !== []) {
+                    $this->executeWithRetry([$this, 'updateTrophyRarityForGames'], $rankedOwnerBatch);
+                    $rankedOwnerBatch = [];
+                }
+
+                $this->executeWithRetry([$this, 'updateZeroOwnerTrophyRarityForGame'], $npCommunicationId);
+                continue;
+            }
+
+            $rankedOwnerBatch[] = $npCommunicationId;
+
+            if (count($rankedOwnerBatch) >= self::RANKED_OWNER_TITLE_BATCH_SIZE) {
+                $this->executeWithRetry([$this, 'updateTrophyRarityForGames'], $rankedOwnerBatch);
+                $rankedOwnerBatch = [];
+            }
+        }
+
+        if ($rankedOwnerBatch !== []) {
+            $this->executeWithRetry([$this, 'updateTrophyRarityForGames'], $rankedOwnerBatch);
         }
     }
 
@@ -188,13 +290,21 @@ final readonly class DailyCronJob implements CronJobInterface
         return $rankedOwnerTitles;
     }
 
-    private function updateTrophyRarityForGame(string $npCommunicationId, bool $hasRankedOwners): void
+    /**
+     * @param non-empty-list<string> $npCommunicationIds
+     */
+    private function updateTrophyRarityForGames(array $npCommunicationIds): void
     {
-        $sql = !$hasRankedOwners
-            ? self::UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY
-            : self::UPDATE_TROPHY_RARITY_QUERY;
+        $encodedIds = json_encode(array_values($npCommunicationIds), JSON_THROW_ON_ERROR);
 
-        $query = $this->database->prepare($sql);
+        $query = $this->database->prepare(self::UPDATE_TROPHY_RARITY_BATCH_QUERY);
+        $query->bindValue(':np_communication_ids', $encodedIds, PDO::PARAM_STR);
+        $query->execute();
+    }
+
+    private function updateZeroOwnerTrophyRarityForGame(string $npCommunicationId): void
+    {
+        $query = $this->database->prepare(self::UPDATE_TROPHY_RARITY_ZERO_OWNERS_QUERY);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
     }
