@@ -13,11 +13,13 @@ final readonly class PaginationItem
     ) {
     }
 
+    #[\NoDiscard]
     public static function forPage(int $page, string $label): self
     {
         return new self($page, $label);
     }
 
+    #[\NoDiscard]
     public static function ellipsis(): self
     {
         return new self(null, '...', disabled: true);

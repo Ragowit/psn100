@@ -236,19 +236,13 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function selectCloneCandidate(array $matches): ?array
     {
-        foreach ($matches as $candidate) {
-            if ($candidate['is_clone'] && $candidate['matches_by_order']) {
-                return $candidate;
-            }
-        }
-
-        foreach ($matches as $candidate) {
-            if ($candidate['is_clone']) {
-                return $candidate;
-            }
-        }
-
-        return null;
+        return array_find(
+            $matches,
+            static fn (array $candidate): bool => $candidate['is_clone'] && $candidate['matches_by_order']
+        ) ?? array_find(
+            $matches,
+            static fn (array $candidate): bool => $candidate['is_clone']
+        );
     }
 
     /**
@@ -295,13 +289,10 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
             static fn (array $game): bool => !str_starts_with($game['np_communication_id'], 'MERGE') && $game['status'] !== 2
         ));
 
-        foreach ($eligibleGames as $game) {
-            if ($this->hasPs5OrPsvr2($game['platforms'])) {
-                return $game;
-            }
-        }
-
-        return array_first($eligibleGames);
+        return array_find(
+            $eligibleGames,
+            fn (array $game): bool => $this->hasPs5OrPsvr2($game['platforms'])
+        ) ?? array_first($eligibleGames);
     }
 
     /**

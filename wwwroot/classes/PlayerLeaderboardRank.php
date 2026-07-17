@@ -4,46 +4,22 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLeaderboardRankChange.php';
 
-class PlayerLeaderboardRank
+final readonly class PlayerLeaderboardRank
 {
-    private const PAGE_SIZE = 50;
-
-    private string $label;
-
-    private string $basePath;
-
-    /**
-     * @var array<string, string>
-     */
-    private array $additionalQueryParameters;
-
-    private string $onlineId;
-
-    private int $rank;
-
-    private int $previousRank;
-
-    private bool $isActive;
+    private const int PAGE_SIZE = 50;
 
     /**
      * @param array<string, string> $additionalQueryParameters
      */
     private function __construct(
-        string $label,
-        string $basePath,
-        array $additionalQueryParameters,
-        string $onlineId,
-        int $rank,
-        int $previousRank,
-        bool $isActive
+        private string $label,
+        private string $basePath,
+        private array $additionalQueryParameters,
+        private string $onlineId,
+        private int $rank,
+        private int $previousRank,
+        private bool $isActive,
     ) {
-        $this->label = $label;
-        $this->basePath = $basePath;
-        $this->additionalQueryParameters = $additionalQueryParameters;
-        $this->onlineId = $onlineId;
-        $this->rank = max(0, $rank);
-        $this->previousRank = max(0, $previousRank);
-        $this->isActive = $isActive;
     }
 
     public static function createWorldRank(
@@ -53,7 +29,15 @@ class PlayerLeaderboardRank
         int $previousRank,
         bool $isActive
     ): self {
-        return new self('World Rank', $basePath, [], $onlineId, $rank, $previousRank, $isActive);
+        return new self(
+            'World Rank',
+            $basePath,
+            [],
+            $onlineId,
+            max(0, $rank),
+            max(0, $previousRank),
+            $isActive
+        );
     }
 
     public static function createCountryRank(
@@ -64,7 +48,15 @@ class PlayerLeaderboardRank
         int $previousRank,
         bool $isActive
     ): self {
-        return new self('Country Rank', $basePath, ['country' => $countryCode], $onlineId, $rank, $previousRank, $isActive);
+        return new self(
+            'Country Rank',
+            $basePath,
+            ['country' => $countryCode],
+            $onlineId,
+            max(0, $rank),
+            max(0, $previousRank),
+            $isActive
+        );
     }
 
     public function getLabel(): string
@@ -114,4 +106,3 @@ class PlayerLeaderboardRank
         return PlayerLeaderboardRankChange::fromRanks($this->rank, $this->previousRank);
     }
 }
-

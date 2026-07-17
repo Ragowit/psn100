@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class PsnpPlusFixedGame
+final readonly class PsnpPlusFixedGame
 {
     /**
      * @var int[]

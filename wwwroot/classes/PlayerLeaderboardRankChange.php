@@ -2,18 +2,14 @@
 
 declare(strict_types=1);
 
-class PlayerLeaderboardRankChange
+final readonly class PlayerLeaderboardRankChange
 {
-    private const NEW_RANK_SENTINEL = 16777215;
+    private const int NEW_RANK_SENTINEL = 16777215;
 
-    private ?int $delta;
-
-    private bool $isNew;
-
-    private function __construct(?int $delta, bool $isNew)
-    {
-        $this->delta = $delta;
-        $this->isNew = $isNew;
+    private function __construct(
+        private ?int $delta,
+        private bool $isNew,
+    ) {
     }
 
     public static function fromRanks(int $currentRank, int $previousRank): self
@@ -77,4 +73,3 @@ class PlayerLeaderboardRankChange
         return '#0070d1';
     }
 }
-

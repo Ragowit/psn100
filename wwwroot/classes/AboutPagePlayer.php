@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class AboutPagePlayer
+final readonly class AboutPagePlayer
 {
     private const array STATUS_LABELS = [
         1 => 'Cheater',
@@ -10,61 +10,39 @@ class AboutPagePlayer
         4 => 'Inactive',
     ];
 
-    private Utility $utility;
-    private string $onlineId;
-    private string $countryCode;
-    private string $avatarUrl;
-    private ?string $lastUpdatedDate;
-    private ?int $level;
-    private ?string $progress;
-    private int $rankLastWeek;
-    private int $status;
-    private int $trophyCountNpwr;
-    private int $trophyCountSony;
-    private ?int $ranking;
-
     public function __construct(
-        Utility $utility,
-        string $onlineId,
-        ?string $countryCode,
-        string $avatarUrl,
-        ?string $lastUpdatedDate,
-        ?int $level,
-        ?string $progress,
-        ?int $rankLastWeek,
-        ?int $status,
-        ?int $trophyCountNpwr,
-        ?int $trophyCountSony,
-        ?int $ranking
+        private Utility $utility,
+        private string $onlineId,
+        private string $countryCode,
+        private string $avatarUrl,
+        private ?string $lastUpdatedDate,
+        private ?int $level,
+        private ?string $progress,
+        private int $rankLastWeek,
+        private int $status,
+        private int $trophyCountNpwr,
+        private int $trophyCountSony,
+        private ?int $ranking,
     ) {
-        $this->utility = $utility;
-        $this->onlineId = $onlineId;
-        $this->countryCode = $countryCode ?? '';
-        $this->avatarUrl = $avatarUrl;
-        $this->lastUpdatedDate = $lastUpdatedDate;
-        $this->level = $level;
-        $this->progress = $progress;
-        $this->rankLastWeek = $rankLastWeek ?? 0;
-        $this->status = $status ?? 0;
-        $this->trophyCountNpwr = $trophyCountNpwr ?? 0;
-        $this->trophyCountSony = $trophyCountSony ?? 0;
-        $this->ranking = $ranking;
     }
 
+    /**
+     * @param array<string, mixed> $row
+     */
     public static function fromArray(array $row, Utility $utility): self
     {
         return new self(
             $utility,
             (string) ($row['online_id'] ?? ''),
-            isset($row['country']) ? (string) $row['country'] : null,
+            isset($row['country']) ? (string) $row['country'] : '',
             (string) ($row['avatar_url'] ?? ''),
             isset($row['last_updated_date']) ? (string) $row['last_updated_date'] : null,
             isset($row['level']) ? (int) $row['level'] : null,
             isset($row['progress']) ? (string) $row['progress'] : null,
-            isset($row['rank_last_week']) ? (int) $row['rank_last_week'] : null,
-            isset($row['status']) ? (int) $row['status'] : null,
-            isset($row['trophy_count_npwr']) ? (int) $row['trophy_count_npwr'] : null,
-            isset($row['trophy_count_sony']) ? (int) $row['trophy_count_sony'] : null,
+            isset($row['rank_last_week']) ? (int) $row['rank_last_week'] : 0,
+            isset($row['status']) ? (int) $row['status'] : 0,
+            isset($row['trophy_count_npwr']) ? (int) $row['trophy_count_npwr'] : 0,
+            isset($row['trophy_count_sony']) ? (int) $row['trophy_count_sony'] : 0,
             isset($row['ranking']) ? (int) $row['ranking'] : null,
         );
     }

@@ -2,40 +2,19 @@
 
 declare(strict_types=1);
 
-class GameHeaderData
+final readonly class GameHeaderData
 {
-    private ?GameHeaderParent $parentGame;
-
-    /**
-     * @var GameHeaderStack[]
-     */
-    private array $stacks;
-
-    private int $unobtainableTrophyCount;
-
-    /**
-     * @var GameObsoleteReplacement[]
-     */
-    private array $obsoleteReplacements;
-
-    private ?string $psnpPlusNote;
-
     /**
      * @param GameHeaderStack[] $stacks
      * @param GameObsoleteReplacement[] $obsoleteReplacements
      */
     public function __construct(
-        ?GameHeaderParent $parentGame,
-        array $stacks,
-        int $unobtainableTrophyCount,
-        array $obsoleteReplacements,
-        ?string $psnpPlusNote
+        private ?GameHeaderParent $parentGame,
+        private array $stacks,
+        private int $unobtainableTrophyCount,
+        private array $obsoleteReplacements,
+        private ?string $psnpPlusNote,
     ) {
-        $this->parentGame = $parentGame;
-        $this->stacks = $stacks;
-        $this->unobtainableTrophyCount = $unobtainableTrophyCount;
-        $this->obsoleteReplacements = $obsoleteReplacements;
-        $this->psnpPlusNote = $psnpPlusNote;
     }
 
     public function hasMergedParent(): bool

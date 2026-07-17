@@ -6,22 +6,22 @@ require_once __DIR__ . '/../Utility.php';
 
 final readonly class GameTrophyRow
 {
-    private const TROPHY_TYPE_COLORS = [
+    private const array TROPHY_TYPE_COLORS = [
         'bronze' => '#c46438',
         'silver' => '#777777',
         'gold' => '#c2903e',
         'platinum' => '#667fb2',
     ];
 
-    private const TROPHY_TYPE_ICONS = [
+    private const array TROPHY_TYPE_ICONS = [
         'bronze' => '/img/trophy-bronze.svg',
         'silver' => '/img/trophy-silver.svg',
         'gold' => '/img/trophy-gold.svg',
         'platinum' => '/img/trophy-platinum.svg',
     ];
 
-    private const UNOBTAINABLE_STATUS = 1;
-    private const UNOBTAINABLE_TITLE = 'This trophy is unobtainable and not accounted for on any leaderboard.';
+    private const int UNOBTAINABLE_STATUS = 1;
+    private const string UNOBTAINABLE_TITLE = 'This trophy is unobtainable and not accounted for on any leaderboard.';
 
     private int $id;
     private int $orderId;

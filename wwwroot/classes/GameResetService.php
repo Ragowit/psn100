@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 class GameResetService
 {
-    private const ACTION_RESET = 0;
-    private const ACTION_DELETE = 1;
+    private const int ACTION_RESET = 0;
+    private const int ACTION_DELETE = 1;
 
     public function __construct(private readonly PDO $database)
     {

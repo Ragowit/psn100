@@ -6,14 +6,20 @@ require_once __DIR__ . '/TrophyRarity.php';
 
 final class TrophyRarityFormatter
 {
-    private const META_THRESHOLDS = [
+    /**
+     * @var list<array{max: float, label: string, class: string}>
+     */
+    private const array META_THRESHOLDS = [
         ['max' => 0.02, 'label' => 'Legendary', 'class' => 'trophy-legendary'],
         ['max' => 0.2, 'label' => 'Epic', 'class' => 'trophy-epic'],
         ['max' => 2.0, 'label' => 'Rare', 'class' => 'trophy-rare'],
         ['max' => 10.0, 'label' => 'Uncommon', 'class' => 'trophy-uncommon'],
     ];
 
-    private const IN_GAME_THRESHOLDS = [
+    /**
+     * @var list<array{max: float, label: string, class: string}>
+     */
+    private const array IN_GAME_THRESHOLDS = [
         ['max' => 1.0, 'label' => 'Legendary', 'class' => 'trophy-legendary'],
         ['max' => 5.0, 'label' => 'Epic', 'class' => 'trophy-epic'],
         ['max' => 20.0, 'label' => 'Rare', 'class' => 'trophy-rare'],
@@ -115,15 +121,18 @@ final class TrophyRarityFormatter
         }
 
         if ($value !== null) {
-            foreach ($thresholds as $threshold) {
-                if ($value <= $threshold['max']) {
-                    return new TrophyRarity(
-                        $percentageString,
-                        $threshold['label'],
-                        $threshold['class'],
-                        false
-                    );
-                }
+            $threshold = array_find(
+                $thresholds,
+                static fn (array $candidate): bool => $value <= $candidate['max']
+            );
+
+            if ($threshold !== null) {
+                return new TrophyRarity(
+                    $percentageString,
+                    $threshold['label'],
+                    $threshold['class'],
+                    false
+                );
             }
         }
 

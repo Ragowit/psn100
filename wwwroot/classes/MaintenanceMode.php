@@ -8,16 +8,19 @@ final readonly class MaintenanceMode
     {
     }
 
+    #[\NoDiscard]
     public static function disabled(string $templatePath): self
     {
         return new self(false, $templatePath);
     }
 
+    #[\NoDiscard]
     public static function enabled(string $templatePath): self
     {
         return new self(true, $templatePath);
     }
 
+    #[\NoDiscard]
     public static function fromFlag(bool $enabled, string $templatePath): self
     {
         return new self($enabled, $templatePath);
@@ -26,6 +29,7 @@ final readonly class MaintenanceMode
     /**
      * @param array<string, mixed> $server
      */
+    #[\NoDiscard]
     public static function fromEnvironment(array $server, string $templatePath, bool $default = false): self
     {
         $serverValue = $server['MAINTENANCE_MODE'] ?? getenv('MAINTENANCE_MODE');

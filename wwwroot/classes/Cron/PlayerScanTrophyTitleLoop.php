@@ -19,7 +19,9 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  */
 final class PlayerScanTrophyTitleLoop
 {
-    private const DEFAULT_SLEEPER = 'sleep';
+    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
+        sleep($seconds);
+    };
 
     private readonly \Closure $sleeper;
 
@@ -35,7 +37,9 @@ final class PlayerScanTrophyTitleLoop
         private readonly PlayerScanTrophyTitleRefresher $trophyTitleRefresher,
         ?callable $sleeper = null,
     ) {
-        $this->sleeper = \Closure::fromCallable($sleeper ?? self::DEFAULT_SLEEPER);
+        $this->sleeper = $sleeper === null
+            ? self::DEFAULT_SLEEPER
+            : \Closure::fromCallable($sleeper);
     }
 
     /**
