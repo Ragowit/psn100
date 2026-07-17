@@ -180,6 +180,27 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
+    public function testRunFlushesPendingRankedOwnerBatchBeforeZeroOwnerUpdate(): void
+    {
+        $database = new DailyCronJobFlushBeforeZeroOwnerTestDatabase();
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds): void {
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame([
+            'ranked:NPWR00001_00,NPWR00002_00',
+            'zero:NPWR00003_00',
+            'zero:NPWR00003_00',
+            'title-points',
+        ], $database->getOperations());
+    }
+
     private function readClassSource(): string
     {
         $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/DailyCronJob.php');
@@ -453,6 +474,71 @@ final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
         if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->titlePointsUpdateCount++;
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+
+final class DailyCronJobFlushBeforeZeroOwnerTestDatabase extends PDO
+{
+    /** @var list<string> */
+    private array $operations = [];
+
+    private int $zeroOwnerUpdateCount = 0;
+
+    public function __construct()
+    {
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getOperations(): array
+    {
+        return $this->operations;
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return ['NPWR00001_00', 'NPWR00002_00', 'NPWR00003_00'];
+            }, isSelect: true);
+        }
+
+        if (str_contains($query, 'SELECT DISTINCT ttp.np_communication_id')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return ['NPWR00001_00', 'NPWR00002_00'];
+            }, isSelect: true);
+        }
+
+        if (str_contains($query, 'ranked_owners AS')) {
+            return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
+                $json = $boundValues[':np_communication_ids'] ?? '[]';
+                $decoded = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
+                $titles = is_array($decoded) ? array_values(array_filter($decoded, 'is_string')) : [];
+                $this->operations[] = 'ranked:' . implode(',', $titles);
+            });
+        }
+
+        if (str_contains($query, 'UPDATE trophy_meta tm')) {
+            return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
+                $npCommunicationId = (string) ($boundValues[':np_communication_id'] ?? '');
+                $this->operations[] = 'zero:' . $npCommunicationId;
+                $this->zeroOwnerUpdateCount++;
+
+                if ($this->zeroOwnerUpdateCount === 1) {
+                    throw new RuntimeException('Simulated zero-owner rarity update failure.');
+                }
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'title-points';
             });
         }
 

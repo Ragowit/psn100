@@ -240,6 +240,11 @@ final readonly class DailyCronJob implements CronJobInterface
             }
 
             if (!isset($rankedOwnerTitles[$npCommunicationId])) {
+                if ($rankedOwnerBatch !== []) {
+                    $this->executeWithRetry([$this, 'updateTrophyRarityForGames'], $rankedOwnerBatch);
+                    $rankedOwnerBatch = [];
+                }
+
                 $this->executeWithRetry([$this, 'updateZeroOwnerTrophyRarityForGame'], $npCommunicationId);
                 continue;
             }
