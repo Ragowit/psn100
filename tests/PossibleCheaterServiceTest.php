@@ -41,6 +41,12 @@ final class PossibleCheaterServiceTest extends TestCase
                 progress INTEGER,
                 earned INTEGER NOT NULL DEFAULT 1
             );
+
+            CREATE TABLE trophy_title_player (
+                np_communication_id TEXT NOT NULL,
+                account_id INTEGER NOT NULL,
+                PRIMARY KEY (np_communication_id, account_id)
+            );
             SQL
         );
 
@@ -95,6 +101,21 @@ final class PossibleCheaterServiceTest extends TestCase
         $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterService.php');
 
         $this->assertStringContainsString('AND te.earned = 1', $source);
+        $this->assertStringContainsString('JOIN trophy_title_player ttp ON', $source);
+        $this->assertStringContainsString('te.account_id = ttp.account_id', $source);
+    }
+
+    public function testProductionSectionQueriesDriveFromTrophyTitlePlayer(): void
+    {
+        $sections = require __DIR__ . '/../wwwroot/config/possible-cheater-sections.php';
+
+        $this->assertTrue($sections !== []);
+        foreach ($sections as $section) {
+            $this->assertTrue(
+                str_contains((string) $section['query'], 'trophy_title_player'),
+                'Expected section "' . $section['title'] . '" to drive from trophy_title_player for partition pruning.'
+            );
+        }
     }
 
     public function testCreateReportFindsMatchingGeneralCheaters(): void
@@ -114,6 +135,11 @@ final class PossibleCheaterServiceTest extends TestCase
                 ('NPWR05066_00', 'default', 2, 1, '2020-01-01 00:00:00'),
                 ('NPWR99999_00', 'default', 0, 1, '2019-01-01 00:00:00'),
                 ('NPWR05066_00', 'default', 2, 3, '2020-01-01 00:00:00');
+
+            INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES
+                ('NPWR05066_00', 1),
+                ('NPWR99999_00', 1),
+                ('NPWR05066_00', 3);
             SQL
         );
 
@@ -139,6 +165,10 @@ final class PossibleCheaterServiceTest extends TestCase
             INSERT INTO trophy_earned (np_communication_id, group_id, order_id, account_id, earned_date) VALUES
                 ('NPWR00550_00', 'default', 4, 4, '2014-12-31 23:59:59'),
                 ('NPWR00550_00', 'default', 4, 5, '2015-01-01 00:00:00');
+
+            INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES
+                ('NPWR00550_00', 4),
+                ('NPWR00550_00', 5);
             SQL
         );
 

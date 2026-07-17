@@ -90,6 +90,8 @@ class PossibleCheaterService
             $this->rulesCatalog->getGeneralRuleGroups()
         );
 
+        // Drive from trophy_title_player so trophy_earned is probed by account_id
+        // (HASH partition key) instead of scanning all 256 partitions by title.
         $sql = <<<SQL
         SELECT
             first_games.account_id,
@@ -101,12 +103,14 @@ class PossibleCheaterService
                 p.account_id,
                 p.online_id AS player_name,
                 MIN(tt.np_communication_id) AS first_np_communication_id
-            FROM
-                trophy_earned te
-            INNER JOIN (
+            FROM (
                 {$ruleDerivedTable}
-            ) cheat_rules ON
-                te.np_communication_id = cheat_rules.np_communication_id
+            ) cheat_rules
+            JOIN trophy_title_player ttp ON
+                ttp.np_communication_id = cheat_rules.np_communication_id
+            JOIN trophy_earned te ON
+                te.account_id = ttp.account_id
+                AND te.np_communication_id = cheat_rules.np_communication_id
                 AND te.order_id = cheat_rules.order_id
                 AND te.earned = 1
                 AND (
@@ -115,8 +119,8 @@ class PossibleCheaterService
                     OR (cheat_rules.date_operator = '<=' AND te.earned_date <= cheat_rules.date_value)
                     OR (cheat_rules.date_operator = '<' AND te.earned_date < cheat_rules.date_value)
                 )
-            JOIN player p ON p.account_id = te.account_id
-            JOIN trophy_title tt ON tt.np_communication_id = te.np_communication_id
+            JOIN player p ON p.account_id = ttp.account_id
+            JOIN trophy_title tt ON tt.np_communication_id = cheat_rules.np_communication_id
             WHERE
                 p.status != 1
             GROUP BY

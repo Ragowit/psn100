@@ -290,17 +290,19 @@ SQL;
             return;
         }
 
-        // Resolve order_ids from the small trophy table first, then probe
-        // trophy_earned via (np_communication_id, order_id, earned) — the leading
-        // columns of idx_te_npcomm_order_earned_date — instead of joining trophy
-        // into the multi-billion-row scan.
+        // Resolve order_ids from the small trophy table first, then drive from
+        // trophy_title_player so trophy_earned is probed by account_id (HASH
+        // partition key) instead of scanning all partitions by title.
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
         $sql = 'INSERT IGNORE INTO temp_impacted_accounts (account_id)
-            SELECT DISTINCT te.account_id
-            FROM trophy_earned te
-            WHERE te.np_communication_id = ?
-              AND te.order_id IN (' . $placeholders . ')
-              AND te.earned = 1';
+            SELECT DISTINCT ttp.account_id
+            FROM trophy_title_player ttp
+            JOIN trophy_earned te
+              ON te.account_id = ttp.account_id
+             AND te.np_communication_id = ttp.np_communication_id
+             AND te.order_id IN (' . $placeholders . ')
+             AND te.earned = 1
+            WHERE ttp.np_communication_id = ?';
 
         if ($groupId !== null) {
             $sql .= ' AND te.group_id = ?';
@@ -308,10 +310,10 @@ SQL;
 
         $statement = $this->database->prepare($sql);
         $parameterIndex = 1;
-        $statement->bindValue($parameterIndex++, $npCommunicationId, PDO::PARAM_STR);
         foreach ($orderIds as $orderId) {
             $statement->bindValue($parameterIndex++, $orderId, PDO::PARAM_INT);
         }
+        $statement->bindValue($parameterIndex++, $npCommunicationId, PDO::PARAM_STR);
         if ($groupId !== null) {
             $statement->bindValue($parameterIndex++, $groupId, PDO::PARAM_STR);
         }

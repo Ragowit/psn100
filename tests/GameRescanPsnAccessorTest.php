@@ -83,6 +83,45 @@ final class GameRescanPsnAccessorTest extends TestCase
         $this->assertSame('200', $user->accountId());
     }
 
+    public function testFindAccessibleUserWithGamePagesOwnerProbes(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Admin/GameRescanPsnAccessor.php');
+
+        $this->assertTrue(str_contains($source, 'ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE'));
+        $this->assertTrue(str_contains($source, 'LIMIT \' . self::ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE . \' OFFSET \' . $offset'));
+        $this->assertTrue(str_contains($source, 'ORDER BY ttp.last_updated_date DESC, ttp.account_id DESC'));
+        $this->assertFalse(str_contains($source, 'ACCESSIBLE_PLAYER_PROBE_LIMIT'));
+    }
+
+    public function testFindAccessibleUserWithGameContinuesPastFullPrivateBatch(): void
+    {
+        // Higher account ids are more recent, so the first batch is 101..2 (private)
+        // and the second batch starts at account 1 (public).
+        $rows = [];
+        $users = [];
+        for ($accountId = 1; $accountId <= 101; $accountId++) {
+            $rows[] = [
+                'account_id' => $accountId,
+                'np_communication_id' => 'NPWR00001_00',
+                'last_updated_date' => sprintf(
+                    '2024-02-%02dT%02d:00:00Z',
+                    1 + intdiv($accountId - 1, 24),
+                    ($accountId - 1) % 24
+                ),
+            ];
+            $users[$accountId] = new GameRescanPsnAccessorTestUser([], privateProfile: $accountId !== 1);
+        }
+
+        $database = $this->createDatabaseWithTitlePlayers($rows);
+        $accessor = $this->createAccessor($database);
+        $client = new GameRescanPsnAccessorTestClient($users);
+
+        $user = $accessor->findAccessibleUserWithGame($client, 'NPWR00001_00');
+
+        $this->assertTrue($user !== null);
+        $this->assertSame('1', $user->accountId());
+    }
+
     public function testLoginToWorkerDelegatesToAuthenticator(): void
     {
         $worker = new Worker(5, 'refresh-token', '', '', new DateTimeImmutable('2024-01-01'), null);
@@ -121,7 +160,7 @@ final class GameRescanPsnAccessorTest extends TestCase
     }
 
     /**
-     * @param list<array{account_id: int, np_communication_id: string}> $rows
+     * @param list<array{account_id: int, np_communication_id: string, last_updated_date?: string}> $rows
      */
     private function createDatabaseWithTitlePlayers(array $rows): PDO
     {
@@ -145,7 +184,7 @@ final class GameRescanPsnAccessorTest extends TestCase
             $statement->execute([
                 'account_id' => $row['account_id'],
                 'np_communication_id' => $row['np_communication_id'],
-                'last_updated_date' => '2024-01-01T00:00:00Z',
+                'last_updated_date' => $row['last_updated_date'] ?? '2024-01-01T00:00:00Z',
             ]);
         }
 

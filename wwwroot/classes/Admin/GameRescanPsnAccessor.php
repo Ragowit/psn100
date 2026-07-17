@@ -14,6 +14,7 @@ final class GameRescanPsnAccessor
 {
     private const ORIGINAL_GAME_PREFIX = 'NPWR';
     private const LOGIN_RETRY_DELAY_SECONDS = 300;
+    private const int ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE = 100;
 
     public function __construct(
         private PDO $database,
@@ -53,31 +54,45 @@ final class GameRescanPsnAccessor
 
     public function findAccessibleUserWithGame(object $client, string $npCommunicationId): ?object
     {
-        $query = $this->database->prepare(
-            'SELECT account_id
-            FROM trophy_title_player ttp
-            JOIN player p USING(account_id)
-            WHERE ttp.np_communication_id = :np_communication_id
-            ORDER BY ttp.last_updated_date DESC'
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->execute();
+        // Page owners in batches (idx_npcid_lupdate serves the sort) so popular
+        // titles do not hold one unbounded result set open, while still scanning
+        // past clusters of recent private profiles until a public owner is found.
+        $offset = 0;
 
-        while (($accountId = $query->fetchColumn()) !== false) {
-            $user = $client->users()->find((string) $accountId);
+        while (true) {
+            $query = $this->database->prepare(
+                'SELECT account_id
+                FROM trophy_title_player ttp
+                JOIN player p USING(account_id)
+                WHERE ttp.np_communication_id = :np_communication_id
+                ORDER BY ttp.last_updated_date DESC, ttp.account_id DESC
+                LIMIT ' . self::ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE . ' OFFSET ' . $offset
+            );
+            $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+            $query->execute();
 
-            try {
-                $user->trophySummary()->level();
+            $batchCount = 0;
+            while (($accountId = $query->fetchColumn()) !== false) {
+                $batchCount++;
+                $user = $client->users()->find((string) $accountId);
 
-                return $user;
-            } catch (TypeError) {
-                // Something odd, try next player.
-            } catch (Exception) {
-                // Player probably private, try next player.
+                try {
+                    $user->trophySummary()->level();
+
+                    return $user;
+                } catch (TypeError) {
+                    // Something odd, try next player.
+                } catch (Exception) {
+                    // Player probably private, try next player.
+                }
             }
-        }
 
-        return null;
+            if ($batchCount < self::ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE) {
+                return null;
+            }
+
+            $offset += self::ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE;
+        }
     }
 
     public function findTrophyTitleForUser(object $user, string $npCommunicationId): ?object

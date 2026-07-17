@@ -107,7 +107,13 @@ class GameService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                *
+                np_communication_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress
             FROM
                 trophy_title_player
             WHERE
@@ -159,7 +165,14 @@ class GameService
         $query = $this->database->prepare(
             <<<'SQL'
             SELECT
-                *
+                np_communication_id,
+                group_id,
+                account_id,
+                bronze,
+                silver,
+                gold,
+                platinum,
+                progress
             FROM
                 trophy_group_player
             WHERE
