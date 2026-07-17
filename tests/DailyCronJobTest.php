@@ -9,22 +9,23 @@ final class DailyCronJobTest extends TestCase
 {
     public function testUpdateTrophyRarityQueryUsesTopTenThousandRankingFilter(): void
     {
-        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_BATCH_QUERY');
 
         $this->assertStringContainsString('JOIN player_ranking pr ON pr.ranking <= 10000', $source);
         $this->assertStringContainsString('te.account_id = pr.account_id', $source);
         $this->assertStringContainsString('/ 10000.0) * 100 AS rarity_percent', $source);
-        $this->assertStringContainsString('CAST(:np_communication_id AS CHAR(12))', $source);
+        $this->assertStringContainsString('JSON_TABLE(', $source);
+        $this->assertStringContainsString(':np_communication_ids', $source);
         $this->assertStringContainsString('JOIN trophy t ON t.np_communication_id = title.np_communication_id', $source);
     }
 
     public function testUpdateTrophyRarityQueryDrivesTrophyEarnedByAccountIdForPartitionPruning(): void
     {
-        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_BATCH_QUERY');
 
         $this->assertStringContainsString('ranked_owners AS', $source);
         $this->assertStringContainsString('INNER JOIN trophy_earned te', $source);
-        $this->assertStringContainsString('GROUP BY te.order_id', $source);
+        $this->assertStringContainsString('GROUP BY te.np_communication_id, te.order_id', $source);
         $this->assertFalse(str_contains($source, 'LEFT JOIN trophy_earned te'));
     }
 
@@ -55,7 +56,7 @@ final class DailyCronJobTest extends TestCase
 
     public function testUpdateTrophyRarityQueryAssignsRarityNamesFromThresholds(): void
     {
-        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_QUERY');
+        $source = $this->readPrivateConstant('UPDATE_TROPHY_RARITY_BATCH_QUERY');
 
         $this->assertStringContainsString("WHEN r.rarity_percent > 10 THEN 'COMMON'", $source);
         $this->assertStringContainsString("WHEN r.rarity_percent > 2 THEN 'UNCOMMON'", $source);
@@ -72,6 +73,8 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString('SELECT np_communication_id FROM trophy_title', $source);
         $this->assertStringContainsString('fetchTopTenThousandOwnerTitleLookup', $source);
         $this->assertStringContainsString('isset($rankedOwnerTitles[$npCommunicationId])', $source);
+        $this->assertStringContainsString('RANKED_OWNER_TITLE_BATCH_SIZE = 100', $source);
+        $this->assertStringContainsString('updateTrophyRarityForGames', $source);
     }
 
     public function testUpdateTrophyTitleRarityPointsAggregatesPerGame(): void
@@ -91,7 +94,7 @@ final class DailyCronJobTest extends TestCase
 
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
-        $this->assertStringContainsString('updateTrophyRarityForGame', $source);
+        $this->assertStringContainsString('updateTrophyRarityForGames', $source);
         $this->assertStringContainsString('updateTrophyTitleRarityPoints', $source);
     }
 
@@ -156,7 +159,7 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
-    public function testRunFetchesRankedOwnerLookupOnceAndChoosesRarityQueryPerTitle(): void
+    public function testRunProcessesRankedOwnerTitlesInBatchesAndZeroOwnerTitlesIndividually(): void
     {
         $database = new DailyCronJobRankedOwnerLookupTestDatabase();
 
@@ -171,8 +174,9 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame(1, $database->getRankedOwnerLookupCount());
-        $this->assertSame(['NPWR00001_00'], $database->getFullRarityUpdates());
-        $this->assertSame(['NPWR00002_00'], $database->getZeroOwnerRarityUpdates());
+        $expectedFirstBatch = array_map(static fn (int $index): string => sprintf('NPWR%05d_00', $index), range(1, 100));
+        $this->assertSame([$expectedFirstBatch, ['NPWR00101_00']], $database->getFullRarityUpdateBatches());
+        $this->assertSame(['NPWR00102_00'], $database->getZeroOwnerRarityUpdates());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
@@ -358,7 +362,9 @@ final class DailyCronJobRankedOwnerLookupRetryTestDatabase extends PDO
 
         if (str_contains($query, 'ranked_owners AS')) {
             return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
-                $this->fullRarityUpdates[] = $boundValues[':np_communication_id'] ?? '';
+                $json = $boundValues[':np_communication_ids'] ?? '[]';
+                $decoded = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
+                $this->fullRarityUpdates = array_merge($this->fullRarityUpdates, is_array($decoded) ? $decoded : []);
             });
         }
 
@@ -376,8 +382,8 @@ final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
 {
     private int $rankedOwnerLookupCount = 0;
 
-    /** @var list<string> */
-    private array $fullRarityUpdates = [];
+    /** @var list<list<string>> */
+    private array $fullRarityUpdateBatches = [];
 
     /** @var list<string> */
     private array $zeroOwnerRarityUpdates = [];
@@ -394,11 +400,11 @@ final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
     }
 
     /**
-     * @return list<string>
+     * @return list<list<string>>
      */
-    public function getFullRarityUpdates(): array
+    public function getFullRarityUpdateBatches(): array
     {
-        return $this->fullRarityUpdates;
+        return $this->fullRarityUpdateBatches;
     }
 
     /**
@@ -418,7 +424,7 @@ final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
     {
         if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
             return new DailyCronJobTestStatement(static function (): array {
-                return ['NPWR00001_00', 'NPWR00002_00'];
+                return array_map(static fn (int $index): string => sprintf('NPWR%05d_00', $index), range(1, 102));
             }, isSelect: true);
         }
 
@@ -426,13 +432,15 @@ final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
             return new DailyCronJobTestStatement(function (): array {
                 $this->rankedOwnerLookupCount++;
 
-                return ['NPWR00001_00'];
+                return array_map(static fn (int $index): string => sprintf('NPWR%05d_00', $index), range(1, 101));
             }, isSelect: true);
         }
 
         if (str_contains($query, 'ranked_owners AS')) {
             return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
-                $this->fullRarityUpdates[] = $boundValues[':np_communication_id'] ?? '';
+                $json = $boundValues[':np_communication_ids'] ?? '[]';
+                $decoded = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
+                $this->fullRarityUpdateBatches[] = is_array($decoded) ? $decoded : [];
             });
         }
 
