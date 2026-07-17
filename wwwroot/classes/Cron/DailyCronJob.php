@@ -145,7 +145,7 @@ final readonly class DailyCronJob implements CronJobInterface
         );
         $query->execute();
         $games = $query->fetchAll(PDO::FETCH_COLUMN);
-        $rankedOwnerTitles = $this->fetchTopTenThousandOwnerTitleLookup();
+        $rankedOwnerTitles = $this->executeWithRetry([$this, 'fetchTopTenThousandOwnerTitleLookup']);
 
         foreach ($games as $npCommunicationId) {
             if (!is_string($npCommunicationId)) {
@@ -210,12 +210,11 @@ final readonly class DailyCronJob implements CronJobInterface
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation, mixed ...$arguments): void
+    private function executeWithRetry(callable $operation, mixed ...$arguments): mixed
     {
         while (true) {
             try {
-                $operation(...$arguments);
-                return;
+                return $operation(...$arguments);
             } catch (Throwable $exception) {
                 ($this->sleeper)($this->retryDelaySeconds);
             }

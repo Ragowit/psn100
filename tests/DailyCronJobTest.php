@@ -135,6 +135,26 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(3, $database->getTitlePointsUpdateCount());
     }
 
+    public function testRunRetriesRankedOwnerLookupUntilItSucceeds(): void
+    {
+        $database = new DailyCronJobRankedOwnerLookupRetryTestDatabase();
+        $sleepCalls = [];
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame([1, 1], $sleepCalls);
+        $this->assertSame(3, $database->getRankedOwnerLookupCount());
+        $this->assertSame(['NPWR00001_00'], $database->getFullRarityUpdates());
+        $this->assertSame(1, $database->getTitlePointsUpdateCount());
+    }
 
     public function testRunFetchesRankedOwnerLookupOnceAndChoosesRarityQueryPerTitle(): void
     {
@@ -285,6 +305,72 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
     }
 }
 
+final class DailyCronJobRankedOwnerLookupRetryTestDatabase extends PDO
+{
+    private int $rankedOwnerLookupCount = 0;
+
+    /** @var list<string> */
+    private array $fullRarityUpdates = [];
+
+    private int $titlePointsUpdateCount = 0;
+
+    public function __construct()
+    {
+    }
+
+    public function getRankedOwnerLookupCount(): int
+    {
+        return $this->rankedOwnerLookupCount;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getFullRarityUpdates(): array
+    {
+        return $this->fullRarityUpdates;
+    }
+
+    public function getTitlePointsUpdateCount(): int
+    {
+        return $this->titlePointsUpdateCount;
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'SELECT np_communication_id FROM trophy_title')) {
+            return new DailyCronJobTestStatement(static function (): array {
+                return ['NPWR00001_00'];
+            }, isSelect: true);
+        }
+
+        if (str_contains($query, 'SELECT DISTINCT ttp.np_communication_id')) {
+            return new DailyCronJobTestStatement(function (): array {
+                $this->rankedOwnerLookupCount++;
+
+                if ($this->rankedOwnerLookupCount < 3) {
+                    throw new RuntimeException('Simulated ranked-owner lookup failure.');
+                }
+
+                return ['NPWR00001_00'];
+            }, isSelect: true);
+        }
+
+        if (str_contains($query, 'ranked_owners AS')) {
+            return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
+                $this->fullRarityUpdates[] = $boundValues[':np_communication_id'] ?? '';
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->titlePointsUpdateCount++;
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
 
 final class DailyCronJobRankedOwnerLookupTestDatabase extends PDO
 {
