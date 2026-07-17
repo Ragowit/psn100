@@ -77,6 +77,66 @@ final class ImageHashCalculatorTest extends TestCase
 
         $this->assertSame(md5($buffer), $calculator->calculate('image-data'));
     }
+
+    public function testCalculatePHashReturnsNullWhenContentsEmpty(): void
+    {
+        $calculator = new ImageHashCalculator(new FakeImageProcessor());
+
+        $this->assertSame(null, $calculator->calculatePHash(''));
+    }
+
+    public function testCalculatePHashReturnsNullWhenProcessorUnsupported(): void
+    {
+        $calculator = new ImageHashCalculator(new FakeImageProcessor(supported: false));
+
+        $this->assertSame(null, $calculator->calculatePHash('image-data'));
+    }
+
+    public function testCalculatePHashReturnsNullWhenImageCreationFails(): void
+    {
+        $calculator = new ImageHashCalculator(new FakeImageProcessor(createSucceeds: false));
+
+        $this->assertSame(null, $calculator->calculatePHash('image-data'));
+    }
+
+    public function testCalculatePHashUsesImageProcessorForDecoding(): void
+    {
+        // Regression: calculatePHash previously called imagecreatefromstring()
+        // directly, which logged libpng iCCP/sRGB profile warnings. Decoding
+        // must go through ImageProcessor (which uses @imagecreatefromstring).
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/ImageHashCalculator.php');
+
+        $pHashMethodStart = strpos($source, 'function calculatePHash');
+        $this->assertTrue($pHashMethodStart !== false);
+
+        $nextMethodStart = strpos($source, "\n    public function ", $pHashMethodStart + 1);
+        if ($nextMethodStart === false) {
+            $nextMethodStart = strpos($source, "\n    private function ", $pHashMethodStart + 1);
+        }
+        $this->assertTrue($nextMethodStart !== false);
+
+        $pHashMethod = substr($source, $pHashMethodStart, $nextMethodStart - $pHashMethodStart);
+        $this->assertTrue(!str_contains($pHashMethod, 'imagecreatefromstring('));
+        $this->assertStringContainsString('createImageFromString($contents)', $pHashMethod);
+    }
+
+    public function testCalculatePHashReturnsThirtyEightCharacterHexHash(): void
+    {
+        $image = imagecreatetruecolor(16, 16);
+        $this->assertTrue($image instanceof \GdImage);
+        imagefilledrectangle($image, 0, 0, 7, 15, imagecolorallocate($image, 255, 0, 0));
+        imagefilledrectangle($image, 8, 0, 15, 15, imagecolorallocate($image, 0, 0, 255));
+
+        ob_start();
+        imagepng($image);
+        $contents = (string) ob_get_clean();
+
+        $hash = (new ImageHashCalculator())->calculatePHash($contents);
+
+        $this->assertTrue(is_string($hash));
+        $this->assertSame(38, strlen((string) $hash));
+        $this->assertTrue((bool) preg_match('/^[0-9a-f]{38}$/', (string) $hash));
+    }
 }
 
 final class FakeImageProcessor implements ImageProcessorInterface
