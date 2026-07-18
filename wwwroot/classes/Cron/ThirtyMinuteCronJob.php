@@ -276,9 +276,11 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                 $this->titleMetadataHelper->clearInvalidTitleDateRetriesForPlayer($invalidTitleDateRetry, $onlineId);
 
                 continue;
-            } catch (Exception $exception) {
+            } catch (TypeError | Exception $exception) {
                 // Transient PSN/network failures (e.g. Guzzle/cURL transfer errors) should
                 // back off and keep the worker alive instead of terminating the cron job.
+                // Guzzle's httpErrors middleware can also TypeError when a null response
+                // reaches a ResponseInterface-typed onFulfilled handler after a network failure.
                 // Lock wait timeouts usually clear quickly, so retry sooner than other errors.
                 $isLockWaitTimeout = $this->isLockWaitTimeoutException($exception);
                 $waitSeconds = $isLockWaitTimeout ? 5 : 60;

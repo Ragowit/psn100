@@ -94,9 +94,13 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
     {
         $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php');
 
-        $this->assertStringContainsString('} catch (Exception $exception) {', $source);
+        $this->assertStringContainsString('} catch (TypeError | Exception $exception) {', $source);
         $this->assertStringContainsString(
             'Transient PSN/network failures (e.g. Guzzle/cURL transfer errors)',
+            $source
+        );
+        $this->assertStringContainsString(
+            'Guzzle\'s httpErrors middleware can also TypeError when a null response',
             $source
         );
         $this->assertStringContainsString(
