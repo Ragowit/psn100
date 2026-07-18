@@ -115,11 +115,14 @@ final class PlayerScanTrophyTitleRefresher
         string $npCommunicationId,
         object $fallbackTitle
     ): object {
-        $trophyTitles = iterator_to_array($user->trophyTitles(), false);
+        // Keep this lazy: trophyTitles() may be a paginated collection, so avoid
+        // iterator_to_array()/array_find() which would fetch every page first.
+        foreach ($user->trophyTitles() as $refreshedTitle) {
+            if ((string) $refreshedTitle->npCommunicationId() === $npCommunicationId) {
+                return $refreshedTitle;
+            }
+        }
 
-        return array_find(
-            $trophyTitles,
-            static fn (object $refreshedTitle): bool => (string) $refreshedTitle->npCommunicationId() === $npCommunicationId
-        ) ?? $fallbackTitle;
+        return $fallbackTitle;
     }
 }
