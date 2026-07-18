@@ -11,8 +11,8 @@ use Tustin\PlayStation\Client;
 
 final class PsnTrophyTitleComparisonService
 {
-    public const SOURCE_DIRECT = 'direct';
-    public const SOURCE_TUSTIN = 'tustin';
+    public const string SOURCE_DIRECT = 'direct';
+    public const string SOURCE_TUSTIN = 'tustin';
 
     /**
      * @var \Closure(): iterable<Worker>

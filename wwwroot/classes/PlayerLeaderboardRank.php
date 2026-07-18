@@ -12,16 +12,17 @@ final readonly class PlayerLeaderboardRank
      * @param array<string, string> $additionalQueryParameters
      */
     private function __construct(
-        private string $label,
-        private string $basePath,
-        private array $additionalQueryParameters,
-        private string $onlineId,
-        private int $rank,
-        private int $previousRank,
-        private bool $isActive,
+        final private string $label,
+        final private string $basePath,
+        final private array $additionalQueryParameters,
+        final private string $onlineId,
+        final private int $rank,
+        final private int $previousRank,
+        final private bool $isActive,
     ) {
     }
 
+    #[\NoDiscard]
     public static function createWorldRank(
         string $basePath,
         string $onlineId,
@@ -40,6 +41,7 @@ final readonly class PlayerLeaderboardRank
         );
     }
 
+    #[\NoDiscard]
     public static function createCountryRank(
         string $basePath,
         string $onlineId,

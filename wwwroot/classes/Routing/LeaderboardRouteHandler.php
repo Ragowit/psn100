@@ -6,7 +6,7 @@ require_once __DIR__ . '/RouteHandlerInterface.php';
 
 final readonly class LeaderboardRouteHandler implements RouteHandlerInterface
 {
-    private const DEFAULT_REDIRECT = '/leaderboard/trophy';
+    private const string DEFAULT_REDIRECT = '/leaderboard/trophy';
 
     /**
      * @param list<string> $segments

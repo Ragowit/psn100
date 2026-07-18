@@ -7,7 +7,7 @@ require_once __DIR__ . '/GameLeaderboardRow.php';
 
 class GameLeaderboardService
 {
-    public const PAGE_SIZE = 50;
+    public const int PAGE_SIZE = 50;
 
     public function __construct(private readonly PDO $database)
     {

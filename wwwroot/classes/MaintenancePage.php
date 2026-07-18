@@ -10,15 +10,16 @@ final readonly class MaintenancePage
      * @param MaintenancePageStylesheet[] $stylesheets
      */
     private function __construct(
-        private string $title,
-        private string $heading,
-        private string $description,
-        private string $author,
-        private string $message,
-        private array $stylesheets,
+        final private string $title,
+        final private string $heading,
+        final private string $description,
+        final private string $author,
+        final private string $message,
+        final private array $stylesheets,
     ) {
     }
 
+    #[\NoDiscard]
     public static function createDefault(): self
     {
         return new self(

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final class GameHistoryService
 {
-    private const INVALID_HISTORY_ID = 0;
+    private const int INVALID_HISTORY_ID = 0;
 
     public function __construct(private readonly PDO $database)
     {

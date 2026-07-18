@@ -12,8 +12,8 @@ require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
  */
 final class GameRescanPsnAccessor
 {
-    private const ORIGINAL_GAME_PREFIX = 'NPWR';
-    private const LOGIN_RETRY_DELAY_SECONDS = 300;
+    private const string ORIGINAL_GAME_PREFIX = 'NPWR';
+    private const int LOGIN_RETRY_DELAY_SECONDS = 300;
     private const int ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE = 100;
 
     public function __construct(

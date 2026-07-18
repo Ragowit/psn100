@@ -12,9 +12,9 @@ require_once __DIR__ . '/PlatformSql.php';
 
 class HomepageContentService
 {
-    private const DEFAULT_NEW_GAME_LIMIT = 8;
-    private const DEFAULT_NEW_DLCS_LIMIT = 8;
-    private const DEFAULT_POPULAR_GAME_LIMIT = 10;
+    private const int DEFAULT_NEW_GAME_LIMIT = 8;
+    private const int DEFAULT_NEW_DLCS_LIMIT = 8;
+    private const int DEFAULT_POPULAR_GAME_LIMIT = 10;
 
     public function __construct(private readonly PDO $database)
     {

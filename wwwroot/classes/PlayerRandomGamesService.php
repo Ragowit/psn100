@@ -213,7 +213,9 @@ class PlayerRandomGamesService
             return [];
         }
 
-        $rows = array_values(array_filter($rows, 'is_array'));
+        $rows = $rows
+            |> (fn(array $rows): array => array_filter($rows, is_array(...)))
+            |> array_values(...);
 
         $rows = $this->randomizer->shuffleArray($rows);
 
@@ -280,7 +282,9 @@ class PlayerRandomGamesService
             return [];
         }
 
-        return array_values(array_filter($rows, 'is_array'));
+        return $rows
+            |> (fn(array $rows): array => array_filter($rows, is_array(...)))
+            |> array_values(...);
     }
 
     /**

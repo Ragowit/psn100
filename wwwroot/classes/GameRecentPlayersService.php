@@ -9,7 +9,7 @@ require_once __DIR__ . '/GameRecentPlayersQueryBuilder.php';
 
 class GameRecentPlayersService
 {
-    public const RECENT_PLAYERS_LIMIT = 10;
+    public const int RECENT_PLAYERS_LIMIT = 10;
 
     public function __construct(private readonly PDO $database)
     {

@@ -5,12 +5,13 @@ declare(strict_types=1);
 final readonly class NotFoundPage
 {
     private function __construct(
-        private string $title,
-        private string $heading,
-        private string $message,
+        final private string $title,
+        final private string $heading,
+        final private string $message,
     ) {
     }
 
+    #[\NoDiscard]
     public static function createDefault(): self
     {
         return new self(

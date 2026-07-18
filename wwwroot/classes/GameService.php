@@ -8,7 +8,7 @@ require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 
 class GameService
 {
-    private const TROPHY_TYPE_ORDER_SQL = "FIELD(%s, 'bronze', 'silver', 'gold', 'platinum')";
+    private const string TROPHY_TYPE_ORDER_SQL = "FIELD(%s, 'bronze', 'silver', 'gold', 'platinum')";
 
     public function __construct(private readonly PDO $database) {}
 

@@ -19,9 +19,7 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  */
 final class PlayerScanTrophyTitleLoop
 {
-    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
-        sleep($seconds);
-    };
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     private readonly \Closure $sleeper;
 

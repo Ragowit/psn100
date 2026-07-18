@@ -15,7 +15,7 @@ final readonly class PlayerRandomGamesFilter
     /**
      * @var list<string>
      */
-    private const PLATFORM_KEYS = [
+    private const array PLATFORM_KEYS = [
         self::PLATFORM_PC,
         self::PLATFORM_PS3,
         self::PLATFORM_PS4,

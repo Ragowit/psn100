@@ -22,9 +22,7 @@ final class PlayStationWorkerAuthenticator
     private const \Closure DEFAULT_REFRESH_TOKEN_SAVER = static function (int $workerId, string $refreshToken): void {
     };
 
-    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
-        sleep($seconds);
-    };
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     /**
      * @var \Closure(): iterable<Worker>

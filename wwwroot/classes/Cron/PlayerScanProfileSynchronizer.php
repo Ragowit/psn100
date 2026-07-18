@@ -20,7 +20,7 @@ use Tustin\PlayStation\Client;
  */
 final class PlayerScanProfileSynchronizer
 {
-    private const MAX_INVALID_API_RESPONSE_ATTEMPTS = 2;
+    private const int MAX_INVALID_API_RESPONSE_ATTEMPTS = 2;
 
     private readonly PlayerAvatarSynchronizer $avatarSynchronizer;
     private readonly PlayerCountryResolver $countryResolver;

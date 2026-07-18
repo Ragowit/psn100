@@ -11,7 +11,7 @@ require_once __DIR__ . '/PsnOnlineIdValidator.php';
 
 class GameListService
 {
-    private const PAGE_LIMIT = 40;
+    private const int PAGE_LIMIT = 40;
 
     public function __construct(
         private readonly PDO $database,

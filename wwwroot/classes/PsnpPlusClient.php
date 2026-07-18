@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class PsnpPlusClient
 {
-    private const DATA_URL = 'https://psnp-plus.huskycode.dev/list.json';
+    private const string DATA_URL = 'https://psnp-plus.huskycode.dev/list.json';
 
     /**
      * @var array<int, array<string, mixed>>|null

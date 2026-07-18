@@ -10,7 +10,7 @@ require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
  */
 final class TrophyMergeMetadataRepository
 {
-    private const PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];
+    private const array PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];
 
     public function __construct(
         private readonly PDO $database,

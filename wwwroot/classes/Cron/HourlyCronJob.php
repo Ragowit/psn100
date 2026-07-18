@@ -6,15 +6,15 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class HourlyCronJob implements CronJobInterface
 {
-    private const BATCH_SIZE = 500;
+    private const int BATCH_SIZE = 500;
 
-    private const CREATE_BATCH_TEMP_TABLE_QUERY = <<<'SQL'
+    private const string CREATE_BATCH_TEMP_TABLE_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_batch (
             np_communication_id VARCHAR(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci PRIMARY KEY
         )
         SQL;
 
-    private const CREATE_STATS_TEMP_TABLE_QUERY = <<<'SQL'
+    private const string CREATE_STATS_TEMP_TABLE_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_stats (
             np_communication_id VARCHAR(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci PRIMARY KEY,
             owners INT NOT NULL,
@@ -23,7 +23,7 @@ final readonly class HourlyCronJob implements CronJobInterface
         )
         SQL;
 
-    private const POPULATE_BATCH_STATS_QUERY = <<<'SQL'
+    private const string POPULATE_BATCH_STATS_QUERY = <<<'SQL'
         INSERT INTO tmp_hourly_stats (np_communication_id, owners, owners_completed, recent_players)
         SELECT
             ttp.np_communication_id,
@@ -36,7 +36,7 @@ final readonly class HourlyCronJob implements CronJobInterface
         GROUP BY ttp.np_communication_id
         SQL;
 
-    private const UPDATE_META_QUERY = <<<'SQL'
+    private const string UPDATE_META_QUERY = <<<'SQL'
         UPDATE trophy_title_meta ttm
         JOIN tmp_hourly_batch b ON b.np_communication_id = ttm.np_communication_id
         LEFT JOIN tmp_hourly_stats s ON s.np_communication_id = ttm.np_communication_id
@@ -58,7 +58,7 @@ final readonly class HourlyCronJob implements CronJobInterface
     #[\Override]
     public function run(): void
     {
-        $this->executeWithRetry([$this, 'updateTrophyTitleStatistics']);
+        $this->executeWithRetry($this->updateTrophyTitleStatistics(...));
     }
 
     private function updateTrophyTitleStatistics(): void

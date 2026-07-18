@@ -6,11 +6,9 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class WeeklyCronJob implements CronJobInterface
 {
-    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
-        sleep($seconds);
-    };
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
 
-    private const UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
+    private const string UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
         UPDATE player p
         JOIN player_ranking r ON p.account_id = r.account_id
         SET
@@ -23,7 +21,7 @@ final readonly class WeeklyCronJob implements CronJobInterface
         WHERE p.status = 0
         SQL;
 
-    private const RESET_INACTIVE_RANKINGS_QUERY = <<<'SQL'
+    private const string RESET_INACTIVE_RANKINGS_QUERY = <<<'SQL'
         UPDATE
             player p
         SET
@@ -47,8 +45,8 @@ final readonly class WeeklyCronJob implements CronJobInterface
     #[\Override]
     public function run(): void
     {
-        $this->executeWithRetry([$this, 'updateLeaderboardsForActivePlayers']);
-        $this->executeWithRetry([$this, 'resetRankingsForInactivePlayers']);
+        $this->executeWithRetry($this->updateLeaderboardsForActivePlayers(...));
+        $this->executeWithRetry($this->resetRankingsForInactivePlayers(...));
     }
 
     private function updateLeaderboardsForActivePlayers(): void
