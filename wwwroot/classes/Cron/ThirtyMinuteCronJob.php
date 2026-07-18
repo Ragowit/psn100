@@ -279,16 +279,25 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
             } catch (Exception $exception) {
                 // Transient PSN/network failures (e.g. Guzzle/cURL transfer errors) should
                 // back off and keep the worker alive instead of terminating the cron job.
+                // Lock wait timeouts usually clear quickly, so retry sooner than other errors.
+                $isLockWaitTimeout = $this->isLockWaitTimeoutException($exception);
+                $waitSeconds = $isLockWaitTimeout ? 5 : 60;
+                $waitDescription = $isLockWaitTimeout ? '5 seconds' : '1 minute';
+
                 $this->logger->log(sprintf(
-                    'Encountered a problem while scanning %s: %s. Waiting 1 minute before retrying.',
+                    'Encountered a problem while scanning %s: %s. Waiting %s before retrying.',
                     $onlineId,
-                    $exception->getMessage()
+                    $exception->getMessage(),
+                    $waitDescription
                 ));
                 $this->workerScanCoordinator->setWaitingScanProgress(
                     (int) $worker['id'],
-                    'Encountered a problem while scanning. Waiting 1 minute before retrying.'
+                    sprintf(
+                        'Encountered a problem while scanning. Waiting %s before retrying.',
+                        $waitDescription
+                    )
                 );
-                sleep(60 * 1);
+                sleep($waitSeconds);
                 $recheck = '';
                 unset($missingGameDeletionCheck[$onlineId]);
                 unset($missingTrophyTitleRetry[$onlineId]);
@@ -300,5 +309,14 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                 $this->workerScanCoordinator->setWorkerScanProgress((int) $worker['id'], null);
             }
         }
+    }
+
+    private function isLockWaitTimeoutException(Throwable $exception): bool
+    {
+        if ($exception instanceof PDOException && (($exception->errorInfo[1] ?? null) === 1205)) {
+            return true;
+        }
+
+        return str_contains($exception->getMessage(), 'Lock wait timeout exceeded');
     }
 }

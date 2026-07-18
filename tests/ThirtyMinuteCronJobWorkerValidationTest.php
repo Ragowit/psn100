@@ -100,8 +100,38 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
             $source
         );
         $this->assertStringContainsString(
-            'Encountered a problem while scanning %s: %s. Waiting 1 minute before retrying.',
+            'Encountered a problem while scanning %s: %s. Waiting %s before retrying.',
             $source
         );
+        $this->assertStringContainsString('isLockWaitTimeoutException', $source);
+        $this->assertStringContainsString('$waitSeconds = $isLockWaitTimeout ? 5 : 60', $source);
+        $this->assertStringContainsString("=== 1205", $source);
+    }
+
+    public function testIsLockWaitTimeoutExceptionDetectsMysqlError1205(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isLockWaitTimeoutException');
+        $method->setAccessible(true);
+
+        $database = new PDO('sqlite::memory:');
+        $cronJob = new ThirtyMinuteCronJob(
+            $database,
+            new TrophyCalculator($database),
+            new Psn100Logger($database),
+            new TrophyHistoryRecorder($database, new Psn100Logger($database)),
+            1
+        );
+
+        $lockWaitTimeout = new PDOException(
+            'SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction'
+        );
+        $lockWaitTimeout->errorInfo = ['HY000', 1205, 'Lock wait timeout exceeded; try restarting transaction'];
+
+        $this->assertTrue($method->invoke($cronJob, $lockWaitTimeout));
+        $this->assertTrue($method->invoke(
+            $cronJob,
+            new RuntimeException('SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction')
+        ));
+        $this->assertFalse($method->invoke($cronJob, new RuntimeException('cURL error 18')));
     }
 }
