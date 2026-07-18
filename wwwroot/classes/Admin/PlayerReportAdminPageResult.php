@@ -4,25 +4,16 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ReportedPlayer.php';
 
-class PlayerReportAdminPageResult
+final readonly class PlayerReportAdminPageResult
 {
-    /**
-     * @var ReportedPlayer[]
-     */
-    private array $reportedPlayers;
-
-    private ?string $successMessage;
-
-    private ?string $errorMessage;
-
     /**
      * @param ReportedPlayer[] $reportedPlayers
      */
-    public function __construct(array $reportedPlayers, ?string $successMessage = null, ?string $errorMessage = null)
-    {
-        $this->reportedPlayers = $reportedPlayers;
-        $this->successMessage = $successMessage;
-        $this->errorMessage = $errorMessage;
+    public function __construct(
+        private array $reportedPlayers,
+        private ?string $successMessage = null,
+        private ?string $errorMessage = null,
+    ) {
     }
 
     /**

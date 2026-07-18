@@ -115,14 +115,11 @@ final class PlayerScanTrophyTitleRefresher
         string $npCommunicationId,
         object $fallbackTitle
     ): object {
-        $trophyTitleCollection = $user->trophyTitles();
+        $trophyTitles = iterator_to_array($user->trophyTitles(), false);
 
-        foreach ($trophyTitleCollection as $refreshedTitle) {
-            if ((string) $refreshedTitle->npCommunicationId() === $npCommunicationId) {
-                return $refreshedTitle;
-            }
-        }
-
-        return $fallbackTitle;
+        return array_find(
+            $trophyTitles,
+            static fn (object $refreshedTitle): bool => (string) $refreshedTitle->npCommunicationId() === $npCommunicationId
+        ) ?? $fallbackTitle;
     }
 }

@@ -61,6 +61,7 @@ readonly class HomepageDlc extends HomepageTitle
         return $this->bronze;
     }
 
+    #[\Override]
     public function getRelativeUrl(Utility $utility): string
     {
         return parent::getRelativeUrl($utility) . '#' . $this->groupId;

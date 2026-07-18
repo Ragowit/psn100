@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class PossibleCheaterRule
+final readonly class PossibleCheaterRule
 {
     public function __construct(private string $condition)
     {
@@ -19,7 +19,7 @@ final class PossibleCheaterRule
     }
 }
 
-final class PossibleCheaterRuleGroup
+final readonly class PossibleCheaterRuleGroup
 {
     /**
      * @param PossibleCheaterRule[] $rules

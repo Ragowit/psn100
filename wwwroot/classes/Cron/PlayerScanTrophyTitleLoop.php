@@ -425,19 +425,23 @@ final class PlayerScanTrophyTitleLoop
      */
     public function determineScanStartIndex(array $trophyTitles, array $gameLastUpdatedDate): int
     {
-        foreach ($trophyTitles as $index => $trophyTitle) {
-            $npid = $trophyTitle->npCommunicationId();
+        $index = array_find_key(
+            $trophyTitles,
+            function (object $trophyTitle) use ($gameLastUpdatedDate): bool {
+                $npid = $trophyTitle->npCommunicationId();
 
-            if (!isset($gameLastUpdatedDate[$npid])) {
-                return (int) $index;
+                if (!isset($gameLastUpdatedDate[$npid])) {
+                    return true;
+                }
+
+                return !$this->titleMetadataHelper->gameTimestampsMatch(
+                    $trophyTitle->lastUpdatedDateTime(),
+                    $gameLastUpdatedDate[$npid]
+                );
             }
+        );
 
-            if (!$this->titleMetadataHelper->gameTimestampsMatch($trophyTitle->lastUpdatedDateTime(), $gameLastUpdatedDate[$npid])) {
-                return (int) $index;
-            }
-        }
-
-        return count($trophyTitles);
+        return $index !== null ? (int) $index : count($trophyTitles);
     }
 
     /**

@@ -41,11 +41,11 @@ final class TrophyCatalogSynchronizer
         $platforms = CommaSeparatedValues::parseTrimmed($platform);
 
         return [
-            'detail' => $row['detail'] === null ? null : (string) $row['detail'],
-            'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
+            'detail' => self::toNullableString($row['detail'] ?? null),
+            'icon' => self::toNullableString($row['icon_url'] ?? null),
             'platform' => $platform,
             'platforms' => $platforms,
-            'set_version' => $row['set_version'] === null ? null : (string) $row['set_version'],
+            'set_version' => self::toNullableString($row['set_version'] ?? null),
         ];
     }
 
@@ -82,9 +82,9 @@ final class TrophyCatalogSynchronizer
         while (($row = $query->fetch(PDO::FETCH_ASSOC)) !== false) {
             $groupId = (string) $row['group_id'];
             $groups[$groupId] = [
-                'name' => $row['name'] === null ? null : (string) $row['name'],
-                'detail' => $row['detail'] === null ? null : (string) $row['detail'],
-                'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
+                'name' => self::toNullableString($row['name'] ?? null),
+                'detail' => self::toNullableString($row['detail'] ?? null),
+                'icon' => self::toNullableString($row['icon_url'] ?? null),
             ];
         }
 
@@ -127,14 +127,14 @@ final class TrophyCatalogSynchronizer
             $groupId = (string) $row['group_id'];
             $orderId = (int) $row['order_id'];
             $trophies[$groupId][$orderId] = [
-                'hidden' => $row['hidden'] === null ? null : (string) $row['hidden'],
-                'type' => $row['type'] === null ? null : (string) $row['type'],
-                'name' => $row['name'] === null ? null : (string) $row['name'],
-                'detail' => $row['detail'] === null ? null : (string) $row['detail'],
-                'icon' => $row['icon_url'] === null ? null : (string) $row['icon_url'],
-                'progress_target_value' => $row['progress_target_value'] === null ? null : (string) $row['progress_target_value'],
-                'reward_name' => $row['reward_name'] === null ? null : (string) $row['reward_name'],
-                'reward_image' => $row['reward_image_url'] === null ? null : (string) $row['reward_image_url'],
+                'hidden' => self::toNullableString($row['hidden'] ?? null),
+                'type' => self::toNullableString($row['type'] ?? null),
+                'name' => self::toNullableString($row['name'] ?? null),
+                'detail' => self::toNullableString($row['detail'] ?? null),
+                'icon' => self::toNullableString($row['icon_url'] ?? null),
+                'progress_target_value' => self::toNullableString($row['progress_target_value'] ?? null),
+                'reward_name' => self::toNullableString($row['reward_name'] ?? null),
+                'reward_image' => self::toNullableString($row['reward_image_url'] ?? null),
             ];
         }
 
@@ -339,5 +339,10 @@ final class TrophyCatalogSynchronizer
         }
 
         $query->bindValue($parameter, $value, PDO::PARAM_STR);
+    }
+
+    private static function toNullableString(mixed $value): ?string
+    {
+        return $value === null ? null : (string) $value;
     }
 }

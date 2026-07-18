@@ -103,13 +103,13 @@ final class PlayerQueueMessageBuilder
         foreach ($this->parts as $part) {
             $type = $part['type'] ?? '';
 
-            if ($type === 'text' || $type === 'emphasis') {
-                $text .= (string) ($part['value'] ?? '');
-            } elseif ($type === 'link') {
-                $text .= (string) ($part['label'] ?? '');
-            } elseif ($type === 'progress') {
+            $text .= match ($type) {
+                'text', 'emphasis' => (string) ($part['value'] ?? ''),
+                'link' => (string) ($part['label'] ?? ''),
                 // Progress bars are rendered separately in the client.
-            }
+                'progress' => '',
+                default => '',
+            };
         }
 
         return trim($text);

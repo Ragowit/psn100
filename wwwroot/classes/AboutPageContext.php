@@ -5,36 +5,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/AboutPageDataProviderInterface.php';
 require_once __DIR__ . '/AboutPagePlayerArraySerializer.php';
 
-final class AboutPageContext
+final readonly class AboutPageContext
 {
     private const DEFAULT_SCAN_LOG_LIMIT = 30;
     private const DEFAULT_MAX_INITIAL_DISPLAY_COUNT = 10;
     private const DEFAULT_TITLE = 'About ~ PSN 100%';
-
-    private AboutPageScanSummary $scanSummary;
-
-    /**
-     * @var list<AboutPagePlayer>
-     */
-    private array $scanLogPlayers;
-
-    /**
-     * @var list<AboutPagePlayer>
-     */
-    private array $initialScanLogPlayers;
-
-    /**
-     * @var list<array<string, mixed>>
-     */
-    private array $serializedScanLogPlayers;
-
-    private int $scanLogLimit;
-
-    private int $initialDisplayCount;
-
-    private int $maxInitialDisplayCount;
-
-    private string $title;
 
     /**
      * @param list<AboutPagePlayer> $scanLogPlayers
@@ -42,23 +17,15 @@ final class AboutPageContext
      * @param list<array<string, mixed>> $serializedScanLogPlayers
      */
     private function __construct(
-        AboutPageScanSummary $scanSummary,
-        array $scanLogPlayers,
-        array $initialScanLogPlayers,
-        array $serializedScanLogPlayers,
-        int $scanLogLimit,
-        int $initialDisplayCount,
-        int $maxInitialDisplayCount,
-        string $title
+        private AboutPageScanSummary $scanSummary,
+        private array $scanLogPlayers,
+        private array $initialScanLogPlayers,
+        private array $serializedScanLogPlayers,
+        private int $scanLogLimit,
+        private int $initialDisplayCount,
+        private int $maxInitialDisplayCount,
+        private string $title,
     ) {
-        $this->scanSummary = $scanSummary;
-        $this->scanLogPlayers = $scanLogPlayers;
-        $this->initialScanLogPlayers = $initialScanLogPlayers;
-        $this->serializedScanLogPlayers = $serializedScanLogPlayers;
-        $this->scanLogLimit = $scanLogLimit;
-        $this->initialDisplayCount = $initialDisplayCount;
-        $this->maxInitialDisplayCount = $maxInitialDisplayCount;
-        $this->title = $title;
     }
 
     public static function create(

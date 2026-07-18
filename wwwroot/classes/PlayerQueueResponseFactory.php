@@ -131,22 +131,20 @@ final class PlayerQueueResponseFactory
         foreach ($messageParts as $part) {
             $type = $part['type'] ?? '';
 
-            if ($type === 'text') {
-                $builder->text((string) ($part['value'] ?? ''));
-            } elseif ($type === 'link') {
-                $builder->link(
+            match ($type) {
+                'text' => $builder->text((string) ($part['value'] ?? '')),
+                'link' => $builder->link(
                     (string) ($part['href'] ?? ''),
                     (string) ($part['label'] ?? '')
-                );
-            } elseif ($type === 'emphasis') {
-                $builder->emphasis((string) ($part['value'] ?? ''));
-            } elseif ($type === 'progress') {
-                $builder->progress(
+                ),
+                'emphasis' => $builder->emphasis((string) ($part['value'] ?? '')),
+                'progress' => $builder->progress(
                     (int) ($part['percentage'] ?? 0),
                     isset($part['title']) ? (string) $part['title'] : null,
                     isset($part['summary']) ? (string) $part['summary'] : null,
-                );
-            }
+                ),
+                default => null,
+            };
         }
 
         return $builder->toPlainText();

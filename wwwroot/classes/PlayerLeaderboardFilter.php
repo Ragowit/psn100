@@ -40,6 +40,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
     /**
      * @return array{country?: string, avatar?: string}
      */
+    #[\Override]
     public function getFilterParameters(): array
     {
         return parent::getFilterParameters();
@@ -48,6 +49,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
     /**
      * @return array<string, int|string>
      */
+    #[\Override]
     public function toQueryParameters(): array
     {
         return $this->withPage($this->page);

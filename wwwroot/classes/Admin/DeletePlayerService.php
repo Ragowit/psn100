@@ -26,7 +26,7 @@ final class DeletePlayerService
 
         return [
             'account_id' => (string) $player['account_id'],
-            'online_id' => array_key_exists('online_id', $player) ? ($player['online_id'] === null ? null : (string) $player['online_id']) : null,
+            'online_id' => isset($player['online_id']) ? (string) $player['online_id'] : null,
         ];
     }
 
@@ -48,7 +48,7 @@ final class DeletePlayerService
 
         return [
             'account_id' => (string) $player['account_id'],
-            'online_id' => array_key_exists('online_id', $player) ? ($player['online_id'] === null ? null : (string) $player['online_id']) : null,
+            'online_id' => isset($player['online_id']) ? (string) $player['online_id'] : null,
         ];
     }
 

@@ -47,10 +47,11 @@ final class PsnHttpExceptionClassifier
             'Tustin\\Haste\\Exception\\NotFoundHttpException',
         ];
 
-        foreach ($retryableExceptionClasses as $retryableExceptionClass) {
-            if ($exception instanceof $retryableExceptionClass) {
-                return true;
-            }
+        if (array_any(
+            $retryableExceptionClasses,
+            static fn (string $retryableExceptionClass): bool => $exception instanceof $retryableExceptionClass
+        )) {
+            return true;
         }
 
         $previous = $exception->getPrevious();

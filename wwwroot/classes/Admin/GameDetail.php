@@ -29,14 +29,10 @@ final readonly class GameDetail
         $platform = (string) ($row['platform'] ?? '');
         $message = (string) ($row['message'] ?? '');
         $setVersion = (string) ($row['set_version'] ?? '');
-        $region = array_key_exists('region', $row) ? ($row['region'] !== null ? (string) $row['region'] : null) : null;
-        $psnprofilesId = array_key_exists('psnprofiles_id', $row)
-            ? ($row['psnprofiles_id'] !== null ? (string) $row['psnprofiles_id'] : null)
-            : null;
+        $region = isset($row['region']) ? (string) $row['region'] : null;
+        $psnprofilesId = isset($row['psnprofiles_id']) ? (string) $row['psnprofiles_id'] : null;
         $status = GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0));
-        $obsoleteIds = array_key_exists('obsolete_ids', $row)
-            ? ($row['obsolete_ids'] !== null ? (string) $row['obsolete_ids'] : null)
-            : null;
+        $obsoleteIds = isset($row['obsolete_ids']) ? (string) $row['obsolete_ids'] : null;
 
         return new self(
             $id,

@@ -242,14 +242,9 @@ final class TrophyTitleNameFormatter
             return false;
         }
 
-        $triggerCharacters = [':', '!', '?', '.'];
-
-        foreach ($triggerCharacters as $character) {
-            if (str_contains($punctuation, $character)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            [':', '!', '?', '.'],
+            static fn (string $character): bool => str_contains($punctuation, $character)
+        );
     }
 }
