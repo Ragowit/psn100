@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../CommaSeparatedValues.php';
+require_once __DIR__ . '/../GameAvailabilityStatus.php';
+require_once __DIR__ . '/../GameStatusBadge.php';
 
 final readonly class GameDetails
 {
@@ -27,7 +29,7 @@ final readonly class GameDetails
         private int $ownersCompleted,
         private int $owners,
         private string $difficulty,
-        private int $status,
+        private GameAvailabilityStatus $status,
         private int $rarityPoints,
         private int $inGameRarityPoints,
         private array $obsoleteGameIds,
@@ -60,7 +62,7 @@ final readonly class GameDetails
             (int) ($row['owners_completed'] ?? 0),
             (int) ($row['owners'] ?? 0),
             (string) ($row['difficulty'] ?? '0'),
-            (int) ($row['status'] ?? 0),
+            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0)),
             (int) ($row['rarity_points'] ?? 0),
             (int) ($row['in_game_rarity_points'] ?? 0),
             self::parseObsoleteIds($row['obsolete_ids'] ?? null),
@@ -204,9 +206,26 @@ final readonly class GameDetails
         return $this->difficulty;
     }
 
-    public function getStatus(): int
+    public function getStatus(): GameAvailabilityStatus
     {
         return $this->status;
+    }
+
+    public function shouldShowRarityPoints(): bool
+    {
+        return $this->status === GameAvailabilityStatus::NORMAL;
+    }
+
+    public function getStatusBadge(): ?GameStatusBadge
+    {
+        $label = $this->status->badgeLabel();
+        $message = $this->status->warningMessage();
+
+        if ($label === null || $message === null) {
+            return null;
+        }
+
+        return new GameStatusBadge($label, $message);
     }
 
     public function getRarityPoints(): int

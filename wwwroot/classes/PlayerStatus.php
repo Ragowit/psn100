@@ -30,4 +30,16 @@ enum PlayerStatus: int
     {
         return $this->isFlagged() || $this->isPrivateProfile();
     }
+
+    public function label(): ?string
+    {
+        return match ($this) {
+            self::FLAGGED => 'Cheater',
+            self::PRIVATE_PROFILE => 'Private',
+            self::INACTIVE => 'Inactive',
+            self::NORMAL,
+            self::UNAVAILABLE,
+            self::NEW_PLAYER => null,
+        };
+    }
 }

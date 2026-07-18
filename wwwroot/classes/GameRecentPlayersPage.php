@@ -13,39 +13,18 @@ require_once __DIR__ . '/Utility.php';
 
 class GameRecentPlayersPage
 {
-    private GameDetails $game;
-
-    private GameHeaderData $gameHeaderData;
-
-    private GamePlayerFilter $filter;
-
-    /**
-     * @var GameRecentPlayer[]
-     */
-    private array $recentPlayers;
-
-    private ?string $playerAccountId;
-
-    private ?GamePlayerProgress $gamePlayer;
-
     /**
      * @param GameRecentPlayer[] $recentPlayers
      * @param GamePlayerProgress|null $gamePlayer
      */
     private function __construct(
-        GameDetails $game,
-        GameHeaderData $gameHeaderData,
-        GamePlayerFilter $filter,
-        array $recentPlayers,
-        ?string $playerAccountId,
-        ?GamePlayerProgress $gamePlayer
+        private GameDetails $game,
+        private GameHeaderData $gameHeaderData,
+        private GamePlayerFilter $filter,
+        private array $recentPlayers,
+        private ?string $playerAccountId,
+        private ?GamePlayerProgress $gamePlayer
     ) {
-        $this->game = $game;
-        $this->gameHeaderData = $gameHeaderData;
-        $this->filter = $filter;
-        $this->recentPlayers = $recentPlayers;
-        $this->playerAccountId = $playerAccountId;
-        $this->gamePlayer = $gamePlayer;
     }
 
     /**
@@ -54,6 +33,7 @@ class GameRecentPlayersPage
      * @throws GameNotFoundException
      * @throws GameLeaderboardPlayerNotFoundException
      */
+    #[\NoDiscard]
     public static function create(
         GameRecentPlayersService $recentPlayersService,
         GameHeaderService $gameHeaderService,

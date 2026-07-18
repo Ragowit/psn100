@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerScanProgress.php';
 require_once __DIR__ . '/PlayerScanStatus.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/IpSubmissionLockExecutor.php';
 require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
 require_once __DIR__ . '/Html.php';
@@ -12,7 +13,7 @@ require_once __DIR__ . '/PsnOnlineIdValidator.php';
 class PlayerQueueService
 {
     public const int MAX_QUEUE_SUBMISSIONS_PER_IP = 10;
-    public const int CHEATER_STATUS = 1;
+    public const int CHEATER_STATUS = PlayerStatus::FLAGGED->value;
     private const string SQL_IP_SUBMISSION_COUNT = <<<'SQL'
         SELECT
             COUNT(*)
@@ -326,7 +327,7 @@ class PlayerQueueService
 
     public function isCheaterStatus(?int $status): bool
     {
-        return $status === self::CHEATER_STATUS;
+        return $status !== null && PlayerStatus::fromValue($status)->isFlagged();
     }
 
     /**

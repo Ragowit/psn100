@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class PlayerGamesFilter
+readonly class PlayerGamesFilter
 {
     public const string SORT_DATE = 'date';
     public const string SORT_IN_GAME_MAX_RARITY = 'max-in-game-rarity';
@@ -48,30 +48,20 @@ class PlayerGamesFilter
 
     private const int DEFAULT_LIMIT = 50;
 
-    private string $search;
-    private string $sort;
-    private bool $completed;
-    private bool $uncompleted;
-    private bool $base;
     /**
-     * @var array<int, string>
+     * @param list<string> $platforms
      */
-    private array $platforms;
-    private int $page;
-    private int $limit;
-    private bool $sortProvided;
-
-    private function __construct()
-    {
-        $this->search = '';
-        $this->sort = self::SORT_DATE;
-        $this->completed = false;
-        $this->uncompleted = false;
-        $this->base = false;
-        $this->platforms = [];
-        $this->page = 1;
-        $this->limit = self::DEFAULT_LIMIT;
-        $this->sortProvided = false;
+    private function __construct(
+        final private string $search,
+        final private string $sort,
+        final private bool $completed,
+        final private bool $uncompleted,
+        final private bool $base,
+        final private array $platforms,
+        final private int $page,
+        final private int $limit,
+        final private bool $sortProvided,
+    ) {
     }
 
     /**
@@ -80,40 +70,49 @@ class PlayerGamesFilter
     #[\NoDiscard]
     public static function fromArray(array $parameters): self
     {
-        $filter = new self();
-
-        $filter->search = isset($parameters['search']) ? (string) $parameters['search'] : '';
+        $search = isset($parameters['search']) ? (string) $parameters['search'] : '';
 
         $sort = isset($parameters['sort']) ? (string) $parameters['sort'] : '';
+        $sortProvided = false;
         if ($sort !== '' && in_array($sort, self::ALLOWED_SORTS, true)) {
-            $filter->sort = $sort;
-            $filter->sortProvided = true;
-        } elseif ($filter->search !== '') {
-            $filter->sort = self::SORT_SEARCH;
+            $sortProvided = true;
+        } elseif ($search !== '') {
+            $sort = self::SORT_SEARCH;
+        } else {
+            $sort = self::SORT_DATE;
         }
 
-        $filter->completed = !empty($parameters['completed']);
-        $filter->uncompleted = !empty($parameters['uncompleted']);
+        $completed = !empty($parameters['completed']);
+        $uncompleted = !empty($parameters['uncompleted']);
 
-        if ($filter->completed && $filter->uncompleted) {
+        if ($completed && $uncompleted) {
             // Selecting both checkboxes should behave like no completion filter at all.
-            $filter->completed = false;
-            $filter->uncompleted = false;
+            $completed = false;
+            $uncompleted = false;
         }
-        $filter->base = !empty($parameters['base']);
 
+        $platforms = [];
         foreach (self::PLATFORM_KEYS as $platformKey) {
             if (!empty($parameters[$platformKey])) {
-                $filter->platforms[] = $platformKey;
+                $platforms[] = $platformKey;
             }
         }
 
         $page = isset($parameters['page']) && is_numeric($parameters['page'])
             ? (int) $parameters['page']
             : 1;
-        $filter->page = max($page, 1);
 
-        return $filter;
+        return new self(
+            $search,
+            $sort,
+            $completed,
+            $uncompleted,
+            !empty($parameters['base']),
+            $platforms,
+            max($page, 1),
+            self::DEFAULT_LIMIT,
+            $sortProvided,
+        );
     }
 
     public function getSearch(): string
@@ -141,6 +140,11 @@ class PlayerGamesFilter
         return $this->sort;
     }
 
+    public function isSort(string $sort): bool
+    {
+        return $this->sort === $sort;
+    }
+
     public function isCompletedSelected(): bool
     {
         return $this->completed;
@@ -162,7 +166,7 @@ class PlayerGamesFilter
     }
 
     /**
-     * @return array<int, string>
+     * @return list<string>
      */
     public function getPlatforms(): array
     {

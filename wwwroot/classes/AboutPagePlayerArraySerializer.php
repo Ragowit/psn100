@@ -26,7 +26,7 @@ final class AboutPagePlayerArraySerializer
             'rankDeltaColor' => $player->getRankDeltaColor(),
             'progress' => $player->getProgress(),
             'level' => $player->getLevel(),
-            'status' => $player->getStatus(),
+            'status' => $player->getStatus()->value,
         ];
     }
 

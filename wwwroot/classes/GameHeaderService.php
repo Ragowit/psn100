@@ -7,6 +7,7 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
 require_once __DIR__ . '/Game/GameHeaderStack.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/PsnpPlusClient.php';
 require_once __DIR__ . '/Html.php';
 
@@ -25,7 +26,7 @@ class GameHeaderService
         $parentNpCommunicationId = $game->getParentNpCommunicationId();
 
         $parentGame = null;
-        if ($status === 2 && $parentNpCommunicationId !== null && $parentNpCommunicationId !== '') {
+        if ($status === GameAvailabilityStatus::MERGED && $parentNpCommunicationId !== null && $parentNpCommunicationId !== '') {
             $parentGame = $this->fetchParentGame($parentNpCommunicationId);
         }
 

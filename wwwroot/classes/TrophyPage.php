@@ -16,60 +16,25 @@ require_once __DIR__ . '/TrophyAchiever.php';
 
 class TrophyPage
 {
-    private TrophyDetails $trophy;
-
-    private ?PlayerTrophyProgress $playerTrophy;
-
-    /**
-     * @var list<TrophyAchiever>
-     */
-    private array $firstAchievers;
-
-    /**
-     * @var list<TrophyAchiever>
-     */
-    private array $latestAchievers;
-
-    private ?int $playerAccountId;
-
-    private ?string $playerOnlineId;
-
-    private PageMetaData $metaData;
-
-    private string $pageTitle;
-
-    private TrophyRarity $metaRarity;
-
-    private TrophyRarity $inGameRarity;
-
     /**
      * @param list<TrophyAchiever> $firstAchievers
      * @param list<TrophyAchiever> $latestAchievers
      */
     private function __construct(
-        TrophyDetails $trophy,
-        ?PlayerTrophyProgress $playerTrophy,
-        array $firstAchievers,
-        array $latestAchievers,
-        ?int $playerAccountId,
-        ?string $playerOnlineId,
-        PageMetaData $metaData,
-        string $pageTitle,
-        TrophyRarity $metaRarity,
-        TrophyRarity $inGameRarity
+        private TrophyDetails $trophy,
+        private ?PlayerTrophyProgress $playerTrophy,
+        private array $firstAchievers,
+        private array $latestAchievers,
+        private ?int $playerAccountId,
+        private ?string $playerOnlineId,
+        private PageMetaData $metaData,
+        private string $pageTitle,
+        private TrophyRarity $metaRarity,
+        private TrophyRarity $inGameRarity
     ) {
-        $this->trophy = $trophy;
-        $this->playerTrophy = $playerTrophy;
-        $this->firstAchievers = $firstAchievers;
-        $this->latestAchievers = $latestAchievers;
-        $this->playerAccountId = $playerAccountId;
-        $this->playerOnlineId = $playerOnlineId;
-        $this->metaData = $metaData;
-        $this->pageTitle = $pageTitle;
-        $this->metaRarity = $metaRarity;
-        $this->inGameRarity = $inGameRarity;
     }
 
+    #[\NoDiscard]
     public static function create(
         TrophyService $trophyService,
         Utility $utility,

@@ -14,50 +14,20 @@ require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 
 class GameLeaderboardPage
 {
-    private GameDetails $game;
-
-    private GameHeaderData $gameHeaderData;
-
-    private GameLeaderboardFilter $filter;
-
-    private int $totalPlayers;
-
-    private int $limit;
-
-    private int $offset;
-
-    private int $totalPagesCount;
-
-    /**
-     * @var GameLeaderboardRow[]
-     */
-    private array $rows;
-
-    private ?string $playerAccountId;
-
     /**
      * @param GameLeaderboardRow[] $rows
      */
     private function __construct(
-        GameDetails $game,
-        GameHeaderData $gameHeaderData,
-        GameLeaderboardFilter $filter,
-        int $totalPlayers,
-        int $limit,
-        int $offset,
-        int $totalPagesCount,
-        array $rows,
-        ?string $playerAccountId
+        private GameDetails $game,
+        private GameHeaderData $gameHeaderData,
+        private GameLeaderboardFilter $filter,
+        private int $totalPlayers,
+        private int $limit,
+        private int $offset,
+        private int $totalPagesCount,
+        private array $rows,
+        private ?string $playerAccountId
     ) {
-        $this->game = $game;
-        $this->gameHeaderData = $gameHeaderData;
-        $this->filter = $filter;
-        $this->totalPlayers = $totalPlayers;
-        $this->limit = $limit;
-        $this->offset = $offset;
-        $this->totalPagesCount = $totalPagesCount;
-        $this->rows = $rows;
-        $this->playerAccountId = $playerAccountId;
     }
 
     /**
@@ -66,6 +36,7 @@ class GameLeaderboardPage
      * @throws GameNotFoundException
      * @throws GameLeaderboardPlayerNotFoundException
      */
+    #[\NoDiscard]
     public static function create(
         GameLeaderboardService $leaderboardService,
         GameHeaderService $headerService,
