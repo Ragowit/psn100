@@ -62,10 +62,22 @@ final class PlayerScanTrophyTitleLoop
         array &$trophyTitleCountRetry,
         array &$invalidTitleDateRetry,
     ): PlayerScanTrophyTitleLoopResult {
-        $totalTrophiesStart = $user->trophySummary()->platinum()
-            + $user->trophySummary()->gold()
-            + $user->trophySummary()->silver()
-            + $user->trophySummary()->bronze();
+        try {
+            $totalTrophiesStart = $this->fetchTotalEarnedTrophies($user);
+        } catch (TypeError | Exception $exception) {
+            // Guzzle can TypeError when httpErrors middleware gets a null response
+            // after a transient network failure; treat like other PSN fetch retries.
+            return $this->retryAfterTransientTrophySummaryFailure(
+                $exception,
+                (int) $worker['id'],
+                $onlineId,
+                $recheck,
+                $missingGameDeletionCheck,
+                $missingTrophyTitleRetry,
+                $trophyTitleCountRetry,
+                $invalidTitleDateRetry,
+            );
+        }
 
         $query = $this->database->prepare("SELECT np_communication_id,
                 last_updated_date
@@ -102,11 +114,11 @@ final class PlayerScanTrophyTitleLoop
         } catch (Exception $exception) {
             // Transient PSN/network failures (e.g. cURL error 18 during paginated
             // trophyTitles fetches) should retry instead of crashing the worker.
-            // $this->logger->log(sprintf(
-            //     'Failed to fetch trophy titles for %s: %s. Waiting 5 seconds before retrying.',
-            //     $onlineId,
-            //     $exception->getMessage()
-            // ));
+            $this->logger->log(sprintf(
+                'Failed to fetch trophy titles for %s: %s. Waiting 5 seconds before retrying.',
+                $onlineId,
+                $exception->getMessage()
+            ));
             $this->workerScanCoordinator->setWaitingScanProgress(
                 (int) $worker['id'],
                 'Encountered a problem while fetching game list. Waiting 5 seconds before retrying.'
@@ -265,10 +277,22 @@ final class PlayerScanTrophyTitleLoop
             return PlayerScanTrophyTitleLoopResult::continueLoop();
         }
 
-        $totalTrophiesEnd = $user->trophySummary()->platinum()
-            + $user->trophySummary()->gold()
-            + $user->trophySummary()->silver()
-            + $user->trophySummary()->bronze();
+        try {
+            $totalTrophiesEnd = $this->fetchTotalEarnedTrophies($user);
+        } catch (TypeError | Exception $exception) {
+            // End-of-scan trophy summary can hit the same Guzzle null-response TypeError
+            // (or transient cURL failures) as earlier PSN fetches.
+            return $this->retryAfterTransientTrophySummaryFailure(
+                $exception,
+                (int) $worker['id'],
+                $onlineId,
+                $recheck,
+                $missingGameDeletionCheck,
+                $missingTrophyTitleRetry,
+                $trophyTitleCountRetry,
+                $invalidTitleDateRetry,
+            );
+        }
 
         if ($totalTrophiesStart !== $totalTrophiesEnd) {
             $recheck = '';
@@ -350,6 +374,54 @@ final class PlayerScanTrophyTitleLoop
         }
 
         return PlayerScanTrophyTitleLoopResult::proceedToFinalize();
+    }
+
+    private function fetchTotalEarnedTrophies(object $user): int
+    {
+        $trophySummary = $user->trophySummary();
+
+        return $trophySummary->platinum()
+            + $trophySummary->gold()
+            + $trophySummary->silver()
+            + $trophySummary->bronze();
+    }
+
+    /**
+     * @param array<string, bool> $missingGameDeletionCheck
+     * @param array<string, bool> $missingTrophyTitleRetry
+     * @param array<string, bool> $trophyTitleCountRetry
+     * @param array<string, bool> $invalidTitleDateRetry
+     */
+    private function retryAfterTransientTrophySummaryFailure(
+        Throwable $exception,
+        int $workerId,
+        string $onlineId,
+        string &$recheck,
+        array &$missingGameDeletionCheck,
+        array &$missingTrophyTitleRetry,
+        array &$trophyTitleCountRetry,
+        array &$invalidTitleDateRetry,
+    ): PlayerScanTrophyTitleLoopResult {
+        $this->logger->log(sprintf(
+            'Failed to fetch trophy summary for %s: %s. Waiting 5 seconds before retrying.',
+            $onlineId,
+            $exception->getMessage()
+        ));
+        $this->workerScanCoordinator->setWaitingScanProgress(
+            $workerId,
+            'Encountered a problem while fetching trophy summary. Waiting 5 seconds before retrying.'
+        );
+        $this->clearTitleListRetryState(
+            $onlineId,
+            $missingGameDeletionCheck,
+            $missingTrophyTitleRetry,
+            $trophyTitleCountRetry,
+            $invalidTitleDateRetry,
+        );
+        $recheck = '';
+        ($this->sleeper)(5);
+
+        return PlayerScanTrophyTitleLoopResult::continueLoop();
     }
 
     /**

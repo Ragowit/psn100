@@ -211,6 +211,89 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $this->assertSame([], $trophyTitleCountRetry);
         $this->assertSame([], $invalidTitleDateRetry);
     }
+
+    public function testProcessAccessibleTrophyTitlesRetriesTrophySummaryTypeErrorAtStart(): void
+    {
+        $recheck = 'ExampleUser';
+        $missingGameDeletionCheck = ['ExampleUser' => true];
+        $missingTrophyTitleRetry = ['ExampleUser' => true];
+        $trophyTitleCountRetry = ['ExampleUser' => true];
+        $invalidTitleDateRetry = ['ExampleUser:NPWR12345_00' => true];
+
+        $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+            new stdClass(),
+            new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophySummary(
+                new TypeError(
+                    'GuzzleHttp\Middleware::{closure}(): Argument #1 ($response) must be of type'
+                    . ' Psr\Http\Message\ResponseInterface, null given'
+                )
+            ),
+            ['online_id' => 'ExampleUser'],
+            ['id' => 1],
+            'ExampleUser',
+            $recheck,
+            $missingGameDeletionCheck,
+            $missingTrophyTitleRetry,
+            $trophyTitleCountRetry,
+            $invalidTitleDateRetry,
+        );
+
+        $this->assertTrue($result->shouldContinueLoop());
+        $this->assertSame([5], $this->sleepCalls);
+        $this->assertSame('', $recheck);
+        $this->assertSame([], $missingGameDeletionCheck);
+        $this->assertSame([], $missingTrophyTitleRetry);
+        $this->assertSame([], $trophyTitleCountRetry);
+        $this->assertSame([], $invalidTitleDateRetry);
+
+        $scanProgress = $this->database->query('SELECT scan_progress FROM setting WHERE id = 1')->fetchColumn();
+        $this->assertTrue(is_string($scanProgress));
+        $this->assertStringContainsString('trophy summary', $scanProgress);
+
+        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
+        $this->assertStringContainsString('ResponseInterface', (string) $logMessage);
+        $this->assertStringContainsString('ExampleUser', (string) $logMessage);
+    }
+
+    public function testProcessAccessibleTrophyTitlesRetriesTrophySummaryTypeErrorAtEnd(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title_player (account_id, np_communication_id, last_updated_date)
+             VALUES ('2498580493801829235', 'NPWR12345_00', '2024-01-01T00:00:00Z')"
+        );
+
+        $recheck = 'ExampleUser';
+        $missingGameDeletionCheck = [];
+        $missingTrophyTitleRetry = [];
+        $trophyTitleCountRetry = [];
+        $invalidTitleDateRetry = [];
+
+        $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+            new stdClass(),
+            new PlayerScanTrophyTitleLoopTestUserThatThrowsOnEndTrophySummary(
+                new TypeError(
+                    'GuzzleHttp\Middleware::{closure}(): Argument #1 ($response) must be of type'
+                    . ' Psr\Http\Message\ResponseInterface, null given'
+                )
+            ),
+            ['online_id' => 'ExampleUser'],
+            ['id' => 1],
+            'ExampleUser',
+            $recheck,
+            $missingGameDeletionCheck,
+            $missingTrophyTitleRetry,
+            $trophyTitleCountRetry,
+            $invalidTitleDateRetry,
+        );
+
+        $this->assertTrue($result->shouldContinueLoop());
+        $this->assertSame([5], $this->sleepCalls);
+        $this->assertSame('', $recheck);
+
+        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
+        $this->assertStringContainsString('Failed to fetch trophy summary', (string) $logMessage);
+        $this->assertStringContainsString('null given', (string) $logMessage);
+    }
 }
 
 final class PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles
@@ -232,6 +315,79 @@ final class PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles
     public function trophyTitles(): never
     {
         throw $this->exception;
+    }
+}
+
+final class PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophySummary
+{
+    public function __construct(private readonly Throwable $exception)
+    {
+    }
+
+    public function accountId(): string
+    {
+        return '2498580493801829235';
+    }
+
+    public function trophySummary(): never
+    {
+        throw $this->exception;
+    }
+
+    public function trophyTitles(): never
+    {
+        throw new RuntimeException('trophyTitles should not be called when trophySummary fails first');
+    }
+}
+
+final class PlayerScanTrophyTitleLoopTestUserThatThrowsOnEndTrophySummary
+{
+    private int $trophySummaryCalls = 0;
+
+    public function __construct(private readonly Throwable $exception)
+    {
+    }
+
+    public function accountId(): string
+    {
+        return '2498580493801829235';
+    }
+
+    public function trophySummary(): PlayerScanTrophyTitleLoopTestTrophySummary
+    {
+        $this->trophySummaryCalls++;
+
+        if ($this->trophySummaryCalls > 1) {
+            throw $this->exception;
+        }
+
+        return new PlayerScanTrophyTitleLoopTestTrophySummary();
+    }
+
+    public function trophyTitles(): PlayerScanTrophyTitleLoopTestTrophyTitleCollection
+    {
+        return new PlayerScanTrophyTitleLoopTestTrophyTitleCollection([
+            new PlayerScanTrophyTitleLoopTestTrophyTitle(
+                'NPWR12345_00',
+                '2024-01-01T00:00:00Z',
+                'Example Game'
+            ),
+        ]);
+    }
+}
+
+final class PlayerScanTrophyTitleLoopTestTrophyTitleCollection
+{
+    /**
+     * @param list<object> $titles
+     */
+    public function __construct(private readonly array $titles)
+    {
+    }
+
+    public function getIterator(): Traversable
+    {
+        return new ArrayIterator($this->titles);
     }
 }
 
@@ -263,7 +419,8 @@ final class PlayerScanTrophyTitleLoopTestTrophyTitle
     public function __construct(
         private readonly string $npCommunicationId,
         private readonly string $lastUpdatedDateTime,
-        private readonly string $name = ''
+        private readonly string $name = '',
+        private readonly string $iconUrl = 'https://example.test/icon.png',
     ) {
     }
 
@@ -280,5 +437,10 @@ final class PlayerScanTrophyTitleLoopTestTrophyTitle
     public function name(): string
     {
         return $this->name;
+    }
+
+    public function iconUrl(): string
+    {
+        return $this->iconUrl;
     }
 }
