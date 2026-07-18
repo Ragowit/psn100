@@ -136,17 +136,19 @@ final readonly class DailyCronJob implements CronJobInterface
     private function recalculateTrophyRarity(): void
     {
         try {
-            $this->executeWithRetry([$this, 'rebuildRankedOwnerCountsAndApplyRarity']);
+            // Populate and apply retry independently so a trophy_meta lock/timeout
+            // does not force another full scan of top-10k trophy_earned rows.
+            $this->executeWithRetry([$this, 'prepareAndPopulateRankedOwnerCounts']);
+            $this->executeWithRetry([$this, 'applyTrophyRarityFromTemporaryTable']);
         } finally {
             $this->dropRankedOwnerTempTable();
         }
     }
 
-    private function rebuildRankedOwnerCountsAndApplyRarity(): void
+    private function prepareAndPopulateRankedOwnerCounts(): void
     {
         $this->prepareRankedOwnerTempTable();
         $this->populateRankedOwnerCounts();
-        $this->applyTrophyRarityFromTemporaryTable();
     }
 
     private function prepareRankedOwnerTempTable(): void

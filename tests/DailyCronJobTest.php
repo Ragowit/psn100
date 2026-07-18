@@ -59,7 +59,7 @@ final class DailyCronJobTest extends TestCase
     {
         $source = $this->readClassSource();
 
-        $this->assertStringContainsString('rebuildRankedOwnerCountsAndApplyRarity', $source);
+        $this->assertStringContainsString('prepareAndPopulateRankedOwnerCounts', $source);
         $this->assertStringContainsString('populateRankedOwnerCounts', $source);
         $this->assertStringContainsString('applyTrophyRarityFromTemporaryTable', $source);
         $this->assertFalse(str_contains($source, 'SELECT np_communication_id FROM trophy_title'));
@@ -88,7 +88,8 @@ final class DailyCronJobTest extends TestCase
 
         $this->assertStringContainsString('while (true)', $source);
         $this->assertFalse(str_contains($source, 'maxAttempt'));
-        $this->assertStringContainsString('rebuildRankedOwnerCountsAndApplyRarity', $source);
+        $this->assertStringContainsString('prepareAndPopulateRankedOwnerCounts', $source);
+        $this->assertStringContainsString('applyTrophyRarityFromTemporaryTable', $source);
         $this->assertStringContainsString('updateTrophyTitleRarityPoints', $source);
     }
 
@@ -134,6 +135,27 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame([1, 1], $sleepCalls);
         $this->assertSame(3, $database->getPopulateCount());
         $this->assertSame(1, $database->getApplyCount());
+        $this->assertSame(1, $database->getTitlePointsUpdateCount());
+    }
+
+    public function testRunRetriesApplyWithoutRepopulatingRankedOwnerCounts(): void
+    {
+        $database = new DailyCronJobApplyRetryTestDatabase();
+        $sleepCalls = [];
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame([1, 1], $sleepCalls);
+        $this->assertSame(1, $database->getPopulateCount());
+        $this->assertSame(3, $database->getApplyCount());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
     }
 
@@ -311,6 +333,65 @@ final class DailyCronJobRarityRetryTestDatabase extends PDO
         if (str_contains($query, 'LEFT JOIN tmp_daily_ranked_trophy_owners owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->applyCount++;
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->titlePointsUpdateCount++;
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+final class DailyCronJobApplyRetryTestDatabase extends PDO
+{
+    private int $populateCount = 0;
+
+    private int $applyCount = 0;
+
+    private int $titlePointsUpdateCount = 0;
+
+    public function __construct()
+    {
+    }
+
+    public function getPopulateCount(): int
+    {
+        return $this->populateCount;
+    }
+
+    public function getApplyCount(): int
+    {
+        return $this->applyCount;
+    }
+
+    public function getTitlePointsUpdateCount(): int
+    {
+        return $this->titlePointsUpdateCount;
+    }
+
+    public function exec(string $statement): int|false
+    {
+        return 0;
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->populateCount++;
+            });
+        }
+
+        if (str_contains($query, 'LEFT JOIN tmp_daily_ranked_trophy_owners owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->applyCount++;
+                if ($this->applyCount < 3) {
+                    throw new RuntimeException('Simulated apply rarity failure.');
+                }
             });
         }
 
