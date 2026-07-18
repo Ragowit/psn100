@@ -9,10 +9,10 @@ final readonly class DailyCronJob implements CronJobInterface
     /**
      * Ranking-window size for scanning trophy_earned for top-10k accounts.
      *
-     * Each batch drives from player_ranking into trophy_earned by account_id so
-     * HASH(account_id) partition pruning applies. Small windows keep each
-     * aggregation bounded so daily cron cannot saturate MySQL/IO and take the
-     * public site offline (Cloudflare 525).
+     * Each batch drives from a frozen ranking snapshot into trophy_earned by
+     * account_id so HASH(account_id) partition pruning applies. Small windows
+     * keep each aggregation bounded so daily cron cannot saturate MySQL/IO and
+     * take the public site offline (Cloudflare 525).
      */
     private const int RANKED_OWNER_RANKING_BATCH_SIZE = 100;
 
@@ -28,6 +28,26 @@ final readonly class DailyCronJob implements CronJobInterface
         sleep($seconds);
     };
 
+    private const string CREATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
+        CREATE TEMPORARY TABLE tmp_daily_ranked_players (
+            ranking MEDIUMINT UNSIGNED NOT NULL,
+            account_id BIGINT UNSIGNED NOT NULL,
+            PRIMARY KEY (ranking),
+            KEY idx_tmp_daily_ranked_players_account (account_id)
+        )
+        SQL;
+
+    /**
+     * Freeze the top-10k account set once so later player_ranking swaps cannot
+     * move an account into another batch window and double-count owners.
+     */
+    private const string POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
+        INSERT INTO tmp_daily_ranked_players (ranking, account_id)
+        SELECT pr.ranking, pr.account_id
+        FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)
+        WHERE pr.ranking <= 10000
+        SQL;
+
     private const string CREATE_RANKED_OWNER_TEMP_TABLE_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners (
             np_communication_id VARCHAR(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
@@ -38,14 +58,15 @@ final readonly class DailyCronJob implements CronJobInterface
         SQL;
 
     /**
-     * Count earned trophies for one ranking window of top players.
+     * Count earned trophies for one ranking window of the frozen top players.
      *
-     * Driving from player_ranking into trophy_earned on account_id applies
-     * HASH(account_id) partition pruning and uses idx_te_acc_comm_order_earned_date.
-     * Batches accumulate into the temp table via ON DUPLICATE KEY UPDATE so the
-     * full top-10k pass never runs as one long, site-blocking statement.
-     * This replaces the previous per-title (or title-batch × 10k) probes that
-     * re-scanned the same accounts for every game and made daily cron take 10+ hours.
+     * Driving from tmp_daily_ranked_players into trophy_earned on account_id
+     * applies HASH(account_id) partition pruning and uses
+     * idx_te_acc_comm_order_earned_date. Batches accumulate into the temp table
+     * via ON DUPLICATE KEY UPDATE so the full top-10k pass never runs as one
+     * long, site-blocking statement. This replaces the previous per-title (or
+     * title-batch × 10k) probes that re-scanned the same accounts for every
+     * game and made daily cron take 10+ hours.
      */
     private const string POPULATE_RANKED_OWNER_COUNTS_QUERY = <<<'SQL'
         INSERT INTO tmp_daily_ranked_trophy_owners (
@@ -53,15 +74,15 @@ final readonly class DailyCronJob implements CronJobInterface
             order_id,
             trophy_owners
         )
-        SELECT /*+ JOIN_ORDER(pr, te) */
+        SELECT /*+ JOIN_ORDER(rp, te) */
             te.np_communication_id,
             te.order_id,
             COUNT(*)
-        FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)
+        FROM tmp_daily_ranked_players rp
         STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)
-            ON te.account_id = pr.account_id
+            ON te.account_id = rp.account_id
             AND te.earned = 1
-        WHERE pr.ranking BETWEEN :min_ranking AND :max_ranking
+        WHERE rp.ranking BETWEEN :min_ranking AND :max_ranking
         GROUP BY te.np_communication_id, te.order_id
         ON DUPLICATE KEY UPDATE
             trophy_owners = trophy_owners + VALUES(trophy_owners)
@@ -170,9 +191,9 @@ final readonly class DailyCronJob implements CronJobInterface
             $this->executeWithRetry([$this, 'applyTrophyRarityFromTemporaryTableWithRecovery']);
         } finally {
             // Best-effort: a transient DROP failure must not abort run() before
-            // title rarity points. The table is TEMPORARY/session-scoped anyway.
+            // title rarity points. The tables are TEMPORARY/session-scoped anyway.
             try {
-                $this->dropRankedOwnerTempTable();
+                $this->dropRankedOwnerTempTables();
             } catch (Throwable) {
             }
         }
@@ -181,13 +202,13 @@ final readonly class DailyCronJob implements CronJobInterface
     private function prepareAndPopulateRankedOwnerCounts(): void
     {
         try {
-            $this->prepareRankedOwnerTempTable();
+            $this->prepareRankedOwnerTempTables();
             $this->populateRankedOwnerCounts();
         } catch (Throwable $exception) {
             // Do not leave an empty/partial temp table behind. A later apply retry
             // would otherwise see the table exist and write zero/stale rarities.
             try {
-                $this->dropRankedOwnerTempTable();
+                $this->dropRankedOwnerTempTables();
             } catch (Throwable) {
             }
 
@@ -195,10 +216,14 @@ final readonly class DailyCronJob implements CronJobInterface
         }
     }
 
-    private function prepareRankedOwnerTempTable(): void
+    private function prepareRankedOwnerTempTables(): void
     {
-        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners');
+        $this->dropRankedOwnerTempTables();
+        $this->database->exec(self::CREATE_RANKED_PLAYER_SNAPSHOT_QUERY);
         $this->database->exec(self::CREATE_RANKED_OWNER_TEMP_TABLE_QUERY);
+
+        $snapshot = $this->database->prepare(self::POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY);
+        $snapshot->execute();
     }
 
     private function populateRankedOwnerCounts(): void
@@ -254,8 +279,10 @@ final readonly class DailyCronJob implements CronJobInterface
     private function isMissingRankedOwnerTempTableError(Throwable $exception): bool
     {
         $message = $exception->getMessage();
+        $mentionsTempTable = str_contains($message, 'tmp_daily_ranked_trophy_owners')
+            || str_contains($message, 'tmp_daily_ranked_players');
 
-        return str_contains($message, 'tmp_daily_ranked_trophy_owners')
+        return $mentionsTempTable
             && (
                 str_contains($message, "doesn't exist")
                 || str_contains($message, 'does not exist')
@@ -263,9 +290,10 @@ final readonly class DailyCronJob implements CronJobInterface
             );
     }
 
-    private function dropRankedOwnerTempTable(): void
+    private function dropRankedOwnerTempTables(): void
     {
         $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners');
+        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_players');
     }
 
     private function recalculateTitleRarityPoints(): void

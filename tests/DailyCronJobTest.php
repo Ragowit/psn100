@@ -7,26 +7,39 @@ require_once __DIR__ . '/../wwwroot/classes/Cron/DailyCronJob.php';
 
 final class DailyCronJobTest extends TestCase
 {
-    public function testPopulateQueryDrivesTrophyEarnedByAccountIdForPartitionPruning(): void
+    public function testPopulateQueryDrivesTrophyEarnedFromFrozenRankingSnapshot(): void
     {
         $source = $this->readPrivateConstant('POPULATE_RANKED_OWNER_COUNTS_QUERY');
 
-        $this->assertStringContainsString('SELECT /*+ JOIN_ORDER(pr, te) */', $source);
-        $this->assertStringContainsString('FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)', $source);
+        $this->assertStringContainsString('SELECT /*+ JOIN_ORDER(rp, te) */', $source);
+        $this->assertStringContainsString('FROM tmp_daily_ranked_players rp', $source);
         $this->assertStringContainsString('STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)', $source);
-        $this->assertStringContainsString('te.account_id = pr.account_id', $source);
+        $this->assertStringContainsString('te.account_id = rp.account_id', $source);
         $this->assertStringContainsString('te.earned = 1', $source);
-        $this->assertStringContainsString('WHERE pr.ranking BETWEEN :min_ranking AND :max_ranking', $source);
+        $this->assertStringContainsString('WHERE rp.ranking BETWEEN :min_ranking AND :max_ranking', $source);
         $this->assertStringContainsString('GROUP BY te.np_communication_id, te.order_id', $source);
         $this->assertStringContainsString('ON DUPLICATE KEY UPDATE', $source);
         $this->assertStringContainsString(
             'trophy_owners = trophy_owners + VALUES(trophy_owners)',
             $source,
         );
-        $this->assertFalse(str_contains($source, 'WHERE pr.ranking <= 10000'));
+        $this->assertFalse(str_contains($source, 'player_ranking'));
         $this->assertFalse(str_contains($source, 'LEFT JOIN trophy_earned te'));
         $this->assertFalse(str_contains($source, 'JSON_TABLE('));
         $this->assertFalse(str_contains($source, 'np_communication_id = title.np_communication_id'));
+    }
+
+    public function testRankedPlayerSnapshotFreezesTopTenThousandFromPlayerRanking(): void
+    {
+        $create = $this->readPrivateConstant('CREATE_RANKED_PLAYER_SNAPSHOT_QUERY');
+        $populate = $this->readPrivateConstant('POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY');
+
+        $this->assertStringContainsString('CREATE TEMPORARY TABLE tmp_daily_ranked_players', $create);
+        $this->assertStringContainsString('PRIMARY KEY (ranking)', $create);
+        $this->assertStringContainsString('KEY idx_tmp_daily_ranked_players_account (account_id)', $create);
+        $this->assertStringContainsString('INSERT INTO tmp_daily_ranked_players (ranking, account_id)', $populate);
+        $this->assertStringContainsString('FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)', $populate);
+        $this->assertStringContainsString('WHERE pr.ranking <= 10000', $populate);
     }
 
     public function testApplyTrophyRarityQueryUsesTempTableOwnerCountsAndTopTenThousandDenominator(): void
@@ -67,10 +80,12 @@ final class DailyCronJobTest extends TestCase
         $source = $this->readClassSource();
 
         $this->assertStringContainsString('prepareAndPopulateRankedOwnerCounts', $source);
+        $this->assertStringContainsString('prepareRankedOwnerTempTables', $source);
         $this->assertStringContainsString('populateRankedOwnerCounts', $source);
         $this->assertStringContainsString('applyTrophyRarityFromTemporaryTable', $source);
         $this->assertStringContainsString('RANKED_OWNER_RANKING_BATCH_SIZE', $source);
         $this->assertStringContainsString('RANKED_OWNER_BATCH_DELAY_SECONDS', $source);
+        $this->assertStringContainsString('tmp_daily_ranked_players', $source);
         $this->assertFalse(str_contains($source, 'SELECT np_communication_id FROM trophy_title'));
         $this->assertFalse(str_contains($source, 'JSON_TABLE('));
         $this->assertFalse(str_contains($source, 'RANKED_OWNER_TITLE_BATCH_SIZE'));
@@ -121,11 +136,15 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-rarity',
-            'drop-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
             'title-points',
         ], $database->getOperations());
     }
@@ -155,14 +174,18 @@ final class DailyCronJobTest extends TestCase
         ], $database->getRankingBatches());
         $this->assertSame([1, 1, 1], $sleepCalls);
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'populate-owners',
             'populate-owners',
             'populate-owners',
             'apply-rarity',
-            'drop-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
             'title-points',
         ], $database->getOperations());
     }
@@ -235,15 +258,22 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(2, $database->getApplyCount());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-missing-temp',
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-rarity',
-            'drop-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
             'title-points',
         ], $database->getOperations());
     }
@@ -290,15 +320,23 @@ final class DailyCronJobTest extends TestCase
 
         $this->assertSame([1], $sleepCalls);
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
-            'drop-temp',
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-rarity',
-            'drop-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
             'title-points',
         ], $database->getOperations());
     }
@@ -325,19 +363,30 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(2, $database->getApplyCount());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-missing-temp',
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners-failed',
-            'drop-temp',
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-rarity',
-            'drop-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
             'title-points',
         ], $database->getOperations());
     }
@@ -365,19 +414,29 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
         $this->assertFalse($database->didApplyWhileCountsUnready());
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-missing-temp',
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners-failed',
-            'drop-temp-failed',
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp-failed',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-rarity',
-            'drop-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
             'title-points',
         ], $database->getOperations());
     }
@@ -399,11 +458,14 @@ final class DailyCronJobTest extends TestCase
         $job->run();
 
         $this->assertSame([
-            'drop-temp',
-            'create-temp',
+            'drop-owners-temp',
+            'drop-players-temp',
+            'create-players-temp',
+            'create-owners-temp',
+            'snapshot-players',
             'populate-owners',
             'apply-rarity',
-            'drop-temp-failed',
+            'drop-owners-temp-failed',
             'title-points',
         ], $database->getOperations());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
@@ -429,6 +491,46 @@ final class DailyCronJobTest extends TestCase
     }
 }
 
+final class DailyCronJobTempTableTestSupport
+{
+    /**
+     * @param list<string> $operations
+     */
+    public static function recordExec(array &$operations, string $statement): ?int
+    {
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
+            $operations[] = 'drop-owners-temp';
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_players')) {
+            $operations[] = 'drop-players-temp';
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_players')) {
+            $operations[] = 'create-players-temp';
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
+            $operations[] = 'create-owners-temp';
+
+            return 0;
+        }
+
+        return null;
+    }
+
+    public static function isSnapshotPopulateQuery(string $query): bool
+    {
+        return str_contains($query, 'INSERT INTO tmp_daily_ranked_players');
+    }
+}
+
 final class DailyCronJobHappyPathTestDatabase extends PDO
 {
     /** @var list<string> */
@@ -448,16 +550,9 @@ final class DailyCronJobHappyPathTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
-        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'drop-temp';
-
-            return 0;
-        }
-
-        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
-
-            return 0;
+        $result = DailyCronJobTempTableTestSupport::recordExec($this->operations, $statement);
+        if ($result !== null) {
+            return $result;
         }
 
         throw new RuntimeException('Unexpected exec call: ' . $statement);
@@ -465,6 +560,12 @@ final class DailyCronJobHappyPathTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->operations[] = 'populate-owners';
@@ -517,16 +618,9 @@ final class DailyCronJobRankingBatchTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
-        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'drop-temp';
-
-            return 0;
-        }
-
-        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
-
-            return 0;
+        $result = DailyCronJobTempTableTestSupport::recordExec($this->operations, $statement);
+        if ($result !== null) {
+            return $result;
         }
 
         throw new RuntimeException('Unexpected exec call: ' . $statement);
@@ -534,6 +628,12 @@ final class DailyCronJobRankingBatchTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
                 $this->operations[] = 'populate-owners';
@@ -594,6 +694,11 @@ final class DailyCronJobRarityRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(static function (): void {
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -653,6 +758,11 @@ final class DailyCronJobApplyRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(static function (): void {
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -712,6 +822,11 @@ final class DailyCronJobTitleRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(static function (): void {
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -758,16 +873,9 @@ final class DailyCronJobTempCleanupRetryTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
-        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'drop-temp';
-
-            return 0;
-        }
-
-        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
-
-            return 0;
+        $result = DailyCronJobTempTableTestSupport::recordExec($this->operations, $statement);
+        if ($result !== null) {
+            return $result;
         }
 
         throw new RuntimeException('Unexpected exec call: ' . $statement);
@@ -775,6 +883,12 @@ final class DailyCronJobTempCleanupRetryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -856,18 +970,31 @@ final class DailyCronJobFailedRecoveryCleanupDropTestDatabase extends PDO
             $this->dropCount++;
             // First recovery cleanup DROP after failed populate leaves the empty table.
             if ($this->populateCount === 2 && $this->dropCount === 3) {
-                $this->operations[] = 'drop-temp-failed';
+                $this->operations[] = 'drop-owners-temp-failed';
                 throw new RuntimeException('Simulated recovery cleanup drop failure.');
             }
 
-            $this->operations[] = 'drop-temp';
+            $this->operations[] = 'drop-owners-temp';
+            $this->countsReady = false;
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_players')) {
+            $this->operations[] = 'drop-players-temp';
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_players')) {
+            $this->operations[] = 'create-players-temp';
             $this->countsReady = false;
 
             return 0;
         }
 
         if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
+            $this->operations[] = 'create-owners-temp';
             $this->countsReady = false;
 
             return 0;
@@ -878,6 +1005,12 @@ final class DailyCronJobFailedRecoveryCleanupDropTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -961,16 +1094,9 @@ final class DailyCronJobFailedRecoveryPopulateTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
-        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'drop-temp';
-
-            return 0;
-        }
-
-        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
-
-            return 0;
+        $result = DailyCronJobTempTableTestSupport::recordExec($this->operations, $statement);
+        if ($result !== null) {
+            return $result;
         }
 
         throw new RuntimeException('Unexpected exec call: ' . $statement);
@@ -978,6 +1104,12 @@ final class DailyCronJobFailedRecoveryPopulateTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -1056,16 +1188,9 @@ final class DailyCronJobMissingTempTableRecoveryTestDatabase extends PDO
 
     public function exec(string $statement): int|false
     {
-        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'drop-temp';
-
-            return 0;
-        }
-
-        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
-
-            return 0;
+        $result = DailyCronJobTempTableTestSupport::recordExec($this->operations, $statement);
+        if ($result !== null) {
+            return $result;
         }
 
         throw new RuntimeException('Unexpected exec call: ' . $statement);
@@ -1073,6 +1198,12 @@ final class DailyCronJobMissingTempTableRecoveryTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->populateCount++;
@@ -1110,7 +1241,7 @@ final class DailyCronJobFinalDropFailureTestDatabase extends PDO
     /** @var list<string> */
     private array $operations = [];
 
-    private int $dropCount = 0;
+    private int $ownersDropCount = 0;
 
     private int $titlePointsUpdateCount = 0;
 
@@ -1134,20 +1265,32 @@ final class DailyCronJobFinalDropFailureTestDatabase extends PDO
     public function exec(string $statement): int|false
     {
         if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
-            $this->dropCount++;
-            if ($this->dropCount === 1) {
+            $this->ownersDropCount++;
+            if ($this->ownersDropCount === 1) {
                 // Initial prepare cleanup before create.
-                $this->operations[] = 'drop-temp';
+                $this->operations[] = 'drop-owners-temp';
 
                 return 0;
             }
 
-            $this->operations[] = 'drop-temp-failed';
+            $this->operations[] = 'drop-owners-temp-failed';
             throw new RuntimeException('Simulated final temp table drop failure.');
         }
 
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_players')) {
+            $this->operations[] = 'drop-players-temp';
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_players')) {
+            $this->operations[] = 'create-players-temp';
+
+            return 0;
+        }
+
         if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
-            $this->operations[] = 'create-temp';
+            $this->operations[] = 'create-owners-temp';
 
             return 0;
         }
@@ -1157,6 +1300,12 @@ final class DailyCronJobFinalDropFailureTestDatabase extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (DailyCronJobTempTableTestSupport::isSnapshotPopulateQuery($query)) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'snapshot-players';
+            });
+        }
+
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->operations[] = 'populate-owners';
