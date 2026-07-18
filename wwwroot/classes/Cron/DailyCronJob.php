@@ -32,14 +32,17 @@ final readonly class DailyCronJob implements CronJobInterface
         CREATE TEMPORARY TABLE tmp_daily_ranked_players (
             ranking MEDIUMINT UNSIGNED NOT NULL,
             account_id BIGINT UNSIGNED NOT NULL,
-            PRIMARY KEY (ranking),
-            KEY idx_tmp_daily_ranked_players_account (account_id)
+            PRIMARY KEY (account_id),
+            KEY idx_tmp_daily_ranked_players_ranking (ranking)
         )
         SQL;
 
     /**
      * Freeze the top-10k account set once so later player_ranking swaps cannot
      * move an account into another batch window and double-count owners.
+     *
+     * account_id is the primary key because PlayerRankingUpdater uses RANK(),
+     * so tied leaderboard scores share the same ranking value.
      */
     private const string POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
         INSERT INTO tmp_daily_ranked_players (ranking, account_id)

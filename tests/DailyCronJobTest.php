@@ -35,8 +35,9 @@ final class DailyCronJobTest extends TestCase
         $populate = $this->readPrivateConstant('POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY');
 
         $this->assertStringContainsString('CREATE TEMPORARY TABLE tmp_daily_ranked_players', $create);
-        $this->assertStringContainsString('PRIMARY KEY (ranking)', $create);
-        $this->assertStringContainsString('KEY idx_tmp_daily_ranked_players_account (account_id)', $create);
+        $this->assertStringContainsString('PRIMARY KEY (account_id)', $create);
+        $this->assertStringContainsString('KEY idx_tmp_daily_ranked_players_ranking (ranking)', $create);
+        // RANK() ties are allowed in player_ranking; ranking must not be unique here.
         $this->assertStringContainsString('INSERT INTO tmp_daily_ranked_players (ranking, account_id)', $populate);
         $this->assertStringContainsString('FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)', $populate);
         $this->assertStringContainsString('WHERE pr.ranking <= 10000', $populate);
