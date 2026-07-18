@@ -344,10 +344,12 @@ final class GameRescanCatalogUpdater
             }
 
             if (!in_array('PS5', $existingPlatforms, true)) {
-                $platforms = array_values(array_filter(
-                    $platforms,
-                    static fn(string $platform): bool => $platform !== 'PS5'
-                ));
+                $platforms = $platforms
+                    |> (fn(array $items): array => array_filter(
+                        $items,
+                        static fn(string $platform): bool => $platform !== 'PS5'
+                    ))
+                    |> array_values(...);
             }
         }
 
@@ -357,10 +359,12 @@ final class GameRescanCatalogUpdater
             }
 
             if (!in_array('PS4', $existingPlatforms, true)) {
-                $platforms = array_values(array_filter(
-                    $platforms,
-                    static fn(string $platform): bool => $platform !== 'PS4'
-                ));
+                $platforms = $platforms
+                    |> (fn(array $items): array => array_filter(
+                        $items,
+                        static fn(string $platform): bool => $platform !== 'PS4'
+                    ))
+                    |> array_values(...);
             }
         }
 

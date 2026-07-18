@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 final readonly class HomepagePopularGamesFilter
 {
-    public const PLATFORM_ALL = '';
-    public const PLATFORM_PC = 'pc';
-    public const PLATFORM_PS3 = 'ps3';
-    public const PLATFORM_PS4 = 'ps4';
-    public const PLATFORM_PS5 = 'ps5';
-    public const PLATFORM_PSVITA = 'psvita';
-    public const PLATFORM_PSVR = 'psvr';
-    public const PLATFORM_PSVR2 = 'psvr2';
+    public const string PLATFORM_ALL = '';
+    public const string PLATFORM_PC = 'pc';
+    public const string PLATFORM_PS3 = 'ps3';
+    public const string PLATFORM_PS4 = 'ps4';
+    public const string PLATFORM_PS5 = 'ps5';
+    public const string PLATFORM_PSVITA = 'psvita';
+    public const string PLATFORM_PSVR = 'psvr';
+    public const string PLATFORM_PSVR2 = 'psvr2';
 
     /**
      * @var list<string>
      */
-    private const PLATFORM_KEYS = [
+    private const array PLATFORM_KEYS = [
         self::PLATFORM_PC,
         self::PLATFORM_PS3,
         self::PLATFORM_PS4,
@@ -29,7 +29,7 @@ final readonly class HomepagePopularGamesFilter
     /**
      * @var array<string, string>
      */
-    private const PLATFORM_LABELS = [
+    private const array PLATFORM_LABELS = [
         self::PLATFORM_ALL => 'All',
         self::PLATFORM_PC => 'PC',
         self::PLATFORM_PS3 => 'PS3',
@@ -41,14 +41,15 @@ final readonly class HomepagePopularGamesFilter
     ];
 
     private function __construct(
-        private readonly string $platform,
-        private readonly bool $exclusiveOnly,
+        final private string $platform,
+        final private bool $exclusiveOnly,
     ) {
     }
 
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromArray(array $queryParameters): self
     {
         $platform = self::normalizePlatform($queryParameters['platform'] ?? null);

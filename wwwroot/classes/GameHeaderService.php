@@ -284,7 +284,9 @@ class GameHeaderService
             $psnprofilesIds[] = (int) $stringValue;
         }
 
-        return array_values(array_unique($psnprofilesIds));
+        return $psnprofilesIds
+            |> array_unique(...)
+            |> array_values(...);
     }
 
     private function getPsnpPlusNote(int $psnprofilesId): ?string

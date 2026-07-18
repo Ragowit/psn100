@@ -8,11 +8,11 @@ readonly class RouteResult
      * @param array<string, mixed> $variables
      */
     private function __construct(
-        private ?string $include,
-        private ?string $redirect,
-        private bool $notFound,
-        private array $variables = [],
-        private ?int $statusCode = null,
+        final private ?string $include,
+        final private ?string $redirect,
+        final private bool $notFound,
+        final private array $variables = [],
+        final private ?int $statusCode = null,
     ) {
     }
 

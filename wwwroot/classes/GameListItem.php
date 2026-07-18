@@ -14,26 +14,27 @@ final readonly class GameListItem
     private const string MISSING_PS4_ICON = '../missing-ps4-game.png';
 
     private function __construct(
-        private readonly int $id,
-        private readonly string $name,
-        private readonly GameAvailabilityStatus $status,
-        private readonly string $iconUrl,
-        private readonly string $platformValue,
-        private readonly int $owners,
-        private readonly int $rarityPoints,
-        private readonly int $inGameRarityPoints,
-        private readonly string $difficulty,
-        private readonly int $platinum,
-        private readonly int $gold,
-        private readonly int $silver,
-        private readonly int $bronze,
-        private readonly int $progress,
+        final private int $id,
+        final private string $name,
+        final private GameAvailabilityStatus $status,
+        final private string $iconUrl,
+        final private string $platformValue,
+        final private int $owners,
+        final private int $rarityPoints,
+        final private int $inGameRarityPoints,
+        final private string $difficulty,
+        final private int $platinum,
+        final private int $gold,
+        final private int $silver,
+        final private int $bronze,
+        final private int $progress,
     ) {
     }
 
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromArray(array $row): self
     {
         return new self(

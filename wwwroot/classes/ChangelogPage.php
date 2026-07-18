@@ -12,7 +12,7 @@ require_once __DIR__ . '/Utility.php';
 
 class ChangelogPage
 {
-    private const DEFAULT_TITLE = 'Changelog ~ PSN 100%';
+    private const string DEFAULT_TITLE = 'Changelog ~ PSN 100%';
 
     private ChangelogPaginator $paginator;
 

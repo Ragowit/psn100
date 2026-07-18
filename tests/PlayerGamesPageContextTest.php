@@ -37,7 +37,7 @@ final class PlayerGamesPageContextTest extends TestCase
         );
 
         $this->assertCount(1, $selectedPlatforms);
-        $this->assertSame('PS5', array_values($selectedPlatforms)[0]->getLabel());
+        $this->assertSame('PS5', array_first($selectedPlatforms)->getLabel());
     }
 
     public function testContextReflectsPlayerStatus(): void

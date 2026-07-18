@@ -25,9 +25,7 @@ final readonly class DailyCronJob implements CronJobInterface
      */
     private const int RANKED_OWNER_BATCH_DELAY_SECONDS = 1;
 
-    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
-        sleep($seconds);
-    };
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     private const string CREATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE tmp_daily_ranked_players (
@@ -200,8 +198,8 @@ final readonly class DailyCronJob implements CronJobInterface
         try {
             // Populate and apply retry independently so a trophy_meta lock/timeout
             // does not force another full scan of top-10k trophy_earned rows.
-            $this->executeWithRetry([$this, 'prepareAndPopulateRankedOwnerCounts']);
-            $this->executeWithRetry([$this, 'applyTrophyRarityFromTemporaryTableWithRecovery']);
+            $this->executeWithRetry($this->prepareAndPopulateRankedOwnerCounts(...));
+            $this->executeWithRetry($this->applyTrophyRarityFromTemporaryTableWithRecovery(...));
         } finally {
             // Best-effort: a transient DROP failure must not abort run() before
             // title rarity points. The tables are TEMPORARY/session-scoped anyway.
@@ -286,7 +284,7 @@ final readonly class DailyCronJob implements CronJobInterface
             // Otherwise a failed rebuild can leave an empty temp table (if DROP
             // cleanup also fails) and the next apply-first attempt would write
             // zero owners / LEGENDARY-style rarities for every trophy.
-            $this->executeWithRetry([$this, 'preparePopulateAndApplyRankedOwnerRarity']);
+            $this->executeWithRetry($this->preparePopulateAndApplyRankedOwnerRarity(...));
         }
     }
 
@@ -324,7 +322,7 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function recalculateTitleRarityPoints(): void
     {
-        $this->executeWithRetry([$this, 'updateTrophyTitleRarityPoints']);
+        $this->executeWithRetry($this->updateTrophyTitleRarityPoints(...));
     }
 
     private function updateTrophyTitleRarityPoints(): void

@@ -7,8 +7,8 @@ require_once __DIR__ . '/ChangelogPaginator.php';
 
 final class ChangelogService
 {
-    public const PAGE_SIZE = 50;
-    private const FILTERED_CHANGE_TYPES = "('GAME_RESCAN', 'GAME_VERSION')";
+    public const int PAGE_SIZE = 50;
+    private const string FILTERED_CHANGE_TYPES = "('GAME_RESCAN', 'GAME_VERSION')";
 
     private ?int $cachedTotalChangeCount = null;
 

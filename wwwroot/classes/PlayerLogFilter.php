@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 readonly class PlayerLogFilter
 {
-    public const SORT_DATE = 'date';
-    public const SORT_RARITY = 'rarity';
-    public const SORT_IN_GAME_RARITY = 'in-game-rarity';
+    public const string SORT_DATE = 'date';
+    public const string SORT_RARITY = 'rarity';
+    public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
 
     /** @var array<int, string> */
-    private const ALLOWED_PLATFORMS = [
+    private const array ALLOWED_PLATFORMS = [
         'pc',
         'ps3',
         'ps4',
@@ -20,13 +20,14 @@ readonly class PlayerLogFilter
     ];
 
     private function __construct(
-        private string $sort,
-        private int $page,
+        final private string $sort,
+        final private int $page,
         /** @var array<int, string> */
-        private array $platforms,
+        final private array $platforms,
     ) {
     }
 
+    #[\NoDiscard]
     public static function fromArray(array $parameters): self
     {
         $sort = is_string($parameters['sort'] ?? null) ? (string) $parameters['sort'] : self::SORT_DATE;
@@ -46,7 +47,7 @@ readonly class PlayerLogFilter
         return new self(
             self::normaliseSort($sort),
             max($page, 1),
-            array_values(array_unique($platforms)),
+            $platforms |> array_unique(...) |> array_values(...),
         );
     }
 

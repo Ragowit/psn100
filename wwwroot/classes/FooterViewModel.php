@@ -5,18 +5,19 @@ declare(strict_types=1);
 final readonly class FooterViewModel
 {
     public function __construct(
-        private int $startYear,
-        private int $currentYear,
-        private string $versionLabel,
-        private string $releaseUrl,
-        private string $changelogUrl,
-        private string $issuesUrl,
-        private string $creatorName,
-        private string $creatorProfileUrl,
-        private string $contributorsUrl
+        final private int $startYear,
+        final private int $currentYear,
+        final private string $versionLabel,
+        final private string $releaseUrl,
+        final private string $changelogUrl,
+        final private string $issuesUrl,
+        final private string $creatorName,
+        final private string $creatorProfileUrl,
+        final private string $contributorsUrl
     ) {
     }
 
+    #[\NoDiscard]
     public static function createDefault(): self
     {
         $currentYear = (int) date('Y');

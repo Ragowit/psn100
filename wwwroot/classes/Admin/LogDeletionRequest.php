@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 final readonly class LogDeletionRequest
 {
-    private const ACTION_SINGLE = 'single';
-    private const ACTION_BULK = 'bulk';
+    private const string ACTION_SINGLE = 'single';
+    private const string ACTION_BULK = 'bulk';
 
     /**
      * @param list<int> $bulkDeletionIds
      */
     private function __construct(
-        private ?string $action,
-        private ?int $singleDeletionId,
+        final private ?string $action,
+        final private ?int $singleDeletionId,
         /** @var list<int> */
-        private array $bulkDeletionIds,
-        private ?string $errorMessage
+        final private array $bulkDeletionIds,
+        final private ?string $errorMessage
     ) {
     }
 

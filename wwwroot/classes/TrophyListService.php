@@ -6,7 +6,7 @@ require_once __DIR__ . '/TrophyListItem.php';
 
 class TrophyListService
 {
-    public const PAGE_SIZE = 50;
+    public const int PAGE_SIZE = 50;
 
     public function __construct(private readonly PDO $database)
     {

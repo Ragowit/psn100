@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 final class PlayerPageAccessGuard
 {
-    private const DEFAULT_REDIRECT_URL = '/player/';
-    private const REDIRECT_STATUS_CODE = 303;
+    private const string DEFAULT_REDIRECT_URL = '/player/';
+    private const int REDIRECT_STATUS_CODE = 303;
 
     private function __construct(
         private readonly ?int $accountId,

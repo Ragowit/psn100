@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 readonly class GameListFilter
 {
-    public const SORT_ADDED = 'added';
-    public const SORT_COMPLETION = 'completion';
-    public const SORT_OWNERS = 'owners';
-    public const SORT_RARITY = 'rarity';
-    public const SORT_IN_GAME_RARITY = 'in-game-rarity';
-    public const SORT_SEARCH = 'search';
+    public const string SORT_ADDED = 'added';
+    public const string SORT_COMPLETION = 'completion';
+    public const string SORT_OWNERS = 'owners';
+    public const string SORT_RARITY = 'rarity';
+    public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
+    public const string SORT_SEARCH = 'search';
 
-    public const PLATFORM_PC = 'pc';
-    public const PLATFORM_PS3 = 'ps3';
-    public const PLATFORM_PS4 = 'ps4';
-    public const PLATFORM_PS5 = 'ps5';
-    public const PLATFORM_PSVITA = 'psvita';
-    public const PLATFORM_PSVR = 'psvr';
-    public const PLATFORM_PSVR2 = 'psvr2';
+    public const string PLATFORM_PC = 'pc';
+    public const string PLATFORM_PS3 = 'ps3';
+    public const string PLATFORM_PS4 = 'ps4';
+    public const string PLATFORM_PS5 = 'ps5';
+    public const string PLATFORM_PSVITA = 'psvita';
+    public const string PLATFORM_PSVR = 'psvr';
+    public const string PLATFORM_PSVR2 = 'psvr2';
 
     /**
      * @var list<string>
      */
-    private const PLATFORM_KEYS = [
+    private const array PLATFORM_KEYS = [
         self::PLATFORM_PC,
         self::PLATFORM_PS3,
         self::PLATFORM_PS4,
@@ -33,26 +33,27 @@ readonly class GameListFilter
     ];
 
     private function __construct(
-        private ?string $player,
-        private string $sort,
-        private bool $sortSpecified,
-        private string $search,
-        private int $page,
-        private bool $uncompletedOnly,
+        final private ?string $player,
+        final private string $sort,
+        final private bool $sortSpecified,
+        final private string $search,
+        final private int $page,
+        final private bool $uncompletedOnly,
         /**
          * @var array<string, bool>
          */
-        private array $platformFilters,
+        final private array $platformFilters,
         /**
          * @var array<string, string>
          */
-        private array $originalParameters
+        final private array $originalParameters
     ) {
     }
 
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromArray(array $queryParameters): self
     {
         $originalParameters = self::extractOriginalParameters($queryParameters);

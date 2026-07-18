@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class Utility
 {
-    private const SLUG_TRANSLITERATOR_RULES = ':: Any-Latin;'
+    private const string SLUG_TRANSLITERATOR_RULES = ':: Any-Latin;'
         . ':: NFD;'
         . ':: [:Nonspacing Mark:] Remove;'
         . ':: NFC;'

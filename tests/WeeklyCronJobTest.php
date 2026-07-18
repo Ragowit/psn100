@@ -35,11 +35,11 @@ final class WeeklyCronJobTest extends TestCase
         $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/WeeklyCronJob.php');
         $this->assertTrue(is_string($source));
         $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'updateLeaderboardsForActivePlayers\']);',
+            '$this->executeWithRetry($this->updateLeaderboardsForActivePlayers(...));',
             $source
         );
         $this->assertStringContainsString(
-            '$this->executeWithRetry([$this, \'resetRankingsForInactivePlayers\']);',
+            '$this->executeWithRetry($this->resetRankingsForInactivePlayers(...));',
             $source
         );
         $this->assertStringContainsString('while (true)', $source);

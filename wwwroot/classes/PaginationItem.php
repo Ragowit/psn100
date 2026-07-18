@@ -5,11 +5,11 @@ declare(strict_types=1);
 final readonly class PaginationItem
 {
     private function __construct(
-        private ?int $page,
-        private string $label,
-        private bool $active = false,
-        private bool $disabled = false,
-        private ?string $ariaLabel = null,
+        final private ?int $page,
+        final private string $label,
+        final private bool $active = false,
+        final private bool $disabled = false,
+        final private ?string $ariaLabel = null,
     ) {
     }
 

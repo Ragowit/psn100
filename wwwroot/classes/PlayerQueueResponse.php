@@ -10,11 +10,11 @@ readonly class PlayerQueueResponse implements \JsonSerializable
      * @param list<array<string, mixed>>|null $messageParts
      */
     private function __construct(
-        private PlayerQueueStatus $status,
-        private string $message,
-        private ?array $messageParts = null,
-        private ?string $pollToken = null,
-        private int $httpStatusCode = 200,
+        final private PlayerQueueStatus $status,
+        final private string $message,
+        final private ?array $messageParts = null,
+        final private ?string $pollToken = null,
+        final private int $httpStatusCode = 200,
     ) {}
 
     /**

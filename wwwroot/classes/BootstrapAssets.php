@@ -6,8 +6,8 @@ require_once __DIR__ . '/StaticAsset.php';
 
 final class BootstrapAssets
 {
-    public const VERSION = '5.3.8';
-    public const POPPER_VERSION = '2.11.8';
+    public const string VERSION = '5.3.8';
+    public const string POPPER_VERSION = '2.11.8';
 
     public static function stylesheetUrl(): string
     {

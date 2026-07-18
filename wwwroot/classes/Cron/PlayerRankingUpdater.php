@@ -12,9 +12,7 @@ class PlayerRankingUpdater
     private const string LOCK_NAME = 'psn100:player_ranking_recalc';
     private const int DEFAULT_RETRY_DELAY_SECONDS = 3;
     private const int DEFAULT_MAX_RETRY_DELAY_SECONDS = 60;
-    private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
-        sleep($seconds);
-    };
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
     private const string INSERT_TEMPLATE = <<<'SQL'
 INSERT INTO %s (
     account_id,

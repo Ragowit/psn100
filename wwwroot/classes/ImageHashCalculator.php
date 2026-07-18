@@ -6,8 +6,8 @@ require_once __DIR__ . '/ImageProcessor.php';
 
 final class ImageHashCalculator
 {
-    private const GD_ALPHA_MAX = 127;
-    private const RGBA_CHANNEL_MAX = 255;
+    private const int GD_ALPHA_MAX = 127;
+    private const int RGBA_CHANNEL_MAX = 255;
 
     private ImageProcessorInterface $imageProcessor;
 

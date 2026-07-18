@@ -148,10 +148,13 @@ final class GameDetailFormParser
             $selected[$platform] = true;
         }
 
-        return implode(',', array_values(array_filter(
-            self::PLATFORM_OPTIONS,
-            static fn (string $platform): bool => isset($selected[$platform])
-        )));
+        return self::PLATFORM_OPTIONS
+            |> (fn(array $platforms): array => array_filter(
+                $platforms,
+                static fn (string $platform): bool => isset($selected[$platform])
+            ))
+            |> array_values(...)
+            |> (fn(array $platforms): string => implode(',', $platforms));
     }
 
     public function normalizeOptionalString(mixed $value): ?string

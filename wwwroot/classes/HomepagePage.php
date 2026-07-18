@@ -8,15 +8,15 @@ require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
 final readonly class HomepagePage
 {
-    private const DEFAULT_TITLE = 'PSN 100% ~ PlayStation Leaderboards & Trophies';
+    private const string DEFAULT_TITLE = 'PSN 100% ~ PlayStation Leaderboards & Trophies';
 
     public function __construct(
-        private HomepageContentService $contentService,
-        private string $title = self::DEFAULT_TITLE,
-        private ?int $newGamesLimit = null,
-        private ?int $newDlcsLimit = null,
-        private ?int $popularGamesLimit = null,
-        private ?HomepagePopularGamesFilter $popularGamesFilter = null,
+        final private HomepageContentService $contentService,
+        final private string $title = self::DEFAULT_TITLE,
+        final private ?int $newGamesLimit = null,
+        final private ?int $newDlcsLimit = null,
+        final private ?int $popularGamesLimit = null,
+        final private ?HomepagePopularGamesFilter $popularGamesFilter = null,
     ) {
     }
 
