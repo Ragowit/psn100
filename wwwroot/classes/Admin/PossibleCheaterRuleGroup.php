@@ -8,6 +8,7 @@ final readonly class PossibleCheaterRule
     {
     }
 
+    #[\NoDiscard]
     public static function fromString(string $condition): self
     {
         return new self($condition);
@@ -31,6 +32,7 @@ final readonly class PossibleCheaterRuleGroup
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data): self
     {
         $label = (string) ($data['label'] ?? '');

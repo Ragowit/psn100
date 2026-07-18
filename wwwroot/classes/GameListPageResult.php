@@ -8,8 +8,8 @@ final readonly class GameListPageResult
      * @param list<GameListItem> $games
      */
     public function __construct(
-        public array $games,
-        public int $totalGames
+        final public array $games,
+        final public int $totalGames,
     ) {
     }
 }

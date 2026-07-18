@@ -12,8 +12,8 @@ final class PlayerScanTrophySummaryAccessResult
     public const STATUS_ABORT_SCAN = 'abort_scan';
 
     private function __construct(
-        public readonly string $status,
-        public readonly int $level = 0,
+        final public readonly string $status,
+        final public readonly int $level = 0,
     ) {
     }
 

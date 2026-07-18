@@ -11,8 +11,8 @@ final readonly class PlayerScanCatalogSideEffectResult
      * @param list<string> $mergeParentsToRecompute
      */
     private function __construct(
-        public ?int $titleId,
-        public array $mergeParentsToRecompute,
+        final public ?int $titleId,
+        final public array $mergeParentsToRecompute,
     ) {
     }
 

@@ -8,10 +8,12 @@ final readonly class DatabaseConfig
         private string $host,
         private string $database,
         private string $user,
+        #[\SensitiveParameter]
         private string $password,
     ) {
     }
 
+    #[\NoDiscard]
     public static function createDefault(): self
     {
         return new self('', '', '', '');
@@ -20,6 +22,7 @@ final readonly class DatabaseConfig
     /**
      * @param array<string, string> $config
      */
+    #[\NoDiscard]
     public static function fromArray(array $config): self
     {
         return new self(
@@ -33,6 +36,7 @@ final readonly class DatabaseConfig
     /**
      * @param array<string, string> $environment
      */
+    #[\NoDiscard]
     public static function fromEnvironment(array $environment = []): self
     {
         return new self(
@@ -134,6 +138,7 @@ class Database extends PDO
         }
     }
 
+    #[\NoDiscard]
     public static function fromEnvironment(array $environment = []): self
     {
         return new self(DatabaseConfig::fromEnvironment($environment));

@@ -144,11 +144,13 @@ final class FakeLeaderboardPageContext extends AbstractLeaderboardPageContext
         self::$dataProvider = null;
     }
 
+    #[\Override]
     public function getTitle(): string
     {
         return self::TITLE;
     }
 
+    #[\Override]
     protected static function createDataProvider(PDO $database): PlayerLeaderboardDataProvider
     {
         if (self::$dataProvider === null) {
@@ -158,6 +160,7 @@ final class FakeLeaderboardPageContext extends AbstractLeaderboardPageContext
         return self::$dataProvider;
     }
 
+    #[\Override]
     protected function createRow(
         array $player,
         PlayerLeaderboardFilter $filter,

@@ -34,6 +34,7 @@ final readonly class WorkerScanProgress
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data): ?self
     {
         $current = self::sanitizeInt($data['current'] ?? null);

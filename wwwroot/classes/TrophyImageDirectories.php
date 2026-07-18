@@ -11,13 +11,14 @@ declare(strict_types=1);
 final readonly class TrophyImageDirectories
 {
     public function __construct(
-        public string $title,
-        public string $group,
-        public string $trophy,
-        public string $reward,
+        final public string $title,
+        final public string $group,
+        final public string $trophy,
+        final public string $reward,
     ) {
     }
 
+    #[\NoDiscard]
     public static function productionDefault(): self
     {
         return new self(

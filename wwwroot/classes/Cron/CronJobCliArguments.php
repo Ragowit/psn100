@@ -14,6 +14,7 @@ final readonly class CronJobCliArguments
     /**
      * @param list<string> $argv
      */
+    #[\NoDiscard]
     public static function fromArgv(array $argv): self
     {
         $arguments = [];

@@ -21,6 +21,7 @@ final readonly class AdminRequest
      * @param array<string, mixed> $serverData
      * @param array<string, mixed> $postData
      */
+    #[\NoDiscard]
     public static function fromGlobals(array $serverData, array $postData): self
     {
         $method = $serverData['REQUEST_METHOD'] ?? 'GET';

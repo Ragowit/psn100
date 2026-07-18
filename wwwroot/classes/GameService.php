@@ -64,7 +64,7 @@ class GameService
      */
     public function resolveSort(array $queryParameters): string
     {
-        $sort = strtolower((string) ($queryParameters['sort'] ?? 'default'));
+        $sort = ((string) ($queryParameters['sort'] ?? 'default')) |> strtolower(...);
 
         return match ($sort) {
             'date', 'rarity' => $sort,

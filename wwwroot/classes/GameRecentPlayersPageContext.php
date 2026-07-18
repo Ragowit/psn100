@@ -23,6 +23,7 @@ final readonly class GameRecentPlayersPageContext
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromGlobals(
         PDO $database,
         Utility $utility,

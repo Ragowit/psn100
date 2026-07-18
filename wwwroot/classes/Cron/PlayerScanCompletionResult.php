@@ -10,7 +10,7 @@ final class PlayerScanCompletionResult
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CONTINUE_SCAN = 'continue_scan';
 
-    private function __construct(public readonly string $status)
+    private function __construct(final public readonly string $status)
     {
     }
 

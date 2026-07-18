@@ -29,7 +29,7 @@ final class AdminUserRepository
         return (int) $this->database->query(self::SQL_ADMIN_COUNT)->fetchColumn() > 0;
     }
 
-    public function verifyCredentials(string $username, string $password): bool
+    public function verifyCredentials(string $username, #[\SensitiveParameter] string $password): bool
     {
         if ($username === '' || $password === '') {
             return false;

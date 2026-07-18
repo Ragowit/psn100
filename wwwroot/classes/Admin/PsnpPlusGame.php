@@ -10,6 +10,7 @@ readonly class PsnpPlusGame
         private string $name
     ) {}
 
+    #[\NoDiscard]
     public static function fromArray(array $row): self
     {
         return new self(

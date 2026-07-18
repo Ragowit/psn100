@@ -28,22 +28,18 @@ final class LogEntryFormatter
 
     public function format(string $message): string
     {
-        $formatters = [
-            fn (string $message) => $this->formatTrophyHistoryMessage($message),
-            fn (string $message) => $this->formatSetVersionMessage($message),
-            fn (string $message) => $this->formatNewTrophiesAddedMessage($message),
-            fn (string $message) => $this->formatSonyIssuesMessage($message),
-        ];
-
-        foreach ($formatters as $formatter) {
-            $formatted = $formatter($message);
-
-            if ($formatted !== null) {
-                return $formatted;
-            }
-        }
-
-        return $this->escape($message);
+        return array_find(
+            array_map(
+                static fn (callable $formatter): ?string => $formatter($message),
+                [
+                    $this->formatTrophyHistoryMessage(...),
+                    $this->formatSetVersionMessage(...),
+                    $this->formatNewTrophiesAddedMessage(...),
+                    $this->formatSonyIssuesMessage(...),
+                ]
+            ),
+            static fn (?string $formatted): bool => $formatted !== null
+        ) ?? $this->escape($message);
     }
 
     private function formatTrophyHistoryMessage(string $message): ?string

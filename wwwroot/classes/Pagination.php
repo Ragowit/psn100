@@ -16,6 +16,7 @@ final readonly class Pagination
         $this->currentPage = min(max(1, $currentPage), $this->totalPages);
     }
 
+    #[\NoDiscard]
     public static function create(int $currentPage, int $totalPages): self
     {
         return new self($currentPage, $totalPages);

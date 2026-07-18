@@ -28,6 +28,7 @@ final class GameRescanProgressReporterTest extends TestCase
             {
             }
 
+            #[\Override]
             public function onProgress(int $percent, string $message): void
             {
                 $this->events[] = [$percent, $message];
@@ -60,6 +61,7 @@ final class GameRescanProgressReporterTest extends TestCase
             {
             }
 
+            #[\Override]
             public function onProgress(int $percent, string $message): void
             {
                 $this->events[] = [$percent, $message];
@@ -204,6 +206,7 @@ final class GameRescanProgressReporterTest extends TestCase
             {
             }
 
+            #[\Override]
             public function onProgress(int $percent, string $message): void
             {
                 $this->events[] = [$percent, $message];

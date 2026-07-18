@@ -38,6 +38,7 @@ final readonly class PlayerRandomGamesFilter
     /**
      * @param array<string, mixed> $parameters
      */
+    #[\NoDiscard]
     public static function fromArray(array $parameters): self
     {
         $selectedPlatforms = [];

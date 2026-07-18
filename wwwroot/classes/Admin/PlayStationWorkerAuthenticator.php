@@ -19,7 +19,10 @@ final class PlayStationWorkerAuthenticator
         return new Client();
     };
 
-    private const \Closure DEFAULT_REFRESH_TOKEN_SAVER = static function (int $workerId, string $refreshToken): void {
+    private const \Closure DEFAULT_REFRESH_TOKEN_SAVER = static function (
+        int $workerId,
+        #[\SensitiveParameter] string $refreshToken,
+    ): void {
     };
 
     private const \Closure DEFAULT_SLEEPER = sleep(...);
@@ -149,7 +152,11 @@ final class PlayStationWorkerAuthenticator
         }
     }
 
-    private function loginClient(object $client, string $refreshToken, string $npsso): void
+    private function loginClient(
+        object $client,
+        #[\SensitiveParameter] string $refreshToken,
+        #[\SensitiveParameter] string $npsso,
+    ): void
     {
         if ($refreshToken !== '' && method_exists($client, 'loginWithRefreshToken')) {
             try {

@@ -11,11 +11,11 @@ final readonly class PlayerScanTitleCatalogSyncResult
      * @param list<string> $mergeParentsToRecompute
      */
     private function __construct(
-        public bool $restartScan,
-        public bool $newTrophies,
-        public bool $isNewTitle,
-        public ?int $titleId,
-        public array $mergeParentsToRecompute,
+        final public bool $restartScan,
+        final public bool $newTrophies,
+        final public bool $isNewTitle,
+        final public ?int $titleId,
+        final public array $mergeParentsToRecompute,
     ) {
     }
 

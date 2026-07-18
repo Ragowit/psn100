@@ -14,6 +14,7 @@ final readonly class PlayerScanProgress
     /**
      * @param array<string, mixed>|null $data
      */
+    #[\NoDiscard]
     public static function fromArray(?array $data): ?self
     {
         if ($data === null) {

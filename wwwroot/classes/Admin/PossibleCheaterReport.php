@@ -46,6 +46,7 @@ class PossibleCheaterReportEntry
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data): self
     {
         return new self(
@@ -89,6 +90,7 @@ class PossibleCheaterReportSection
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data): self
     {
         $title = (string) ($data['title'] ?? '');
@@ -128,6 +130,7 @@ class PossibleCheaterReportSectionEntry
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data): self
     {
         return new self(

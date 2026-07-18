@@ -28,6 +28,7 @@ final readonly class PlayerTimeline
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data, Utility $utility): self
     {
         return new self(
