@@ -2,6 +2,6 @@
 
 declare(strict_types=1);
 
-class GameNotFoundException extends RuntimeException
+final class GameNotFoundException extends RuntimeException
 {
 }

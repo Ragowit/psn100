@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerReportResult.php';
+require_once __DIR__ . '/PlayerReportSubmitOutcome.php';
 require_once __DIR__ . '/IpSubmissionLockExecutor.php';
 require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
 
@@ -11,12 +12,6 @@ class PlayerReportService
     private const int MAX_PENDING_REPORTS_PER_IP = 10;
 
     public const int MAX_EXPLANATION_LENGTH = 256;
-
-    private const string SUBMIT_OUTCOME_SUCCESS = 'success';
-
-    private const string SUBMIT_OUTCOME_DUPLICATE = 'duplicate';
-
-    private const string SUBMIT_OUTCOME_LIMIT = 'limit';
 
     public function __construct(
         private readonly PDO $database,
@@ -35,26 +30,26 @@ class PlayerReportService
         try {
             $outcome = $this->getIpSubmissionLockExecutor()->execute(
                 $ipAddress,
-                function () use ($accountId, $ipAddress, $explanation): string {
+                function () use ($accountId, $ipAddress, $explanation): PlayerReportSubmitOutcome {
                     if ($this->hasExistingReport($accountId, $ipAddress)) {
-                        return self::SUBMIT_OUTCOME_DUPLICATE;
+                        return PlayerReportSubmitOutcome::DUPLICATE;
                     }
 
                     if ($this->getReportCountForIp($ipAddress) >= self::MAX_PENDING_REPORTS_PER_IP) {
-                        return self::SUBMIT_OUTCOME_LIMIT;
+                        return PlayerReportSubmitOutcome::LIMIT;
                     }
 
                     try {
                         $this->insertReport($accountId, $ipAddress, $explanation);
                     } catch (PDOException $exception) {
                         if ($this->isDuplicateReportException($exception)) {
-                            return self::SUBMIT_OUTCOME_DUPLICATE;
+                            return PlayerReportSubmitOutcome::DUPLICATE;
                         }
 
                         throw $exception;
                     }
 
-                    return self::SUBMIT_OUTCOME_SUCCESS;
+                    return PlayerReportSubmitOutcome::SUCCESS;
                 }
             );
         } catch (IpSubmissionLockUnavailableException) {
@@ -64,9 +59,9 @@ class PlayerReportService
         }
 
         return match ($outcome) {
-            self::SUBMIT_OUTCOME_SUCCESS => PlayerReportResult::success('Player reported successfully.'),
-            self::SUBMIT_OUTCOME_DUPLICATE => PlayerReportResult::error("You've already reported this player."),
-            self::SUBMIT_OUTCOME_LIMIT => PlayerReportResult::error(
+            PlayerReportSubmitOutcome::SUCCESS => PlayerReportResult::success('Player reported successfully.'),
+            PlayerReportSubmitOutcome::DUPLICATE => PlayerReportResult::error("You've already reported this player."),
+            PlayerReportSubmitOutcome::LIMIT => PlayerReportResult::error(
                 'You already have 10 reports waiting to be processed. Please try again later.'
             ),
         };

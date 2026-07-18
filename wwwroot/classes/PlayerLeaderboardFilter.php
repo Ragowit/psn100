@@ -17,6 +17,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\Override]
     public static function fromArray(array $queryParameters): self
     {
         $baseFilter = parent::fromArray($queryParameters);

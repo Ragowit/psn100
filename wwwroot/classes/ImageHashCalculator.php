@@ -51,8 +51,8 @@ final class ImageHashCalculator
 
             // Optional but helps ensure GD keeps alpha as expected
             // (No harm for hashing; makes behavior more predictable.)
-            imagesavealpha($image, true);
-            imagealphablending($image, false);
+            (void) imagesavealpha($image, true);
+            (void) imagealphablending($image, false);
 
             return $this->hashRgbaPixels($image, $width, $height);
         } finally {
@@ -103,11 +103,11 @@ final class ImageHashCalculator
             }
 
             // Prepare the sample to handle transparency correctly
-            imagealphablending($sample, false);
-            imagesavealpha($sample, true);
+            (void) imagealphablending($sample, false);
+            (void) imagesavealpha($sample, true);
 
             // Resize original image to the sampling grid
-            imagecopyresampled(
+            (void) imagecopyresampled(
                 $sample,
                 $image,
                 0,
@@ -247,7 +247,7 @@ final class ImageHashCalculator
             }
 
             // Stream into MD5 context to avoid a huge buffer
-            hash_update($ctx, $row);
+            (void) hash_update($ctx, $row);
         }
 
         return hash_final($ctx);

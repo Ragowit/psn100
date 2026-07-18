@@ -6,15 +6,13 @@ require_once __DIR__ . '/../Html.php';
 
 require_once __DIR__ . '/AdminRequest.php';
 require_once __DIR__ . '/GameResetRequestResult.php';
+require_once __DIR__ . '/../GameResetAction.php';
 require_once __DIR__ . '/../GameResetService.php';
 
 class GameResetRequestHandler
 {
-    private GameResetService $gameResetService;
-
-    public function __construct(GameResetService $gameResetService)
+    public function __construct(private readonly GameResetService $gameResetService)
     {
-        $this->gameResetService = $gameResetService;
     }
 
     public function handleRequest(AdminRequest $request): GameResetRequestResult
@@ -28,7 +26,7 @@ class GameResetRequestHandler
             return GameResetRequestResult::error('<p>Please provide a valid game ID.</p>');
         }
 
-        $action = $request->getPostIntInSet('status', [0, 1]);
+        $action = GameResetAction::tryFrom($request->getPostInt('status') ?? PHP_INT_MIN);
         if ($action === null) {
             return GameResetRequestResult::error('<p>Please choose a valid action.</p>');
         }

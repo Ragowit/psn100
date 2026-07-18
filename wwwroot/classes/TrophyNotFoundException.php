@@ -2,6 +2,6 @@
 
 declare(strict_types=1);
 
-class TrophyNotFoundException extends RuntimeException
+final class TrophyNotFoundException extends RuntimeException
 {
 }

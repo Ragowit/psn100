@@ -92,15 +92,10 @@ final class PlayStationGraphqlPlayerSearch
             return null;
         }
 
-        foreach ($this->search($onlineId) as $player) {
-            $playerOnlineId = strtolower((string) ($player['onlineId'] ?? ''));
-
-            if ($playerOnlineId === $normalizedId) {
-                return $player;
-            }
-        }
-
-        return null;
+        return array_find(
+            $this->search($onlineId),
+            fn (array $player): bool => strtolower((string) ($player['onlineId'] ?? '')) === $normalizedId
+        );
     }
 
     private function performContextSearch(string $searchTerm): ?object

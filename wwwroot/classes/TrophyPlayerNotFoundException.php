@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-class TrophyPlayerNotFoundException extends RuntimeException
+final class TrophyPlayerNotFoundException extends RuntimeException
 {
     public function __construct(
-        private string $trophyId,
-        private string $trophyName,
+        private readonly string $trophyId,
+        private readonly string $trophyName,
     ) {
         parent::__construct('Player not found for trophy.');
     }

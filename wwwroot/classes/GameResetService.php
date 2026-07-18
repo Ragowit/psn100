@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameResetAction.php';
+
 class GameResetService
 {
-    private const int ACTION_RESET = 0;
-    private const int ACTION_DELETE = 1;
-
     public function __construct(private readonly PDO $database)
     {
     }
 
-    public function process(int $gameId, int $action): string
+    public function process(int $gameId, GameResetAction $action): string
     {
         $npCommunicationId = $this->getGameNpCommunicationId($gameId);
 
@@ -24,9 +23,8 @@ class GameResetService
         }
 
         return match ($action) {
-            self::ACTION_RESET => $this->resetGame($gameId, $npCommunicationId),
-            self::ACTION_DELETE => $this->deleteGame($gameId, $npCommunicationId),
-            default => throw new InvalidArgumentException('Unknown method.'),
+            GameResetAction::RESET => $this->resetGame($gameId, $npCommunicationId),
+            GameResetAction::DELETE => $this->deleteGame($gameId, $npCommunicationId),
         };
     }
 
