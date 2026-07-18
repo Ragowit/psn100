@@ -152,8 +152,19 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function prepareAndPopulateRankedOwnerCounts(): void
     {
-        $this->prepareRankedOwnerTempTable();
-        $this->populateRankedOwnerCounts();
+        try {
+            $this->prepareRankedOwnerTempTable();
+            $this->populateRankedOwnerCounts();
+        } catch (Throwable $exception) {
+            // Do not leave an empty/partial temp table behind. A later apply retry
+            // would otherwise see the table exist and write zero/stale rarities.
+            try {
+                $this->dropRankedOwnerTempTable();
+            } catch (Throwable) {
+            }
+
+            throw $exception;
+        }
     }
 
     private function prepareRankedOwnerTempTable(): void
