@@ -21,13 +21,10 @@ final class PlayerTimelineLayout
         $rowEndDates = [];
 
         foreach ($entries as $entry) {
-            $rowIndex = null;
-            foreach ($rowEndDates as $index => $rowEndDate) {
-                if ($entry->getFirstTrophyDate() > $rowEndDate) {
-                    $rowIndex = $index;
-                    break;
-                }
-            }
+            $rowIndex = array_find_key(
+                $rowEndDates,
+                fn (DateTimeImmutable $rowEndDate): bool => $entry->getFirstTrophyDate() > $rowEndDate
+            );
 
             if ($rowIndex === null) {
                 $rowIndex = count($rows);

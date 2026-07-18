@@ -248,20 +248,9 @@ final class GameHistoryRenderer
                 return;
             }
 
-            $firstNonWhitespaceIndex = null;
-            $lastNonWhitespaceIndex = null;
-
-            foreach ($highlightTokens as $index => $token) {
-                if ($token['isWhitespace']) {
-                    continue;
-                }
-
-                if ($firstNonWhitespaceIndex === null) {
-                    $firstNonWhitespaceIndex = $index;
-                }
-
-                $lastNonWhitespaceIndex = $index;
-            }
+            $isNonWhitespace = static fn (array $token): bool => !$token['isWhitespace'];
+            $firstNonWhitespaceIndex = array_find_key($highlightTokens, $isNonWhitespace);
+            $lastNonWhitespaceIndex = array_find_key(array_reverse($highlightTokens, true), $isNonWhitespace);
 
             if ($firstNonWhitespaceIndex === null || $lastNonWhitespaceIndex === null) {
                 foreach ($highlightTokens as $token) {

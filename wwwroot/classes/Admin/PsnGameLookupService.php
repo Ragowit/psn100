@@ -321,13 +321,10 @@ final class PsnGameLookupService
      */
     private function resolveAlternateQueryVariant(array $queryVariants, array $winningQuery): ?array
     {
-        foreach ($queryVariants as $queryVariant) {
-            if ($queryVariant !== $winningQuery) {
-                return $queryVariant;
-            }
-        }
-
-        return null;
+        return array_find(
+            $queryVariants,
+            static fn (array $queryVariant): bool => $queryVariant !== $winningQuery
+        );
     }
 
 }

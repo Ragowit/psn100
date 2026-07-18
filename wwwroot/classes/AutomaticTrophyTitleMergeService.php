@@ -284,15 +284,13 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function selectGameToClone(array $games): ?array
     {
-        $eligibleGames = array_values(array_filter(
-            $games,
-            static fn (array $game): bool => !str_starts_with($game['np_communication_id'], 'MERGE') && $game['status'] !== 2
-        ));
+        $isEligible = static fn (array $game): bool => !str_starts_with($game['np_communication_id'], 'MERGE')
+            && $game['status'] !== 2;
 
         return array_find(
-            $eligibleGames,
-            fn (array $game): bool => $this->hasPs5OrPsvr2($game['platforms'])
-        ) ?? array_first($eligibleGames);
+            $games,
+            fn (array $game): bool => $isEligible($game) && $this->hasPs5OrPsvr2($game['platforms'])
+        ) ?? array_find($games, $isEligible);
     }
 
     /**

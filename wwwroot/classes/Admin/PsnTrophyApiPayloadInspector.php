@@ -178,13 +178,12 @@ final class PsnTrophyApiPayloadInspector
     private function extractNpCommunicationIdFromArray(array $payload): ?string
     {
         $topLevelCandidateKeys = ['npCommunicationId', 'np_communication_id'];
-        foreach ($topLevelCandidateKeys as $candidateKey) {
-            $candidate = $payload[$candidateKey] ?? null;
-            if (is_string($candidate) && trim($candidate) !== '') {
-                return $candidate;
-            }
-        }
+        $candidateKey = array_find(
+            $topLevelCandidateKeys,
+            fn (string $candidateKey): bool => is_string($payload[$candidateKey] ?? null)
+                && trim((string) $payload[$candidateKey]) !== ''
+        );
 
-        return null;
+        return $candidateKey === null ? null : (string) $payload[$candidateKey];
     }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../wwwroot/classes/GameResetAction.php';
 require_once __DIR__ . '/../wwwroot/classes/GameResetService.php';
 
 final class GameResetServiceTest extends TestCase
@@ -30,7 +31,7 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-123', 1001)");
         $this->database->exec("INSERT INTO trophy_group_player (np_communication_id) VALUES ('MERGE-123')");
 
-        $message = $this->service->process(1, 0);
+        $message = $this->service->process(1, GameResetAction::RESET);
 
         $this->assertSame('Game 1 was reset.', $message);
 
@@ -92,7 +93,7 @@ final class GameResetServiceTest extends TestCase
             'trophy_group',
         ];
 
-        $message = $this->service->process(1, 1);
+        $message = $this->service->process(1, GameResetAction::DELETE);
 
         $this->assertSame('Game 1 was deleted.', $message);
 
@@ -132,7 +133,7 @@ final class GameResetServiceTest extends TestCase
     public function testProcessThrowsWhenGameEntryIsMissing(): void
     {
         try {
-            $this->service->process(99, 0);
+            $this->service->process(99, GameResetAction::RESET);
             $this->fail('Expected InvalidArgumentException was not thrown.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Can only reset/delete merged game entries.', $exception->getMessage());
@@ -145,22 +146,10 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-123', 1, 0, NULL)");
 
         try {
-            $this->service->process(5, 0);
+            $this->service->process(5, GameResetAction::RESET);
             $this->fail('Expected InvalidArgumentException was not thrown.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Can only reset/delete merged game entries.', $exception->getMessage());
-        }
-    }
-
-    public function testProcessThrowsForUnknownAction(): void
-    {
-        $this->insertMergedGame('MERGE-789', 7, 'Merged Game', 2, 1);
-
-        try {
-            $this->service->process(7, 42);
-            $this->fail('Expected InvalidArgumentException was not thrown.');
-        } catch (InvalidArgumentException $exception) {
-            $this->assertSame('Unknown method.', $exception->getMessage());
         }
     }
 
@@ -172,7 +161,7 @@ final class GameResetServiceTest extends TestCase
         // Orphan row without trophy_title_player must still be removed on reset/delete.
         $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-ACC', 2002)");
 
-        $this->service->process(11, 0);
+        $this->service->process(11, GameResetAction::RESET);
 
         $this->assertSame(
             0,
@@ -187,7 +176,7 @@ final class GameResetServiceTest extends TestCase
         $this->database->exec('CREATE TRIGGER fail_delete BEFORE DELETE ON trophy_merge BEGIN SELECT RAISE(ABORT, "delete failure"); END;');
 
         try {
-            $this->service->process(9, 0);
+            $this->service->process(9, GameResetAction::RESET);
             $this->fail('Expected exception was not thrown.');
         } catch (Throwable $exception) {
             $this->assertStringContainsString('delete failure', $exception->getMessage());

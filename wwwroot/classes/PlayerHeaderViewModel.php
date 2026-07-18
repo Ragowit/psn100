@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Html.php';
 
 require_once __DIR__ . '/PlayerSummary.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PlayerLeaderboardRank.php';
 require_once __DIR__ . '/PlayerLeaderboardRankChange.php';
@@ -67,9 +68,7 @@ final readonly class PlayerHeaderViewModel
 
     public function canShowPlayerStats(): bool
     {
-        $status = $this->getStatus();
-
-        return $status !== 1 && $status !== 3;
+        return !$this->getStatus()->isRestricted();
     }
 
     /**
@@ -82,26 +81,26 @@ final readonly class PlayerHeaderViewModel
         $accountId = $this->getAccountId();
 
         $alerts = match ($status) {
-            1 => [
+            PlayerStatus::FLAGGED => [
                 PlayerStatusNotice::flagged($onlineId, (string) $accountId)->getMessage(),
             ],
-            3 => [
+            PlayerStatus::PRIVATE_PROFILE => [
                 PlayerStatusNotice::privateProfile()->getMessage()
                 . ' Make sure this player is no longer private, and then issue a new scan of the profile on the front page.',
             ],
-            4 => [
+            PlayerStatus::INACTIVE => [
                 'This player has not played a game in over a year and is considered inactive by this site. All data from this player will be excluded from site statistics and leaderboards.',
             ],
-            5 => [
+            PlayerStatus::UNAVAILABLE => [
                 'This player seems to no longer be available from Sony, maybe removed for some reason. We will recheck after 24h and if this player is still not available it will be removed from here as well.',
             ],
-            99 => [
+            PlayerStatus::NEW_PLAYER => [
                 'This is a new player currently being scanned for the first time. Rank and stats will be done once the scan is complete.',
             ],
-            default => [],
+            PlayerStatus::NORMAL => [],
         };
 
-        if ($status === 1 || $status === 3 || $status === 99) {
+        if ($status->isRestricted() || $status === PlayerStatus::NEW_PLAYER) {
             return $alerts;
         }
 
@@ -112,7 +111,7 @@ final readonly class PlayerHeaderViewModel
             );
         }
 
-        if ($status === 4) {
+        if ($status === PlayerStatus::INACTIVE) {
             return $alerts;
         }
 
@@ -226,14 +225,14 @@ final readonly class PlayerHeaderViewModel
         return (int) ($this->player['account_id'] ?? 0);
     }
 
-    private function getStatus(): int
+    private function getStatus(): PlayerStatus
     {
-        return (int) ($this->player['status'] ?? 0);
+        return PlayerStatus::fromValue((int) ($this->player['status'] ?? 0));
     }
 
     private function hasHiddenTrophies(): bool
     {
-        if ($this->getStatus() === 3) {
+        if ($this->getStatus()->isPrivateProfile()) {
             return false;
         }
 

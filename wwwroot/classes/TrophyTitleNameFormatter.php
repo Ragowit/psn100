@@ -11,7 +11,9 @@ final class TrophyTitleNameFormatter
 {
     public function format(string $name): string
     {
-        return $this->toApaTitleCase($this->sanitize($name));
+        return $name
+            |> $this->sanitize(...)
+            |> $this->toApaTitleCase(...);
     }
 
     public function sanitize(string $name): string

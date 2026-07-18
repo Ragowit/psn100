@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-class GameLeaderboardPlayerNotFoundException extends RuntimeException
+final class GameLeaderboardPlayerNotFoundException extends RuntimeException
 {
     public function __construct(
-        private int $gameId,
-        private string $gameName,
+        private readonly int $gameId,
+        private readonly string $gameName,
         string $message = 'Player not found for game',
     ) {
         parent::__construct($message);

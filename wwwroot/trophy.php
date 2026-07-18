@@ -106,7 +106,7 @@ require_once("header.php");
                                                     <?php
                                                     $progressTargetValue = $trophy->getProgressTargetValue();
                                                     if ($progressTargetValue !== null) {
-                                                        $progress = $playerTrophy !== null ? $playerTrophy->getProgress() : null;
+                                                        $progress = $playerTrophy?->getProgress();
                                                         ?>
                                                         <br><b><?= htmlspecialchars($progress ?? '0', ENT_QUOTES, 'UTF-8'); ?>/<?= htmlspecialchars($progressTargetValue, ENT_QUOTES, 'UTF-8'); ?></b>
                                                         <?php

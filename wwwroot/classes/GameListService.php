@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/GameListItem.php';
 require_once __DIR__ . '/GameListPageResult.php';
 require_once __DIR__ . '/PlatformSql.php';
+require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PsnOnlineIdValidator.php';
 
@@ -47,8 +48,7 @@ class GameListService
             return $onlineId;
         }
 
-        $status = (int) $status;
-        if ($status === 1 || $status === 3) {
+        if (PlayerStatus::fromValue((int) $status)->isRestricted()) {
             return null;
         }
 

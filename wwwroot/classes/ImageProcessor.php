@@ -77,7 +77,7 @@ final class GdImageProcessor implements ImageProcessorInterface
     #[\Override]
     public function convertPaletteToTrueColor(\GdImage $image): void
     {
-        @imagepalettetotruecolor($image);
+        (void) @imagepalettetotruecolor($image);
     }
 
     #[\Override]

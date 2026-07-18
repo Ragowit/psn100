@@ -93,23 +93,14 @@ final class TrophyGroupConflictResolver
             return null;
         }
 
-        foreach ($parentGroupTrophyNames as $parentGroupId => $parentNames) {
-            $parentGroupIdString = (string) $parentGroupId;
+        $parentGroupId = array_find_key(
+            $parentGroupTrophyNames,
+            fn (array $parentNames, int|string $parentGroupId): bool => (string) $parentGroupId !== $childGroupId
+                && !isset($usedParentGroups[(string) $parentGroupId])
+                && $parentNames === $childNames
+        );
 
-            if ($parentGroupIdString === $childGroupId) {
-                continue;
-            }
-
-            if (isset($usedParentGroups[$parentGroupIdString])) {
-                continue;
-            }
-
-            if ($parentNames === $childNames) {
-                return $parentGroupIdString;
-            }
-        }
-
-        return null;
+        return $parentGroupId === null ? null : (string) $parentGroupId;
     }
 
     /**
