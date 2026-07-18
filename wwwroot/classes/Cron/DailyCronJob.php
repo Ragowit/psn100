@@ -7,19 +7,20 @@ require_once __DIR__ . '/CronJobInterface.php';
 final readonly class DailyCronJob implements CronJobInterface
 {
     /**
-     * Ranking-window size for scanning trophy_earned for top-10k accounts.
+     * Account-window size for scanning trophy_earned from the frozen snapshot.
      *
-     * Each batch drives from a frozen ranking snapshot into trophy_earned by
-     * account_id so HASH(account_id) partition pruning applies. Small windows
-     * keep each aggregation bounded so daily cron cannot saturate MySQL/IO and
-     * take the public site offline (Cloudflare 525).
+     * Each batch drives a fixed number of snapshot rows into trophy_earned by
+     * account_id so HASH(account_id) partition pruning applies. Batching by
+     * synthetic batch_position (not RANK() values) keeps each statement bounded
+     * even when many players share the same ranking, so daily cron cannot
+     * saturate MySQL/IO and take the public site offline (Cloudflare 525).
      */
-    private const int RANKED_OWNER_RANKING_BATCH_SIZE = 100;
+    private const int RANKED_OWNER_SNAPSHOT_BATCH_SIZE = 100;
 
     private const int TOP_RANKED_PLAYERS = 10000;
 
     /**
-     * Pause between ranking batches so web traffic can use MySQL while daily
+     * Pause between snapshot batches so web traffic can use MySQL while daily
      * rarity recalculation is in progress.
      */
     private const int RANKED_OWNER_BATCH_DELAY_SECONDS = 1;
@@ -30,10 +31,11 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private const string CREATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE tmp_daily_ranked_players (
+            batch_position INT UNSIGNED NOT NULL,
             ranking MEDIUMINT UNSIGNED NOT NULL,
             account_id BIGINT UNSIGNED NOT NULL,
-            PRIMARY KEY (account_id),
-            KEY idx_tmp_daily_ranked_players_ranking (ranking)
+            PRIMARY KEY (batch_position),
+            UNIQUE KEY u_tmp_daily_ranked_players_account (account_id)
         )
         SQL;
 
@@ -41,14 +43,22 @@ final readonly class DailyCronJob implements CronJobInterface
      * Freeze the top-10k account set once so later player_ranking swaps cannot
      * move an account into another batch window and double-count owners.
      *
-     * account_id is the primary key because PlayerRankingUpdater uses RANK(),
-     * so tied leaderboard scores share the same ranking value.
+     * batch_position is a dense ROW_NUMBER() so later trophy_earned scans can
+     * batch by account count. account_id stays unique because PlayerRankingUpdater
+     * uses RANK(), so tied leaderboard scores share the same ranking value.
      */
     private const string POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
-        INSERT INTO tmp_daily_ranked_players (ranking, account_id)
-        SELECT pr.ranking, pr.account_id
+        INSERT INTO tmp_daily_ranked_players (batch_position, ranking, account_id)
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY pr.ranking, pr.account_id) AS batch_position,
+            pr.ranking,
+            pr.account_id
         FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)
         WHERE pr.ranking <= 10000
+        SQL;
+
+    private const string COUNT_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
+        SELECT COUNT(*) FROM tmp_daily_ranked_players
         SQL;
 
     private const string CREATE_RANKED_OWNER_TEMP_TABLE_QUERY = <<<'SQL'
@@ -61,7 +71,7 @@ final readonly class DailyCronJob implements CronJobInterface
         SQL;
 
     /**
-     * Count earned trophies for one ranking window of the frozen top players.
+     * Count earned trophies for one account window of the frozen top players.
      *
      * Driving from tmp_daily_ranked_players into trophy_earned on account_id
      * applies HASH(account_id) partition pruning and uses
@@ -85,7 +95,7 @@ final readonly class DailyCronJob implements CronJobInterface
         STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)
             ON te.account_id = rp.account_id
             AND te.earned = 1
-        WHERE rp.ranking BETWEEN :min_ranking AND :max_ranking
+        WHERE rp.batch_position BETWEEN :min_position AND :max_position
         GROUP BY te.np_communication_id, te.order_id
         ON DUPLICATE KEY UPDATE
             trophy_owners = trophy_owners + VALUES(trophy_owners)
@@ -173,7 +183,7 @@ final readonly class DailyCronJob implements CronJobInterface
         private PDO $database,
         private int $retryDelaySeconds = 3,
         private \Closure $sleeper = self::DEFAULT_SLEEPER,
-        private int $rankedOwnerRankingBatchSize = self::RANKED_OWNER_RANKING_BATCH_SIZE,
+        private int $rankedOwnerSnapshotBatchSize = self::RANKED_OWNER_SNAPSHOT_BATCH_SIZE,
         private int $batchDelaySeconds = self::RANKED_OWNER_BATCH_DELAY_SECONDS,
     ) {
     }
@@ -231,19 +241,32 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function populateRankedOwnerCounts(): void
     {
-        $batchSize = max(1, $this->rankedOwnerRankingBatchSize);
+        $totalPlayers = $this->countRankedPlayerSnapshot();
+        if ($totalPlayers === 0) {
+            return;
+        }
+
+        $batchSize = max(1, $this->rankedOwnerSnapshotBatchSize);
         $query = $this->database->prepare(self::POPULATE_RANKED_OWNER_COUNTS_QUERY);
 
-        for ($minRanking = 1; $minRanking <= self::TOP_RANKED_PLAYERS; $minRanking += $batchSize) {
-            if ($minRanking > 1 && $this->batchDelaySeconds > 0) {
+        for ($minPosition = 1; $minPosition <= $totalPlayers; $minPosition += $batchSize) {
+            if ($minPosition > 1 && $this->batchDelaySeconds > 0) {
                 ($this->sleeper)($this->batchDelaySeconds);
             }
 
-            $maxRanking = min($minRanking + $batchSize - 1, self::TOP_RANKED_PLAYERS);
-            $query->bindValue(':min_ranking', $minRanking, PDO::PARAM_INT);
-            $query->bindValue(':max_ranking', $maxRanking, PDO::PARAM_INT);
+            $maxPosition = min($minPosition + $batchSize - 1, $totalPlayers);
+            $query->bindValue(':min_position', $minPosition, PDO::PARAM_INT);
+            $query->bindValue(':max_position', $maxPosition, PDO::PARAM_INT);
             $query->execute();
         }
+    }
+
+    private function countRankedPlayerSnapshot(): int
+    {
+        $query = $this->database->prepare(self::COUNT_RANKED_PLAYER_SNAPSHOT_QUERY);
+        $query->execute();
+
+        return max(0, (int) $query->fetchColumn());
     }
 
     /**
