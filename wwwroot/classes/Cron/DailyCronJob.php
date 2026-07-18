@@ -141,7 +141,12 @@ final readonly class DailyCronJob implements CronJobInterface
             $this->executeWithRetry([$this, 'prepareAndPopulateRankedOwnerCounts']);
             $this->executeWithRetry([$this, 'applyTrophyRarityFromTemporaryTable']);
         } finally {
-            $this->dropRankedOwnerTempTable();
+            // Best-effort: a transient DROP failure must not abort run() before
+            // title rarity points. The table is TEMPORARY/session-scoped anyway.
+            try {
+                $this->dropRankedOwnerTempTable();
+            } catch (Throwable) {
+            }
         }
     }
 

@@ -210,6 +210,31 @@ final class DailyCronJobTest extends TestCase
         ], $database->getOperations());
     }
 
+    public function testRunContinuesToTitlePointsWhenFinalTempTableDropFails(): void
+    {
+        $database = new DailyCronJobFinalDropFailureTestDatabase();
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds): void {
+                throw new RuntimeException('Sleeper should not be called.');
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame([
+            'drop-temp',
+            'create-temp',
+            'populate-owners',
+            'apply-rarity',
+            'drop-temp-failed',
+            'title-points',
+        ], $database->getOperations());
+        $this->assertSame(1, $database->getTitlePointsUpdateCount());
+    }
+
     private function readClassSource(): string
     {
         $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/DailyCronJob.php');
@@ -522,6 +547,81 @@ final class DailyCronJobTempCleanupRetryTestDatabase extends PDO
         if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->operations[] = 'title-points';
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+final class DailyCronJobFinalDropFailureTestDatabase extends PDO
+{
+    /** @var list<string> */
+    private array $operations = [];
+
+    private int $dropCount = 0;
+
+    private int $titlePointsUpdateCount = 0;
+
+    public function __construct()
+    {
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getOperations(): array
+    {
+        return $this->operations;
+    }
+
+    public function getTitlePointsUpdateCount(): int
+    {
+        return $this->titlePointsUpdateCount;
+    }
+
+    public function exec(string $statement): int|false
+    {
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
+            $this->dropCount++;
+            if ($this->dropCount === 1) {
+                // Initial prepare cleanup before create.
+                $this->operations[] = 'drop-temp';
+
+                return 0;
+            }
+
+            $this->operations[] = 'drop-temp-failed';
+            throw new RuntimeException('Simulated final temp table drop failure.');
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
+            $this->operations[] = 'create-temp';
+
+            return 0;
+        }
+
+        throw new RuntimeException('Unexpected exec call: ' . $statement);
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'populate-owners';
+            });
+        }
+
+        if (str_contains($query, 'LEFT JOIN tmp_daily_ranked_trophy_owners owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'apply-rarity';
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'title-points';
+                $this->titlePointsUpdateCount++;
             });
         }
 
