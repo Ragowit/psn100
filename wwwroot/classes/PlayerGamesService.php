@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerGame.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
+require_once __DIR__ . '/DateDurationSummary.php';
 
 final class PlayerGamesService
 {
@@ -287,18 +288,7 @@ final class PlayerGamesService
             return null;
         }
 
-        $interval = $start->diff($end);
-        $formatted = $interval->format('%y years, %m months, %d days, %h hours, %i minutes, %s seconds');
-        $parts = explode(', ', $formatted);
-
-        $summary = $parts
-            |> (fn(array $parts): array => array_filter(
-                $parts,
-                static fn(string $part): bool => $part !== '' && $part[0] !== '0'
-            ))
-            |> array_values(...)
-            |> (fn(array $parts): array => array_slice($parts, 0, 2));
-
+        $summary = DateDurationSummary::significantParts($start, $end);
         if ($summary === []) {
             return null;
         }

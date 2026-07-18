@@ -71,6 +71,7 @@ class PlayerGamesFilter
     /**
      * @param array<string, mixed> $parameters
      */
+    #[\NoDiscard]
     public static function fromArray(array $parameters): self
     {
         $filter = new self();

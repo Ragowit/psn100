@@ -70,7 +70,7 @@ class TrophyStatusPage
         $statusInput = '1';
         $message = null;
 
-        $normalizedMethod = strtoupper($requestMethod);
+        $normalizedMethod = $requestMethod |> trim(...) |> strtoupper(...);
         $hasTrophyPost = array_key_exists('trophy', $postData);
         $hasGamePost = array_key_exists('game', $postData);
 

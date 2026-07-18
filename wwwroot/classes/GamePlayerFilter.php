@@ -17,6 +17,7 @@ readonly class GamePlayerFilter
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromArray(array $queryParameters): self
     {
         return new self(

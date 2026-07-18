@@ -176,8 +176,10 @@ final readonly class TrophyImageDownloader
         if ($hash === null) {
             $hash = md5($contents);
         }
-        $extensionPosition = strrpos($url, '.');
-        $extension = $extensionPosition === false ? '' : strtolower(substr($url, $extensionPosition));
+
+        $path = Uri\Rfc3986\Uri::parse($url)?->getPath() ?? '';
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $extension = $extension === '' ? '' : '.' . $extension;
 
         return $hash . $extension;
     }

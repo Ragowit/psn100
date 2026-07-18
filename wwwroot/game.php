@@ -7,6 +7,7 @@ require_once __DIR__ . '/classes/GamePage.php';
 require_once __DIR__ . '/classes/GameTrophyFilter.php';
 require_once __DIR__ . '/classes/TrophyRarityFormatter.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
+require_once __DIR__ . '/classes/DateDurationSummary.php';
 
 if (!isset($gameId)) {
     header("Location: /game/", true, 303);
@@ -284,31 +285,15 @@ require_once("header.php");
                                                     && $previousTimeStamp !== null
                                                     && $trophyRow->hasRecordedEarnedDate()
                                                 ) {
-                                                    $datetime1 = date_create($previousTimeStamp);
-                                                    $datetime2 = date_create($trophyRow->getEarnedDate());
+                                                    try {
+                                                        $start = new DateTimeImmutable($previousTimeStamp);
+                                                        $end = new DateTimeImmutable($trophyRow->getEarnedDate());
+                                                        $completionTimes = DateDurationSummary::significantParts($start, $end);
 
-                                                    if ($datetime1 !== false && $datetime2 !== false) {
-                                                        echo "<br>";
-                                                        $completionTimes = explode(", ", date_diff($datetime1, $datetime2)->format("%y years, %m months, %d days, %h hours, %i minutes, %s seconds"));
-                                                        $first = -1;
-                                                        $second = -1;
-                                                        for ($i = 0; $i < count($completionTimes); $i++) {
-                                                            if ($completionTimes[$i][0] === '0') {
-                                                                continue;
-                                                            }
-
-                                                            if ($first == -1) {
-                                                                $first = $i;
-                                                            } elseif ($second == -1) {
-                                                                $second = $i;
-                                                            }
+                                                        if ($completionTimes !== []) {
+                                                            echo '<br>(+' . Html::escape(implode(', ', $completionTimes)) . ')';
                                                         }
-
-                                                        if ($first >= 0 && $second >= 0) {
-                                                            echo "(+". $completionTimes[$first] .", ". $completionTimes[$second] .")";
-                                                        } elseif ($first >= 0 && $second == -1) {
-                                                            echo "(+". $completionTimes[$first] .")";
-                                                        }
+                                                    } catch (DateMalformedStringException) {
                                                     }
                                                 }
                                                 if ($sort == "date") {

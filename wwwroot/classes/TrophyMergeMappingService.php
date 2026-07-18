@@ -185,9 +185,9 @@ SQL
 
     private function normalizeTrophyName(string $name): string
     {
-        $name = trim($name);
-
-        return mb_strtolower($name, 'UTF-8');
+        return $name
+            |> trim(...)
+            |> (fn(string $value): string => mb_strtolower($value, 'UTF-8'));
     }
 
     /**

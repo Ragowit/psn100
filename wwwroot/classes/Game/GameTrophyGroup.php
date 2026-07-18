@@ -7,6 +7,7 @@ final readonly class GameTrophyGroup
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data, bool $usesPlayStation5Assets): self
     {
         return new self(

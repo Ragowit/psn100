@@ -15,6 +15,7 @@ final readonly class GameHeaderStack
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromArray(array $row): self
     {
         $region = $row['region'] ?? null;

@@ -18,6 +18,7 @@ final readonly class GamePlayerProgress
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromArray(array $row): self
     {
         return new self(
