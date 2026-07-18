@@ -4,23 +4,26 @@ declare(strict_types=1);
 
 class PlayerGamesFilter
 {
-    public const SORT_DATE = 'date';
-    public const SORT_IN_GAME_MAX_RARITY = 'max-in-game-rarity';
-    public const SORT_IN_GAME_RARITY = 'in-game-rarity';
-    public const SORT_MAX_RARITY = 'max-rarity';
-    public const SORT_NAME = 'name';
-    public const SORT_RARITY = 'rarity';
-    public const SORT_SEARCH = 'search';
+    public const string SORT_DATE = 'date';
+    public const string SORT_IN_GAME_MAX_RARITY = 'max-in-game-rarity';
+    public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
+    public const string SORT_MAX_RARITY = 'max-rarity';
+    public const string SORT_NAME = 'name';
+    public const string SORT_RARITY = 'rarity';
+    public const string SORT_SEARCH = 'search';
 
-    public const PLATFORM_PC = 'pc';
-    public const PLATFORM_PS3 = 'ps3';
-    public const PLATFORM_PS4 = 'ps4';
-    public const PLATFORM_PS5 = 'ps5';
-    public const PLATFORM_PSVITA = 'psvita';
-    public const PLATFORM_PSVR = 'psvr';
-    public const PLATFORM_PSVR2 = 'psvr2';
+    public const string PLATFORM_PC = 'pc';
+    public const string PLATFORM_PS3 = 'ps3';
+    public const string PLATFORM_PS4 = 'ps4';
+    public const string PLATFORM_PS5 = 'ps5';
+    public const string PLATFORM_PSVITA = 'psvita';
+    public const string PLATFORM_PSVR = 'psvr';
+    public const string PLATFORM_PSVR2 = 'psvr2';
 
-    private const ALLOWED_SORTS = [
+    /**
+     * @var list<string>
+     */
+    private const array ALLOWED_SORTS = [
         self::SORT_DATE,
         self::SORT_IN_GAME_MAX_RARITY,
         self::SORT_IN_GAME_RARITY,
@@ -30,7 +33,10 @@ class PlayerGamesFilter
         self::SORT_SEARCH,
     ];
 
-    private const PLATFORM_KEYS = [
+    /**
+     * @var list<string>
+     */
+    private const array PLATFORM_KEYS = [
         self::PLATFORM_PC,
         self::PLATFORM_PS3,
         self::PLATFORM_PS4,
@@ -40,7 +46,7 @@ class PlayerGamesFilter
         self::PLATFORM_PSVR2,
     ];
 
-    private const DEFAULT_LIMIT = 50;
+    private const int DEFAULT_LIMIT = 50;
 
     private string $search;
     private string $sort;

@@ -5,14 +5,15 @@ declare(strict_types=1);
 final readonly class PlayerReportDeletionRequest
 {
     private function __construct(
-        private ?int $deleteId,
-        private ?string $errorMessage
+        final private ?int $deleteId,
+        final private ?string $errorMessage,
     ) {
     }
 
     /**
      * @param array<string, mixed> $postData
      */
+    #[\NoDiscard]
     public static function fromPostData(array $postData): self
     {
         if (!array_key_exists('delete_id', $postData)) {

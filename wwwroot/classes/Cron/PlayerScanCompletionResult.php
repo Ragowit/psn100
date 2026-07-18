@@ -7,8 +7,8 @@ declare(strict_types=1);
  */
 final class PlayerScanCompletionResult
 {
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CONTINUE_SCAN = 'continue_scan';
+    public const string STATUS_COMPLETED = 'completed';
+    public const string STATUS_CONTINUE_SCAN = 'continue_scan';
 
     private function __construct(final public readonly string $status)
     {

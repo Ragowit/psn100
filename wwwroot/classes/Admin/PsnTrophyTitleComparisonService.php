@@ -14,6 +14,20 @@ final class PsnTrophyTitleComparisonService
     public const string SOURCE_DIRECT = 'direct';
     public const string SOURCE_TUSTIN = 'tustin';
 
+    private const \Closure DEFAULT_CLIENT_FACTORY = static function (): object {
+        return new Client();
+    };
+
+    private const \Closure DEFAULT_TIME_PROVIDER = static function (): float {
+        return microtime(true);
+    };
+
+    private const \Closure DEFAULT_REFRESH_TOKEN_SAVER = static function (
+        int $workerId,
+        #[\SensitiveParameter] string $refreshToken,
+    ): void {
+    };
+
     /**
      * @var \Closure(): iterable<Worker>
      */
@@ -45,12 +59,12 @@ final class PsnTrophyTitleComparisonService
         ?callable $refreshTokenSaver = null,
     ) {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable($clientFactory ?? static fn (): object => new Client());
-        $this->timeProvider = \Closure::fromCallable($timeProvider ?? static fn (): float => microtime(true));
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? static function (int $workerId, string $refreshToken): void {
-        });
+        $this->clientFactory = \Closure::fromCallable($clientFactory ?? self::DEFAULT_CLIENT_FACTORY);
+        $this->timeProvider = \Closure::fromCallable($timeProvider ?? self::DEFAULT_TIME_PROVIDER);
+        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER);
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(PDO $database): self
     {
         $workerService = new WorkerService($database);
@@ -59,7 +73,7 @@ final class PsnTrophyTitleComparisonService
             static fn (): array => $workerService->fetchWorkers(),
             null,
             null,
-            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
+            static fn (int $workerId, #[\SensitiveParameter] string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
         );
     }
 

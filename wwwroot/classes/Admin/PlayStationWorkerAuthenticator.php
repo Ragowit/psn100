@@ -68,6 +68,7 @@ final class PlayStationWorkerAuthenticator
             : null;
     }
 
+    #[\NoDiscard]
     public static function fromWorkerService(
         WorkerService $workerService,
         ?callable $clientFactory = null,
@@ -76,7 +77,7 @@ final class PlayStationWorkerAuthenticator
         return new self(
             static fn (): array => $workerService->fetchWorkers(),
             $clientFactory,
-            static function (int $workerId, string $refreshToken) use ($workerService): void {
+            static function (int $workerId, #[\SensitiveParameter] string $refreshToken) use ($workerService): void {
                 $workerService->updateWorkerRefreshToken($workerId, $refreshToken);
             },
             null,

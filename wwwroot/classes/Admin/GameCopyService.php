@@ -9,7 +9,7 @@ require_once __DIR__ . '/TrophyGroupConflictResolver.php';
 
 class GameCopyService
 {
-    private const TROPHY_UPDATE_QUERY = <<<'SQL'
+    private const string TROPHY_UPDATE_QUERY = <<<'SQL'
         WITH
             tg_org AS(
             SELECT
@@ -46,7 +46,7 @@ class GameCopyService
             tg.np_communication_id = :parent_np_communication_id
         SQL;
 
-    private const TROPHY_INSERT_QUERY = <<<'SQL'
+    private const string TROPHY_INSERT_QUERY = <<<'SQL'
         INSERT INTO
             trophy (
                 np_communication_id,
@@ -99,7 +99,7 @@ class GameCopyService
             )
         SQL;
 
-    private const TROPHY_META_INSERT_QUERY = <<<'SQL'
+    private const string TROPHY_META_INSERT_QUERY = <<<'SQL'
         INSERT INTO
             trophy_meta (
                 trophy_id,

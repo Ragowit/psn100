@@ -22,6 +22,7 @@ final readonly class LogDeletionRequest
     /**
      * @param array<string, mixed> $postData
      */
+    #[\NoDiscard]
     public static function fromPostData(array $postData): self
     {
         $action = null;

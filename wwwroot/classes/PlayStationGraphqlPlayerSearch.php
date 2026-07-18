@@ -4,27 +4,33 @@ declare(strict_types=1);
 
 final class PlayStationGraphqlPlayerSearch
 {
-    private const GRAPHQL_OPERATION_CONTEXT = 'metGetContextSearchResults';
+    private const string GRAPHQL_OPERATION_CONTEXT = 'metGetContextSearchResults';
 
-    private const GRAPHQL_OPERATION_DOMAIN = 'metGetDomainSearchResults';
+    private const string GRAPHQL_OPERATION_DOMAIN = 'metGetDomainSearchResults';
 
-    private const GRAPHQL_PERSISTED_QUERY_HASHES = [
+    /**
+     * @var array<string, string>
+     */
+    private const array GRAPHQL_PERSISTED_QUERY_HASHES = [
         self::GRAPHQL_OPERATION_CONTEXT => 'ac5fb2b82c4d086ca0d272fba34418ab327a7762dd2cd620e63f175bbc5aff10',
         self::GRAPHQL_OPERATION_DOMAIN => '23ece284bf8bdc50bfa30a4d97fd4d733e723beb7a42dff8c1ee883f8461a2e1',
     ];
 
-    private const GRAPHQL_HEADERS = [
+    /**
+     * @var array<string, string>
+     */
+    private const array GRAPHQL_HEADERS = [
         'apollographql-client-name' => 'PlayStationApp-Android',
         'content-type' => 'application/json',
     ];
 
-    private const GRAPHQL_SEARCH_CONTEXT = 'MobileUniversalSearchSocial';
+    private const string GRAPHQL_SEARCH_CONTEXT = 'MobileUniversalSearchSocial';
 
-    private const GRAPHQL_SEARCH_LOCALE = 'en-US';
+    private const string GRAPHQL_SEARCH_LOCALE = 'en-US';
 
-    private const GRAPHQL_SEARCH_DOMAIN = 'SocialAllAccounts';
+    private const string GRAPHQL_SEARCH_DOMAIN = 'SocialAllAccounts';
 
-    private const GRAPHQL_PAGE_SIZE = 20;
+    private const int GRAPHQL_PAGE_SIZE = 20;
 
     private object $client;
 

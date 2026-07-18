@@ -97,7 +97,7 @@ class TrophyMergeRequestHandler
 
         $childId = (int) $postData['child'];
         $parentId = (int) $postData['parent'];
-        $method = strtolower((string) ($postData['method'] ?? 'order'));
+        $method = ((string) ($postData['method'] ?? 'order')) |> strtolower(...);
 
         return $this->trophyMergeService->mergeGames($childId, $parentId, $method, $progressListener);
     }
@@ -106,7 +106,7 @@ class TrophyMergeRequestHandler
     {
         $childId = (int) $postData['child'];
         $parentId = (int) $postData['parent'];
-        $method = strtolower((string) ($postData['method'] ?? 'order'));
+        $method = ((string) ($postData['method'] ?? 'order')) |> strtolower(...);
 
         return $this->trophyMergeService->mergeGames($childId, $parentId, $method);
     }

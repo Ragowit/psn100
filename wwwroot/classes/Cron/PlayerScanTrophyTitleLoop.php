@@ -21,8 +21,6 @@ final class PlayerScanTrophyTitleLoop
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
-    private readonly \Closure $sleeper;
-
     public function __construct(
         private readonly PDO $database,
         private readonly Psn100Logger $logger,
@@ -33,11 +31,8 @@ final class PlayerScanTrophyTitleLoop
         private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService,
         private readonly PlayerScanCompletionService $scanCompletionService,
         private readonly PlayerScanTrophyTitleRefresher $trophyTitleRefresher,
-        ?callable $sleeper = null,
+        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
-        $this->sleeper = $sleeper === null
-            ? self::DEFAULT_SLEEPER
-            : \Closure::fromCallable($sleeper);
     }
 
     /**

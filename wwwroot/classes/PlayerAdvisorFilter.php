@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 readonly class PlayerAdvisorFilter
 {
-    public const SORT_RARITY = 'rarity';
-    public const SORT_IN_GAME_RARITY = 'in_game_rarity';
+    public const string SORT_RARITY = 'rarity';
+    public const string SORT_IN_GAME_RARITY = 'in_game_rarity';
 
     /**
-     * @var array<int, string>
+     * @var list<string>
      */
-    private const ALLOWED_SORTS = [
+    private const array ALLOWED_SORTS = [
         self::SORT_RARITY,
         self::SORT_IN_GAME_RARITY,
     ];
 
-    private const SUPPORTED_PLATFORMS = [
+    /**
+     * @var list<string>
+     */
+    private const array SUPPORTED_PLATFORMS = [
         'pc',
         'ps3',
         'ps4',

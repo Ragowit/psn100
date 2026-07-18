@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final class TrophyMetaRepository
 {
-    private const SELECT_TROPHY_ID_SQL = <<<'SQL'
+    private const string SELECT_TROPHY_ID_SQL = <<<'SQL'
         SELECT id
         FROM trophy
         WHERE np_communication_id = :np_communication_id
@@ -12,7 +12,7 @@ final class TrophyMetaRepository
           AND order_id = :order_id
     SQL;
 
-    private const SQLITE_INSERT_META_SQL = <<<'SQL'
+    private const string SQLITE_INSERT_META_SQL = <<<'SQL'
         INSERT OR IGNORE INTO trophy_meta (
             trophy_id,
             rarity_percent,
@@ -30,7 +30,7 @@ final class TrophyMetaRepository
         )
     SQL;
 
-    private const MYSQL_INSERT_META_SQL = <<<'SQL'
+    private const string MYSQL_INSERT_META_SQL = <<<'SQL'
         INSERT INTO trophy_meta (
             trophy_id,
             rarity_percent,

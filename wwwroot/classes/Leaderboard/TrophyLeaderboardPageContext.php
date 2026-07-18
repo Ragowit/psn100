@@ -8,7 +8,7 @@ require_once __DIR__ . '/TrophyLeaderboardRow.php';
 
 class TrophyLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
-    private const TITLE = 'PSN Trophy Leaderboard ~ PSN 100%';
+    private const string TITLE = 'PSN Trophy Leaderboard ~ PSN 100%';
 
     #[\Override]
     public function getTitle(): string

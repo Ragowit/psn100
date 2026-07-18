@@ -11,9 +11,9 @@ require_once __DIR__ . '/IpAddressResolver.php';
 
 final class AboutPageScanLogController
 {
-    private const DEFAULT_LIMIT = 30;
-    private const MIN_LIMIT = 1;
-    private const MAX_LIMIT = 100;
+    private const int DEFAULT_LIMIT = 30;
+    private const int MIN_LIMIT = 1;
+    private const int MAX_LIMIT = 100;
 
     private AboutPageDataProviderInterface $aboutPageService;
     private JsonResponseEmitter $jsonResponder;
@@ -38,6 +38,7 @@ final class AboutPageScanLogController
         $this->maxLimit = $maxLimit;
     }
 
+    #[\NoDiscard]
     public static function create(
         AboutPageDataProviderInterface $aboutPageService,
         JsonResponseEmitter $jsonResponder,

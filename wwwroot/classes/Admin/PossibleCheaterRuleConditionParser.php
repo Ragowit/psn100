@@ -7,7 +7,7 @@ require_once __DIR__ . '/PossibleCheaterRuleTuple.php';
 
 final class PossibleCheaterRuleConditionParser
 {
-    private const CONDITION_PATTERN = '/^te\.np_communication_id = \'([^\']+)\' AND te\.order_id = (\d+)(?: AND te\.earned_date (>=|<=|<) \'([^\']+)\')?$/';
+    private const string CONDITION_PATTERN = '/^te\.np_communication_id = \'([^\']+)\' AND te\.order_id = (\d+)(?: AND te\.earned_date (>=|<=|<) \'([^\']+)\')?$/';
 
     public function parse(string $condition): PossibleCheaterRuleTuple
     {

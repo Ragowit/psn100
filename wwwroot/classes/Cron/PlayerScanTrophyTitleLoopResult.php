@@ -7,8 +7,8 @@ declare(strict_types=1);
  */
 final readonly class PlayerScanTrophyTitleLoopResult
 {
-    public const ACTION_CONTINUE = 'continue';
-    public const ACTION_PROCEED = 'proceed';
+    public const string ACTION_CONTINUE = 'continue';
+    public const string ACTION_PROCEED = 'proceed';
 
     private function __construct(final public string $action)
     {

@@ -11,6 +11,16 @@ use Tustin\PlayStation\Client;
 
 final class PsnPlayerLookupService
 {
+    private const \Closure DEFAULT_CLIENT_FACTORY = static function (): object {
+        return new Client();
+    };
+
+    private const \Closure DEFAULT_REFRESH_TOKEN_SAVER = static function (
+        int $workerId,
+        #[\SensitiveParameter] string $refreshToken,
+    ): void {
+    };
+
     /**
      * @var \Closure(): iterable<Worker>
      */
@@ -32,15 +42,11 @@ final class PsnPlayerLookupService
     public function __construct(callable $workerFetcher, ?callable $clientFactory = null, ?callable $refreshTokenSaver = null)
     {
         $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable(
-            $clientFactory ?? static function (): object {
-                return new Client();
-            }
-        );
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? static function (int $workerId, string $refreshToken): void {
-        });
+        $this->clientFactory = \Closure::fromCallable($clientFactory ?? self::DEFAULT_CLIENT_FACTORY);
+        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER);
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(PDO $database): self
     {
         $workerService = new WorkerService($database);
@@ -48,7 +54,7 @@ final class PsnPlayerLookupService
         return new self(
             static fn (): array => $workerService->fetchWorkers(),
             null,
-            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
+            static fn (int $workerId, #[\SensitiveParameter] string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken)
         );
     }
 

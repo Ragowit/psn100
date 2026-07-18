@@ -14,6 +14,7 @@ readonly class GameTrophyFilter
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromQueryParameters(array $queryParameters, bool $allowUnearnedFilter): self
     {
         if (!$allowUnearnedFilter) {

@@ -62,7 +62,7 @@ class GameDetailPage
         $error = null;
 
         try {
-            $method = strtoupper((string) ($serverParameters['REQUEST_METHOD'] ?? 'GET'));
+            $method = ((string) ($serverParameters['REQUEST_METHOD'] ?? 'GET')) |> strtoupper(...);
 
             if ($method === 'POST') {
                 $action = $this->formParser->parseAction($postData['action'] ?? null);

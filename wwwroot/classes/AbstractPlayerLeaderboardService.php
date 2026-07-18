@@ -7,9 +7,9 @@ require_once __DIR__ . '/PlayerLeaderboardQueryResult.php';
 
 abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeaderboardDataProvider
 {
-    public const PAGE_SIZE = 50;
+    public const int PAGE_SIZE = 50;
 
-    private const COUNT_SQL = <<<'SQL'
+    private const string COUNT_SQL = <<<'SQL'
         SELECT
             COUNT(*)
         FROM
