@@ -6,6 +6,24 @@ require_once __DIR__ . '/CronJobInterface.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
+    /**
+     * Ranking-window size for scanning trophy_earned for top-10k accounts.
+     *
+     * Each batch drives from player_ranking into trophy_earned by account_id so
+     * HASH(account_id) partition pruning applies. Small windows keep each
+     * aggregation bounded so daily cron cannot saturate MySQL/IO and take the
+     * public site offline (Cloudflare 525).
+     */
+    private const int RANKED_OWNER_RANKING_BATCH_SIZE = 100;
+
+    private const int TOP_RANKED_PLAYERS = 10000;
+
+    /**
+     * Pause between ranking batches so web traffic can use MySQL while daily
+     * rarity recalculation is in progress.
+     */
+    private const int RANKED_OWNER_BATCH_DELAY_SECONDS = 1;
+
     private const \Closure DEFAULT_SLEEPER = static function (int $seconds): void {
         sleep($seconds);
     };
@@ -20,15 +38,21 @@ final readonly class DailyCronJob implements CronJobInterface
         SQL;
 
     /**
-     * Count earned trophies for the top 10k ranked players once.
+     * Count earned trophies for one ranking window of top players.
      *
      * Driving from player_ranking into trophy_earned on account_id applies
      * HASH(account_id) partition pruning and uses idx_te_acc_comm_order_earned_date.
+     * Batches accumulate into the temp table via ON DUPLICATE KEY UPDATE so the
+     * full top-10k pass never runs as one long, site-blocking statement.
      * This replaces the previous per-title (or title-batch × 10k) probes that
      * re-scanned the same accounts for every game and made daily cron take 10+ hours.
      */
     private const string POPULATE_RANKED_OWNER_COUNTS_QUERY = <<<'SQL'
-        INSERT INTO tmp_daily_ranked_trophy_owners (np_communication_id, order_id, trophy_owners)
+        INSERT INTO tmp_daily_ranked_trophy_owners (
+            np_communication_id,
+            order_id,
+            trophy_owners
+        )
         SELECT /*+ JOIN_ORDER(pr, te) */
             te.np_communication_id,
             te.order_id,
@@ -37,8 +61,10 @@ final readonly class DailyCronJob implements CronJobInterface
         STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)
             ON te.account_id = pr.account_id
             AND te.earned = 1
-        WHERE pr.ranking <= 10000
+        WHERE pr.ranking BETWEEN :min_ranking AND :max_ranking
         GROUP BY te.np_communication_id, te.order_id
+        ON DUPLICATE KEY UPDATE
+            trophy_owners = trophy_owners + VALUES(trophy_owners)
         SQL;
 
     /**
@@ -123,6 +149,8 @@ final readonly class DailyCronJob implements CronJobInterface
         private PDO $database,
         private int $retryDelaySeconds = 3,
         private \Closure $sleeper = self::DEFAULT_SLEEPER,
+        private int $rankedOwnerRankingBatchSize = self::RANKED_OWNER_RANKING_BATCH_SIZE,
+        private int $batchDelaySeconds = self::RANKED_OWNER_BATCH_DELAY_SECONDS,
     ) {
     }
 
@@ -175,8 +203,19 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function populateRankedOwnerCounts(): void
     {
+        $batchSize = max(1, $this->rankedOwnerRankingBatchSize);
         $query = $this->database->prepare(self::POPULATE_RANKED_OWNER_COUNTS_QUERY);
-        $query->execute();
+
+        for ($minRanking = 1; $minRanking <= self::TOP_RANKED_PLAYERS; $minRanking += $batchSize) {
+            if ($minRanking > 1 && $this->batchDelaySeconds > 0) {
+                ($this->sleeper)($this->batchDelaySeconds);
+            }
+
+            $maxRanking = min($minRanking + $batchSize - 1, self::TOP_RANKED_PLAYERS);
+            $query->bindValue(':min_ranking', $minRanking, PDO::PARAM_INT);
+            $query->bindValue(':max_ranking', $maxRanking, PDO::PARAM_INT);
+            $query->execute();
+        }
     }
 
     /**

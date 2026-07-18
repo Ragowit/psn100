@@ -16,8 +16,14 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString('STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)', $source);
         $this->assertStringContainsString('te.account_id = pr.account_id', $source);
         $this->assertStringContainsString('te.earned = 1', $source);
-        $this->assertStringContainsString('WHERE pr.ranking <= 10000', $source);
+        $this->assertStringContainsString('WHERE pr.ranking BETWEEN :min_ranking AND :max_ranking', $source);
         $this->assertStringContainsString('GROUP BY te.np_communication_id, te.order_id', $source);
+        $this->assertStringContainsString('ON DUPLICATE KEY UPDATE', $source);
+        $this->assertStringContainsString(
+            'trophy_owners = trophy_owners + VALUES(trophy_owners)',
+            $source,
+        );
+        $this->assertFalse(str_contains($source, 'WHERE pr.ranking <= 10000'));
         $this->assertFalse(str_contains($source, 'LEFT JOIN trophy_earned te'));
         $this->assertFalse(str_contains($source, 'JSON_TABLE('));
         $this->assertFalse(str_contains($source, 'np_communication_id = title.np_communication_id'));
@@ -63,6 +69,8 @@ final class DailyCronJobTest extends TestCase
         $this->assertStringContainsString('prepareAndPopulateRankedOwnerCounts', $source);
         $this->assertStringContainsString('populateRankedOwnerCounts', $source);
         $this->assertStringContainsString('applyTrophyRarityFromTemporaryTable', $source);
+        $this->assertStringContainsString('RANKED_OWNER_RANKING_BATCH_SIZE', $source);
+        $this->assertStringContainsString('RANKED_OWNER_BATCH_DELAY_SECONDS', $source);
         $this->assertFalse(str_contains($source, 'SELECT np_communication_id FROM trophy_title'));
         $this->assertFalse(str_contains($source, 'JSON_TABLE('));
         $this->assertFalse(str_contains($source, 'RANKED_OWNER_TITLE_BATCH_SIZE'));
@@ -106,6 +114,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds): void {
                 throw new RuntimeException('Sleeper should not be called.');
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -113,6 +123,43 @@ final class DailyCronJobTest extends TestCase
         $this->assertSame([
             'drop-temp',
             'create-temp',
+            'populate-owners',
+            'apply-rarity',
+            'drop-temp',
+            'title-points',
+        ], $database->getOperations());
+    }
+
+    public function testPopulateRankedOwnerCountsUsesRankingBatchesAndYieldsBetweenThem(): void
+    {
+        $database = new DailyCronJobRankingBatchTestDatabase();
+        $sleepCalls = [];
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+            rankedOwnerRankingBatchSize: 2500,
+            batchDelaySeconds: 1,
+        );
+
+        $job->run();
+
+        $this->assertSame([
+            [1, 2500],
+            [2501, 5000],
+            [5001, 7500],
+            [7501, 10000],
+        ], $database->getRankingBatches());
+        $this->assertSame([1, 1, 1], $sleepCalls);
+        $this->assertSame([
+            'drop-temp',
+            'create-temp',
+            'populate-owners',
+            'populate-owners',
+            'populate-owners',
             'populate-owners',
             'apply-rarity',
             'drop-temp',
@@ -131,6 +178,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -152,6 +201,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -173,6 +224,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -206,6 +259,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -227,6 +282,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -257,6 +314,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -294,6 +353,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds) use (&$sleepCalls): void {
                 $sleepCalls[] = $seconds;
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -331,6 +392,8 @@ final class DailyCronJobTest extends TestCase
             sleeper: static function (int $seconds): void {
                 throw new RuntimeException('Sleeper should not be called.');
             },
+            rankedOwnerRankingBatchSize: 10000,
+            batchDelaySeconds: 0,
         );
 
         $job->run();
@@ -405,6 +468,79 @@ final class DailyCronJobHappyPathTestDatabase extends PDO
         if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->operations[] = 'populate-owners';
+            });
+        }
+
+        if (str_contains($query, 'LEFT JOIN tmp_daily_ranked_trophy_owners owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'apply-rarity';
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'title-points';
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+final class DailyCronJobRankingBatchTestDatabase extends PDO
+{
+    /** @var list<string> */
+    private array $operations = [];
+
+    /** @var list<array{0: int, 1: int}> */
+    private array $rankingBatches = [];
+
+    public function __construct()
+    {
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getOperations(): array
+    {
+        return $this->operations;
+    }
+
+    /**
+     * @return list<array{0: int, 1: int}>
+     */
+    public function getRankingBatches(): array
+    {
+        return $this->rankingBatches;
+    }
+
+    public function exec(string $statement): int|false
+    {
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
+            $this->operations[] = 'drop-temp';
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
+            $this->operations[] = 'create-temp';
+
+            return 0;
+        }
+
+        throw new RuntimeException('Unexpected exec call: ' . $statement);
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
+            return new DailyCronJobTestStatement(function (?array $params, array $boundValues): void {
+                $this->operations[] = 'populate-owners';
+                $this->rankingBatches[] = [
+                    (int) $boundValues[':min_ranking'],
+                    (int) $boundValues[':max_ranking'],
+                ];
             });
         }
 
