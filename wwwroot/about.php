@@ -161,7 +161,7 @@ require_once("header.php");
                                             </td>
                                             <td class="align-middle text-center">
                                                 <?php
-                                                if ($player->getStatus() == 1 || $player->getStatus() == 3) {
+                                                if ($player->getStatus()->isRestricted()) {
                                                     echo 'N/A';
                                                 } else {
                                                     echo '<img src="/img/star.svg" class="mb-1" alt="Level" title="Level" height="18"/> ' . $level;

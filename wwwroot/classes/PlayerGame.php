@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/GameStatusBadge.php';
 
 class PlayerGame
 {
@@ -102,6 +103,23 @@ class PlayerGame
     public function isActive(): bool
     {
         return $this->status === GameAvailabilityStatus::NORMAL;
+    }
+
+    public function shouldShowRarityPoints(): bool
+    {
+        return $this->status === GameAvailabilityStatus::NORMAL;
+    }
+
+    public function getStatusBadge(): ?GameStatusBadge
+    {
+        $label = $this->status->badgeLabel();
+        $message = $this->status->warningMessage();
+
+        if ($label === null || $message === null) {
+            return null;
+        }
+
+        return new GameStatusBadge($label, $message);
     }
 
     public function isCompleted(): bool

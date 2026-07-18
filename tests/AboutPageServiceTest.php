@@ -6,6 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageService.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayer.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageScanSummary.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/Utility.php';
 
 /**
@@ -232,7 +233,7 @@ final class AboutPageServiceTest extends TestCase
         $this->assertTrue($firstPlayer->isRanked());
         $this->assertSame(8, $firstPlayer->getRanking());
         $this->assertTrue($firstPlayer->hasHiddenTrophies());
-        $this->assertSame(0, $firstPlayer->getStatus());
+        $this->assertSame(PlayerStatus::NORMAL, $firstPlayer->getStatus());
         $this->assertSame(null, $firstPlayer->getStatusLabel());
         $this->assertFalse($firstPlayer->isNew());
         $this->assertSame(2, $firstPlayer->getRankDelta());
@@ -250,7 +251,7 @@ final class AboutPageServiceTest extends TestCase
         $this->assertFalse($secondPlayer->isRanked());
         $this->assertSame(null, $secondPlayer->getRanking());
         $this->assertFalse($secondPlayer->hasHiddenTrophies());
-        $this->assertSame(3, $secondPlayer->getStatus());
+        $this->assertSame(PlayerStatus::PRIVATE_PROFILE, $secondPlayer->getStatus());
         $this->assertSame('Private', $secondPlayer->getStatusLabel());
         $this->assertTrue($secondPlayer->isNew());
         $this->assertSame(null, $secondPlayer->getRankDelta());

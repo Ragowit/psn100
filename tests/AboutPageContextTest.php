@@ -6,6 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageContext.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayer.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageScanSummary.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/Utility.php';
 
 final class AboutPageDataProviderStub implements AboutPageDataProviderInterface
@@ -91,7 +92,7 @@ final class AboutPageContextTest extends TestCase
                 100,
                 '50',
                 0,
-                0,
+                PlayerStatus::NORMAL,
                 1,
                 1,
                 1

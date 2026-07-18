@@ -25,7 +25,6 @@ $playerGamesPage = $pageContext->getPlayerGamesPage();
 $playerGames = $pageContext->getGames();
 $metaData = $pageContext->getMetaData();
 $playerSearch = $pageContext->getSearch();
-$sort = $pageContext->getSort();
 $playerNavigation = $pageContext->getPlayerNavigation();
 $platformFilterOptions = $pageContext->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
@@ -93,13 +92,13 @@ require_once("header.php");
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
-                            <option value="search"<?= ($sort == "search" ? " selected" : ""); ?>>Best Match</option>
-                            <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
-                            <option value="max-rarity"<?= ($sort == "max-rarity" ? " selected" : ""); ?>>Max Rarity</option>
-                            <option value="max-in-game-rarity"<?= ($sort == "max-in-game-rarity" ? " selected" : ""); ?>>Max Rarity (Game)</option>
-                            <option value="name"<?= ($sort == "name" ? " selected" : ""); ?>>Name</option>
-                            <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity</option>
-                            <option value="in-game-rarity"<?= ($sort == "in-game-rarity" ? " selected" : ""); ?>>Rarity (Game)</option>
+                            <option value="search"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_SEARCH) ? ' selected' : ''); ?>>Best Match</option>
+                            <option value="date"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_DATE) ? ' selected' : ''); ?>>Date</option>
+                            <option value="max-rarity"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_MAX_RARITY) ? ' selected' : ''); ?>>Max Rarity</option>
+                            <option value="max-in-game-rarity"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_IN_GAME_MAX_RARITY) ? ' selected' : ''); ?>>Max Rarity (Game)</option>
+                            <option value="name"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_NAME) ? ' selected' : ''); ?>>Name</option>
+                            <option value="rarity"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_RARITY) ? ' selected' : ''); ?>>Rarity</option>
+                            <option value="in-game-rarity"<?= ($playerGamesFilter->isSort(PlayerGamesFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''); ?>>Rarity (Game)</option>
                         </select>
                     </div>
                 </form>
@@ -201,7 +200,7 @@ require_once("header.php");
                                         </td>
                                         <td class="align-middle text-center">
                                             <?php
-                                            if ($playerGame->getStatus() == 0) {
+                                            if ($playerGame->shouldShowRarityPoints()) {
                                                 echo number_format($playerGame->getRarityPoints());
                                                 if (!$playerGame->isCompleted()) {
                                                     echo '/'. number_format($playerGame->getMaxRarityPoints());
@@ -215,12 +214,13 @@ require_once("header.php");
                                                 }
 
                                                 echo ' <span class="text-body-secondary small">(Game)</span></div>';
-                                            } elseif ($playerGame->getStatus() == 1) {
-                                                echo "<span class=\"badge rounded-pill text-bg-warning\">Delisted</span>";
-                                            } elseif ($playerGame->getStatus() == 3) {
-                                                echo "<span class=\"badge rounded-pill text-bg-warning\">Obsolete</span>";
-                                            } elseif ($playerGame->getStatus() == 4) {
-                                                echo "<span class=\"badge rounded-pill text-bg-warning\">Delisted &amp; Obsolete</span>";
+                                            } else {
+                                                $statusBadge = $playerGame->getStatusBadge();
+                                                if ($statusBadge !== null) {
+                                                    echo '<span class="' . $statusBadge->getCssClass() . '" title="'
+                                                        . $statusBadge->getTooltip() . '">'
+                                                        . $statusBadge->getLabel() . '</span>';
+                                                }
                                             }
                                             ?>
                                         </td>

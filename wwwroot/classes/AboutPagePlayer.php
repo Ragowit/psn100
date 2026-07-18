@@ -2,14 +2,10 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerStatus.php';
+
 final readonly class AboutPagePlayer
 {
-    private const array STATUS_LABELS = [
-        1 => 'Cheater',
-        3 => 'Private',
-        4 => 'Inactive',
-    ];
-
     public function __construct(
         private Utility $utility,
         private string $onlineId,
@@ -19,7 +15,7 @@ final readonly class AboutPagePlayer
         private ?int $level,
         private ?string $progress,
         private int $rankLastWeek,
-        private int $status,
+        private PlayerStatus $status,
         private int $trophyCountNpwr,
         private int $trophyCountSony,
         private ?int $ranking,
@@ -41,7 +37,7 @@ final readonly class AboutPagePlayer
             isset($row['level']) ? (int) $row['level'] : null,
             isset($row['progress']) ? (string) $row['progress'] : null,
             isset($row['rank_last_week']) ? (int) $row['rank_last_week'] : 0,
-            isset($row['status']) ? (int) $row['status'] : 0,
+            PlayerStatus::fromValue(isset($row['status']) ? (int) $row['status'] : 0),
             isset($row['trophy_count_npwr']) ? (int) $row['trophy_count_npwr'] : 0,
             isset($row['trophy_count_sony']) ? (int) $row['trophy_count_sony'] : 0,
             isset($row['ranking']) ? (int) $row['ranking'] : null,
@@ -85,7 +81,7 @@ final readonly class AboutPagePlayer
 
     public function isRanked(): bool
     {
-        return $this->status === 0 && $this->ranking !== null;
+        return $this->status === PlayerStatus::NORMAL && $this->ranking !== null;
     }
 
     public function getRanking(): ?int
@@ -98,14 +94,14 @@ final readonly class AboutPagePlayer
         return $this->trophyCountNpwr < $this->trophyCountSony;
     }
 
-    public function getStatus(): int
+    public function getStatus(): PlayerStatus
     {
         return $this->status;
     }
 
     public function getStatusLabel(): ?string
     {
-        return self::STATUS_LABELS[$this->status] ?? null;
+        return $this->status->label();
     }
 
     public function isNew(): bool

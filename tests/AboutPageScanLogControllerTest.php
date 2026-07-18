@@ -9,6 +9,7 @@ require_once __DIR__ . '/../wwwroot/classes/AboutPageService.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPageScanSummary.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayer.php';
 require_once __DIR__ . '/../wwwroot/classes/AboutPagePlayerArraySerializer.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/Utility.php';
 require_once __DIR__ . '/../wwwroot/classes/JsonResponseEmitter.php';
 require_once __DIR__ . '/../wwwroot/classes/IpRateLimitService.php';
@@ -78,8 +79,8 @@ final class AboutPageScanLogControllerTest extends TestCase
         $utility = new Utility();
 
         $players = [
-            new AboutPagePlayer($utility, 'Ragowit', 'se', 'avatar1.png', '2024-01-01 00:00:00', 999, '50', 0, 0, 10, 10, 1),
-            new AboutPagePlayer($utility, 'Hunter', 'us', 'avatar2.png', '2024-01-02 12:00:00', 123, '25', 1, 0, 5, 10, 2),
+            new AboutPagePlayer($utility, 'Ragowit', 'se', 'avatar1.png', '2024-01-01 00:00:00', 999, '50', 0, PlayerStatus::NORMAL, 10, 10, 1),
+            new AboutPagePlayer($utility, 'Hunter', 'us', 'avatar2.png', '2024-01-02 12:00:00', 123, '25', 1, PlayerStatus::NORMAL, 5, 10, 2),
         ];
         $summary = new AboutPageScanSummary(25, 7);
         $service = new FakeAboutPageService($summary, $players);
@@ -112,7 +113,7 @@ final class AboutPageScanLogControllerTest extends TestCase
     {
         $utility = new Utility();
         $players = [
-            new AboutPagePlayer($utility, 'SoloPlayer', 'gb', 'avatar3.png', '2024-01-03 08:30:00', 75, '90', 0, 0, 1, 1, 5),
+            new AboutPagePlayer($utility, 'SoloPlayer', 'gb', 'avatar3.png', '2024-01-03 08:30:00', 75, '90', 0, PlayerStatus::NORMAL, 1, 1, 5),
         ];
         $summary = new AboutPageScanSummary(3, 1);
         $service = new FakeAboutPageService($summary, $players);
@@ -144,7 +145,7 @@ final class AboutPageScanLogControllerTest extends TestCase
 
         $utility = new Utility();
         $players = [
-            new AboutPagePlayer($utility, 'SoloPlayer', 'gb', 'avatar3.png', '2024-01-03 08:30:00', 75, '90', 0, 0, 1, 1, 5),
+            new AboutPagePlayer($utility, 'SoloPlayer', 'gb', 'avatar3.png', '2024-01-03 08:30:00', 75, '90', 0, PlayerStatus::NORMAL, 1, 1, 5),
         ];
         $summary = new AboutPageScanSummary(3, 1);
         $service = new FakeAboutPageService($summary, $players);

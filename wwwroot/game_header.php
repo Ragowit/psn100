@@ -5,6 +5,7 @@ require_once __DIR__ . '/classes/CommaSeparatedValues.php';
 require_once __DIR__ . '/classes/Html.php';
 
 require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
+require_once __DIR__ . '/classes/GameAvailabilityStatus.php';
 require_once __DIR__ . '/classes/GameMessageSanitizer.php';
 
 /** @var GameDetails $game */
@@ -82,7 +83,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
         }
     }
 
-    if ($status === 4) {
+    if ($status === GameAvailabilityStatus::DELISTED_AND_OBSOLETE) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
@@ -97,7 +98,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
             </div>
         </div>
         <?php
-    } elseif ($status === 1) {
+    } elseif ($status === GameAvailabilityStatus::DELISTED) {
         ?>
         <div class="col-12">
             <div class="alert alert-warning" role="alert">
@@ -265,15 +266,19 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                     <?php
                     $details = [];
 
-                    if ($status === 0) {
+                    if ($game->shouldShowRarityPoints()) {
                         $details[] = number_format($game->getRarityPoints()) . ' Rarity Points';
                         $details[] = number_format($game->getInGameRarityPoints()) . ' Rarity (Game) Points';
-                    } elseif ($status === 1) {
-                        $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted, no trophies will be accounted for on any leaderboard.'>Delisted</span>";
-                    } elseif ($status === 3) {
-                        $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is obsolete, no trophies will be accounted for on any leaderboard.'>Obsolete</span>";
-                    } elseif ($status === 4) {
-                        $details[] = "<span class='badge rounded-pill text-bg-warning' title='This game is delisted &amp; obsolete, no trophies will be accounted for on any leaderboard.'>Delisted &amp; Obsolete</span>";
+                    } else {
+                        $statusBadge = $game->getStatusBadge();
+                        if ($statusBadge !== null) {
+                            $details[] = sprintf(
+                                "<span class='%s' title='%s'>%s</span>",
+                                $statusBadge->getCssClass(),
+                                $statusBadge->getTooltip(),
+                                $statusBadge->getLabel()
+                            );
+                        }
                     }
 
                     echo implode('<br>', $details);
