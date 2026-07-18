@@ -175,9 +175,8 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $this->assertTrue(is_string($scanProgress));
         $this->assertStringContainsString('fetching game list', $scanProgress);
 
-        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
-        $this->assertStringContainsString('cURL error 18', (string) $logMessage);
-        $this->assertStringContainsString('ExampleUser', (string) $logMessage);
+        $logCount = (int) $this->database->query('SELECT COUNT(*) FROM log')->fetchColumn();
+        $this->assertSame(0, $logCount);
     }
 
     public function testProcessAccessibleTrophyTitlesRetriesTypeErrorsQuickly(): void
