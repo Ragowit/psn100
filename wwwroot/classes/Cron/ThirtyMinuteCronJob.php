@@ -281,10 +281,12 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                 // back off and keep the worker alive instead of terminating the cron job.
                 // Guzzle's httpErrors middleware can also TypeError when a null response
                 // reaches a ResponseInterface-typed onFulfilled handler after a network failure.
-                // Lock wait timeouts usually clear quickly, so retry sooner than other errors.
-                $isLockWaitTimeout = $this->isLockWaitTimeoutException($exception);
-                $waitSeconds = $isLockWaitTimeout ? 5 : 60;
-                $waitDescription = $isLockWaitTimeout ? '5 seconds' : '1 minute';
+                // Lock wait timeouts and deadlocks usually clear quickly, so retry sooner
+                // than other errors.
+                $isQuickDbRetry = $this->isLockWaitTimeoutException($exception)
+                    || $this->isDeadlockException($exception);
+                $waitSeconds = $isQuickDbRetry ? 5 : 60;
+                $waitDescription = $isQuickDbRetry ? '5 seconds' : '1 minute';
 
                 $this->logger->log(sprintf(
                     'Encountered a problem while scanning %s: %s. Waiting %s before retrying.',
@@ -320,5 +322,16 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
         }
 
         return str_contains($exception->getMessage(), 'Lock wait timeout exceeded');
+    }
+
+    private function isDeadlockException(Throwable $exception): bool
+    {
+        if ($exception instanceof PDOException) {
+            if ($exception->getCode() === '40001' || (($exception->errorInfo[1] ?? null) === 1213)) {
+                return true;
+            }
+        }
+
+        return str_contains($exception->getMessage(), 'Deadlock found when trying to get lock');
     }
 }

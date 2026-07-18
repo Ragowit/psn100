@@ -108,8 +108,10 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
             $source
         );
         $this->assertStringContainsString('isLockWaitTimeoutException', $source);
-        $this->assertStringContainsString('$waitSeconds = $isLockWaitTimeout ? 5 : 60', $source);
+        $this->assertStringContainsString('isDeadlockException', $source);
+        $this->assertStringContainsString('$waitSeconds = $isQuickDbRetry ? 5 : 60', $source);
         $this->assertStringContainsString("=== 1205", $source);
+        $this->assertStringContainsString("=== 1213", $source);
     }
 
     public function testIsLockWaitTimeoutExceptionDetectsMysqlError1205(): void
@@ -135,6 +137,35 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
         $this->assertTrue($method->invoke(
             $cronJob,
             new RuntimeException('SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction')
+        ));
+        $this->assertFalse($method->invoke($cronJob, new RuntimeException('cURL error 18')));
+    }
+
+    public function testIsDeadlockExceptionDetectsMysqlError1213(): void
+    {
+        $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isDeadlockException');
+        $method->setAccessible(true);
+
+        $database = new PDO('sqlite::memory:');
+        $cronJob = new ThirtyMinuteCronJob(
+            $database,
+            new TrophyCalculator($database),
+            new Psn100Logger($database),
+            new TrophyHistoryRecorder($database, new Psn100Logger($database)),
+            1
+        );
+
+        $deadlock = new PDOException(
+            'SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction'
+        );
+        $deadlock->errorInfo = ['40001', 1213, 'Deadlock found when trying to get lock; try restarting transaction'];
+
+        $this->assertTrue($method->invoke($cronJob, $deadlock));
+        $this->assertTrue($method->invoke(
+            $cronJob,
+            new RuntimeException(
+                'SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction'
+            )
         ));
         $this->assertFalse($method->invoke($cronJob, new RuntimeException('cURL error 18')));
     }
