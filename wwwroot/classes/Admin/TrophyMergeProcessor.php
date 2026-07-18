@@ -30,7 +30,7 @@ class TrophyMergeProcessor
      */
     public function processRequest(array $postData, array $serverData): void
     {
-        $method = strtoupper((string) ($serverData['REQUEST_METHOD'] ?? ''));
+        $method = ((string) ($serverData['REQUEST_METHOD'] ?? '')) |> strtoupper(...);
         if ($method !== 'POST') {
             $this->sendJsonResponse(405, [
                 'success' => false,
@@ -42,7 +42,7 @@ class TrophyMergeProcessor
 
         $childId = $this->filterNumericValue($postData['child'] ?? null);
         $parentId = $this->filterNumericValue($postData['parent'] ?? null);
-        $mergeMethod = strtolower((string) ($postData['method'] ?? 'order'));
+        $mergeMethod = ((string) ($postData['method'] ?? 'order')) |> strtolower(...);
 
         if ($childId === null || $parentId === null) {
             $this->sendJsonResponse(400, [

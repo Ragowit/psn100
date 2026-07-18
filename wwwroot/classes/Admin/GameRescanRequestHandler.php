@@ -21,7 +21,7 @@ class GameRescanRequestHandler
      */
     public function handleRequest(array $postData, array $serverData): void
     {
-        $method = strtoupper((string) ($serverData['REQUEST_METHOD'] ?? ''));
+        $method = ((string) ($serverData['REQUEST_METHOD'] ?? '')) |> strtoupper(...);
         if ($method !== 'POST') {
             $this->sendJsonResponse(405, [
                 'success' => false,

@@ -16,6 +16,7 @@ final readonly class PlayerTimelineEntry
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromRow(array $row): self
     {
         return new self(

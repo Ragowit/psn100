@@ -6,8 +6,8 @@ require_once __DIR__ . '/PageMetaData.php';
 
 class PageMetaDataRenderer
 {
-    private const OG_SITE_NAME = 'PSN 100%';
-    private const TWITTER_CARD = 'summary_large_image';
+    private const string OG_SITE_NAME = 'PSN 100%';
+    private const string TWITTER_CARD = 'summary_large_image';
 
     public function render(PageMetaData $metaData): string
     {

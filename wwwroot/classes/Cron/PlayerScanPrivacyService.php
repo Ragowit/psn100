@@ -15,14 +15,11 @@ final class PlayerScanPrivacyService
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
-    private readonly \Closure $sleeper;
-
     public function __construct(
         private readonly PDO $database,
         private readonly WorkerScanCoordinator $workerScanCoordinator,
-        ?callable $sleeper = null,
+        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
-        $this->sleeper = \Closure::fromCallable($sleeper ?? self::DEFAULT_SLEEPER);
     }
 
     public function markAsPrivateByOnlineId(string $onlineId): void

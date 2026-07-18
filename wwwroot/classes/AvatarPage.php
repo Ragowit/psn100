@@ -38,6 +38,7 @@ class AvatarPage
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromQueryParameters(AvatarService $avatarService, array $queryParameters, int $limit = 48): self
     {
         $page = 1;

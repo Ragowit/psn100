@@ -7,8 +7,8 @@ declare(strict_types=1);
  */
 final class PlayerScanProfileSyncResult
 {
-    public const STATUS_SUCCESS = 'success';
-    public const STATUS_SKIP_PLAYER = 'skip_player';
+    public const string STATUS_SUCCESS = 'success';
+    public const string STATUS_SKIP_PLAYER = 'skip_player';
 
     /**
      * @param array<string, mixed> $player

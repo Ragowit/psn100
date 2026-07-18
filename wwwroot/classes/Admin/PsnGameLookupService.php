@@ -37,6 +37,7 @@ final class PsnGameLookupService
         $this->trophyGroupAssembler = $trophyGroupAssembler ?? new PsnTrophyGroupAssembler();
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(PDO $database): self
     {
         $workerService = new WorkerService($database);

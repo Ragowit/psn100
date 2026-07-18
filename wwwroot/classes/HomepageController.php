@@ -14,6 +14,7 @@ final readonly class HomepageController
     ) {
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(PDO $database): self
     {
         $contentService = new HomepageContentService($database);

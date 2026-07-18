@@ -30,6 +30,7 @@ class ChangelogPage
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function create(PDO $database, Utility $utility, array $queryParameters): self
     {
         $service = new ChangelogService($database);
@@ -40,6 +41,7 @@ class ChangelogPage
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromService(ChangelogService $service, Utility $utility, array $queryParameters): self
     {
         $requestedPage = self::resolvePageNumber($queryParameters['page'] ?? null);

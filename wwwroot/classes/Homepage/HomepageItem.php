@@ -6,8 +6,8 @@ require_once __DIR__ . '/../CommaSeparatedValues.php';
 
 abstract readonly class HomepageItem
 {
-    private const MISSING_PS5_ICON = '/img/missing-ps5-game-and-trophy.png';
-    private const MISSING_PS4_ICON = '/img/missing-ps4-game.png';
+    private const string MISSING_PS5_ICON = '/img/missing-ps5-game-and-trophy.png';
+    private const string MISSING_PS4_ICON = '/img/missing-ps4-game.png';
 
     private string $iconDirectory;
 

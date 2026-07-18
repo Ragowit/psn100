@@ -7,8 +7,8 @@ require_once __DIR__ . '/PossibleCheaterSectionDefinition.php';
 
 final class PossibleCheaterRulesCatalog
 {
-    private const DEFAULT_GENERAL_RULES_FILE = __DIR__ . '/../../config/possible-cheater-general-rules.php';
-    private const DEFAULT_SECTIONS_FILE = __DIR__ . '/../../config/possible-cheater-sections.php';
+    private const string DEFAULT_GENERAL_RULES_FILE = __DIR__ . '/../../config/possible-cheater-general-rules.php';
+    private const string DEFAULT_SECTIONS_FILE = __DIR__ . '/../../config/possible-cheater-sections.php';
 
     /**
      * @var PossibleCheaterRuleGroup[]|null

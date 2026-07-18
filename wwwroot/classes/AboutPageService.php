@@ -8,7 +8,7 @@ require_once __DIR__ . '/AboutPageScanSummary.php';
 
 final readonly class AboutPageService implements AboutPageDataProviderInterface
 {
-    private const DEFAULT_SCAN_LOG_LIMIT = 10;
+    private const int DEFAULT_SCAN_LOG_LIMIT = 10;
 
     public function __construct(
         private readonly PDO $database,

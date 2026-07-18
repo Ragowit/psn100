@@ -7,9 +7,9 @@ declare(strict_types=1);
  */
 final class PlayerScanTrophySummaryAccessResult
 {
-    public const STATUS_ACCESSIBLE = 'accessible';
-    public const STATUS_PRIVATE = 'private';
-    public const STATUS_ABORT_SCAN = 'abort_scan';
+    public const string STATUS_ACCESSIBLE = 'accessible';
+    public const string STATUS_PRIVATE = 'private';
+    public const string STATUS_ABORT_SCAN = 'abort_scan';
 
     private function __construct(
         final public readonly string $status,

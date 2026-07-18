@@ -7,9 +7,9 @@ require_once __DIR__ . '/AboutPagePlayerArraySerializer.php';
 
 final readonly class AboutPageContext
 {
-    private const DEFAULT_SCAN_LOG_LIMIT = 30;
-    private const DEFAULT_MAX_INITIAL_DISPLAY_COUNT = 10;
-    private const DEFAULT_TITLE = 'About ~ PSN 100%';
+    private const int DEFAULT_SCAN_LOG_LIMIT = 30;
+    private const int DEFAULT_MAX_INITIAL_DISPLAY_COUNT = 10;
+    private const string DEFAULT_TITLE = 'About ~ PSN 100%';
 
     /**
      * @param list<AboutPagePlayer> $scanLogPlayers
@@ -28,6 +28,7 @@ final readonly class AboutPageContext
     ) {
     }
 
+    #[\NoDiscard]
     public static function create(
         AboutPageDataProviderInterface $dataProvider,
         int $scanLogLimit = self::DEFAULT_SCAN_LOG_LIMIT,

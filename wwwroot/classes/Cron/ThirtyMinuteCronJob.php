@@ -174,10 +174,10 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                 continue;
             }
 
-            if ($recheck == $player["online_id"]) {
-                $recheck = "";
+            if ($recheck === $player['online_id']) {
+                $recheck = '';
             } else {
-                $recheck = $player["online_id"];
+                $recheck = $player['online_id'];
             }
 
             $onlineId = (string) $player['online_id'];

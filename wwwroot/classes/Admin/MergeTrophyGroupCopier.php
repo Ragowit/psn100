@@ -9,7 +9,7 @@ require_once __DIR__ . '/TrophyGroupConflictResolver.php';
  */
 final class MergeTrophyGroupCopier
 {
-    private const TROPHY_GROUP_UPDATE_QUERY = <<<'SQL'
+    private const string TROPHY_GROUP_UPDATE_QUERY = <<<'SQL'
         WITH
             tg_org AS(
             SELECT
@@ -33,7 +33,7 @@ final class MergeTrophyGroupCopier
             tg.np_communication_id = :parent_np_communication_id
         SQL;
 
-    private const TROPHY_GROUP_INSERT_QUERY = <<<'SQL'
+    private const string TROPHY_GROUP_INSERT_QUERY = <<<'SQL'
         INSERT INTO
             trophy_group (
                 np_communication_id,

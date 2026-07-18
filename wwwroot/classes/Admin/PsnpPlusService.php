@@ -12,9 +12,9 @@ require_once __DIR__ . '/../PsnpPlusClient.php';
 class PsnpPlusService
 {
     /**
-     * @var int[]
+     * @var list<int>
      */
-    private const UNRELEASED_GAMES = [
+    private const array UNRELEASED_GAMES = [
         2409, 2410, 2414, 2552, 4234, 4236, 4237, 4240, 4241, 5012, 5318, 5925, 6420, 7082, 7272, 8352, 8644, 8672,
         10225, 10314, 10519, 10601, 10834, 11153, 13787, 13788, 14299, 16636, 16827, 16907, 16935, 17071, 17166, 17244,
         17359, 17420, 17575, 17745, 18171, 18552, 18895,

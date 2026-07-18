@@ -317,7 +317,7 @@ final class PlayerScanTitleCatalogSynchronizer
                 $query->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
                 $query->execute();
                 $status = $query->fetchColumn();
-                if ($status == 2) {
+                if ((int) $status === 2) {
                     $this->logger->log('New trophies added for ' . $trophyTitle->name() . '. ' . $npid . ', ' . $trophyGroupId . ', ' . $trophyGroupName);
                 } else {
                     $this->logger->log('SET VERSION for ' . $trophyTitle->name() . '. ' . $npid . ', ' . $trophyGroupId . ', ' . $trophyGroupName);

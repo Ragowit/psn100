@@ -6,7 +6,7 @@ require_once __DIR__ . '/GamePlayerFilter.php';
 
 final class GameRecentPlayersQueryBuilder
 {
-    private const BASE_QUERY = <<<'SQL'
+    private const string BASE_QUERY = <<<'SQL'
         WITH eligible_players AS (
             SELECT
                 p.account_id,
@@ -38,7 +38,7 @@ final class GameRecentPlayersQueryBuilder
         WHERE ttp.np_communication_id = :np_communication_id
     SQL;
 
-    private const ORDER_BY_QUERY = <<<'SQL'
+    private const string ORDER_BY_QUERY = <<<'SQL'
         ORDER BY
             ttp.last_updated_date DESC
         LIMIT :limit

@@ -102,7 +102,7 @@ final class PlayerScanCompletionService
         $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
         $withinAYear = $query->fetchColumn();
-        if ($withinAYear == 0) {
+        if ((int) $withinAYear === 0) {
             $playerStatus = 4;
         }
 
@@ -159,7 +159,7 @@ final class PlayerScanCompletionService
         $query->execute();
         $playerStatus = $query->fetchColumn();
 
-        if ($playerStatus != 0) {
+        if ((int) $playerStatus !== 0) {
             return;
         }
 
