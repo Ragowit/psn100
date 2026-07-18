@@ -8,9 +8,9 @@ declare(strict_types=1);
 final readonly class PlayerScanTitleHeaderSyncResult
 {
     public function __construct(
-        public bool $titleDataChanged,
-        public bool $titleNeedsUpdate,
-        public bool $isNewTitle,
+        final public bool $titleDataChanged,
+        final public bool $titleNeedsUpdate,
+        final public bool $isNewTitle,
     ) {
     }
 }

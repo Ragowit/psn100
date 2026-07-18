@@ -212,6 +212,7 @@ final class StubGameRescanGroupDataFetcher implements GameRescanGroupDataFetcher
         $this->groupData = $groupData;
     }
 
+    #[\Override]
     public function fetchGroupData(\Tustin\PlayStation\Client $client, string $npCommunicationId): array
     {
         return $this->groupData;

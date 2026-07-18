@@ -13,6 +13,7 @@ readonly class PlayerTrophyProgress
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data, ?string $progressTargetValue): self
     {
         $earned = ((int) ($data['earned'] ?? 0)) === 1;

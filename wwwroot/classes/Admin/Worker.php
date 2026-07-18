@@ -8,7 +8,9 @@ final readonly class Worker
 {
     public function __construct(
         private int $id,
+        #[\SensitiveParameter]
         private string $refreshToken,
+        #[\SensitiveParameter]
         private string $npsso,
         private string $scanning,
         private DateTimeImmutable $scanStart,

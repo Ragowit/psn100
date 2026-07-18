@@ -21,6 +21,7 @@ final readonly class GameDetail
     ) {
     }
 
+    #[\NoDiscard]
     public static function fromArray(int $id, array $row): self
     {
         $npCommunicationId = isset($row['np_communication_id']) ? (string) $row['np_communication_id'] : null;

@@ -14,6 +14,7 @@ final class NavigationMenu
     {
     }
 
+    #[\NoDiscard]
     public static function createDefault(NavigationState $state): self
     {
         $items = [

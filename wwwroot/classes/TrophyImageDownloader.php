@@ -178,7 +178,7 @@ final readonly class TrophyImageDownloader
         }
 
         $path = Uri\Rfc3986\Uri::parse($url)?->getPath() ?? '';
-        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $extension = pathinfo($path, PATHINFO_EXTENSION) |> strtolower(...);
         $extension = $extension === '' ? '' : '.' . $extension;
 
         return $hash . $extension;

@@ -13,6 +13,7 @@ readonly class PlayerQueueRequest
         private string $pollToken,
     ) {}
 
+    #[\NoDiscard]
     public static function fromArrays(array $requestData, array $serverData): self
     {
         $playerName = self::sanitizeValue($requestData['q'] ?? '');

@@ -47,7 +47,7 @@ final class AdminAuthService
         return $this->loginThrottle?->getLockoutRemainingSeconds($ipAddress) ?? 0;
     }
 
-    public function login(string $username, string $password, string $ipAddress = ''): bool
+    public function login(string $username, #[\SensitiveParameter] string $password, string $ipAddress = ''): bool
     {
         if ($ipAddress !== '' && $this->isLoginLocked($ipAddress)) {
             return false;

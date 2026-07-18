@@ -29,6 +29,7 @@ final readonly class AboutPagePlayer
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromArray(array $row, Utility $utility): self
     {
         return new self(

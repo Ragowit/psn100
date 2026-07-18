@@ -31,6 +31,7 @@ class PlayerGame
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromArray(array $row, ?string $completionDurationLabel = null): self
     {
         return new self(

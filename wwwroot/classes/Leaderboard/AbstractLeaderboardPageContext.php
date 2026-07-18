@@ -54,6 +54,7 @@ abstract class AbstractLeaderboardPageContext
     /**
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     final public static function fromGlobals(PDO $database, Utility $utility, array $queryParameters): static
     {
         $dataProvider = static::createDataProvider($database);

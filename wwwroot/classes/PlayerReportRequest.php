@@ -18,6 +18,7 @@ final readonly class PlayerReportRequest
      * @param array<string, mixed> $postParameters
      * @param array<string, mixed> $serverParameters
      */
+    #[\NoDiscard]
     public static function fromArrays(array $postParameters, array $serverParameters): self
     {
         $explanationSubmitted = array_key_exists('explanation', $postParameters);

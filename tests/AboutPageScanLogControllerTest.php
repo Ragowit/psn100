@@ -33,6 +33,7 @@ final class FakeAboutPageService implements AboutPageDataProviderInterface
         $this->players = $players;
     }
 
+    #[\Override]
     public function getScanSummary(): AboutPageScanSummary
     {
         return $this->summary;
@@ -41,6 +42,7 @@ final class FakeAboutPageService implements AboutPageDataProviderInterface
     /**
      * @return array<int, AboutPagePlayer>
      */
+    #[\Override]
     public function getScanLogPlayers(int $limit = 10): array
     {
         $this->capturedLimit = $limit;
@@ -56,11 +58,13 @@ final class FakeAboutPageService implements AboutPageDataProviderInterface
 
 final class FailingAboutPageService implements AboutPageDataProviderInterface
 {
+    #[\Override]
     public function getScanSummary(): AboutPageScanSummary
     {
         throw new \RuntimeException('Failed to load summary');
     }
 
+    #[\Override]
     public function getScanLogPlayers(int $limit): array
     {
         throw new \RuntimeException('Failed to load scan log players');

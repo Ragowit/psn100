@@ -8,7 +8,7 @@ final class WorkerCredentialMasker
     private const int MASK_LENGTH = 8;
     private const int VISIBLE_SUFFIX_LENGTH = 4;
 
-    public static function mask(string $secret): string
+    public static function mask(#[\SensitiveParameter] string $secret): string
     {
         if ($secret === '') {
             return 'Not configured';
@@ -22,7 +22,7 @@ final class WorkerCredentialMasker
             . substr($secret, -self::VISIBLE_SUFFIX_LENGTH);
     }
 
-    public static function isConfigured(string $secret): bool
+    public static function isConfigured(#[\SensitiveParameter] string $secret): bool
     {
         return $secret !== '';
     }

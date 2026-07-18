@@ -14,10 +14,10 @@ final class PlayerScanProfileSyncResult
      * @param array<string, mixed> $player
      */
     private function __construct(
-        public readonly string $status,
-        public readonly array $player = [],
-        public readonly ?object $user = null,
-        public readonly ?string $country = null,
+        final public readonly string $status,
+        final public readonly array $player = [],
+        final public readonly ?object $user = null,
+        final public readonly ?string $country = null,
     ) {
     }
 

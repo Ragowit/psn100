@@ -32,6 +32,7 @@ final readonly class PlayerLogEntry
     /**
      * @param array<string, mixed> $row
      */
+    #[\NoDiscard]
     public static function fromArray(array $row): self
     {
         return new self(

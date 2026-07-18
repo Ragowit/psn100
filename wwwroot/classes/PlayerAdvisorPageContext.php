@@ -45,6 +45,7 @@ final class PlayerAdvisorPageContext
      * @param array<string, mixed> $playerData
      * @param array<string, mixed> $queryParameters
      */
+    #[\NoDiscard]
     public static function fromGlobals(
         PDO $database,
         Utility $utility,

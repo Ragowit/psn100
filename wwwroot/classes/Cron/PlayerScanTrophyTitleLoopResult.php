@@ -10,7 +10,7 @@ final readonly class PlayerScanTrophyTitleLoopResult
     public const ACTION_CONTINUE = 'continue';
     public const ACTION_PROCEED = 'proceed';
 
-    private function __construct(public string $action)
+    private function __construct(final public string $action)
     {
     }
 

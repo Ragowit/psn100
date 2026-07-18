@@ -76,7 +76,7 @@ final class WorkerService
         return WorkerScanProgress::fromJson($value);
     }
 
-    public function updateWorkerNpsso(int $workerId, string $npsso): bool
+    public function updateWorkerNpsso(int $workerId, #[\SensitiveParameter] string $npsso): bool
     {
         $statement = $this->database->prepare('UPDATE setting SET npsso = :npsso WHERE id = :id');
 
@@ -92,7 +92,7 @@ final class WorkerService
         return $statement->rowCount() > 0;
     }
 
-    public function updateWorkerRefreshToken(int $workerId, string $refreshToken): bool
+    public function updateWorkerRefreshToken(int $workerId, #[\SensitiveParameter] string $refreshToken): bool
     {
         $statement = $this->database->prepare('UPDATE setting SET refresh_token = :refresh_token WHERE id = :id');
 

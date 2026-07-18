@@ -77,6 +77,7 @@ class PlayerAdvisableTrophy
         $this->utility = $utility;
     }
 
+    #[\NoDiscard]
     public static function fromArray(array $data, Utility $utility): self
     {
         return new self(
