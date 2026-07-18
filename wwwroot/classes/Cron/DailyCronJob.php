@@ -192,9 +192,18 @@ final readonly class DailyCronJob implements CronJobInterface
                 throw $exception;
             }
 
-            $this->prepareAndPopulateRankedOwnerCounts();
-            $this->applyTrophyRarityFromTemporaryTable();
+            // Missing-table recovery must populate+apply as one retry unit.
+            // Otherwise a failed rebuild can leave an empty temp table (if DROP
+            // cleanup also fails) and the next apply-first attempt would write
+            // zero owners / LEGENDARY-style rarities for every trophy.
+            $this->executeWithRetry([$this, 'preparePopulateAndApplyRankedOwnerRarity']);
         }
+    }
+
+    private function preparePopulateAndApplyRankedOwnerRarity(): void
+    {
+        $this->prepareAndPopulateRankedOwnerCounts();
+        $this->applyTrophyRarityFromTemporaryTable();
     }
 
     private function applyTrophyRarityFromTemporaryTable(): void

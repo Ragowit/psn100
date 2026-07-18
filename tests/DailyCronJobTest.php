@@ -91,6 +91,7 @@ final class DailyCronJobTest extends TestCase
         $this->assertFalse(str_contains($source, 'maxAttempt'));
         $this->assertStringContainsString('prepareAndPopulateRankedOwnerCounts', $source);
         $this->assertStringContainsString('applyTrophyRarityFromTemporaryTableWithRecovery', $source);
+        $this->assertStringContainsString('preparePopulateAndApplyRankedOwnerRarity', $source);
         $this->assertStringContainsString('isMissingRankedOwnerTempTableError', $source);
         $this->assertStringContainsString('updateTrophyTitleRarityPoints', $source);
     }
@@ -262,7 +263,7 @@ final class DailyCronJobTest extends TestCase
 
         $this->assertSame([1], $sleepCalls);
         $this->assertSame(3, $database->getPopulateCount());
-        $this->assertSame(3, $database->getApplyCount());
+        $this->assertSame(2, $database->getApplyCount());
         $this->assertSame(1, $database->getTitlePointsUpdateCount());
         $this->assertSame([
             'drop-temp',
@@ -273,7 +274,44 @@ final class DailyCronJobTest extends TestCase
             'create-temp',
             'populate-owners-failed',
             'drop-temp',
+            'drop-temp',
+            'create-temp',
+            'populate-owners',
+            'apply-rarity',
+            'drop-temp',
+            'title-points',
+        ], $database->getOperations());
+    }
+
+    public function testRunDoesNotApplyEmptyTempTableWhenRecoveryCleanupDropFails(): void
+    {
+        $database = new DailyCronJobFailedRecoveryCleanupDropTestDatabase();
+        $sleepCalls = [];
+
+        $job = new DailyCronJob(
+            $database,
+            retryDelaySeconds: 1,
+            sleeper: static function (int $seconds) use (&$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+            },
+        );
+
+        $job->run();
+
+        $this->assertSame([1], $sleepCalls);
+        $this->assertSame(3, $database->getPopulateCount());
+        $this->assertSame(2, $database->getApplyCount());
+        $this->assertSame(1, $database->getTitlePointsUpdateCount());
+        $this->assertFalse($database->didApplyWhileCountsUnready());
+        $this->assertSame([
+            'drop-temp',
+            'create-temp',
+            'populate-owners',
             'apply-missing-temp',
+            'drop-temp',
+            'create-temp',
+            'populate-owners-failed',
+            'drop-temp-failed',
             'drop-temp',
             'create-temp',
             'populate-owners',
@@ -620,6 +658,126 @@ final class DailyCronJobTempCleanupRetryTestDatabase extends PDO
         if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
             return new DailyCronJobTestStatement(function (): void {
                 $this->operations[] = 'title-points';
+            });
+        }
+
+        throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+}
+
+final class DailyCronJobFailedRecoveryCleanupDropTestDatabase extends PDO
+{
+    /** @var list<string> */
+    private array $operations = [];
+
+    private int $populateCount = 0;
+
+    private int $applyCount = 0;
+
+    private int $titlePointsUpdateCount = 0;
+
+    private int $dropCount = 0;
+
+    private bool $countsReady = false;
+
+    private bool $appliedWhileCountsUnready = false;
+
+    public function __construct()
+    {
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getOperations(): array
+    {
+        return $this->operations;
+    }
+
+    public function getPopulateCount(): int
+    {
+        return $this->populateCount;
+    }
+
+    public function getApplyCount(): int
+    {
+        return $this->applyCount;
+    }
+
+    public function getTitlePointsUpdateCount(): int
+    {
+        return $this->titlePointsUpdateCount;
+    }
+
+    public function didApplyWhileCountsUnready(): bool
+    {
+        return $this->appliedWhileCountsUnready;
+    }
+
+    public function exec(string $statement): int|false
+    {
+        if (str_contains($statement, 'DROP TEMPORARY TABLE IF EXISTS tmp_daily_ranked_trophy_owners')) {
+            $this->dropCount++;
+            // First recovery cleanup DROP after failed populate leaves the empty table.
+            if ($this->populateCount === 2 && $this->dropCount === 3) {
+                $this->operations[] = 'drop-temp-failed';
+                throw new RuntimeException('Simulated recovery cleanup drop failure.');
+            }
+
+            $this->operations[] = 'drop-temp';
+            $this->countsReady = false;
+
+            return 0;
+        }
+
+        if (str_contains($statement, 'CREATE TEMPORARY TABLE tmp_daily_ranked_trophy_owners')) {
+            $this->operations[] = 'create-temp';
+            $this->countsReady = false;
+
+            return 0;
+        }
+
+        throw new RuntimeException('Unexpected exec call: ' . $statement);
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        if (str_contains($query, 'INSERT INTO tmp_daily_ranked_trophy_owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->populateCount++;
+                if ($this->populateCount === 2) {
+                    $this->operations[] = 'populate-owners-failed';
+                    $this->countsReady = false;
+                    throw new RuntimeException('Simulated recovery populate failure.');
+                }
+
+                $this->operations[] = 'populate-owners';
+                $this->countsReady = true;
+            });
+        }
+
+        if (str_contains($query, 'LEFT JOIN tmp_daily_ranked_trophy_owners owners')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->applyCount++;
+                if (!$this->countsReady) {
+                    $this->appliedWhileCountsUnready = true;
+                }
+
+                if ($this->applyCount === 1) {
+                    $this->operations[] = 'apply-missing-temp';
+                    throw new RuntimeException(
+                        "SQLSTATE[42S02]: Base table or view not found: 1146 Table 'psn100.tmp_daily_ranked_trophy_owners' doesn't exist"
+                    );
+                }
+
+                $this->operations[] = 'apply-rarity';
+            });
+        }
+
+        if (str_contains($query, 'ttm.rarity_points = r.rarity_sum')) {
+            return new DailyCronJobTestStatement(function (): void {
+                $this->operations[] = 'title-points';
+                $this->titlePointsUpdateCount++;
             });
         }
 
