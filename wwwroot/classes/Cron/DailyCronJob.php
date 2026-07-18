@@ -139,7 +139,7 @@ final readonly class DailyCronJob implements CronJobInterface
             // Populate and apply retry independently so a trophy_meta lock/timeout
             // does not force another full scan of top-10k trophy_earned rows.
             $this->executeWithRetry([$this, 'prepareAndPopulateRankedOwnerCounts']);
-            $this->executeWithRetry([$this, 'applyTrophyRarityFromTemporaryTable']);
+            $this->executeWithRetry([$this, 'applyTrophyRarityFromTemporaryTableWithRecovery']);
         } finally {
             // Best-effort: a transient DROP failure must not abort run() before
             // title rarity points. The table is TEMPORARY/session-scoped anyway.
@@ -168,10 +168,40 @@ final readonly class DailyCronJob implements CronJobInterface
         $query->execute();
     }
 
+    /**
+     * Apply rarity from the temp table, rebuilding counts if the session-scoped
+     * table disappeared (e.g. MySQL session reset after populate succeeded).
+     */
+    private function applyTrophyRarityFromTemporaryTableWithRecovery(): void
+    {
+        try {
+            $this->applyTrophyRarityFromTemporaryTable();
+        } catch (Throwable $exception) {
+            if (!$this->isMissingRankedOwnerTempTableError($exception)) {
+                throw $exception;
+            }
+
+            $this->prepareAndPopulateRankedOwnerCounts();
+            $this->applyTrophyRarityFromTemporaryTable();
+        }
+    }
+
     private function applyTrophyRarityFromTemporaryTable(): void
     {
         $query = $this->database->prepare(self::APPLY_TROPHY_RARITY_QUERY);
         $query->execute();
+    }
+
+    private function isMissingRankedOwnerTempTableError(Throwable $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'tmp_daily_ranked_trophy_owners')
+            && (
+                str_contains($message, "doesn't exist")
+                || str_contains($message, 'does not exist')
+                || str_contains($message, 'Base table or view not found')
+            );
     }
 
     private function dropRankedOwnerTempTable(): void
