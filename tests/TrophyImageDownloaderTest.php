@@ -31,6 +31,18 @@ final class TrophyImageDownloaderTest extends TestCase
         $this->assertSame(md5('image-data') . '.png', $filename);
     }
 
+    public function testBuildFilenameIgnoresQueryStringWhenResolvingExtension(): void
+    {
+        $downloader = $this->createDownloader(static fn (): ?string => null);
+
+        $filename = $downloader->buildFilename(
+            'https://example.test/icon.PNG?size=l&version=1.2',
+            'image-data'
+        );
+
+        $this->assertSame(md5('image-data') . '.png', $filename);
+    }
+
     public function testDownloadMandatoryForScanStoresFileAndReturnsFilename(): void
     {
         $downloader = $this->createDownloader(static fn (string $url): ?string => $url === 'https://example.test/title.png'

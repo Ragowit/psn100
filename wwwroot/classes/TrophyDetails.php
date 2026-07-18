@@ -35,6 +35,7 @@ readonly class TrophyDetails
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data): self
     {
         return new self(

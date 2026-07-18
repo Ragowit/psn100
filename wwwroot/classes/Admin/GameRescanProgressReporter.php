@@ -105,15 +105,9 @@ final class GameRescanProgressReporter
 
     private function normalizeProgressLabel(string $label): string
     {
-        $normalized = trim($label);
-        if ($normalized === '') {
-            return '';
-        }
-
-        $normalized = preg_replace('/\s+/', ' ', $normalized);
-        if (!is_string($normalized)) {
-            return '';
-        }
+        $normalized = $label
+            |> trim(...)
+            |> (fn(string $value): string => preg_replace('/\s+/', ' ', $value) ?? '');
 
         return $normalized;
     }

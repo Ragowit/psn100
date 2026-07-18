@@ -146,7 +146,9 @@ class PsnpPlusService
             return [];
         }
 
-        return array_values(array_diff($source, $comparison));
+        return $source
+            |> (fn(array $items): array => array_diff($items, $comparison))
+            |> array_values(...);
     }
 
     /**

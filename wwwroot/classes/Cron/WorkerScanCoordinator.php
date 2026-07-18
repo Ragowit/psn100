@@ -10,9 +10,11 @@ declare(strict_types=1);
  */
 final class WorkerScanCoordinator
 {
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
+
     public function __construct(
         private readonly PDO $database,
-        private readonly ?\Closure $sleeper = null,
+        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 
@@ -125,12 +127,6 @@ final class WorkerScanCoordinator
 
     private function pause(int $seconds): void
     {
-        if ($this->sleeper !== null) {
-            ($this->sleeper)($seconds);
-
-            return;
-        }
-
-        sleep($seconds);
+        ($this->sleeper)($seconds);
     }
 }

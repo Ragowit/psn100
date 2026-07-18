@@ -14,12 +14,14 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  */
 final class CronWorkerLoginSession
 {
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
+
     public function __construct(
         private readonly PDO $database,
         private readonly PlayStationWorkerAuthenticator $workerAuthenticator,
         private readonly WorkerScanCoordinator $workerScanCoordinator,
         private readonly Psn100Logger $logger,
-        private readonly ?\Closure $sleeper = null,
+        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 
@@ -97,12 +99,6 @@ final class CronWorkerLoginSession
 
     private function pause(int $seconds): void
     {
-        if ($this->sleeper !== null) {
-            ($this->sleeper)($seconds);
-
-            return;
-        }
-
-        sleep($seconds);
+        ($this->sleeper)($seconds);
     }
 }

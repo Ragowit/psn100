@@ -8,6 +8,7 @@ readonly class PlayerScanStatus
     {
     }
 
+    #[\NoDiscard]
     public static function withProgress(?PlayerScanProgress $progress): self
     {
         return new self($progress);

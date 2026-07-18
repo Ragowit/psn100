@@ -46,6 +46,7 @@ final readonly class GameTrophyRow
     /**
      * @param array<string, mixed> $data
      */
+    #[\NoDiscard]
     public static function fromArray(array $data, Utility $utility, bool $usesPlayStation5Assets): self
     {
         return new self($data, $utility, $usesPlayStation5Assets);

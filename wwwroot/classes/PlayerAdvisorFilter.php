@@ -26,18 +26,19 @@ readonly class PlayerAdvisorFilter
     ];
 
     private function __construct(
-        private int $page,
-        private string $sort,
+        final private int $page,
+        final private string $sort,
         /**
          * @var array<int, string>
          */
-        private array $platforms,
+        final private array $platforms,
     ) {
     }
 
     /**
      * @param array<string, mixed> $parameters
      */
+    #[\NoDiscard]
     public static function fromArray(array $parameters): self
     {
         $page = 1;

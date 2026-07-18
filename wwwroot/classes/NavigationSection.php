@@ -13,6 +13,6 @@ enum NavigationSection: string
 
     public static function fromName(string $section): ?self
     {
-        return self::tryFrom(strtolower($section));
+        return self::tryFrom($section |> strtolower(...));
     }
 }

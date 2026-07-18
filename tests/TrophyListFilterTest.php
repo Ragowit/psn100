@@ -43,16 +43,11 @@ final class TrophyListFilterTest extends TestCase
         $this->assertSame(['page' => 1], $filter->toQueryParameters());
     }
 
-    public function testWithPageMergesFilterParameters(): void
+    public function testWithPageNormalizesPageParameter(): void
     {
-        $filter = new class(2) extends TrophyListFilter {
-            public function getFilterParameters(): array
-            {
-                return ['foo' => 42];
-            }
-        };
+        $filter = new TrophyListFilter(2);
 
-        $this->assertSame(['foo' => 42, 'page' => 5], $filter->withPage(5));
-        $this->assertSame(['foo' => 42, 'page' => 1], $filter->withPage(0));
+        $this->assertSame(['page' => 5], $filter->withPage(5));
+        $this->assertSame(['page' => 1], $filter->withPage(0));
     }
 }

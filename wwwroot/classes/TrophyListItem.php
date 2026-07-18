@@ -29,6 +29,7 @@ final readonly class TrophyListItem
     ) {
     }
 
+    #[\NoDiscard]
     public static function fromArray(array $data): self
     {
         return new self(
