@@ -11,8 +11,9 @@ final class DailyCronJobTest extends TestCase
     {
         $source = $this->readPrivateConstant('POPULATE_RANKED_OWNER_COUNTS_QUERY');
 
-        $this->assertStringContainsString('FROM player_ranking pr', $source);
-        $this->assertStringContainsString('INNER JOIN trophy_earned te', $source);
+        $this->assertStringContainsString('SELECT /*+ JOIN_ORDER(pr, te) */', $source);
+        $this->assertStringContainsString('FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)', $source);
+        $this->assertStringContainsString('STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)', $source);
         $this->assertStringContainsString('te.account_id = pr.account_id', $source);
         $this->assertStringContainsString('te.earned = 1', $source);
         $this->assertStringContainsString('WHERE pr.ranking <= 10000', $source);

@@ -29,12 +29,12 @@ final readonly class DailyCronJob implements CronJobInterface
      */
     private const string POPULATE_RANKED_OWNER_COUNTS_QUERY = <<<'SQL'
         INSERT INTO tmp_daily_ranked_trophy_owners (np_communication_id, order_id, trophy_owners)
-        SELECT
+        SELECT /*+ JOIN_ORDER(pr, te) */
             te.np_communication_id,
             te.order_id,
             COUNT(*)
-        FROM player_ranking pr
-        INNER JOIN trophy_earned te
+        FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)
+        STRAIGHT_JOIN trophy_earned te FORCE INDEX (idx_te_acc_comm_order_earned_date)
             ON te.account_id = pr.account_id
             AND te.earned = 1
         WHERE pr.ranking <= 10000
