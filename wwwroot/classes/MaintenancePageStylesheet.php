@@ -4,22 +4,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/BootstrapAssets.php';
 
-final class MaintenancePageStylesheet
+final readonly class MaintenancePageStylesheet
 {
-    private string $href;
-
-    private string $rel;
-
-    private ?string $integrity;
-
-    private ?string $crossorigin;
-
-    private function __construct(string $href, string $rel = 'stylesheet', ?string $integrity = null, ?string $crossorigin = null)
-    {
-        $this->href = $href;
-        $this->rel = $rel;
-        $this->integrity = $integrity;
-        $this->crossorigin = $crossorigin;
+    private function __construct(
+        private string $href,
+        private string $rel = 'stylesheet',
+        private ?string $integrity = null,
+        private ?string $crossorigin = null,
+    ) {
     }
 
     public static function create(string $href, string $rel = 'stylesheet', ?string $integrity = null, ?string $crossorigin = null): self
@@ -36,9 +28,7 @@ final class MaintenancePageStylesheet
         return new self(BootstrapAssets::stylesheetUrl());
     }
 
-    /**
-     * @deprecated Use bootstrap() for the self-hosted stylesheet.
-     */
+    #[\Deprecated(message: 'Use bootstrap() for the self-hosted stylesheet.')]
     public static function bootstrapCdn(string $version = BootstrapAssets::VERSION): self
     {
         return self::bootstrap($version);

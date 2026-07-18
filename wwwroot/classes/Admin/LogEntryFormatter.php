@@ -83,10 +83,6 @@ final class LogEntryFormatter
         $between = substr($message, $npPosition + strlen($npCommunicationId), $groupPosition - ($npPosition + strlen($npCommunicationId)));
         $suffix = substr($message, $groupPosition + strlen($groupId));
 
-        $prefix = $prefix === false ? '' : $prefix;
-        $between = $between === false ? '' : $between;
-        $suffix = $suffix === false ? '' : $suffix;
-
         $game = $this->fetchGameByNpCommunicationId($npCommunicationId);
 
         if ($game === null) {
@@ -113,10 +109,6 @@ final class LogEntryFormatter
         $prefix = substr($message, 0, $npPosition);
         $between = substr($message, $npPosition + strlen($npCommunicationId), $groupPosition - ($npPosition + strlen($npCommunicationId)));
         $suffix = substr($message, $groupPosition + strlen($groupId));
-
-        $prefix = $prefix === false ? '' : $prefix;
-        $between = $between === false ? '' : $between;
-        $suffix = $suffix === false ? '' : $suffix;
 
         $game = $this->fetchGameByNpCommunicationId($npCommunicationId);
 

@@ -302,9 +302,9 @@ final class MergeTrophyCopier
             ':name' => (string) $trophy['name'],
             ':detail' => (string) $trophy['detail'],
             ':icon_url' => (string) $trophy['icon_url'],
-            ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
-            ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
-            ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
+            ':progress_target_value' => isset($trophy['progress_target_value']) ? (int) $trophy['progress_target_value'] : null,
+            ':reward_name' => isset($trophy['reward_name']) ? (string) $trophy['reward_name'] : null,
+            ':reward_image_url' => isset($trophy['reward_image_url']) ? (string) $trophy['reward_image_url'] : null,
             ':np_communication_id' => $parentNpCommunicationId,
             ':group_id' => $parentGroupId,
             ':order_id' => $parentOrderId,
@@ -334,9 +334,9 @@ final class MergeTrophyCopier
             ':name' => (string) $trophy['name'],
             ':detail' => (string) $trophy['detail'],
             ':icon_url' => (string) $trophy['icon_url'],
-            ':progress_target_value' => $trophy['progress_target_value'] === null ? null : (int) $trophy['progress_target_value'],
-            ':reward_name' => $trophy['reward_name'] === null ? null : (string) $trophy['reward_name'],
-            ':reward_image_url' => $trophy['reward_image_url'] === null ? null : (string) $trophy['reward_image_url'],
+            ':progress_target_value' => isset($trophy['progress_target_value']) ? (int) $trophy['progress_target_value'] : null,
+            ':reward_name' => isset($trophy['reward_name']) ? (string) $trophy['reward_name'] : null,
+            ':reward_image_url' => isset($trophy['reward_image_url']) ? (string) $trophy['reward_image_url'] : null,
         ]);
 
         $trophyId = (int) $this->database->lastInsertId();

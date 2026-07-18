@@ -50,11 +50,14 @@ final class PlayerAvatarSynchronizer
                 $query->execute();
                 $existingPHashes = $query->fetchAll(PDO::FETCH_COLUMN);
 
-                foreach ($existingPHashes as $existingPHash) {
-                    if ($this->imageHashCalculator->getHammingDistance($newPHash, $existingPHash) <= 10) {
-                        $newPHash = $existingPHash;
-                        break;
-                    }
+                $matchedPHash = array_find(
+                    $existingPHashes,
+                    fn (mixed $existingPHash): bool => is_string($existingPHash)
+                        && $this->imageHashCalculator->getHammingDistance($newPHash, $existingPHash) <= 10
+                );
+
+                if (is_string($matchedPHash)) {
+                    $newPHash = $matchedPHash;
                 }
 
                 $extension = strtolower(pathinfo($avatarUrl, PATHINFO_EXTENSION));

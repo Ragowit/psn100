@@ -6,17 +6,17 @@ require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationSectionState.php';
 require_once __DIR__ . '/RequestParameter.php';
 
-final class NavigationState
+final readonly class NavigationState
 {
     /**
      * @param array<string, NavigationSectionState> $sectionStates
      */
     private function __construct(
-        private readonly string $sort,
-        private readonly string $player,
-        private readonly string $filter,
-        private readonly string $search,
-        private readonly array $sectionStates,
+        private string $sort,
+        private string $player,
+        private string $filter,
+        private string $search,
+        private array $sectionStates,
     ) {
     }
 

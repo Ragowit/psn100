@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-final class PossibleCheaterRuleTuple
+final readonly class PossibleCheaterRuleTuple
 {
     public function __construct(
         private string $npCommunicationId,
         private int $orderId,
         private ?string $dateOperator,
-        private ?string $dateValue
+        private ?string $dateValue,
     ) {
     }
 

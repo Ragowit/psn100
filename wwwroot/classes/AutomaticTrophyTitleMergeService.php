@@ -396,13 +396,10 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function hasPs5OrPsvr2(array $platforms): bool
     {
-        foreach ($platforms as $platform) {
-            if ($platform === 'PS5' || $platform === 'PSVR2') {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            $platforms,
+            static fn (string $platform): bool => $platform === 'PS5' || $platform === 'PSVR2'
+        );
     }
 
     /**

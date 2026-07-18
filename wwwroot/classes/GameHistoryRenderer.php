@@ -102,17 +102,7 @@ final class GameHistoryRenderer
             return '<div class="text-center"><span class="history-diff__empty">&mdash;</span></div>';
         }
 
-        $objectFit = 'object-fit-scale';
-        $directory = 'trophy';
-        $height = 3.5;
-
-        if ($type === 'group') {
-            $objectFit = 'object-fit-cover';
-            $directory = 'group';
-        } elseif ($type === 'title') {
-            $directory = 'title';
-            $height = 5.5;
-        }
+        ['objectFit' => $objectFit, 'directory' => $directory, 'height' => $height] = $this->resolveIconDisplay($type);
 
         return '<div class="text-center">'
             . '<img class="' . $objectFit . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
@@ -363,23 +353,25 @@ final class GameHistoryRenderer
         }
 
         $borderClass = $state === 'previous' ? 'border-danger' : 'border-success';
-        $objectFit = 'object-fit-scale';
-        $directory = 'trophy';
-        $height = 3.5;
-
-        if ($type === 'group') {
-            $objectFit = 'object-fit-cover';
-            $directory = 'group';
-        } elseif ($type === 'title') {
-            $directory = 'title';
-            $height = 5.5;
-        }
+        ['objectFit' => $objectFit, 'directory' => $directory, 'height' => $height] = $this->resolveIconDisplay($type);
 
         return '<div class="text-center">'
             . '<img class="' . $objectFit . ' border border-2 ' . $borderClass . ' rounded" style="height: ' . $height . 'rem;" src="/img/'
             . $directory . '/' . Html::escape($resolvedPath)
             . '" alt="' . Html::escape($name ?? '') . '">'
             . '</div>';
+    }
+
+    /**
+     * @return array{objectFit: string, directory: string, height: float}
+     */
+    private function resolveIconDisplay(string $type): array
+    {
+        return match ($type) {
+            'group' => ['objectFit' => 'object-fit-cover', 'directory' => 'group', 'height' => 3.5],
+            'title' => ['objectFit' => 'object-fit-scale', 'directory' => 'title', 'height' => 5.5],
+            default => ['objectFit' => 'object-fit-scale', 'directory' => 'trophy', 'height' => 3.5],
+        };
     }
 }
 

@@ -88,13 +88,13 @@ class PlayerAdvisableTrophy
             (float) ($data['rarity_percent'] ?? 0.0),
             (float) ($data['in_game_rarity_percent'] ?? 0.0),
             isset($data['progress_target_value']) ? (int) $data['progress_target_value'] : null,
-            array_key_exists('reward_name', $data) ? ($data['reward_name'] !== null ? (string) $data['reward_name'] : null) : null,
-            array_key_exists('reward_image_url', $data) ? ($data['reward_image_url'] !== null ? (string) $data['reward_image_url'] : null) : null,
+            isset($data['reward_name']) ? (string) $data['reward_name'] : null,
+            isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null,
             (int) ($data['game_id'] ?? 0),
             (string) ($data['game_name'] ?? ''),
             (string) ($data['game_icon'] ?? ''),
             (string) ($data['platform'] ?? ''),
-            array_key_exists('progress', $data) ? ($data['progress'] !== null ? (float) $data['progress'] : null) : null,
+            isset($data['progress']) ? (float) $data['progress'] : null,
             $utility
         );
     }
@@ -233,12 +233,9 @@ class PlayerAdvisableTrophy
 
     private function usesPlayStation5Assets(): bool
     {
-        foreach ($this->platforms as $platform) {
-            if (str_contains($platform, 'PS5') || str_contains($platform, 'PSVR2')) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            $this->platforms,
+            static fn (string $platform): bool => str_contains($platform, 'PS5') || str_contains($platform, 'PSVR2')
+        );
     }
 }

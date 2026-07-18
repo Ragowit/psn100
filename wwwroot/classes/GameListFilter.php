@@ -160,13 +160,10 @@ readonly class GameListFilter
 
     public function hasPlatformFilters(): bool
     {
-        foreach ($this->platformFilters as $selected) {
-            if ($selected) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            $this->platformFilters,
+            static fn (bool $selected): bool => $selected
+        );
     }
 
     public function isPlatformSelected(string $platform): bool

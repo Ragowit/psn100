@@ -210,13 +210,11 @@ final class PsnGameLookupService
         }
 
         $legacyPlatforms = ['PS3', 'PS4', 'PSVR', 'PSVITA'];
-        foreach ($platforms as $platformValue) {
-            if (in_array($platformValue, $legacyPlatforms, true)) {
-                return 'trophy';
-            }
-        }
 
-        return 'trophy2';
+        return array_any(
+            $platforms,
+            static fn (string $platformValue): bool => in_array($platformValue, $legacyPlatforms, true)
+        ) ? 'trophy' : 'trophy2';
     }
 
     /**

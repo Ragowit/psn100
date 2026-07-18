@@ -7,25 +7,8 @@ require_once __DIR__ . '/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
 require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 
-class HomepageViewModel
+final readonly class HomepageViewModel
 {
-    private string $title;
-
-    /**
-     * @var HomepageNewGame[]
-     */
-    private array $newGames;
-
-    /**
-     * @var HomepageDlc[]
-     */
-    private array $newDlcs;
-
-    /**
-     * @var HomepagePopularGame[]
-     */
-    private array $popularGames;
-
     private HomepagePopularGamesFilter $popularGamesFilter;
 
     /**
@@ -34,16 +17,12 @@ class HomepageViewModel
      * @param HomepagePopularGame[] $popularGames
      */
     public function __construct(
-        string $title,
-        array $newGames,
-        array $newDlcs,
-        array $popularGames,
-        ?HomepagePopularGamesFilter $popularGamesFilter = null
+        private string $title,
+        private array $newGames,
+        private array $newDlcs,
+        private array $popularGames,
+        ?HomepagePopularGamesFilter $popularGamesFilter = null,
     ) {
-        $this->title = $title;
-        $this->newGames = $newGames;
-        $this->newDlcs = $newDlcs;
-        $this->popularGames = $popularGames;
         $this->popularGamesFilter = $popularGamesFilter ?? HomepagePopularGamesFilter::fromArray([]);
     }
 

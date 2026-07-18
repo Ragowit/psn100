@@ -28,12 +28,9 @@ final readonly class SimpleRouteHandler implements RouteHandlerInterface
      */
     private function hasAdditionalSegments(array $segments): bool
     {
-        foreach ($segments as $segment) {
-            if ($segment !== '') {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            $segments,
+            static fn (string $segment): bool => $segment !== ''
+        );
     }
 }
