@@ -3,16 +3,17 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/PlayerGamesSort.php';
 
 readonly class PlayerGamesFilter
 {
-    public const string SORT_DATE = 'date';
-    public const string SORT_IN_GAME_MAX_RARITY = 'max-in-game-rarity';
-    public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
-    public const string SORT_MAX_RARITY = 'max-rarity';
-    public const string SORT_NAME = 'name';
-    public const string SORT_RARITY = 'rarity';
-    public const string SORT_SEARCH = 'search';
+    public const string SORT_DATE = PlayerGamesSort::Date->value;
+    public const string SORT_IN_GAME_MAX_RARITY = PlayerGamesSort::InGameMaxRarity->value;
+    public const string SORT_IN_GAME_RARITY = PlayerGamesSort::InGameRarity->value;
+    public const string SORT_MAX_RARITY = PlayerGamesSort::MaxRarity->value;
+    public const string SORT_NAME = PlayerGamesSort::Name->value;
+    public const string SORT_RARITY = PlayerGamesSort::Rarity->value;
+    public const string SORT_SEARCH = PlayerGamesSort::Search->value;
 
     public const string PLATFORM_PC = Platform::Pc->value;
     public const string PLATFORM_PS3 = Platform::Ps3->value;
@@ -22,19 +23,6 @@ readonly class PlayerGamesFilter
     public const string PLATFORM_PSVR = Platform::PsVr->value;
     public const string PLATFORM_PSVR2 = Platform::PsVr2->value;
 
-    /**
-     * @var list<string>
-     */
-    private const array ALLOWED_SORTS = [
-        self::SORT_DATE,
-        self::SORT_IN_GAME_MAX_RARITY,
-        self::SORT_IN_GAME_RARITY,
-        self::SORT_MAX_RARITY,
-        self::SORT_NAME,
-        self::SORT_RARITY,
-        self::SORT_SEARCH,
-    ];
-
     private const int DEFAULT_LIMIT = 50;
 
     /**
@@ -42,7 +30,7 @@ readonly class PlayerGamesFilter
      */
     private function __construct(
         final private string $search,
-        final private string $sort,
+        final private PlayerGamesSort $sort,
         final private bool $completed,
         final private bool $uncompleted,
         final private bool $base,
@@ -61,15 +49,10 @@ readonly class PlayerGamesFilter
     {
         $search = isset($parameters['search']) ? (string) $parameters['search'] : '';
 
-        $sort = isset($parameters['sort']) ? (string) $parameters['sort'] : '';
-        $sortProvided = false;
-        if ($sort !== '' && in_array($sort, self::ALLOWED_SORTS, true)) {
-            $sortProvided = true;
-        } elseif ($search !== '') {
-            $sort = self::SORT_SEARCH;
-        } else {
-            $sort = self::SORT_DATE;
-        }
+        $parsedSort = PlayerGamesSort::tryFromMixed($parameters['sort'] ?? null);
+        $sortProvided = $parsedSort !== null;
+        $sort = $parsedSort
+            ?? ($search !== '' ? PlayerGamesSort::Search : PlayerGamesSort::Date);
 
         $completed = !empty($parameters['completed']);
         $uncompleted = !empty($parameters['uncompleted']);
@@ -116,7 +99,7 @@ readonly class PlayerGamesFilter
 
     public function shouldApplyFulltextCondition(): bool
     {
-        return $this->hasSearchTerm() || $this->sort === self::SORT_SEARCH;
+        return $this->hasSearchTerm() || $this->sort === PlayerGamesSort::Search;
     }
 
     public function shouldIncludeScoreColumn(): bool
@@ -126,12 +109,12 @@ readonly class PlayerGamesFilter
 
     public function getSort(): string
     {
-        return $this->sort;
+        return $this->sort->value;
     }
 
     public function isSort(string $sort): bool
     {
-        return $this->sort === $sort;
+        return $this->sort->value === $sort;
     }
 
     public function isCompletedSelected(): bool
@@ -193,8 +176,8 @@ readonly class PlayerGamesFilter
             $parameters['search'] = $this->search;
         }
 
-        if ($this->sortProvided || $this->sort !== self::SORT_DATE) {
-            $parameters['sort'] = $this->sort;
+        if ($this->sortProvided || $this->sort !== PlayerGamesSort::Date) {
+            $parameters['sort'] = $this->sort->value;
         }
 
         if ($this->completed) {
@@ -227,6 +210,7 @@ readonly class PlayerGamesFilter
     /**
      * @return array<string, int|string>
      */
+    #[\NoDiscard]
     public function withPage(int $page): array
     {
         $parameters = $this->getFilterParameters();

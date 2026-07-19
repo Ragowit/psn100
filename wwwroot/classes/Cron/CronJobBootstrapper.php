@@ -19,6 +19,7 @@ final class CronJobBootstrapper
         $this->application = $application;
     }
 
+    #[\NoDiscard]
     public static function create(string $projectRoot, ?CronJobApplication $application = null): self
     {
         return new self($projectRoot, $application ?? CronJobApplication::create());

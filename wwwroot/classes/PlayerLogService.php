@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLogEntry.php';
+require_once __DIR__ . '/PlayerLogSort.php';
 require_once __DIR__ . '/PlatformSql.php';
 
 class PlayerLogService
@@ -106,9 +107,9 @@ class PlayerLogService
 
     private function buildOrderByClause(PlayerLogFilter $filter): string
     {
-        return match ($filter->getSort()) {
-            PlayerLogFilter::SORT_RARITY => PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date',
-            PlayerLogFilter::SORT_IN_GAME_RARITY => PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date',
+        return match (PlayerLogSort::from($filter->getSort())) {
+            PlayerLogSort::Rarity => PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date',
+            PlayerLogSort::InGameRarity => PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date',
             default => PHP_EOL . '            ORDER BY te.earned_date DESC',
         };
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GameListItem.php';
 require_once __DIR__ . '/GameListPageResult.php';
+require_once __DIR__ . '/GameListSort.php';
 require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
@@ -202,9 +203,9 @@ class GameListService
     private function buildConditions(GameListFilter $filter): string
     {
         $conditions = [
-            match ($filter->getSort()) {
-                GameListFilter::SORT_COMPLETION => "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
-                GameListFilter::SORT_RARITY, GameListFilter::SORT_IN_GAME_RARITY => 'ttm.status = 0',
+            match (GameListSort::from($filter->getSort())) {
+                GameListSort::Completion => "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
+                GameListSort::Rarity, GameListSort::InGameRarity => 'ttm.status = 0',
                 default => 'ttm.status != 2',
             },
         ];
@@ -242,12 +243,12 @@ class GameListService
 
     private function buildOrderByClause(GameListFilter $filter): string
     {
-        return match ($filter->getSort()) {
-            GameListFilter::SORT_COMPLETION => 'ORDER BY difficulty DESC, owners DESC, `name`',
-            GameListFilter::SORT_OWNERS => 'ORDER BY owners DESC, `name`',
-            GameListFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, owners DESC, `name`',
-            GameListFilter::SORT_IN_GAME_RARITY => 'ORDER BY in_game_rarity_points DESC, owners DESC, `name`',
-            GameListFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
+        return match (GameListSort::from($filter->getSort())) {
+            GameListSort::Completion => 'ORDER BY difficulty DESC, owners DESC, `name`',
+            GameListSort::Owners => 'ORDER BY owners DESC, `name`',
+            GameListSort::Rarity => 'ORDER BY rarity_points DESC, owners DESC, `name`',
+            GameListSort::InGameRarity => 'ORDER BY in_game_rarity_points DESC, owners DESC, `name`',
+            GameListSort::Search => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
             default => 'ORDER BY id DESC',
         };
     }

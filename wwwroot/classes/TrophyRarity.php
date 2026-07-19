@@ -7,10 +7,10 @@ require_once __DIR__ . '/Html.php';
 final readonly class TrophyRarity
 {
     public function __construct(
-        private ?string $percentage,
-        private string $label,
-        private ?string $cssClass,
-        private bool $unobtainable,
+        final private ?string $percentage,
+        final private string $label,
+        final private ?string $cssClass,
+        final private bool $unobtainable,
     ) {
     }
 

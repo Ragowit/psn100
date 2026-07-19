@@ -55,6 +55,7 @@ final readonly class TrophyListFilter
     /**
      * @return array<string, int>
      */
+    #[\NoDiscard]
     public function withPage(int $page): array
     {
         $parameters = $this->getFilterParameters();

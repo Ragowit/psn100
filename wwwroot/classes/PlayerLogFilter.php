@@ -3,15 +3,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/PlayerLogSort.php';
 
 readonly class PlayerLogFilter
 {
-    public const string SORT_DATE = 'date';
-    public const string SORT_RARITY = 'rarity';
-    public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
+    public const string SORT_DATE = PlayerLogSort::Date->value;
+    public const string SORT_RARITY = PlayerLogSort::Rarity->value;
+    public const string SORT_IN_GAME_RARITY = PlayerLogSort::InGameRarity->value;
 
     private function __construct(
-        final private string $sort,
+        final private PlayerLogSort $sort,
         final private int $page,
         /** @var array<int, string> */
         final private array $platforms,
@@ -21,8 +22,6 @@ readonly class PlayerLogFilter
     #[\NoDiscard]
     public static function fromArray(array $parameters): self
     {
-        $sort = is_string($parameters['sort'] ?? null) ? (string) $parameters['sort'] : self::SORT_DATE;
-
         $page = 1;
         if (isset($parameters['page']) && is_numeric((string) $parameters['page'])) {
             $page = (int) $parameters['page'];
@@ -36,7 +35,7 @@ readonly class PlayerLogFilter
         }
 
         return new self(
-            self::normaliseSort($sort),
+            PlayerLogSort::fromMixed($parameters['sort'] ?? null),
             max($page, 1),
             $platforms |> array_unique(...) |> array_values(...),
         );
@@ -44,12 +43,12 @@ readonly class PlayerLogFilter
 
     public function getSort(): string
     {
-        return $this->sort;
+        return $this->sort->value;
     }
 
     public function isSort(string $sort): bool
     {
-        return $this->sort === self::normaliseSort($sort);
+        return $this->sort === PlayerLogSort::fromMixed($sort);
     }
 
     public function getPage(): int
@@ -91,7 +90,7 @@ readonly class PlayerLogFilter
             $parameters[$platform] = 'true';
         }
 
-        $parameters['sort'] = $this->sort;
+        $parameters['sort'] = $this->sort->value;
 
         return $parameters;
     }
@@ -107,6 +106,7 @@ readonly class PlayerLogFilter
     /**
      * @return array<string, int|string>
      */
+    #[\NoDiscard]
     public function withPage(int $page): array
     {
         $parameters = $this->getFilterParameters();
@@ -119,18 +119,5 @@ readonly class PlayerLogFilter
     public function withPageNumber(int $page): self
     {
         return clone($this, ['page' => max($page, 1)]);
-    }
-
-    private static function normaliseSort(string $sort): string
-    {
-        if ($sort === self::SORT_RARITY) {
-            return self::SORT_RARITY;
-        }
-
-        if ($sort === self::SORT_IN_GAME_RARITY) {
-            return self::SORT_IN_GAME_RARITY;
-        }
-
-        return self::SORT_DATE;
     }
 }

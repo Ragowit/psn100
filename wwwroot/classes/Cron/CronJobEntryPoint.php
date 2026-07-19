@@ -21,6 +21,7 @@ final class CronJobEntryPoint
         $this->bootstrapper = $bootstrapper;
     }
 
+    #[\NoDiscard]
     public static function create(string $projectRoot, ?CronJobBootstrapper $bootstrapper = null): self
     {
         return new self($bootstrapper ?? CronJobBootstrapper::create($projectRoot));

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerAdvisableTrophy.php';
+require_once __DIR__ . '/PlayerAdvisorSort.php';
 require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/Utility.php';
 
@@ -119,10 +120,9 @@ class PlayerAdvisorService
 
     private function buildOrderByClause(PlayerAdvisorFilter $filter): string
     {
-        if ($filter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) {
-            return ' ORDER BY tm.in_game_rarity_percent DESC, ttp.last_updated_date DESC';
-        }
-
-        return ' ORDER BY tm.rarity_percent DESC, ttp.last_updated_date DESC';
+        return match (PlayerAdvisorSort::from($filter->getSort())) {
+            PlayerAdvisorSort::InGameRarity => ' ORDER BY tm.in_game_rarity_percent DESC, ttp.last_updated_date DESC',
+            PlayerAdvisorSort::Rarity => ' ORDER BY tm.rarity_percent DESC, ttp.last_updated_date DESC',
+        };
     }
 }
