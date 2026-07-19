@@ -8,6 +8,7 @@ final class CsrfTokenManager
 {
     private const string SESSION_KEY_PREFIX = 'csrf_token_';
 
+    #[\NoDiscard]
     public static function getToken(string $scope): string
     {
         SessionManager::ensureStarted();

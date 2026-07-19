@@ -7,9 +7,9 @@ require_once __DIR__ . '/PlayerScanCompletionStatus.php';
 /**
  * Outcome of post-scan player aggregation during a worker scan.
  */
-final class PlayerScanCompletionResult
+final readonly class PlayerScanCompletionResult
 {
-    private function __construct(final public readonly PlayerScanCompletionStatus $status)
+    private function __construct(final public PlayerScanCompletionStatus $status)
     {
     }
 

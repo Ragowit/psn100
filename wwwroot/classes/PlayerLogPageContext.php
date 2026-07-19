@@ -13,7 +13,7 @@ require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/TrophyRarityFormatter.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-final class PlayerLogPageContext
+final readonly class PlayerLogPageContext
 {
 
     private PlayerLogPage $playerLogPage;

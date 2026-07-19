@@ -5,28 +5,28 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/TrophyType.php';
 
-final class PlayerAdvisableTrophy
+final readonly class PlayerAdvisableTrophy
 {
     /**
      * @param string[] $platforms
      */
     private function __construct(
-        private readonly int $trophyId,
-        private readonly TrophyType $trophyType,
-        private readonly string $trophyName,
-        private readonly string $trophyDetail,
-        private readonly string $trophyIcon,
-        private readonly float $rarityPercent,
-        private readonly float $inGameRarityPercent,
-        private readonly ?int $progressTargetValue,
-        private readonly ?string $rewardName,
-        private readonly ?string $rewardImageUrl,
-        private readonly int $gameId,
-        private readonly string $gameName,
-        private readonly string $gameIcon,
-        private readonly array $platforms,
-        private readonly ?float $progress,
-        private readonly Utility $utility,
+        private int $trophyId,
+        private TrophyType $trophyType,
+        private string $trophyName,
+        private string $trophyDetail,
+        private string $trophyIcon,
+        private float $rarityPercent,
+        private float $inGameRarityPercent,
+        private ?int $progressTargetValue,
+        private ?string $rewardName,
+        private ?string $rewardImageUrl,
+        private int $gameId,
+        private string $gameName,
+        private string $gameIcon,
+        private array $platforms,
+        private ?float $progress,
+        private Utility $utility,
     ) {
     }
 

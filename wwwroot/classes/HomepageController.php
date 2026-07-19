@@ -10,7 +10,7 @@ require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 final readonly class HomepageController
 {
     public function __construct(
-        private HomepagePage $homepagePage,
+        final private HomepagePage $homepagePage,
     ) {
     }
 

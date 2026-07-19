@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PsnTrophyTypeApiAdapter.php';
 
-final class PsnTrophyApiAdapter
+final readonly class PsnTrophyApiAdapter
 {
     /**
      * @param array<string, mixed> $rawTrophy
      */
-    public function __construct(private readonly array $rawTrophy)
+    public function __construct(private array $rawTrophy)
     {
     }
 

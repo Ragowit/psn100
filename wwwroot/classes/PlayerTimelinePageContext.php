@@ -13,7 +13,7 @@ require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-final class PlayerTimelinePageContext
+final readonly class PlayerTimelinePageContext
 {
     private PlayerTimelinePage $playerTimelinePage;
 

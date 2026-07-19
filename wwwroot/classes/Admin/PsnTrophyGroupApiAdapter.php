@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-final class PsnTrophyGroupApiAdapter
+final readonly class PsnTrophyGroupApiAdapter
 {
     /**
      * @param array<string, mixed> $rawGroup
      */
     public function __construct(
-        private readonly string $groupId,
-        private readonly array $rawGroup,
+        private string $groupId,
+        private array $rawGroup,
     ) {
     }
 

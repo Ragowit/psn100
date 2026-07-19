@@ -29,15 +29,14 @@ final class FakeRouter extends Router
     }
 }
 
-final class FixedHttpRequest extends HttpRequest
+final readonly class FixedHttpRequest extends HttpRequest
 {
-    private string $resolvedUri;
-
-    public function __construct(string $resolvedUri)
+    public function __construct(private string $resolvedUri)
     {
-        $this->resolvedUri = $resolvedUri;
+        parent::__construct();
     }
 
+    #[\Override]
     public function getResolvedUri(): string
     {
         return $this->resolvedUri;

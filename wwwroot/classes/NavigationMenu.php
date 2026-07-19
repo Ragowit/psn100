@@ -5,12 +5,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationState.php';
 
-final class NavigationMenu
+final readonly class NavigationMenu
 {
     /**
      * @param NavigationMenuItem[] $items
      */
-    private function __construct(private readonly array $items)
+    private function __construct(private array $items)
     {
     }
 

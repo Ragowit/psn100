@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-final class PlayerPageAccessGuard
+final readonly class PlayerPageAccessGuard
 {
     private const string DEFAULT_REDIRECT_URL = '/player/';
     private const int REDIRECT_STATUS_CODE = 303;
 
     private function __construct(
-        private readonly ?int $accountId,
-        private readonly string $redirectUrl
+        private ?int $accountId,
+        private string $redirectUrl
     ) {}
 
     #[\NoDiscard]

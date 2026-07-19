@@ -6,26 +6,26 @@ require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
 
-final class PlayerGame
+final readonly class PlayerGame
 {
     private function __construct(
-        private readonly int $id,
-        private readonly string $npCommunicationId,
-        private readonly string $name,
-        private readonly string $iconUrl,
-        private readonly string $platform,
-        private readonly GameAvailabilityStatus $status,
-        private readonly int $maxRarityPoints,
-        private readonly int $maxInGameRarityPoints,
-        private readonly int $bronze,
-        private readonly int $silver,
-        private readonly int $gold,
-        private readonly int $platinum,
-        private readonly int $progress,
-        private readonly string $lastUpdatedDate,
-        private readonly int $rarityPoints,
-        private readonly int $inGameRarityPoints,
-        private readonly ?string $completionDurationLabel,
+        private int $id,
+        private string $npCommunicationId,
+        private string $name,
+        private string $iconUrl,
+        private string $platform,
+        private GameAvailabilityStatus $status,
+        private int $maxRarityPoints,
+        private int $maxInGameRarityPoints,
+        private int $bronze,
+        private int $silver,
+        private int $gold,
+        private int $platinum,
+        private int $progress,
+        private string $lastUpdatedDate,
+        private int $rarityPoints,
+        private int $inGameRarityPoints,
+        private ?string $completionDurationLabel,
     ) {
     }
 

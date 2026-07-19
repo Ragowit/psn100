@@ -15,7 +15,7 @@ require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
 
-final class PlayerGamesPageContext
+final readonly class PlayerGamesPageContext
 {
     private PlayerGamesPage $playerGamesPage;
 
