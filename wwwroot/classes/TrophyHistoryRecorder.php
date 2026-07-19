@@ -6,14 +6,10 @@ require_once __DIR__ . '/Psn100Logger.php';
 
 class TrophyHistoryRecorder
 {
-    private PDO $database;
-
-    private ?Psn100Logger $logger;
-
-    public function __construct(PDO $database, ?Psn100Logger $logger = null)
-    {
-        $this->database = $database;
-        $this->logger = $logger;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly ?Psn100Logger $logger = null,
+    ) {
     }
 
     public function recordByTitleId(int $titleId): void

@@ -5,29 +5,29 @@ declare(strict_types=1);
 require_once __DIR__ . '/GameListService.php';
 require_once __DIR__ . '/GameListFilter.php';
 
-class GameListPage
+final readonly class GameListPage
 {
-    private readonly GameListService $gameListService;
+    private GameListService $gameListService;
 
-    private readonly GameListFilter $filter;
+    private GameListFilter $filter;
 
-    private readonly int $limit;
+    private int $limit;
 
-    private readonly int $offset;
+    private int $offset;
 
-    private readonly int $totalGames;
+    private int $totalGames;
 
-    private readonly int $totalPages;
+    private int $totalPages;
 
     /**
      * @var GameListItem[]
      */
-    private readonly array $games;
+    private array $games;
 
     /**
      * @var array<string, string>
      */
-    private readonly array $paginationParameters;
+    private array $paginationParameters;
 
     public function __construct(GameListService $gameListService, GameListFilter $filter)
     {

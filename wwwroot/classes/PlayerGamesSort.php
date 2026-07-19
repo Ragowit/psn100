@@ -12,6 +12,7 @@ enum PlayerGamesSort: string
     case Rarity = 'rarity';
     case Search = 'search';
 
+    #[\NoDiscard]
     public static function tryFromMixed(mixed $value): ?self
     {
         if (!is_string($value)) {

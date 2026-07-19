@@ -12,21 +12,21 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 
-class GameLeaderboardPage
+final readonly class GameLeaderboardPage
 {
     /**
      * @param GameLeaderboardRow[] $rows
      */
     private function __construct(
-        private GameDetails $game,
-        private GameHeaderData $gameHeaderData,
-        private GameLeaderboardFilter $filter,
-        private int $totalPlayers,
-        private int $limit,
-        private int $offset,
-        private int $totalPagesCount,
-        private array $rows,
-        private ?string $playerAccountId
+        final private GameDetails $game,
+        final private GameHeaderData $gameHeaderData,
+        final private GameLeaderboardFilter $filter,
+        final private int $totalPlayers,
+        final private int $limit,
+        final private int $offset,
+        final private int $totalPagesCount,
+        final private array $rows,
+        final private ?string $playerAccountId,
     ) {
     }
 

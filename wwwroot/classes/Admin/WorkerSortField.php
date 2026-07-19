@@ -7,6 +7,7 @@ enum WorkerSortField: string
     case Id = 'id';
     case ScanStart = 'scan_start';
 
+    #[\NoDiscard]
     public static function fromMixed(mixed $value): self
     {
         if (!is_string($value)) {

@@ -9,9 +9,9 @@ require_once __DIR__ . '/TrophyStatusUpdateResultPresenter.php';
 final readonly class TrophyStatusPageResult
 {
     public function __construct(
-        private string $trophyInput,
-        private string $statusInput,
-        private ?string $message,
+        final private string $trophyInput,
+        final private string $statusInput,
+        final private ?string $message,
     ) {
     }
 
@@ -36,22 +36,13 @@ final readonly class TrophyStatusPageResult
     }
 }
 
-class TrophyStatusPage
+final readonly class TrophyStatusPage
 {
-    private TrophyStatusInputParser $trophyStatusInputParser;
-
-    private TrophyStatusService $trophyStatusService;
-
-    private TrophyStatusUpdateResultPresenter $trophyStatusUpdateResultPresenter;
-
     public function __construct(
-        TrophyStatusInputParser $trophyStatusInputParser,
-        TrophyStatusService $trophyStatusService,
-        ?TrophyStatusUpdateResultPresenter $trophyStatusUpdateResultPresenter = null,
+        final private TrophyStatusInputParser $trophyStatusInputParser,
+        final private TrophyStatusService $trophyStatusService,
+        final private TrophyStatusUpdateResultPresenter $trophyStatusUpdateResultPresenter = new TrophyStatusUpdateResultPresenter(),
     ) {
-        $this->trophyStatusInputParser = $trophyStatusInputParser;
-        $this->trophyStatusService = $trophyStatusService;
-        $this->trophyStatusUpdateResultPresenter = $trophyStatusUpdateResultPresenter ?? new TrophyStatusUpdateResultPresenter();
     }
 
     /**

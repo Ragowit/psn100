@@ -8,24 +8,8 @@ require_once __DIR__ . '/PlayerReportRequest.php';
 require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 
-class PlayerReportPage
+final readonly class PlayerReportPage
 {
-    private PlayerReportHandler $playerReportHandler;
-
-    private PlayerSummaryService $playerSummaryService;
-
-    private int $accountId;
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $postParameters;
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $serverParameters;
-
     private PlayerSummary $playerSummary;
 
     private string $explanation;
@@ -43,27 +27,13 @@ class PlayerReportPage
         PlayerSummaryService $playerSummaryService,
         int $accountId,
         array $postParameters,
-        array $serverParameters
+        array $serverParameters,
     ) {
-        $this->playerReportHandler = $playerReportHandler;
-        $this->playerSummaryService = $playerSummaryService;
-        $this->accountId = $accountId;
-        $this->postParameters = $postParameters;
-        $this->serverParameters = $serverParameters;
-
-        $this->initialize();
-    }
-
-    private function initialize(): void
-    {
-        $this->playerSummary = $this->playerSummaryService->getSummary($this->accountId);
-        $request = PlayerReportRequest::fromArrays($this->postParameters, $this->serverParameters);
+        $this->playerSummary = $playerSummaryService->getSummary($accountId);
+        $request = PlayerReportRequest::fromArrays($postParameters, $serverParameters);
         $this->explanation = $request->getExplanation();
         $this->explanationSubmitted = $request->wasExplanationSubmitted();
-        $this->reportResult = $this->playerReportHandler->handleReportRequest(
-            $this->accountId,
-            $request
-        );
+        $this->reportResult = $playerReportHandler->handleReportRequest($accountId, $request);
     }
 
     public function getPlayerSummary(): PlayerSummary

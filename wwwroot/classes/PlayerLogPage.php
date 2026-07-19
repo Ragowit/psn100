@@ -6,41 +6,43 @@ require_once __DIR__ . '/PlayerLogFilter.php';
 require_once __DIR__ . '/PlayerLogService.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-class PlayerLogPage
+final readonly class PlayerLogPage
 {
     private PlayerLogFilter $requestedFilter;
 
     /**
      * @var PlayerLogEntry[]
      */
-    private array $trophies = [];
+    private array $trophies;
 
-    private int $totalTrophies = 0;
+    private int $totalTrophies;
 
     public function __construct(
         PlayerLogService $service,
         PlayerLogFilter $filter,
         int $accountId,
-        PlayerStatus $playerStatus
+        PlayerStatus $playerStatus,
     ) {
-        $this->requestedFilter = $filter->withPageNumber(1);
+        $requestedFilter = $filter->withPageNumber(1);
+        $trophies = [];
+        $totalTrophies = 0;
 
-        if (!$this->shouldLoadPlayerLog($playerStatus)) {
-            return;
+        if ($this->shouldLoadPlayerLog($playerStatus)) {
+            $totalTrophies = $service->countTrophies($accountId, $requestedFilter);
+
+            if ($totalTrophies > 0) {
+                $trophies = $service->getTrophies(
+                    $accountId,
+                    $requestedFilter,
+                    0,
+                    PlayerLogService::PAGE_SIZE
+                );
+            }
         }
 
-        $this->totalTrophies = $service->countTrophies($accountId, $this->requestedFilter);
-
-        if ($this->totalTrophies === 0) {
-            return;
-        }
-
-        $this->trophies = $service->getTrophies(
-            $accountId,
-            $this->requestedFilter,
-            0,
-            PlayerLogService::PAGE_SIZE
-        );
+        $this->requestedFilter = $requestedFilter;
+        $this->trophies = $trophies;
+        $this->totalTrophies = $totalTrophies;
     }
 
     /**

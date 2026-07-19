@@ -11,14 +11,10 @@ class PlayerAdvisorService
 {
     public const int PAGE_SIZE = 50;
 
-    private PDO $database;
-
-    private Utility $utility;
-
-    public function __construct(PDO $database, Utility $utility)
-    {
-        $this->database = $database;
-        $this->utility = $utility;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly Utility $utility,
+    ) {
     }
 
     public function countAdvisableTrophies(int $accountId, PlayerAdvisorFilter $filter): int

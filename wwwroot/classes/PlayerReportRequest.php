@@ -8,10 +8,10 @@ require_once __DIR__ . '/CsrfTokenManager.php';
 final readonly class PlayerReportRequest
 {
     private function __construct(
-        private string $explanation,
-        private bool $explanationSubmitted,
-        private string $ipAddress,
-        private string $csrfToken,
+        final private string $explanation,
+        final private bool $explanationSubmitted,
+        final private string $ipAddress,
+        final private string $csrfToken,
     ) {}
 
     /**

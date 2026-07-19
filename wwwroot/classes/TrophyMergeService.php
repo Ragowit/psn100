@@ -13,9 +13,9 @@ require_once __DIR__ . '/TrophyTitleCloneService.php';
 
 class TrophyMergeService
 {
-    private PDO $database;
+    private readonly PDO $database;
 
-    private NestedDatabaseTransactionRunner $transactionRunner;
+    private readonly NestedDatabaseTransactionRunner $transactionRunner;
 
     private ?TrophyMergeEarnedCopier $earnedCopier = null;
 
@@ -30,7 +30,7 @@ class TrophyMergeService
     public function __construct(
         PDO $database,
         ?NestedDatabaseTransactionRunner $transactionRunner = null,
-        ?TrophyMergeEarnedCopier $earnedCopier = null
+        ?TrophyMergeEarnedCopier $earnedCopier = null,
     ) {
         $this->database = $database;
         $this->transactionRunner = $transactionRunner ?? new NestedDatabaseTransactionRunner($database);

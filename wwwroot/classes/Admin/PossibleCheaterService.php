@@ -8,14 +8,14 @@ require_once __DIR__ . '/PossibleCheaterReport.php';
 
 class PossibleCheaterService
 {
-    private PDO $database;
-    private PossibleCheaterRulesCatalog $rulesCatalog;
-    private PossibleCheaterRuleConditionParser $conditionParser;
+    private readonly PDO $database;
+    private readonly PossibleCheaterRulesCatalog $rulesCatalog;
+    private readonly PossibleCheaterRuleConditionParser $conditionParser;
 
     public function __construct(
         PDO $database,
         ?PossibleCheaterRulesCatalog $rulesCatalog = null,
-        ?PossibleCheaterRuleConditionParser $conditionParser = null
+        ?PossibleCheaterRuleConditionParser $conditionParser = null,
     ) {
         $this->database = $database;
         $this->rulesCatalog = $rulesCatalog ?? new PossibleCheaterRulesCatalog();

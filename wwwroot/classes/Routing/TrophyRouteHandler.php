@@ -8,8 +8,9 @@ require_once __DIR__ . '/RouteHandlerInterface.php';
 
 final readonly class TrophyRouteHandler implements RouteHandlerInterface
 {
-    public function __construct(private TrophyRepository $trophyRepository)
-    {
+    public function __construct(
+        final private TrophyRepository $trophyRepository,
+    ) {
     }
 
     /**

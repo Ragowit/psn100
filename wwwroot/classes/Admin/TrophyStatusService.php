@@ -7,10 +7,10 @@ require_once __DIR__ . '/TrophyStatusProgressRecalculator.php';
 
 class TrophyStatusService
 {
-    private TrophyStatusProgressRecalculator $progressRecalculator;
+    private readonly TrophyStatusProgressRecalculator $progressRecalculator;
 
     public function __construct(
-        private PDO $database,
+        private readonly PDO $database,
         ?TrophyStatusProgressRecalculator $progressRecalculator = null,
     ) {
         $this->progressRecalculator = $progressRecalculator ?? new TrophyStatusProgressRecalculator($database);

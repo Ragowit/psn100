@@ -122,22 +122,22 @@ class GameCopyService
             AND existing.trophy_id IS NULL
         SQL;
 
-    private PDO $database;
+    private readonly PDO $database;
 
-    private TrophyHistoryRecorder $historyRecorder;
+    private readonly TrophyHistoryRecorder $historyRecorder;
 
-    private TrophyGroupConflictResolver $groupConflictResolver;
+    private readonly TrophyGroupConflictResolver $groupConflictResolver;
 
-    private MergeTrophyGroupCopier $groupCopier;
+    private readonly MergeTrophyGroupCopier $groupCopier;
 
-    private MergeTrophyCopier $trophyCopier;
+    private readonly MergeTrophyCopier $trophyCopier;
 
     public function __construct(
         PDO $database,
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?TrophyGroupConflictResolver $groupConflictResolver = null,
         ?MergeTrophyGroupCopier $groupCopier = null,
-        ?MergeTrophyCopier $trophyCopier = null
+        ?MergeTrophyCopier $trophyCopier = null,
     ) {
         $this->database = $database;
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);

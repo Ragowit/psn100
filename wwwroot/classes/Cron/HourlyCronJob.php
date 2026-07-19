@@ -51,8 +51,10 @@ final readonly class HourlyCronJob implements CronJobInterface
             )
         SQL;
 
-    public function __construct(private PDO $database, private int $retryDelaySeconds = 3)
-    {
+    public function __construct(
+        final private PDO $database,
+        final private int $retryDelaySeconds = 3,
+    ) {
     }
 
     #[\Override]

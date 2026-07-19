@@ -51,11 +51,11 @@ WHERE `status` = 0
 SQL;
 
     public function __construct(
-        private PDO $database,
-        private int $retryDelaySeconds = self::DEFAULT_RETRY_DELAY_SECONDS,
-        private int $maxRetryDelaySeconds = self::DEFAULT_MAX_RETRY_DELAY_SECONDS,
-        private ?Psn100Logger $logger = null,
-        private \Closure $sleeper = self::DEFAULT_SLEEPER,
+        private readonly PDO $database,
+        private readonly int $retryDelaySeconds = self::DEFAULT_RETRY_DELAY_SECONDS,
+        private readonly int $maxRetryDelaySeconds = self::DEFAULT_MAX_RETRY_DELAY_SECONDS,
+        private readonly ?Psn100Logger $logger = null,
+        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

@@ -11,6 +11,7 @@ enum GameListSort: string
     case InGameRarity = 'in-game-rarity';
     case Search = 'search';
 
+    #[\NoDiscard]
     public static function tryFromMixed(mixed $value): ?self
     {
         if (!is_string($value)) {
