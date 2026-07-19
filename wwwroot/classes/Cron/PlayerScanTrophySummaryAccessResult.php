@@ -7,11 +7,11 @@ require_once __DIR__ . '/PlayerScanTrophySummaryAccessStatus.php';
 /**
  * Outcome of reading a PSN user's trophy summary level during a player scan.
  */
-final class PlayerScanTrophySummaryAccessResult
+final readonly class PlayerScanTrophySummaryAccessResult
 {
     private function __construct(
-        final public readonly PlayerScanTrophySummaryAccessStatus $status,
-        final public readonly int $level = 0,
+        final public PlayerScanTrophySummaryAccessStatus $status,
+        final public int $level = 0,
     ) {
     }
 

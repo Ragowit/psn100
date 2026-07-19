@@ -9,30 +9,15 @@ require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 
-final class GameLeaderboardPageContext
+final readonly class GameLeaderboardPageContext
 {
-    private ?GameLeaderboardPage $page;
-
-    private ?string $title;
-
-    private ?string $gameSlug;
-
-    private ?string $redirectLocation;
-
-    private int $redirectStatusCode;
-
     private function __construct(
-        ?GameLeaderboardPage $page,
-        ?string $title,
-        ?string $gameSlug,
-        ?string $redirectLocation,
-        int $redirectStatusCode
+        private ?GameLeaderboardPage $page,
+        private ?string $title,
+        private ?string $gameSlug,
+        private ?string $redirectLocation,
+        private int $redirectStatusCode,
     ) {
-        $this->page = $page;
-        $this->title = $title;
-        $this->gameSlug = $gameSlug;
-        $this->redirectLocation = $redirectLocation;
-        $this->redirectStatusCode = $redirectStatusCode;
     }
 
     /**

@@ -87,9 +87,12 @@ final class IpAddressResolver
             return '';
         }
 
-        return array_find(
-            array_map(self::resolve(...), CommaSeparatedValues::parseTrimmed($forwardedFor)),
-            static fn (string $validatedAddress): bool => $validatedAddress !== ''
-        ) ?? '';
+        return CommaSeparatedValues::parseTrimmed($forwardedFor)
+            |> (fn (array $addresses): array => array_map(self::resolve(...), $addresses))
+            |> (fn (array $addresses): ?string => array_find(
+                $addresses,
+                static fn (string $validatedAddress): bool => $validatedAddress !== ''
+            ))
+            ?? '';
     }
 }

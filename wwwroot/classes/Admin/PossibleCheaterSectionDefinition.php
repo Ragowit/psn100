@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-final class PossibleCheaterSectionDefinition
+final readonly class PossibleCheaterSectionDefinition
 {
     public function __construct(
-        private string $title,
-        private string $query,
-        private string $linkPattern
+        final private string $title,
+        final private string $query,
+        final private string $linkPattern
     ) {
     }
 

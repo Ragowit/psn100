@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../PlayerUrlBuilder.php';
 require_once __DIR__ . '/../Utility.php';
 
-final class PossibleCheaterReport
+final readonly class PossibleCheaterReport
 {
     /**
      * @param PossibleCheaterReportEntry[] $generalCheaters
@@ -34,7 +34,7 @@ final class PossibleCheaterReport
     }
 }
 
-final class PossibleCheaterReportEntry
+final readonly class PossibleCheaterReportEntry
 {
     public function __construct(
         final private int $gameId,
@@ -76,7 +76,7 @@ final class PossibleCheaterReportEntry
     }
 }
 
-final class PossibleCheaterReportSection
+final readonly class PossibleCheaterReportSection
 {
     /**
      * @param PossibleCheaterReportSectionEntry[] $entries
@@ -115,7 +115,7 @@ final class PossibleCheaterReportSection
     }
 }
 
-final class PossibleCheaterReportSectionEntry
+final readonly class PossibleCheaterReportSectionEntry
 {
     public function __construct(
         final private string $url,

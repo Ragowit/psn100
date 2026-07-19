@@ -10,6 +10,7 @@ final class PlayerQueuePollTokenManager
 
     private const int TOKEN_TTL_SECONDS = 3600;
 
+    #[\NoDiscard]
     public function issue(string $playerName): string
     {
         SessionManager::ensureStarted();

@@ -7,16 +7,16 @@ require_once __DIR__ . '/PlayerScanProfileSyncStatus.php';
 /**
  * Outcome of resolving and persisting a queued player's PSN profile during a scan.
  */
-final class PlayerScanProfileSyncResult
+final readonly class PlayerScanProfileSyncResult
 {
     /**
      * @param array<string, mixed> $player
      */
     private function __construct(
-        final public readonly PlayerScanProfileSyncStatus $status,
-        final public readonly array $player = [],
-        final public readonly ?object $user = null,
-        final public readonly ?string $country = null,
+        final public PlayerScanProfileSyncStatus $status,
+        final public array $player = [],
+        final public ?object $user = null,
+        final public ?string $country = null,
     ) {
     }
 

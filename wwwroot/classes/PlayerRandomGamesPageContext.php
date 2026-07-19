@@ -14,7 +14,7 @@ require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-final class PlayerRandomGamesPageContext
+final readonly class PlayerRandomGamesPageContext
 {
     private const int STATUS_FLAGGED = 1;
     private const int STATUS_PRIVATE = 3;

@@ -15,7 +15,7 @@ require_once __DIR__ . '/TrophyRarityFormatter.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-final class PlayerAdvisorPageContext
+final readonly class PlayerAdvisorPageContext
 {
     private PlayerAdvisorPage $playerAdvisorPage;
 

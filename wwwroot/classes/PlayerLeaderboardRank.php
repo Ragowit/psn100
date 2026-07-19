@@ -88,15 +88,24 @@ final readonly class PlayerLeaderboardRank
 
         $page = max(1, (int) ceil($this->rank / self::PAGE_SIZE));
 
-        $queryParameters = array_merge(
-            $this->additionalQueryParameters,
-            [
-                'page' => (string) $page,
-                'player' => $this->onlineId,
-            ]
+        $query = http_build_query(
+            array_merge(
+                $this->additionalQueryParameters,
+                [
+                    'page' => (string) $page,
+                    'player' => $this->onlineId,
+                ]
+            ),
+            '',
+            '&',
+            PHP_QUERY_RFC3986
         );
 
-        return $this->basePath . '?' . http_build_query($queryParameters) . '#' . rawurlencode($this->onlineId);
+        return Uri\Rfc3986\Uri::parse($this->basePath)
+            ?->withQuery($query)
+            ->withFragment(rawurlencode($this->onlineId))
+            ->toRawString()
+            ?? $this->basePath . '?' . $query . '#' . rawurlencode($this->onlineId);
     }
 
     public function getChange(): ?PlayerLeaderboardRankChange
