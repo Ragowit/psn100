@@ -5,9 +5,9 @@ declare(strict_types=1);
 final readonly class WorkerCredentialRevealResult
 {
     private function __construct(
-        private bool $success,
-        private ?string $credential,
-        private ?string $errorMessage,
+        final private bool $success,
+        final private ?string $credential,
+        final private ?string $errorMessage,
     ) {
     }
 

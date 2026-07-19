@@ -7,14 +7,14 @@ require_once __DIR__ . '/WorkerScanProgress.php';
 final readonly class Worker
 {
     public function __construct(
-        private int $id,
+        final private int $id,
         #[\SensitiveParameter]
-        private string $refreshToken,
+        final private string $refreshToken,
         #[\SensitiveParameter]
-        private string $npsso,
-        private string $scanning,
-        private DateTimeImmutable $scanStart,
-        private ?WorkerScanProgress $scanProgress,
+        final private string $npsso,
+        final private string $scanning,
+        final private DateTimeImmutable $scanStart,
+        final private ?WorkerScanProgress $scanProgress,
     ) {
     }
 

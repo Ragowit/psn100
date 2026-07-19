@@ -5,13 +5,13 @@ declare(strict_types=1);
 final readonly class GamePlayerProgress
 {
     public function __construct(
-        private string $npCommunicationId,
-        private string $accountId,
-        private int $bronze,
-        private int $silver,
-        private int $gold,
-        private int $platinum,
-        private int $progress,
+        final private string $npCommunicationId,
+        final private string $accountId,
+        final private int $bronze,
+        final private int $silver,
+        final private int $gold,
+        final private int $platinum,
+        final private int $progress,
     ) {
     }
 

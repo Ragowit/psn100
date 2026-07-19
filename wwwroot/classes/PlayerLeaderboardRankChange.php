@@ -7,11 +7,12 @@ final readonly class PlayerLeaderboardRankChange
     private const int NEW_RANK_SENTINEL = 16777215;
 
     private function __construct(
-        private ?int $delta,
-        private bool $isNew,
+        final private ?int $delta,
+        final private bool $isNew,
     ) {
     }
 
+    #[\NoDiscard]
     public static function fromRanks(int $currentRank, int $previousRank): self
     {
         if ($previousRank === 0 || $previousRank === self::NEW_RANK_SENTINEL) {

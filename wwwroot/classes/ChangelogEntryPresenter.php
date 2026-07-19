@@ -6,11 +6,11 @@ require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/Html.php';
 
-readonly class ChangelogEntryPresenter
+final readonly class ChangelogEntryPresenter
 {
     public function __construct(
-        private ChangelogEntry $entry,
-        private Utility $utility
+        final private ChangelogEntry $entry,
+        final private Utility $utility
     ) {}
 
     public function getDateLabel(): string

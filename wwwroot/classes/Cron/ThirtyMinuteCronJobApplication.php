@@ -24,6 +24,7 @@ final class ThirtyMinuteCronJobApplication
     /**
      * @param array<int, string>|string[] $argv
      */
+    #[\NoDiscard]
     public static function fromGlobals(string $rootDirectory, array $argv = []): self
     {
         $entryPoint = CronJobEntryPoint::create($rootDirectory);

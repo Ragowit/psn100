@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../PlayerUrlBuilder.php';
 require_once __DIR__ . '/../Utility.php';
 
-class PossibleCheaterReport
+final class PossibleCheaterReport
 {
     /**
      * @param PossibleCheaterReportEntry[] $generalCheaters
      * @param PossibleCheaterReportSection[] $sections
      */
     public function __construct(
-        private array $generalCheaters,
-        private array $sections
+        final private array $generalCheaters,
+        final private array $sections
     ) {
     }
 
@@ -33,13 +34,13 @@ class PossibleCheaterReport
     }
 }
 
-class PossibleCheaterReportEntry
+final class PossibleCheaterReportEntry
 {
     public function __construct(
-        private int $gameId,
-        private string $gameName,
-        private string $playerName,
-        private int $accountId
+        final private int $gameId,
+        final private string $gameName,
+        final private string $playerName,
+        final private int $accountId
     ) {
     }
 
@@ -69,21 +70,20 @@ class PossibleCheaterReportEntry
 
     public function getProfileUrl(Utility $utility): string
     {
-        $slug = $utility->slugify($this->gameName);
-        $player = rawurlencode($this->playerName);
+        $slug = $this->gameId . '-' . $utility->slugify($this->gameName);
 
-        return sprintf('/game/%d-%s/%s', $this->gameId, $slug, $player);
+        return PlayerUrlBuilder::gamePlayerPath($slug, $this->playerName);
     }
 }
 
-class PossibleCheaterReportSection
+final class PossibleCheaterReportSection
 {
     /**
      * @param PossibleCheaterReportSectionEntry[] $entries
      */
     public function __construct(
-        private string $title,
-        private array $entries
+        final private string $title,
+        final private array $entries
     ) {
     }
 
@@ -118,12 +118,12 @@ class PossibleCheaterReportSection
     }
 }
 
-class PossibleCheaterReportSectionEntry
+final class PossibleCheaterReportSectionEntry
 {
     public function __construct(
-        private string $url,
-        private string $onlineId,
-        private int $accountId
+        final private string $url,
+        final private string $onlineId,
+        final private int $accountId
     ) {
     }
 

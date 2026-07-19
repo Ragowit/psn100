@@ -5,10 +5,10 @@ declare(strict_types=1);
 final readonly class GameHeaderStack
 {
     private function __construct(
-        private int $id,
-        private string $name,
-        private string $platform,
-        private ?string $region,
+        final private int $id,
+        final private string $name,
+        final private string $platform,
+        final private ?string $region,
     ) {
     }
 

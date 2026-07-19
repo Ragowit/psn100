@@ -7,18 +7,20 @@ require_once __DIR__ . '/BootstrapAssets.php';
 final readonly class MaintenancePageStylesheet
 {
     private function __construct(
-        private string $href,
-        private string $rel = 'stylesheet',
-        private ?string $integrity = null,
-        private ?string $crossorigin = null,
+        final private string $href,
+        final private string $rel = 'stylesheet',
+        final private ?string $integrity = null,
+        final private ?string $crossorigin = null,
     ) {
     }
 
+    #[\NoDiscard]
     public static function create(string $href, string $rel = 'stylesheet', ?string $integrity = null, ?string $crossorigin = null): self
     {
         return new self($href, $rel, $integrity, $crossorigin);
     }
 
+    #[\NoDiscard]
     public static function bootstrap(string $version = BootstrapAssets::VERSION): self
     {
         if ($version !== BootstrapAssets::VERSION) {

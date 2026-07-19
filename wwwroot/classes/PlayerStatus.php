@@ -11,6 +11,7 @@ enum PlayerStatus: int
     case UNAVAILABLE = 5;
     case NEW_PLAYER = 99;
 
+    #[\NoDiscard]
     public static function fromValue(int $status): self
     {
         return self::tryFrom($status) ?? self::NORMAL;

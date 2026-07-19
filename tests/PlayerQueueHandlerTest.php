@@ -411,9 +411,9 @@ final class PlayerQueueHandlerTest extends TestCase
 
         $parts = $response->getMessageParts();
         $this->assertTrue(is_array($parts));
-        $progressParts = array_values(array_filter($parts, static fn (array $part): bool => ($part['type'] ?? '') === 'progress'));
+        $progressParts = array_filter($parts, static fn (array $part): bool => ($part['type'] ?? '') === 'progress');
         $this->assertSame(1, count($progressParts));
-        $this->assertSame(30, $progressParts[0]['percentage'] ?? null);
+        $this->assertSame(30, array_first($progressParts)['percentage'] ?? null);
     }
 
     public function testHandleQueuePositionRequestReturnsQueuePositionWhenAvailable(): void

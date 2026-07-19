@@ -10,6 +10,7 @@ enum GameAvailabilityStatus: int
     case OBSOLETE = 3;
     case DELISTED_AND_OBSOLETE = 4;
 
+    #[\NoDiscard]
     public static function fromInt(int $status): self
     {
         return self::tryFrom($status) ?? self::NORMAL;

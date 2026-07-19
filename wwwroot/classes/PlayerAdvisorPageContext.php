@@ -79,6 +79,7 @@ final class PlayerAdvisorPageContext
         );
     }
 
+    #[\NoDiscard]
     public static function fromComponents(
         PlayerAdvisorPage $playerAdvisorPage,
         PlayerAdvisorFilter $filter,

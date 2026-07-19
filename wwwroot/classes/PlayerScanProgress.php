@@ -5,10 +5,10 @@ declare(strict_types=1);
 final readonly class PlayerScanProgress
 {
     private function __construct(
-        private ?int $current,
-        private ?int $total,
-        private ?string $title,
-        private ?string $npCommunicationId,
+        final private ?int $current,
+        final private ?int $total,
+        final private ?string $title,
+        final private ?string $npCommunicationId,
     ) {}
 
     /**
@@ -33,6 +33,7 @@ final readonly class PlayerScanProgress
         return new self($current, $total, $title, $npCommunicationId);
     }
 
+    #[\NoDiscard]
     public static function fromJson(?string $json): ?self
     {
         if ($json === null) {

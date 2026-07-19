@@ -17,6 +17,7 @@ final class NavigationBarRenderer
         $this->menu = $menu;
     }
 
+    #[\NoDiscard]
     public static function create(NavigationState $state, ?NavigationMenu $menu = null): self
     {
         return new self($state, $menu ?? NavigationMenu::createDefault($state));

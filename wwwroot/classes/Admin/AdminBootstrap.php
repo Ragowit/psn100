@@ -21,8 +21,7 @@ final class AdminBootstrap
         }
 
         if (!$authService->isAuthenticated()) {
-            header('Location: /admin/login.php', true, 303);
-            exit;
+            self::respondLoginRedirect();
         }
 
         if (self::isPostRequest()) {
@@ -84,10 +83,21 @@ final class AdminBootstrap
         $submittedToken = $_POST['_csrf_token'] ?? '';
 
         if (!CsrfTokenManager::validate('admin', $submittedToken)) {
-            http_response_code(403);
-            echo 'Invalid CSRF token.';
-            exit;
+            self::respondInvalidCsrfToken();
         }
+    }
+
+    private static function respondLoginRedirect(): never
+    {
+        header('Location: /admin/login.php', true, 303);
+        exit;
+    }
+
+    private static function respondInvalidCsrfToken(): never
+    {
+        http_response_code(403);
+        echo 'Invalid CSRF token.';
+        exit;
     }
 
     private static function respondNotConfigured(): never

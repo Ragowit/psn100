@@ -14,7 +14,7 @@ final readonly class MaintenanceResponder
         require_once $template;
     };
 
-    private const \Closure DEFAULT_TERMINATOR = static function (): void {
+    private const \Closure DEFAULT_TERMINATOR = static function (): never {
         exit();
     };
 

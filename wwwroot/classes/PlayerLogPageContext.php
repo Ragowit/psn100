@@ -69,6 +69,7 @@ final class PlayerLogPageContext
     );
 }
 
+#[\NoDiscard]
 public static function fromComponents(
     PlayerLogPage $playerLogPage,
         PlayerSummary $playerSummary,

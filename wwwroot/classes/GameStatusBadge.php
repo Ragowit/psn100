@@ -5,9 +5,9 @@ declare(strict_types=1);
 final readonly class GameStatusBadge
 {
     public function __construct(
-        private string $label,
-        private string $tooltip,
-        private string $cssClass = 'badge rounded-pill text-bg-warning'
+        final private string $label,
+        final private string $tooltip,
+        final private string $cssClass = 'badge rounded-pill text-bg-warning'
     ) {
     }
 

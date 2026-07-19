@@ -24,15 +24,15 @@ final readonly class GameTrophyGroup
     }
 
     private function __construct(
-        private string $id,
-        private string $name,
-        private string $detail,
-        private string $iconUrl,
-        private int $bronzeCount,
-        private int $silverCount,
-        private int $goldCount,
-        private int $platinumCount,
-        private bool $usesPlayStation5Assets,
+        final private string $id,
+        final private string $name,
+        final private string $detail,
+        final private string $iconUrl,
+        final private int $bronzeCount,
+        final private int $silverCount,
+        final private int $goldCount,
+        final private int $platinumCount,
+        final private bool $usesPlayStation5Assets,
     ) {
     }
 

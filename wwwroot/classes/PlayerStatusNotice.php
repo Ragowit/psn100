@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerStatusNoticeType.php';
 
-readonly class PlayerStatusNotice
+final readonly class PlayerStatusNotice
 {
     private const string DISPUTE_BASE_URL = 'https://github.com/Ragowit/psn100/issues';
     private const string PRIVATE_PROFILE_URL = 'https://www.playstation.com/en-us/support/account/privacy-settings-psn/';

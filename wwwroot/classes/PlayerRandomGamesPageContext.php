@@ -73,6 +73,7 @@ final class PlayerRandomGamesPageContext
         );
     }
 
+    #[\NoDiscard]
     public static function fromComponents(
         PlayerRandomGamesPage $playerRandomGamesPage,
         PlayerSummary $playerSummary,

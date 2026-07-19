@@ -5,8 +5,8 @@ declare(strict_types=1);
 final readonly class GameObsoleteReplacement
 {
     private function __construct(
-        private int $id,
-        private string $name,
+        final private int $id,
+        final private string $name,
     ) {
     }
 

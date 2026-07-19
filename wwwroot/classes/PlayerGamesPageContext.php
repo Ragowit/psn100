@@ -108,6 +108,7 @@ final class PlayerGamesPageContext
     /**
      * @param array<string, mixed> $playerData
      */
+    #[\NoDiscard]
     public static function fromComponents(
         PlayerGamesPage $playerGamesPage,
         PlayerSummary $playerSummary,
