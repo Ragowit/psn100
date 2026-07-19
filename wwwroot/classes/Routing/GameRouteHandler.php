@@ -9,10 +9,10 @@ require_once __DIR__ . '/RouteHandlerInterface.php';
 final readonly class GameRouteHandler implements RouteHandlerInterface
 {
     public function __construct(
-        private GameRepository $gameRepository,
-        private string $includeFile,
-        private string $redirectPath,
-        private ?string $missingSegmentInclude = null,
+        final private GameRepository $gameRepository,
+        final private string $includeFile,
+        final private string $redirectPath,
+        final private ?string $missingSegmentInclude = null,
     ) {
     }
 

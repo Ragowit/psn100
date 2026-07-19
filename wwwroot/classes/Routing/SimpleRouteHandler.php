@@ -6,8 +6,10 @@ require_once __DIR__ . '/RouteHandlerInterface.php';
 
 final readonly class SimpleRouteHandler implements RouteHandlerInterface
 {
-    public function __construct(private string $includeFile, private string $redirectPath)
-    {
+    public function __construct(
+        final private string $includeFile,
+        final private string $redirectPath,
+    ) {
     }
 
     /**

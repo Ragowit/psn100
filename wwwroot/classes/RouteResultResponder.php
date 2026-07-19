@@ -15,8 +15,8 @@ require_once __DIR__ . '/TemplateRenderer.php';
 final readonly class RouteResultResponder
 {
     public function __construct(
-        private TemplateRenderer $templateRenderer,
-        private string $notFoundTemplate = '404.php'
+        final private TemplateRenderer $templateRenderer,
+        final private string $notFoundTemplate = '404.php',
     ) {
     }
 

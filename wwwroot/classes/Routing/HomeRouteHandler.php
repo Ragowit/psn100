@@ -6,8 +6,9 @@ require_once __DIR__ . '/RouteHandlerInterface.php';
 
 final readonly class HomeRouteHandler implements RouteHandlerInterface
 {
-    public function __construct(private string $includeFile = 'home.php')
-    {
+    public function __construct(
+        final private string $includeFile = 'home.php',
+    ) {
     }
 
     /**

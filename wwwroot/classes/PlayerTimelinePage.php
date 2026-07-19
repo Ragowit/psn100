@@ -8,26 +8,25 @@ require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-class PlayerTimelinePage
+final readonly class PlayerTimelinePage
 {
     private PlayerSummary $playerSummary;
 
     private PlayerStatus $playerStatus;
 
-    private ?PlayerTimelineData $timelineData = null;
+    private ?PlayerTimelineData $timelineData;
 
     public function __construct(
         PlayerTimelineService $timelineService,
         PlayerSummaryService $summaryService,
         int $accountId,
-        PlayerStatus $playerStatus
+        PlayerStatus $playerStatus,
     ) {
         $this->playerSummary = $summaryService->getSummary($accountId);
         $this->playerStatus = $playerStatus;
-
-        if ($this->shouldLoadTimeline()) {
-            $this->timelineData = $timelineService->getTimelineData($accountId);
-        }
+        $this->timelineData = $this->shouldLoadTimeline()
+            ? $timelineService->getTimelineData($accountId)
+            : null;
     }
 
     public function getPlayerSummary(): PlayerSummary

@@ -11,22 +11,22 @@ final readonly class PlayerAdvisableTrophy
      * @param string[] $platforms
      */
     private function __construct(
-        private int $trophyId,
-        private TrophyType $trophyType,
-        private string $trophyName,
-        private string $trophyDetail,
-        private string $trophyIcon,
-        private float $rarityPercent,
-        private float $inGameRarityPercent,
-        private ?int $progressTargetValue,
-        private ?string $rewardName,
-        private ?string $rewardImageUrl,
-        private int $gameId,
-        private string $gameName,
-        private string $gameIcon,
-        private array $platforms,
-        private ?float $progress,
-        private Utility $utility,
+        final private int $trophyId,
+        final private TrophyType $trophyType,
+        final private string $trophyName,
+        final private string $trophyDetail,
+        final private string $trophyIcon,
+        final private float $rarityPercent,
+        final private float $inGameRarityPercent,
+        final private ?int $progressTargetValue,
+        final private ?string $rewardName,
+        final private ?string $rewardImageUrl,
+        final private int $gameId,
+        final private string $gameName,
+        final private string $gameIcon,
+        final private array $platforms,
+        final private ?float $progress,
+        final private Utility $utility,
     ) {
     }
 

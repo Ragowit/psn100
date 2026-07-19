@@ -8,6 +8,7 @@ enum PlayerLogSort: string
     case Rarity = 'rarity';
     case InGameRarity = 'in-game-rarity';
 
+    #[\NoDiscard]
     public static function fromMixed(mixed $value): self
     {
         if (!is_string($value)) {

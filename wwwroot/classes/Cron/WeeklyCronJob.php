@@ -36,9 +36,9 @@ final readonly class WeeklyCronJob implements CronJobInterface
         SQL;
 
     public function __construct(
-        private PDO $database,
-        private int $retryDelaySeconds = 3,
-        private \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private PDO $database,
+        final private int $retryDelaySeconds = 3,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

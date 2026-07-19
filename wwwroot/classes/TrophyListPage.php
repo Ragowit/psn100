@@ -6,7 +6,7 @@ require_once __DIR__ . '/ChangelogPaginator.php';
 require_once __DIR__ . '/TrophyListFilter.php';
 require_once __DIR__ . '/TrophyListService.php';
 
-class TrophyListPage
+final readonly class TrophyListPage
 {
     private TrophyListFilter $filter;
 

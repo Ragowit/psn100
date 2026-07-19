@@ -7,7 +7,7 @@ require_once __DIR__ . '/AbstractPlayerLeaderboardService.php';
 require_once __DIR__ . '/PlayerLeaderboardDataProvider.php';
 require_once __DIR__ . '/PlayerLeaderboardFilter.php';
 
-class PlayerLeaderboardPage
+final readonly class PlayerLeaderboardPage
 {
     private PlayerLeaderboardFilter $requestedFilter;
 

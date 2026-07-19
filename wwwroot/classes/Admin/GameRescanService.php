@@ -23,18 +23,18 @@ use Tustin\PlayStation\Client;
 
 class GameRescanService
 {
-    private PDO $database;
-    private TrophyCalculator $trophyCalculator;
+    private readonly PDO $database;
+    private readonly TrophyCalculator $trophyCalculator;
 
-    private TrophyHistoryRecorder $historyRecorder;
+    private readonly TrophyHistoryRecorder $historyRecorder;
 
-    private ImageHashCalculator $imageHashCalculator;
-    private PsnGameLookupService $psnGameLookupService;
-    private PsnTrophyLookupGroupDataProvider $trophyLookupGroupDataProvider;
-    private TrophyImageDirectories $imageDirectories;
+    private readonly ImageHashCalculator $imageHashCalculator;
+    private readonly PsnGameLookupService $psnGameLookupService;
+    private readonly PsnTrophyLookupGroupDataProvider $trophyLookupGroupDataProvider;
+    private readonly TrophyImageDirectories $imageDirectories;
     private TrophyImageDownloader $imageDownloader;
-    private GameRescanPsnAccessor $psnAccessor;
-    private TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
+    private readonly GameRescanPsnAccessor $psnAccessor;
+    private readonly TrophyCatalogSynchronizer $trophyCatalogSynchronizer;
     private GameRescanCatalogUpdater $catalogUpdater;
 
     /**

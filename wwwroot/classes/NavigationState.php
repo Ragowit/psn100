@@ -12,11 +12,11 @@ final readonly class NavigationState
      * @param array<string, NavigationSectionState> $sectionStates
      */
     private function __construct(
-        private string $sort,
-        private string $player,
-        private string $filter,
-        private string $search,
-        private array $sectionStates,
+        final private string $sort,
+        final private string $player,
+        final private string $filter,
+        final private string $search,
+        final private array $sectionStates,
     ) {
     }
 

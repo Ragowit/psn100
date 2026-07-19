@@ -7,9 +7,9 @@ require_once __DIR__ . '/../Utility.php';
 
 final class LogEntryFormatter
 {
-    private PDO $database;
+    private readonly PDO $database;
 
-    private Utility $utility;
+    private readonly Utility $utility;
 
     /**
      * @var array<int, array{id: int, name: string}|null>

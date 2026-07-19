@@ -9,11 +9,11 @@ require_once __DIR__ . '/Cron/PlayerScanNewTitleMergeHandler.php';
 
 final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeHandler
 {
-    private PDO $database;
+    private readonly PDO $database;
 
-    private TrophyMergeService $trophyMergeService;
+    private readonly TrophyMergeService $trophyMergeService;
 
-    private TrophySetComparator $trophySetComparator;
+    private readonly TrophySetComparator $trophySetComparator;
 
     /** @var array<string, list<array{group_id:string, order_id:int, name:string, detail:string}>> */
     private array $trophyCache = [];

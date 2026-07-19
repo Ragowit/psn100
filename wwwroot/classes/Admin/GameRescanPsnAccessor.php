@@ -17,8 +17,8 @@ final class GameRescanPsnAccessor
     private const int ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE = 100;
 
     public function __construct(
-        private PDO $database,
-        private PlayStationWorkerAuthenticator $workerAuthenticator,
+        private readonly PDO $database,
+        private readonly PlayStationWorkerAuthenticator $workerAuthenticator,
     ) {
     }
 

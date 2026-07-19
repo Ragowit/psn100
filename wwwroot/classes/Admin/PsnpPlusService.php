@@ -23,9 +23,9 @@ class PsnpPlusService
         35758, 40301,
     ];
 
-    private PDO $database;
+    private readonly PDO $database;
 
-    private PsnpPlusClient $psnpPlusClient;
+    private readonly PsnpPlusClient $psnpPlusClient;
 
     public function __construct(PDO $database, ?PsnpPlusClient $psnpPlusClient = null)
     {

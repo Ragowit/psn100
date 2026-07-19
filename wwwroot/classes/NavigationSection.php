@@ -11,6 +11,7 @@ enum NavigationSection: string
     case Avatar = 'avatar';
     case About = 'about';
 
+    #[\NoDiscard]
     public static function fromName(string $section): ?self
     {
         return self::tryFrom($section |> strtolower(...));

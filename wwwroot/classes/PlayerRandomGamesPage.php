@@ -8,7 +8,7 @@ require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-class PlayerRandomGamesPage
+final readonly class PlayerRandomGamesPage
 {
     private PlayerRandomGamesFilter $filter;
 
@@ -26,17 +26,14 @@ class PlayerRandomGamesPage
         PlayerSummaryService $summaryService,
         PlayerRandomGamesFilter $filter,
         int $accountId,
-        PlayerStatus $playerStatus
+        PlayerStatus $playerStatus,
     ) {
         $this->filter = $filter;
         $this->playerSummary = $summaryService->getSummary($accountId);
         $this->playerStatus = $playerStatus;
-
-        if ($this->shouldLoadRandomGames()) {
-            $this->randomGames = $randomGamesService->getRandomGames($accountId, $filter);
-        } else {
-            $this->randomGames = [];
-        }
+        $this->randomGames = $this->shouldLoadRandomGames()
+            ? $randomGamesService->getRandomGames($accountId, $filter)
+            : [];
     }
 
     public function getFilter(): PlayerRandomGamesFilter

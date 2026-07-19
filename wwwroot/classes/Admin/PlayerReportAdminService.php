@@ -6,11 +6,9 @@ require_once __DIR__ . '/ReportedPlayer.php';
 
 class PlayerReportAdminService
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
-    {
-        $this->database = $database;
+    public function __construct(
+        private readonly PDO $database,
+    ) {
     }
 
     public function deleteReportById(int $reportId): void

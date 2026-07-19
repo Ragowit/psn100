@@ -7,6 +7,7 @@ enum WorkerCredentialField: string
     case RefreshToken = 'refresh_token';
     case Npsso = 'npsso';
 
+    #[\NoDiscard]
     public static function fromMixed(mixed $value): ?self
     {
         if (!is_string($value)) {

@@ -10,22 +10,13 @@ require_once __DIR__ . '/GameDetailPageResult.php';
 require_once __DIR__ . '/../GameStatusService.php';
 require_once __DIR__ . '/../GameAvailabilityStatus.php';
 
-class GameDetailPage
+final readonly class GameDetailPage
 {
-    private GameDetailService $gameDetailService;
-
-    private GameStatusService $gameStatusService;
-
-    private GameDetailFormParser $formParser;
-
     public function __construct(
-        GameDetailService $gameDetailService,
-        GameStatusService $gameStatusService,
-        ?GameDetailFormParser $formParser = null,
+        final private GameDetailService $gameDetailService,
+        final private GameStatusService $gameStatusService,
+        final private GameDetailFormParser $formParser = new GameDetailFormParser(),
     ) {
-        $this->gameDetailService = $gameDetailService;
-        $this->gameStatusService = $gameStatusService;
-        $this->formParser = $formParser ?? new GameDetailFormParser();
     }
 
     /**

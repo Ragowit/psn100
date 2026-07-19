@@ -7,6 +7,7 @@ enum WorkerSortDirection: string
     case Asc = 'asc';
     case Desc = 'desc';
 
+    #[\NoDiscard]
     public static function fromMixed(mixed $value): self
     {
         if (!is_string($value)) {
@@ -26,6 +27,7 @@ enum WorkerSortDirection: string
         return $this === self::Asc ? ' ▲' : ' ▼';
     }
 
+    #[\NoDiscard]
     public function toggled(): self
     {
         return $this === self::Asc ? self::Desc : self::Asc;

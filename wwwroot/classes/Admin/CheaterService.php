@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 class CheaterService
 {
-    private PDO $database;
-
-    public function __construct(PDO $database)
-    {
-        $this->database = $database;
+    public function __construct(
+        private readonly PDO $database,
+    ) {
     }
 
     public function markPlayerAsCheater(string $onlineId): void

@@ -10,21 +10,17 @@ require_once __DIR__ . '/ChangelogService.php';
 require_once __DIR__ . '/RequestParameter.php';
 require_once __DIR__ . '/Utility.php';
 
-class ChangelogPage
+final readonly class ChangelogPage
 {
     private const string DEFAULT_TITLE = 'Changelog ~ PSN 100%';
 
-    private ChangelogPaginator $paginator;
-
     /**
-     * @var ChangelogDateGroup[]
+     * @param ChangelogDateGroup[] $dateGroups
      */
-    private array $dateGroups;
-
-    private function __construct(ChangelogPaginator $paginator, array $dateGroups)
-    {
-        $this->paginator = $paginator;
-        $this->dateGroups = $dateGroups;
+    private function __construct(
+        final private ChangelogPaginator $paginator,
+        final private array $dateGroups,
+    ) {
     }
 
     /**

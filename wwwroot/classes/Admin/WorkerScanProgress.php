@@ -12,6 +12,7 @@ final readonly class WorkerScanProgress
     ) {
     }
 
+    #[\NoDiscard]
     public static function fromJson(?string $value): ?self
     {
         if ($value === null || trim($value) === '') {

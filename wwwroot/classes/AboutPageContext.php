@@ -17,14 +17,14 @@ final readonly class AboutPageContext
      * @param list<array<string, mixed>> $serializedScanLogPlayers
      */
     private function __construct(
-        private AboutPageScanSummary $scanSummary,
-        private array $scanLogPlayers,
-        private array $initialScanLogPlayers,
-        private array $serializedScanLogPlayers,
-        private int $scanLogLimit,
-        private int $initialDisplayCount,
-        private int $maxInitialDisplayCount,
-        private string $title,
+        final private AboutPageScanSummary $scanSummary,
+        final private array $scanLogPlayers,
+        final private array $initialScanLogPlayers,
+        final private array $serializedScanLogPlayers,
+        final private int $scanLogLimit,
+        final private int $initialDisplayCount,
+        final private int $maxInitialDisplayCount,
+        final private string $title,
     ) {
     }
 

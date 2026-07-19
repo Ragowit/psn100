@@ -14,23 +14,23 @@ require_once __DIR__ . '/TrophyDetails.php';
 require_once __DIR__ . '/PlayerTrophyProgress.php';
 require_once __DIR__ . '/TrophyAchiever.php';
 
-class TrophyPage
+final readonly class TrophyPage
 {
     /**
      * @param list<TrophyAchiever> $firstAchievers
      * @param list<TrophyAchiever> $latestAchievers
      */
     private function __construct(
-        private TrophyDetails $trophy,
-        private ?PlayerTrophyProgress $playerTrophy,
-        private array $firstAchievers,
-        private array $latestAchievers,
-        private ?int $playerAccountId,
-        private ?string $playerOnlineId,
-        private PageMetaData $metaData,
-        private string $pageTitle,
-        private TrophyRarity $metaRarity,
-        private TrophyRarity $inGameRarity
+        final private TrophyDetails $trophy,
+        final private ?PlayerTrophyProgress $playerTrophy,
+        final private array $firstAchievers,
+        final private array $latestAchievers,
+        final private ?int $playerAccountId,
+        final private ?string $playerOnlineId,
+        final private PageMetaData $metaData,
+        final private string $pageTitle,
+        final private TrophyRarity $metaRarity,
+        final private TrophyRarity $inGameRarity,
     ) {
     }
 

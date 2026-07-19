@@ -178,11 +178,11 @@ final readonly class DailyCronJob implements CronJobInterface
         SQL;
 
     public function __construct(
-        private PDO $database,
-        private int $retryDelaySeconds = 3,
-        private \Closure $sleeper = self::DEFAULT_SLEEPER,
-        private int $rankedOwnerSnapshotBatchSize = self::RANKED_OWNER_SNAPSHOT_BATCH_SIZE,
-        private int $batchDelaySeconds = self::RANKED_OWNER_BATCH_DELAY_SECONDS,
+        final private PDO $database,
+        final private int $retryDelaySeconds = 3,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private int $rankedOwnerSnapshotBatchSize = self::RANKED_OWNER_SNAPSHOT_BATCH_SIZE,
+        final private int $batchDelaySeconds = self::RANKED_OWNER_BATCH_DELAY_SECONDS,
     ) {
     }
 

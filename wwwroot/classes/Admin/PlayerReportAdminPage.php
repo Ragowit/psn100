@@ -6,13 +6,11 @@ require_once __DIR__ . '/PlayerReportAdminService.php';
 require_once __DIR__ . '/PlayerReportAdminPageResult.php';
 require_once __DIR__ . '/PlayerReportDeletionRequest.php';
 
-class PlayerReportAdminPage
+final readonly class PlayerReportAdminPage
 {
-    private PlayerReportAdminService $playerReportAdminService;
-
-    public function __construct(PlayerReportAdminService $playerReportAdminService)
-    {
-        $this->playerReportAdminService = $playerReportAdminService;
+    public function __construct(
+        final private PlayerReportAdminService $playerReportAdminService,
+    ) {
     }
 
     /**

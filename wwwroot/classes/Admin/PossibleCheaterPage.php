@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/PossibleCheaterReport.php';
 require_once __DIR__ . '/PossibleCheaterService.php';
 
-class PossibleCheaterPage
+final readonly class PossibleCheaterPage
 {
     private PossibleCheaterReport $report;
 

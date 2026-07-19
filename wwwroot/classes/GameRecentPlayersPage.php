@@ -11,19 +11,19 @@ require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 require_once __DIR__ . '/Utility.php';
 
-class GameRecentPlayersPage
+final readonly class GameRecentPlayersPage
 {
     /**
      * @param GameRecentPlayer[] $recentPlayers
      * @param GamePlayerProgress|null $gamePlayer
      */
     private function __construct(
-        private GameDetails $game,
-        private GameHeaderData $gameHeaderData,
-        private GamePlayerFilter $filter,
-        private array $recentPlayers,
-        private ?string $playerAccountId,
-        private ?GamePlayerProgress $gamePlayer
+        final private GameDetails $game,
+        final private GameHeaderData $gameHeaderData,
+        final private GamePlayerFilter $filter,
+        final private array $recentPlayers,
+        final private ?string $playerAccountId,
+        final private ?GamePlayerProgress $gamePlayer,
     ) {
     }
 
