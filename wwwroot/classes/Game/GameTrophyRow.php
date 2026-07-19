@@ -3,29 +3,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Utility.php';
+require_once __DIR__ . '/../TrophyType.php';
 
 final readonly class GameTrophyRow
 {
-    private const array TROPHY_TYPE_COLORS = [
-        'bronze' => '#c46438',
-        'silver' => '#777777',
-        'gold' => '#c2903e',
-        'platinum' => '#667fb2',
-    ];
-
-    private const array TROPHY_TYPE_ICONS = [
-        'bronze' => '/img/trophy-bronze.svg',
-        'silver' => '/img/trophy-silver.svg',
-        'gold' => '/img/trophy-gold.svg',
-        'platinum' => '/img/trophy-platinum.svg',
-    ];
-
     private const int UNOBTAINABLE_STATUS = 1;
     private const string UNOBTAINABLE_TITLE = 'This trophy is unobtainable and not accounted for on any leaderboard.';
 
     private int $id;
     private int $orderId;
-    private string $type;
+    private TrophyType $type;
     private string $name;
     private string $detail;
     private string $iconUrl;
@@ -59,7 +46,7 @@ final readonly class GameTrophyRow
     {
         $this->id = (int) ($data['id'] ?? 0);
         $this->orderId = (int) ($data['order_id'] ?? 0);
-        $this->type = (string) ($data['type'] ?? '');
+        $this->type = TrophyType::fromMixed($data['type'] ?? null);
         $this->name = (string) ($data['name'] ?? '');
         $this->detail = (string) ($data['detail'] ?? '');
         $this->iconUrl = (string) ($data['icon_url'] ?? '');
@@ -97,12 +84,17 @@ final readonly class GameTrophyRow
 
     public function getType(): string
     {
+        return $this->type->value;
+    }
+
+    public function getTrophyType(): TrophyType
+    {
         return $this->type;
     }
 
     public function getTypeIconPath(): string
     {
-        return self::TROPHY_TYPE_ICONS[$this->type] ?? self::TROPHY_TYPE_ICONS['bronze'];
+        return $this->type->iconPath();
     }
 
     public function getName(): string
@@ -206,7 +198,7 @@ final readonly class GameTrophyRow
 
     public function getTypeColor(): string
     {
-        return self::TROPHY_TYPE_COLORS[$this->type] ?? self::TROPHY_TYPE_COLORS['bronze'];
+        return $this->type->color();
     }
 
     public function getRowAttributes(?int $accountId): string

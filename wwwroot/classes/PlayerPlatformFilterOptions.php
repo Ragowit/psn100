@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Platform.php';
+
 readonly final class PlayerPlatformFilterOption
 {
     public function __construct(
@@ -34,19 +36,6 @@ readonly final class PlayerPlatformFilterOption
 readonly final class PlayerPlatformFilterOptions
 {
     /**
-     * @var array<string, string>
-     */
-    private const array PLATFORM_LABELS = [
-        'pc' => 'PC',
-        'ps3' => 'PS3',
-        'ps4' => 'PS4',
-        'ps5' => 'PS5',
-        'psvita' => 'PSVITA',
-        'psvr' => 'PSVR',
-        'psvr2' => 'PSVR2',
-    ];
-
-    /**
      * @param PlayerPlatformFilterOption[] $options
      */
     private function __construct(private array $options)
@@ -60,12 +49,12 @@ readonly final class PlayerPlatformFilterOptions
     {
         return new self(
             array_map(
-                static fn (string $key): PlayerPlatformFilterOption => new PlayerPlatformFilterOption(
-                    $key,
-                    self::PLATFORM_LABELS[$key],
-                    (bool) $selectionCallback($key)
+                static fn (Platform $platform): PlayerPlatformFilterOption => new PlayerPlatformFilterOption(
+                    $platform->value,
+                    $platform->label(),
+                    (bool) $selectionCallback($platform->value)
                 ),
-                array_keys(self::PLATFORM_LABELS)
+                Platform::cases()
             )
         );
     }

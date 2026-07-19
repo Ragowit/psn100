@@ -2,32 +2,31 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerScanCompletionStatus.php';
+
 /**
  * Outcome of post-scan player aggregation during a worker scan.
  */
 final class PlayerScanCompletionResult
 {
-    public const string STATUS_COMPLETED = 'completed';
-    public const string STATUS_CONTINUE_SCAN = 'continue_scan';
-
-    private function __construct(final public readonly string $status)
+    private function __construct(final public readonly PlayerScanCompletionStatus $status)
     {
     }
 
     #[\NoDiscard]
     public static function completed(): self
     {
-        return new self(self::STATUS_COMPLETED);
+        return new self(PlayerScanCompletionStatus::Completed);
     }
 
     #[\NoDiscard]
     public static function continueScan(): self
     {
-        return new self(self::STATUS_CONTINUE_SCAN);
+        return new self(PlayerScanCompletionStatus::ContinueScan);
     }
 
     public function shouldContinueScan(): bool
     {
-        return $this->status === self::STATUS_CONTINUE_SCAN;
+        return $this->status === PlayerScanCompletionStatus::ContinueScan;
     }
 }

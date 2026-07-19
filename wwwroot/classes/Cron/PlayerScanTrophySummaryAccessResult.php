@@ -2,17 +2,15 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerScanTrophySummaryAccessStatus.php';
+
 /**
  * Outcome of reading a PSN user's trophy summary level during a player scan.
  */
 final class PlayerScanTrophySummaryAccessResult
 {
-    public const string STATUS_ACCESSIBLE = 'accessible';
-    public const string STATUS_PRIVATE = 'private';
-    public const string STATUS_ABORT_SCAN = 'abort_scan';
-
     private function __construct(
-        final public readonly string $status,
+        final public readonly PlayerScanTrophySummaryAccessStatus $status,
         final public readonly int $level = 0,
     ) {
     }
@@ -20,33 +18,33 @@ final class PlayerScanTrophySummaryAccessResult
     #[\NoDiscard]
     public static function accessible(int $level): self
     {
-        return new self(self::STATUS_ACCESSIBLE, $level);
+        return new self(PlayerScanTrophySummaryAccessStatus::Accessible, $level);
     }
 
     #[\NoDiscard]
     public static function privateProfile(): self
     {
-        return new self(self::STATUS_PRIVATE);
+        return new self(PlayerScanTrophySummaryAccessStatus::Private);
     }
 
     #[\NoDiscard]
     public static function abortScan(): self
     {
-        return new self(self::STATUS_ABORT_SCAN);
+        return new self(PlayerScanTrophySummaryAccessStatus::AbortScan);
     }
 
     public function isAccessible(): bool
     {
-        return $this->status === self::STATUS_ACCESSIBLE;
+        return $this->status === PlayerScanTrophySummaryAccessStatus::Accessible;
     }
 
     public function isPrivateProfile(): bool
     {
-        return $this->status === self::STATUS_PRIVATE;
+        return $this->status === PlayerScanTrophySummaryAccessStatus::Private;
     }
 
     public function shouldAbortScan(): bool
     {
-        return $this->status === self::STATUS_ABORT_SCAN;
+        return $this->status === PlayerScanTrophySummaryAccessStatus::AbortScan;
     }
 }

@@ -2,22 +2,13 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Platform.php';
+
 readonly class PlayerLogFilter
 {
     public const string SORT_DATE = 'date';
     public const string SORT_RARITY = 'rarity';
     public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
-
-    /** @var array<int, string> */
-    private const array ALLOWED_PLATFORMS = [
-        'pc',
-        'ps3',
-        'ps4',
-        'ps5',
-        'psvita',
-        'psvr',
-        'psvr2',
-    ];
 
     private function __construct(
         final private string $sort,
@@ -38,7 +29,7 @@ readonly class PlayerLogFilter
         }
 
         $platforms = [];
-        foreach (self::ALLOWED_PLATFORMS as $platform) {
+        foreach (Platform::values() as $platform) {
             if (!empty($parameters[$platform])) {
                 $platforms[] = $platform;
             }

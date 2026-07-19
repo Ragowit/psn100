@@ -32,7 +32,7 @@ final class IpRateLimitServiceTest extends TestCase
     {
         for ($index = 0; $index < 60; $index++) {
             $this->assertTrue(
-                $this->service->checkAndRecord('192.0.2.10', IpRateLimitService::BUCKET_QUEUE_POLL)
+                $this->service->checkAndRecord('192.0.2.10', IpRateLimitBucket::QueuePoll)
             );
         }
     }
@@ -40,25 +40,25 @@ final class IpRateLimitServiceTest extends TestCase
     public function testCheckAndRecordBlocksRequestsAboveLimit(): void
     {
         for ($index = 0; $index < 60; $index++) {
-            $this->service->checkAndRecord('192.0.2.11', IpRateLimitService::BUCKET_QUEUE_POLL);
+            $this->service->checkAndRecord('192.0.2.11', IpRateLimitBucket::QueuePoll);
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('192.0.2.11', IpRateLimitService::BUCKET_QUEUE_POLL)
+            $this->service->checkAndRecord('192.0.2.11', IpRateLimitBucket::QueuePoll)
         );
     }
 
     public function testDifferentBucketsTrackSeparately(): void
     {
         for ($index = 0; $index < 30; $index++) {
-            $this->service->checkAndRecord('192.0.2.12', IpRateLimitService::BUCKET_SCAN_LOG_POLL);
+            $this->service->checkAndRecord('192.0.2.12', IpRateLimitBucket::ScanLogPoll);
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('192.0.2.12', IpRateLimitService::BUCKET_SCAN_LOG_POLL)
+            $this->service->checkAndRecord('192.0.2.12', IpRateLimitBucket::ScanLogPoll)
         );
         $this->assertTrue(
-            $this->service->checkAndRecord('192.0.2.12', IpRateLimitService::BUCKET_QUEUE_POLL)
+            $this->service->checkAndRecord('192.0.2.12', IpRateLimitBucket::QueuePoll)
         );
     }
 
@@ -66,26 +66,26 @@ final class IpRateLimitServiceTest extends TestCase
     {
         for ($index = 0; $index < 10; $index++) {
             $this->assertTrue(
-                $this->service->checkAndRecord('192.0.2.13', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+                $this->service->checkAndRecord('192.0.2.13', IpRateLimitBucket::QueueSubmit)
             );
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('192.0.2.13', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            $this->service->checkAndRecord('192.0.2.13', IpRateLimitBucket::QueueSubmit)
         );
     }
 
     public function testQueueSubmitBucketTracksSeparatelyFromQueuePoll(): void
     {
         for ($index = 0; $index < 10; $index++) {
-            $this->service->checkAndRecord('192.0.2.14', IpRateLimitService::BUCKET_QUEUE_SUBMIT);
+            $this->service->checkAndRecord('192.0.2.14', IpRateLimitBucket::QueueSubmit);
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('192.0.2.14', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            $this->service->checkAndRecord('192.0.2.14', IpRateLimitBucket::QueueSubmit)
         );
         $this->assertTrue(
-            $this->service->checkAndRecord('192.0.2.14', IpRateLimitService::BUCKET_QUEUE_POLL)
+            $this->service->checkAndRecord('192.0.2.14', IpRateLimitBucket::QueuePoll)
         );
     }
 
@@ -93,26 +93,26 @@ final class IpRateLimitServiceTest extends TestCase
     {
         for ($index = 0; $index < 10; $index++) {
             $this->assertTrue(
-                $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+                $this->service->checkAndRecord('', IpRateLimitBucket::QueueSubmit)
             );
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            $this->service->checkAndRecord('', IpRateLimitBucket::QueueSubmit)
         );
     }
 
     public function testUnknownClientBucketIsSeparateFromKnownIp(): void
     {
         for ($index = 0; $index < 10; $index++) {
-            $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT);
+            $this->service->checkAndRecord('', IpRateLimitBucket::QueueSubmit);
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            $this->service->checkAndRecord('', IpRateLimitBucket::QueueSubmit)
         );
         $this->assertTrue(
-            $this->service->checkAndRecord('192.0.2.15', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            $this->service->checkAndRecord('192.0.2.15', IpRateLimitBucket::QueueSubmit)
         );
     }
 
@@ -120,26 +120,26 @@ final class IpRateLimitServiceTest extends TestCase
     {
         for ($index = 0; $index < 5; $index++) {
             $this->assertTrue(
-                $this->service->checkAndRecord('192.0.2.16', IpRateLimitService::BUCKET_PLAYER_REPORT)
+                $this->service->checkAndRecord('192.0.2.16', IpRateLimitBucket::PlayerReport)
             );
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('192.0.2.16', IpRateLimitService::BUCKET_PLAYER_REPORT)
+            $this->service->checkAndRecord('192.0.2.16', IpRateLimitBucket::PlayerReport)
         );
     }
 
     public function testPlayerReportBucketTracksSeparatelyFromQueueSubmit(): void
     {
         for ($index = 0; $index < 5; $index++) {
-            $this->service->checkAndRecord('192.0.2.17', IpRateLimitService::BUCKET_PLAYER_REPORT);
+            $this->service->checkAndRecord('192.0.2.17', IpRateLimitBucket::PlayerReport);
         }
 
         $this->assertFalse(
-            $this->service->checkAndRecord('192.0.2.17', IpRateLimitService::BUCKET_PLAYER_REPORT)
+            $this->service->checkAndRecord('192.0.2.17', IpRateLimitBucket::PlayerReport)
         );
         $this->assertTrue(
-            $this->service->checkAndRecord('192.0.2.17', IpRateLimitService::BUCKET_QUEUE_SUBMIT)
+            $this->service->checkAndRecord('192.0.2.17', IpRateLimitBucket::QueueSubmit)
         );
     }
 }

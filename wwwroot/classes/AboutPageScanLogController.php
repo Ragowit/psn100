@@ -7,6 +7,7 @@ require_once __DIR__ . '/AboutPageScanSummary.php';
 require_once __DIR__ . '/AboutPagePlayerArraySerializer.php';
 require_once __DIR__ . '/JsonResponseEmitter.php';
 require_once __DIR__ . '/IpRateLimitService.php';
+require_once __DIR__ . '/IpRateLimitBucket.php';
 require_once __DIR__ . '/IpAddressResolver.php';
 
 final class AboutPageScanLogController
@@ -58,7 +59,7 @@ final class AboutPageScanLogController
             if (
                 !$this->rateLimitService->checkAndRecord(
                     $ipAddress,
-                    IpRateLimitService::BUCKET_SCAN_LOG_POLL
+                    IpRateLimitBucket::ScanLogPoll
                 )
             ) {
                 $this->jsonResponder->respond([

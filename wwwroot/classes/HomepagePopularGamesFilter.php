@@ -2,43 +2,18 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Platform.php';
+
 final readonly class HomepagePopularGamesFilter
 {
     public const string PLATFORM_ALL = '';
-    public const string PLATFORM_PC = 'pc';
-    public const string PLATFORM_PS3 = 'ps3';
-    public const string PLATFORM_PS4 = 'ps4';
-    public const string PLATFORM_PS5 = 'ps5';
-    public const string PLATFORM_PSVITA = 'psvita';
-    public const string PLATFORM_PSVR = 'psvr';
-    public const string PLATFORM_PSVR2 = 'psvr2';
-
-    /**
-     * @var list<string>
-     */
-    private const array PLATFORM_KEYS = [
-        self::PLATFORM_PC,
-        self::PLATFORM_PS3,
-        self::PLATFORM_PS4,
-        self::PLATFORM_PS5,
-        self::PLATFORM_PSVITA,
-        self::PLATFORM_PSVR,
-        self::PLATFORM_PSVR2,
-    ];
-
-    /**
-     * @var array<string, string>
-     */
-    private const array PLATFORM_LABELS = [
-        self::PLATFORM_ALL => 'All',
-        self::PLATFORM_PC => 'PC',
-        self::PLATFORM_PS3 => 'PS3',
-        self::PLATFORM_PS4 => 'PS4',
-        self::PLATFORM_PS5 => 'PS5',
-        self::PLATFORM_PSVITA => 'PSVITA',
-        self::PLATFORM_PSVR => 'PSVR',
-        self::PLATFORM_PSVR2 => 'PSVR2',
-    ];
+    public const string PLATFORM_PC = Platform::Pc->value;
+    public const string PLATFORM_PS3 = Platform::Ps3->value;
+    public const string PLATFORM_PS4 = Platform::Ps4->value;
+    public const string PLATFORM_PS5 = Platform::Ps5->value;
+    public const string PLATFORM_PSVITA = Platform::PsVita->value;
+    public const string PLATFORM_PSVR = Platform::PsVr->value;
+    public const string PLATFORM_PSVR2 = Platform::PsVr2->value;
 
     private function __construct(
         final private string $platform,
@@ -80,7 +55,7 @@ final readonly class HomepagePopularGamesFilter
 
     public function getPlatformDatabaseValue(): string
     {
-        return self::PLATFORM_LABELS[$this->platform] ?? '';
+        return Platform::tryFrom($this->platform)?->label() ?? '';
     }
 
     /**
@@ -106,7 +81,7 @@ final readonly class HomepagePopularGamesFilter
      */
     public static function getPlatformOptions(): array
     {
-        return self::PLATFORM_LABELS;
+        return [self::PLATFORM_ALL => 'All'] + Platform::labelsByValue();
     }
 
     private static function normalizePlatform(mixed $value): string
@@ -117,11 +92,7 @@ final readonly class HomepagePopularGamesFilter
 
         $platform = ((string) $value) |> trim(...) |> strtolower(...);
 
-        if ($platform === '' || !in_array($platform, self::PLATFORM_KEYS, true)) {
-            return self::PLATFORM_ALL;
-        }
-
-        return $platform;
+        return Platform::tryFrom($platform)?->value ?? self::PLATFORM_ALL;
     }
 
     private static function toBool(mixed $value): bool
