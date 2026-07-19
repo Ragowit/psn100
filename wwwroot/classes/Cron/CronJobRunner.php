@@ -11,6 +11,7 @@ final class CronJobRunner
 
     private bool $environmentConfigured = false;
 
+    #[\NoDiscard]
     public static function create(): self
     {
         return new self();

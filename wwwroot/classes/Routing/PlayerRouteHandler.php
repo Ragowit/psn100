@@ -36,7 +36,7 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect('/player/');
         }
 
-        $view = $segments !== [] ? (string) array_shift($segments) : '';
+        $view = (string) (array_first($segments) ?? '');
 
         $variables = [
             'accountId' => $accountId,

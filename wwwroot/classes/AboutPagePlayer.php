@@ -7,18 +7,18 @@ require_once __DIR__ . '/PlayerStatus.php';
 final readonly class AboutPagePlayer
 {
     public function __construct(
-        private Utility $utility,
-        private string $onlineId,
-        private string $countryCode,
-        private string $avatarUrl,
-        private ?string $lastUpdatedDate,
-        private ?int $level,
-        private ?string $progress,
-        private int $rankLastWeek,
-        private PlayerStatus $status,
-        private int $trophyCountNpwr,
-        private int $trophyCountSony,
-        private ?int $ranking,
+        final private Utility $utility,
+        final private string $onlineId,
+        final private string $countryCode,
+        final private string $avatarUrl,
+        final private ?string $lastUpdatedDate,
+        final private ?int $level,
+        final private ?string $progress,
+        final private int $rankLastWeek,
+        final private PlayerStatus $status,
+        final private int $trophyCountNpwr,
+        final private int $trophyCountSony,
+        final private ?int $ranking,
     ) {
     }
 

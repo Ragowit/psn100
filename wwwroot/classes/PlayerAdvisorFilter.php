@@ -2,35 +2,17 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/PlayerAdvisorSort.php';
+
 readonly class PlayerAdvisorFilter
 {
-    public const string SORT_RARITY = 'rarity';
-    public const string SORT_IN_GAME_RARITY = 'in_game_rarity';
-
-    /**
-     * @var list<string>
-     */
-    private const array ALLOWED_SORTS = [
-        self::SORT_RARITY,
-        self::SORT_IN_GAME_RARITY,
-    ];
-
-    /**
-     * @var list<string>
-     */
-    private const array SUPPORTED_PLATFORMS = [
-        'pc',
-        'ps3',
-        'ps4',
-        'ps5',
-        'psvita',
-        'psvr',
-        'psvr2',
-    ];
+    public const string SORT_RARITY = PlayerAdvisorSort::Rarity->value;
+    public const string SORT_IN_GAME_RARITY = PlayerAdvisorSort::InGameRarity->value;
 
     private function __construct(
         final private int $page,
-        final private string $sort,
+        final private PlayerAdvisorSort $sort,
         /**
          * @var array<int, string>
          */
@@ -49,13 +31,10 @@ readonly class PlayerAdvisorFilter
             $page = max((int) $parameters['page'], 1);
         }
 
-        $sort = self::SORT_RARITY;
-        if (isset($parameters['sort']) && in_array($parameters['sort'], self::ALLOWED_SORTS, true)) {
-            $sort = (string) $parameters['sort'];
-        }
+        $sort = PlayerAdvisorSort::tryFromMixed($parameters['sort'] ?? null) ?? PlayerAdvisorSort::Rarity;
 
         $platforms = [];
-        foreach (self::SUPPORTED_PLATFORMS as $platform) {
+        foreach (Platform::values() as $platform) {
             if (!empty($parameters[$platform])) {
                 $platforms[] = $platform;
             }
@@ -100,7 +79,7 @@ readonly class PlayerAdvisorFilter
 
     public function getSort(): string
     {
-        return $this->sort;
+        return $this->sort->value;
     }
 
     /**
@@ -114,7 +93,7 @@ readonly class PlayerAdvisorFilter
             $parameters[$platform] = 'true';
         }
 
-        $parameters['sort'] = $this->sort;
+        $parameters['sort'] = $this->sort->value;
 
         return $parameters;
     }

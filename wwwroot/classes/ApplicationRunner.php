@@ -18,6 +18,7 @@ final readonly class ApplicationRunner
         $this->maintenanceResponder = $maintenanceResponder ?? new MaintenanceResponder();
     }
 
+    #[\NoDiscard]
     public static function create(
         ApplicationContainer $applicationContainer,
         MaintenanceMode $maintenanceMode,

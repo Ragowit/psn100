@@ -60,6 +60,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
     /**
      * @return array<string, int|string>
      */
+    #[\NoDiscard]
     public function withPage(int $page): array
     {
         $parameters = $this->getFilterParameters();

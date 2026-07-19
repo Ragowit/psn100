@@ -20,6 +20,7 @@ final class CronJobApplication
         $this->runner = $runner;
     }
 
+    #[\NoDiscard]
     public static function create(?CronJobRunner $runner = null): self
     {
         return new self($runner ?? CronJobRunner::create());

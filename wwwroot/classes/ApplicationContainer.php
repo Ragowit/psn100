@@ -27,6 +27,7 @@ class ApplicationContainer
 
     private ?TemplateRenderer $templateRenderer = null;
 
+    #[\NoDiscard]
     public static function create(): self
     {
         return new self(

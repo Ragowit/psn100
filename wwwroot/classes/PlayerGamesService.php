@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerGame.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
+require_once __DIR__ . '/PlayerGamesSort.php';
 require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/DateDurationSummary.php';
@@ -156,13 +157,13 @@ final class PlayerGamesService
 
     private function buildOrderByClause(PlayerGamesFilter $filter): string
     {
-        return match ($filter->getSort()) {
-            PlayerGamesFilter::SORT_IN_GAME_MAX_RARITY => 'ORDER BY max_in_game_rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_IN_GAME_RARITY => 'ORDER BY in_game_rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_MAX_RARITY => 'ORDER BY max_rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_NAME => 'ORDER BY `name`',
-            PlayerGamesFilter::SORT_RARITY => 'ORDER BY rarity_points DESC, `name`',
-            PlayerGamesFilter::SORT_SEARCH => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
+        return match (PlayerGamesSort::from($filter->getSort())) {
+            PlayerGamesSort::InGameMaxRarity => 'ORDER BY max_in_game_rarity_points DESC, `name`',
+            PlayerGamesSort::InGameRarity => 'ORDER BY in_game_rarity_points DESC, `name`',
+            PlayerGamesSort::MaxRarity => 'ORDER BY max_rarity_points DESC, `name`',
+            PlayerGamesSort::Name => 'ORDER BY `name`',
+            PlayerGamesSort::Rarity => 'ORDER BY rarity_points DESC, `name`',
+            PlayerGamesSort::Search => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
             default => 'ORDER BY last_updated_date DESC',
         };
     }

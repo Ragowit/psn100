@@ -3,15 +3,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/GameListSort.php';
 
 readonly class GameListFilter
 {
-    public const string SORT_ADDED = 'added';
-    public const string SORT_COMPLETION = 'completion';
-    public const string SORT_OWNERS = 'owners';
-    public const string SORT_RARITY = 'rarity';
-    public const string SORT_IN_GAME_RARITY = 'in-game-rarity';
-    public const string SORT_SEARCH = 'search';
+    public const string SORT_ADDED = GameListSort::Added->value;
+    public const string SORT_COMPLETION = GameListSort::Completion->value;
+    public const string SORT_OWNERS = GameListSort::Owners->value;
+    public const string SORT_RARITY = GameListSort::Rarity->value;
+    public const string SORT_IN_GAME_RARITY = GameListSort::InGameRarity->value;
+    public const string SORT_SEARCH = GameListSort::Search->value;
 
     public const string PLATFORM_PC = Platform::Pc->value;
     public const string PLATFORM_PS3 = Platform::Ps3->value;
@@ -23,7 +24,7 @@ readonly class GameListFilter
 
     private function __construct(
         final private ?string $player,
-        final private string $sort,
+        final private GameListSort $sort,
         final private bool $sortSpecified,
         final private string $search,
         final private int $page,
@@ -100,12 +101,12 @@ readonly class GameListFilter
 
     public function getSort(): string
     {
-        return $this->sort;
+        return $this->sort->value;
     }
 
     public function isSort(string $sort): bool
     {
-        return $this->sort === $sort;
+        return $this->sort->value === $sort;
     }
 
     public function hasExplicitSort(): bool
@@ -125,7 +126,7 @@ readonly class GameListFilter
 
     public function shouldApplySearch(): bool
     {
-        return $this->hasSearch() || $this->sort === self::SORT_SEARCH;
+        return $this->hasSearch() || $this->sort === GameListSort::Search;
     }
 
     public function getPage(): int
@@ -191,7 +192,7 @@ readonly class GameListFilter
         }
 
         if ($this->sortSpecified) {
-            $parameters['sort'] = $this->sort;
+            $parameters['sort'] = $this->sort->value;
         } else {
             unset($parameters['sort']);
         }
@@ -287,18 +288,18 @@ readonly class GameListFilter
         return max($page, 1);
     }
 
-    private static function normalizeSort(mixed $value, string $search, bool $sortSpecified): string
+    private static function normalizeSort(mixed $value, string $search, bool $sortSpecified): GameListSort
     {
-        $sort = is_string($value) ? ($value |> trim(...) |> strtolower(...)) : '';
+        $sort = GameListSort::tryFromMixed($value);
 
         return match ($sort) {
-            self::SORT_ADDED,
-            self::SORT_COMPLETION,
-            self::SORT_OWNERS,
-            self::SORT_RARITY,
-            self::SORT_IN_GAME_RARITY => $sort,
-            self::SORT_SEARCH => ($search !== '' || $sortSpecified) ? self::SORT_SEARCH : self::SORT_ADDED,
-            default => $search !== '' ? self::SORT_SEARCH : self::SORT_ADDED,
+            GameListSort::Added,
+            GameListSort::Completion,
+            GameListSort::Owners,
+            GameListSort::Rarity,
+            GameListSort::InGameRarity => $sort,
+            GameListSort::Search => ($search !== '' || $sortSpecified) ? GameListSort::Search : GameListSort::Added,
+            null => $search !== '' ? GameListSort::Search : GameListSort::Added,
         };
     }
 

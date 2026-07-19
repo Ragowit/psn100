@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerStatusNoticeType.php';
+
 readonly class PlayerStatusNotice
 {
-    private const string TYPE_FLAGGED = 'flagged';
-    private const string TYPE_PRIVATE = 'private';
     private const string DISPUTE_BASE_URL = 'https://github.com/Ragowit/psn100/issues';
     private const string PRIVATE_PROFILE_URL = 'https://www.playstation.com/en-us/support/account/privacy-settings-psn/';
 
     private function __construct(
-        private string $type,
-        private string $message,
+        final private PlayerStatusNoticeType $type,
+        final private string $message,
     ) {}
 
     #[\NoDiscard]
@@ -23,7 +23,7 @@ readonly class PlayerStatusNotice
             htmlspecialchars($disputeUrl, ENT_QUOTES, 'UTF-8')
         );
 
-        return new self(self::TYPE_FLAGGED, $message);
+        return new self(PlayerStatusNoticeType::Flagged, $message);
     }
 
     #[\NoDiscard]
@@ -34,7 +34,7 @@ readonly class PlayerStatusNotice
             htmlspecialchars(self::PRIVATE_PROFILE_URL, ENT_QUOTES, 'UTF-8')
         );
 
-        return new self(self::TYPE_PRIVATE, $message);
+        return new self(PlayerStatusNoticeType::Private, $message);
     }
 
     #[\NoDiscard]
@@ -60,17 +60,17 @@ readonly class PlayerStatusNotice
 
     public function getType(): string
     {
-        return $this->type;
+        return $this->type->value;
     }
 
     public function isFlagged(): bool
     {
-        return $this->type === self::TYPE_FLAGGED;
+        return $this->type === PlayerStatusNoticeType::Flagged;
     }
 
     public function isPrivateProfile(): bool
     {
-        return $this->type === self::TYPE_PRIVATE;
+        return $this->type === PlayerStatusNoticeType::Private;
     }
 
     private static function buildDisputeQuery(string $onlineId, ?string $accountId): string

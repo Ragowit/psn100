@@ -75,6 +75,7 @@ readonly class GamePlayerFilter
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function withCountry(?string $country): array
     {
         $parameters = $this->getFilterParameters();
@@ -92,6 +93,7 @@ readonly class GamePlayerFilter
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function withAvatar(?string $avatar): array
     {
         $parameters = $this->getFilterParameters();

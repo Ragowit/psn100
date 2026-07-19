@@ -5,8 +5,8 @@ declare(strict_types=1);
 readonly class Avatar
 {
     public function __construct(
-        private string $url,
-        private int $count
+        final private string $url,
+        final private int $count
     ) {}
 
     public function getUrl(): string
