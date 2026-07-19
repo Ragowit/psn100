@@ -10,53 +10,22 @@ abstract class AbstractLeaderboardRow
     private const int NEW_PLAYER_RANK_VALUE = 16777215;
 
     /**
-     * @var array<string, mixed>
-     */
-    protected array $player;
-
-    private PlayerLeaderboardFilter $filter;
-
-    private Utility $utility;
-
-    private ?string $highlightedPlayerId;
-
-    /**
-     * @var array<string, int|string>
-     */
-    private array $filterParameters;
-
-    private string $rankingField;
-
-    private string $rankingLastWeekField;
-
-    private string $countryRankingField;
-
-    private string $countryRankingLastWeekField;
-
-    /**
      * @param array<string, mixed> $player
      * @param array<string, int|string> $filterParameters
      */
     public function __construct(
-        array $player,
-        PlayerLeaderboardFilter $filter,
-        Utility $utility,
-        ?string $highlightedPlayerId,
-        array $filterParameters,
-        string $rankingField,
-        string $rankingLastWeekField,
-        string $countryRankingField,
-        string $countryRankingLastWeekField
+        protected array $player,
+        private PlayerLeaderboardFilter $filter,
+        private Utility $utility,
+        private ?string $highlightedPlayerId,
+        /** @var array<string, int|string> */
+        private array $filterParameters,
+        private string $rankingField,
+        private string $rankingLastWeekField,
+        private string $countryRankingField,
+        private string $countryRankingLastWeekField,
     ) {
-        $this->player = $player;
-        $this->filter = $filter;
-        $this->utility = $utility;
         $this->highlightedPlayerId = $highlightedPlayerId !== null ? trim($highlightedPlayerId) : null;
-        $this->filterParameters = $filterParameters;
-        $this->rankingField = $rankingField;
-        $this->rankingLastWeekField = $rankingLastWeekField;
-        $this->countryRankingField = $countryRankingField;
-        $this->countryRankingLastWeekField = $countryRankingLastWeekField;
     }
 
     public function getRowId(): string

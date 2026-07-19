@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerScanProfileSyncStatus.php';
+
 /**
  * Outcome of resolving and persisting a queued player's PSN profile during a scan.
  */
 final class PlayerScanProfileSyncResult
 {
-    public const string STATUS_SUCCESS = 'success';
-    public const string STATUS_SKIP_PLAYER = 'skip_player';
-
     /**
      * @param array<string, mixed> $player
      */
     private function __construct(
-        final public readonly string $status,
+        final public readonly PlayerScanProfileSyncStatus $status,
         final public readonly array $player = [],
         final public readonly ?object $user = null,
         final public readonly ?string $country = null,
@@ -27,22 +26,22 @@ final class PlayerScanProfileSyncResult
     #[\NoDiscard]
     public static function success(array $player, object $user, string $country): self
     {
-        return new self(self::STATUS_SUCCESS, $player, $user, $country);
+        return new self(PlayerScanProfileSyncStatus::Success, $player, $user, $country);
     }
 
     #[\NoDiscard]
     public static function skipPlayer(): self
     {
-        return new self(self::STATUS_SKIP_PLAYER);
+        return new self(PlayerScanProfileSyncStatus::SkipPlayer);
     }
 
     public function isSuccess(): bool
     {
-        return $this->status === self::STATUS_SUCCESS;
+        return $this->status === PlayerScanProfileSyncStatus::Success;
     }
 
     public function shouldSkipPlayer(): bool
     {
-        return $this->status === self::STATUS_SKIP_PLAYER;
+        return $this->status === PlayerScanProfileSyncStatus::SkipPlayer;
     }
 }

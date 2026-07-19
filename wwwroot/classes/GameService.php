@@ -5,11 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
+require_once __DIR__ . '/TrophyType.php';
 
 class GameService
 {
-    private const string TROPHY_TYPE_ORDER_SQL = "FIELD(%s, 'bronze', 'silver', 'gold', 'platinum')";
-
     public function __construct(private readonly PDO $database) {}
 
     public function getGame(int $gameId): ?GameDetails
@@ -285,7 +284,7 @@ class GameService
 
     private function buildAccountSortSql(string $sort): string
     {
-        $trophyTypeSort = sprintf(self::TROPHY_TYPE_ORDER_SQL, 't.type');
+        $trophyTypeSort = TrophyType::sqlFieldOrder('t.type');
 
         return match ($sort) {
             'date' => " ORDER BY te.earned_date IS NULL, te.earned_date, {$trophyTypeSort}, t.order_id",
@@ -300,7 +299,7 @@ class GameService
             return ' ORDER BY t.order_id';
         }
 
-        $trophyTypeSort = sprintf(self::TROPHY_TYPE_ORDER_SQL, 't.type');
+        $trophyTypeSort = TrophyType::sqlFieldOrder('t.type');
 
         return " ORDER BY tm.rarity_percent DESC, {$trophyTypeSort}, t.order_id";
     }

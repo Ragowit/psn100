@@ -9,6 +9,7 @@ require_once __DIR__ . '/PlayerQueueHandler.php';
 require_once __DIR__ . '/PlayerQueueResponseFactory.php';
 require_once __DIR__ . '/PlayerQueuePollTokenManager.php';
 require_once __DIR__ . '/IpRateLimitService.php';
+require_once __DIR__ . '/IpRateLimitBucket.php';
 
 class PlayerQueueController
 {
@@ -38,7 +39,7 @@ class PlayerQueueController
             $this->rateLimitService !== null
             && !$this->rateLimitService->checkAndRecord(
                 $request->getIpAddress(),
-                IpRateLimitService::BUCKET_QUEUE_SUBMIT
+                IpRateLimitBucket::QueueSubmit
             )
         ) {
             return PlayerQueueResponse::rateLimited(
@@ -57,7 +58,7 @@ class PlayerQueueController
             $this->rateLimitService !== null
             && !$this->rateLimitService->checkAndRecord(
                 $request->getIpAddress(),
-                IpRateLimitService::BUCKET_QUEUE_POLL
+                IpRateLimitBucket::QueuePoll
             )
         ) {
             return PlayerQueueResponse::rateLimited(

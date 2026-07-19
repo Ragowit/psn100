@@ -5,14 +5,15 @@ declare(strict_types=1);
 require_once __DIR__ . '/Worker.php';
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/PsnTrophyTitleComparisonException.php';
+require_once __DIR__ . '/PsnTrophyTitleComparisonSource.php';
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 
 use Tustin\PlayStation\Client;
 
 final class PsnTrophyTitleComparisonService
 {
-    public const string SOURCE_DIRECT = 'direct';
-    public const string SOURCE_TUSTIN = 'tustin';
+    public const string SOURCE_DIRECT = PsnTrophyTitleComparisonSource::Direct->value;
+    public const string SOURCE_TUSTIN = PsnTrophyTitleComparisonSource::Tustin->value;
 
     private const \Closure DEFAULT_CLIENT_FACTORY = static function (): object {
         return new Client();
@@ -80,10 +81,12 @@ final class PsnTrophyTitleComparisonService
     /**
      * @return array<string, mixed>
      */
-    public function compareByAccountId(string $accountId, string $source): array
+    public function compareByAccountId(string $accountId, string|PsnTrophyTitleComparisonSource $source): array
     {
         $normalizedAccountId = trim($accountId);
-        $normalizedSource = self::normalizeSource($source);
+        $normalizedSource = $source instanceof PsnTrophyTitleComparisonSource
+            ? $source
+            : self::normalizeSource($source);
 
         if ($normalizedAccountId === '' || !ctype_digit($normalizedAccountId)) {
             throw new InvalidArgumentException('Account ID must be a numeric value.');
@@ -94,26 +97,20 @@ final class PsnTrophyTitleComparisonService
         }
 
         $client = $this->createAuthenticatedClient();
-        $fetchResult = $normalizedSource === self::SOURCE_DIRECT
+        $fetchResult = $normalizedSource === PsnTrophyTitleComparisonSource::Direct
             ? $this->fetchTitlesViaEndpoint($client, $normalizedAccountId)
             : $this->fetchTitlesViaTustin($client, $normalizedAccountId);
 
         return [
             'accountId' => $normalizedAccountId,
-            'source' => $normalizedSource,
+            'source' => $normalizedSource->value,
             'result' => $fetchResult,
         ];
     }
 
-    public static function normalizeSource(string $source): ?string
+    public static function normalizeSource(string $source): ?PsnTrophyTitleComparisonSource
     {
-        $normalizedSource = $source |> trim(...) |> strtolower(...);
-
-        if ($normalizedSource === self::SOURCE_DIRECT || $normalizedSource === self::SOURCE_TUSTIN) {
-            return $normalizedSource;
-        }
-
-        return null;
+        return PsnTrophyTitleComparisonSource::tryFrom($source |> trim(...) |> strtolower(...));
     }
 
     private function createAuthenticatedClient(): object

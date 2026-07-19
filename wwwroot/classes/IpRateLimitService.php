@@ -3,43 +3,20 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/IpAddressResolver.php';
+require_once __DIR__ . '/IpRateLimitBucket.php';
 
 /**
  * Fixed-window IP rate limiting backed by the ip_rate_limit table.
  */
 final class IpRateLimitService
 {
-    public const string BUCKET_QUEUE_POLL = 'queue_poll';
-
-    public const string BUCKET_QUEUE_SUBMIT = 'queue_submit';
-
-    public const string BUCKET_PLAYER_REPORT = 'player_report';
-
-    public const string BUCKET_SCAN_LOG_POLL = 'scan_log_poll';
-
-    private const int QUEUE_POLL_MAX_REQUESTS = 60;
-
-    private const int QUEUE_POLL_WINDOW_SECONDS = 60;
-
-    private const int QUEUE_SUBMIT_MAX_REQUESTS = 10;
-
-    private const int QUEUE_SUBMIT_WINDOW_SECONDS = 60;
-
-    private const int PLAYER_REPORT_MAX_REQUESTS = 5;
-
-    private const int PLAYER_REPORT_WINDOW_SECONDS = 60;
-
-    private const int SCAN_LOG_POLL_MAX_REQUESTS = 30;
-
-    private const int SCAN_LOG_POLL_WINDOW_SECONDS = 60;
-
     public function __construct(private readonly PDO $database)
     {
     }
 
-    public function isAllowed(string $ipAddress, string $bucket): bool
+    public function isAllowed(string $ipAddress, IpRateLimitBucket $bucket): bool
     {
-        [$maxRequests, $windowSeconds] = $this->resolveLimits($bucket);
+        [$maxRequests, $windowSeconds] = $bucket->limits();
         $bucketKey = $this->buildBucketKey($ipAddress, $bucket);
         $row = $this->fetchBucketRow($bucketKey);
 
@@ -57,14 +34,14 @@ final class IpRateLimitService
         return $requestCount < $maxRequests;
     }
 
-    public function recordRequest(string $ipAddress, string $bucket): void
+    public function recordRequest(string $ipAddress, IpRateLimitBucket $bucket): void
     {
         $this->checkAndRecord($ipAddress, $bucket);
     }
 
-    public function checkAndRecord(string $ipAddress, string $bucket): bool
+    public function checkAndRecord(string $ipAddress, IpRateLimitBucket $bucket): bool
     {
-        [$maxRequests, $windowSeconds] = $this->resolveLimits($bucket);
+        [$maxRequests, $windowSeconds] = $bucket->limits();
         $bucketKey = $this->buildBucketKey($ipAddress, $bucket);
 
         $startedTransaction = false;
@@ -90,37 +67,11 @@ final class IpRateLimitService
         }
     }
 
-    /**
-     * @return array{0: int, 1: int}
-     */
-    private function resolveLimits(string $bucket): array
-    {
-        return match ($bucket) {
-            self::BUCKET_SCAN_LOG_POLL => [
-                self::SCAN_LOG_POLL_MAX_REQUESTS,
-                self::SCAN_LOG_POLL_WINDOW_SECONDS,
-            ],
-            self::BUCKET_QUEUE_POLL => [
-                self::QUEUE_POLL_MAX_REQUESTS,
-                self::QUEUE_POLL_WINDOW_SECONDS,
-            ],
-            self::BUCKET_QUEUE_SUBMIT => [
-                self::QUEUE_SUBMIT_MAX_REQUESTS,
-                self::QUEUE_SUBMIT_WINDOW_SECONDS,
-            ],
-            self::BUCKET_PLAYER_REPORT => [
-                self::PLAYER_REPORT_MAX_REQUESTS,
-                self::PLAYER_REPORT_WINDOW_SECONDS,
-            ],
-            default => throw new InvalidArgumentException(sprintf('Unknown rate-limit bucket "%s".', $bucket)),
-        };
-    }
-
-    private function buildBucketKey(string $ipAddress, string $bucket): string
+    private function buildBucketKey(string $ipAddress, IpRateLimitBucket $bucket): string
     {
         $normalizedIpAddress = IpAddressResolver::normalizeForAbuseControls($ipAddress);
 
-        return hash('sha256', $bucket . '|' . $normalizedIpAddress);
+        return hash('sha256', $bucket->value . '|' . $normalizedIpAddress);
     }
 
     private function consumeSlotIfAvailable(string $bucketKey, int $maxRequests, int $windowSeconds): bool

@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerReportService.php';
 require_once __DIR__ . '/PlayerReportResult.php';
 require_once __DIR__ . '/PlayerReportRequest.php';
 require_once __DIR__ . '/IpRateLimitService.php';
+require_once __DIR__ . '/IpRateLimitBucket.php';
 
 class PlayerReportHandler
 {
@@ -42,7 +43,7 @@ class PlayerReportHandler
             $this->rateLimitService !== null
             && !$this->rateLimitService->checkAndRecord(
                 $request->getIpAddress(),
-                IpRateLimitService::BUCKET_PLAYER_REPORT
+                IpRateLimitBucket::PlayerReport
             )
         ) {
             return PlayerReportResult::error(

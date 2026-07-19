@@ -2,28 +2,17 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Platform.php';
+
 final readonly class PlayerRandomGamesFilter
 {
-    public const string PLATFORM_PC = 'pc';
-    public const string PLATFORM_PS3 = 'ps3';
-    public const string PLATFORM_PS4 = 'ps4';
-    public const string PLATFORM_PS5 = 'ps5';
-    public const string PLATFORM_PSVITA = 'psvita';
-    public const string PLATFORM_PSVR = 'psvr';
-    public const string PLATFORM_PSVR2 = 'psvr2';
-
-    /**
-     * @var list<string>
-     */
-    private const array PLATFORM_KEYS = [
-        self::PLATFORM_PC,
-        self::PLATFORM_PS3,
-        self::PLATFORM_PS4,
-        self::PLATFORM_PS5,
-        self::PLATFORM_PSVITA,
-        self::PLATFORM_PSVR,
-        self::PLATFORM_PSVR2,
-    ];
+    public const string PLATFORM_PC = Platform::Pc->value;
+    public const string PLATFORM_PS3 = Platform::Ps3->value;
+    public const string PLATFORM_PS4 = Platform::Ps4->value;
+    public const string PLATFORM_PS5 = Platform::Ps5->value;
+    public const string PLATFORM_PSVITA = Platform::PsVita->value;
+    public const string PLATFORM_PSVR = Platform::PsVr->value;
+    public const string PLATFORM_PSVR2 = Platform::PsVr2->value;
 
     /**
      * @var array<string, bool>
@@ -42,7 +31,7 @@ final readonly class PlayerRandomGamesFilter
     public static function fromArray(array $parameters): self
     {
         $selectedPlatforms = [];
-        foreach (self::PLATFORM_KEYS as $platformKey) {
+        foreach (Platform::values() as $platformKey) {
             $selectedPlatforms[$platformKey] = self::toBool($parameters[$platformKey] ?? null);
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/PsnTrophyTitleComparisonException.php';
 require_once __DIR__ . '/PsnTrophyTitleComparisonRequestResult.php';
 require_once __DIR__ . '/PsnTrophyTitleComparisonService.php';
+require_once __DIR__ . '/PsnTrophyTitleComparisonSource.php';
 
 final class PsnTrophyTitleComparisonRequestHandler
 {
@@ -12,7 +13,7 @@ final class PsnTrophyTitleComparisonRequestHandler
     {
         $normalizedAccountId = trim($accountId);
         $normalizedSource = PsnTrophyTitleComparisonService::normalizeSource($source)
-            ?? PsnTrophyTitleComparisonService::SOURCE_DIRECT;
+            ?? PsnTrophyTitleComparisonSource::Direct;
         $result = null;
         $errorMessage = null;
 
@@ -31,6 +32,11 @@ final class PsnTrophyTitleComparisonRequestHandler
             }
         }
 
-        return new PsnTrophyTitleComparisonRequestResult($normalizedAccountId, $normalizedSource, $result, $errorMessage);
+        return new PsnTrophyTitleComparisonRequestResult(
+            $normalizedAccountId,
+            $normalizedSource->value,
+            $result,
+            $errorMessage
+        );
     }
 }

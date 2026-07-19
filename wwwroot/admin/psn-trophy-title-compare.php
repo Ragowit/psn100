@@ -8,9 +8,10 @@ require_once '../classes/Admin/PsnTrophyTitleComparisonException.php';
 require_once '../classes/Admin/PsnTrophyTitleComparisonRequestHandler.php';
 require_once '../classes/Admin/PsnTrophyTitleComparisonRequestResult.php';
 require_once '../classes/Admin/PsnTrophyTitleComparisonService.php';
+require_once '../classes/Admin/PsnTrophyTitleComparisonSource.php';
 
 $accountId = isset($_GET['accountId']) ? (string) $_GET['accountId'] : '';
-$source = isset($_GET['source']) ? (string) $_GET['source'] : PsnTrophyTitleComparisonService::SOURCE_DIRECT;
+$source = isset($_GET['source']) ? (string) $_GET['source'] : PsnTrophyTitleComparisonSource::Direct->value;
 $service = PsnTrophyTitleComparisonService::fromDatabase($database);
 $handledRequest = PsnTrophyTitleComparisonRequestHandler::handle($service, $accountId, $source);
 
@@ -43,11 +44,11 @@ $errorMessage = $handledRequest->getErrorMessage();
                 <div class="mb-2">
                     <span class="form-label d-block">Source</span>
                     <div class="btn-group" role="group" aria-label="Source toggle">
-                        <input type="radio" class="btn-check" name="source" id="source-direct" value="direct" autocomplete="off" <?= $normalizedSource === PsnTrophyTitleComparisonService::SOURCE_DIRECT ? 'checked' : ''; ?>>
-                        <label class="btn btn-outline-secondary" for="source-direct">Direct endpoint</label>
+                        <input type="radio" class="btn-check" name="source" id="source-direct" value="<?= Html::escape(PsnTrophyTitleComparisonSource::Direct->value); ?>" autocomplete="off" <?= $normalizedSource === PsnTrophyTitleComparisonSource::Direct->value ? 'checked' : ''; ?>>
+                        <label class="btn btn-outline-secondary" for="source-direct"><?= Html::escape(PsnTrophyTitleComparisonSource::Direct->label()); ?></label>
 
-                        <input type="radio" class="btn-check" name="source" id="source-tustin" value="tustin" autocomplete="off" <?= $normalizedSource === PsnTrophyTitleComparisonService::SOURCE_TUSTIN ? 'checked' : ''; ?>>
-                        <label class="btn btn-outline-secondary" for="source-tustin">tustin/psn-php</label>
+                        <input type="radio" class="btn-check" name="source" id="source-tustin" value="<?= Html::escape(PsnTrophyTitleComparisonSource::Tustin->value); ?>" autocomplete="off" <?= $normalizedSource === PsnTrophyTitleComparisonSource::Tustin->value ? 'checked' : ''; ?>>
+                        <label class="btn btn-outline-secondary" for="source-tustin"><?= Html::escape(PsnTrophyTitleComparisonSource::Tustin->label()); ?></label>
                     </div>
                 </div>
             </form>
@@ -65,11 +66,11 @@ $errorMessage = $handledRequest->getErrorMessage();
                     <div class="col-md-6">
                         <div class="card h-100">
                             <div class="card-body">
-                                <h2 class="h5"><?= $normalizedSource === PsnTrophyTitleComparisonService::SOURCE_DIRECT ? 'Direct endpoint' : 'tustin/psn-php'; ?></h2>
+                                <h2 class="h5"><?= Html::escape((PsnTrophyTitleComparisonSource::tryFrom($normalizedSource) ?? PsnTrophyTitleComparisonSource::Direct)->label()); ?></h2>
                                 <dl class="row mb-0">
                                     <dt class="col-sm-5">Titles fetched</dt>
                                     <dd class="col-sm-7"><?= Html::escape((string) ($result['result']['count'] ?? 0)); ?></dd>
-                                    <?php if ($normalizedSource === PsnTrophyTitleComparisonService::SOURCE_DIRECT) { ?>
+                                    <?php if ($normalizedSource === PsnTrophyTitleComparisonSource::Direct->value) { ?>
                                         <dt class="col-sm-5">Pages fetched</dt>
                                         <dd class="col-sm-7"><?= Html::escape((string) ($result['result']['pagesFetched'] ?? 0)); ?></dd>
                                         <dt class="col-sm-5">Total item count</dt>
