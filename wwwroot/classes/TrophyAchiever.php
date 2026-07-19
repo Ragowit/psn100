@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-readonly class TrophyAchiever
+final readonly class TrophyAchiever
 {
     public function __construct(
-        private string $avatarUrl,
-        private string $onlineId,
-        private int $trophyCountNpwr,
-        private int $trophyCountSony,
-        private string $earnedDate
+        final private string $avatarUrl,
+        final private string $onlineId,
+        final private int $trophyCountNpwr,
+        final private int $trophyCountSony,
+        final private string $earnedDate
     ) {}
 
     /**

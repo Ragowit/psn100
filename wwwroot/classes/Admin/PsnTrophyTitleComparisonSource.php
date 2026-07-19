@@ -7,6 +7,7 @@ enum PsnTrophyTitleComparisonSource: string
     case Direct = 'direct';
     case Tustin = 'tustin';
 
+    #[\NoDiscard]
     public static function fromMixed(mixed $value): self
     {
         if (!is_string($value) && !is_numeric($value)) {

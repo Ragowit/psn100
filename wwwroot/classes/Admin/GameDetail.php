@@ -7,17 +7,17 @@ require_once __DIR__ . '/../GameAvailabilityStatus.php';
 final readonly class GameDetail
 {
     public function __construct(
-        private int $id,
-        private ?string $npCommunicationId,
-        private string $name,
-        private string $iconUrl,
-        private string $platform,
-        private string $message,
-        private string $setVersion,
-        private ?string $region,
-        private ?string $psnprofilesId,
-        private GameAvailabilityStatus $status,
-        private ?string $obsoleteIds,
+        final private int $id,
+        final private ?string $npCommunicationId,
+        final private string $name,
+        final private string $iconUrl,
+        final private string $platform,
+        final private string $message,
+        final private string $setVersion,
+        final private ?string $region,
+        final private ?string $psnprofilesId,
+        final private GameAvailabilityStatus $status,
+        final private ?string $obsoleteIds,
     ) {
     }
 

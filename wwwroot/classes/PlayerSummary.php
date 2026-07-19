@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-readonly class PlayerSummary
+final readonly class PlayerSummary
 {
     public function __construct(
-        private int $numberOfGames,
-        private int $numberOfCompletedGames,
-        private ?float $averageProgress,
-        private int $unearnedTrophies
+        final private int $numberOfGames,
+        final private int $numberOfCompletedGames,
+        final private ?float $averageProgress,
+        final private int $unearnedTrophies
     ) {}
 
     public function getNumberOfGames(): int

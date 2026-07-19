@@ -45,6 +45,7 @@ readonly final class PlayerPlatformFilterOptions
     /**
      * @param callable(string):bool $selectionCallback
      */
+    #[\NoDiscard]
     public static function fromSelectionCallback(callable $selectionCallback): self
     {
         return new self(

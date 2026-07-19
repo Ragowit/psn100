@@ -12,6 +12,7 @@ final class PlayerPageAccessGuard
         private readonly string $redirectUrl
     ) {}
 
+    #[\NoDiscard]
     public static function fromAccountId(int|string|null $accountId, string $redirectUrl = self::DEFAULT_REDIRECT_URL): self
     {
         if ($accountId === null) {
@@ -30,7 +31,7 @@ final class PlayerPageAccessGuard
         return $this->accountId;
     }
 
-    private function redirect(): void
+    private function redirect(): never
     {
         header('Location: ' . $this->redirectUrl, true, self::REDIRECT_STATUS_CODE);
         exit();

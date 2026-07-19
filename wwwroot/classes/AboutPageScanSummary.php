@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class AboutPageScanSummary
+final readonly class AboutPageScanSummary
 {
     public function __construct(private int $scannedPlayers, private int $newPlayers)
     {

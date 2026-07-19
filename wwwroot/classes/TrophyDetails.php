@@ -3,33 +3,34 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/PlayerUrlBuilder.php';
 require_once __DIR__ . '/Utility.php';
 
-readonly class TrophyDetails
+final readonly class TrophyDetails
 {
     private const string MISSING_PS5_ICON = '../missing-ps5-game-and-trophy.png';
     private const string MISSING_PS4_GAME_ICON = '../missing-ps4-game.png';
     private const string MISSING_PS4_TROPHY_ICON = '../missing-ps4-trophy.png';
 
     public function __construct(
-        private int $id,
-        private string $npCommunicationId,
-        private int $groupId,
-        private int $orderId,
-        private string $type,
-        private string $name,
-        private string $detail,
-        private string $iconFileName,
-        private float $rarityPercent,
-        private ?float $inGameRarityPercent,
-        private int $status,
-        private ?string $progressTargetValue,
-        private ?string $rewardName,
-        private ?string $rewardImageUrl,
-        private int $gameId,
-        private string $gameName,
-        private string $gameIconFileName,
-        private string $platform
+        final private int $id,
+        final private string $npCommunicationId,
+        final private int $groupId,
+        final private int $orderId,
+        final private string $type,
+        final private string $name,
+        final private string $detail,
+        final private string $iconFileName,
+        final private float $rarityPercent,
+        final private ?float $inGameRarityPercent,
+        final private int $status,
+        final private ?string $progressTargetValue,
+        final private ?string $rewardName,
+        final private ?string $rewardImageUrl,
+        final private int $gameId,
+        final private string $gameName,
+        final private string $gameIconFileName,
+        final private string $platform
     ) {}
 
     /**
@@ -197,13 +198,7 @@ readonly class TrophyDetails
 
     public function getGameLink(Utility $utility, ?string $playerOnlineId = null): string
     {
-        $slug = $this->getGameSlug($utility);
-
-        if ($playerOnlineId === null || $playerOnlineId === '') {
-            return '/game/' . $slug;
-        }
-
-        return '/game/' . $slug . '/' . rawurlencode($playerOnlineId);
+        return PlayerUrlBuilder::gamePath($this->getGameSlug($utility), $playerOnlineId);
     }
 
     private function usesPlayStation5Assets(): bool

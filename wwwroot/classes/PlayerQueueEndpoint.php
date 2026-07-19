@@ -19,11 +19,13 @@ class PlayerQueueEndpoint
         $this->jsonResponder = $jsonResponder;
     }
 
+    #[\NoDiscard]
     public static function create(PlayerQueueController $controller, JsonResponseEmitter $jsonResponder): self
     {
         return new self($controller, $jsonResponder);
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(Database $database): self
     {
         $controller = PlayerQueueController::create($database);

@@ -10,6 +10,7 @@ final class PlayerQueueMessageBuilder
     /** @var list<array<string, mixed>> */
     private array $parts = [];
 
+    #[\NoDiscard]
     public static function create(): self
     {
         return new self();

@@ -5,8 +5,8 @@ declare(strict_types=1);
 final readonly class CheaterRequestResult
 {
     private function __construct(
-        private ?string $successMessage,
-        private ?string $errorMessage,
+        final private ?string $successMessage,
+        final private ?string $errorMessage,
     ) {
     }
 

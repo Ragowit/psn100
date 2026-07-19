@@ -9,6 +9,7 @@ enum TrophyType: string
     case Gold = 'gold';
     case Platinum = 'platinum';
 
+    #[\NoDiscard]
     public static function fromMixed(mixed $value): self
     {
         if (!is_string($value) && !is_numeric($value)) {

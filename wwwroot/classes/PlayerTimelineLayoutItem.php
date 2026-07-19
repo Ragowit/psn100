@@ -5,9 +5,9 @@ declare(strict_types=1);
 final readonly class PlayerTimelineLayoutItem
 {
     public function __construct(
-        private PlayerTimelineEntry $entry,
-        private int $offsetDays,
-        private int $durationDays,
+        final private PlayerTimelineEntry $entry,
+        final private int $offsetDays,
+        final private int $durationDays,
     ) {
     }
 

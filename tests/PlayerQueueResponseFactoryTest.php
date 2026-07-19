@@ -115,10 +115,10 @@ final class PlayerQueueResponseFactoryTest extends TestCase
         $this->assertStringContainsString('Working on Game <Title> (5/34)', $response->getMessage());
 
         $parts = $response->getMessageParts();
-        $emphasisParts = array_values(array_filter($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'emphasis'));
-        $progressParts = array_values(array_filter($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'progress'));
-        $this->assertSame('Game <Title>', $emphasisParts[0]['value'] ?? null);
-        $this->assertSame(15, $progressParts[0]['percentage'] ?? null);
+        $emphasisPart = array_first(array_filter($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'emphasis'));
+        $progressPart = array_first(array_filter($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'progress'));
+        $this->assertSame('Game <Title>', $emphasisPart['value'] ?? null);
+        $this->assertSame(15, $progressPart['percentage'] ?? null);
     }
 
     public function testCreateQueuedForScanResponseOmitsScanningPrefixForErrors(): void

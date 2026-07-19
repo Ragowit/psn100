@@ -16,6 +16,7 @@ class TrophyMergeProcessor
         $this->requestHandler = $requestHandler;
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(PDO $database): self
     {
         $mergeService = new TrophyMergeService($database);

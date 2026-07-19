@@ -9,11 +9,11 @@ final readonly class GameHeaderData
      * @param GameObsoleteReplacement[] $obsoleteReplacements
      */
     public function __construct(
-        private ?GameHeaderParent $parentGame,
-        private array $stacks,
-        private int $unobtainableTrophyCount,
-        private array $obsoleteReplacements,
-        private ?string $psnpPlusNote,
+        final private ?GameHeaderParent $parentGame,
+        final private array $stacks,
+        final private int $unobtainableTrophyCount,
+        final private array $obsoleteReplacements,
+        final private ?string $psnpPlusNote,
     ) {
     }
 

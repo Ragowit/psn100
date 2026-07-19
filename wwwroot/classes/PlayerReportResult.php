@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class PlayerReportResult
+final readonly class PlayerReportResult
 {
     private function __construct(private bool $hasMessage, private bool $success, private string $message)
     {

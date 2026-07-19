@@ -27,14 +27,10 @@ final readonly class RouteResultResponder
                 $routeResult->getRedirect() ?? '/',
                 $routeResult->getStatusCode() ?? 303
             );
-
-            return;
         }
 
         if ($routeResult->isNotFound()) {
             $this->emitNotFound($routeResult->getStatusCode() ?? 404);
-
-            return;
         }
 
         if ($routeResult->shouldInclude()) {
@@ -45,13 +41,13 @@ final readonly class RouteResultResponder
         }
     }
 
-    private function emitRedirect(string $location, int $statusCode): void
+    private function emitRedirect(string $location, int $statusCode): never
     {
         header('Location: ' . $location, true, $statusCode);
         exit();
     }
 
-    private function emitNotFound(int $statusCode): void
+    private function emitNotFound(int $statusCode): never
     {
         http_response_code($statusCode);
         $this->templateRenderer->render($this->notFoundTemplate);

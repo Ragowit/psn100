@@ -3,15 +3,17 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerNavigationSection.php';
+require_once __DIR__ . '/PlayerUrlBuilder.php';
 
 final readonly class PlayerNavigation
 {
     private function __construct(
-        private string $onlineId,
-        private ?PlayerNavigationSection $activeSection,
+        final private string $onlineId,
+        final private ?PlayerNavigationSection $activeSection,
     ) {
     }
 
+    #[\NoDiscard]
     public static function forSection(string $onlineId, ?PlayerNavigationSection $activeSection = null): self
     {
         return new self($onlineId, $activeSection);
@@ -22,27 +24,28 @@ final readonly class PlayerNavigation
      */
     public function getLinks(): array
     {
+        $playerPath = PlayerUrlBuilder::playerPath($this->onlineId);
         $encodedOnlineId = rawurlencode($this->onlineId);
 
         return [
             new PlayerNavigationLink(
                 'Games',
-                '/player/' . $encodedOnlineId,
+                $playerPath,
                 $this->isActive(PlayerNavigationSection::GAMES)
             ),
             new PlayerNavigationLink(
                 'Timeline',
-                '/player/' . $encodedOnlineId . '/timeline',
+                $playerPath . '/timeline',
                 $this->isActive(PlayerNavigationSection::TIMELINE)
             ),
             new PlayerNavigationLink(
                 'Log',
-                '/player/' . $encodedOnlineId . '/log',
+                $playerPath . '/log',
                 $this->isActive(PlayerNavigationSection::LOG)
             ),
             new PlayerNavigationLink(
                 'Trophy Advisor',
-                '/player/' . $encodedOnlineId . '/advisor',
+                $playerPath . '/advisor',
                 $this->isActive(PlayerNavigationSection::TROPHY_ADVISOR)
             ),
             new PlayerNavigationLink(
@@ -52,7 +55,7 @@ final readonly class PlayerNavigation
             ),
             new PlayerNavigationLink(
                 'Random Games',
-                '/player/' . $encodedOnlineId . '/random',
+                $playerPath . '/random',
                 $this->isActive(PlayerNavigationSection::RANDOM)
             ),
         ];
@@ -67,9 +70,9 @@ final readonly class PlayerNavigation
 final readonly class PlayerNavigationLink
 {
     public function __construct(
-        private string $label,
-        private string $url,
-        private bool $active,
+        final private string $label,
+        final private string $url,
+        final private bool $active,
     ) {
     }
 

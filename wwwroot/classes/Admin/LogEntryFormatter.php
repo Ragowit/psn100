@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../PlayerUrlBuilder.php';
 require_once __DIR__ . '/../Utility.php';
 
 final class LogEntryFormatter
@@ -173,9 +174,7 @@ final class LogEntryFormatter
 
     private function buildPlayerLink(string $onlineId): string
     {
-        $url = '/player/' . rawurlencode($onlineId);
-
-        return $this->buildAnchor($url, $onlineId);
+        return $this->buildAnchor(PlayerUrlBuilder::playerPath($onlineId), $onlineId);
     }
 
     private function buildAnchor(string $url, string $displayText): string

@@ -8,9 +8,9 @@ final readonly class PlayerTimelineData
      * @param PlayerTimelineEntry[] $entries
      */
     public function __construct(
-        private DateTimeImmutable $startDate,
-        private DateTimeImmutable $endDate,
-        private array $entries,
+        final private DateTimeImmutable $startDate,
+        final private DateTimeImmutable $endDate,
+        final private array $entries,
     ) {
     }
 

@@ -5,12 +5,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/IpAddressResolver.php';
 require_once __DIR__ . '/RequestParameter.php';
 
-readonly class PlayerQueueRequest
+final readonly class PlayerQueueRequest
 {
     private function __construct(
-        private string $playerName,
-        private string $ipAddress,
-        private string $pollToken,
+        final private string $playerName,
+        final private string $ipAddress,
+        final private string $pollToken,
     ) {}
 
     #[\NoDiscard]

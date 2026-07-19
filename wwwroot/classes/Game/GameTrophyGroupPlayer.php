@@ -23,14 +23,14 @@ final readonly class GameTrophyGroupPlayer
     }
 
     private function __construct(
-        private string $npCommunicationId,
-        private string $groupId,
-        private int $accountId,
-        private int $bronzeCount,
-        private int $silverCount,
-        private int $goldCount,
-        private int $platinumCount,
-        private int $progress,
+        final private string $npCommunicationId,
+        final private string $groupId,
+        final private int $accountId,
+        final private int $bronzeCount,
+        final private int $silverCount,
+        final private int $goldCount,
+        final private int $platinumCount,
+        final private int $progress,
     ) {
     }
 

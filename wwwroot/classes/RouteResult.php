@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class RouteResult
+final readonly class RouteResult
 {
     /**
      * @param array<string, mixed> $variables

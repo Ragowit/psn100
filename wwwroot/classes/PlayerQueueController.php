@@ -18,6 +18,7 @@ class PlayerQueueController
         private readonly ?IpRateLimitService $rateLimitService = null,
     ) {}
 
+    #[\NoDiscard]
     public static function create(
         Database $database,
         ?PlayerQueuePollTokenManager $pollTokenManager = null,

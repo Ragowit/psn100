@@ -5,9 +5,9 @@ declare(strict_types=1);
 final readonly class LogEntry
 {
     public function __construct(
-        private int $id,
-        private DateTimeImmutable $time,
-        private string $formattedMessage,
+        final private int $id,
+        final private DateTimeImmutable $time,
+        final private string $formattedMessage,
     ) {
     }
 

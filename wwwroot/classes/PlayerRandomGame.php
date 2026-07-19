@@ -7,21 +7,21 @@ require_once __DIR__ . '/CommaSeparatedValues.php';
 final readonly class PlayerRandomGame
 {
     private function __construct(
-        private int $id,
-        private string $npCommunicationId,
-        private string $name,
-        private string $iconUrl,
-        private string $platform,
-        private int $owners,
-        private string $difficulty,
-        private int $platinum,
-        private int $gold,
-        private int $silver,
-        private int $bronze,
-        private int $rarityPoints,
-        private int $inGameRarityPoints,
-        private ?string $progress,
-        private Utility $utility,
+        final private int $id,
+        final private string $npCommunicationId,
+        final private string $name,
+        final private string $iconUrl,
+        final private string $platform,
+        final private int $owners,
+        final private string $difficulty,
+        final private int $platinum,
+        final private int $gold,
+        final private int $silver,
+        final private int $bronze,
+        final private int $rarityPoints,
+        final private int $inGameRarityPoints,
+        final private ?string $progress,
+        final private Utility $utility,
     ) {
     }
 

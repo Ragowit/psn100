@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerQueueStatus.php';
 
-readonly class PlayerQueueResponse implements \JsonSerializable
+final readonly class PlayerQueueResponse implements \JsonSerializable
 {
     /**
      * @param list<array<string, mixed>>|null $messageParts

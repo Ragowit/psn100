@@ -8,18 +8,18 @@ require_once __DIR__ . '/Utility.php';
 final readonly class GameRecentPlayer
 {
     public function __construct(
-        private string $accountId,
-        private string $avatarUrl,
-        private string $countryCode,
-        private string $onlineId,
-        private int $trophyCountNpwr,
-        private int $trophyCountSony,
-        private int $bronzeCount,
-        private int $silverCount,
-        private int $goldCount,
-        private int $platinumCount,
-        private int $progress,
-        private string $lastKnownDate,
+        final private string $accountId,
+        final private string $avatarUrl,
+        final private string $countryCode,
+        final private string $onlineId,
+        final private int $trophyCountNpwr,
+        final private int $trophyCountSony,
+        final private int $bronzeCount,
+        final private int $silverCount,
+        final private int $goldCount,
+        final private int $platinumCount,
+        final private int $progress,
+        final private string $lastKnownDate,
     ) {
     }
 

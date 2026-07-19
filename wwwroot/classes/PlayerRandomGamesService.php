@@ -133,7 +133,9 @@ class PlayerRandomGamesService
             return $this->randomizer->shuffleArray($eligibleIds);
         }
 
-        return array_slice($this->randomizer->shuffleArray($eligibleIds), 0, $limit);
+        return $eligibleIds
+            |> $this->randomizer->shuffleArray(...)
+            |> (fn(array $ids): array => array_slice($ids, 0, $limit));
     }
 
     /**
@@ -150,10 +152,9 @@ class PlayerRandomGamesService
         $count = max(1, min($count, $available));
 
         if ($available <= $count * 2) {
-            $pool = range($minId, $maxId);
-            $pool = $this->randomizer->shuffleArray($pool);
-
-            return array_slice($pool, 0, $count);
+            return range($minId, $maxId)
+                |> $this->randomizer->shuffleArray(...)
+                |> (fn(array $pool): array => array_slice($pool, 0, $count));
         }
 
         $ids = [];

@@ -18,39 +18,41 @@ final class TrophyMergeServiceCopyMergedTrophiesTest extends TestCase
         $this->assertSame(1, $pdo->insertExecutions, 'Expected a single bulk insert operation.');
         $this->assertSame(1, $pdo->updateExecutions, 'Expected a single synchronization update.');
 
-        $insertStatements = array_values(array_filter(
+        $insertStatements = array_filter(
             $pdo->executedSql,
             static fn (string $sql): bool => str_contains($sql, 'INSERT INTO trophy_earned')
-        ));
+        );
 
         $this->assertCount(1, $insertStatements, 'Expected insert statement for merged trophies.');
+        $insertStatement = array_first($insertStatements);
 
         $this->assertTrue(
-            str_contains($insertStatements[0], 'WITH merge_source AS (')
-                && str_contains($insertStatements[0], 'FROM merge_source AS source'),
+            str_contains($insertStatement, 'WITH merge_source AS (')
+                && str_contains($insertStatement, 'FROM merge_source AS source'),
             'Insert statement should use the merge_source CTE.'
         );
         $this->assertTrue(
-            str_contains($insertStatements[0], 'JOIN trophy_title_player AS ttp')
-                && str_contains($insertStatements[0], 'child.account_id = ttp.account_id'),
+            str_contains($insertStatement, 'JOIN trophy_title_player AS ttp')
+                && str_contains($insertStatement, 'child.account_id = ttp.account_id'),
             'Insert statement should drive trophy_earned by account_id for partition pruning.'
         );
 
-        $updateStatements = array_values(array_filter(
+        $updateStatements = array_filter(
             $pdo->executedSql,
             static fn (string $sql): bool => str_contains($sql, 'UPDATE trophy_earned AS parent')
-        ));
+        );
 
         $this->assertCount(1, $updateStatements, 'Expected update statement for merged trophies.');
+        $updateStatement = array_first($updateStatements);
 
         $this->assertTrue(
-            str_contains($updateStatements[0], 'WITH merge_source AS (')
-                && str_contains($updateStatements[0], 'JOIN merge_source AS source ON'),
+            str_contains($updateStatement, 'WITH merge_source AS (')
+                && str_contains($updateStatement, 'JOIN merge_source AS source ON'),
             'Update statement should join from the merge_source CTE.'
         );
         $this->assertTrue(
-            str_contains($updateStatements[0], 'JOIN trophy_title_player AS ttp')
-                && str_contains($updateStatements[0], 'child.account_id = ttp.account_id'),
+            str_contains($updateStatement, 'JOIN trophy_title_player AS ttp')
+                && str_contains($updateStatement, 'child.account_id = ttp.account_id'),
             'Update statement should drive trophy_earned by account_id for partition pruning.'
         );
 

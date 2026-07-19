@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../PlayerRepository.php';
+require_once __DIR__ . '/../PlayerUrlBuilder.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
 final readonly class PlayerRouteHandler implements RouteHandlerInterface
 {
-    public function __construct(private PlayerRepository $playerRepository)
+    public function __construct(final private PlayerRepository $playerRepository)
     {
     }
 
@@ -51,7 +52,7 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
             'random' => RouteResult::include('player_random.php', $variables),
             'report' => RouteResult::include('player_report.php', $variables),
             'timeline' => RouteResult::include('player_timeline.php', $variables),
-            default => RouteResult::redirect('/player/' . rawurlencode($onlineId)),
+            default => RouteResult::redirect(PlayerUrlBuilder::playerPath($onlineId)),
         };
     }
 }

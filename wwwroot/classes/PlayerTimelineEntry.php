@@ -5,11 +5,11 @@ declare(strict_types=1);
 final readonly class PlayerTimelineEntry
 {
     private function __construct(
-        private int $gameId,
-        private string $name,
-        private int $progress,
-        private DateTimeImmutable $firstTrophyDate,
-        private DateTimeImmutable $lastTrophyDate,
+        final private int $gameId,
+        final private string $name,
+        final private int $progress,
+        final private DateTimeImmutable $firstTrophyDate,
+        final private DateTimeImmutable $lastTrophyDate,
     ) {
     }
 

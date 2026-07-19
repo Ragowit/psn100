@@ -24,25 +24,25 @@ enum ChangelogEntryType: string
     case UNKNOWN = 'UNKNOWN';
 }
 
-readonly class ChangelogEntry
+final readonly class ChangelogEntry
 {
     /**
      * @param array<int, string> $param1Platforms
      * @param array<int, string> $param2Platforms
      */
     private function __construct(
-        private DateTimeImmutable $time,
-        private string $changeTypeValue,
-        private ChangelogEntryType $changeType,
-        private ?int $param1Id,
-        private ?string $param1Name,
-        private array $param1Platforms,
-        private ?string $param1Region,
-        private ?int $param2Id,
-        private ?string $param2Name,
-        private array $param2Platforms,
-        private ?string $param2Region,
-        private ?string $extra
+        final private DateTimeImmutable $time,
+        final private string $changeTypeValue,
+        final private ChangelogEntryType $changeType,
+        final private ?int $param1Id,
+        final private ?string $param1Name,
+        final private array $param1Platforms,
+        final private ?string $param1Region,
+        final private ?int $param2Id,
+        final private ?string $param2Name,
+        final private array $param2Platforms,
+        final private ?string $param2Region,
+        final private ?string $extra
     ) {}
 
     /**

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-readonly class PlayerTrophyProgress
+final readonly class PlayerTrophyProgress
 {
     public function __construct(
-        private ?string $earnedDate,
-        private ?string $progress,
-        private bool $earned
+        final private ?string $earnedDate,
+        final private ?string $progress,
+        final private bool $earned
     ) {}
 
     /**

@@ -8,8 +8,8 @@ final readonly class TrophyStatusUpdateResult
      * @param string[] $trophyNames
      */
     public function __construct(
-        private array $trophyNames,
-        private string $statusText,
+        final private array $trophyNames,
+        final private string $statusText,
     ) {
     }
 

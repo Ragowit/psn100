@@ -13,6 +13,7 @@ final class ExecutionEnvironmentConfigurator
 
     private bool $shouldIgnoreUserAbort = false;
 
+    #[\NoDiscard]
     public static function create(): self
     {
         return new self();

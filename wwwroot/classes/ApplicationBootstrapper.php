@@ -8,10 +8,11 @@ require_once __DIR__ . '/MaintenanceResponder.php';
 
 final readonly class ApplicationBootstrapper
 {
-    private function __construct(private ApplicationContainer $applicationContainer)
+    private function __construct(final private ApplicationContainer $applicationContainer)
     {
     }
 
+    #[\NoDiscard]
     public static function bootstrap(?ApplicationContainer $applicationContainer = null): self
     {
         return new self($applicationContainer ?? ApplicationContainer::create());

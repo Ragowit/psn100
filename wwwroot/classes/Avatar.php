@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class Avatar
+final readonly class Avatar
 {
     public function __construct(
         final private string $url,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 
-readonly class GameTrophyFilter
+final readonly class GameTrophyFilter
 {
     private function __construct(private bool $unearnedOnly)
     {

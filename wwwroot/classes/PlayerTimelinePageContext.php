@@ -62,6 +62,7 @@ final class PlayerTimelinePageContext
         );
     }
 
+    #[\NoDiscard]
     public static function fromComponents(
         PlayerTimelinePage $playerTimelinePage,
         PlayerSummary $playerSummary,

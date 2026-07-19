@@ -7,25 +7,25 @@ require_once __DIR__ . '/CommaSeparatedValues.php';
 final readonly class PlayerLogEntry
 {
     public function __construct(
-        private int $trophyId,
-        private string $trophyType,
-        private string $trophyName,
-        private string $trophyDetail,
-        private string $trophyIcon,
-        private ?string $rarityPercent,
-        private ?string $inGameRarityPercent,
-        private int $trophyStatus,
-        private ?int $progressTargetValue,
-        private ?int $progress,
-        private bool $isEarned,
-        private ?string $rewardName,
-        private ?string $rewardImageUrl,
-        private int $gameId,
-        private string $gameName,
-        private int $gameStatus,
-        private string $gameIcon,
-        private string $platforms,
-        private string $earnedDate
+        final private int $trophyId,
+        final private string $trophyType,
+        final private string $trophyName,
+        final private string $trophyDetail,
+        final private string $trophyIcon,
+        final private ?string $rarityPercent,
+        final private ?string $inGameRarityPercent,
+        final private int $trophyStatus,
+        final private ?int $progressTargetValue,
+        final private ?int $progress,
+        final private bool $isEarned,
+        final private ?string $rewardName,
+        final private ?string $rewardImageUrl,
+        final private int $gameId,
+        final private string $gameName,
+        final private int $gameStatus,
+        final private string $gameIcon,
+        final private string $platforms,
+        final private string $earnedDate
     ) {
     }
 

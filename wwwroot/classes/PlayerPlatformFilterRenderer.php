@@ -10,6 +10,7 @@ final class PlayerPlatformFilterRenderer
     {
     }
 
+    #[\NoDiscard]
     public static function createDefault(): self
     {
         return new self('Filter');

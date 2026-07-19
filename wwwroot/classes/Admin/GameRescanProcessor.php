@@ -16,6 +16,7 @@ final class GameRescanProcessor
         $this->requestHandler = $requestHandler;
     }
 
+    #[\NoDiscard]
     public static function fromDatabase(PDO $database): self
     {
         $trophyCalculator = new TrophyCalculator($database);
