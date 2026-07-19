@@ -288,12 +288,13 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                 $waitSeconds = $isQuickDbRetry ? 5 : 60;
                 $waitDescription = $isQuickDbRetry ? '5 seconds' : '1 minute';
 
-                $this->logger->log(sprintf(
-                    'Encountered a problem while scanning %s: %s. Waiting %s before retrying.',
-                    $onlineId,
-                    $exception->getMessage(),
-                    $waitDescription
-                ));
+                // An error occurs every so often, so it will spam the logs if we log every single one. Instead, we will just log the error to the worker scan progress so that it is visible in the UI.
+                // $this->logger->log(sprintf(
+                //     'Encountered a problem while scanning %s: %s. Waiting %s before retrying.',
+                //     $onlineId,
+                //     $exception->getMessage(),
+                //     $waitDescription
+                // ));
                 $this->workerScanCoordinator->setWaitingScanProgress(
                     (int) $worker['id'],
                     sprintf(
