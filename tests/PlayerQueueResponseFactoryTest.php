@@ -115,8 +115,8 @@ final class PlayerQueueResponseFactoryTest extends TestCase
         $this->assertStringContainsString('Working on Game <Title> (5/34)', $response->getMessage());
 
         $parts = $response->getMessageParts();
-        $emphasisPart = array_first(array_filter($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'emphasis'));
-        $progressPart = array_first(array_filter($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'progress'));
+        $emphasisPart = array_find($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'emphasis');
+        $progressPart = array_find($parts ?? [], static fn (array $part): bool => ($part['type'] ?? '') === 'progress');
         $this->assertSame('Game <Title>', $emphasisPart['value'] ?? null);
         $this->assertSame(15, $progressPart['percentage'] ?? null);
     }

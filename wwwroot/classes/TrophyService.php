@@ -161,6 +161,6 @@ class TrophyService
         /** @var array<int, array<string, mixed>> $achievers */
         $achievers = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(static fn (array $row): TrophyAchiever => TrophyAchiever::fromArray($row), $achievers);
+        return array_map(TrophyAchiever::fromArray(...), $achievers);
     }
 }

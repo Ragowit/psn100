@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class ReportedPlayer
+final readonly class ReportedPlayer
 {
     public function __construct(
         private int $reportId,

@@ -97,10 +97,7 @@ class GameListService
             $totalGames = $this->fetchCount($filter);
         }
 
-        $items = array_map(
-            static fn(array $row): GameListItem => GameListItem::fromArray($row),
-            $games
-        );
+        $items = array_map(GameListItem::fromArray(...), $games);
 
         return new GameListPageResult($items, $totalGames);
     }

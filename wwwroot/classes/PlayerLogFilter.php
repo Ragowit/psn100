@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlayerLogSort.php';
 
-readonly class PlayerLogFilter
+final readonly class PlayerLogFilter
 {
     public const string SORT_DATE = PlayerLogSort::Date->value;
     public const string SORT_RARITY = PlayerLogSort::Rarity->value;

@@ -170,10 +170,7 @@ class GameLeaderboardService
             return [];
         }
 
-        return array_map(
-            static fn(array $row): GameLeaderboardRow => GameLeaderboardRow::fromArray($row),
-            $rows
-        );
+        return array_map(GameLeaderboardRow::fromArray(...), $rows);
     }
 
     private function buildFilterSql(GamePlayerFilter $filter): string

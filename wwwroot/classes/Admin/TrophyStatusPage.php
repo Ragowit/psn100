@@ -6,19 +6,13 @@ require_once __DIR__ . '/TrophyStatusInputParser.php';
 require_once __DIR__ . '/TrophyStatusService.php';
 require_once __DIR__ . '/TrophyStatusUpdateResultPresenter.php';
 
-class TrophyStatusPageResult
+final readonly class TrophyStatusPageResult
 {
-    private string $trophyInput;
-
-    private string $statusInput;
-
-    private ?string $message;
-
-    public function __construct(string $trophyInput, string $statusInput, ?string $message)
-    {
-        $this->trophyInput = $trophyInput;
-        $this->statusInput = $statusInput;
-        $this->message = $message;
+    public function __construct(
+        private string $trophyInput,
+        private string $statusInput,
+        private ?string $message,
+    ) {
     }
 
     public function getTrophyInput(): string

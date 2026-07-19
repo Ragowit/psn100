@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class PsnpPlusMissingGame
+final readonly class PsnpPlusMissingGame
 {
     public function __construct(private int $psnprofilesId)
     {

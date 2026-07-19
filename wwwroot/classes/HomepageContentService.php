@@ -52,10 +52,7 @@ class HomepageContentService
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(
-            static fn(array $row): HomepageNewGame => HomepageNewGame::fromArray($row),
-            $rows
-        );
+        return array_map(HomepageNewGame::fromArray(...), $rows);
     }
 
     /**
@@ -93,10 +90,7 @@ class HomepageContentService
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(
-            static fn(array $row): HomepageDlc => HomepageDlc::fromArray($row),
-            $rows
-        );
+        return array_map(HomepageDlc::fromArray(...), $rows);
     }
 
     /**
@@ -133,10 +127,7 @@ class HomepageContentService
 
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(
-            static fn(array $row): HomepagePopularGame => HomepagePopularGame::fromArray($row),
-            $rows
-        );
+        return array_map(HomepagePopularGame::fromArray(...), $rows);
     }
 
     /**

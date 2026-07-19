@@ -6,7 +6,7 @@ require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
 
-class PlayerGame
+final class PlayerGame
 {
     private function __construct(
         private readonly int $id,

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class HomepagePopularGame extends HomepageTitle
+final readonly class HomepagePopularGame extends HomepageTitle
 {
     private function __construct(
         int $id,

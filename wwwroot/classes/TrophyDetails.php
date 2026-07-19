@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
+require_once __DIR__ . '/TrophyType.php';
 require_once __DIR__ . '/Utility.php';
 
 final readonly class TrophyDetails
@@ -17,7 +18,7 @@ final readonly class TrophyDetails
         final private string $npCommunicationId,
         final private int $groupId,
         final private int $orderId,
-        final private string $type,
+        final private TrophyType $type,
         final private string $name,
         final private string $detail,
         final private string $iconFileName,
@@ -44,7 +45,7 @@ final readonly class TrophyDetails
             (string) ($data['np_communication_id'] ?? ''),
             (int) ($data['group_id'] ?? 0),
             (int) ($data['order_id'] ?? 0),
-            (string) ($data['trophy_type'] ?? ''),
+            TrophyType::fromMixed($data['trophy_type'] ?? null),
             (string) ($data['trophy_name'] ?? ''),
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
@@ -81,7 +82,7 @@ final readonly class TrophyDetails
         return $this->orderId;
     }
 
-    public function getType(): string
+    public function getType(): TrophyType
     {
         return $this->type;
     }

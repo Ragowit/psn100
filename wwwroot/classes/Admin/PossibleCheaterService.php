@@ -45,10 +45,7 @@ class PossibleCheaterService
      */
     private function buildGeneralReportEntries(): array
     {
-        return array_map(
-            static fn(array $row): PossibleCheaterReportEntry => PossibleCheaterReportEntry::fromArray($row),
-            $this->fetchGeneralPossibleCheaterRows()
-        );
+        return array_map(PossibleCheaterReportEntry::fromArray(...), $this->fetchGeneralPossibleCheaterRows());
     }
 
     /**

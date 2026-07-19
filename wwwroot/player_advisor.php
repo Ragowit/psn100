@@ -161,8 +161,7 @@ require_once("header.php");
                                         ?>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <?php $trophyTypeLabel = ucfirst($trophy->getTrophyType()); ?>
-                                            <img src="/img/trophy-<?= htmlspecialchars($trophy->getTrophyType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= htmlspecialchars($trophyTypeLabel, ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophyTypeLabel, ENT_QUOTES, 'UTF-8'); ?>" height="50" />
+                                            <img src="<?= Html::escape($trophy->getTrophyType()->iconPath()); ?>" alt="<?= Html::escape($trophy->getTrophyType()->label()); ?>" title="<?= Html::escape($trophy->getTrophyType()->label()); ?>" height="50" />
                                         </td>
                                     </tr>
                                     <?php

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/TrophyType.php';
 require_once __DIR__ . '/Utility.php';
 
 final readonly class TrophyListItem
@@ -13,7 +14,7 @@ final readonly class TrophyListItem
 
     public function __construct(
         final private int $trophyId,
-        final private string $trophyType,
+        final private TrophyType $trophyType,
         final private string $trophyName,
         final private string $trophyDetail,
         final private string $trophyIcon,
@@ -34,7 +35,7 @@ final readonly class TrophyListItem
     {
         return new self(
             (int) ($data['trophy_id'] ?? 0),
-            (string) ($data['trophy_type'] ?? ''),
+            TrophyType::fromMixed($data['trophy_type'] ?? null),
             (string) ($data['trophy_name'] ?? ''),
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
@@ -55,7 +56,7 @@ final readonly class TrophyListItem
         return $this->trophyId;
     }
 
-    public function getTrophyType(): string
+    public function getTrophyType(): TrophyType
     {
         return $this->trophyType;
     }

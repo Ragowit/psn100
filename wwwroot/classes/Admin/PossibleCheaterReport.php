@@ -96,10 +96,7 @@ final class PossibleCheaterReportSection
         $title = (string) ($data['title'] ?? '');
         $entryData = is_array($data['entries'] ?? null) ? $data['entries'] : [];
 
-        $entries = array_map(
-            static fn(array $entry): PossibleCheaterReportSectionEntry => PossibleCheaterReportSectionEntry::fromArray($entry),
-            $entryData
-        );
+        $entries = array_map(PossibleCheaterReportSectionEntry::fromArray(...), $entryData);
 
         return new self($title, $entries);
     }

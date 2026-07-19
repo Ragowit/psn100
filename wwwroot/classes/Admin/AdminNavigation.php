@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-readonly class AdminNavigationItem
+final readonly class AdminNavigationItem
 {
-    public function __construct(private string $label, private string $href)
-    {
+    public function __construct(
+        private string $label,
+        private string $href,
+    ) {
     }
 
     public function getLabel(): string
@@ -19,7 +21,7 @@ readonly class AdminNavigationItem
     }
 }
 
-class AdminNavigation
+final class AdminNavigation
 {
     /**
      * @var AdminNavigationItem[]
@@ -31,11 +33,7 @@ class AdminNavigation
      */
     public function __construct(array $items = [])
     {
-        if ($items === []) {
-            $items = $this->createDefaultItems();
-        }
-
-        $this->items = $items;
+        $this->items = $items === [] ? self::createDefaultItems() : $items;
     }
 
     public function addItem(AdminNavigationItem $item): void
@@ -54,7 +52,7 @@ class AdminNavigation
     /**
      * @return AdminNavigationItem[]
      */
-    private function createDefaultItems(): array
+    private static function createDefaultItems(): array
     {
         return [
             new AdminNavigationItem('Cheater', '/admin/cheater.php'),

@@ -79,9 +79,6 @@ final class ChangelogService
             }
         }
 
-        return array_map(
-            static fn(array $row): ChangelogEntry => ChangelogEntry::fromArray($row),
-            $rows
-        );
+        return array_map(ChangelogEntry::fromArray(...), $rows);
     }
 }

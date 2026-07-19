@@ -141,10 +141,7 @@ class GameRecentPlayersService
             return [];
         }
 
-        return array_map(
-            static fn(array $row): GameRecentPlayer => GameRecentPlayer::fromArray($row),
-            $rows
-        );
+        return array_map(GameRecentPlayer::fromArray(...), $rows);
     }
 
 }
