@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-readonly class PsnpPlusGame
+final readonly class PsnpPlusGame
 {
     public function __construct(
         private int $id,

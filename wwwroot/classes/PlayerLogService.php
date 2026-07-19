@@ -90,10 +90,7 @@ class PlayerLogService
             return [];
         }
 
-        return array_map(
-            static fn(array $row): PlayerLogEntry => PlayerLogEntry::fromArray($row),
-            $rows
-        );
+        return array_map(PlayerLogEntry::fromArray(...), $rows);
     }
 
     private function buildPlatformClause(PlayerLogFilter $filter): string

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlayerGamesSort.php';
 
-readonly class PlayerGamesFilter
+final readonly class PlayerGamesFilter
 {
     public const string SORT_DATE = PlayerGamesSort::Date->value;
     public const string SORT_IN_GAME_MAX_RARITY = PlayerGamesSort::InGameMaxRarity->value;

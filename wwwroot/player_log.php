@@ -192,7 +192,7 @@ require_once("header.php");
                                             </div>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <img src="/img/trophy-<?= htmlspecialchars($trophy->getTrophyType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= Html::escape(ucfirst($trophy->getTrophyType())); ?>" title="<?= Html::escape(ucfirst($trophy->getTrophyType())); ?>" height="50" />
+                                            <img src="<?= Html::escape($trophy->getTrophyType()->iconPath()); ?>" alt="<?= Html::escape($trophy->getTrophyType()->label()); ?>" title="<?= Html::escape($trophy->getTrophyType()->label()); ?>" height="50" />
                                         </td>
                                     </tr>
                                     <?php

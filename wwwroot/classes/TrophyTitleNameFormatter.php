@@ -53,11 +53,12 @@ final class TrophyTitleNameFormatter
             '/\s*Trophy$/i',
         ];
 
-        foreach ($suffixPatterns as $pattern) {
-            if (preg_match($pattern, $name)) {
-                $name = preg_replace($pattern, '', $name);
-                break;
-            }
+        $matchingSuffix = array_find(
+            $suffixPatterns,
+            static fn(string $pattern): bool => preg_match($pattern, $name) === 1
+        );
+        if ($matchingSuffix !== null) {
+            $name = preg_replace($matchingSuffix, '', $name) ?? $name;
         }
 
         if (str_ends_with($name, ' -')) {

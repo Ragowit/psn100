@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlayerAdvisorSort.php';
 
-readonly class PlayerAdvisorFilter
+final readonly class PlayerAdvisorFilter
 {
     public const string SORT_RARITY = PlayerAdvisorSort::Rarity->value;
     public const string SORT_IN_GAME_RARITY = PlayerAdvisorSort::InGameRarity->value;

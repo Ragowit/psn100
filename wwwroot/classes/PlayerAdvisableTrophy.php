@@ -3,78 +3,31 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/TrophyType.php';
 
-class PlayerAdvisableTrophy
+final class PlayerAdvisableTrophy
 {
-    private int $trophyId;
-
-    private string $trophyType;
-
-    private string $trophyName;
-
-    private string $trophyDetail;
-
-    private string $trophyIcon;
-
-    private float $rarityPercent;
-
-    private float $inGameRarityPercent;
-
-    private ?int $progressTargetValue;
-
-    private ?string $rewardName;
-
-    private ?string $rewardImageUrl;
-
-    private int $gameId;
-
-    private string $gameName;
-
-    private string $gameIcon;
-
     /**
-     * @var string[]
+     * @param string[] $platforms
      */
-    private array $platforms;
-
-    private ?float $progress;
-
-    private Utility $utility;
-
     private function __construct(
-        int $trophyId,
-        string $trophyType,
-        string $trophyName,
-        string $trophyDetail,
-        string $trophyIcon,
-        float $rarityPercent,
-        float $inGameRarityPercent,
-        ?int $progressTargetValue,
-        ?string $rewardName,
-        ?string $rewardImageUrl,
-        int $gameId,
-        string $gameName,
-        string $gameIcon,
-        string $platformsRaw,
-        ?float $progress,
-        Utility $utility
+        private readonly int $trophyId,
+        private readonly TrophyType $trophyType,
+        private readonly string $trophyName,
+        private readonly string $trophyDetail,
+        private readonly string $trophyIcon,
+        private readonly float $rarityPercent,
+        private readonly float $inGameRarityPercent,
+        private readonly ?int $progressTargetValue,
+        private readonly ?string $rewardName,
+        private readonly ?string $rewardImageUrl,
+        private readonly int $gameId,
+        private readonly string $gameName,
+        private readonly string $gameIcon,
+        private readonly array $platforms,
+        private readonly ?float $progress,
+        private readonly Utility $utility,
     ) {
-        $this->trophyId = $trophyId;
-        $this->trophyType = $trophyType;
-        $this->trophyName = $trophyName;
-        $this->trophyDetail = $trophyDetail;
-        $this->trophyIcon = $trophyIcon;
-        $this->rarityPercent = $rarityPercent;
-        $this->inGameRarityPercent = $inGameRarityPercent;
-        $this->progressTargetValue = $progressTargetValue;
-        $this->rewardName = $rewardName;
-        $this->rewardImageUrl = $rewardImageUrl;
-        $this->gameId = $gameId;
-        $this->gameName = $gameName;
-        $this->gameIcon = $gameIcon;
-        $this->platforms = $this->parsePlatforms($platformsRaw);
-        $this->progress = $progress;
-        $this->utility = $utility;
     }
 
     #[\NoDiscard]
@@ -82,7 +35,7 @@ class PlayerAdvisableTrophy
     {
         return new self(
             (int) ($data['trophy_id'] ?? 0),
-            (string) ($data['trophy_type'] ?? ''),
+            TrophyType::fromMixed($data['trophy_type'] ?? null),
             (string) ($data['trophy_name'] ?? ''),
             (string) ($data['trophy_detail'] ?? ''),
             (string) ($data['trophy_icon'] ?? ''),
@@ -94,7 +47,7 @@ class PlayerAdvisableTrophy
             (int) ($data['game_id'] ?? 0),
             (string) ($data['game_name'] ?? ''),
             (string) ($data['game_icon'] ?? ''),
-            (string) ($data['platform'] ?? ''),
+            CommaSeparatedValues::parseTrimmed((string) ($data['platform'] ?? '')),
             isset($data['progress']) ? (float) $data['progress'] : null,
             $utility
         );
@@ -105,7 +58,7 @@ class PlayerAdvisableTrophy
         return $this->trophyId;
     }
 
-    public function getTrophyType(): string
+    public function getTrophyType(): TrophyType
     {
         return $this->trophyType;
     }
@@ -225,11 +178,6 @@ class PlayerAdvisableTrophy
     public function getPlatforms(): array
     {
         return $this->platforms;
-    }
-
-    private function parsePlatforms(string $platformsRaw): array
-    {
-        return CommaSeparatedValues::parseTrimmed($platformsRaw);
     }
 
     private function usesPlayStation5Assets(): bool

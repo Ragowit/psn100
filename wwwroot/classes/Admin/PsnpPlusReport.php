@@ -6,31 +6,18 @@ require_once __DIR__ . '/PsnpPlusMissingGame.php';
 require_once __DIR__ . '/PsnpPlusGameDifference.php';
 require_once __DIR__ . '/PsnpPlusFixedGame.php';
 
-class PsnpPlusReport
+final readonly class PsnpPlusReport
 {
-    /**
-     * @var PsnpPlusMissingGame[]
-     */
-    private array $missingGames;
-    /**
-     * @var PsnpPlusGameDifference[]
-     */
-    private array $gameDifferences;
-    /**
-     * @var PsnpPlusFixedGame[]
-     */
-    private array $fixedGames;
-
     /**
      * @param PsnpPlusMissingGame[] $missingGames
      * @param PsnpPlusGameDifference[] $gameDifferences
      * @param PsnpPlusFixedGame[] $fixedGames
      */
-    public function __construct(array $missingGames, array $gameDifferences, array $fixedGames)
-    {
-        $this->missingGames = $missingGames;
-        $this->gameDifferences = $gameDifferences;
-        $this->fixedGames = $fixedGames;
+    public function __construct(
+        private array $missingGames,
+        private array $gameDifferences,
+        private array $fixedGames,
+    ) {
     }
 
     /**

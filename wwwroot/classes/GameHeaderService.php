@@ -107,10 +107,7 @@ class GameHeaderService
             return [];
         }
 
-        return array_map(
-            static fn(array $row): GameHeaderStack => GameHeaderStack::fromArray($row),
-            $rows
-        );
+        return array_map(GameHeaderStack::fromArray(...), $rows);
     }
 
     private function countUnobtainableTrophies(string $npCommunicationId): int

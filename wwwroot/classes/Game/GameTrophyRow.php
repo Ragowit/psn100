@@ -82,9 +82,9 @@ final readonly class GameTrophyRow
         return $this->orderId;
     }
 
-    public function getType(): string
+    public function getType(): TrophyType
     {
-        return $this->type->value;
+        return $this->type;
     }
 
     public function getTrophyType(): TrophyType

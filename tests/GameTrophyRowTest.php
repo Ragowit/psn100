@@ -101,4 +101,14 @@ final class GameTrophyRowTest extends TestCase
 
         $this->assertSame(0.0, $row->getInGameRarityPercent());
     }
+
+    public function testGetTypeReturnsTrophyTypeEnum(): void
+    {
+        $row = $this->createRow(['type' => 'platinum']);
+
+        $this->assertSame(TrophyType::Platinum, $row->getType());
+        $this->assertSame(TrophyType::Platinum, $row->getTrophyType());
+        $this->assertSame('/img/trophy-platinum.svg', $row->getTypeIconPath());
+        $this->assertSame('#667fb2', $row->getTypeColor());
+    }
 }

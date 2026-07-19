@@ -33,7 +33,7 @@ final class PossibleCheaterRulesCatalog
     {
         if ($this->generalRuleGroups === null) {
             $this->generalRuleGroups = array_map(
-                static fn(array $group): PossibleCheaterRuleGroup => PossibleCheaterRuleGroup::fromArray($group),
+                PossibleCheaterRuleGroup::fromArray(...),
                 $this->loadArrayFile($this->generalRulesFile)
             );
         }
@@ -48,7 +48,7 @@ final class PossibleCheaterRulesCatalog
     {
         if ($this->sectionDefinitions === null) {
             $this->sectionDefinitions = array_map(
-                static fn(array $definition): PossibleCheaterSectionDefinition => PossibleCheaterSectionDefinition::fromArray($definition),
+                PossibleCheaterSectionDefinition::fromArray(...),
                 $this->loadArrayFile($this->sectionsFile)
             );
         }

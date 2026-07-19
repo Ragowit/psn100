@@ -161,7 +161,7 @@ require_once("header.php");
                                 </div>
 
                                 <div class="col-1 text-center align-self-center">
-                                    <img src="/img/trophy-<?= htmlspecialchars($trophy->getType(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= ucfirst($trophy->getType()); ?>" title="<?= ucfirst($trophy->getType()); ?>" height="50" />
+                                    <img src="<?= Html::escape($trophy->getType()->iconPath()); ?>" alt="<?= Html::escape($trophy->getType()->label()); ?>" title="<?= Html::escape($trophy->getType()->label()); ?>" height="50" />
                                 </div>
                             </div>
                         </div>

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/GameListSort.php';
 
-readonly class GameListFilter
+final readonly class GameListFilter
 {
     public const string SORT_ADDED = GameListSort::Added->value;
     public const string SORT_COMPLETION = GameListSort::Completion->value;
