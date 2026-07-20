@@ -309,13 +309,14 @@ final class PlayerScanProfileSynchronizer
      */
     private function handleInvalidApiResponse(array $player, int $workerId, Throwable $exception): void
     {
-        $this->logger->log(
-            sprintf(
-                'Failed to scan %s because the PlayStation API returned an invalid response: %s',
-                (string) ($player['online_id'] ?? ''),
-                $exception->getMessage()
-            )
-        );
+        // This logging is disabled because it can be very noisy and is not actionable. The worker will automatically defer the player scan for later retry.
+        // $this->logger->log(
+        //     sprintf(
+        //         'Failed to scan %s because the PlayStation API returned an invalid response: %s',
+        //         (string) ($player['online_id'] ?? ''),
+        //         $exception->getMessage()
+        //     )
+        // );
 
         $this->workerScanCoordinator->deferPlayerScanAfterFailure($player, $workerId);
     }
