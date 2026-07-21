@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Html.php';
+require_once __DIR__ . '/../HttpMethod.php';
 
 require_once __DIR__ . '/GameDetailFormParser.php';
 require_once __DIR__ . '/GameDetailService.php';
@@ -53,9 +54,9 @@ final readonly class GameDetailPage
         $error = null;
 
         try {
-            $method = ((string) ($serverParameters['REQUEST_METHOD'] ?? 'GET')) |> strtoupper(...);
+            $method = HttpMethod::fromServer($serverParameters);
 
-            if ($method === 'POST') {
+            if ($method->isPost()) {
                 $action = $this->formParser->parseAction($postData['action'] ?? null);
 
                 if ($action === 'update-status') {
@@ -63,7 +64,7 @@ final readonly class GameDetailPage
                 } else {
                     [$gameDetail, $success, $error] = $this->handleDetailUpdate($postData);
                 }
-            } elseif ($method === 'GET') {
+            } elseif ($method->isGet()) {
                 $npCommunicationId = null;
                 $gameId = $this->formParser->parseGameId($queryParameters['game'] ?? null);
 

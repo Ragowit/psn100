@@ -48,7 +48,7 @@ final readonly class TrophyPage
         }
 
         $trophyName = $trophy->getName();
-        $metaData = (new PageMetaData())
+        $metaData = (new PageMetaData)
             ->withTitle($trophyName . ' Trophy')
             ->withDescription(Html::escape($trophy->getDetail()))
             ->withImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerReportAdminService.php';
 require_once __DIR__ . '/PlayerReportAdminPageResult.php';
 require_once __DIR__ . '/PlayerReportDeletionRequest.php';
+require_once __DIR__ . '/../HttpMethod.php';
 
 final readonly class PlayerReportAdminPage
 {
@@ -22,7 +23,7 @@ final readonly class PlayerReportAdminPage
         $successMessage = null;
         $errorMessage = null;
 
-        if (strtoupper($method) === 'POST') {
+        if (HttpMethod::fromMixed($method)->isPost()) {
             $deletionRequest = PlayerReportDeletionRequest::fromPostData($postData);
 
             if ($deletionRequest->hasError()) {

@@ -90,15 +90,15 @@ require_once("header.php");
                         ?>
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
-                            <option value="default"<?= ($sort == "default" ? " selected" : ""); ?>>Default</option>
+                            <option value="<?= GameTrophySort::Default->value; ?>"<?= ($sort === GameTrophySort::Default ? " selected" : ""); ?>>Default</option>
                             <?php
                             if (isset($player)) {
                                 ?>
-                                <option value="date"<?= ($sort == "date" ? " selected" : ""); ?>>Date</option>
+                                <option value="<?= GameTrophySort::Date->value; ?>"<?= ($sort === GameTrophySort::Date ? " selected" : ""); ?>>Date</option>
                                 <?php
                             }
                             ?>
-                            <option value="rarity"<?= ($sort == "rarity" ? " selected" : ""); ?>>Rarity</option>
+                            <option value="<?= GameTrophySort::Rarity->value; ?>"<?= ($sort === GameTrophySort::Rarity ? " selected" : ""); ?>>Rarity</option>
                         </select>
                     </div>
                 </form>
@@ -281,7 +281,7 @@ require_once("header.php");
                                                 ></span>
                                                 <?php
                                                 if (
-                                                    $sort == "date"
+                                                    $sort === GameTrophySort::Date
                                                     && $previousTimeStamp !== null
                                                     && $trophyRow->hasRecordedEarnedDate()
                                                 ) {
@@ -296,7 +296,7 @@ require_once("header.php");
                                                     } catch (DateMalformedStringException) {
                                                     }
                                                 }
-                                                if ($sort == "date") {
+                                                if ($sort === GameTrophySort::Date) {
                                                     $previousTimeStamp = $trophyRow->hasRecordedEarnedDate()
                                                         ? $trophyRow->getEarnedDate()
                                                         : null;

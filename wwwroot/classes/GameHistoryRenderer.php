@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
+require_once __DIR__ . '/HistoryIconType.php';
+require_once __DIR__ . '/HistoryIconState.php';
 require_once __DIR__ . '/Html.php';
 
 /**
@@ -68,7 +70,7 @@ final class GameHistoryRenderer
     public function renderIconDiff(
         ?array $diff,
         GameDetails $game,
-        string $type,
+        HistoryIconType $type,
         ?string $name,
         bool $hidePrevious = false
     ): string {
@@ -81,20 +83,20 @@ final class GameHistoryRenderer
             $game,
             $type,
             $name,
-            'previous'
+            HistoryIconState::Previous
         );
         $current = $this->formatIcon(
             is_string($diff['current'] ?? null) ? $diff['current'] : null,
             $game,
             $type,
             $name,
-            'current'
+            HistoryIconState::Current
         );
 
         return $this->renderDiffBlocks($previous, $current, $hidePrevious);
     }
 
-    public function renderSingleIcon(?string $iconUrl, GameDetails $game, string $type, ?string $name): string
+    public function renderSingleIcon(?string $iconUrl, GameDetails $game, HistoryIconType $type, ?string $name): string
     {
         $resolvedPath = $this->resolveIconPath($iconUrl, $game, $type);
 
@@ -102,7 +104,7 @@ final class GameHistoryRenderer
             return '<div class="text-center"><span class="history-diff__empty">&mdash;</span></div>';
         }
 
-        ['objectFit' => $objectFit, 'directory' => $directory, 'height' => $height] = $this->resolveIconDisplay($type);
+        ['objectFit' => $objectFit, 'directory' => $directory, 'height' => $height] = $type->display();
 
         return '<div class="text-center">'
             . '<img class="' . $objectFit . ' rounded" style="height: ' . $height . 'rem;" src="/img/' . $directory . '/'
@@ -312,7 +314,7 @@ final class GameHistoryRenderer
         return $html;
     }
 
-    private function resolveIconPath(?string $iconUrl, GameDetails $game, string $type): ?string
+    private function resolveIconPath(?string $iconUrl, GameDetails $game, HistoryIconType $type): ?string
     {
         if ($iconUrl === null || $iconUrl === '') {
             return null;
@@ -321,46 +323,37 @@ final class GameHistoryRenderer
         if ($iconUrl === '.png') {
             $hasPs5Assets = str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2');
 
-            if ($type === 'group' || $type === 'title') {
+            if ($type->usesGameMissingAsset()) {
                 return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-game.png';
             }
 
-            if ($type === 'trophy') {
-                return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-trophy.png';
-            }
+            return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-trophy.png';
         }
 
         return $iconUrl;
     }
 
-    private function formatIcon(?string $iconUrl, GameDetails $game, string $type, ?string $name, string $state): string
-    {
+    private function formatIcon(
+        ?string $iconUrl,
+        GameDetails $game,
+        HistoryIconType $type,
+        ?string $name,
+        HistoryIconState $state
+    ): string {
         $resolvedPath = $this->resolveIconPath($iconUrl, $game, $type);
 
         if ($resolvedPath === null) {
             return '<div class="text-center"><span class="history-diff__empty">&mdash;</span></div>';
         }
 
-        $borderClass = $state === 'previous' ? 'border-danger' : 'border-success';
-        ['objectFit' => $objectFit, 'directory' => $directory, 'height' => $height] = $this->resolveIconDisplay($type);
+        $borderClass = $state->borderClass();
+        ['objectFit' => $objectFit, 'directory' => $directory, 'height' => $height] = $type->display();
 
         return '<div class="text-center">'
             . '<img class="' . $objectFit . ' border border-2 ' . $borderClass . ' rounded" style="height: ' . $height . 'rem;" src="/img/'
             . $directory . '/' . Html::escape($resolvedPath)
             . '" alt="' . Html::escape($name ?? '') . '">'
             . '</div>';
-    }
-
-    /**
-     * @return array{objectFit: string, directory: string, height: float}
-     */
-    private function resolveIconDisplay(string $type): array
-    {
-        return match ($type) {
-            'group' => ['objectFit' => 'object-fit-cover', 'directory' => 'group', 'height' => 3.5],
-            'title' => ['objectFit' => 'object-fit-scale', 'directory' => 'title', 'height' => 5.5],
-            default => ['objectFit' => 'object-fit-scale', 'directory' => 'trophy', 'height' => 3.5],
-        };
     }
 }
 

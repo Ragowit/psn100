@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
+require_once __DIR__ . '/../HttpMethod.php';
 require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/CallableGameRescanProgressListener.php';
 
@@ -21,8 +22,7 @@ class GameRescanRequestHandler
      */
     public function handleRequest(array $postData, array $serverData): void
     {
-        $method = ((string) ($serverData['REQUEST_METHOD'] ?? '')) |> strtoupper(...);
-        if ($method !== 'POST') {
+        if (!HttpMethod::fromServer($serverData)->isPost()) {
             $this->sendJsonResponse(405, [
                 'success' => false,
                 'error' => 'Method not allowed.',

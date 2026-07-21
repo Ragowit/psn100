@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerScanProgress.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerSortField.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerSortDirection.php';
 
 final class AdminWorkerServiceTest extends TestCase
 {
@@ -44,7 +46,7 @@ SQL
         $database->exec("INSERT INTO setting (id, refresh_token, npsso, scanning, scan_start) VALUES (2, 'token-2', 'npsso-2', '', '2024-01-02 09:00:00')");
 
         $service = new WorkerService($database);
-        $workers = $service->fetchWorkers('id', 'DESC');
+        $workers = $service->fetchWorkers(WorkerSortField::Id, WorkerSortDirection::Desc);
 
         $this->assertCount(2, $workers);
         $this->assertSame(2, $workers[0]->getId());

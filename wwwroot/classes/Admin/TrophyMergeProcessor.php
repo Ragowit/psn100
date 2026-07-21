@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
+require_once __DIR__ . '/../HttpMethod.php';
 require_once __DIR__ . '/../TrophyMergeMethod.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/TrophyMergeRequestHandler.php';
@@ -32,8 +33,7 @@ class TrophyMergeProcessor
      */
     public function processRequest(array $postData, array $serverData): void
     {
-        $method = ((string) ($serverData['REQUEST_METHOD'] ?? '')) |> strtoupper(...);
-        if ($method !== 'POST') {
+        if (!HttpMethod::fromServer($serverData)->isPost()) {
             $this->sendJsonResponse(405, [
                 'success' => false,
                 'error' => 'Method not allowed.',

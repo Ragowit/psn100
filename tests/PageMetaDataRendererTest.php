@@ -16,14 +16,14 @@ final class PageMetaDataRendererTest extends TestCase
 
     public function testRenderReturnsEmptyStringWhenMetaDataIsEmpty(): void
     {
-        $result = $this->renderer->render(new PageMetaData());
+        $result = $this->renderer->render(new PageMetaData);
 
         $this->assertSame('', $result);
     }
 
     public function testRenderProducesExpectedTagsWithEscapedValues(): void
     {
-        $metaData = (new PageMetaData())
+        $metaData = (new PageMetaData)
             ->withTitle('Title "special" & more')
             ->withDescription("Description with 'quote' & <tag>")
             ->withImage('https://example.com/image.png?foo=1&bar=2')

@@ -18,7 +18,7 @@ final class PageMetaDataTest extends TestCase
 
     public function testWithersNormalizeValuesAndCreateNewInstances(): void
     {
-        $pageMetaData = new PageMetaData();
+        $pageMetaData = new PageMetaData;
 
         $result = $pageMetaData
             ->withTitle('  Example Title  ')
@@ -37,7 +37,7 @@ final class PageMetaDataTest extends TestCase
 
     public function testIsEmptyIndicatesWhetherAnyMetadataIsPresent(): void
     {
-        $pageMetaData = new PageMetaData();
+        $pageMetaData = new PageMetaData;
         $this->assertTrue($pageMetaData->isEmpty());
 
         $pageMetaDataWithDescription = $pageMetaData->withDescription('Description');

@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../HttpMethod.php';
+
 final readonly class AdminRequest
 {
-    private string $method;
+    private HttpMethod $method;
 
     /**
      * @param array<string, mixed> $postData
      */
     public function __construct(
-        string $method,
+        string|HttpMethod $method,
         private array $postData,
     ) {
-        $normalizedMethod = $method |> trim(...) |> strtoupper(...);
-        $this->method = $normalizedMethod === '' ? 'GET' : $normalizedMethod;
+        $this->method = $method instanceof HttpMethod ? $method : HttpMethod::fromMixed($method);
     }
 
     /**
@@ -24,23 +25,17 @@ final readonly class AdminRequest
     #[\NoDiscard]
     public static function fromGlobals(array $serverData, array $postData): self
     {
-        $method = $serverData['REQUEST_METHOD'] ?? 'GET';
-
-        if (!is_string($method)) {
-            $method = 'GET';
-        }
-
-        return new self($method, $postData);
+        return new self(HttpMethod::fromServer($serverData), $postData);
     }
 
-    public function getMethod(): string
+    public function getMethod(): HttpMethod
     {
         return $this->method;
     }
 
     public function isPost(): bool
     {
-        return $this->method === 'POST';
+        return $this->method->isPost();
     }
 
     public function getPostValue(string $key): mixed

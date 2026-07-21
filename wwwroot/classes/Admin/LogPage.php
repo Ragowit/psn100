@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/LogService.php';
 require_once __DIR__ . '/LogPageResult.php';
 require_once __DIR__ . '/LogDeletionRequest.php';
+require_once __DIR__ . '/../HttpMethod.php';
 
 final class LogPage
 {
@@ -27,7 +28,7 @@ final class LogPage
         $successMessage = null;
         $errorMessage = null;
 
-        if (strtoupper($method) === 'POST') {
+        if (HttpMethod::fromMixed($method)->isPost()) {
             $deletionRequest = LogDeletionRequest::fromPostData($postData);
 
             if ($deletionRequest->hasError()) {

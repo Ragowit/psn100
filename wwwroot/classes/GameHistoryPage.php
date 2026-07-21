@@ -123,7 +123,7 @@ final class GameHistoryPage
     #[\NoDiscard]
     public function createMetaData(): PageMetaData
     {
-        return (new PageMetaData())
+        return (new PageMetaData)
             ->withTitle($this->game->getName() . ' Trophy Data History')
             ->withDescription('Version history and trophy data changes for ' . $this->game->getName())
             ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())

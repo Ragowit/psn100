@@ -89,7 +89,10 @@ final class GameHistoryChangeFilter
                 $titleHighlights['icon_url'] = $this->isNewNonEmptyString($titleChange['icon_url'] ?? null, $previousTitle['icon_url']);
                 $titleHighlights['set_version'] = $this->isNewNonEmptyString($titleChange['set_version'] ?? null, $previousTitle['set_version']);
 
-                $hasTitleChanges = in_array(true, $titleHighlights, true);
+                $hasTitleChanges = array_any(
+                    $titleHighlights,
+                    static fn (bool $changed): bool => $changed
+                );
 
                 foreach (['detail', 'icon_url', 'set_version'] as $field) {
                     if ($titleHighlights[$field]) {
@@ -123,7 +126,10 @@ final class GameHistoryChangeFilter
                     }
                 }
 
-                $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
+                $hasRowChanges = $isNewRow || array_any(
+                    $changedFields,
+                    static fn (bool $changed): bool => $changed
+                );
 
                 if ($hasRowChanges) {
                     $fieldDiffs = [];
@@ -186,7 +192,10 @@ final class GameHistoryChangeFilter
                     }
                 }
 
-                $hasRowChanges = $isNewRow || in_array(true, $changedFields, true);
+                $hasRowChanges = $isNewRow || array_any(
+                    $changedFields,
+                    static fn (bool $changed): bool => $changed
+                );
 
                 if ($hasRowChanges) {
                     $fieldDiffs = [];

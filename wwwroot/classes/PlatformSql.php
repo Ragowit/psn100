@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Platform.php';
+
 /**
  * Shared SQL fragments for filtering trophy_title.platform.
  *
@@ -18,13 +20,13 @@ final class PlatformSql
      * @var array<string, string>
      */
     public const array CONDITIONS = [
-        'pc' => "tt.platform LIKE '%PC%'",
-        'ps3' => "tt.platform LIKE '%PS3%'",
-        'ps4' => "tt.platform LIKE '%PS4%'",
-        'ps5' => "tt.platform LIKE '%PS5%'",
-        'psvita' => "tt.platform LIKE '%PSVITA%'",
-        'psvr' => self::PSVR_TOKEN_MATCH,
-        'psvr2' => "tt.platform LIKE '%PSVR2%'",
+        Platform::Pc->value => "tt.platform LIKE '%PC%'",
+        Platform::Ps3->value => "tt.platform LIKE '%PS3%'",
+        Platform::Ps4->value => "tt.platform LIKE '%PS4%'",
+        Platform::Ps5->value => "tt.platform LIKE '%PS5%'",
+        Platform::PsVita->value => "tt.platform LIKE '%PSVITA%'",
+        Platform::PsVr->value => self::PSVR_TOKEN_MATCH,
+        Platform::PsVr2->value => "tt.platform LIKE '%PSVR2%'",
     ];
 
     /**
@@ -59,8 +61,8 @@ final class PlatformSql
         return $expression === null ? '' : ' AND ' . $expression;
     }
 
-    public static function conditionFor(string $platformKey): ?string
+    public static function conditionFor(Platform $platform): string
     {
-        return self::CONDITIONS[$platformKey] ?? null;
+        return self::CONDITIONS[$platform->value];
     }
 }

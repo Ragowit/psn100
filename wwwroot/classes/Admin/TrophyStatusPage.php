@@ -7,6 +7,7 @@ require_once __DIR__ . '/TrophyStatusService.php';
 require_once __DIR__ . '/TrophyStatusUpdateResultPresenter.php';
 require_once __DIR__ . '/../TrophyMetaStatus.php';
 require_once __DIR__ . '/../Html.php';
+require_once __DIR__ . '/../HttpMethod.php';
 
 final readonly class TrophyStatusPageResult
 {
@@ -57,11 +58,10 @@ final readonly class TrophyStatusPage
         $statusInput = '1';
         $message = null;
 
-        $normalizedMethod = $requestMethod |> trim(...) |> strtoupper(...);
         $hasTrophyPost = array_key_exists('trophy', $postData);
         $hasGamePost = array_key_exists('game', $postData);
 
-        if ($normalizedMethod === 'POST' && ($hasTrophyPost || $hasGamePost)) {
+        if (HttpMethod::fromMixed($requestMethod)->isPost() && ($hasTrophyPost || $hasGamePost)) {
             $status = TrophyMetaStatus::fromMixed($postData['status'] ?? TrophyMetaStatus::Unobtainable->value);
             $statusInput = (string) $status->value;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../CsrfTokenManager.php';
 require_once __DIR__ . '/../SessionManager.php';
 require_once __DIR__ . '/../Html.php';
+require_once __DIR__ . '/../HttpMethod.php';
 require_once __DIR__ . '/AdminAuthService.php';
 require_once __DIR__ . '/AdminLoginThrottleService.php';
 require_once __DIR__ . '/AdminUserRepository.php';
@@ -69,9 +70,7 @@ final class AdminBootstrap
 
     private static function isPostRequest(): bool
     {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
-        return is_string($method) && strtoupper($method) === 'POST';
+        return HttpMethod::fromServer($_SERVER)->isPost();
     }
 
     public static function requireValidPostCsrfToken(): void
