@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Psn100Logger.php';
+require_once __DIR__ . '/ChangelogEntry.php';
 
 class TrophyHistoryRecorder
 {
@@ -130,8 +131,9 @@ class TrophyHistoryRecorder
     private function recordHistorySnapshotChange(int $titleId): void
     {
         $changeStatement = $this->database->prepare(
-            "INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_HISTORY_SNAPSHOT', :title_id)"
+            'INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :title_id)'
         );
+        $changeStatement->bindValue(':change_type', ChangelogEntryType::GAME_HISTORY_SNAPSHOT->value, PDO::PARAM_STR);
         $changeStatement->bindValue(':title_id', $titleId, PDO::PARAM_INT);
         $changeStatement->execute();
     }

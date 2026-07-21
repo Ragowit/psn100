@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Utility.php';
 require_once __DIR__ . '/../TrophyType.php';
+require_once __DIR__ . '/../TrophyMetaStatus.php';
 
 final readonly class GameTrophyRow
 {
-    private const int UNOBTAINABLE_STATUS = 1;
     private const string UNOBTAINABLE_TITLE = 'This trophy is unobtainable and not accounted for on any leaderboard.';
 
     private int $id;
@@ -18,7 +18,7 @@ final readonly class GameTrophyRow
     private string $iconUrl;
     private float $rarityPercent;
     private ?float $inGameRarityPercent;
-    private int $status;
+    private TrophyMetaStatus $status;
     private ?int $progressTargetValue;
     private ?int $progress;
     private ?string $rewardName;
@@ -52,7 +52,7 @@ final readonly class GameTrophyRow
         $this->iconUrl = (string) ($data['icon_url'] ?? '');
         $this->rarityPercent = (float) ($data['rarity_percent'] ?? 0.0);
         $this->inGameRarityPercent = (float) ($data['in_game_rarity_percent'] ?? 0.0);
-        $this->status = (int) ($data['status'] ?? 0);
+        $this->status = TrophyMetaStatus::fromMixed($data['status'] ?? 0);
         $this->progressTargetValue = isset($data['progress_target_value'])
             ? (int) $data['progress_target_value']
             : null;
@@ -181,7 +181,7 @@ final readonly class GameTrophyRow
         return $this->inGameRarityPercent;
     }
 
-    public function getStatus(): int
+    public function getStatus(): TrophyMetaStatus
     {
         return $this->status;
     }
@@ -221,6 +221,6 @@ final readonly class GameTrophyRow
 
     private function isUnobtainable(): bool
     {
-        return $this->status === self::UNOBTAINABLE_STATUS;
+        return $this->status->isUnobtainable();
     }
 }

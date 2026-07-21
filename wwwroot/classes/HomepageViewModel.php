@@ -17,10 +17,10 @@ final readonly class HomepageViewModel
      * @param HomepagePopularGame[] $popularGames
      */
     public function __construct(
-        private string $title,
-        private array $newGames,
-        private array $newDlcs,
-        private array $popularGames,
+        final private string $title,
+        final private array $newGames,
+        final private array $newDlcs,
+        final private array $popularGames,
         ?HomepagePopularGamesFilter $popularGamesFilter = null,
     ) {
         $this->popularGamesFilter = $popularGamesFilter ?? HomepagePopularGamesFilter::fromArray([]);

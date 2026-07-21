@@ -53,12 +53,12 @@ class GameStatusService
         $query->execute();
     }
 
-    private function logStatusChange(int $gameId, string $changeType): void
+    private function logStatusChange(int $gameId, ChangelogEntryType $changeType): void
     {
         $query = $this->database->prepare(
             "INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :param_1)"
         );
-        $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
+        $query->bindValue(':change_type', $changeType->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         $query->execute();
     }

@@ -7,9 +7,9 @@ require_once __DIR__ . '/Platform.php';
 readonly final class PlayerPlatformFilterOption
 {
     public function __construct(
-        private string $key,
-        private string $label,
-        private bool $selected
+        final private string $key,
+        final private string $label,
+        final private bool $selected
     ) {}
 
     public function getInputName(): string
@@ -38,7 +38,7 @@ readonly final class PlayerPlatformFilterOptions
     /**
      * @param PlayerPlatformFilterOption[] $options
      */
-    private function __construct(private array $options)
+    private function __construct(final private array $options)
     {
     }
 

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/ChangelogEntry.php';
+
 enum GameAvailabilityStatus: int
 {
     case NORMAL = 0;
@@ -27,14 +29,14 @@ enum GameAvailabilityStatus: int
         };
     }
 
-    public function changeType(): string
+    public function changeType(): ChangelogEntryType
     {
         return match ($this) {
-            self::DELISTED => 'GAME_DELISTED',
-            self::MERGED => 'GAME_MERGE',
-            self::OBSOLETE => 'GAME_OBSOLETE',
-            self::DELISTED_AND_OBSOLETE => 'GAME_DELISTED_AND_OBSOLETE',
-            self::NORMAL => 'GAME_NORMAL',
+            self::DELISTED => ChangelogEntryType::GAME_DELISTED,
+            self::MERGED => ChangelogEntryType::GAME_MERGE,
+            self::OBSOLETE => ChangelogEntryType::GAME_OBSOLETE,
+            self::DELISTED_AND_OBSOLETE => ChangelogEntryType::GAME_DELISTED_AND_OBSOLETE,
+            self::NORMAL => ChangelogEntryType::GAME_NORMAL,
         };
     }
 

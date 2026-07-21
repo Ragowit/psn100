@@ -34,6 +34,24 @@ enum Platform: string
     }
 
     /**
+     * Display / merge sort order for platform labels (e.g. "PS5", "PC").
+     *
+     * @return list<string>
+     */
+    public static function labelOrder(): array
+    {
+        return [
+            self::Ps3->label(),
+            self::PsVita->label(),
+            self::Ps4->label(),
+            self::PsVr->label(),
+            self::Ps5->label(),
+            self::PsVr2->label(),
+            self::Pc->label(),
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function labelsByValue(): array

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
 require_once __DIR__ . '/TrophyType.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
 require_once __DIR__ . '/Utility.php';
 
 final readonly class TrophyDetails
@@ -24,7 +25,7 @@ final readonly class TrophyDetails
         final private string $iconFileName,
         final private float $rarityPercent,
         final private ?float $inGameRarityPercent,
-        final private int $status,
+        final private TrophyMetaStatus $status,
         final private ?string $progressTargetValue,
         final private ?string $rewardName,
         final private ?string $rewardImageUrl,
@@ -51,7 +52,7 @@ final readonly class TrophyDetails
             (string) ($data['trophy_icon'] ?? ''),
             (float) ($data['rarity_percent'] ?? 0.0),
             (float) ($data['in_game_rarity_percent'] ?? 0.0),
-            (int) ($data['status'] ?? 0),
+            TrophyMetaStatus::fromMixed($data['status'] ?? 0),
             isset($data['progress_target_value']) ? (string) $data['progress_target_value'] : null,
             isset($data['reward_name']) ? (string) $data['reward_name'] : null,
             isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null,
@@ -112,7 +113,7 @@ final readonly class TrophyDetails
         return $this->inGameRarityPercent;
     }
 
-    public function getStatus(): int
+    public function getStatus(): TrophyMetaStatus
     {
         return $this->status;
     }
@@ -184,7 +185,7 @@ final readonly class TrophyDetails
 
     public function isUnobtainable(): bool
     {
-        return $this->status === 1;
+        return $this->status->isUnobtainable();
     }
 
     public function getGameSlug(Utility $utility): string

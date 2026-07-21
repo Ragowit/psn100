@@ -7,7 +7,7 @@ readonly class HttpRequest
     /**
      * @param array<string, mixed> $server
      */
-    public function __construct(private array $server = [])
+    public function __construct(final private array $server = [])
     {
     }
 

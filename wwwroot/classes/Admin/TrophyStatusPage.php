@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/TrophyStatusInputParser.php';
 require_once __DIR__ . '/TrophyStatusService.php';
 require_once __DIR__ . '/TrophyStatusUpdateResultPresenter.php';
+require_once __DIR__ . '/../TrophyMetaStatus.php';
 
 final readonly class TrophyStatusPageResult
 {
@@ -60,8 +61,8 @@ final readonly class TrophyStatusPage
         $hasGamePost = array_key_exists('game', $postData);
 
         if ($normalizedMethod === 'POST' && ($hasTrophyPost || $hasGamePost)) {
-            $status = isset($postData['status']) ? (int) $postData['status'] : 1;
-            $statusInput = (string) $status;
+            $status = TrophyMetaStatus::fromMixed($postData['status'] ?? TrophyMetaStatus::Unobtainable->value);
+            $statusInput = (string) $status->value;
 
             try {
                 $gameValue = trim((string) ($postData['game'] ?? ''));

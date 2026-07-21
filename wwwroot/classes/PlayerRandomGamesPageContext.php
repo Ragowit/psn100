@@ -16,9 +16,6 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class PlayerRandomGamesPageContext
 {
-    private const int STATUS_FLAGGED = 1;
-    private const int STATUS_PRIVATE = 3;
-
     private PlayerRandomGamesPage $playerRandomGamesPage;
 
     private PlayerSummary $playerSummary;

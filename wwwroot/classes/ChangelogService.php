@@ -8,12 +8,33 @@ require_once __DIR__ . '/ChangelogPaginator.php';
 final class ChangelogService
 {
     public const int PAGE_SIZE = 50;
-    private const string FILTERED_CHANGE_TYPES = "('GAME_RESCAN', 'GAME_VERSION')";
 
     private ?int $cachedTotalChangeCount = null;
 
     public function __construct(private readonly PDO $database)
     {
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function filteredChangeTypes(): array
+    {
+        return [
+            ChangelogEntryType::GAME_RESCAN->value,
+            ChangelogEntryType::GAME_VERSION->value,
+        ];
+    }
+
+    private static function filteredChangeTypesSql(): string
+    {
+        return '(' . implode(
+            ', ',
+            array_map(
+                static fn (string $type): string => "'" . $type . "'",
+                self::filteredChangeTypes()
+            )
+        ) . ')';
     }
 
     public function getTotalChangeCount(): int
@@ -23,7 +44,7 @@ final class ChangelogService
         }
 
         $query = $this->database->prepare(
-            sprintf('SELECT COUNT(*) FROM psn100_change WHERE change_type NOT IN %s', self::FILTERED_CHANGE_TYPES)
+            sprintf('SELECT COUNT(*) FROM psn100_change WHERE change_type NOT IN %s', self::filteredChangeTypesSql())
         );
         $query->execute();
 
@@ -38,7 +59,8 @@ final class ChangelogService
     public function getChanges(ChangelogPaginator $paginator): array
     {
         $query = $this->database->prepare(
-            <<<'SQL'
+            sprintf(
+                <<<'SQL'
             SELECT
                 c.time,
                 c.change_type,
@@ -57,10 +79,12 @@ final class ChangelogService
             LEFT JOIN trophy_title_meta ttm1 ON ttm1.np_communication_id = tt1.np_communication_id
             LEFT JOIN trophy_title tt2 ON tt2.id = c.param_2
             LEFT JOIN trophy_title_meta ttm2 ON ttm2.np_communication_id = tt2.np_communication_id
-            WHERE c.change_type NOT IN ('GAME_RESCAN', 'GAME_VERSION')
+            WHERE c.change_type NOT IN %s
             ORDER BY c.time DESC
             LIMIT :limit OFFSET :offset
-            SQL
+            SQL,
+                self::filteredChangeTypesSql()
+            )
         );
         $query->bindValue(':offset', $paginator->getOffset(), PDO::PARAM_INT);
         $query->bindValue(':limit', $paginator->getLimit(), PDO::PARAM_INT);

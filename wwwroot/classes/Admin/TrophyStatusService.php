@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyStatusUpdateResult.php';
 require_once __DIR__ . '/TrophyStatusProgressRecalculator.php';
+require_once __DIR__ . '/../TrophyMetaStatus.php';
 
 class TrophyStatusService
 {
@@ -19,8 +20,9 @@ class TrophyStatusService
     /**
      * @param int[] $trophyIds
      */
-    public function updateTrophies(array $trophyIds, int $status): TrophyStatusUpdateResult
+    public function updateTrophies(array $trophyIds, int|TrophyMetaStatus $status): TrophyStatusUpdateResult
     {
+        $metaStatus = TrophyMetaStatus::fromMixed($status);
         $trophyIds = $trophyIds
             |> (fn(array $ids): array => array_map(intval(...), $ids))
             |> array_unique(...)
@@ -35,7 +37,7 @@ class TrophyStatusService
         $trophyTitles = [];
 
         foreach ($trophyIds as $trophyId) {
-            $trophy = $this->updateTrophyStatus((int) $trophyId, $status);
+            $trophy = $this->updateTrophyStatus((int) $trophyId, $metaStatus);
             $trophyNames[] = $trophy['label'];
             if (!isset($trophyGroups[$trophy['groupKey']])) {
                 $trophyGroups[$trophy['groupKey']] = [
@@ -57,24 +59,22 @@ class TrophyStatusService
         }
 
         foreach ($trophyTitles as $npCommunicationId => $titleTrophyIds) {
-            $this->progressRecalculator->recalculateTitle((string) $npCommunicationId, $status, $titleTrophyIds);
+            $this->progressRecalculator->recalculateTitle((string) $npCommunicationId, $metaStatus, $titleTrophyIds);
         }
 
-        $statusText = $status === 1 ? 'unobtainable' : 'obtainable';
-
-        return new TrophyStatusUpdateResult($trophyNames, $statusText);
+        return new TrophyStatusUpdateResult($trophyNames, $metaStatus->label());
     }
 
     /**
      * @return array{id: int, name: string, np_communication_id: string, group_id: string, label: string, groupKey: string}
      */
-    private function updateTrophyStatus(int $trophyId, int $status): array
+    private function updateTrophyStatus(int $trophyId, TrophyMetaStatus $status): array
     {
         try {
             $this->database->beginTransaction();
 
             $query = $this->database->prepare('UPDATE trophy_meta SET status = :status WHERE trophy_id = :trophy_id');
-            $query->bindValue(':status', $status, PDO::PARAM_INT);
+            $query->bindValue(':status', $status->value, PDO::PARAM_INT);
             $query->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
             $query->execute();
 

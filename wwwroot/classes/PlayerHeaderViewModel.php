@@ -17,9 +17,9 @@ final readonly class PlayerHeaderViewModel
      * @param array<string, mixed> $player
      */
     public function __construct(
-        private array $player,
-        private PlayerSummary $playerSummary,
-        private Utility $utility
+        final private array $player,
+        final private PlayerSummary $playerSummary,
+        final private Utility $utility
     ) {}
 
     public function getAboutMe(): string

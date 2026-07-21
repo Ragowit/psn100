@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
+require_once __DIR__ . '/../ChangelogEntry.php';
 require_once __DIR__ . '/MergeTrophyCopier.php';
 require_once __DIR__ . '/MergeTrophyGroupCopier.php';
 require_once __DIR__ . '/TrophyGroupConflictResolver.php';
@@ -374,7 +375,10 @@ class GameCopyService
 
     private function recordCopyAction(int $childId, int $parentId): void
     {
-        $query = $this->database->prepare("INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES ('GAME_COPY', :param_1, :param_2)");
+        $query = $this->database->prepare(
+            'INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES (:change_type, :param_1, :param_2)'
+        );
+        $query->bindValue(':change_type', ChangelogEntryType::GAME_COPY->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $childId, PDO::PARAM_INT);
         $query->bindValue(':param_2', $parentId, PDO::PARAM_INT);
         $query->execute();

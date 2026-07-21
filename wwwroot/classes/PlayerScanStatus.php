@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final readonly class PlayerScanStatus
 {
-    public function __construct(private ?PlayerScanProgress $progress)
+    public function __construct(final private ?PlayerScanProgress $progress)
     {
     }
 

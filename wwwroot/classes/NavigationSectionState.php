@@ -6,8 +6,10 @@ require_once __DIR__ . '/NavigationSection.php';
 
 final readonly class NavigationSectionState
 {
-    public function __construct(private NavigationSection $section, private bool $active)
-    {
+    public function __construct(
+        final private NavigationSection $section,
+        final private bool $active,
+    ) {
     }
 
     public function getSection(): NavigationSection

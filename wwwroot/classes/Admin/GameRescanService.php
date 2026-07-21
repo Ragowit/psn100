@@ -13,6 +13,7 @@ require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
+require_once __DIR__ . '/../ChangelogEntry.php';
 require_once __DIR__ . '/PsnGameLookupService.php';
 require_once __DIR__ . '/PsnTrophyLookupGroupDataProvider.php';
 require_once __DIR__ . '/GameRescanPsnAccessor.php';
@@ -308,8 +309,9 @@ class GameRescanService
     private function recordRescan(int $gameId): void
     {
         $query = $this->database->prepare(
-            "INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_RESCAN', :param_1)"
+            'INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :param_1)'
         );
+        $query->bindValue(':change_type', ChangelogEntryType::GAME_RESCAN->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         $query->execute();
     }

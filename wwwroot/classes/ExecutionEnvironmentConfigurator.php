@@ -19,6 +19,7 @@ final class ExecutionEnvironmentConfigurator
         return new self();
     }
 
+    #[\NoDiscard]
     public function addIniSetting(string $option, string $value): self
     {
         $this->iniSettings[$option] = $value;
@@ -26,6 +27,7 @@ final class ExecutionEnvironmentConfigurator
         return $this;
     }
 
+    #[\NoDiscard]
     public function enableUnlimitedExecution(): self
     {
         $this->unlimitedExecution = true;
@@ -33,6 +35,7 @@ final class ExecutionEnvironmentConfigurator
         return $this;
     }
 
+    #[\NoDiscard]
     public function enableIgnoreUserAbort(): self
     {
         $this->shouldIgnoreUserAbort = true;
