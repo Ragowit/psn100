@@ -47,6 +47,18 @@ final class HomepagePopularGamesFilterTest extends TestCase
         $this->assertSame(['exclusive' => 'true'], $filter->getQueryParameters());
     }
 
+    public function testFromArrayTreatsExclusiveFalseAsDisabled(): void
+    {
+        $filter = HomepagePopularGamesFilter::fromArray([
+            'platform' => 'ps4',
+            'exclusive' => 'false',
+        ]);
+
+        $this->assertTrue($filter->isPlatformSelected(HomepagePopularGamesFilter::PLATFORM_PS4));
+        $this->assertFalse($filter->isExclusiveOnly());
+        $this->assertSame(['platform' => 'ps4'], $filter->getQueryParameters());
+    }
+
     public function testGetPlatformOptionsListsAllFirstThenAlphabeticalPlatforms(): void
     {
         $this->assertSame(

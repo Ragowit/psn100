@@ -37,16 +37,12 @@ final class AboutPagePlayerArraySerializer
      */
     public static function serializeCollection(array $players): array
     {
-        $serializedPlayers = [];
-
-        foreach ($players as $player) {
-            if (!$player instanceof AboutPagePlayer) {
-                continue;
-            }
-
-            $serializedPlayers[] = self::serialize($player);
-        }
-
-        return $serializedPlayers;
+        return $players
+            |> (fn (array $players): array => array_filter(
+                $players,
+                static fn (mixed $player): bool => $player instanceof AboutPagePlayer,
+            ))
+            |> (fn (array $players): array => array_map(self::serialize(...), $players))
+            |> array_values(...);
     }
 }

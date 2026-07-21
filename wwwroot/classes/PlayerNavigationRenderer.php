@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerNavigation.php';
+require_once __DIR__ . '/Html.php';
 
 final class PlayerNavigationRenderer
 {
@@ -24,9 +25,9 @@ HTML;
 
     private function renderLink(PlayerNavigationLink $link): string
     {
-        $cssClass = htmlspecialchars($link->getButtonCssClass() . ' d-flex align-items-center justify-content-center', ENT_QUOTES, 'UTF-8');
-        $url = htmlspecialchars($link->getUrl(), ENT_QUOTES, 'UTF-8');
-        $label = htmlspecialchars($link->getLabel(), ENT_QUOTES, 'UTF-8');
+        $cssClass = Html::escape($link->getButtonCssClass() . ' d-flex align-items-center justify-content-center');
+        $url = Html::escape($link->getUrl());
+        $label = Html::escape($link->getLabel());
         $ariaAttribute = $this->renderAriaAttribute($link->getAriaCurrent());
 
         return sprintf(
@@ -44,7 +45,7 @@ HTML;
             return '';
         }
 
-        $value = htmlspecialchars($ariaCurrent, ENT_QUOTES, 'UTF-8');
+        $value = Html::escape($ariaCurrent);
 
         return ' aria-current="' . $value . '"';
     }

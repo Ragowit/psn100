@@ -69,9 +69,6 @@ class TrophyListService
         /** @var array<int, array<string, mixed>> $trophies */
         $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(
-            static fn (array $trophy): TrophyListItem => TrophyListItem::fromArray($trophy),
-            $trophies
-        );
+        return array_map(TrophyListItem::fromArray(...), $trophies);
     }
 }

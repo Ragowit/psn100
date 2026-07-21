@@ -116,11 +116,11 @@ final class GameTrophyFilterTest extends TestCase
         $this->assertFalse($filter->shouldDisplayTrophy($earnedTrophy));
     }
 
-    public function testFromQueryParametersTreatsUnexpectedTypesAsTruthy(): void
+    public function testFromQueryParametersTreatsUnexpectedTypesAsFalsy(): void
     {
         $filter = GameTrophyFilter::fromQueryParameters(['unearned' => ['unexpected']], true);
 
-        $this->assertTrue($filter->shouldShowUnearnedOnly());
+        $this->assertFalse($filter->shouldShowUnearnedOnly());
     }
 
     private function createGroupPlayer(array $overrides = []): GameTrophyGroupPlayer

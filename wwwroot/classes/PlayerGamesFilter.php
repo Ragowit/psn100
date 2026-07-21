@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlayerGamesSort.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerGamesFilter
 {
@@ -54,8 +55,8 @@ final readonly class PlayerGamesFilter
         $sort = $parsedSort
             ?? ($search !== '' ? PlayerGamesSort::Search : PlayerGamesSort::Date);
 
-        $completed = !empty($parameters['completed']);
-        $uncompleted = !empty($parameters['uncompleted']);
+        $completed = RequestParameter::toBool($parameters['completed'] ?? null);
+        $uncompleted = RequestParameter::toBool($parameters['uncompleted'] ?? null);
 
         if ($completed && $uncompleted) {
             // Selecting both checkboxes should behave like no completion filter at all.
@@ -65,7 +66,7 @@ final readonly class PlayerGamesFilter
 
         $platforms = [];
         foreach (Platform::values() as $platformKey) {
-            if (!empty($parameters[$platformKey])) {
+            if (RequestParameter::toBool($parameters[$platformKey] ?? null)) {
                 $platforms[] = $platformKey;
             }
         }
@@ -79,7 +80,7 @@ final readonly class PlayerGamesFilter
             $sort,
             $completed,
             $uncompleted,
-            !empty($parameters['base']),
+            RequestParameter::toBool($parameters['base'] ?? null),
             $platforms,
             max($page, 1),
             self::DEFAULT_LIMIT,
@@ -202,6 +203,7 @@ final readonly class PlayerGamesFilter
     /**
      * @return array<string, int|string>
      */
+    #[\NoDiscard]
     public function toQueryParameters(): array
     {
         return $this->withPage($this->page);

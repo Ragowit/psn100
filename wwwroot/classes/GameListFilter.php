@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/GameListSort.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class GameListFilter
 {
@@ -53,11 +54,11 @@ final readonly class GameListFilter
         $search = self::sanitizeString($queryParameters['search'] ?? null);
         $page = self::sanitizePage($queryParameters['page'] ?? null);
         $sort = self::normalizeSort($queryParameters['sort'] ?? null, $search, $sortSpecified);
-        $uncompletedOnly = self::toBool($queryParameters['filter'] ?? null);
+        $uncompletedOnly = RequestParameter::toBool($queryParameters['filter'] ?? null);
 
         $platformFilters = [];
         foreach (Platform::values() as $platform) {
-            $platformFilters[$platform] = self::toBool($queryParameters[$platform] ?? null);
+            $platformFilters[$platform] = RequestParameter::toBool($queryParameters[$platform] ?? null);
         }
 
         return new self(
@@ -167,15 +168,10 @@ final readonly class GameListFilter
      */
     public function getSelectedPlatforms(): array
     {
-        $platforms = [];
-
-        foreach (Platform::values() as $platform) {
-            if ($this->platformFilters[$platform]) {
-                $platforms[] = $platform;
-            }
-        }
-
-        return $platforms;
+        return array_keys(array_filter(
+            $this->platformFilters,
+            static fn (bool $selected): bool => $selected,
+        ));
     }
 
     /**
@@ -301,32 +297,5 @@ final readonly class GameListFilter
             GameListSort::Search => ($search !== '' || $sortSpecified) ? GameListSort::Search : GameListSort::Added,
             null => $search !== '' ? GameListSort::Search : GameListSort::Added,
         };
-    }
-
-    private static function toBool(mixed $value): bool
-    {
-        if ($value === null) {
-            return false;
-        }
-
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value !== 0;
-        }
-
-        if (is_string($value)) {
-            $value = $value |> trim(...) |> strtolower(...);
-
-            if ($value === '' || $value === 'false' || $value === '0') {
-                return false;
-            }
-
-            return true;
-        }
-
-        return false;
     }
 }

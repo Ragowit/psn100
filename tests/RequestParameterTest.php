@@ -30,4 +30,24 @@ final class RequestParameterTest extends TestCase
     {
         $this->assertSame(null, RequestParameter::lastScalar([]));
     }
+
+    public function testToBoolTreatsCommonTruthyValuesAsTrue(): void
+    {
+        foreach ([true, 1, '1', 'true', 'yes', 'on', ' TRUE '] as $value) {
+            $this->assertTrue(
+                RequestParameter::toBool($value),
+                sprintf('Expected %s to be truthy.', var_export($value, true))
+            );
+        }
+    }
+
+    public function testToBoolTreatsCommonFalsyValuesAsFalse(): void
+    {
+        foreach ([null, false, 0, '0', 'false', 'off', 'no', '', '  False  ', []] as $value) {
+            $this->assertFalse(
+                RequestParameter::toBool($value),
+                sprintf('Expected %s to be falsy.', var_export($value, true))
+            );
+        }
+    }
 }

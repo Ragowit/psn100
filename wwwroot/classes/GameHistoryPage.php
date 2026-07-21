@@ -120,6 +120,7 @@ final class GameHistoryPage
         return $this->historyEntries;
     }
 
+    #[\NoDiscard]
     public function createMetaData(): PageMetaData
     {
         return (new PageMetaData())

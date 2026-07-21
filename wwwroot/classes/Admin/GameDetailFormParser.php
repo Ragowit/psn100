@@ -72,9 +72,7 @@ final class GameDetailFormParser
             return '';
         }
 
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? '' : strtolower($trimmed);
+        return $value |> trim(...) |> strtolower(...);
     }
 
     public function parseStatus(mixed $value): ?GameAvailabilityStatus

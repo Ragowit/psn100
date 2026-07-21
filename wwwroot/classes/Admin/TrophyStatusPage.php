@@ -6,6 +6,7 @@ require_once __DIR__ . '/TrophyStatusInputParser.php';
 require_once __DIR__ . '/TrophyStatusService.php';
 require_once __DIR__ . '/TrophyStatusUpdateResultPresenter.php';
 require_once __DIR__ . '/../TrophyMetaStatus.php';
+require_once __DIR__ . '/../Html.php';
 
 final readonly class TrophyStatusPageResult
 {
@@ -82,7 +83,7 @@ final readonly class TrophyStatusPage
                 $result = $this->trophyStatusService->updateTrophies($trophyIds, $status);
                 $message = $this->trophyStatusUpdateResultPresenter->renderToHtml($result);
             } catch (\Throwable $exception) {
-                $message = '<p>' . htmlspecialchars($exception->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
+                $message = '<p>' . Html::escape($exception->getMessage()) . '</p>';
             }
         } else {
             if (array_key_exists('trophy', $queryData)) {

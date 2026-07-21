@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
+require_once __DIR__ . '/Html.php';
 
 final class PlayerPlatformFilterRenderer
 {
@@ -36,7 +37,7 @@ HTML;
 
     public function renderDropdownControls(PlayerPlatformFilterOptions $options): string
     {
-        $buttonLabel = htmlspecialchars($this->buttonLabel, ENT_QUOTES, 'UTF-8');
+        $buttonLabel = Html::escape($this->buttonLabel);
         $optionItems = $this->renderOptionItems($options);
 
         return <<<HTML
@@ -61,9 +62,9 @@ HTML;
 
     private function renderOption(PlayerPlatformFilterOption $option): string
     {
-        $inputId = htmlspecialchars($option->getInputId(), ENT_QUOTES, 'UTF-8');
-        $inputName = htmlspecialchars($option->getInputName(), ENT_QUOTES, 'UTF-8');
-        $label = htmlspecialchars($option->getLabel(), ENT_QUOTES, 'UTF-8');
+        $inputId = Html::escape($option->getInputId());
+        $inputName = Html::escape($option->getInputName());
+        $label = Html::escape($option->getLabel());
         $checkedAttribute = $option->isSelected() ? ' checked' : '';
 
         return <<<HTML
@@ -95,8 +96,8 @@ HTML;
         foreach ($hiddenInputs as $name => $value) {
             $inputs[] = sprintf(
                 '<input type="hidden" name="%s" value="%s">',
-                htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-                htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
+                Html::escape($name),
+                Html::escape($value)
             );
         }
 

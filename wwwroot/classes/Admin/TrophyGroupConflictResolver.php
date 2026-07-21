@@ -31,19 +31,21 @@ final class TrophyGroupConflictResolver
      */
     public function determinePreferredGroupOffset(array $existingGroupMappings): ?int
     {
-        foreach ($existingGroupMappings as $parentGroupId) {
-            $numericGroupId = $this->parseNumericGroupId($parentGroupId);
+        $parentGroupId = array_find(
+            $existingGroupMappings,
+            fn (string $id): bool => $this->parseNumericGroupId($id) !== null,
+        );
 
-            if ($numericGroupId === null) {
-                continue;
-            }
-
-            $block = intdiv($numericGroupId, 100);
-
-            return $block * 100;
+        if ($parentGroupId === null) {
+            return null;
         }
 
-        return null;
+        $numericGroupId = $this->parseNumericGroupId($parentGroupId);
+        if ($numericGroupId === null) {
+            return null;
+        }
+
+        return intdiv($numericGroupId, 100) * 100;
     }
 
     /**

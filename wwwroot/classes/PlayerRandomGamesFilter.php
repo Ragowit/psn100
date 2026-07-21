@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerRandomGamesFilter
 {
@@ -32,33 +33,10 @@ final readonly class PlayerRandomGamesFilter
     {
         $selectedPlatforms = [];
         foreach (Platform::values() as $platformKey) {
-            $selectedPlatforms[$platformKey] = self::toBool($parameters[$platformKey] ?? null);
+            $selectedPlatforms[$platformKey] = RequestParameter::toBool($parameters[$platformKey] ?? null);
         }
 
         return new self($selectedPlatforms);
-    }
-
-    private static function toBool(mixed $value): bool
-    {
-        if ($value === null) {
-            return false;
-        }
-
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value !== 0;
-        }
-
-        if (!is_string($value) && !is_numeric($value)) {
-            return false;
-        }
-
-        $normalized = ((string) $value) |> trim(...) |> strtolower(...);
-
-        return !in_array($normalized, ['', '0', 'false', 'off', 'no'], true);
     }
 
     public function isPlatformSelected(string $platform): bool

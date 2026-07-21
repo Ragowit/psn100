@@ -37,7 +37,7 @@ final class PlayerCountryResolver
             return null;
         }
 
-        return strtolower(substr($trimmed, -2));
+        return substr($trimmed, -2) |> strtolower(...);
     }
 
     public function resolveCountry(

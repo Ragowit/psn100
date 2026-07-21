@@ -3,19 +3,20 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/FooterViewModel.php';
+require_once __DIR__ . '/Html.php';
 
 final class FooterRenderer
 {
     public function render(FooterViewModel $viewModel): string
     {
-        $yearRangeLabel = htmlspecialchars($viewModel->getYearRangeLabel(), ENT_QUOTES, 'UTF-8');
-        $releaseUrl = htmlspecialchars($viewModel->getReleaseUrl(), ENT_QUOTES, 'UTF-8');
-        $versionLabel = htmlspecialchars($viewModel->getVersionLabel(), ENT_QUOTES, 'UTF-8');
-        $changelogUrl = htmlspecialchars($viewModel->getChangelogUrl(), ENT_QUOTES, 'UTF-8');
-        $issuesUrl = htmlspecialchars($viewModel->getIssuesUrl(), ENT_QUOTES, 'UTF-8');
-        $creatorProfileUrl = htmlspecialchars($viewModel->getCreatorProfileUrl(), ENT_QUOTES, 'UTF-8');
-        $creatorName = htmlspecialchars($viewModel->getCreatorName(), ENT_QUOTES, 'UTF-8');
-        $contributorsUrl = htmlspecialchars($viewModel->getContributorsUrl(), ENT_QUOTES, 'UTF-8');
+        $yearRangeLabel = Html::escape($viewModel->getYearRangeLabel());
+        $releaseUrl = Html::escape($viewModel->getReleaseUrl());
+        $versionLabel = Html::escape($viewModel->getVersionLabel());
+        $changelogUrl = Html::escape($viewModel->getChangelogUrl());
+        $issuesUrl = Html::escape($viewModel->getIssuesUrl());
+        $creatorProfileUrl = Html::escape($viewModel->getCreatorProfileUrl());
+        $creatorName = Html::escape($viewModel->getCreatorName());
+        $contributorsUrl = Html::escape($viewModel->getContributorsUrl());
 
         return <<<HTML
         <footer class="container">

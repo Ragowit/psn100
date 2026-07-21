@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationSectionState.php';
 require_once __DIR__ . '/RequestParameter.php';
+require_once __DIR__ . '/Html.php';
 
 final readonly class NavigationState
 {
@@ -135,7 +136,7 @@ final readonly class NavigationState
     {
         $value = RequestParameter::firstScalar($value) ?? '';
 
-        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        return Html::escape((string) $value);
     }
 
     private static function resolveActiveSection(string $requestPath): NavigationSection
