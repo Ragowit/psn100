@@ -50,7 +50,7 @@ final class TrophyMergeServiceTransactionTest extends TestCase
         $service = new TrophyMergeService($database);
 
         try {
-            $service->mergeGames(10, 20, 'order');
+            $service->mergeGames(10, 20, TrophyMergeMethod::Order);
             $this->fail('Expected mergeGames to fail when marking the child game as merged.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Failed while marking child game as merged.', $exception->getMessage());

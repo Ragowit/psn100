@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../CommaSeparatedValues.php';
 require_once __DIR__ . '/../Html.php';
+require_once __DIR__ . '/../TrophyMergeMethod.php';
 
 require_once __DIR__ . '/TrophyMergeProgressListener.php';
 
@@ -97,7 +98,7 @@ class TrophyMergeRequestHandler
 
         $childId = (int) $postData['child'];
         $parentId = (int) $postData['parent'];
-        $method = ((string) ($postData['method'] ?? 'order')) |> strtolower(...);
+        $method = TrophyMergeMethod::fromMixed($postData['method'] ?? null);
 
         return $this->trophyMergeService->mergeGames($childId, $parentId, $method, $progressListener);
     }
@@ -106,7 +107,7 @@ class TrophyMergeRequestHandler
     {
         $childId = (int) $postData['child'];
         $parentId = (int) $postData['parent'];
-        $method = ((string) ($postData['method'] ?? 'order')) |> strtolower(...);
+        $method = TrophyMergeMethod::fromMixed($postData['method'] ?? null);
 
         return $this->trophyMergeService->mergeGames($childId, $parentId, $method);
     }
