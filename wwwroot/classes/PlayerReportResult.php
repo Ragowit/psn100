@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Html.php';
+
 final readonly class PlayerReportResult
 {
     private function __construct(private bool $hasMessage, private bool $success, private string $message)
@@ -43,6 +45,6 @@ final readonly class PlayerReportResult
 
     public function getEscapedMessage(): string
     {
-        return htmlspecialchars($this->message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return Html::escape($this->message);
     }
 }

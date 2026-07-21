@@ -13,6 +13,7 @@ class Utility
         . '[:Separator:] > \'-\'';
     private static ?\Transliterator $slugTransliterator = null;
 
+    #[\NoDiscard]
     public function slugify(?string $text): string
     {
         $text = ($text ?? '')
@@ -33,6 +34,7 @@ class Utility
         return $slug;
     }
 
+    #[\NoDiscard]
     public function getCountryName(?string $countryCode): string
     {
         $countryCode = ($countryCode ?? '')

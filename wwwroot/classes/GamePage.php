@@ -196,6 +196,7 @@ class GamePage
         );
     }
 
+    #[\NoDiscard]
     public function createMetaData(): PageMetaData
     {
         return (new PageMetaData())

@@ -25,6 +25,7 @@ final class PlayerAdvisorFilterTest extends TestCase
             'ps4' => '',
             'ps5' => 'true',
             'pc' => 'yes',
+            'psvr' => 'false',
             'unknown' => 'true',
         ]);
 
@@ -35,6 +36,7 @@ final class PlayerAdvisorFilterTest extends TestCase
         $this->assertTrue($filter->isPlatformSelected('ps3'));
         $this->assertTrue($filter->isPlatformSelected('ps5'));
         $this->assertFalse($filter->isPlatformSelected('ps4'));
+        $this->assertFalse($filter->isPlatformSelected('psvr'));
         $this->assertFalse($filter->isPlatformSelected('unknown'));
     }
 

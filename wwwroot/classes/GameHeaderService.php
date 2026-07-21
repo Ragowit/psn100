@@ -272,17 +272,13 @@ class GameHeaderService
             return [];
         }
 
-        $psnprofilesIds = [];
-        foreach ($rows as $psnprofilesId) {
-            $stringValue = (string) $psnprofilesId;
-            if ($stringValue === '' || !ctype_digit($stringValue)) {
-                continue;
-            }
-
-            $psnprofilesIds[] = (int) $stringValue;
-        }
-
-        return $psnprofilesIds
+        return $rows
+            |> (fn (array $rows): array => array_map(strval(...), $rows))
+            |> (fn (array $rows): array => array_filter(
+                $rows,
+                static fn (string $value): bool => $value !== '' && ctype_digit($value),
+            ))
+            |> (fn (array $rows): array => array_map(intval(...), $rows))
             |> array_unique(...)
             |> array_values(...);
     }

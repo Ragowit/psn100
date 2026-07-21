@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/SessionManager.php';
+require_once __DIR__ . '/Html.php';
 
 final class CsrfTokenManager
 {
@@ -44,7 +45,7 @@ final class CsrfTokenManager
 
     public static function hiddenField(string $scope): string
     {
-        $token = htmlspecialchars(self::getToken($scope), ENT_QUOTES, 'UTF-8');
+        $token = Html::escape(self::getToken($scope));
 
         return '<input type="hidden" name="_csrf_token" value="' . $token . '">';
     }

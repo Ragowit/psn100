@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../PlayerUrlBuilder.php';
 require_once __DIR__ . '/../Utility.php';
+require_once __DIR__ . '/../Html.php';
 
 final class LogEntryFormatter
 {
@@ -181,14 +182,14 @@ final class LogEntryFormatter
     {
         return sprintf(
             '<a href="%s">%s</a>',
-            htmlspecialchars($url, ENT_QUOTES, 'UTF-8'),
-            htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8')
+            Html::escape($url),
+            Html::escape($displayText)
         );
     }
 
     private function escape(string $text): string
     {
-        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        return Html::escape($text);
     }
 
     private function createSlug(?string $name): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class GameTrophyFilter
 {
@@ -21,7 +22,7 @@ final readonly class GameTrophyFilter
             return new self(false);
         }
 
-        $unearnedOnly = self::resolveBoolean($queryParameters['unearned'] ?? null);
+        $unearnedOnly = RequestParameter::toBool($queryParameters['unearned'] ?? null);
 
         return new self($unearnedOnly);
     }
@@ -54,32 +55,5 @@ final readonly class GameTrophyFilter
         }
 
         return (int) ($trophy['earned'] ?? 0) !== 1;
-    }
-
-    private static function resolveBoolean(mixed $value): bool
-    {
-        if ($value === null) {
-            return false;
-        }
-
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value !== 0;
-        }
-
-        if (is_string($value)) {
-            $normalized = $value |> trim(...) |> strtolower(...);
-
-            if ($normalized === '' || in_array($normalized, ['0', 'false', 'off', 'no'], true)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        return true;
     }
 }

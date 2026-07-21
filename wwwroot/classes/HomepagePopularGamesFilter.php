@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class HomepagePopularGamesFilter
 {
@@ -28,7 +29,7 @@ final readonly class HomepagePopularGamesFilter
     public static function fromArray(array $queryParameters): self
     {
         $platform = self::normalizePlatform($queryParameters['platform'] ?? null);
-        $exclusiveOnly = self::toBool($queryParameters['exclusive'] ?? null);
+        $exclusiveOnly = RequestParameter::toBool($queryParameters['exclusive'] ?? null);
 
         return new self($platform, $exclusiveOnly);
     }
@@ -95,30 +96,4 @@ final readonly class HomepagePopularGamesFilter
         return Platform::tryFrom($platform)?->value ?? self::PLATFORM_ALL;
     }
 
-    private static function toBool(mixed $value): bool
-    {
-        if ($value === null) {
-            return false;
-        }
-
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value !== 0;
-        }
-
-        if (is_string($value)) {
-            $value = $value |> trim(...) |> strtolower(...);
-
-            if ($value === '' || $value === 'false' || $value === '0') {
-                return false;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
 }

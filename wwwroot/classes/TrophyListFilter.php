@@ -47,6 +47,7 @@ final readonly class TrophyListFilter
     /**
      * @return array<string, int>
      */
+    #[\NoDiscard]
     public function toQueryParameters(): array
     {
         return $this->withPage($this->page);

@@ -49,6 +49,7 @@ final readonly class GameLeaderboardFilter extends GamePlayerFilter
      * @return array<string, int|string>
      */
     #[\Override]
+    #[\NoDiscard]
     public function toQueryParameters(): array
     {
         $parameters = parent::getFilterParameters();

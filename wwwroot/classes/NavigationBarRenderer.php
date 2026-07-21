@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/NavigationState.php';
 require_once __DIR__ . '/NavigationMenu.php';
+require_once __DIR__ . '/Html.php';
 
 final class NavigationBarRenderer
 {
@@ -65,9 +66,9 @@ HTML;
         $items = [];
 
         foreach ($this->menu->getItems() as $item) {
-            $linkClass = htmlspecialchars($item->getLinkCssClass(), ENT_QUOTES, 'UTF-8');
-            $href = htmlspecialchars($item->getHref(), ENT_QUOTES, 'UTF-8');
-            $label = htmlspecialchars($item->getLabel(), ENT_QUOTES, 'UTF-8');
+            $linkClass = Html::escape($item->getLinkCssClass());
+            $href = Html::escape($item->getHref());
+            $label = Html::escape($item->getLabel());
             $ariaAttribute = $this->renderAriaAttribute($item->getAriaCurrentValue());
 
             $items[] = sprintf(
@@ -88,7 +89,7 @@ HTML;
             return '';
         }
 
-        $value = htmlspecialchars($ariaCurrent, ENT_QUOTES, 'UTF-8');
+        $value = Html::escape($ariaCurrent);
 
         return ' aria-current="' . $value . '"';
     }

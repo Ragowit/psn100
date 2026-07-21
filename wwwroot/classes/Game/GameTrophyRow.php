@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Utility.php';
 require_once __DIR__ . '/../TrophyType.php';
 require_once __DIR__ . '/../TrophyMetaStatus.php';
+require_once __DIR__ . '/../Html.php';
 
 final readonly class GameTrophyRow
 {
@@ -207,7 +208,7 @@ final readonly class GameTrophyRow
 
         if ($this->isUnobtainable()) {
             $attributes[] = 'class="table-warning"';
-            $attributes[] = 'title="' . htmlspecialchars(self::UNOBTAINABLE_TITLE, ENT_QUOTES, 'UTF-8') . '"';
+            $attributes[] = 'title="' . Html::escape(self::UNOBTAINABLE_TITLE) . '"';
         } elseif ($accountId !== null && $this->isEarned) {
             $attributes[] = 'class="table-success"';
         }

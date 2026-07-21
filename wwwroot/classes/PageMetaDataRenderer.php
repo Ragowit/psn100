@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PageMetaData.php';
+require_once __DIR__ . '/Html.php';
 
 class PageMetaDataRenderer
 {
@@ -52,6 +53,6 @@ class PageMetaDataRenderer
             return null;
         }
 
-        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        return Html::escape($value);
     }
 }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerStatusNoticeType.php';
+require_once __DIR__ . '/Html.php';
 
 final readonly class PlayerStatusNotice
 {
@@ -20,7 +21,7 @@ final readonly class PlayerStatusNotice
         $disputeUrl = self::createDisputeUrl($onlineId, $accountId);
         $message = sprintf(
             "This player has some funny looking trophy data. This doesn't necessarily mean cheating, but all data from this player will be excluded from site statistics and leaderboards. <a href=\"%s\">Dispute</a>?",
-            htmlspecialchars($disputeUrl, ENT_QUOTES, 'UTF-8')
+            Html::escape($disputeUrl)
         );
 
         return new self(PlayerStatusNoticeType::Flagged, $message);
@@ -31,7 +32,7 @@ final readonly class PlayerStatusNotice
     {
         $message = sprintf(
             'This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="%s">private</a> profile.',
-            htmlspecialchars(self::PRIVATE_PROFILE_URL, ENT_QUOTES, 'UTF-8')
+            Html::escape(self::PRIVATE_PROFILE_URL)
         );
 
         return new self(PlayerStatusNoticeType::Private, $message);

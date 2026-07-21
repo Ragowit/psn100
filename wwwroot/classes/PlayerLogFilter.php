@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlayerLogSort.php';
+require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerLogFilter
 {
@@ -29,7 +30,7 @@ final readonly class PlayerLogFilter
 
         $platforms = [];
         foreach (Platform::values() as $platform) {
-            if (!empty($parameters[$platform])) {
+            if (RequestParameter::toBool($parameters[$platform] ?? null)) {
                 $platforms[] = $platform;
             }
         }
@@ -98,6 +99,7 @@ final readonly class PlayerLogFilter
     /**
      * @return array<string, int|string>
      */
+    #[\NoDiscard]
     public function toQueryParameters(): array
     {
         return $this->withPage($this->page);

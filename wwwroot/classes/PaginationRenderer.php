@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Pagination.php';
+require_once __DIR__ . '/Html.php';
 
 /**
  * Responsible for rendering Bootstrap pagination controls that match the site's
@@ -24,7 +25,7 @@ class PaginationRenderer
         $navAttributes = '';
 
         if ($ariaLabel !== null && $ariaLabel !== '') {
-            $navAttributes = ' aria-label="' . htmlspecialchars($ariaLabel, ENT_QUOTES, 'UTF-8') . '"';
+            $navAttributes = ' aria-label="' . Html::escape($ariaLabel) . '"';
         }
 
         $buildUrl = static function (int $page) use ($queryParametersFactory): string {

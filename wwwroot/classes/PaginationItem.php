@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Html.php';
+
 final readonly class PaginationItem
 {
     private function __construct(
@@ -71,7 +73,7 @@ final readonly class PaginationItem
         }
 
         if ($this->ariaLabel !== null && $this->ariaLabel !== '') {
-            $attributes[] = 'aria-label="' . htmlspecialchars($this->ariaLabel, ENT_QUOTES, 'UTF-8') . '"';
+            $attributes[] = 'aria-label="' . Html::escape($this->ariaLabel) . '"';
         }
 
         if ($this->disabled) {
@@ -83,9 +85,9 @@ final readonly class PaginationItem
             ? ''
             : ' ' . implode(' ', $attributes);
 
-        $label = htmlspecialchars($this->label, ENT_QUOTES, 'UTF-8');
-        $href = htmlspecialchars($href, ENT_QUOTES, 'UTF-8');
-        $classAttribute = htmlspecialchars(implode(' ', $classNames), ENT_QUOTES, 'UTF-8');
+        $label = Html::escape($this->label);
+        $href = Html::escape($href);
+        $classAttribute = Html::escape(implode(' ', $classNames));
 
         return '<li class="' . $classAttribute . '"><a class="page-link" href="' . $href . '"'
             . $attributesString . '>' . $label . '</a></li>';

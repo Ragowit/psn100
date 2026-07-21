@@ -67,6 +67,7 @@ readonly class GamePlayerFilter
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function toQueryParameters(): array
     {
         return $this->getFilterParameters();

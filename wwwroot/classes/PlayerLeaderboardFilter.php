@@ -52,6 +52,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
      * @return array<string, int|string>
      */
     #[\Override]
+    #[\NoDiscard]
     public function toQueryParameters(): array
     {
         return $this->withPage($this->page);
