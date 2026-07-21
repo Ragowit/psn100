@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final readonly class HttpRequest
+readonly class HttpRequest
 {
     /**
      * @param array<string, mixed> $server
