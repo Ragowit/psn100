@@ -28,15 +28,14 @@ final class WorkerService
     /**
      * @return list<Worker>
      */
-    public function fetchWorkers(string $orderBy = 'scan_start', string $direction = 'ASC'): array
-    {
-        $sortField = WorkerSortField::fromMixed($orderBy);
-        $sortDirection = WorkerSortDirection::fromMixed($direction);
-
+    public function fetchWorkers(
+        WorkerSortField $orderBy = WorkerSortField::ScanStart,
+        WorkerSortDirection $direction = WorkerSortDirection::Asc,
+    ): array {
         $query = sprintf(
             'SELECT id, refresh_token, npsso, scanning, scan_start, scan_progress FROM setting ORDER BY %s %s',
-            $sortField->toSqlColumn(),
-            $sortDirection->toSqlKeyword()
+            $orderBy->toSqlColumn(),
+            $direction->toSqlKeyword()
         );
 
         $statement = $this->database->query($query);

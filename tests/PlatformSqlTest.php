@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 require_once __DIR__ . '/../wwwroot/classes/PlatformSql.php';
 
 final class PlatformSqlTest extends TestCase
@@ -24,9 +25,8 @@ final class PlatformSqlTest extends TestCase
 
     public function testPsvrPredicateDoesNotSubstringMatchPsvr2(): void
     {
-        $psvr = PlatformSql::conditionFor('psvr');
-        $this->assertTrue($psvr !== null);
-        $this->assertStringContainsString("LIKE '%,PSVR,%'", (string) $psvr);
-        $this->assertFalse(str_contains((string) $psvr, "LIKE '%PSVR%'"));
+        $psvr = PlatformSql::conditionFor(Platform::PsVr);
+        $this->assertStringContainsString("LIKE '%,PSVR,%'", $psvr);
+        $this->assertFalse(str_contains($psvr, "LIKE '%PSVR%'"));
     }
 }

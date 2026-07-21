@@ -48,7 +48,7 @@ final class GameHistoryRendererTest extends TestCase
         $html = $renderer->renderIconDiff([
             'previous' => '.png',
             'current' => '.png',
-        ], $game, 'title', 'Sample');
+        ], $game, HistoryIconType::Title, 'Sample');
 
         $this->assertStringContainsString('missing-ps5-game-and-trophy.png', $html);
     }
@@ -58,7 +58,7 @@ final class GameHistoryRendererTest extends TestCase
         $renderer = new GameHistoryRenderer();
         $game = $this->createGameDetails();
 
-        $html = $renderer->renderSingleIcon(null, $game, 'trophy', 'Reward');
+        $html = $renderer->renderSingleIcon(null, $game, HistoryIconType::Trophy, 'Reward');
 
         $this->assertStringContainsString('history-diff__empty', $html);
     }

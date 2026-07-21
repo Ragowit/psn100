@@ -8,6 +8,7 @@ require_once __DIR__ . '/Homepage/HomepageNewGame.php';
 require_once __DIR__ . '/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
 require_once __DIR__ . '/HomepagePopularGamesFilter.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlatformSql.php';
 
 class HomepageContentService
@@ -142,9 +143,9 @@ class HomepageContentService
         } elseif ($filter->isExclusiveOnly()) {
             $conditions[] = "tt.platform NOT LIKE '%,%'";
         } elseif ($filter->hasPlatformFilter()) {
-            $platformCondition = PlatformSql::conditionFor($filter->getPlatform());
-            if ($platformCondition !== null) {
-                $conditions[] = $platformCondition;
+            $platform = Platform::tryFrom($filter->getPlatform());
+            if ($platform !== null) {
+                $conditions[] = PlatformSql::conditionFor($platform);
             }
         }
 

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../init.php';
 require_once __DIR__ . '/../classes/IpAddressResolver.php';
 require_once __DIR__ . '/../classes/SessionManager.php';
 require_once __DIR__ . '/../classes/CsrfTokenManager.php';
+require_once __DIR__ . '/../classes/HttpMethod.php';
 require_once __DIR__ . '/../classes/Admin/AdminBootstrap.php';
 require_once __DIR__ . '/../classes/BootstrapAssets.php';
 
@@ -19,7 +20,7 @@ if ($authService->isConfigured() && $authService->isAuthenticated()) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (HttpMethod::fromServer($_SERVER)->isPost()) {
     $submittedToken = $_POST['_csrf_token'] ?? '';
     if (!CsrfTokenManager::validate('admin', $submittedToken)) {
         http_response_code(403);

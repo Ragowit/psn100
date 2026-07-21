@@ -5,13 +5,14 @@ declare(strict_types=1);
 require_once 'init.php';
 require_once 'classes/SessionManager.php';
 require_once 'classes/CsrfTokenManager.php';
+require_once 'classes/HttpMethod.php';
 require_once 'classes/PlayerQueueEndpoint.php';
 require_once 'classes/PlayerQueueResponse.php';
 require_once 'classes/JsonResponseEmitter.php';
 
 $jsonResponder = new JsonResponseEmitter();
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+if (!HttpMethod::fromServer($_SERVER)->isPost()) {
     $jsonResponder->respond(
         PlayerQueueResponse::error('Queue submissions must use POST.')->toArray(),
         405

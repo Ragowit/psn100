@@ -31,7 +31,7 @@ final class WorkerPage
             ? $this->processAction($request)
             : [null, null];
 
-        $workers = $this->workerService->fetchWorkers($sortField->value, $sortDirection->value);
+        $workers = $this->workerService->fetchWorkers($sortField, $sortDirection);
 
         $sortLinks = [
             'id' => $this->createSortLink(WorkerSortField::Id, $sortField, $sortDirection),

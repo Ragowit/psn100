@@ -141,7 +141,7 @@ require_once 'header.php';
                                 <div class="row g-3 align-items-start mb-3">
                                     <?php if ($titleHighlights['icon_url'] ?? false) { ?>
                                         <div class="col-12 col-md-4 col-lg-3">
-                                            <?= $historyRenderer->renderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, 'title', $game->getName(), $titleIsNewRow); ?>
+                                            <?= $historyRenderer->renderIconDiff($titleFieldDiffs['icon_url'] ?? null, $game, HistoryIconType::Title, $game->getName(), $titleIsNewRow); ?>
                                         </div>
                                     <?php } ?>
                                     <?php if ($titleHighlights['detail'] ?? false) { ?>
@@ -197,11 +197,11 @@ require_once 'header.php';
                                                         </td>
                                                         <td class="text-center">
                                                             <?php if ($groupIsNewRow) { ?>
-                                                                <?= $historyRenderer->renderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($groupChange['icon_url'] ?? null, $game, HistoryIconType::Group, $groupChange['name'] ?? ''); ?>
                                                             <?php } elseif ($groupChangedFields['icon_url'] ?? false) { ?>
-                                                                <?= $historyRenderer->renderIconDiff($groupFieldDiffs['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderIconDiff($groupFieldDiffs['icon_url'] ?? null, $game, HistoryIconType::Group, $groupChange['name'] ?? ''); ?>
                                                             <?php } else { ?>
-                                                                <?= $historyRenderer->renderSingleIcon($groupChange['icon_url'] ?? null, $game, 'group', $groupChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($groupChange['icon_url'] ?? null, $game, HistoryIconType::Group, $groupChange['name'] ?? ''); ?>
                                                             <?php } ?>
                                                         </td>
                                                     </tr>
@@ -275,11 +275,11 @@ require_once 'header.php';
                                                         </td>
                                                         <td class="text-center">
                                                             <?php if ($trophyIsNewRow) { ?>
-                                                                <?= $historyRenderer->renderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($trophyChange['icon_url'] ?? null, $game, HistoryIconType::Trophy, $trophyChange['name'] ?? ''); ?>
                                                             <?php } elseif ($trophyChangedFields['icon_url'] ?? false) { ?>
-                                                                <?= $historyRenderer->renderIconDiff($trophyFieldDiffs['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderIconDiff($trophyFieldDiffs['icon_url'] ?? null, $game, HistoryIconType::Trophy, $trophyChange['name'] ?? ''); ?>
                                                             <?php } else { ?>
-                                                                <?= $historyRenderer->renderSingleIcon($trophyChange['icon_url'] ?? null, $game, 'trophy', $trophyChange['name'] ?? ''); ?>
+                                                                <?= $historyRenderer->renderSingleIcon($trophyChange['icon_url'] ?? null, $game, HistoryIconType::Trophy, $trophyChange['name'] ?? ''); ?>
                                                             <?php } ?>
                                                         </td>
                                                     </tr>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
+require_once __DIR__ . '/GameTrophySort.php';
 require_once __DIR__ . '/TrophyType.php';
 
 class GameService
@@ -61,14 +62,9 @@ class GameService
     /**
      * @param array<string, mixed> $queryParameters
      */
-    public function resolveSort(array $queryParameters): string
+    public function resolveSort(array $queryParameters): GameTrophySort
     {
-        $sort = ((string) ($queryParameters['sort'] ?? 'default')) |> strtolower(...);
-
-        return match ($sort) {
-            'date', 'rarity' => $sort,
-            default => 'default',
-        };
+        return GameTrophySort::fromMixed($queryParameters['sort'] ?? null);
     }
 
     public function getPlayerAccountId(string $onlineId): ?int
@@ -197,7 +193,7 @@ class GameService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function getTrophies(string $npCommunicationId, string $groupId, ?int $accountId, string $sort): array
+    public function getTrophies(string $npCommunicationId, string $groupId, ?int $accountId, GameTrophySort $sort): array
     {
         if ($accountId !== null) {
             $sql = <<<'SQL'
@@ -282,20 +278,20 @@ class GameService
         return is_array($trophies) ? $trophies : [];
     }
 
-    private function buildAccountSortSql(string $sort): string
+    private function buildAccountSortSql(GameTrophySort $sort): string
     {
         $trophyTypeSort = TrophyType::sqlFieldOrder('t.type');
 
         return match ($sort) {
-            'date' => " ORDER BY te.earned_date IS NULL, te.earned_date, {$trophyTypeSort}, t.order_id",
-            'rarity' => " ORDER BY tm.rarity_percent DESC, {$trophyTypeSort}, t.order_id",
-            default => ' ORDER BY t.order_id',
+            GameTrophySort::Date => " ORDER BY te.earned_date IS NULL, te.earned_date, {$trophyTypeSort}, t.order_id",
+            GameTrophySort::Rarity => " ORDER BY tm.rarity_percent DESC, {$trophyTypeSort}, t.order_id",
+            GameTrophySort::Default => ' ORDER BY t.order_id',
         };
     }
 
-    private function buildPublicSortSql(string $sort): string
+    private function buildPublicSortSql(GameTrophySort $sort): string
     {
-        if ($sort !== 'rarity') {
+        if ($sort !== GameTrophySort::Rarity) {
             return ' ORDER BY t.order_id';
         }
 

@@ -12,10 +12,11 @@ require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameTrophyGroup.php';
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
+require_once __DIR__ . '/GameTrophySort.php';
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Utility.php';
 
-class GamePage
+final class GamePage
 {
     private GameService $gameService;
 
@@ -27,7 +28,7 @@ class GamePage
 
     private GameHeaderData $headerData;
 
-    private string $sort;
+    private GameTrophySort $sort;
 
     private ?int $playerAccountId;
 
@@ -114,7 +115,7 @@ class GamePage
         return $this->headerData;
     }
 
-    public function getSort(): string
+    public function getSort(): GameTrophySort
     {
         return $this->sort;
     }
@@ -199,7 +200,7 @@ class GamePage
     #[\NoDiscard]
     public function createMetaData(): PageMetaData
     {
-        return (new PageMetaData())
+        return (new PageMetaData)
             ->withTitle($this->game->getName() . ' Trophies')
             ->withDescription(
                 $this->game->getBronze() . ' Bronze ~ '
