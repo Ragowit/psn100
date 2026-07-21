@@ -97,7 +97,7 @@ final class ThrowingTrophyMergeService extends TrophyMergeService
     public function mergeGames(
         int $childGameId,
         int $parentGameId,
-        string $method,
+        TrophyMergeMethod|string $method,
         ?TrophyMergeProgressListener $progressListener = null
     ): string {
         throw $this->throwable;

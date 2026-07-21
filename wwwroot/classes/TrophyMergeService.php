@@ -8,6 +8,7 @@ require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/TrophyMergeEarnedCopier.php';
 require_once __DIR__ . '/TrophyMergeMappingService.php';
 require_once __DIR__ . '/TrophyMergeMetadataRepository.php';
+require_once __DIR__ . '/TrophyMergeMethod.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressUpdater.php';
 require_once __DIR__ . '/TrophyTitleCloneService.php';
 
@@ -95,10 +96,11 @@ class TrophyMergeService
     public function mergeGames(
         int $childGameId,
         int $parentGameId,
-        string $method,
+        TrophyMergeMethod|string $method,
         ?TrophyMergeProgressListener $progressListener = null
     ): string
     {
+        $method = TrophyMergeMethod::fromMixed($method);
         $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
 
         if (str_starts_with($childNpCommunicationId, 'MERGE')) {
@@ -124,21 +126,22 @@ class TrophyMergeService
             $progressListener,
             &$message
         ): void {
-            $this->notifyProgress($progressListener, 30, match ($method) {
-                'name' => 'Matching trophies by name…',
-                'icon' => 'Matching trophies by icon…',
-                'order' => 'Matching trophies by list order…',
-                default => throw new InvalidArgumentException('Wrong input'),
-            });
+            $this->notifyProgress($progressListener, 30, $method->progressLabel());
 
-            if ($method === 'order') {
-                $this->mappingService()->insertMappingsByOrder($childGameId, $parentGameId);
-            } else {
-                $message .= match ($method) {
-                    'name' => $this->mappingService()->insertMappingsByName($childGameId, $parentGameId),
-                    'icon' => $this->mappingService()->insertMappingsByIcon($childGameId, $parentGameId),
-                };
-            }
+            match ($method) {
+                TrophyMergeMethod::Order => $this->mappingService()->insertMappingsByOrder(
+                    $childGameId,
+                    $parentGameId
+                ),
+                TrophyMergeMethod::Name => $message .= $this->mappingService()->insertMappingsByName(
+                    $childGameId,
+                    $parentGameId
+                ),
+                TrophyMergeMethod::Icon => $message .= $this->mappingService()->insertMappingsByIcon(
+                    $childGameId,
+                    $parentGameId
+                ),
+            };
 
             $this->notifyProgress($progressListener, 55, 'Trophy mappings saved.');
             $this->notifyProgress($progressListener, 60, 'Preparing to mark child game as merged…');

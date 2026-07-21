@@ -118,7 +118,7 @@ final class TrophySetComparatorTest extends TestCase
 
     public function testSelectMergeMethodPrefersOrder(): void
     {
-        $this->assertSame('order', $this->comparator->selectMergeMethod([
+        $this->assertSame(TrophyMergeMethod::Order, $this->comparator->selectMergeMethod([
             'matches' => true,
             'orderMatches' => true,
             'nameMatches' => true,
@@ -127,7 +127,7 @@ final class TrophySetComparatorTest extends TestCase
 
     public function testSelectMergeMethodFallsBackToName(): void
     {
-        $this->assertSame('name', $this->comparator->selectMergeMethod([
+        $this->assertSame(TrophyMergeMethod::Name, $this->comparator->selectMergeMethod([
             'matches' => true,
             'orderMatches' => false,
             'nameMatches' => true,

@@ -46,7 +46,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         ], $this->mergeService->copiedGames);
 
         $this->assertSame([
-            [1, 2, 'order'],
+            [1, 2, TrophyMergeMethod::Order],
         ], $this->mergeService->mergedGames);
     }
 
@@ -89,7 +89,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 
         $this->assertSame([], $this->mergeService->copiedGames);
         $this->assertSame([
-            [1, 2, 'order'],
+            [1, 2, TrophyMergeMethod::Order],
         ], $this->mergeService->mergedGames);
     }
 
@@ -111,7 +111,7 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
         $parentsToRecompute = $this->service->handleNewTitle('NP_NEW');
 
         $this->assertSame([
-            [1, 2, 'order'],
+            [1, 2, TrophyMergeMethod::Order],
         ], $this->mergeService->mergedGames);
     }
 
@@ -165,8 +165,8 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 
         $this->assertSame([1], $this->mergeService->clonedGames);
         $this->assertSame([
-            [1, 99, 'order'],
-            [2, 99, 'order'],
+            [1, 99, TrophyMergeMethod::Order],
+            [2, 99, TrophyMergeMethod::Order],
         ], $this->mergeService->mergedGames);
     }
 
@@ -200,8 +200,8 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 
         $this->assertSame([1], $this->mergeService->clonedGames);
         $this->assertSame([
-            [1, 99, 'order'],
-            [2, 99, 'order'],
+            [1, 99, TrophyMergeMethod::Order],
+            [2, 99, TrophyMergeMethod::Order],
         ], $this->mergeService->mergedGames);
         $this->assertSame(['MERGE_000099'], $parentsToRecompute);
     }
@@ -250,8 +250,8 @@ final class AutomaticTrophyTitleMergeServiceTest extends TestCase
 
         $this->assertSame([2], $this->mergeService->clonedGames);
         $this->assertSame([
-            [1, 99, 'order'],
-            [2, 99, 'order'],
+            [1, 99, TrophyMergeMethod::Order],
+            [2, 99, TrophyMergeMethod::Order],
         ], $this->mergeService->mergedGames);
     }
 
@@ -491,9 +491,9 @@ final class RecordingTrophyMergeService extends TrophyMergeService
         $this->copiedGames[] = [$sourceNpCommunicationId, $targetNpCommunicationId];
     }
 
-    public function mergeGames(int $childGameId, int $parentGameId, string $method, ?TrophyMergeProgressListener $progressListener = null): string
+    public function mergeGames(int $childGameId, int $parentGameId, TrophyMergeMethod|string $method, ?TrophyMergeProgressListener $progressListener = null): string
     {
-        $this->mergedGames[] = [$childGameId, $parentGameId, $method];
+        $this->mergedGames[] = [$childGameId, $parentGameId, TrophyMergeMethod::fromMixed($method)];
 
         return 'The games have been merged.';
     }

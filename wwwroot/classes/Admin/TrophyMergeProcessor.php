@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
+require_once __DIR__ . '/../TrophyMergeMethod.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
 require_once __DIR__ . '/TrophyMergeRequestHandler.php';
 require_once __DIR__ . '/CallableTrophyMergeProgressListener.php';
@@ -43,12 +44,22 @@ class TrophyMergeProcessor
 
         $childId = $this->filterNumericValue($postData['child'] ?? null);
         $parentId = $this->filterNumericValue($postData['parent'] ?? null);
-        $mergeMethod = ((string) ($postData['method'] ?? 'order')) |> strtolower(...);
 
         if ($childId === null || $parentId === null) {
             $this->sendJsonResponse(400, [
                 'success' => false,
                 'error' => 'Please provide numeric child and parent game ids.',
+            ]);
+
+            return;
+        }
+
+        try {
+            $mergeMethod = TrophyMergeMethod::fromMixed($postData['method'] ?? null);
+        } catch (InvalidArgumentException $exception) {
+            $this->sendJsonResponse(400, [
+                'success' => false,
+                'error' => $exception->getMessage(),
             ]);
 
             return;
@@ -76,7 +87,7 @@ class TrophyMergeProcessor
                 [
                     'child' => (string) $childId,
                     'parent' => (string) $parentId,
-                    'method' => $mergeMethod,
+                    'method' => $mergeMethod->value,
                 ],
                 $progressListener
             );

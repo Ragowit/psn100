@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyMergeMethod.php';
+
 /**
  * Compares two trophy sets to decide whether automatic title merges are safe.
  */
@@ -38,14 +40,15 @@ final class TrophySetComparator
     /**
      * @param array{matches:bool, orderMatches:bool, nameMatches:bool} $comparison
      */
-    public function selectMergeMethod(array $comparison): ?string
+    #[\NoDiscard]
+    public function selectMergeMethod(array $comparison): ?TrophyMergeMethod
     {
         if ($comparison['orderMatches']) {
-            return 'order';
+            return TrophyMergeMethod::Order;
         }
 
         if ($comparison['nameMatches']) {
-            return 'name';
+            return TrophyMergeMethod::Name;
         }
 
         return null;
@@ -64,16 +67,14 @@ final class TrophySetComparator
             $lookup[$key] = $this->createTrophyKey($trophy['name'], $trophy['detail']);
         }
 
-        foreach ($right as $trophy) {
-            $key = $this->createOrderKey($trophy['group_id'], $trophy['order_id']);
-            $value = $this->createTrophyKey($trophy['name'], $trophy['detail']);
+        return array_all(
+            $right,
+            function (array $trophy) use ($lookup): bool {
+                $key = $this->createOrderKey($trophy['group_id'], $trophy['order_id']);
 
-            if (!isset($lookup[$key]) || $lookup[$key] !== $value) {
-                return false;
+                return ($lookup[$key] ?? null) === $this->createTrophyKey($trophy['name'], $trophy['detail']);
             }
-        }
-
-        return true;
+        );
     }
 
     /**

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/TrophyMergeMethod.php';
 require_once __DIR__ . '/TrophyMergeService.php';
 require_once __DIR__ . '/TrophySetComparator.php';
 require_once __DIR__ . '/Cron/PlayerScanNewTitleMergeHandler.php';
@@ -158,11 +160,13 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function getTitleByNpCommunicationId(string $npCommunicationId): ?array
     {
+        $normalStatus = GameAvailabilityStatus::NORMAL->value;
+
         $query = $this->database->prepare(
-            'SELECT tt.id, tt.np_communication_id, tt.name, tt.platform, COALESCE(ttm.status, 0) AS status
+            "SELECT tt.id, tt.np_communication_id, tt.name, tt.platform, COALESCE(ttm.status, {$normalStatus}) AS status
             FROM trophy_title tt
             LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
-            WHERE tt.np_communication_id = :np_communication_id'
+            WHERE tt.np_communication_id = :np_communication_id"
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->execute();
@@ -191,11 +195,14 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function findMatchingTitles(array $newTitle): array
     {
+        $normalStatus = GameAvailabilityStatus::NORMAL->value;
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+
         $query = $this->database->prepare(
-            'SELECT tt.id, tt.np_communication_id, tt.platform, COALESCE(ttm.status, 0) AS status
+            "SELECT tt.id, tt.np_communication_id, tt.platform, COALESCE(ttm.status, {$normalStatus}) AS status
             FROM trophy_title tt
             LEFT JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
-            WHERE tt.name = :name AND tt.np_communication_id != :np_communication_id AND COALESCE(ttm.status, 0) != 2'
+            WHERE tt.name = :name AND tt.np_communication_id != :np_communication_id AND COALESCE(ttm.status, {$normalStatus}) != {$mergedStatus}"
         );
         $query->bindValue(':name', $newTitle['name'], PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $newTitle['np_communication_id'], PDO::PARAM_STR);
@@ -261,7 +268,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
                 continue;
             }
 
-            if ($match['status'] === 2) {
+            if ($match['status'] === GameAvailabilityStatus::MERGED->value) {
                 continue;
             }
 
@@ -285,7 +292,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
     private function selectGameToClone(array $games): ?array
     {
         $isEligible = static fn (array $game): bool => !str_starts_with($game['np_communication_id'], 'MERGE')
-            && $game['status'] !== 2;
+            && $game['status'] !== GameAvailabilityStatus::MERGED->value;
 
         return array_find(
             $games,
@@ -318,7 +325,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
     private function mergeAndReportWarnings(
         int $childGameId,
         int $parentGameId,
-        string $mergeMethod,
+        TrophyMergeMethod $mergeMethod,
         string $childNpCommunicationId,
         string $parentNpCommunicationId
     ): void {
