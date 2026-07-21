@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/HttpMethod.php';
+require_once __DIR__ . '/../HttpMethod.php';
 
 final readonly class AdminRequest
 {
