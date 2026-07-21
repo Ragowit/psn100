@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../TrophyMetaStatus.php';
+require_once __DIR__ . '/../ChangelogEntry.php';
+
 /**
  * Recalculates trophy group/title aggregates and player progress after a status change.
  *
@@ -105,7 +108,7 @@ SQL,
     /**
      * @param int[] $affectedTrophyIds
      */
-    public function recalculateTitle(string $npCommunicationId, int $status, array $affectedTrophyIds): void
+    public function recalculateTitle(string $npCommunicationId, int|TrophyMetaStatus $status, array $affectedTrophyIds): void
     {
         $statement = $this->database->prepare(
             <<<'SQL'
@@ -217,11 +220,11 @@ SQL
         $gameId = $this->findGameId($npCommunicationId);
 
         if ($gameId !== null) {
-            $changeType = $status === 1 ? 'GAME_UNOBTAINABLE' : 'GAME_OBTAINABLE';
+            $changeType = TrophyMetaStatus::fromMixed($status)->changeType();
             $statement = $this->database->prepare(
                 'INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :param_1)'
             );
-            $statement->bindValue(':change_type', $changeType, PDO::PARAM_STR);
+            $statement->bindValue(':change_type', $changeType->value, PDO::PARAM_STR);
             $statement->bindValue(':param_1', $gameId, PDO::PARAM_INT);
             $statement->execute();
         }

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyMetaStatus.php';
+
 final class GameHistoryService
 {
     private const int INVALID_HISTORY_ID = 0;
@@ -181,7 +183,7 @@ final class GameHistoryService
                 'detail' => self::toNullableString($row, 'detail'),
                 'icon_url' => self::toNullableString($row, 'icon_url'),
                 'progress_target_value' => self::toNullableInt($row, 'progress_target_value'),
-                'is_unobtainable' => self::toInt($row, 'trophy_status') === 1,
+                'is_unobtainable' => TrophyMetaStatus::fromMixed(self::toInt($row, 'trophy_status'))->isUnobtainable(),
             ];
         }
 

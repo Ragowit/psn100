@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../ChangelogEntry.php';
+
 class GameDetailService
 {
     public function __construct(
@@ -169,8 +171,9 @@ class GameDetailService
     private function recordChange(int $gameId): void
     {
         $query = $this->database->prepare(
-            "INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_UPDATE', :param_1)"
+            'INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :param_1)'
         );
+        $query->bindValue(':change_type', ChangelogEntryType::GAME_UPDATE->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         $query->execute();
     }

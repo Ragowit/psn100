@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
+require_once __DIR__ . '/ChangelogEntry.php';
 
 /**
  * Clones a trophy title into a new MERGE_* title, including catalog rows and history.
@@ -385,7 +386,7 @@ SQL
         $query = $this->database->prepare(
             "INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES (:change_type, :param_1, :param_2)"
         );
-        $query->bindValue(':change_type', 'GAME_CLONE', PDO::PARAM_STR);
+        $query->bindValue(':change_type', ChangelogEntryType::GAME_CLONE->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $childGameId, PDO::PARAM_INT);
         $query->bindValue(':param_2', $cloneGameId, PDO::PARAM_INT);
         $query->execute();

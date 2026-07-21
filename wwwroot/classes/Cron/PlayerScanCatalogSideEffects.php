@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../AutomaticTrophyTitleMergeService.php';
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
+require_once __DIR__ . '/../ChangelogEntry.php';
 require_once __DIR__ . '/PlayerScanCatalogSideEffectResult.php';
 require_once __DIR__ . '/PlayerScanNewTitleMergeHandler.php';
 
@@ -85,8 +86,9 @@ final class PlayerScanCatalogSideEffects
     private function insertGameVersionChangelog(int $titleId): void
     {
         $query = $this->database->prepare(
-            "INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES ('GAME_VERSION', :param_1)"
+            'INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :param_1)'
         );
+        $query->bindValue(':change_type', ChangelogEntryType::GAME_VERSION->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $titleId, PDO::PARAM_INT);
         $query->execute();
     }

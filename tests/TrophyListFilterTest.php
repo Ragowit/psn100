@@ -50,4 +50,14 @@ final class TrophyListFilterTest extends TestCase
         $this->assertSame(['page' => 5], $filter->withPage(5));
         $this->assertSame(['page' => 1], $filter->withPage(0));
     }
+
+    public function testWithPageNumberReturnsClonedFilter(): void
+    {
+        $filter = new TrophyListFilter(2);
+        $updated = $filter->withPageNumber(5);
+
+        $this->assertSame(2, $filter->getPage());
+        $this->assertSame(5, $updated->getPage());
+        $this->assertSame(1, $filter->withPageNumber(0)->getPage());
+    }
 }

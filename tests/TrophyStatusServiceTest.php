@@ -6,6 +6,7 @@ require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyStatusService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyStatusProgressRecalculator.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/TrophyStatusUpdateResult.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMetaStatus.php';
 
 final class TrophyStatusServiceTest extends TestCase
 {
@@ -47,7 +48,7 @@ final class TrophyStatusServiceTest extends TestCase
             [
                 [
                     'np_communication_id' => 'NPWR00001_00',
-                    'status' => 1,
+                    'status' => TrophyMetaStatus::Unobtainable,
                     'trophy_ids' => [10],
                 ],
             ],
@@ -64,7 +65,7 @@ final class TrophyStatusServiceTest extends TestCase
         $result = $service->updateTrophies([10], 0);
 
         $this->assertSame('obtainable', $result->getStatusText());
-        $this->assertSame(0, $recalculator->titleCalls[0]['status']);
+        $this->assertSame(TrophyMetaStatus::Obtainable, $recalculator->titleCalls[0]['status']);
     }
 }
 
@@ -73,7 +74,7 @@ final class RecordingTrophyStatusProgressRecalculator extends TrophyStatusProgre
     /** @var list<array{np_communication_id: string, group_id: string, trophy_ids: list<int>}> */
     public array $groupCalls = [];
 
-    /** @var list<array{np_communication_id: string, status: int, trophy_ids: list<int>}> */
+    /** @var list<array{np_communication_id: string, status: TrophyMetaStatus, trophy_ids: list<int>}> */
     public array $titleCalls = [];
 
     public function __construct()
@@ -91,11 +92,11 @@ final class RecordingTrophyStatusProgressRecalculator extends TrophyStatusProgre
         ];
     }
 
-    public function recalculateTitle(string $npCommunicationId, int $status, array $affectedTrophyIds): void
+    public function recalculateTitle(string $npCommunicationId, int|TrophyMetaStatus $status, array $affectedTrophyIds): void
     {
         $this->titleCalls[] = [
             'np_communication_id' => $npCommunicationId,
-            'status' => $status,
+            'status' => TrophyMetaStatus::fromMixed($status),
             'trophy_ids' => $affectedTrophyIds,
         ];
     }

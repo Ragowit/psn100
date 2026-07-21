@@ -8,8 +8,8 @@ final readonly class PlayerPageAccessGuard
     private const int REDIRECT_STATUS_CODE = 303;
 
     private function __construct(
-        private ?int $accountId,
-        private string $redirectUrl
+        final private ?int $accountId,
+        final private string $redirectUrl
     ) {}
 
     #[\NoDiscard]

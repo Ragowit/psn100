@@ -5,9 +5,9 @@ declare(strict_types=1);
 final readonly class PsnpPlusGame
 {
     public function __construct(
-        private int $id,
-        private string $npCommunicationId,
-        private string $name
+        final private int $id,
+        final private string $npCommunicationId,
+        final private string $name
     ) {}
 
     #[\NoDiscard]

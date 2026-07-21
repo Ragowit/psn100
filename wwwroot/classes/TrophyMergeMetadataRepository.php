@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
+require_once __DIR__ . '/Platform.php';
 
 /**
  * Persists trophy-title merge metadata: merged status, parent links, platform union, and changelog rows.
  */
 final class TrophyMergeMetadataRepository
 {
-    private const array PLATFORM_ORDER = ['PS3', 'PSVITA', 'PS4', 'PSVR', 'PS5', 'PSVR2', 'PC'];
-
     public function __construct(
         private readonly PDO $database,
         private readonly NestedDatabaseTransactionRunner $transactionRunner
@@ -188,7 +187,7 @@ SQL
      */
     private function sortPlatforms(array $platforms): array
     {
-        $order = array_flip(self::PLATFORM_ORDER);
+        $order = array_flip(Platform::labelOrder());
 
         usort(
             $platforms,

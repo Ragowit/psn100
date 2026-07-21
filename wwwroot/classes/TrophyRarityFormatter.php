@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyRarity.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
 
 final class TrophyRarityFormatter
 {
@@ -29,24 +30,30 @@ final class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
-    public function format(float|int|string|null $rarityPercent, int $status = 0): TrophyRarity
-    {
+    public function format(
+        float|int|string|null $rarityPercent,
+        int|TrophyMetaStatus $status = 0,
+    ): TrophyRarity {
         return $this->formatMeta($rarityPercent, $status);
     }
 
     /**
      * @param float|int|string|null $rarityPercent
      */
-    public function formatMeta(float|int|string|null $rarityPercent, int $status = 0): TrophyRarity
-    {
+    public function formatMeta(
+        float|int|string|null $rarityPercent,
+        int|TrophyMetaStatus $status = 0,
+    ): TrophyRarity {
         return $this->formatWithThresholds($rarityPercent, $status, self::META_THRESHOLDS);
     }
 
     /**
      * @param float|int|string|null $rarityPercent
      */
-    public function formatInGame(float|int|string|null $rarityPercent, int $status = 0): TrophyRarity
-    {
+    public function formatInGame(
+        float|int|string|null $rarityPercent,
+        int|TrophyMetaStatus $status = 0,
+    ): TrophyRarity {
         return $this->formatWithThresholds($rarityPercent, $status, self::IN_GAME_THRESHOLDS);
     }
 
@@ -110,13 +117,14 @@ final class TrophyRarityFormatter
      */
     private function formatWithThresholds(
         float|int|string|null $rarityPercent,
-        int $status,
+        int|TrophyMetaStatus $status,
         array $thresholds
     ): TrophyRarity {
         $value = $this->toFloat($rarityPercent);
         $percentageString = $this->normalizePercentage($rarityPercent, $value);
+        $metaStatus = TrophyMetaStatus::fromMixed($status);
 
-        if ($status === 1) {
+        if ($metaStatus->isUnobtainable()) {
             return new TrophyRarity($percentageString, 'Unobtainable', null, true);
         }
 
