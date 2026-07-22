@@ -8,6 +8,7 @@ require_once __DIR__ . '/Homepage/HomepageNewGame.php';
 require_once __DIR__ . '/Homepage/HomepageDlc.php';
 require_once __DIR__ . '/Homepage/HomepagePopularGame.php';
 require_once __DIR__ . '/HomepagePopularGamesFilter.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlatformSql.php';
 
@@ -26,8 +27,10 @@ class HomepageContentService
      */
     public function getNewGames(int $limit = self::DEFAULT_NEW_GAME_LIMIT): array
     {
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 tt.id,
                 tt.name,
@@ -41,7 +44,7 @@ class HomepageContentService
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                ttm.status <> 2
+                ttm.status <> {$mergedStatus}
             ORDER BY
                 tt.id DESC
             LIMIT
@@ -61,8 +64,10 @@ class HomepageContentService
      */
     public function getNewDlcs(int $limit = self::DEFAULT_NEW_DLCS_LIMIT): array
     {
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 tt.id,
                 tt.name AS game_name,
@@ -78,7 +83,7 @@ class HomepageContentService
                 JOIN trophy_title tt USING (np_communication_id)
                 JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE
-                ttm.status <> 2
+                ttm.status <> {$mergedStatus}
                 AND tg.group_id <> 'default'
             ORDER BY
                 tg.id DESC
@@ -136,7 +141,8 @@ class HomepageContentService
      */
     private function buildPopularGamesWhereClauses(HomepagePopularGamesFilter $filter): array
     {
-        $conditions = ['ttm.status <> 2'];
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+        $conditions = ["ttm.status <> {$mergedStatus}"];
 
         if ($filter->isExclusiveOnly() && $filter->hasPlatformFilter()) {
             $conditions[] = 'tt.platform = ' . $this->database->quote($filter->getPlatformDatabaseValue());

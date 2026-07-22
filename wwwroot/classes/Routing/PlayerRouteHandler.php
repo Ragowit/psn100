@@ -22,8 +22,9 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect('/leaderboard/trophy');
         }
 
-        $onlineIdSegment = array_shift($segments) ?? '';
+        $onlineIdSegment = array_first($segments) ?? '';
         $onlineId = rawurldecode($onlineIdSegment);
+        $segments = array_slice($segments, 1);
 
         $accountId = $this->playerRepository->findAccountIdByOnlineId($onlineId);
 

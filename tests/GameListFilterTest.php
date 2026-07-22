@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/GameListFilter.php';
 require_once __DIR__ . '/../wwwroot/classes/GameListSort.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 
 final class GameListFilterTest extends TestCase
 {
@@ -33,10 +34,10 @@ final class GameListFilterTest extends TestCase
         $this->assertTrue($filter->shouldFilterUncompleted());
         $this->assertTrue($filter->shouldShowUncompletedOption());
         $this->assertTrue($filter->hasPlatformFilters());
-        $this->assertTrue($filter->isPlatformSelected(GameListFilter::PLATFORM_PS4));
-        $this->assertFalse($filter->isPlatformSelected(GameListFilter::PLATFORM_PS5));
-        $this->assertFalse($filter->isPlatformSelected(GameListFilter::PLATFORM_PC));
-        $this->assertSame([GameListFilter::PLATFORM_PS4], $filter->getSelectedPlatforms());
+        $this->assertTrue($filter->isPlatformSelected(Platform::Ps4->value));
+        $this->assertFalse($filter->isPlatformSelected(Platform::Ps5->value));
+        $this->assertFalse($filter->isPlatformSelected(Platform::Pc->value));
+        $this->assertSame([Platform::Ps4->value], $filter->getSelectedPlatforms());
     }
 
     public function testFromArrayDefaultsSearchSortAndNormalizesPage(): void

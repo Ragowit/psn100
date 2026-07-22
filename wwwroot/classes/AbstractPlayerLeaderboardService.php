@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerLeaderboardDataProvider.php';
 require_once __DIR__ . '/PlayerLeaderboardQueryResult.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeaderboardDataProvider
 {
     public const int PAGE_SIZE = 50;
 
-    private const string COUNT_SQL = <<<'SQL'
+    private const string COUNT_SQL =
+        <<<'SQL'
         SELECT
             COUNT(*)
         FROM
             player_ranking r
         JOIN player p ON p.account_id = r.account_id
         WHERE
-            p.status = 0
-    SQL;
+            p.status = 
+        SQL . PlayerStatus::NORMAL->value;
 
     public function __construct(protected \PDO $database)
     {
@@ -74,6 +76,7 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
         int $limit,
         bool $includeTotalCount,
     ): array {
+        $normalStatus = PlayerStatus::NORMAL->value;
         $totalCountProjection = $includeTotalCount ? ",\n                COUNT(*) OVER() AS total_rows" : '';
 
         $sql = <<<SQL
@@ -84,7 +87,7 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
                 player_ranking r
             JOIN player p ON p.account_id = r.account_id
             WHERE
-                p.status = 0
+                p.status = {$normalStatus}
         SQL;
 
         $sql .= $this->buildFilterSql($filter);

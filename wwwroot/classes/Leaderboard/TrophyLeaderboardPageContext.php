@@ -6,7 +6,7 @@ require_once __DIR__ . '/AbstractLeaderboardPageContext.php';
 require_once __DIR__ . '/../PlayerLeaderboardService.php';
 require_once __DIR__ . '/TrophyLeaderboardRow.php';
 
-class TrophyLeaderboardPageContext extends AbstractLeaderboardPageContext
+final class TrophyLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
     private const string TITLE = 'PSN Trophy Leaderboard ~ PSN 100%';
 

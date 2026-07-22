@@ -15,14 +15,6 @@ final readonly class GameListFilter
     public const string SORT_IN_GAME_RARITY = GameListSort::InGameRarity->value;
     public const string SORT_SEARCH = GameListSort::Search->value;
 
-    public const string PLATFORM_PC = Platform::Pc->value;
-    public const string PLATFORM_PS3 = Platform::Ps3->value;
-    public const string PLATFORM_PS4 = Platform::Ps4->value;
-    public const string PLATFORM_PS5 = Platform::Ps5->value;
-    public const string PLATFORM_PSVITA = Platform::PsVita->value;
-    public const string PLATFORM_PSVR = Platform::PsVr->value;
-    public const string PLATFORM_PSVR2 = Platform::PsVr2->value;
-
     private function __construct(
         final private ?string $player,
         final private GameListSort $sort,
@@ -172,15 +164,18 @@ final readonly class GameListFilter
      */
     public function getSelectedPlatforms(): array
     {
-        return array_keys(array_filter(
-            $this->platformFilters,
-            static fn (bool $selected): bool => $selected,
-        ));
+        return $this->platformFilters
+            |> (fn (array $filters): array => array_filter(
+                $filters,
+                static fn (bool $selected): bool => $selected,
+            ))
+            |> array_keys(...);
     }
 
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function getQueryParametersForPagination(): array
     {
         $parameters = $this->originalParameters;

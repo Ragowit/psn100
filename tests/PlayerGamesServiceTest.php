@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/PlayerGamesService.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerGamesFilter.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 require_once __DIR__ . '/../wwwroot/classes/SearchQueryHelper.php';
 
 final class PlayerGamesServiceTest extends TestCase
@@ -127,7 +128,7 @@ final class PlayerGamesServiceTest extends TestCase
         $filter = PlayerGamesFilter::fromArray([
             'completed' => '1',
             'base' => '1',
-            PlayerGamesFilter::PLATFORM_PS4 => '1',
+            Platform::Ps4->value => '1',
         ]);
 
         $count = $this->service->countPlayerGames(42, $filter);

@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerLogEntry.php';
 require_once __DIR__ . '/PlayerLogSort.php';
 require_once __DIR__ . '/PlatformSql.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
 
 class PlayerLogService
 {
@@ -16,17 +18,20 @@ class PlayerLogService
 
     public function countTrophies(int $accountId, PlayerLogFilter $filter): int
     {
-        $sql = <<<'SQL'
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+        $unobtainableStatus = TrophyMetaStatus::Unobtainable->value;
+
+        $sql = <<<SQL
             SELECT COUNT(*)
             FROM trophy_earned te
             LEFT JOIN trophy t USING (np_communication_id, group_id, order_id)
             LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE ttm.status != 2
+            WHERE ttm.status != {$mergedStatus}
                 AND te.account_id = :account_id
                 AND te.earned = 1
-                AND (tm.status IS NULL OR tm.status != 1)
+                AND (tm.status IS NULL OR tm.status != {$unobtainableStatus})
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);
@@ -43,7 +48,10 @@ class PlayerLogService
      */
     public function getTrophies(int $accountId, PlayerLogFilter $filter, int $offset, int $limit = self::PAGE_SIZE): array
     {
-        $sql = <<<'SQL'
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+        $unobtainableStatus = TrophyMetaStatus::Unobtainable->value;
+
+        $sql = <<<SQL
             SELECT
                 te.earned,
                 te.progress,
@@ -69,10 +77,10 @@ class PlayerLogService
             LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE ttm.status != 2
+            WHERE ttm.status != {$mergedStatus}
                 AND te.account_id = :account_id
                 AND te.earned = 1
-                AND (tm.status IS NULL OR tm.status != 1)
+                AND (tm.status IS NULL OR tm.status != {$unobtainableStatus})
         SQL;
 
         $sql .= $this->buildPlatformClause($filter);

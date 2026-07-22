@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/AboutPageDataProviderInterface.php';
 require_once __DIR__ . '/AboutPagePlayer.php';
 require_once __DIR__ . '/AboutPageScanSummary.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class AboutPageService implements AboutPageDataProviderInterface
 {
@@ -19,8 +20,10 @@ final readonly class AboutPageService implements AboutPageDataProviderInterface
     #[\Override]
     public function getScanSummary(): AboutPageScanSummary
     {
+        $normalStatus = PlayerStatus::NORMAL->value;
+
         $summaryQuery = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 (
                     SELECT COUNT(*)
@@ -30,7 +33,7 @@ final readonly class AboutPageService implements AboutPageDataProviderInterface
                 (
                     SELECT COUNT(*)
                     FROM player
-                    WHERE status = 0 AND rank_last_week = 0
+                    WHERE status = {$normalStatus} AND rank_last_week = 0
                 ) AS new_players
             SQL
         );

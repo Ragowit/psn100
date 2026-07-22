@@ -53,7 +53,7 @@ HTML;
     public function renderOptionItems(PlayerPlatformFilterOptions $options): string
     {
         $optionItems = array_map(
-            fn (PlayerPlatformFilterOption $option): string => $this->renderOption($option),
+            $this->renderOption(...),
             $options->getOptions()
         );
 

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../PlayerStatus.php';
+
 /**
  * Selects the next player for a worker scan from the tiered priority queue.
  *
@@ -115,6 +117,12 @@ final class PlayerScanQueueSelector
             ],
         );
 
+        $unavailableStatus = PlayerStatus::UNAVAILABLE->value;
+        $normalStatus = PlayerStatus::NORMAL->value;
+        $newPlayerStatus = PlayerStatus::NEW_PLAYER->value;
+        $privateStatus = PlayerStatus::PRIVATE_PROFILE->value;
+        $inactiveStatus = PlayerStatus::INACTIVE->value;
+
         return <<<SQL
             WITH
                 now_values AS (
@@ -156,7 +164,7 @@ final class PlayerScanQueueSelector
                     player p
                     JOIN now_values nv
                 WHERE
-                    p.status = 5
+                    p.status = {$unavailableStatus}
                     AND p.last_updated_date < nv.cutoff_1d
 
                 UNION ALL
@@ -171,7 +179,7 @@ final class PlayerScanQueueSelector
                     LEFT JOIN player_ranking pr ON pr.account_id = p.account_id
                     JOIN now_values nv
                 WHERE
-                    p.status IN (0, 99)
+                    p.status IN ({$normalStatus}, {$newPlayerStatus})
                     AND p.last_updated_date < nv.cutoff_1w
                     AND (
                         pr.account_id IS NULL
@@ -191,7 +199,7 @@ final class PlayerScanQueueSelector
                     player p
                     JOIN now_values nv
                 WHERE
-                    p.status = 3
+                    p.status = {$privateStatus}
                     AND p.last_updated_date < nv.cutoff_1m
 
                 UNION ALL
@@ -205,7 +213,7 @@ final class PlayerScanQueueSelector
                     player p
                     JOIN now_values nv
                 WHERE
-                    p.status = 4
+                    p.status = {$inactiveStatus}
                     AND p.last_updated_date < nv.cutoff_3m
 
                 UNION ALL

@@ -7,14 +7,6 @@ require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerRandomGamesFilter
 {
-    public const string PLATFORM_PC = Platform::Pc->value;
-    public const string PLATFORM_PS3 = Platform::Ps3->value;
-    public const string PLATFORM_PS4 = Platform::Ps4->value;
-    public const string PLATFORM_PS5 = Platform::Ps5->value;
-    public const string PLATFORM_PSVITA = Platform::PsVita->value;
-    public const string PLATFORM_PSVR = Platform::PsVr->value;
-    public const string PLATFORM_PSVR2 = Platform::PsVr2->value;
-
     /**
      * @var array<string, bool>
      */

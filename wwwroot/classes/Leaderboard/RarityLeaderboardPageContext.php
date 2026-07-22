@@ -6,7 +6,7 @@ require_once __DIR__ . '/AbstractLeaderboardPageContext.php';
 require_once __DIR__ . '/../PlayerRarityLeaderboardService.php';
 require_once __DIR__ . '/RarityLeaderboardRow.php';
 
-class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
+final class RarityLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
     private const string TITLE = 'PSN Rarity Leaderboard ~ PSN 100%';
 

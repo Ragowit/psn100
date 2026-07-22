@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Avatar.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 class AvatarService
 {
@@ -12,14 +13,16 @@ class AvatarService
 
     public function getTotalUniqueAvatarCount(): int
     {
+        $normalStatus = PlayerStatus::NORMAL->value;
+
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 COUNT(DISTINCT avatar_url)
             FROM
                 player p
             WHERE
-                p.status = 0
+                p.status = {$normalStatus}
             SQL
         );
         $query->execute();
@@ -35,16 +38,17 @@ class AvatarService
         $limit = max($limit, 1);
         $page = max($page, 1);
         $offset = ($page - 1) * $limit;
+        $normalStatus = PlayerStatus::NORMAL->value;
 
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 COUNT(*) AS count,
                 avatar_url
             FROM
                 player p
             WHERE
-                p.status = 0
+                p.status = {$normalStatus}
             GROUP BY
                 avatar_url
             ORDER BY

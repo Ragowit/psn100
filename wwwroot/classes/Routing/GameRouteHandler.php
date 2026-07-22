@@ -30,8 +30,9 @@ final readonly class GameRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect($this->redirectPath);
         }
 
-        $gameSegment = array_shift($segments);
+        $gameSegment = array_first($segments);
         $gameId = $this->gameRepository->findIdFromSegment($gameSegment);
+        $segments = array_slice($segments, 1);
 
         if ($gameId === null) {
             return RouteResult::redirect($this->redirectPath);

@@ -6,6 +6,7 @@ require_once __DIR__ . '/PlayerGame.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesSort.php';
 require_once __DIR__ . '/PlatformSql.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/DateDurationSummary.php';
 
@@ -121,8 +122,9 @@ final class PlayerGamesService
 
     private function buildWhereClause(PlayerGamesFilter $filter): string
     {
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
         $conditions = [
-            'ttm.status != 2',
+            "ttm.status != {$mergedStatus}",
             'ttp.account_id = :account_id',
         ];
 

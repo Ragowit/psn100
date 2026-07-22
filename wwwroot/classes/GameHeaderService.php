@@ -10,6 +10,7 @@ require_once __DIR__ . '/Game/GameHeaderStack.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/PsnpPlusClient.php';
 require_once __DIR__ . '/Html.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
 
 class GameHeaderService
 {
@@ -112,15 +113,17 @@ class GameHeaderService
 
     private function countUnobtainableTrophies(string $npCommunicationId): int
     {
+        $unobtainableStatus = TrophyMetaStatus::Unobtainable->value;
+
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 COUNT(*)
             FROM
                 trophy t
                 JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE
-                tm.status = 1
+                tm.status = {$unobtainableStatus}
                 AND t.np_communication_id = :np_communication_id
             SQL
         );

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/HomepagePopularGamesFilter.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 
 final class HomepagePopularGamesFilterTest extends TestCase
 {
@@ -23,7 +24,7 @@ final class HomepagePopularGamesFilterTest extends TestCase
             'exclusive' => 'true',
         ]);
 
-        $this->assertTrue($filter->isPlatformSelected(HomepagePopularGamesFilter::PLATFORM_PS5));
+        $this->assertTrue($filter->isPlatformSelected(Platform::Ps5->value));
         $this->assertTrue($filter->isExclusiveOnly());
         $this->assertSame(
             [
@@ -54,7 +55,7 @@ final class HomepagePopularGamesFilterTest extends TestCase
             'exclusive' => 'false',
         ]);
 
-        $this->assertTrue($filter->isPlatformSelected(HomepagePopularGamesFilter::PLATFORM_PS4));
+        $this->assertTrue($filter->isPlatformSelected(Platform::Ps4->value));
         $this->assertFalse($filter->isExclusiveOnly());
         $this->assertSame(['platform' => 'ps4'], $filter->getQueryParameters());
     }

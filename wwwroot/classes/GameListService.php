@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameListItem.php';
 require_once __DIR__ . '/GameListPageResult.php';
 require_once __DIR__ . '/GameListSort.php';
@@ -199,11 +200,14 @@ class GameListService
 
     private function buildConditions(GameListFilter $filter): string
     {
+        $normalStatus = GameAvailabilityStatus::NORMAL->value;
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+
         $conditions = [
             match ($filter->getSort()) {
-                GameListSort::Completion => "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
-                GameListSort::Rarity, GameListSort::InGameRarity => 'ttm.status = 0',
-                default => 'ttm.status != 2',
+                GameListSort::Completion => "ttm.status = {$normalStatus} AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
+                GameListSort::Rarity, GameListSort::InGameRarity => "ttm.status = {$normalStatus}",
+                default => "ttm.status != {$mergedStatus}",
             },
         ];
 

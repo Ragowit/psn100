@@ -23,8 +23,9 @@ final readonly class TrophyRouteHandler implements RouteHandlerInterface
             return RouteResult::include('trophies.php');
         }
 
-        $trophySegment = array_shift($segments);
+        $trophySegment = array_first($segments);
         $trophyId = $this->trophyRepository->findIdFromSegment($trophySegment);
+        $segments = array_slice($segments, 1);
 
         if ($trophyId === null) {
             return RouteResult::redirect('/trophy/');
