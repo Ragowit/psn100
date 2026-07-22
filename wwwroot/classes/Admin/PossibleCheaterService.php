@@ -5,19 +5,18 @@ declare(strict_types=1);
 require_once __DIR__ . '/PossibleCheaterRuleConditionParser.php';
 require_once __DIR__ . '/PossibleCheaterRulesCatalog.php';
 require_once __DIR__ . '/PossibleCheaterReport.php';
+require_once __DIR__ . '/../PlayerStatus.php';
 
-class PossibleCheaterService
+final class PossibleCheaterService
 {
-    private readonly PDO $database;
     private readonly PossibleCheaterRulesCatalog $rulesCatalog;
     private readonly PossibleCheaterRuleConditionParser $conditionParser;
 
     public function __construct(
-        PDO $database,
+        private readonly PDO $database,
         ?PossibleCheaterRulesCatalog $rulesCatalog = null,
         ?PossibleCheaterRuleConditionParser $conditionParser = null,
     ) {
-        $this->database = $database;
         $this->rulesCatalog = $rulesCatalog ?? new PossibleCheaterRulesCatalog();
         $this->conditionParser = $conditionParser ?? new PossibleCheaterRuleConditionParser();
     }
@@ -86,6 +85,7 @@ class PossibleCheaterService
         $ruleDerivedTable = $this->conditionParser->buildRuleDerivedTableSql(
             $this->rulesCatalog->getGeneralRuleGroups()
         );
+        $flaggedStatus = PlayerStatus::FLAGGED->value;
 
         // Drive from trophy_title_player so trophy_earned is probed by account_id
         // (HASH partition key) instead of scanning all 256 partitions by title.
@@ -119,7 +119,7 @@ class PossibleCheaterService
             JOIN player p ON p.account_id = ttp.account_id
             JOIN trophy_title tt ON tt.np_communication_id = cheat_rules.np_communication_id
             WHERE
-                p.status != 1
+                p.status != {$flaggedStatus}
             GROUP BY
                 p.account_id,
                 p.online_id

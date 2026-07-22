@@ -8,6 +8,7 @@ require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/PlayerCountryResolver.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
 require_once __DIR__ . '/../PlayerRepository.php';
+require_once __DIR__ . '/../PlayerStatus.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\PlayStation\Client;
@@ -341,8 +342,9 @@ final class PlayerScanProfileSynchronizer
                     sprintf('Sony issues with %s (%s).', $player['online_id'], $accountId)
                 );
 
+                $unavailableStatus = PlayerStatus::UNAVAILABLE->value;
                 $query = $this->database->prepare(
-                    'UPDATE player SET `status` = 5, last_updated_date = NOW() WHERE account_id = :account_id'
+                    "UPDATE player SET `status` = {$unavailableStatus}, last_updated_date = NOW() WHERE account_id = :account_id"
                 );
                 $query->bindValue(':account_id', (string) $accountId, PDO::PARAM_STR);
                 $query->execute();

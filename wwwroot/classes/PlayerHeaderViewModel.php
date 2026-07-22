@@ -256,6 +256,6 @@ final readonly class PlayerHeaderViewModel
 
     private function isLeaderboardRankAvailable(): bool
     {
-        return (int) ($this->player['status'] ?? 0) === 0;
+        return $this->getStatus() === PlayerStatus::NORMAL;
     }
 }

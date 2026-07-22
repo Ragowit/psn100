@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../classes/PlayerStatus.php';
+
+$flaggedStatus = PlayerStatus::FLAGGED->value;
+
 return [
         [
             'title' => 'FUEL',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -24,7 +28,7 @@ return [
                     AND fuel_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00481_00'
                 HAVING
@@ -36,7 +40,7 @@ return [
         ],
         [
             'title' => 'SOCOM: U.S. NAVY SEALS CONFRONTATION',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -55,7 +59,7 @@ return [
                     AND socom_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00302_00'
                 HAVING
@@ -67,7 +71,7 @@ return [
         ],
         [
             'title' => 'Resonance of Fate (Lap Two Complete < A New Beginning)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -86,7 +90,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR01103_00'
                 HAVING
@@ -98,7 +102,7 @@ return [
         ],
         [
             'title' => 'End of Eternity (2周目クリア < 2周目突入)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -117,7 +121,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00987_00'
                 HAVING
@@ -129,7 +133,7 @@ return [
         ],
         [
             'title' => 'Catherine: Full Body',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -148,7 +152,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR17582_00'
                 HAVING
@@ -160,7 +164,7 @@ return [
         ],
         [
             'title' => '凱薩琳FULL BODY',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -179,7 +183,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR17415_00'
                 HAVING
@@ -191,7 +195,7 @@ return [
         ],
         [
             'title' => 'キャサリン・フルボディ',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -210,7 +214,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR14836_00'
                 HAVING
@@ -222,7 +226,7 @@ return [
         ],
         [
             'title' => 'Lost Planet 2 (200-Chapter Playback <-> 300-Chapter Playback)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -241,7 +245,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00928_00'
                 HAVING
@@ -253,7 +257,7 @@ return [
         ],
         [
             'title' => 'Lost Planet 2 (Snow Pirate Leader <-> Snow Pirate Commander)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -272,7 +276,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00928_00'
                 HAVING
@@ -284,7 +288,7 @@ return [
         ],
         [
             'title' => 'Resident Evil: Revelations [PS4] (Bonus Legend <-> Bonus Demi-god)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -303,7 +307,7 @@ return [
                     AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR11777_00'
                 HAVING
@@ -315,7 +319,7 @@ return [
         ],
         [
             'title' => 'Resident Evil: Revelations [PS4] (Meteoric Rise <-> Top of My Game)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -334,7 +338,7 @@ return [
                     AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR11777_00'
                 HAVING
@@ -346,7 +350,7 @@ return [
         ],
         [
             'title' => 'Resident Evil: Revelations [PS3] (Bonus Legend <-> Bonus Demi-god)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -365,7 +369,7 @@ return [
                     AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR03903_00'
                 HAVING
@@ -377,7 +381,7 @@ return [
         ],
         [
             'title' => 'Resident Evil: Revelations [PS3] (Meteoric Rise <-> Top of My Game)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -396,7 +400,7 @@ return [
                     AND rer_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR03903_00'
                 HAVING
@@ -408,7 +412,7 @@ return [
         ],
         [
             'title' => 'Angry Birds Trilogy [PS3] (Block Breaker <-> Block Annihilator)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -427,7 +431,7 @@ return [
                     AND abt_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR03771_00'
                 HAVING
@@ -439,7 +443,7 @@ return [
         ],
         [
             'title' => 'Terminator Salvation',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -470,7 +474,7 @@ return [
                 ) trophy_counter
                 INNER JOIN player p ON
                     p.account_id = trophy_counter.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 ORDER BY
                     p.online_id
             SQL,
@@ -478,7 +482,7 @@ return [
         ],
         [
             'title' => 'F1 Race Stars',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -497,7 +501,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR03734_00'
                 HAVING
@@ -509,7 +513,7 @@ return [
         ],
         [
             'title' => 'Mega Man: Legacy Collection',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -528,7 +532,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR09098_00'
                 HAVING
@@ -540,7 +544,7 @@ return [
         ],
         [
             'title' => 'Batman: Arkham Asylum',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -559,7 +563,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00626_00'
                 HAVING
@@ -571,7 +575,7 @@ return [
         ],
         [
             'title' => 'Batman: Arkham Asylum (JP)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -590,7 +594,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR01012_00'
                 HAVING
@@ -602,7 +606,7 @@ return [
         ],
         [
             'title' => 'Dead Space',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -621,7 +625,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00464_00'
                 HAVING
@@ -633,7 +637,7 @@ return [
         ],
         [
             'title' => 'Street Fighter X Tekken [PSVITA] (Transcend All You Know <-> Your Legend Will Never Die)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -652,7 +656,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR03139_00'
                 HAVING
@@ -664,7 +668,7 @@ return [
         ],
         [
             'title' => 'Street Fighter X Tekken [PS3] (Transcend All You Know <-> Your Legend Will Never Die)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -683,7 +687,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR01781_00'
                 HAVING
@@ -695,7 +699,7 @@ return [
         ],
         [
             'title' => 'Fat Princess',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -714,7 +718,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR00737_00'
                 HAVING
@@ -726,7 +730,7 @@ return [
         ],
         [
             'title' => 'Code Vein (Determiner of Fate <-> Heirs)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -745,7 +749,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR14318_00'
                 HAVING
@@ -757,7 +761,7 @@ return [
         ],
         [
             'title' => 'Code Vein (Determiner of Fate <-> To Eternity)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -776,7 +780,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR14318_00'
                 HAVING
@@ -788,7 +792,7 @@ return [
         ],
         [
             'title' => 'Code Vein (Determiner of Fate <-> Dweller in the Dark)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -807,7 +811,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR14318_00'
                 HAVING
@@ -819,7 +823,7 @@ return [
         ],
         [
             'title' => 'Final Fantasy X-2 HD Remaster (Giant Tower <-> Almost There)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -838,7 +842,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR05019_00'
                 HAVING
@@ -850,7 +854,7 @@ return [
         ],
         [
             'title' => 'Pic-a-Pix Color 2 [VITA, EU] (Casual Puzzler <-> Casual Completionist)',
-            'query' => <<<'SQL'
+            'query' => <<<SQL
                 SELECT
                     p.account_id,
                     p.online_id,
@@ -869,7 +873,7 @@ return [
                     AND trophy_end.earned = 1
                 JOIN player p ON
                     p.account_id = ttp.account_id
-                    AND p.status != 1
+                    AND p.status != {$flaggedStatus}
                 WHERE
                     ttp.np_communication_id = 'NPWR18592_00'
                 HAVING

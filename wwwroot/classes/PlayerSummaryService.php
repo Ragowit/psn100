@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+
 class PlayerSummaryService
 {
     public function __construct(private readonly PDO $database)
@@ -25,8 +27,10 @@ class PlayerSummaryService
      */
     private function fetchSummaryRow(int $accountId): array
     {
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 CAST(COUNT(*) AS UNSIGNED)                                  AS number_of_games,
                 CAST(COALESCE(SUM(ttp.progress = 100), 0) AS UNSIGNED)      AS number_of_completed_games,
@@ -42,7 +46,7 @@ class PlayerSummaryService
                 INNER JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
                 INNER JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             WHERE
-                ttm.status = 0
+                ttm.status = {$normalGameStatus}
                 AND ttp.account_id = :account_id
             SQL
         );

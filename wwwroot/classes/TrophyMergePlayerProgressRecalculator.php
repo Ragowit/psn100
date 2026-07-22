@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyMetaStatus.php';
+require_once __DIR__ . '/TrophyType.php';
+
 /**
  * Recalculates trophy group/title player progress aggregates for merged titles.
  *
@@ -30,6 +33,11 @@ class TrophyMergePlayerProgressRecalculator
             $childPlaceholders[] = ':child_np_' . $index;
         }
         $childListSql = implode(', ', $childPlaceholders);
+        $bronze = TrophyType::Bronze->value;
+        $silver = TrophyType::Silver->value;
+        $gold = TrophyType::Gold->value;
+        $platinum = TrophyType::Platinum->value;
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
 
         $groups = $this->database->prepare(
             <<<'SQL'
@@ -48,7 +56,7 @@ SQL
             // Drive trophy_earned from child title accounts so HASH(account_id)
             // partition pruning applies instead of scanning all 256 partitions by title.
             $mergeSql = sprintf(
-                <<<'SQL'
+                <<<SQL
                 INSERT INTO trophy_group_player(
                     np_communication_id,
                     group_id,
@@ -78,11 +86,11 @@ SQL
                 player AS(
                     SELECT
                         te.account_id,
-                        SUM(t.type = 'bronze') AS bronze,
-                        SUM(t.type = 'silver') AS silver,
-                        SUM(t.type = 'gold') AS gold,
-                        SUM(t.type = 'platinum') AS platinum,
-                        SUM(t.type = 'bronze') * 15 + SUM(t.type = 'silver') * 30 + SUM(t.type = 'gold') * 90 AS score
+                        SUM(t.type = '{$bronze}') AS bronze,
+                        SUM(t.type = '{$silver}') AS silver,
+                        SUM(t.type = '{$gold}') AS gold,
+                        SUM(t.type = '{$platinum}') AS platinum,
+                        SUM(t.type = '{$bronze}') * 15 + SUM(t.type = '{$silver}') * 30 + SUM(t.type = '{$gold}') * 90 AS score
                     FROM
                         accounts a
                     JOIN trophy_earned te ON
@@ -92,7 +100,7 @@ SQL
                         AND te.earned = 1
                     JOIN trophy t ON
                         t.np_communication_id = te.np_communication_id AND t.order_id = te.order_id
-                    JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
+                    JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = {$obtainableStatus}
                     GROUP BY
                         te.account_id
                 )

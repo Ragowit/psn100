@@ -30,9 +30,10 @@ final class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
+    #[\NoDiscard]
     public function format(
         float|int|string|null $rarityPercent,
-        int|TrophyMetaStatus $status = 0,
+        int|TrophyMetaStatus $status = TrophyMetaStatus::Obtainable,
     ): TrophyRarity {
         return $this->formatMeta($rarityPercent, $status);
     }
@@ -40,9 +41,10 @@ final class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
+    #[\NoDiscard]
     public function formatMeta(
         float|int|string|null $rarityPercent,
-        int|TrophyMetaStatus $status = 0,
+        int|TrophyMetaStatus $status = TrophyMetaStatus::Obtainable,
     ): TrophyRarity {
         return $this->formatWithThresholds($rarityPercent, $status, self::META_THRESHOLDS);
     }
@@ -50,9 +52,10 @@ final class TrophyRarityFormatter
     /**
      * @param float|int|string|null $rarityPercent
      */
+    #[\NoDiscard]
     public function formatInGame(
         float|int|string|null $rarityPercent,
-        int|TrophyMetaStatus $status = 0,
+        int|TrophyMetaStatus $status = TrophyMetaStatus::Obtainable,
     ): TrophyRarity {
         return $this->formatWithThresholds($rarityPercent, $status, self::IN_GAME_THRESHOLDS);
     }

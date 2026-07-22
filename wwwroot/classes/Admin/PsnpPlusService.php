@@ -8,8 +8,9 @@ require_once __DIR__ . '/PsnpPlusFixedGame.php';
 require_once __DIR__ . '/PsnpPlusMissingGame.php';
 require_once __DIR__ . '/PsnpPlusGame.php';
 require_once __DIR__ . '/../PsnpPlusClient.php';
+require_once __DIR__ . '/../TrophyMetaStatus.php';
 
-class PsnpPlusService
+final class PsnpPlusService
 {
     /**
      * @var list<int>
@@ -23,13 +24,12 @@ class PsnpPlusService
         35758, 40301,
     ];
 
-    private readonly PDO $database;
-
     private readonly PsnpPlusClient $psnpPlusClient;
 
-    public function __construct(PDO $database, ?PsnpPlusClient $psnpPlusClient = null)
-    {
-        $this->database = $database;
+    public function __construct(
+        private readonly PDO $database,
+        ?PsnpPlusClient $psnpPlusClient = null,
+    ) {
         $this->psnpPlusClient = $psnpPlusClient ?? new PsnpPlusClient();
     }
 
@@ -122,7 +122,8 @@ class PsnpPlusService
     {
         $sql = 'SELECT t.order_id + 1 FROM trophy t';
         if ($obtainableOnly) {
-            $sql .= ' JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 1';
+            $unobtainableStatus = TrophyMetaStatus::Unobtainable->value;
+            $sql .= " JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = {$unobtainableStatus}";
         }
         $sql .= ' WHERE t.np_communication_id = :np_communication_id ORDER BY t.order_id';
 
@@ -179,10 +180,12 @@ class PsnpPlusService
      */
     private function findGamesWithUnobtainableTrophies(): array
     {
+        $unobtainableStatus = TrophyMetaStatus::Unobtainable->value;
+
         $statement = $this->database->prepare(
             "SELECT DISTINCT t.np_communication_id
             FROM trophy t
-            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 1
+            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = {$unobtainableStatus}
             WHERE t.np_communication_id LIKE 'N%'
             ORDER BY t.np_communication_id"
         );
@@ -264,12 +267,14 @@ class PsnpPlusService
      */
     private function findObtainableTrophyIds(string $npCommunicationId): array
     {
+        $unobtainableStatus = TrophyMetaStatus::Unobtainable->value;
+
         $statement = $this->database->prepare(
-            'SELECT t.id
+            "SELECT t.id
             FROM trophy t
-            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 1
+            JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = {$unobtainableStatus}
             WHERE t.np_communication_id = :np_communication_id
-            ORDER BY t.id'
+            ORDER BY t.id"
         );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $statement->execute();

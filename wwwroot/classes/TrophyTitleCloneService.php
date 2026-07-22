@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/ChangelogEntry.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 
 /**
  * Clones a trophy title into a new MERGE_* title, including catalog rows and history.
@@ -98,8 +99,11 @@ SQL
 
             $cloneGameId = (int) $insertedGameId;
 
+            $mergedStatus = GameAvailabilityStatus::MERGED->value;
+            $normalStatus = GameAvailabilityStatus::NORMAL->value;
+
             $metaInsert = $this->database->prepare(
-                <<<'SQL'
+                <<<SQL
                 INSERT INTO trophy_title_meta (
                     np_communication_id,
                     owners,
@@ -117,7 +121,7 @@ SQL
                     owners,
                     difficulty,
                     message,
-                    CASE WHEN status = 2 THEN 0 ELSE status END,
+                    CASE WHEN status = {$mergedStatus} THEN {$normalStatus} ELSE status END,
                     recent_players,
                     owners_completed,
                     NULL,

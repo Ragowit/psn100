@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 
 /**
  * Persists trophy-title merge metadata: merged status, parent links, platform union, and changelog rows.
@@ -20,10 +21,12 @@ final class TrophyMergeMetadataRepository
     public function markGameAsMergedByNpId(string $npCommunicationId): void
     {
         $this->transactionRunner->execute(function () use ($npCommunicationId): void {
+            $mergedStatus = GameAvailabilityStatus::MERGED->value;
+
             $query = $this->database->prepare(
-                <<<'SQL'
+                <<<SQL
                 UPDATE trophy_title_meta
-                SET    status = 2
+                SET    status = {$mergedStatus}
                 WHERE  np_communication_id = :child_np_communication_id
                 SQL
             );
@@ -51,10 +54,12 @@ final class TrophyMergeMetadataRepository
                 return;
             }
 
+            $mergedStatus = GameAvailabilityStatus::MERGED->value;
+
             $query = $this->database->prepare(
-                <<<'SQL'
+                <<<SQL
                 UPDATE trophy_title_meta
-                SET    status = 2
+                SET    status = {$mergedStatus}
                 WHERE  np_communication_id = :np_communication_id
                 SQL
             );
