@@ -15,20 +15,19 @@ final readonly class LogPageResult
 
     private int $totalPages;
 
-    private ?string $successMessage;
-
-    private ?string $errorMessage;
-
     /**
      * @param list<LogEntry> $entries
      */
-    public function __construct(array $entries, int $currentPage, int $totalPages, ?string $successMessage, ?string $errorMessage)
-    {
+    public function __construct(
+        array $entries,
+        int $currentPage,
+        int $totalPages,
+        private ?string $successMessage,
+        private ?string $errorMessage,
+    ) {
         $this->entries = $entries;
         $this->currentPage = max(1, $currentPage);
         $this->totalPages = max(1, $totalPages);
-        $this->successMessage = $successMessage;
-        $this->errorMessage = $errorMessage;
     }
 
     /**

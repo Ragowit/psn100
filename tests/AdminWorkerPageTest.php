@@ -11,6 +11,8 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPageSortLink.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerService.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerCredentialField.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/Worker.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerSortField.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerSortDirection.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/CommandExecutionResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/CommandExecutorInterface.php';
 
@@ -38,8 +40,8 @@ final class AdminWorkerPageTest extends TestCase
         $workers = $result->getWorkers();
         $this->assertCount(2, $workers);
         $this->assertSame(2, $workers[0]->getId());
-        $this->assertSame('id', $result->getSortField());
-        $this->assertSame('desc', $result->getSortDirection());
+        $this->assertSame(WorkerSortField::Id, $result->getSortField());
+        $this->assertSame(WorkerSortDirection::Desc, $result->getSortDirection());
 
         $idSortLink = $result->getSortLink('id');
         $this->assertTrue($idSortLink instanceof WorkerPageSortLink);

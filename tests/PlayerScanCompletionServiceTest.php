@@ -138,7 +138,8 @@ final class PlayerScanCompletionServiceTest extends TestCase
         $source = file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/PlayerScanCompletionService.php');
 
         $this->assertStringContainsString('INTERVAL 1 YEAR', $source);
-        $this->assertStringContainsString('AND p.status != 1', $source);
+        $this->assertStringContainsString('PlayerStatus::FLAGGED->value', $source);
+        $this->assertStringContainsString('AND p.status != {$flaggedStatus}', $source);
     }
 
     public function testRemovePlayerFromScanQueueDeletesOnlyMatchingOnlineId(): void

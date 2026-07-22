@@ -14,15 +14,7 @@ require_once __DIR__ . '/Utility.php';
 
 final class GameHistoryPage
 {
-    private GameService $gameService;
-
-    private GameHistoryService $historyService;
-
-    private GameHeaderService $gameHeaderService;
-
     private GameHistoryChangeFilter $historyChangeFilter;
-
-    private Utility $utility;
 
     private GameDetails $game;
 
@@ -63,18 +55,14 @@ final class GameHistoryPage
     private ?array $historyEntries = null;
 
     public function __construct(
-        GameService $gameService,
-        GameHistoryService $historyService,
-        GameHeaderService $gameHeaderService,
-        Utility $utility,
+        private GameService $gameService,
+        private GameHistoryService $historyService,
+        private GameHeaderService $gameHeaderService,
+        private Utility $utility,
         int $gameId,
         ?GameHistoryChangeFilter $historyChangeFilter = null
     ) {
-        $this->gameService = $gameService;
-        $this->historyService = $historyService;
-        $this->gameHeaderService = $gameHeaderService;
         $this->historyChangeFilter = $historyChangeFilter ?? new GameHistoryChangeFilter();
-        $this->utility = $utility;
 
         $this->game = $this->loadGame($gameId);
         $this->headerData = $this->gameHeaderService->buildHeaderData($this->game);

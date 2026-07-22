@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../PlayStationTrophyLevelCalculator.php';
+require_once __DIR__ . '/../PlayerStatus.php';
+require_once __DIR__ . '/../GameAvailabilityStatus.php';
+require_once __DIR__ . '/../TrophyRarityName.php';
 
 /**
  * Recalculates player trophy totals, PSN level/progress, status, and rarity rollups
@@ -21,6 +24,8 @@ final class PlayerScanCompletionService
         int $totalTrophiesSony,
         string $recheck,
     ): PlayerScanCompletionResult {
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+
         $query = $this->database->prepare("SELECT Ifnull(Sum(ttp.bronze), 0)   AS bronze,
                 Ifnull(Sum(ttp.silver), 0)   AS silver,
                 Ifnull(Sum(ttp.gold), 0)     AS gold,
@@ -28,7 +33,7 @@ final class PlayerScanCompletionService
             FROM   trophy_title_player ttp
                 JOIN trophy_title tt USING (np_communication_id)
                 JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE  ttm.status = 0
+            WHERE  ttm.status = {$normalGameStatus}
                 AND ttp.account_id = :account_id ");
         $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
@@ -58,7 +63,7 @@ final class PlayerScanCompletionService
         $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
 
-        $playerStatus = 0;
+        $playerStatus = PlayerStatus::NORMAL->value;
 
         $query = $this->database->prepare('SELECT trophy_count_npwr FROM player WHERE account_id = :account_id');
         $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
@@ -103,8 +108,10 @@ final class PlayerScanCompletionService
         $query->execute();
         $withinAYear = $query->fetchColumn();
         if ((int) $withinAYear === 0) {
-            $playerStatus = 4;
+            $playerStatus = PlayerStatus::INACTIVE->value;
         }
+
+        $flaggedStatus = PlayerStatus::FLAGGED->value;
 
         $query = $this->database->prepare("UPDATE
                 player p
@@ -113,7 +120,7 @@ final class PlayerScanCompletionService
                 p.trophy_count_sony = :trophy_count_sony
             WHERE
                 p.account_id = :account_id
-                AND p.status != 1
+                AND p.status != {$flaggedStatus}
             ");
         $query->bindValue(':status', $playerStatus, PDO::PARAM_INT);
         $query->bindValue(':trophy_count_sony', $totalTrophiesSony, PDO::PARAM_INT);
@@ -159,27 +166,42 @@ final class PlayerScanCompletionService
         $query->execute();
         $playerStatus = $query->fetchColumn();
 
-        if ((int) $playerStatus !== 0) {
+        if (PlayerStatus::fromValue((int) $playerStatus) !== PlayerStatus::NORMAL) {
             return;
         }
 
-        $this->executeWithDeadlockRetry(function () use ($accountId): void {
+        $common = TrophyRarityName::Common->toSqlLiteral();
+        $uncommon = TrophyRarityName::Uncommon->toSqlLiteral();
+        $rare = TrophyRarityName::Rare->toSqlLiteral();
+        $epic = TrophyRarityName::Epic->toSqlLiteral();
+        $legendary = TrophyRarityName::Legendary->toSqlLiteral();
+        $normalPlayerStatus = PlayerStatus::NORMAL->value;
+
+        $this->executeWithDeadlockRetry(function () use (
+            $accountId,
+            $common,
+            $uncommon,
+            $rare,
+            $epic,
+            $legendary,
+            $normalPlayerStatus,
+        ): void {
             $query = $this->database->prepare("WITH
                     rarity AS(
                     SELECT
                         trophy_earned.np_communication_id,
                         SUM(tm.rarity_point) AS points,
                         SUM(tm.in_game_rarity_point) AS in_game_points,
-                        SUM(tm.rarity_name = 'COMMON') common,
-                        SUM(tm.rarity_name = 'UNCOMMON') uncommon,
-                        SUM(tm.rarity_name = 'RARE') rare,
-                        SUM(tm.rarity_name = 'EPIC') epic,
-                        SUM(tm.rarity_name = 'LEGENDARY') legendary,
-                        SUM(tm.in_game_rarity_name = 'COMMON') in_game_common,
-                        SUM(tm.in_game_rarity_name = 'UNCOMMON') in_game_uncommon,
-                        SUM(tm.in_game_rarity_name = 'RARE') in_game_rare,
-                        SUM(tm.in_game_rarity_name = 'EPIC') in_game_epic,
-                        SUM(tm.in_game_rarity_name = 'LEGENDARY') in_game_legendary
+                        SUM(tm.rarity_name = {$common}) common,
+                        SUM(tm.rarity_name = {$uncommon}) uncommon,
+                        SUM(tm.rarity_name = {$rare}) rare,
+                        SUM(tm.rarity_name = {$epic}) epic,
+                        SUM(tm.rarity_name = {$legendary}) legendary,
+                        SUM(tm.in_game_rarity_name = {$common}) in_game_common,
+                        SUM(tm.in_game_rarity_name = {$uncommon}) in_game_uncommon,
+                        SUM(tm.in_game_rarity_name = {$rare}) in_game_rare,
+                        SUM(tm.in_game_rarity_name = {$epic}) in_game_epic,
+                        SUM(tm.in_game_rarity_name = {$legendary}) in_game_legendary
                     FROM
                         trophy_earned
                     JOIN trophy t ON t.np_communication_id = trophy_earned.np_communication_id
@@ -248,7 +270,7 @@ final class PlayerScanCompletionService
                     p.in_game_epic = rarity.in_game_epic,
                     p.in_game_legendary = rarity.in_game_legendary
                 WHERE
-                    p.account_id = :account_id AND p.status = 0");
+                    p.account_id = :account_id AND p.status = {$normalPlayerStatus}");
             $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
             $query->execute();
         });

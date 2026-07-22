@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../TrophyMetaStatus.php';
+require_once __DIR__ . '/../TrophyType.php';
 require_once __DIR__ . '/../ChangelogEntry.php';
 
 /**
@@ -25,17 +26,23 @@ class TrophyStatusProgressRecalculator
     {
         $this->createImpactedAccountsTempTable($npCommunicationId, $groupId, $affectedTrophyIds);
 
+        $bronze = TrophyType::Bronze->value;
+        $silver = TrophyType::Silver->value;
+        $gold = TrophyType::Gold->value;
+        $platinum = TrophyType::Platinum->value;
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+
         $this->executeGroupStatement(
-            <<<'SQL'
+            <<<SQL
 WITH counts AS (
     SELECT
-      COALESCE(SUM(CASE WHEN t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
-      COALESCE(SUM(CASE WHEN t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
-      COALESCE(SUM(CASE WHEN t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
-      COALESCE(SUM(CASE WHEN t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
+      COALESCE(SUM(CASE WHEN t.type = '{$bronze}' THEN 1 ELSE 0 END), 0) AS bronze,
+      COALESCE(SUM(CASE WHEN t.type = '{$silver}' THEN 1 ELSE 0 END), 0) AS silver,
+      COALESCE(SUM(CASE WHEN t.type = '{$gold}' THEN 1 ELSE 0 END), 0) AS gold,
+      COALESCE(SUM(CASE WHEN t.type = '{$platinum}' THEN 1 ELSE 0 END), 0) AS platinum
     FROM
       trophy t
-      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = 0
+      JOIN trophy_meta tm ON tm.trophy_id = t.id AND tm.status = {$obtainableStatus}
     WHERE
       t.np_communication_id = :np_communication_id
       AND t.group_id = :group_id
@@ -240,16 +247,22 @@ SQL
 
     private function getPlayerTrophyCountSql(): string
     {
-        return <<<'SQL'
+        $bronze = TrophyType::Bronze->value;
+        $silver = TrophyType::Silver->value;
+        $gold = TrophyType::Gold->value;
+        $platinum = TrophyType::Platinum->value;
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+
+        return <<<SQL
 UPDATE
     trophy_group_player tgp
     LEFT JOIN (
         SELECT
             tia.account_id,
-            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
-            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
-            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
-            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = '{$bronze}' THEN 1 ELSE 0 END), 0) AS bronze,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = '{$silver}' THEN 1 ELSE 0 END), 0) AS silver,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = '{$gold}' THEN 1 ELSE 0 END), 0) AS gold,
+            COALESCE(SUM(CASE WHEN tm.trophy_id IS NOT NULL AND t.type = '{$platinum}' THEN 1 ELSE 0 END), 0) AS platinum
         FROM
             temp_impacted_accounts tia
             LEFT JOIN trophy_earned te ON te.account_id = tia.account_id
@@ -260,7 +273,7 @@ UPDATE
             AND t.group_id = te.group_id
             AND t.order_id = te.order_id
             LEFT JOIN trophy_meta tm ON tm.trophy_id = t.id
-            AND tm.status = 0
+            AND tm.status = {$obtainableStatus}
         GROUP BY
             tia.account_id
     ) aggregate ON aggregate.account_id = tgp.account_id

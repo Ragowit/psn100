@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyListItem.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 
-class TrophyListService
+final class TrophyListService
 {
     public const int PAGE_SIZE = 50;
 
@@ -14,13 +16,16 @@ class TrophyListService
 
     public function countTrophies(): int
     {
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+
         $query = $this->database->prepare(
-            'SELECT COUNT(*)
+            "SELECT COUNT(*)
             FROM trophy t
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING (np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE tm.status = 0 AND ttm.status = 0'
+            WHERE tm.status = {$obtainableStatus} AND ttm.status = {$normalGameStatus}"
         );
 
         $query->execute();
@@ -36,9 +41,11 @@ class TrophyListService
     {
         $offset = max($offset, 0);
         $limit = max($limit, 1);
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
 
         $query = $this->database->prepare(
-            'SELECT
+            "SELECT
                 t.id AS trophy_id,
                 t.type AS trophy_type,
                 t.name AS trophy_name,
@@ -57,9 +64,9 @@ class TrophyListService
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             JOIN trophy_title tt USING(np_communication_id)
             JOIN trophy_title_meta ttm USING (np_communication_id)
-            WHERE tm.status = 0 AND ttm.status = 0
+            WHERE tm.status = {$obtainableStatus} AND ttm.status = {$normalGameStatus}
             ORDER BY tm.rarity_percent DESC
-            LIMIT :offset, :limit'
+            LIMIT :offset, :limit"
         );
 
         $query->bindValue(':offset', $offset, PDO::PARAM_INT);

@@ -41,8 +41,8 @@ final class WorkerPage
             $successMessage,
             $errorMessage,
             $sortLinks,
-            $sortField->value,
-            $sortDirection->value
+            $sortField,
+            $sortDirection
         );
     }
 

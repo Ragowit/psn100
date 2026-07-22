@@ -10,6 +10,7 @@ require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
+require_once __DIR__ . '/../GameAvailabilityStatus.php';
 require_once __DIR__ . '/PlayerScanCatalogSideEffects.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 require_once __DIR__ . '/PlayerScanTitleHeaderSynchronizer.php';
@@ -317,7 +318,7 @@ final class PlayerScanTitleCatalogSynchronizer
                 $query->bindValue(':np_communication_id', $npid, PDO::PARAM_STR);
                 $query->execute();
                 $status = $query->fetchColumn();
-                if ((int) $status === 2) {
+                if (GameAvailabilityStatus::fromInt((int) $status) === GameAvailabilityStatus::MERGED) {
                     $this->logger->log('New trophies added for ' . $trophyTitle->name() . '. ' . $npid . ', ' . $trophyGroupId . ', ' . $trophyGroupName);
                 } else {
                     $this->logger->log('SET VERSION for ' . $trophyTitle->name() . '. ' . $npid . ', ' . $trophyGroupId . ', ' . $trophyGroupName);

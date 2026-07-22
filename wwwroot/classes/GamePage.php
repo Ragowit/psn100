@@ -18,12 +18,6 @@ require_once __DIR__ . '/Utility.php';
 
 final class GamePage
 {
-    private GameService $gameService;
-
-    private GameHeaderService $gameHeaderService;
-
-    private Utility $utility;
-
     private GameDetails $game;
 
     private GameHeaderData $headerData;
@@ -55,16 +49,13 @@ final class GamePage
      * @param array<string, mixed> $queryParameters
      */
     public function __construct(
-        GameService $gameService,
-        GameHeaderService $gameHeaderService,
-        Utility $utility,
+        private GameService $gameService,
+        private GameHeaderService $gameHeaderService,
+        private Utility $utility,
         int $gameId,
         array $queryParameters = [],
         ?string $playerOnlineId = null
     ) {
-        $this->gameService = $gameService;
-        $this->gameHeaderService = $gameHeaderService;
-        $this->utility = $utility;
         $this->playerOnlineId = $playerOnlineId !== null ? trim($playerOnlineId) : null;
 
         $this->game = $this->loadGame($gameId);

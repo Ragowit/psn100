@@ -53,7 +53,7 @@ final class DailyCronJobTest extends TestCase
 
     public function testApplyTrophyRarityQueryUsesTempTableOwnerCountsAndTopTenThousandDenominator(): void
     {
-        $source = $this->readPrivateConstant('APPLY_TROPHY_RARITY_QUERY');
+        $source = $this->invokeBuildApplyTrophyRarityQuery();
 
         $this->assertStringContainsString('LEFT JOIN tmp_daily_ranked_trophy_owners owners', $source);
         $this->assertStringContainsString('/ 10000.0) * 100 AS rarity_percent', $source);
@@ -65,7 +65,7 @@ final class DailyCronJobTest extends TestCase
 
     public function testApplyTrophyRarityQueryAssignsRarityNamesFromThresholds(): void
     {
-        $source = $this->readPrivateConstant('APPLY_TROPHY_RARITY_QUERY');
+        $source = $this->invokeBuildApplyTrophyRarityQuery();
 
         $this->assertStringContainsString("WHEN r.rarity_percent > 10 THEN 'COMMON'", $source);
         $this->assertStringContainsString("WHEN r.rarity_percent > 2 THEN 'UNCOMMON'", $source);
@@ -509,6 +509,17 @@ final class DailyCronJobTest extends TestCase
         $constant = $class->getReflectionConstant($name);
         $this->assertTrue($constant instanceof ReflectionClassConstant);
         $value = $constant->getValue();
+        $this->assertTrue(is_string($value));
+
+        return $value;
+    }
+
+    private function invokeBuildApplyTrophyRarityQuery(): string
+    {
+        $class = new ReflectionClass(DailyCronJob::class);
+        $method = $class->getMethod('buildApplyTrophyRarityQuery');
+        $job = $class->newInstanceWithoutConstructor();
+        $value = $method->invoke($job);
         $this->assertTrue(is_string($value));
 
         return $value;

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerTimelineData.php';
 require_once __DIR__ . '/PlayerTimelineEntry.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+
 class PlayerTimelineService
 {
     public function __construct(private readonly PDO $database)
@@ -12,7 +14,9 @@ class PlayerTimelineService
 
     public function getTimelineData(int $accountId): ?PlayerTimelineData
     {
-        $sql = <<<'SQL'
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+
+        $sql = <<<SQL
             WITH timeline AS (
                 SELECT
                     tt.id AS game_id,
@@ -28,7 +32,7 @@ class PlayerTimelineService
                 JOIN trophy_title tt ON tt.np_communication_id = ttp.np_communication_id
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = ttp.np_communication_id
                 WHERE ttp.account_id = :account_id
-                    AND ttm.status = 0
+                    AND ttm.status = {$normalGameStatus}
                 GROUP BY ttp.np_communication_id, tt.id, tt.name, ttp.progress
             )
             SELECT

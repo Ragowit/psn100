@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../TrophyMetaStatus.php';
+require_once __DIR__ . '/../GameAvailabilityStatus.php';
+require_once __DIR__ . '/../TrophyRarityName.php';
 
 final readonly class DailyCronJob implements CronJobInterface
 {
@@ -106,7 +109,18 @@ final readonly class DailyCronJob implements CronJobInterface
      * earned by a top-10k player get zero owners via LEFT JOIN + IFNULL, matching
      * the previous zero-owner fast path (10000 / LEGENDARY when obtainable).
      */
-    private const string APPLY_TROPHY_RARITY_QUERY = <<<'SQL'
+    private function buildApplyTrophyRarityQuery(): string
+    {
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+        $normalTitleStatus = GameAvailabilityStatus::NORMAL->value;
+        $none = TrophyRarityName::None->toSqlLiteral();
+        $common = TrophyRarityName::Common->toSqlLiteral();
+        $uncommon = TrophyRarityName::Uncommon->toSqlLiteral();
+        $rare = TrophyRarityName::Rare->toSqlLiteral();
+        $epic = TrophyRarityName::Epic->toSqlLiteral();
+        $legendary = TrophyRarityName::Legendary->toSqlLiteral();
+
+        return <<<SQL
         WITH rarity AS (
             SELECT
                 t.id AS trophy_id,
@@ -132,33 +146,34 @@ final readonly class DailyCronJob implements CronJobInterface
             tm.rarity_percent = r.rarity_percent,
             tm.owners = r.trophy_owners,
             tm.rarity_point = IF(
-                r.meta_status = 0 AND r.title_status = 0,
+                r.meta_status = {$obtainableStatus} AND r.title_status = {$normalTitleStatus},
                 IF(r.rarity_percent = 0, 10000, FLOOR(1 / (r.rarity_percent / 100) - 1)),
                 0
             ),
             tm.rarity_name = CASE
-                WHEN r.meta_status != 0 OR r.title_status != 0 THEN 'NONE'
-                WHEN r.rarity_percent > 10 THEN 'COMMON'
-                WHEN r.rarity_percent > 2 THEN 'UNCOMMON'
-                WHEN r.rarity_percent > 0.2 THEN 'RARE'
-                WHEN r.rarity_percent > 0.02 THEN 'EPIC'
-                ELSE 'LEGENDARY'
+                WHEN r.meta_status != {$obtainableStatus} OR r.title_status != {$normalTitleStatus} THEN {$none}
+                WHEN r.rarity_percent > 10 THEN {$common}
+                WHEN r.rarity_percent > 2 THEN {$uncommon}
+                WHEN r.rarity_percent > 0.2 THEN {$rare}
+                WHEN r.rarity_percent > 0.02 THEN {$epic}
+                ELSE {$legendary}
             END,
             tm.in_game_rarity_percent = r.in_game_rarity_percent,
             tm.in_game_rarity_point = IF(
-                r.meta_status = 0 AND r.title_status = 0 AND r.title_owners > 0,
+                r.meta_status = {$obtainableStatus} AND r.title_status = {$normalTitleStatus} AND r.title_owners > 0,
                 IF(r.in_game_rarity_percent = 0, 0, FLOOR(1 / (r.in_game_rarity_percent / 100) - 1)),
                 0
             ),
             tm.in_game_rarity_name = CASE
-                WHEN r.meta_status != 0 OR r.title_status != 0 THEN 'NONE'
-                WHEN r.in_game_rarity_percent <= 1 THEN 'LEGENDARY'
-                WHEN r.in_game_rarity_percent <= 5 THEN 'EPIC'
-                WHEN r.in_game_rarity_percent <= 20 THEN 'RARE'
-                WHEN r.in_game_rarity_percent <= 60 THEN 'UNCOMMON'
-                ELSE 'COMMON'
+                WHEN r.meta_status != {$obtainableStatus} OR r.title_status != {$normalTitleStatus} THEN {$none}
+                WHEN r.in_game_rarity_percent <= 1 THEN {$legendary}
+                WHEN r.in_game_rarity_percent <= 5 THEN {$epic}
+                WHEN r.in_game_rarity_percent <= 20 THEN {$rare}
+                WHEN r.in_game_rarity_percent <= 60 THEN {$uncommon}
+                ELSE {$common}
             END
         SQL;
+    }
 
     private const string UPDATE_TITLE_RARITY_POINTS_QUERY = <<<'SQL'
         WITH rarity AS (
@@ -296,7 +311,7 @@ final readonly class DailyCronJob implements CronJobInterface
 
     private function applyTrophyRarityFromTemporaryTable(): void
     {
-        $query = $this->database->prepare(self::APPLY_TROPHY_RARITY_QUERY);
+        $query = $this->database->prepare($this->buildApplyTrophyRarityQuery());
         $query->execute();
     }
 

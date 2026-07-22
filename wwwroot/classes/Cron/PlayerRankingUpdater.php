@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Psn100Logger.php';
+require_once __DIR__ . '/../PlayerStatus.php';
 
 class PlayerRankingUpdater
 {
@@ -47,8 +48,8 @@ SELECT
         ORDER BY `in_game_rarity_points` DESC
     ) AS in_game_rarity_ranking_country
 FROM player
-WHERE `status` = 0
-SQL;
+WHERE `status` = 
+SQL . PlayerStatus::NORMAL->value;
 
     public function __construct(
         private readonly PDO $database,

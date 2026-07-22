@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/TrophyMetaStatus.php';
+
 final class TrophyCalculator
 {
     private const int BRONZE_SCORE = 15;
@@ -94,14 +96,16 @@ final class TrophyCalculator
 
     public function recalculateTrophyGroup(string $npCommunicationId, string $groupId, string $accountId): void
     {
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+
         $query = $this->database->prepare(
-            'SELECT t.type, COUNT(*) AS count
+            "SELECT t.type, COUNT(*) AS count
             FROM trophy t
             JOIN trophy_meta tm ON tm.trophy_id = t.id
             WHERE t.np_communication_id = :np_communication_id
                 AND t.group_id = :group_id
-                AND tm.status = 0
-            GROUP BY t.type'
+                AND tm.status = {$obtainableStatus}
+            GROUP BY t.type"
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
@@ -132,7 +136,7 @@ final class TrophyCalculator
         $maxScore = $this->calculateScore($trophyTypes);
 
         $query = $this->database->prepare(
-            'SELECT t.type, COUNT(t.type) AS count
+            "SELECT t.type, COUNT(t.type) AS count
             FROM trophy_earned te
             JOIN trophy t ON t.np_communication_id = te.np_communication_id
                 AND t.order_id = te.order_id
@@ -141,8 +145,8 @@ final class TrophyCalculator
                 AND te.np_communication_id = :np_communication_id
                 AND te.group_id = :group_id
                 AND te.earned = 1
-                AND tm.status = 0
-            GROUP BY t.type'
+                AND tm.status = {$obtainableStatus}
+            GROUP BY t.type"
         );
         $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);

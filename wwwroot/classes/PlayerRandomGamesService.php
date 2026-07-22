@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Random\Randomizer;
 
 require_once __DIR__ . '/PlatformSql.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 
 class PlayerRandomGamesService
 {
@@ -67,14 +68,16 @@ class PlayerRandomGamesService
 
     private function buildBaseQuery(PlayerRandomGamesFilter $filter): string
     {
-        $sql = <<<'SQL'
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+
+        $sql = <<<SQL
              FROM trophy_title tt
             JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
             LEFT JOIN trophy_title_player ttp ON
                 ttp.np_communication_id = tt.np_communication_id
                 AND ttp.account_id = :account_id
             WHERE
-                ttm.status = 0
+                ttm.status = {$normalGameStatus}
                 AND (ttp.progress IS NULL OR ttp.progress < 100)
         SQL;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../ChangelogEntry.php';
+require_once __DIR__ . '/../TrophyRarityName.php';
 require_once __DIR__ . '/MergeTrophyCopier.php';
 require_once __DIR__ . '/MergeTrophyGroupCopier.php';
 require_once __DIR__ . '/TrophyGroupConflictResolver.php';
@@ -98,29 +99,6 @@ class GameCopyService
                     AND tm.child_order_id = t.order_id
                     AND tm.parent_np_communication_id = :parent_np_communication_id
             )
-        SQL;
-
-    private const string TROPHY_META_INSERT_QUERY = <<<'SQL'
-        INSERT INTO
-            trophy_meta (
-                trophy_id,
-                status,
-                rarity_name
-            )
-        SELECT
-            parent.id,
-            tm.status,
-            'NONE'
-        FROM
-            trophy parent
-            INNER JOIN trophy t ON t.np_communication_id = :child_np_communication_id
-                AND t.group_id = parent.group_id
-                AND t.order_id = parent.order_id
-            INNER JOIN trophy_meta tm ON tm.trophy_id = t.id
-            LEFT JOIN trophy_meta existing ON existing.trophy_id = parent.id
-        WHERE
-            parent.np_communication_id = :parent_np_communication_id
-            AND existing.trophy_id IS NULL
         SQL;
 
     private readonly PDO $database;
@@ -279,11 +257,39 @@ class GameCopyService
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
 
-        $metaQuery = $this->database->prepare(self::TROPHY_META_INSERT_QUERY);
+        $metaQuery = $this->database->prepare($this->buildTrophyMetaInsertQuery());
         $metaQuery->bindValue(':child_np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $metaQuery->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $metaQuery->execute();
         $metaQuery->closeCursor();
+    }
+
+    private function buildTrophyMetaInsertQuery(): string
+    {
+        $none = TrophyRarityName::None->toSqlLiteral();
+
+        return <<<SQL
+        INSERT INTO
+            trophy_meta (
+                trophy_id,
+                status,
+                rarity_name
+            )
+        SELECT
+            parent.id,
+            tm.status,
+            {$none}
+        FROM
+            trophy parent
+            INNER JOIN trophy t ON t.np_communication_id = :child_np_communication_id
+                AND t.group_id = parent.group_id
+                AND t.order_id = parent.order_id
+            INNER JOIN trophy_meta tm ON tm.trophy_id = t.id
+            LEFT JOIN trophy_meta existing ON existing.trophy_id = parent.id
+        WHERE
+            parent.np_communication_id = :parent_np_communication_id
+            AND existing.trophy_id IS NULL
+        SQL;
     }
 
     private function updateTrophyTitleCounts(string $npCommunicationId): void
