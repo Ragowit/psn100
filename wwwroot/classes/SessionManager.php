@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/RequestParameter.php';
+
 final class SessionManager
 {
     public static function ensureStarted(): void
@@ -14,8 +16,7 @@ final class SessionManager
             return;
         }
 
-        $https = (string) ($_SERVER['HTTPS'] ?? '');
-        $isSecure = ($https !== '' && $https !== 'off')
+        $isSecure = RequestParameter::toBool($_SERVER['HTTPS'] ?? null)
             || (($_SERVER['SERVER_PORT'] ?? '') === '443');
 
         session_set_cookie_params([
