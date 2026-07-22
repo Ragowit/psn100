@@ -100,13 +100,17 @@ final readonly class GameListFilter
         return clone($this, ['page' => max($page, 1)]);
     }
 
-    public function getSort(): string
+    public function getSort(): GameListSort
     {
-        return $this->sort->value;
+        return $this->sort;
     }
 
-    public function isSort(string $sort): bool
+    public function isSort(GameListSort|string $sort): bool
     {
+        if ($sort instanceof GameListSort) {
+            return $this->sort === $sort;
+        }
+
         return $this->sort->value === $sort;
     }
 

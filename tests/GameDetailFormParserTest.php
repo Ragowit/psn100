@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameDetail.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/GameDetailAction.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/GameDetailFormParser.php';
 require_once __DIR__ . '/../wwwroot/classes/GameAvailabilityStatus.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 
 final class GameDetailFormParserTest extends TestCase
 {
@@ -45,10 +47,11 @@ final class GameDetailFormParserTest extends TestCase
 
     public function testParseActionNormalizesCaseAndWhitespace(): void
     {
-        $this->assertSame('update-status', $this->parser->parseAction('Update-Status'));
-        $this->assertSame('update-detail', $this->parser->parseAction(' update-detail '));
-        $this->assertSame('', $this->parser->parseAction(''));
-        $this->assertSame('', $this->parser->parseAction(null));
+        $this->assertSame(GameDetailAction::UpdateStatus, $this->parser->parseAction('Update-Status'));
+        $this->assertSame(GameDetailAction::UpdateDetail, $this->parser->parseAction(' update-detail '));
+        $this->assertSame(null, $this->parser->parseAction(''));
+        $this->assertSame(null, $this->parser->parseAction(null));
+        $this->assertSame(null, $this->parser->parseAction('unknown'));
     }
 
     public function testParseStatusAcceptsValidEnumValues(): void
@@ -109,5 +112,10 @@ final class GameDetailFormParserTest extends TestCase
         $this->assertSame('999', $detail->getPsnprofilesId());
         $this->assertSame(GameAvailabilityStatus::OBSOLETE, $detail->getStatus());
         $this->assertSame('42,84', $detail->getObsoleteIds());
+    }
+
+    public function testGetPlatformOptionsUsesPlatformLabelOrder(): void
+    {
+        $this->assertSame(Platform::labelOrder(), $this->parser->getPlatformOptions());
     }
 }

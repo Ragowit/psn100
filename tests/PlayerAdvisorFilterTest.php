@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/PlayerAdvisorFilter.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerAdvisorSort.php';
 require_once __DIR__ . '/TestCase.php';
 
 final class PlayerAdvisorFilterTest extends TestCase
@@ -12,7 +13,7 @@ final class PlayerAdvisorFilterTest extends TestCase
         $filter = PlayerAdvisorFilter::fromArray([]);
 
         $this->assertSame(1, $filter->getPage());
-        $this->assertSame(PlayerAdvisorFilter::SORT_RARITY, $filter->getSort());
+        $this->assertSame(PlayerAdvisorSort::Rarity, $filter->getSort());
         $this->assertFalse($filter->hasPlatformFilters());
         $this->assertSame([], $filter->getPlatforms());
     }
@@ -44,14 +45,15 @@ final class PlayerAdvisorFilterTest extends TestCase
     {
         $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY]);
 
-        $this->assertSame(PlayerAdvisorFilter::SORT_IN_GAME_RARITY, $filter->getSort());
+        $this->assertSame(PlayerAdvisorSort::InGameRarity, $filter->getSort());
+        $this->assertTrue($filter->isSort(PlayerAdvisorSort::InGameRarity));
     }
 
     public function testFromArrayFallsBackToDefaultSortWhenUnknown(): void
     {
         $filter = PlayerAdvisorFilter::fromArray(['sort' => 'unknown']);
 
-        $this->assertSame(PlayerAdvisorFilter::SORT_RARITY, $filter->getSort());
+        $this->assertSame(PlayerAdvisorSort::Rarity, $filter->getSort());
     }
 
     public function testPageIsNeverBelowOne(): void

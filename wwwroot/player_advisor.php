@@ -5,6 +5,7 @@ require_once __DIR__ . '/classes/Html.php';
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerAdvisorPageContext.php';
+require_once __DIR__ . '/classes/PlayerAdvisorSort.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
@@ -35,7 +36,7 @@ $platformFilterOptions = $playerAdvisorPageContext->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerStatusNotice = $playerAdvisorPageContext->getPlayerStatusNotice();
 $playerOnlineId = $playerAdvisorPageContext->getPlayerOnlineId();
-$rarityColumnLabel = $playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY
+$rarityColumnLabel = $playerAdvisorFilter->isSort(PlayerAdvisorSort::InGameRarity)
     ? 'Rarity (Game)'
     : 'Rarity';
 
@@ -65,8 +66,8 @@ require_once("header.php");
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
-                            <option value="<?= PlayerAdvisorFilter::SORT_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_RARITY) { echo ' selected'; } ?>>Rarity</option>
-                            <option value="<?= PlayerAdvisorFilter::SORT_IN_GAME_RARITY; ?>"<?php if ($playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY) { echo ' selected'; } ?>>Rarity (Game)</option>
+                            <option value="<?= PlayerAdvisorSort::Rarity->value; ?>"<?php if ($playerAdvisorFilter->isSort(PlayerAdvisorSort::Rarity)) { echo ' selected'; } ?>>Rarity</option>
+                            <option value="<?= PlayerAdvisorSort::InGameRarity->value; ?>"<?php if ($playerAdvisorFilter->isSort(PlayerAdvisorSort::InGameRarity)) { echo ' selected'; } ?>>Rarity (Game)</option>
                         </select>
                     </div>
                 </form>
@@ -153,7 +154,7 @@ require_once("header.php");
                                         </td>
                                         <td class="text-center align-middle">
                                         <?php
-                                        $rarityPercent = $playerAdvisorFilter->getSort() === PlayerAdvisorFilter::SORT_IN_GAME_RARITY
+                                        $rarityPercent = $playerAdvisorFilter->isSort(PlayerAdvisorSort::InGameRarity)
                                             ? $trophy->getInGameRarityPercent()
                                             : $trophy->getRarityPercent();
                                         $trophyRarity = $trophyRarityFormatter->format($rarityPercent);

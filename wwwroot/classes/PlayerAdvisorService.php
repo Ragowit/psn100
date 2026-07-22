@@ -116,7 +116,7 @@ class PlayerAdvisorService
 
     private function buildOrderByClause(PlayerAdvisorFilter $filter): string
     {
-        return match (PlayerAdvisorSort::from($filter->getSort())) {
+        return match ($filter->getSort()) {
             PlayerAdvisorSort::InGameRarity => ' ORDER BY tm.in_game_rarity_percent DESC, ttp.last_updated_date DESC',
             PlayerAdvisorSort::Rarity => ' ORDER BY tm.rarity_percent DESC, ttp.last_updated_date DESC',
         };

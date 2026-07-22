@@ -200,7 +200,7 @@ class GameListService
     private function buildConditions(GameListFilter $filter): string
     {
         $conditions = [
-            match (GameListSort::from($filter->getSort())) {
+            match ($filter->getSort()) {
                 GameListSort::Completion => "ttm.status = 0 AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
                 GameListSort::Rarity, GameListSort::InGameRarity => 'ttm.status = 0',
                 default => 'ttm.status != 2',
@@ -240,7 +240,7 @@ class GameListService
 
     private function buildOrderByClause(GameListFilter $filter): string
     {
-        return match (GameListSort::from($filter->getSort())) {
+        return match ($filter->getSort()) {
             GameListSort::Completion => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListSort::Owners => 'ORDER BY owners DESC, `name`',
             GameListSort::Rarity => 'ORDER BY rarity_points DESC, owners DESC, `name`',

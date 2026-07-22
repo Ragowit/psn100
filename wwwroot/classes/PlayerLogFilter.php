@@ -42,13 +42,17 @@ final readonly class PlayerLogFilter
         );
     }
 
-    public function getSort(): string
+    public function getSort(): PlayerLogSort
     {
-        return $this->sort->value;
+        return $this->sort;
     }
 
-    public function isSort(string $sort): bool
+    public function isSort(PlayerLogSort|string $sort): bool
     {
+        if ($sort instanceof PlayerLogSort) {
+            return $this->sort === $sort;
+        }
+
         return $this->sort === PlayerLogSort::fromMixed($sort);
     }
 
