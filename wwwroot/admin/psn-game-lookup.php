@@ -7,7 +7,7 @@ require_once '../vendor/autoload.php';
 require_once '../classes/Admin/PsnGameLookupService.php';
 require_once '../classes/Admin/PsnGameLookupRequestHandler.php';
 
-$gameId = isset($_GET['gameId']) ? (string) $_GET['gameId'] : '';
+$gameId = (string) ($_GET['gameId'] ?? '');
 $lookupService = PsnGameLookupService::fromDatabase($database);
 $handledRequest = PsnGameLookupRequestHandler::handle($lookupService, $gameId);
 

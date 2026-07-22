@@ -73,7 +73,7 @@ final class PsnPlayerLookupRequestHandler
         $country = null;
 
         if (strlen($trimmed) >= 2) {
-            $country = strtoupper(substr($trimmed, -2));
+            $country = substr($trimmed, -2) |> strtoupper(...);
         }
 
         return [$trimmed, $country];

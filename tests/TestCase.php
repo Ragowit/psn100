@@ -13,7 +13,7 @@ abstract class TestCase
     public final function runTests(): array
     {
         $results = [];
-        $className = get_class($this);
+        $className = $this::class;
 
         foreach ($this->getTestMethods() as $method) {
             $this->setUp();

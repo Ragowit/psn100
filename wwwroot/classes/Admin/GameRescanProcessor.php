@@ -9,11 +9,8 @@ require_once __DIR__ . '/GameRescanRequestHandler.php';
 
 final class GameRescanProcessor
 {
-    private GameRescanRequestHandler $requestHandler;
-
-    public function __construct(GameRescanRequestHandler $requestHandler)
+    public function __construct(private readonly GameRescanRequestHandler $requestHandler)
     {
-        $this->requestHandler = $requestHandler;
     }
 
     #[\NoDiscard]

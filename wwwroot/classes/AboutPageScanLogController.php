@@ -16,27 +16,14 @@ final class AboutPageScanLogController
     private const int MIN_LIMIT = 1;
     private const int MAX_LIMIT = 100;
 
-    private AboutPageDataProviderInterface $aboutPageService;
-    private JsonResponseEmitter $jsonResponder;
-    private ?IpRateLimitService $rateLimitService;
-    private int $defaultLimit;
-    private int $minLimit;
-    private int $maxLimit;
-
     public function __construct(
-        AboutPageDataProviderInterface $aboutPageService,
-        JsonResponseEmitter $jsonResponder,
-        ?IpRateLimitService $rateLimitService = null,
-        int $defaultLimit = self::DEFAULT_LIMIT,
-        int $minLimit = self::MIN_LIMIT,
-        int $maxLimit = self::MAX_LIMIT
+        private readonly AboutPageDataProviderInterface $aboutPageService,
+        private readonly JsonResponseEmitter $jsonResponder,
+        private readonly ?IpRateLimitService $rateLimitService = null,
+        private readonly int $defaultLimit = self::DEFAULT_LIMIT,
+        private readonly int $minLimit = self::MIN_LIMIT,
+        private readonly int $maxLimit = self::MAX_LIMIT,
     ) {
-        $this->aboutPageService = $aboutPageService;
-        $this->jsonResponder = $jsonResponder;
-        $this->rateLimitService = $rateLimitService;
-        $this->defaultLimit = $defaultLimit;
-        $this->minLimit = $minLimit;
-        $this->maxLimit = $maxLimit;
     }
 
     #[\NoDiscard]

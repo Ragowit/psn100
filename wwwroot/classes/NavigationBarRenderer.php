@@ -8,14 +8,10 @@ require_once __DIR__ . '/Html.php';
 
 final class NavigationBarRenderer
 {
-    private NavigationState $state;
-
-    private NavigationMenu $menu;
-
-    private function __construct(NavigationState $state, NavigationMenu $menu)
-    {
-        $this->state = $state;
-        $this->menu = $menu;
+    private function __construct(
+        private readonly NavigationState $state,
+        private readonly NavigationMenu $menu,
+    ) {
     }
 
     #[\NoDiscard]

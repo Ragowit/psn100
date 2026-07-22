@@ -186,10 +186,10 @@ require_once("header.php");
             <?= $paginationRenderer->render(
                 $page,
                 $totalPages,
-                static fn (int $pageNumber): array => array_merge(
-                    $filterParameters,
-                    ['page' => (string) $pageNumber]
-                ),
+                static fn (int $pageNumber): array => [
+                    ...$filterParameters,
+                    'page' => (string) $pageNumber,
+                ],
                 'Player log navigation'
             ); ?>
         </div>

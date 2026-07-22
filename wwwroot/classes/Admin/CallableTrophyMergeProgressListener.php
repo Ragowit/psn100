@@ -16,7 +16,7 @@ final class CallableTrophyMergeProgressListener implements TrophyMergeProgressLi
      */
     public function __construct(callable $callback)
     {
-        $this->callback = \Closure::fromCallable($callback);
+        $this->callback = $callback(...);
     }
 
     #[\Override]

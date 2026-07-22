@@ -59,12 +59,12 @@ final class PlayStationWorkerAuthenticator
         ?callable $sleeper = null,
         ?callable $refreshTokenPersistenceFailureHandler = null,
     ) {
-        $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable($clientFactory ?? self::DEFAULT_CLIENT_FACTORY);
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER);
-        $this->sleeper = \Closure::fromCallable($sleeper ?? self::DEFAULT_SLEEPER);
+        $this->workerFetcher = $workerFetcher(...);
+        $this->clientFactory = ($clientFactory ?? self::DEFAULT_CLIENT_FACTORY)(...);
+        $this->refreshTokenSaver = ($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER)(...);
+        $this->sleeper = ($sleeper ?? self::DEFAULT_SLEEPER)(...);
         $this->refreshTokenPersistenceFailureHandler = $refreshTokenPersistenceFailureHandler !== null
-            ? \Closure::fromCallable($refreshTokenPersistenceFailureHandler)
+            ? $refreshTokenPersistenceFailureHandler(...)
             : null;
     }
 
@@ -129,7 +129,7 @@ final class PlayStationWorkerAuthenticator
         ?callable $onLoginFailure = null,
     ): object {
         $onLoginFailureClosure = $onLoginFailure !== null
-            ? \Closure::fromCallable($onLoginFailure)
+            ? $onLoginFailure(...)
             : null;
 
         while (true) {

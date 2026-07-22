@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/StaticAsset.php';
 require_once '../classes/Admin/AdminRequest.php';
+require_once '../classes/Admin/WorkerAction.php';
 require_once '../classes/Admin/WorkerCredentialMasker.php';
 require_once '../classes/Admin/WorkerService.php';
 require_once '../classes/Admin/WorkerPage.php';
@@ -48,7 +49,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
             <div class="mb-4 d-flex justify-content-end">
                 <form method="post" onsubmit="return confirm('Restart all workers?');">
                     <?php AdminBootstrap::renderCsrfField(); ?>
-                    <input type="hidden" name="action" value="restart_all_workers">
+                    <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::RestartAllWorkers->value); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         Restart All Workers
                     </button>
@@ -111,7 +112,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                         <div class="vstack gap-2">
                                             <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
                                                 <?php AdminBootstrap::renderCsrfField(); ?>
-                                                <input type="hidden" name="action" value="update_refresh_token">
+                                                <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::UpdateRefreshToken->value); ?>">
                                                 <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                                 <label class="form-label small text-body-secondary mb-0 text-nowrap" for="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                                     Refresh Token
@@ -142,7 +143,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                             </form>
                                             <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
                                                 <?php AdminBootstrap::renderCsrfField(); ?>
-                                                <input type="hidden" name="action" value="update_npsso">
+                                                <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::UpdateNpsso->value); ?>">
                                                 <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                                 <label class="form-label small text-body-secondary mb-0 text-nowrap" for="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                                     NPSSO
@@ -233,7 +234,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                             onsubmit="return confirm('Restart worker #<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>?');"
                                         >
                                             <?php AdminBootstrap::renderCsrfField(); ?>
-                                            <input type="hidden" name="action" value="restart_worker">
+                                            <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::RestartWorker->value); ?>">
                                             <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-warning">
                                                 Restart

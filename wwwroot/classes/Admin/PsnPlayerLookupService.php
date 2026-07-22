@@ -41,9 +41,9 @@ final class PsnPlayerLookupService
      */
     public function __construct(callable $workerFetcher, ?callable $clientFactory = null, ?callable $refreshTokenSaver = null)
     {
-        $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable($clientFactory ?? self::DEFAULT_CLIENT_FACTORY);
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER);
+        $this->workerFetcher = $workerFetcher(...);
+        $this->clientFactory = ($clientFactory ?? self::DEFAULT_CLIENT_FACTORY)(...);
+        $this->refreshTokenSaver = ($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER)(...);
     }
 
     #[\NoDiscard]

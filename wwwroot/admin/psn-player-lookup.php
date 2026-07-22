@@ -6,7 +6,7 @@ require_once '../vendor/autoload.php';
 require_once '../classes/Admin/PsnPlayerLookupService.php';
 require_once '../classes/Admin/PsnPlayerLookupRequestHandler.php';
 
-$onlineId = isset($_GET['onlineId']) ? (string) $_GET['onlineId'] : '';
+$onlineId = (string) ($_GET['onlineId'] ?? '');
 $lookupService = PsnPlayerLookupService::fromDatabase($database);
 $handledRequest = PsnPlayerLookupRequestHandler::handle($lookupService, $onlineId);
 

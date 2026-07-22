@@ -12,11 +12,8 @@ require_once __DIR__ . '/CallableTrophyMergeProgressListener.php';
 
 class TrophyMergeProcessor
 {
-    private TrophyMergeRequestHandler $requestHandler;
-
-    public function __construct(TrophyMergeRequestHandler $requestHandler)
+    public function __construct(private readonly TrophyMergeRequestHandler $requestHandler)
     {
-        $this->requestHandler = $requestHandler;
     }
 
     #[\NoDiscard]

@@ -8,13 +8,10 @@ require_once __DIR__ . '/AdminRequest.php';
 require_once __DIR__ . '/CheaterRequestResult.php';
 require_once __DIR__ . '/CheaterService.php';
 
-class CheaterRequestHandler
+final class CheaterRequestHandler
 {
-    private CheaterService $cheaterService;
-
-    public function __construct(CheaterService $cheaterService)
+    public function __construct(private readonly CheaterService $cheaterService)
     {
-        $this->cheaterService = $cheaterService;
     }
 
     public function handle(AdminRequest $request): CheaterRequestResult

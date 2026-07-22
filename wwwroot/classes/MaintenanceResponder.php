@@ -59,8 +59,6 @@ final readonly class MaintenanceResponder
 
     private function toClosure(?callable $callable, callable $fallback): \Closure
     {
-        return $callable instanceof \Closure
-            ? $callable
-            : \Closure::fromCallable($callable ?? $fallback);
+        return ($callable ?? $fallback)(...);
     }
 }

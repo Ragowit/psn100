@@ -59,10 +59,10 @@ final class PsnTrophyTitleComparisonService
         ?callable $timeProvider = null,
         ?callable $refreshTokenSaver = null,
     ) {
-        $this->workerFetcher = \Closure::fromCallable($workerFetcher);
-        $this->clientFactory = \Closure::fromCallable($clientFactory ?? self::DEFAULT_CLIENT_FACTORY);
-        $this->timeProvider = \Closure::fromCallable($timeProvider ?? self::DEFAULT_TIME_PROVIDER);
-        $this->refreshTokenSaver = \Closure::fromCallable($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER);
+        $this->workerFetcher = $workerFetcher(...);
+        $this->clientFactory = ($clientFactory ?? self::DEFAULT_CLIENT_FACTORY)(...);
+        $this->timeProvider = ($timeProvider ?? self::DEFAULT_TIME_PROVIDER)(...);
+        $this->refreshTokenSaver = ($refreshTokenSaver ?? self::DEFAULT_REFRESH_TOKEN_SAVER)(...);
     }
 
     #[\NoDiscard]

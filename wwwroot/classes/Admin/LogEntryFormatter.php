@@ -8,10 +8,6 @@ require_once __DIR__ . '/../Html.php';
 
 final class LogEntryFormatter
 {
-    private readonly PDO $database;
-
-    private readonly Utility $utility;
-
     /**
      * @var array<int, array{id: int, name: string}|null>
      */
@@ -22,10 +18,10 @@ final class LogEntryFormatter
      */
     private array $gameCacheByNpId = [];
 
-    public function __construct(PDO $database, Utility $utility)
-    {
-        $this->database = $database;
-        $this->utility = $utility;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly Utility $utility,
+    ) {
     }
 
     public function format(string $message): string

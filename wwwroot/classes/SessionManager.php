@@ -14,7 +14,8 @@ final class SessionManager
             return;
         }
 
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        $https = (string) ($_SERVER['HTTPS'] ?? '');
+        $isSecure = ($https !== '' && $https !== 'off')
             || (($_SERVER['SERVER_PORT'] ?? '') === '443');
 
         session_set_cookie_params([

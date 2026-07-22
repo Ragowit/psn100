@@ -13,11 +13,8 @@ require_once __DIR__ . '/CronJobRunner.php';
  */
 final class CronJobApplication
 {
-    private CronJobRunner $runner;
-
-    private function __construct(CronJobRunner $runner)
+    private function __construct(private readonly CronJobRunner $runner)
     {
-        $this->runner = $runner;
     }
 
     #[\NoDiscard]

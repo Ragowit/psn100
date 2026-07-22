@@ -46,7 +46,7 @@ final class MergeTrophyCopier
              ORDER BY t.group_id, t.order_id'
         );
 
-        $parameters = array_merge([$childNpCommunicationId], array_keys($groupIdMapping));
+        $parameters = [$childNpCommunicationId, ...array_keys($groupIdMapping)];
         $query->execute($parameters);
 
         $trophies = $query->fetchAll(PDO::FETCH_ASSOC);

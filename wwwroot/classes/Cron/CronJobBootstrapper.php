@@ -7,16 +7,15 @@ require_once __DIR__ . '/CronJobApplication.php';
 
 final class CronJobBootstrapper
 {
-    private CronJobApplication $application;
-
     private string $projectRoot;
 
     private ?\PDO $database = null;
 
-    private function __construct(string $projectRoot, CronJobApplication $application)
-    {
+    private function __construct(
+        string $projectRoot,
+        private readonly CronJobApplication $application,
+    ) {
         $this->projectRoot = rtrim($projectRoot, '/\\');
-        $this->application = $application;
     }
 
     #[\NoDiscard]

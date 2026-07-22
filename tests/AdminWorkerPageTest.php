@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/AdminRequest.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerAction.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPage.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPageResult.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerPageSortLink.php';
@@ -58,7 +59,7 @@ final class AdminWorkerPageTest extends TestCase
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, '')));
         $page = new WorkerPage($service);
 
-        $request = new AdminRequest('POST', ['action' => 'update_npsso', 'worker_id' => '5', 'npsso' => 'updated']);
+        $request = new AdminRequest('POST', ['action' => WorkerAction::UpdateNpsso->value, 'worker_id' => '5', 'npsso' => 'updated']);
         $result = $page->handle([], $request);
 
         $this->assertSame('Worker NPSSO updated successfully.', $result->getSuccessMessage());
@@ -76,7 +77,7 @@ final class AdminWorkerPageTest extends TestCase
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, 'Done')));
         $page = new WorkerPage($service);
 
-        $request = new AdminRequest('POST', ['action' => 'restart_worker', 'worker_id' => '3']);
+        $request = new AdminRequest('POST', ['action' => WorkerAction::RestartWorker->value, 'worker_id' => '3']);
         $result = $page->handle([], $request);
 
         $this->assertSame('Worker #3 restart signal sent successfully. Done', $result->getSuccessMessage());
@@ -90,7 +91,7 @@ final class AdminWorkerPageTest extends TestCase
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(0, '')));
         $page = new WorkerPage($service);
 
-        $request = new AdminRequest('POST', ['action' => 'update_refresh_token', 'worker_id' => '7', 'refresh_token' => 'new-refresh-token-value']);
+        $request = new AdminRequest('POST', ['action' => WorkerAction::UpdateRefreshToken->value, 'worker_id' => '7', 'refresh_token' => 'new-refresh-token-value']);
         $result = $page->handle([], $request);
 
         $this->assertSame('Worker refresh token updated successfully.', $result->getSuccessMessage());
@@ -105,7 +106,7 @@ final class AdminWorkerPageTest extends TestCase
         $service = new WorkerService($this->database, new FakeCommandExecutor(new CommandExecutionResult(2, 'error')));
         $page = new WorkerPage($service);
 
-        $request = new AdminRequest('POST', ['action' => 'restart_all_workers']);
+        $request = new AdminRequest('POST', ['action' => WorkerAction::RestartAllWorkers->value]);
         $result = $page->handle([], $request);
 
         $this->assertSame(null, $result->getSuccessMessage());
@@ -117,6 +118,8 @@ final class AdminWorkerPageTest extends TestCase
         $source = file_get_contents(__DIR__ . '/../wwwroot/admin/workers.php');
 
         $this->assertTrue(is_string($source));
+        $this->assertTrue(str_contains($source, 'WorkerAction::UpdateNpsso'));
+        $this->assertTrue(str_contains($source, 'WorkerAction::RestartWorker'));
         $this->assertTrue(str_contains($source, 'WorkerCredentialMasker::mask'));
         $this->assertTrue(str_contains($source, 'admin-worker-credentials.js'));
         $this->assertFalse(str_contains($source, 'getRefreshToken(), ENT_QUOTES'));
@@ -143,11 +146,8 @@ final class AdminWorkerPageTest extends TestCase
 
 final class FakeCommandExecutor implements CommandExecutorInterface
 {
-    private CommandExecutionResult $result;
-
-    public function __construct(CommandExecutionResult $result)
+    public function __construct(private readonly CommandExecutionResult $result)
     {
-        $this->result = $result;
     }
 
     #[\Override]

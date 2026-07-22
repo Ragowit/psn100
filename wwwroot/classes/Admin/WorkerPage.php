@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AdminRequest.php';
+require_once __DIR__ . '/WorkerAction.php';
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/CommandExecutionResult.php';
 require_once __DIR__ . '/WorkerPageSortLink.php';
@@ -12,11 +13,8 @@ require_once __DIR__ . '/WorkerSortDirection.php';
 
 final class WorkerPage
 {
-    private WorkerService $workerService;
-
-    public function __construct(WorkerService $workerService)
+    public function __construct(private readonly WorkerService $workerService)
     {
-        $this->workerService = $workerService;
     }
 
     /**
@@ -53,14 +51,14 @@ final class WorkerPage
      */
     private function processAction(AdminRequest $request): array
     {
-        $action = $request->getPostString('action');
+        $action = WorkerAction::tryFromMixed($request->getPostString('action'));
 
         return match ($action) {
-            'update_npsso' => $this->processUpdateNpsso($request),
-            'update_refresh_token' => $this->processUpdateRefreshToken($request),
-            'restart_worker' => $this->processRestartWorker($request),
-            'restart_all_workers' => $this->processRestartAllWorkers(),
-            default => [null, 'Unsupported action requested.'],
+            WorkerAction::UpdateNpsso => $this->processUpdateNpsso($request),
+            WorkerAction::UpdateRefreshToken => $this->processUpdateRefreshToken($request),
+            WorkerAction::RestartWorker => $this->processRestartWorker($request),
+            WorkerAction::RestartAllWorkers => $this->processRestartAllWorkers(),
+            null => [null, 'Unsupported action requested.'],
         };
     }
 
