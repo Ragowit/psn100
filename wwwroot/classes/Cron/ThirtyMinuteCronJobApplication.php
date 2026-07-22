@@ -11,14 +11,10 @@ require_once __DIR__ . '/ThirtyMinuteCronJob.php';
 
 final class ThirtyMinuteCronJobApplication
 {
-    private CronJobEntryPoint $entryPoint;
-
-    private CronJobCliArguments $cliArguments;
-
-    private function __construct(CronJobEntryPoint $entryPoint, CronJobCliArguments $cliArguments)
-    {
-        $this->entryPoint = $entryPoint;
-        $this->cliArguments = $cliArguments;
+    private function __construct(
+        private readonly CronJobEntryPoint $entryPoint,
+        private readonly CronJobCliArguments $cliArguments,
+    ) {
     }
 
     /**

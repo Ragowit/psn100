@@ -21,8 +21,8 @@ $gameDetail = $pageResult->getGameDetail();
 $success = $pageResult->getSuccessMessage();
 $error = $pageResult->getErrorMessage();
 
-$requestedGameId = isset($_GET['game']) ? (string) $_GET['game'] : '';
-$requestedNpCommunicationId = isset($_GET['np_communication_id']) ? (string) $_GET['np_communication_id'] : '';
+$requestedGameId = (string) ($_GET['game'] ?? '');
+$requestedNpCommunicationId = (string) ($_GET['np_communication_id'] ?? '');
 
 ?>
 <!doctype html>

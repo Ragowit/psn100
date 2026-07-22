@@ -92,7 +92,7 @@ class GameRescanService
     ): GameRescanResult {
         $previousLogListener = $this->logListener;
         $this->logListener = $logListener !== null
-            ? \Closure::fromCallable($logListener)
+            ? $logListener(...)
             : null;
         $previousImageDownloader = $this->imageDownloader;
         $this->imageDownloader = $this->imageDownloader->withLogger(

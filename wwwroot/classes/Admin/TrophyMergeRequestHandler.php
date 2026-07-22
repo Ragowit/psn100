@@ -10,11 +10,8 @@ require_once __DIR__ . '/TrophyMergeProgressListener.php';
 
 class TrophyMergeRequestHandler
 {
-    private TrophyMergeService $trophyMergeService;
-
-    public function __construct(TrophyMergeService $trophyMergeService)
+    public function __construct(private readonly TrophyMergeService $trophyMergeService)
     {
-        $this->trophyMergeService = $trophyMergeService;
     }
 
     public function handle(array $postData): string

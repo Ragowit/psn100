@@ -10,8 +10,8 @@ require_once '../classes/Admin/PsnTrophyTitleComparisonRequestResult.php';
 require_once '../classes/Admin/PsnTrophyTitleComparisonService.php';
 require_once '../classes/Admin/PsnTrophyTitleComparisonSource.php';
 
-$accountId = isset($_GET['accountId']) ? (string) $_GET['accountId'] : '';
-$source = isset($_GET['source']) ? (string) $_GET['source'] : PsnTrophyTitleComparisonSource::Direct->value;
+$accountId = (string) ($_GET['accountId'] ?? '');
+$source = (string) ($_GET['source'] ?? PsnTrophyTitleComparisonSource::Direct->value);
 $service = PsnTrophyTitleComparisonService::fromDatabase($database);
 $handledRequest = PsnTrophyTitleComparisonRequestHandler::handle($service, $accountId, $source);
 

@@ -9,11 +9,8 @@ require_once __DIR__ . '/../Html.php';
 
 final class DeletePlayerRequestHandler
 {
-    private DeletePlayerService $service;
-
-    public function __construct(DeletePlayerService $service)
+    public function __construct(private readonly DeletePlayerService $service)
     {
-        $this->service = $service;
     }
 
     public function handleRequest(AdminRequest $request): DeletePlayerRequestResult

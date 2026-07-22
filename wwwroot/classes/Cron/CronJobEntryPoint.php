@@ -14,11 +14,8 @@ require_once __DIR__ . '/CronJobInterface.php';
  */
 final class CronJobEntryPoint
 {
-    private CronJobBootstrapper $bootstrapper;
-
-    private function __construct(CronJobBootstrapper $bootstrapper)
+    private function __construct(private readonly CronJobBootstrapper $bootstrapper)
     {
-        $this->bootstrapper = $bootstrapper;
     }
 
     #[\NoDiscard]

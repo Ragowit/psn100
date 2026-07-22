@@ -17,7 +17,7 @@ final readonly class TestRunReporter
             ? static function (string $line): void {
                 echo $line . PHP_EOL;
             }
-            : \Closure::fromCallable($outputWriter);
+            : $outputWriter(...);
     }
 
     public function report(TestSuiteResult $result): int

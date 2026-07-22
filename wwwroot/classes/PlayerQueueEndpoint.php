@@ -7,16 +7,12 @@ require_once __DIR__ . '/PlayerQueueController.php';
 require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/JsonResponseEmitter.php';
 
-class PlayerQueueEndpoint
+final class PlayerQueueEndpoint
 {
-    private PlayerQueueController $controller;
-
-    private JsonResponseEmitter $jsonResponder;
-
-    private function __construct(PlayerQueueController $controller, JsonResponseEmitter $jsonResponder)
-    {
-        $this->controller = $controller;
-        $this->jsonResponder = $jsonResponder;
+    private function __construct(
+        private readonly PlayerQueueController $controller,
+        private readonly JsonResponseEmitter $jsonResponder,
+    ) {
     }
 
     #[\NoDiscard]

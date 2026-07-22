@@ -8,16 +8,13 @@ require_once __DIR__ . '/PlatformSql.php';
 
 class PlayerRandomGamesService
 {
-    private readonly PDO $database;
-
-    private readonly Utility $utility;
-
     private readonly Randomizer $randomizer;
 
-    public function __construct(PDO $database, Utility $utility, ?Randomizer $randomizer = null)
-    {
-        $this->database = $database;
-        $this->utility = $utility;
+    public function __construct(
+        private readonly PDO $database,
+        private readonly Utility $utility,
+        ?Randomizer $randomizer = null,
+    ) {
         $this->randomizer = $randomizer ?? new Randomizer();
     }
 

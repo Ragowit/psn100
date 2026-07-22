@@ -89,13 +89,11 @@ final readonly class PlayerLeaderboardRank
         $page = max(1, (int) ceil($this->rank / self::PAGE_SIZE));
 
         $query = http_build_query(
-            array_merge(
-                $this->additionalQueryParameters,
-                [
-                    'page' => (string) $page,
-                    'player' => $this->onlineId,
-                ]
-            ),
+            [
+                ...$this->additionalQueryParameters,
+                'page' => (string) $page,
+                'player' => $this->onlineId,
+            ],
             '',
             '&',
             PHP_QUERY_RFC3986

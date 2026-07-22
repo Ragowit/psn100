@@ -197,7 +197,7 @@ final class PlayerAdvisorServiceTest extends TestCase
         $trophies = $this->service->getAdvisableTrophies(99, $filter, 0, 50);
 
         $this->assertCount(3, $trophies);
-        $this->assertSame(PlayerAdvisableTrophy::class, get_class($trophies[0]));
+        $this->assertSame(PlayerAdvisableTrophy::class, $trophies[0]::class);
 
         $this->assertSame(
             [2, 3, 1],
