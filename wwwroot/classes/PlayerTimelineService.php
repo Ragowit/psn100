@@ -61,7 +61,7 @@ class PlayerTimelineService
         $endDate = $timelineEnd->modify('first day of next month');
 
         $entries = array_map(
-            fn(array $row): PlayerTimelineEntry => PlayerTimelineEntry::fromRow($row),
+            PlayerTimelineEntry::fromRow(...),
             $rows
         );
 

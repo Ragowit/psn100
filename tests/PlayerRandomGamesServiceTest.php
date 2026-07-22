@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/Utility.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerRandomGame.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerRandomGamesFilter.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerRandomGamesService.php';
@@ -114,7 +115,7 @@ final class PlayerRandomGamesServiceTest extends TestCase
 
         $rows = $this->invokeFetchFallbackGames(
             accountId: 77,
-            filter: PlayerRandomGamesFilter::fromArray([PlayerRandomGamesFilter::PLATFORM_PS3 => '1']),
+            filter: PlayerRandomGamesFilter::fromArray([Platform::Ps3->value => '1']),
             limit: 30,
             seenIds: [1, 2]
         );
@@ -133,7 +134,7 @@ final class PlayerRandomGamesServiceTest extends TestCase
 
         $games = $this->service->getRandomGames(
             accountId: 222,
-            filter: PlayerRandomGamesFilter::fromArray([PlayerRandomGamesFilter::PLATFORM_PS3 => '1']),
+            filter: PlayerRandomGamesFilter::fromArray([Platform::Ps3->value => '1']),
             limit: 5
         );
 
@@ -150,7 +151,7 @@ final class PlayerRandomGamesServiceTest extends TestCase
 
         $games = $this->service->getRandomGames(
             accountId: 333,
-            filter: PlayerRandomGamesFilter::fromArray([PlayerRandomGamesFilter::PLATFORM_PSVR => '1']),
+            filter: PlayerRandomGamesFilter::fromArray([Platform::PsVr->value => '1']),
             limit: 6
         );
 

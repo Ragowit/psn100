@@ -10,7 +10,7 @@ final class PlayerNavigationRenderer
     public function render(PlayerNavigation $navigation): string
     {
         $links = array_map(
-            fn (PlayerNavigationLink $link): string => $this->renderLink($link),
+            $this->renderLink(...),
             $navigation->getLinks()
         );
 

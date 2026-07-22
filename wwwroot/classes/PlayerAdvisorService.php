@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerAdvisableTrophy.php';
 require_once __DIR__ . '/PlayerAdvisorSort.php';
 require_once __DIR__ . '/PlatformSql.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
 require_once __DIR__ . '/Utility.php';
 
 class PlayerAdvisorService
@@ -19,7 +21,10 @@ class PlayerAdvisorService
 
     public function countAdvisableTrophies(int $accountId, PlayerAdvisorFilter $filter): int
     {
-        $sql = <<<'SQL'
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+
+        $sql = <<<SQL
             SELECT COUNT(*)
             FROM trophy_title_player ttp
             JOIN trophy t ON t.np_communication_id = ttp.np_communication_id
@@ -31,8 +36,8 @@ class PlayerAdvisorService
                 AND te.np_communication_id = t.np_communication_id
                 AND te.order_id = t.order_id
             WHERE ttp.account_id = :account_id
-                AND ttm.status = 0
-                AND tm.status = 0
+                AND ttm.status = {$normalGameStatus}
+                AND tm.status = {$obtainableStatus}
                 AND (te.account_id IS NULL OR te.earned = 0)
         SQL;
 
@@ -50,7 +55,10 @@ class PlayerAdvisorService
      */
     public function getAdvisableTrophies(int $accountId, PlayerAdvisorFilter $filter, int $offset, int $limit = self::PAGE_SIZE): array
     {
-        $sql = <<<'SQL'
+        $normalGameStatus = GameAvailabilityStatus::NORMAL->value;
+        $obtainableStatus = TrophyMetaStatus::Obtainable->value;
+
+        $sql = <<<SQL
             SELECT
                 t.id AS trophy_id,
                 t.type AS trophy_type,
@@ -77,8 +85,8 @@ class PlayerAdvisorService
                 AND te.np_communication_id = t.np_communication_id
                 AND te.order_id = t.order_id
             WHERE ttp.account_id = :account_id
-                AND ttm.status = 0
-                AND tm.status = 0
+                AND ttm.status = {$normalGameStatus}
+                AND tm.status = {$obtainableStatus}
                 AND (te.account_id IS NULL OR te.earned = 0)
         SQL;
 

@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/GamePlayerFilter.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
-final class GameRecentPlayersQueryBuilder
+final readonly class GameRecentPlayersQueryBuilder
 {
-    private const string BASE_QUERY = <<<'SQL'
+    private const string BASE_QUERY_PREFIX = <<<'SQL'
         WITH eligible_players AS (
             SELECT
                 p.account_id,
@@ -17,7 +18,10 @@ final class GameRecentPlayersQueryBuilder
                 p.trophy_count_sony
             FROM player p
             JOIN player_ranking r ON r.account_id = p.account_id
-            WHERE p.status = 0
+            WHERE p.status = 
+        SQL;
+
+    private const string BASE_QUERY_SUFFIX = <<<'SQL'
               AND r.ranking <= 10000
         )
         SELECT
@@ -44,14 +48,14 @@ final class GameRecentPlayersQueryBuilder
         LIMIT :limit
     SQL;
 
+    private int $limit;
+
     public function __construct(
-        private readonly GamePlayerFilter $filter,
+        private GamePlayerFilter $filter,
         int $limit,
     ) {
         $this->limit = max(1, $limit);
     }
-
-    private readonly int $limit;
 
     public function prepare(\PDO $database, string $npCommunicationId): \PDOStatement
     {
@@ -65,7 +69,9 @@ final class GameRecentPlayersQueryBuilder
 
     private function buildSql(): string
     {
-        return self::BASE_QUERY
+        return self::BASE_QUERY_PREFIX
+            . PlayerStatus::NORMAL->value
+            . self::BASE_QUERY_SUFFIX
             . $this->buildFilterSql()
             . self::ORDER_BY_QUERY;
     }

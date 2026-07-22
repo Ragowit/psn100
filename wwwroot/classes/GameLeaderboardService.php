@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameLeaderboardRow.php';
+require_once __DIR__ . '/PlayerStatus.php';
 
 class GameLeaderboardService
 {
@@ -92,7 +93,9 @@ class GameLeaderboardService
 
     public function getLeaderboardPlayerCount(string $npCommunicationId, GamePlayerFilter $filter): int
     {
-        $sql = <<<'SQL'
+        $normalStatus = PlayerStatus::NORMAL->value;
+
+        $sql = <<<SQL
             SELECT
                 COUNT(*)
             FROM
@@ -101,7 +104,7 @@ class GameLeaderboardService
             JOIN player_ranking r ON r.account_id = p.account_id
             WHERE
                 ttp.np_communication_id = :np_communication_id
-                AND p.status = 0
+                AND p.status = {$normalStatus}
                 AND r.ranking <= 10000
         SQL;
 
@@ -120,7 +123,9 @@ class GameLeaderboardService
      */
     public function getLeaderboardRows(string $npCommunicationId, GameLeaderboardFilter $filter, int $limit): array
     {
-        $sql = <<<'SQL'
+        $normalStatus = PlayerStatus::NORMAL->value;
+
+        $sql = <<<SQL
             SELECT
                 p.account_id,
                 p.avatar_url,
@@ -139,7 +144,7 @@ class GameLeaderboardService
             JOIN player p ON ttp.account_id = p.account_id
             JOIN player_ranking r ON p.account_id = r.account_id
             WHERE
-                p.status = 0
+                p.status = {$normalStatus}
                 AND r.ranking <= 10000
                 AND ttp.np_communication_id = :np_communication_id
         SQL;

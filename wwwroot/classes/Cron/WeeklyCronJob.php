@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CronJobInterface.php';
+require_once __DIR__ . '/../PlayerStatus.php';
 
 final readonly class WeeklyCronJob implements CronJobInterface
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
-    private const string UPDATE_PLAYER_RANKINGS_QUERY = <<<'SQL'
+    private const string UPDATE_PLAYER_RANKINGS_QUERY =
+        <<<'SQL'
         UPDATE player p
         JOIN player_ranking r ON p.account_id = r.account_id
         SET
@@ -18,10 +20,11 @@ final readonly class WeeklyCronJob implements CronJobInterface
             p.rank_country_last_week = r.ranking_country,
             p.rarity_rank_country_last_week = r.rarity_ranking_country,
             p.in_game_rarity_rank_country_last_week = r.in_game_rarity_ranking_country
-        WHERE p.status = 0
-        SQL;
+        WHERE p.status = 
+        SQL . PlayerStatus::NORMAL->value;
 
-    private const string RESET_INACTIVE_RANKINGS_QUERY = <<<'SQL'
+    private const string RESET_INACTIVE_RANKINGS_QUERY =
+        <<<'SQL'
         UPDATE
             player p
         SET
@@ -32,8 +35,8 @@ final readonly class WeeklyCronJob implements CronJobInterface
             p.in_game_rarity_rank_last_week = 0,
             p.in_game_rarity_rank_country_last_week = 0
         WHERE
-            p.status != 0
-        SQL;
+            p.status != 
+        SQL . PlayerStatus::NORMAL->value;
 
     public function __construct(
         final private PDO $database,

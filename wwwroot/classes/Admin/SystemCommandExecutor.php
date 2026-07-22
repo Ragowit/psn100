@@ -44,7 +44,7 @@ final class SystemCommandExecutor implements CommandExecutorInterface
     private function buildCommandString(array $command): string
     {
         $escapedParts = array_map(
-            static fn(string $part): string => escapeshellarg($part),
+            escapeshellarg(...),
             $command
         );
 
