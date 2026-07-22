@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../wwwroot/classes/GameListFilter.php';
+require_once __DIR__ . '/../wwwroot/classes/GameListSort.php';
 
 final class GameListFilterTest extends TestCase
 {
@@ -20,7 +21,8 @@ final class GameListFilterTest extends TestCase
 
         $this->assertSame('Alice', $filter->getPlayer());
         $this->assertTrue($filter->hasPlayer());
-        $this->assertSame(GameListFilter::SORT_OWNERS, $filter->getSort());
+        $this->assertSame(GameListSort::Owners, $filter->getSort());
+        $this->assertTrue($filter->isSort(GameListSort::Owners));
         $this->assertTrue($filter->isSort(GameListFilter::SORT_OWNERS));
         $this->assertTrue($filter->hasExplicitSort());
         $this->assertSame('God of War', $filter->getSearch());
@@ -45,7 +47,7 @@ final class GameListFilterTest extends TestCase
             'filter' => 'false',
         ]);
 
-        $this->assertSame(GameListFilter::SORT_SEARCH, $filter->getSort());
+        $this->assertSame(GameListSort::Search, $filter->getSort());
         $this->assertFalse($filter->hasExplicitSort());
         $this->assertSame('Kratos', $filter->getSearch());
         $this->assertTrue($filter->hasSearch());
@@ -67,7 +69,7 @@ final class GameListFilterTest extends TestCase
         ]);
 
         $this->assertTrue($filter->hasPlatformFilters());
-        $this->assertTrue($filter->isSort(GameListFilter::SORT_SEARCH));
+        $this->assertTrue($filter->isSort(GameListSort::Search));
         $this->assertTrue($filter->shouldApplySearch());
 
         $this->assertSame(

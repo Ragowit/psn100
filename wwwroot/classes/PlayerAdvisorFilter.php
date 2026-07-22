@@ -78,9 +78,18 @@ final readonly class PlayerAdvisorFilter
         return in_array($platform, $this->platforms, true);
     }
 
-    public function getSort(): string
+    public function getSort(): PlayerAdvisorSort
     {
-        return $this->sort->value;
+        return $this->sort;
+    }
+
+    public function isSort(PlayerAdvisorSort|string $sort): bool
+    {
+        if ($sort instanceof PlayerAdvisorSort) {
+            return $this->sort === $sort;
+        }
+
+        return $this->sort->value === $sort;
     }
 
     /**

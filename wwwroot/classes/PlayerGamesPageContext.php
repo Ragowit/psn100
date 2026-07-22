@@ -6,6 +6,7 @@ require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesPage.php';
 require_once __DIR__ . '/PlayerGamesService.php';
+require_once __DIR__ . '/PlayerGamesSort.php';
 require_once __DIR__ . '/PlayerNavigation.php';
 require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
@@ -29,7 +30,7 @@ final readonly class PlayerGamesPageContext
 
     private string $playerSearch;
 
-    private string $sort;
+    private PlayerGamesSort $sort;
 
     private PlayerNavigation $playerNavigation;
 
@@ -173,7 +174,7 @@ final readonly class PlayerGamesPageContext
         return $this->playerSearch;
     }
 
-    public function getSort(): string
+    public function getSort(): PlayerGamesSort
     {
         return $this->sort;
     }

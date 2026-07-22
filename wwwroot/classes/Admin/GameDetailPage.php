@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Html.php';
 require_once __DIR__ . '/../HttpMethod.php';
 
+require_once __DIR__ . '/GameDetailAction.php';
 require_once __DIR__ . '/GameDetailFormParser.php';
 require_once __DIR__ . '/GameDetailService.php';
 require_once __DIR__ . '/GameDetailPageResult.php';
@@ -59,7 +60,7 @@ final readonly class GameDetailPage
             if ($method->isPost()) {
                 $action = $this->formParser->parseAction($postData['action'] ?? null);
 
-                if ($action === 'update-status') {
+                if ($action === GameDetailAction::UpdateStatus) {
                     [$gameDetail, $success, $error] = $this->handleStatusUpdate($postData);
                 } else {
                     [$gameDetail, $success, $error] = $this->handleDetailUpdate($postData);

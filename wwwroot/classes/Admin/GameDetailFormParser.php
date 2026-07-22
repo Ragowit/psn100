@@ -2,31 +2,20 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../Platform.php';
 require_once __DIR__ . '/GameDetail.php';
+require_once __DIR__ . '/GameDetailAction.php';
 require_once __DIR__ . '/../CommaSeparatedValues.php';
 require_once __DIR__ . '/../GameAvailabilityStatus.php';
 
 final class GameDetailFormParser
 {
     /**
-     * @var list<string>
-     */
-    public const array PLATFORM_OPTIONS = [
-        'PS3',
-        'PSVITA',
-        'PS4',
-        'PSVR',
-        'PS5',
-        'PSVR2',
-        'PC',
-    ];
-
-    /**
      * @return list<string>
      */
     public function getPlatformOptions(): array
     {
-        return self::PLATFORM_OPTIONS;
+        return Platform::labelOrder();
     }
 
     public function parseNpCommunicationId(mixed $value): ?string
@@ -66,13 +55,9 @@ final class GameDetailFormParser
         return (int) $trimmed;
     }
 
-    public function parseAction(mixed $value): string
+    public function parseAction(mixed $value): ?GameDetailAction
     {
-        if (!is_string($value)) {
-            return '';
-        }
-
-        return $value |> trim(...) |> strtolower(...);
+        return GameDetailAction::tryFromMixed($value);
     }
 
     public function parseStatus(mixed $value): ?GameAvailabilityStatus
@@ -146,7 +131,7 @@ final class GameDetailFormParser
             $selected[$platform] = true;
         }
 
-        return self::PLATFORM_OPTIONS
+        return Platform::labelOrder()
             |> (fn(array $platforms): array => array_filter(
                 $platforms,
                 static fn (string $platform): bool => isset($selected[$platform])

@@ -108,13 +108,17 @@ final readonly class PlayerGamesFilter
         return $this->shouldApplyFulltextCondition();
     }
 
-    public function getSort(): string
+    public function getSort(): PlayerGamesSort
     {
-        return $this->sort->value;
+        return $this->sort;
     }
 
-    public function isSort(string $sort): bool
+    public function isSort(PlayerGamesSort|string $sort): bool
     {
+        if ($sort instanceof PlayerGamesSort) {
+            return $this->sort === $sort;
+        }
+
         return $this->sort->value === $sort;
     }
 

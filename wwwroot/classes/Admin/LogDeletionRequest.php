@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/LogDeletionAction.php';
+
 final readonly class LogDeletionRequest
 {
-    private const string ACTION_SINGLE = 'single';
-    private const string ACTION_BULK = 'bulk';
-
     /**
      * @param list<int> $bulkDeletionIds
      */
     private function __construct(
-        final private ?string $action,
+        final private ?LogDeletionAction $action,
         final private ?int $singleDeletionId,
         /** @var list<int> */
         final private array $bulkDeletionIds,
@@ -31,14 +30,14 @@ final readonly class LogDeletionRequest
         $errorMessage = null;
 
         if (array_key_exists('delete_id', $postData)) {
-            $action = self::ACTION_SINGLE;
+            $action = LogDeletionAction::Single;
             $singleDeletionId = self::parsePositiveInt($postData['delete_id'] ?? null);
 
             if ($singleDeletionId === null) {
                 $errorMessage = 'Please provide a valid log entry ID to delete.';
             }
         } elseif (array_key_exists('delete_selected', $postData) || array_key_exists('delete_ids', $postData)) {
-            $action = self::ACTION_BULK;
+            $action = LogDeletionAction::Bulk;
             $bulkDeletionIds = self::parsePositiveIntList($postData['delete_ids'] ?? []);
 
             if ($bulkDeletionIds === []) {
@@ -66,12 +65,12 @@ final readonly class LogDeletionRequest
 
     public function isSingleDeletion(): bool
     {
-        return $this->action === self::ACTION_SINGLE && !$this->hasError();
+        return $this->action === LogDeletionAction::Single && !$this->hasError();
     }
 
     public function isBulkDeletion(): bool
     {
-        return $this->action === self::ACTION_BULK && !$this->hasError();
+        return $this->action === LogDeletionAction::Bulk && !$this->hasError();
     }
 
     public function getSingleDeletionId(): ?int

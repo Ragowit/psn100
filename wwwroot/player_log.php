@@ -5,6 +5,7 @@ require_once __DIR__ . '/classes/Html.php';
 
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerLogPageContext.php';
+require_once __DIR__ . '/classes/PlayerLogSort.php';
 require_once __DIR__ . '/classes/PlayerPlatformFilterRenderer.php';
 require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
@@ -64,9 +65,9 @@ require_once("header.php");
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
-                            <option value="date"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_DATE) ? ' selected' : ''; ?>>Date</option>
-                            <option value="rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_RARITY) ? ' selected' : ''; ?>>Rarity</option>
-                            <option value="in-game-rarity"<?= $playerLogFilter->isSort(PlayerLogFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''; ?>>Rarity (Game)</option>
+                            <option value="<?= PlayerLogSort::Date->value; ?>"<?= $playerLogFilter->isSort(PlayerLogSort::Date) ? ' selected' : ''; ?>>Date</option>
+                            <option value="<?= PlayerLogSort::Rarity->value; ?>"<?= $playerLogFilter->isSort(PlayerLogSort::Rarity) ? ' selected' : ''; ?>>Rarity</option>
+                            <option value="<?= PlayerLogSort::InGameRarity->value; ?>"<?= $playerLogFilter->isSort(PlayerLogSort::InGameRarity) ? ' selected' : ''; ?>>Rarity (Game)</option>
                         </select>
                     </div>
                 </form>

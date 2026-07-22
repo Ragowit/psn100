@@ -5,6 +5,7 @@ require_once __DIR__ . '/classes/Html.php';
 require_once __DIR__ . '/classes/PsnOnlineIdValidator.php';
 
 require_once __DIR__ . '/classes/GameListFilter.php';
+require_once __DIR__ . '/classes/GameListSort.php';
 require_once __DIR__ . '/classes/GameListService.php';
 require_once __DIR__ . '/classes/GameListPage.php';
 require_once __DIR__ . '/classes/SearchQueryHelper.php';
@@ -115,18 +116,18 @@ require_once("header.php");
 
                     <select class="form-select" name="sort" onChange="this.form.submit()">
                         <option disabled>Sort by...</option>
-                        <option value="added"<?= ($filter->isSort(GameListFilter::SORT_ADDED) ? ' selected' : ''); ?>>Added to Site</option>
+                        <option value="<?= GameListSort::Added->value; ?>"<?= ($filter->isSort(GameListSort::Added) ? ' selected' : ''); ?>>Added to Site</option>
                         <?php
-                        if ($filter->hasSearch() || $filter->isSort(GameListFilter::SORT_SEARCH)) {
+                        if ($filter->hasSearch() || $filter->isSort(GameListSort::Search)) {
                             ?>
-                            <option value="search"<?= ($filter->isSort(GameListFilter::SORT_SEARCH) ? ' selected' : ''); ?>>Best Match</option>
+                            <option value="<?= GameListSort::Search->value; ?>"<?= ($filter->isSort(GameListSort::Search) ? ' selected' : ''); ?>>Best Match</option>
                             <?php
                         }
                         ?>
-                        <option value="completion"<?= ($filter->isSort(GameListFilter::SORT_COMPLETION) ? ' selected' : ''); ?>>Completion Rate</option>
-                        <option value="owners"<?= ($filter->isSort(GameListFilter::SORT_OWNERS) ? ' selected' : ''); ?>>Owners</option>
-                        <option value="rarity"<?= ($filter->isSort(GameListFilter::SORT_RARITY) ? ' selected' : ''); ?>>Rarity Points</option>
-                        <option value="in-game-rarity"<?= ($filter->isSort(GameListFilter::SORT_IN_GAME_RARITY) ? ' selected' : ''); ?>>Rarity (Game) Points</option>
+                        <option value="<?= GameListSort::Completion->value; ?>"<?= ($filter->isSort(GameListSort::Completion) ? ' selected' : ''); ?>>Completion Rate</option>
+                        <option value="<?= GameListSort::Owners->value; ?>"<?= ($filter->isSort(GameListSort::Owners) ? ' selected' : ''); ?>>Owners</option>
+                        <option value="<?= GameListSort::Rarity->value; ?>"<?= ($filter->isSort(GameListSort::Rarity) ? ' selected' : ''); ?>>Rarity Points</option>
+                        <option value="<?= GameListSort::InGameRarity->value; ?>"<?= ($filter->isSort(GameListSort::InGameRarity) ? ' selected' : ''); ?>>Rarity (Game) Points</option>
                     </select>
                 </div>
             </form>
@@ -192,9 +193,9 @@ require_once("header.php");
                         <!-- rarity points / status -->
                         <div>
                             <?php
-                            if ($game->shouldShowRarityPoints() && $filter->isSort(GameListFilter::SORT_RARITY)) {
+                            if ($game->shouldShowRarityPoints() && $filter->isSort(GameListSort::Rarity)) {
                                 echo number_format($rarityPoints) . ' Rarity Points';
-                            } elseif ($game->shouldShowRarityPoints() && $filter->isSort(GameListFilter::SORT_IN_GAME_RARITY)) {
+                            } elseif ($game->shouldShowRarityPoints() && $filter->isSort(GameListSort::InGameRarity)) {
                                 echo number_format($inGameRarityPoints) . ' Rarity (Game) Points';
                             } elseif ($statusBadge !== null) {
                                 ?>

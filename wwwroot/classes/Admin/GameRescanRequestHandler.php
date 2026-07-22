@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
 require_once __DIR__ . '/../HttpMethod.php';
+require_once __DIR__ . '/AdminStreamEventType.php';
 require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/CallableGameRescanProgressListener.php';
 
@@ -45,7 +46,7 @@ class GameRescanRequestHandler
         $this->prepareStreamResponse();
 
         $this->sendEvent([
-            'type' => 'progress',
+            'type' => AdminStreamEventType::Progress->value,
             'progress' => 0,
             'message' => 'Preparing rescan…',
         ]);
@@ -53,14 +54,14 @@ class GameRescanRequestHandler
         try {
             $logListener = function (string $message): void {
                 $this->sendEvent([
-                    'type' => 'log',
+                    'type' => AdminStreamEventType::Log->value,
                     'message' => $message,
                 ]);
             };
 
             $progressListener = new CallableGameRescanProgressListener(function (int $percent, string $message): void {
                 $this->sendEvent([
-                    'type' => 'progress',
+                    'type' => AdminStreamEventType::Progress->value,
                     'progress' => $percent,
                     'message' => $message,
                 ]);
@@ -69,7 +70,7 @@ class GameRescanRequestHandler
             $result = $this->gameRescanService->rescan($gameId, $progressListener, $logListener);
 
             $this->sendEvent([
-                'type' => 'complete',
+                'type' => AdminStreamEventType::Complete->value,
                 'success' => true,
                 'progress' => 100,
                 'message' => $result->getMessage(),
@@ -79,7 +80,7 @@ class GameRescanRequestHandler
             http_response_code(200);
 
             $this->sendEvent([
-                'type' => 'error',
+                'type' => AdminStreamEventType::Error->value,
                 'success' => false,
                 'progress' => 100,
                 'error' => $exception->getMessage(),
@@ -89,7 +90,7 @@ class GameRescanRequestHandler
             error_log($exception->getMessage());
 
             $this->sendEvent([
-                'type' => 'error',
+                'type' => AdminStreamEventType::Error->value,
                 'success' => false,
                 'progress' => 100,
                 'error' => 'An unexpected error occurred while rescanning the game.',

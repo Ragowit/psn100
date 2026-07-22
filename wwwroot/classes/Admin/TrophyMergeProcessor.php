@@ -6,6 +6,7 @@ require_once __DIR__ . '/../ExecutionEnvironmentConfigurator.php';
 require_once __DIR__ . '/../HttpMethod.php';
 require_once __DIR__ . '/../TrophyMergeMethod.php';
 require_once __DIR__ . '/../TrophyMergeService.php';
+require_once __DIR__ . '/AdminStreamEventType.php';
 require_once __DIR__ . '/TrophyMergeRequestHandler.php';
 require_once __DIR__ . '/CallableTrophyMergeProgressListener.php';
 
@@ -69,14 +70,14 @@ class TrophyMergeProcessor
         $this->prepareStreamResponse();
 
         $this->sendEvent([
-            'type' => 'progress',
+            'type' => AdminStreamEventType::Progress->value,
             'progress' => 0,
             'message' => 'Preparing game merge…',
         ]);
 
         $progressListener = new CallableTrophyMergeProgressListener(function (int $percent, string $message): void {
             $this->sendEvent([
-                'type' => 'progress',
+                'type' => AdminStreamEventType::Progress->value,
                 'progress' => $percent,
                 'message' => $message,
             ]);
@@ -93,14 +94,14 @@ class TrophyMergeProcessor
             );
 
             $this->sendEvent([
-                'type' => 'complete',
+                'type' => AdminStreamEventType::Complete->value,
                 'success' => true,
                 'progress' => 100,
                 'message' => $resultMessage,
             ]);
         } catch (\InvalidArgumentException | \RuntimeException $exception) {
             $this->sendEvent([
-                'type' => 'error',
+                'type' => AdminStreamEventType::Error->value,
                 'success' => false,
                 'progress' => 100,
                 'error' => $exception->getMessage(),
@@ -109,7 +110,7 @@ class TrophyMergeProcessor
             error_log($exception->getMessage());
 
             $this->sendEvent([
-                'type' => 'error',
+                'type' => AdminStreamEventType::Error->value,
                 'success' => false,
                 'progress' => 100,
                 'error' => 'An unexpected error occurred while merging the games.',
