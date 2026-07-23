@@ -10,15 +10,15 @@ require_once __DIR__ . '/Html.php';
  * existing style. The renderer generates the HTML as a string so that templates
  * can decide where and how to output it.
  */
-class PaginationRenderer
+final class PaginationRenderer
 {
     /**
-     * @param callable(int):array<string, string> $queryParametersFactory
+     * @param \Closure(int):array<string, string> $queryParametersFactory
      */
     public function render(
         int $currentPage,
         int $totalPages,
-        callable $queryParametersFactory,
+        \Closure $queryParametersFactory,
         ?string $ariaLabel = null
     ): string {
         $pagination = Pagination::create($currentPage, $totalPages);

@@ -1433,8 +1433,7 @@ final class DailyCronJobFinalDropFailureTestDatabase extends PDO
 
 final class DailyCronJobTestStatement extends PDOStatement
 {
-    /** @var callable */
-    private $callback;
+    private \Closure $callback;
 
     private bool $isSelect;
 
@@ -1443,10 +1442,7 @@ final class DailyCronJobTestStatement extends PDOStatement
     /** @var array<string|int, mixed> */
     private array $boundValues = [];
 
-    /**
-     * @param callable $callback
-     */
-    public function __construct(callable $callback, bool $isSelect = false, mixed $fetchColumnValue = null)
+    public function __construct(\Closure $callback, bool $isSelect = false, mixed $fetchColumnValue = null)
     {
         $this->callback = $callback;
         $this->isSelect = $isSelect;

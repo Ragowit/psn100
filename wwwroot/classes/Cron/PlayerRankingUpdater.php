@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../PlayerStatus.php';
 
-class PlayerRankingUpdater
+final class PlayerRankingUpdater
 {
     private const string TEMPORARY_TABLE = 'player_ranking_new';
     private const string PRIMARY_TABLE = 'player_ranking';
@@ -97,7 +97,7 @@ SQL . PlayerStatus::NORMAL->value;
         }
     }
 
-    private function executeWithRetry(callable $operation, string $phase): void
+    private function executeWithRetry(\Closure $operation, string $phase): void
     {
         $attempt = 0;
 

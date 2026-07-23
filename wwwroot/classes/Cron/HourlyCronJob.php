@@ -149,7 +149,7 @@ final readonly class HourlyCronJob implements CronJobInterface
         $query->execute(array_values($batchIds));
     }
 
-    private function executeWithRetry(callable $operation): void
+    private function executeWithRetry(\Closure $operation): void
     {
         while (true) {
             try {

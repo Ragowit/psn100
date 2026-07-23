@@ -9,16 +9,19 @@ final class BootstrapAssets
     public const string VERSION = '5.3.8';
     public const string POPPER_VERSION = '2.11.8';
 
+    #[\NoDiscard]
     public static function stylesheetUrl(): string
     {
         return StaticAsset::url('/lib/bootstrap/' . self::VERSION . '/css/bootstrap.min.css');
     }
 
+    #[\NoDiscard]
     public static function scriptUrl(): string
     {
         return StaticAsset::url('/lib/bootstrap/' . self::VERSION . '/js/bootstrap.min.js');
     }
 
+    #[\NoDiscard]
     public static function popperScriptUrl(): string
     {
         return StaticAsset::url('/lib/popper/' . self::POPPER_VERSION . '/popper.min.js');

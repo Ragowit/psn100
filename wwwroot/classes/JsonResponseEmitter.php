@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/JsonResponseStatus.php';
+
 final class JsonResponseEmitter
 {
     /**
@@ -24,7 +26,7 @@ final class JsonResponseEmitter
         http_response_code(500);
 
         $fallbackPayload = [
-            'status' => 'error',
+            'status' => JsonResponseStatus::Error->value,
             'message' => 'An unexpected error occurred while encoding the response.',
             'shouldPoll' => false,
         ];

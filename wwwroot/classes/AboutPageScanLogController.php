@@ -6,6 +6,7 @@ require_once __DIR__ . '/AboutPageDataProviderInterface.php';
 require_once __DIR__ . '/AboutPageScanSummary.php';
 require_once __DIR__ . '/AboutPagePlayerArraySerializer.php';
 require_once __DIR__ . '/JsonResponseEmitter.php';
+require_once __DIR__ . '/JsonResponseStatus.php';
 require_once __DIR__ . '/IpRateLimitService.php';
 require_once __DIR__ . '/IpRateLimitBucket.php';
 require_once __DIR__ . '/IpAddressResolver.php';
@@ -50,7 +51,7 @@ final class AboutPageScanLogController
                 )
             ) {
                 $this->jsonResponder->respond([
-                    'status' => 'error',
+                    'status' => JsonResponseStatus::Error->value,
                     'message' => 'Too many scan log requests. Please wait a moment and try again.',
                 ], 429);
 
@@ -65,7 +66,7 @@ final class AboutPageScanLogController
             $scanLogPlayers = $this->aboutPageService->getScanLogPlayers($limit);
 
             $this->jsonResponder->respond([
-                'status' => 'ok',
+                'status' => JsonResponseStatus::Ok->value,
                 'summary' => [
                     'scannedPlayers' => $scanSummary->getScannedPlayers(),
                     'newPlayers' => $scanSummary->getNewPlayers(),
@@ -74,7 +75,7 @@ final class AboutPageScanLogController
             ]);
         } catch (\Throwable) {
             $this->jsonResponder->respond([
-                'status' => 'error',
+                'status' => JsonResponseStatus::Error->value,
                 'message' => 'Unable to load scan log data at this time.',
             ], 500);
         }

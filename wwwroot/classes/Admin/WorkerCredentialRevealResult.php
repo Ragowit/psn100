@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../JsonResponseStatus.php';
+
 final readonly class WorkerCredentialRevealResult
 {
     private function __construct(
@@ -45,13 +47,13 @@ final readonly class WorkerCredentialRevealResult
     {
         if ($this->success) {
             return [
-                'status' => 'ok',
+                'status' => JsonResponseStatus::Ok->value,
                 'credential' => $this->credential ?? '',
             ];
         }
 
         return [
-            'status' => 'error',
+            'status' => JsonResponseStatus::Error->value,
             'message' => $this->errorMessage ?? 'Unable to reveal credential.',
         ];
     }

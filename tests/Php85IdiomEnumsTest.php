@@ -9,6 +9,10 @@ require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerAction.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerSortField.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/WorkerSortDirection.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyRarityName.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerQueueMessagePartType.php';
+require_once __DIR__ . '/../wwwroot/classes/JsonResponseStatus.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyType.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyMetaStatus.php';
 
 final class Php85IdiomEnumsTest extends TestCase
 {
@@ -52,5 +56,34 @@ final class Php85IdiomEnumsTest extends TestCase
         $this->assertSame(WorkerSortDirection::Asc, WorkerSortDirection::fromMixed(null));
         $this->assertSame(WorkerSortDirection::Desc, WorkerSortDirection::fromMixed(' DESC '));
         $this->assertSame(WorkerSortDirection::Asc, WorkerSortDirection::Desc->toggled());
+    }
+
+    public function testPlayerQueueMessagePartTypeTryFromMixed(): void
+    {
+        $this->assertSame(PlayerQueueMessagePartType::Text, PlayerQueueMessagePartType::tryFromMixed(' TEXT '));
+        $this->assertSame(PlayerQueueMessagePartType::Progress, PlayerQueueMessagePartType::tryFromMixed('progress'));
+        $this->assertSame(null, PlayerQueueMessagePartType::tryFromMixed('unknown'));
+        $this->assertSame(null, PlayerQueueMessagePartType::tryFromMixed(null));
+    }
+
+    public function testJsonResponseStatusValues(): void
+    {
+        $this->assertSame('ok', JsonResponseStatus::Ok->value);
+        $this->assertSame('error', JsonResponseStatus::Error->value);
+    }
+
+    public function testTrophyTypeFromMixedDefaultsToBronze(): void
+    {
+        $this->assertSame(TrophyType::Bronze, TrophyType::fromMixed(null));
+        $this->assertSame(TrophyType::Bronze, TrophyType::fromMixed(''));
+        $this->assertSame(TrophyType::Gold, TrophyType::fromMixed(' GOLD '));
+        $this->assertSame(TrophyType::Platinum, TrophyType::fromMixed('platinum'));
+    }
+
+    public function testTrophyMetaStatusFromMixed(): void
+    {
+        $this->assertSame(TrophyMetaStatus::Unobtainable, TrophyMetaStatus::fromMixed('1'));
+        $this->assertSame(TrophyMetaStatus::Obtainable, TrophyMetaStatus::fromMixed('0'));
+        $this->assertSame(TrophyMetaStatus::Obtainable, TrophyMetaStatus::fromMixed('unknown'));
     }
 }

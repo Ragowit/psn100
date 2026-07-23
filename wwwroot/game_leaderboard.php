@@ -146,7 +146,7 @@ require_once("header.php");
     <div class="row">
         <div class="col-12">
             <p class="text-center">
-                <?= ($totalPlayers == 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $totalPlayers); ?> of <?= number_format($totalPlayers) ?>
+                <?= ($totalPlayers === 0 ? "0" : $offset + 1); ?>-<?= min($offset + $limit, $totalPlayers); ?> of <?= number_format($totalPlayers) ?>
             </p>
         </div>
         <div class="col-12">

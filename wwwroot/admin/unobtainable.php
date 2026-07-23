@@ -1,6 +1,3 @@
-<?php
-declare(strict_types=1);
-
 require_once __DIR__ . '/../classes/ExecutionEnvironmentConfigurator.php';
 
 ExecutionEnvironmentConfigurator::create()
@@ -14,6 +11,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once("../classes/Admin/TrophyStatusInputParser.php");
 require_once("../classes/Admin/TrophyStatusService.php");
 require_once("../classes/Admin/TrophyStatusPage.php");
+require_once("../classes/TrophyMetaStatus.php");
 
 $trophyStatusInputParser = new TrophyStatusInputParser($database);
 $trophyStatusService = new TrophyStatusService($database);
@@ -26,6 +24,7 @@ $queryData = $_GET ?? [];
 $pageResult = $trophyStatusPage->handleRequest($requestMethod, $postData, $queryData);
 $trophyInput = $pageResult->getTrophyInput();
 $statusInput = $pageResult->getStatusInput();
+$status = TrophyMetaStatus::fromMixed($statusInput);
 
 ?>
 <!doctype html>
@@ -49,8 +48,8 @@ $statusInput = $pageResult->getStatusInput();
                 <br>
                 Status:<br>
                 <select name="status">
-                    <option value="1" <?= ($statusInput == "1" ? "selected" : ""); ?>>Unobtainable</option>
-                    <option value="0" <?= ($statusInput == "0" ? "selected" : ""); ?>>Obtainable</option>
+                    <option value="<?= TrophyMetaStatus::Unobtainable->value ?>" <?= ($status === TrophyMetaStatus::Unobtainable ? "selected" : ""); ?>>Unobtainable</option>
+                    <option value="<?= TrophyMetaStatus::Obtainable->value ?>" <?= ($status === TrophyMetaStatus::Obtainable ? "selected" : ""); ?>>Obtainable</option>
                 </select><br><br>
                 <input type="submit" value="Submit">
             </form>

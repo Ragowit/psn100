@@ -11,6 +11,7 @@ require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
 require_once __DIR__ . '/../GameAvailabilityStatus.php';
+require_once __DIR__ . '/../TrophyType.php';
 require_once __DIR__ . '/PlayerScanCatalogSideEffects.php';
 require_once __DIR__ . '/PlayerScanTitleCatalogSyncResult.php';
 require_once __DIR__ . '/PlayerScanTitleHeaderSynchronizer.php';
@@ -25,7 +26,7 @@ require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
 final class PlayerScanTitleCatalogSynchronizer
 {
     /**
-     * @param null|callable(string, object): array<string, mixed> $trophyDataFetcher
+     * @param null|\Closure(string, object): array<string, mixed> $trophyDataFetcher
      */
     public function __construct(
         private readonly PDO $database,
@@ -38,7 +39,7 @@ final class PlayerScanTitleCatalogSynchronizer
         private readonly ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
         private readonly ?TrophyMetaRepository $trophyMetaRepository = null,
         private readonly ?PlayerScanCatalogSideEffects $catalogSideEffects = null,
-        private readonly mixed $trophyDataFetcher = null,
+        private readonly ?\Closure $trophyDataFetcher = null,
         private readonly ?PlayerScanTitleHeaderSynchronizer $titleHeaderSynchronizer = null,
     ) {
     }
@@ -211,18 +212,20 @@ final class PlayerScanTitleCatalogSynchronizer
                 $rewardImageUrl = $trophy['trophyRewardImageUrl'] ?? null;
                 $rewardImageShouldBeNull = $rewardImageUrl === null || $rewardImageUrl === '';
 
-                $trophyTypeEnumValue = strtolower((string) ($trophy['trophyType'] ?? ''));
-                if ($trophyTypeEnumValue === '') {
-                    $trophyTypeEnumValue = 'bronze';
-                }
+                $trophyType = TrophyType::fromMixed($trophy['trophyType'] ?? null);
+                $trophyTypeEnumValue = $trophyType->value;
 
                 $trophyName = (string) ($trophy['trophyName'] ?? '');
                 $trophyDetail = (string) ($trophy['trophyDetail'] ?? '');
                 $trophyIconUrl = (string) ($trophy['trophyIconUrl'] ?? '');
 
+                $existingTrophyType = $existingTrophy === null
+                    ? null
+                    : TrophyType::fromMixed($existingTrophy['type'] ?? null);
+
                 $trophyNeedsUpdate = $existingTrophy === null
                     || (int) ($existingTrophy['hidden'] ?? -1) !== $trophyHidden
-                    || ($existingTrophy['type'] ?? '') !== $trophyTypeEnumValue
+                    || $existingTrophyType !== $trophyType
                     || ($existingTrophy['name'] ?? '') !== $trophyName
                     || ($existingTrophy['detail'] ?? '') !== $trophyDetail
                     || $existingProgressTargetValue !== $progressTargetValue

@@ -22,7 +22,7 @@ require_once __DIR__ . '/WorkerService.php';
 
 use Tustin\PlayStation\Client;
 
-class GameRescanService
+final class GameRescanService
 {
     private readonly PDO $database;
     private readonly TrophyCalculator $trophyCalculator;

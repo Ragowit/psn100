@@ -25,7 +25,8 @@ final class PlayerScanTitleMetadataHelper
             return false;
         }
 
-        return $sonyLastUpdatedDate == $dbLastUpdatedDate;
+        return $sonyLastUpdatedDate->getTimestamp() === $dbLastUpdatedDate->getTimestamp()
+            && $sonyLastUpdatedDate->format('u') === $dbLastUpdatedDate->format('u');
     }
 
     public function isValidSonyLastUpdatedDateTime(string $value): bool
