@@ -183,10 +183,10 @@ final class WeeklyCronJobActiveRetryTestDatabase extends PDO
 
 final class WeeklyCronJobTestStatement extends PDOStatement
 {
-    /** @var callable(): void */
-    private $callback;
+    /** @var \Closure(): void */
+    private \Closure $callback;
 
-    public function __construct(callable $callback)
+    public function __construct(\Closure $callback)
     {
         $this->callback = $callback;
     }

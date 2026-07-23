@@ -46,10 +46,12 @@ final readonly class TestSuite implements TestSuiteInterface
         $afterClasses = get_declared_classes();
         $newClasses = array_diff($afterClasses, $beforeClasses);
 
-        $testClasses = array_values(array_filter(
-            $newClasses,
-            static fn (string $className): bool => is_subclass_of($className, TestCase::class)
-        ));
+        $testClasses = $newClasses
+            |> (fn (array $classes): array => array_filter(
+                $classes,
+                static fn (string $className): bool => is_subclass_of($className, TestCase::class)
+            ))
+            |> array_values(...);
 
         sort($testClasses);
 

@@ -346,7 +346,7 @@ final readonly class DailyCronJob implements CronJobInterface
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation, mixed ...$arguments): mixed
+    private function executeWithRetry(\Closure $operation, mixed ...$arguments): mixed
     {
         while (true) {
             try {

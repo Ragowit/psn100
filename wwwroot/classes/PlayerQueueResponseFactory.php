@@ -8,6 +8,7 @@ require_once __DIR__ . '/PlayerQueueResponse.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
 require_once __DIR__ . '/PlayerScanProgress.php';
 require_once __DIR__ . '/PlayerQueueMessageBuilder.php';
+require_once __DIR__ . '/PlayerQueueMessagePartType.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
 
 final class PlayerQueueResponseFactory
@@ -129,21 +130,21 @@ final class PlayerQueueResponseFactory
         $builder = PlayerQueueMessageBuilder::create();
 
         foreach ($messageParts as $part) {
-            $type = $part['type'] ?? '';
+            $type = PlayerQueueMessagePartType::tryFromMixed($part['type'] ?? null);
 
             match ($type) {
-                'text' => $builder->text((string) ($part['value'] ?? '')),
-                'link' => $builder->link(
+                PlayerQueueMessagePartType::Text => $builder->text((string) ($part['value'] ?? '')),
+                PlayerQueueMessagePartType::Link => $builder->link(
                     (string) ($part['href'] ?? ''),
                     (string) ($part['label'] ?? '')
                 ),
-                'emphasis' => $builder->emphasis((string) ($part['value'] ?? '')),
-                'progress' => $builder->progress(
+                PlayerQueueMessagePartType::Emphasis => $builder->emphasis((string) ($part['value'] ?? '')),
+                PlayerQueueMessagePartType::Progress => $builder->progress(
                     (int) ($part['percentage'] ?? 0),
                     isset($part['title']) ? (string) $part['title'] : null,
                     isset($part['summary']) ? (string) $part['summary'] : null,
                 ),
-                default => null,
+                PlayerQueueMessagePartType::Spinner, null => null,
             };
         }
 

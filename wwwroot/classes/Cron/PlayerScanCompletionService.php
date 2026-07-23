@@ -277,9 +277,9 @@ final class PlayerScanCompletionService
     }
 
     /**
-     * @param callable(): void $operation
+     * @param \Closure(): void $operation
      */
-    private function executeWithDeadlockRetry(callable $operation, int $maxAttempts = 3): void
+    private function executeWithDeadlockRetry(\Closure $operation, int $maxAttempts = 3): void
     {
         $attempt = 0;
 

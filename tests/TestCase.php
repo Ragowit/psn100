@@ -50,10 +50,12 @@ abstract class TestCase
     {
         $methods = get_class_methods($this);
 
-        return array_values(array_filter(
-            $methods,
-            static fn (string $method): bool => str_starts_with($method, 'test')
-        ));
+        return $methods
+            |> (fn (array $methods): array => array_filter(
+                $methods,
+                static fn (string $method): bool => str_starts_with($method, 'test')
+            ))
+            |> array_values(...);
     }
 
     protected function setUp(): void

@@ -111,10 +111,10 @@ final class PlayerScanTrophyProgressSynchronizer
 
     /**
      * @template T
-     * @param callable():T $operation
+     * @param \Closure():T $operation
      * @return T
      */
-    private function retryNotFound(callable $operation, string $description): mixed
+    private function retryNotFound(\Closure $operation, string $description): mixed
     {
         $attempt = 0;
         $delay = 2;

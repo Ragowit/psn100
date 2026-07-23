@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GameResetAction.php';
 
-class GameResetService
+final class GameResetService
 {
     public function __construct(private readonly PDO $database)
     {
@@ -172,7 +172,7 @@ class GameResetService
         $query->execute();
     }
 
-    private function executeWithinTransaction(callable $callback): void
+    private function executeWithinTransaction(\Closure $callback): void
     {
         $this->database->beginTransaction();
 

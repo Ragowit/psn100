@@ -64,7 +64,7 @@ final readonly class WeeklyCronJob implements CronJobInterface
         $query->execute();
     }
 
-    private function executeWithRetry(callable $operation): void
+    private function executeWithRetry(\Closure $operation): void
     {
         while (true) {
             try {

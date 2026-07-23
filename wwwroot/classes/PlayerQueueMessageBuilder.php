@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerUrlBuilder.php';
 require_once __DIR__ . '/PlayerStatusNotice.php';
+require_once __DIR__ . '/PlayerQueueMessagePartType.php';
 
 final class PlayerQueueMessageBuilder
 {
@@ -20,7 +21,7 @@ final class PlayerQueueMessageBuilder
     {
         if ($value !== '') {
             $this->parts[] = [
-                'type' => 'text',
+                'type' => PlayerQueueMessagePartType::Text->value,
                 'value' => $value,
             ];
         }
@@ -31,7 +32,7 @@ final class PlayerQueueMessageBuilder
     public function playerLink(string $playerName): self
     {
         $this->parts[] = [
-            'type' => 'link',
+            'type' => PlayerQueueMessagePartType::Link->value,
             'href' => PlayerUrlBuilder::playerPath($playerName),
             'label' => $playerName,
         ];
@@ -42,7 +43,7 @@ final class PlayerQueueMessageBuilder
     public function link(string $href, string $label): self
     {
         $this->parts[] = [
-            'type' => 'link',
+            'type' => PlayerQueueMessagePartType::Link->value,
             'href' => $href,
             'label' => $label,
         ];
@@ -54,7 +55,7 @@ final class PlayerQueueMessageBuilder
     {
         if ($value !== '') {
             $this->parts[] = [
-                'type' => 'emphasis',
+                'type' => PlayerQueueMessagePartType::Emphasis->value,
                 'value' => $value,
             ];
         }
@@ -64,7 +65,7 @@ final class PlayerQueueMessageBuilder
 
     public function spinner(): self
     {
-        $this->parts[] = ['type' => 'spinner'];
+        $this->parts[] = ['type' => PlayerQueueMessagePartType::Spinner->value];
 
         return $this;
     }
@@ -72,7 +73,7 @@ final class PlayerQueueMessageBuilder
     public function progress(int $percentage, ?string $title = null, ?string $summary = null): self
     {
         $part = [
-            'type' => 'progress',
+            'type' => PlayerQueueMessagePartType::Progress->value,
             'percentage' => $percentage,
         ];
 
@@ -102,14 +103,13 @@ final class PlayerQueueMessageBuilder
         $text = '';
 
         foreach ($this->parts as $part) {
-            $type = $part['type'] ?? '';
+            $type = PlayerQueueMessagePartType::tryFromMixed($part['type'] ?? null);
 
             $text .= match ($type) {
-                'text', 'emphasis' => (string) ($part['value'] ?? ''),
-                'link' => (string) ($part['label'] ?? ''),
+                PlayerQueueMessagePartType::Text, PlayerQueueMessagePartType::Emphasis => (string) ($part['value'] ?? ''),
+                PlayerQueueMessagePartType::Link => (string) ($part['label'] ?? ''),
                 // Progress bars are rendered separately in the client.
-                'progress' => '',
-                default => '',
+                PlayerQueueMessagePartType::Progress, PlayerQueueMessagePartType::Spinner, null => '',
             };
         }
 
