@@ -51,7 +51,13 @@ final readonly class HourlyCronJob implements CronJobInterface
         WHERE pr.ranking <= 10000
         SQL;
 
-    private const string POPULATE_BATCH_STATS_QUERY = <<<'SQL'
+    /**
+     * Aggregate all top-10k title stats once. Re-running this per 500-title
+     * batch previously stretched hourly runtime from ~1 minute to 10+ minutes
+     * and made PROCESSLIST look like INSERT INTO tmp_hourly_stats was
+     * "restarting" on every batch.
+     */
+    private const string POPULATE_ALL_STATS_QUERY = <<<'SQL'
         INSERT INTO tmp_hourly_stats (np_communication_id, owners, owners_completed, recent_players)
         SELECT
             ttp.np_communication_id,
@@ -59,7 +65,6 @@ final readonly class HourlyCronJob implements CronJobInterface
             SUM(ttp.progress = 100) AS owners_completed,
             SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players
         FROM trophy_title_player ttp
-        JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id
         JOIN tmp_hourly_ranked_players rp ON rp.account_id = ttp.account_id
         GROUP BY ttp.np_communication_id
         SQL;
@@ -82,44 +87,98 @@ final readonly class HourlyCronJob implements CronJobInterface
     public function __construct(
         final private PDO $database,
         final private int $retryDelaySeconds = 3,
+        final private \Closure $sleeper = sleep(...),
     ) {
     }
 
     #[\Override]
     public function run(): void
     {
-        $this->executeWithRetry($this->updateTrophyTitleStatistics(...));
+        try {
+            // Populate and apply retry independently so a trophy_title_meta
+            // lock/timeout does not force another full trophy_title_player scan.
+            $this->executeWithRetry($this->prepareAndPopulateStatistics(...));
+            $this->executeWithRetry($this->applyStatisticsInBatchesWithRecovery(...));
+        } finally {
+            // Best-effort: a transient DROP failure must not abort run().
+            // The tables are TEMPORARY/session-scoped anyway.
+            try {
+                $this->dropTemporaryTables();
+            } catch (Throwable) {
+            }
+        }
     }
 
-    private function updateTrophyTitleStatistics(): void
+    private function prepareAndPopulateStatistics(): void
+    {
+        try {
+            $this->initializeTemporaryTables();
+            $this->populateAllStatistics();
+        } catch (Throwable $exception) {
+            // Do not leave a partial stats table behind. A later apply retry
+            // would otherwise see the table exist and write zero/stale values.
+            try {
+                $this->dropTemporaryTables();
+            } catch (Throwable) {
+            }
+
+            throw $exception;
+        }
+    }
+
+    private function populateAllStatistics(): void
+    {
+        $query = $this->database->prepare(self::POPULATE_ALL_STATS_QUERY);
+        $query->execute();
+    }
+
+    /**
+     * Apply precomputed stats in short batched UPDATE transactions. If the
+     * session-scoped temp tables disappeared (e.g. MySQL session reset after
+     * populate succeeded), rebuild populate+apply as one retry unit.
+     */
+    private function applyStatisticsInBatchesWithRecovery(): void
+    {
+        try {
+            $this->applyStatisticsInBatches();
+        } catch (Throwable $exception) {
+            if (!$this->isMissingTempTableError($exception)) {
+                throw $exception;
+            }
+
+            $this->executeWithRetry($this->preparePopulateAndApplyStatistics(...));
+        }
+    }
+
+    private function preparePopulateAndApplyStatistics(): void
+    {
+        $this->prepareAndPopulateStatistics();
+        $this->applyStatisticsInBatches();
+    }
+
+    private function applyStatisticsInBatches(): void
     {
         $lastId = null;
 
-        $this->initializeTemporaryTables();
+        while (true) {
+            $batchIds = $this->getBatchNpCommunicationIds($lastId, self::BATCH_SIZE);
 
-        try {
-            while (true) {
-                $batchIds = $this->getBatchNpCommunicationIds($lastId, self::BATCH_SIZE);
-
-                if ($batchIds === []) {
-                    break;
-                }
-
-                $this->database->beginTransaction();
-
-                try {
-                    $this->updateStatisticsForBatch($batchIds);
-                    $this->database->commit();
-                } catch (Exception $exception) {
-                    $this->database->rollBack();
-
-                    throw $exception;
-                }
-
-                $lastId = array_last($batchIds);
+            if ($batchIds === []) {
+                break;
             }
-        } finally {
-            $this->dropTemporaryTables();
+
+            $this->database->beginTransaction();
+
+            try {
+                $this->updateStatisticsForBatch($batchIds);
+                $this->database->commit();
+            } catch (Exception $exception) {
+                $this->database->rollBack();
+
+                throw $exception;
+            }
+
+            $lastId = array_last($batchIds);
         }
     }
 
@@ -143,11 +202,7 @@ final readonly class HourlyCronJob implements CronJobInterface
     private function updateStatisticsForBatch(array $batchIds): void
     {
         $this->database->exec('DELETE FROM tmp_hourly_batch');
-        $this->database->exec('DELETE FROM tmp_hourly_stats');
         $this->insertBatchIdsIntoTemporaryTable($batchIds);
-
-        $populateStatsQuery = $this->database->prepare(self::POPULATE_BATCH_STATS_QUERY);
-        $populateStatsQuery->execute();
 
         $updateMetaQuery = $this->database->prepare(self::UPDATE_META_QUERY);
         $updateMetaQuery->execute();
@@ -155,6 +210,7 @@ final readonly class HourlyCronJob implements CronJobInterface
 
     private function initializeTemporaryTables(): void
     {
+        $this->dropTemporaryTables();
         $this->database->exec(self::CREATE_BATCH_TEMP_TABLE_QUERY);
         $this->database->exec(self::CREATE_STATS_TEMP_TABLE_QUERY);
         $this->prepareRankedPlayerSnapshot();
@@ -191,6 +247,21 @@ final readonly class HourlyCronJob implements CronJobInterface
         $query->execute(array_values($batchIds));
     }
 
+    private function isMissingTempTableError(Throwable $exception): bool
+    {
+        $message = $exception->getMessage();
+        $mentionsTempTable = str_contains($message, 'tmp_hourly_stats')
+            || str_contains($message, 'tmp_hourly_batch')
+            || str_contains($message, 'tmp_hourly_ranked_players');
+
+        return $mentionsTempTable
+            && (
+                str_contains($message, "doesn't exist")
+                || str_contains($message, 'does not exist')
+                || str_contains($message, 'Base table or view not found')
+            );
+    }
+
     private function executeWithRetry(\Closure $operation): void
     {
         while (true) {
@@ -199,7 +270,7 @@ final readonly class HourlyCronJob implements CronJobInterface
 
                 return;
             } catch (Throwable $exception) {
-                sleep($this->retryDelaySeconds);
+                ($this->sleeper)($this->retryDelaySeconds);
             }
         }
     }
