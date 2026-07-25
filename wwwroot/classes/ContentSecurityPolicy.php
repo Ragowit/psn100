@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-final class ContentSecurityPolicy
+final readonly class ContentSecurityPolicy
 {
     public const string HEADER_NAME = 'Content-Security-Policy';
 
+    #[\NoDiscard]
     public static function value(): string
     {
         return "default-src 'self'; "

@@ -14,6 +14,7 @@ require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 require_once __DIR__ . '/GameTrophySort.php';
 require_once __DIR__ . '/PageMetaData.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/Utility.php';
 
 final class GamePage
@@ -215,8 +216,6 @@ final class GamePage
 
     private function usesPlayStation5Assets(): bool
     {
-        $platform = $this->game->getPlatform();
-
-        return str_contains($platform, 'PS5') || str_contains($platform, 'PSVR2');
+        return Platform::usesPlayStation5Assets($this->game->getPlatform());
     }
 }

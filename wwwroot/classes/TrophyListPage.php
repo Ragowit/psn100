@@ -8,8 +8,6 @@ require_once __DIR__ . '/TrophyListService.php';
 
 final readonly class TrophyListPage
 {
-    private TrophyListFilter $filter;
-
     private ChangelogPaginator $paginator;
 
     /**
@@ -17,10 +15,10 @@ final readonly class TrophyListPage
      */
     private array $trophies;
 
-    public function __construct(TrophyListService $service, TrophyListFilter $filter)
-    {
-        $this->filter = $filter;
-
+    public function __construct(
+        TrophyListService $service,
+        private TrophyListFilter $filter,
+    ) {
         $totalTrophies = $service->countTrophies();
         $this->paginator = new ChangelogPaginator(
             $filter->getPage(),

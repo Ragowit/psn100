@@ -6,6 +6,7 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/HistoryIconType.php';
 require_once __DIR__ . '/HistoryIconState.php';
 require_once __DIR__ . '/Html.php';
+require_once __DIR__ . '/Platform.php';
 
 /**
  * Utility responsible for rendering the visual diff blocks that appear on the
@@ -13,7 +14,7 @@ require_once __DIR__ . '/Html.php';
  * dedicated class instead of relying on a collection of global helper
  * functions, which makes the behaviour easier to test and reuse.
  */
-final class GameHistoryRenderer
+final readonly class GameHistoryRenderer
 {
     /**
      * @param array{previous: mixed, current: mixed}|null $diff
@@ -321,7 +322,7 @@ final class GameHistoryRenderer
         }
 
         if ($iconUrl === '.png') {
-            $hasPs5Assets = str_contains($game->getPlatform(), 'PS5') || str_contains($game->getPlatform(), 'PSVR2');
+            $hasPs5Assets = Platform::usesPlayStation5Assets($game->getPlatform());
 
             if ($type->usesGameMissingAsset()) {
                 return $hasPs5Assets ? '../missing-ps5-game-and-trophy.png' : '../missing-ps4-game.png';

@@ -5,11 +5,12 @@ declare(strict_types=1);
 /**
  * Formats a date interval into its most significant non-zero duration parts.
  */
-final class DateDurationSummary
+final readonly class DateDurationSummary
 {
     /**
      * @return list<string>
      */
+    #[\NoDiscard]
     public static function significantParts(
         \DateTimeInterface $start,
         \DateTimeInterface $end,

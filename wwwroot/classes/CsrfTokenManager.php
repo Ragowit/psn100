@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/SessionManager.php';
 require_once __DIR__ . '/Html.php';
 
-final class CsrfTokenManager
+final readonly class CsrfTokenManager
 {
     private const string SESSION_KEY_PREFIX = 'csrf_token_';
 

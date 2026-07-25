@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Encapsulates validation rules that were previously embedded in PlayerQueueService.
  */
-final class PsnOnlineIdValidator
+final readonly class PsnOnlineIdValidator
 {
     public const string HTML_PATTERN = '[A-Za-z][A-Za-z0-9_-]{2,15}';
     public const string INVALID_MESSAGE = 'PSN name must contain between three and 16 characters, start with a letter, and can consist of letters, numbers, hyphens (-) and underscores (_). Letters are not case-sensitive.';

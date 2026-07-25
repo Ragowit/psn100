@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class PlayerUrlBuilder
+final readonly class PlayerUrlBuilder
 {
     #[\NoDiscard]
     public static function playerPath(string $onlineId): string

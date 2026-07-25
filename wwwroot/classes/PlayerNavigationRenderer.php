@@ -5,16 +5,13 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerNavigation.php';
 require_once __DIR__ . '/Html.php';
 
-final class PlayerNavigationRenderer
+final readonly class PlayerNavigationRenderer
 {
     public function render(PlayerNavigation $navigation): string
     {
-        $links = array_map(
-            $this->renderLink(...),
-            $navigation->getLinks()
-        );
-
-        $linksHtml = implode(PHP_EOL, $links);
+        $linksHtml = $navigation->getLinks()
+            |> (fn (array $links): array => array_map($this->renderLink(...), $links))
+            |> (fn (array $links): string => implode(PHP_EOL, $links));
 
         return <<<HTML
 <div class="btn-group d-flex align-items-stretch">

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/TrophyType.php';
 
 final readonly class PlayerLogEntry
@@ -240,8 +241,6 @@ final readonly class PlayerLogEntry
 
     private function usesPs5Assets(): bool
     {
-        $platforms = strtoupper($this->platforms);
-
-        return str_contains($platforms, 'PS5') || str_contains($platforms, 'PSVR2');
+        return Platform::usesPlayStation5Assets(strtoupper($this->platforms));
     }
 }

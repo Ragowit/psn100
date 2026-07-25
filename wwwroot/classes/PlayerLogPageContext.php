@@ -15,13 +15,6 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class PlayerLogPageContext
 {
-
-    private PlayerLogPage $playerLogPage;
-
-    private PlayerSummary $playerSummary;
-
-    private PlayerLogFilter $filter;
-
     private PlayerNavigation $playerNavigation;
 
     private PlayerPlatformFilterOptions $platformFilterOptions;
@@ -29,12 +22,6 @@ final readonly class PlayerLogPageContext
     private TrophyRarityFormatter $trophyRarityFormatter;
 
     private string $title;
-
-    private string $playerOnlineId;
-
-    private int $playerAccountId;
-
-    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -60,18 +47,18 @@ final readonly class PlayerLogPageContext
         $playerSummary = $playerSummaryService->getSummary($accountId);
 
         return new self(
-        $playerLogPage,
-        $playerSummary,
-        $filter,
-        self::extractOnlineId($playerData),
-        self::extractPlayerAccountId($playerData),
-        self::extractPlayerStatus($playerData)
-    );
-}
+            $playerLogPage,
+            $playerSummary,
+            $filter,
+            self::extractOnlineId($playerData),
+            self::extractPlayerAccountId($playerData),
+            self::extractPlayerStatus($playerData)
+        );
+    }
 
-#[\NoDiscard]
-public static function fromComponents(
-    PlayerLogPage $playerLogPage,
+    #[\NoDiscard]
+    public static function fromComponents(
+        PlayerLogPage $playerLogPage,
         PlayerSummary $playerSummary,
         PlayerLogFilter $filter,
         string $playerOnlineId,
@@ -89,19 +76,13 @@ public static function fromComponents(
     }
 
     private function __construct(
-        PlayerLogPage $playerLogPage,
-        PlayerSummary $playerSummary,
-        PlayerLogFilter $filter,
-        string $playerOnlineId,
-        int $playerAccountId,
-        PlayerStatus $playerStatus
+        private PlayerLogPage $playerLogPage,
+        private PlayerSummary $playerSummary,
+        private PlayerLogFilter $filter,
+        private string $playerOnlineId,
+        private int $playerAccountId,
+        private PlayerStatus $playerStatus,
     ) {
-        $this->playerLogPage = $playerLogPage;
-        $this->playerSummary = $playerSummary;
-        $this->filter = $filter;
-        $this->playerOnlineId = $playerOnlineId;
-        $this->playerAccountId = $playerAccountId;
-        $this->playerStatus = $playerStatus;
         $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::LOG);
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
             fn (string $platform): bool => $this->filter->isPlatformSelected($platform)

@@ -17,12 +17,6 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class PlayerAdvisorPageContext
 {
-    private PlayerAdvisorPage $playerAdvisorPage;
-
-    private PlayerSummary $playerSummary;
-
-    private PlayerAdvisorFilter $filter;
-
     private PlayerNavigation $playerNavigation;
 
     private PlayerPlatformFilterOptions $platformFilterOptions;
@@ -30,14 +24,6 @@ final readonly class PlayerAdvisorPageContext
     private TrophyRarityFormatter $trophyRarityFormatter;
 
     private ?PlayerStatusNotice $playerStatusNotice;
-
-    private string $playerOnlineId;
-
-    private int $playerAccountId;
-
-    private PlayerStatus $playerStatus;
-
-    private ?string $playerAccountIdValue;
 
     private string $title;
 
@@ -100,21 +86,14 @@ final readonly class PlayerAdvisorPageContext
     }
 
     private function __construct(
-        PlayerAdvisorPage $playerAdvisorPage,
-        PlayerSummary $playerSummary,
-        PlayerAdvisorFilter $filter,
-        string $playerOnlineId,
-        int $playerAccountId,
-        PlayerStatus $playerStatus,
-        ?string $playerAccountIdValue
+        private PlayerAdvisorPage $playerAdvisorPage,
+        private PlayerSummary $playerSummary,
+        private PlayerAdvisorFilter $filter,
+        private string $playerOnlineId,
+        private int $playerAccountId,
+        private PlayerStatus $playerStatus,
+        private ?string $playerAccountIdValue,
     ) {
-        $this->playerAdvisorPage = $playerAdvisorPage;
-        $this->playerSummary = $playerSummary;
-        $this->filter = $filter;
-        $this->playerOnlineId = $playerOnlineId;
-        $this->playerAccountId = $playerAccountId;
-        $this->playerStatus = $playerStatus;
-        $this->playerAccountIdValue = $playerAccountIdValue;
         $this->playerNavigation = PlayerNavigation::forSection(
             $playerOnlineId,
             PlayerNavigationSection::TROPHY_ADVISOR

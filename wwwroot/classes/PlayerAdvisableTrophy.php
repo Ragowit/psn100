@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/TrophyType.php';
 
 final readonly class PlayerAdvisableTrophy
@@ -182,9 +183,6 @@ final readonly class PlayerAdvisableTrophy
 
     private function usesPlayStation5Assets(): bool
     {
-        return array_any(
-            $this->platforms,
-            static fn (string $platform): bool => str_contains($platform, 'PS5') || str_contains($platform, 'PSVR2')
-        );
+        return Platform::anyUsesPlayStation5Assets($this->platforms);
     }
 }

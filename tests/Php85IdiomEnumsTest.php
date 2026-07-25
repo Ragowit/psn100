@@ -16,6 +16,7 @@ require_once __DIR__ . '/../wwwroot/classes/TrophyMetaStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/HistoryIconType.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineEntry.php';
+require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 
 final class Php85IdiomEnumsTest extends TestCase
 {
@@ -123,5 +124,14 @@ final class Php85IdiomEnumsTest extends TestCase
             'last_trophy' => '2024-05-20',
         ]);
         $this->assertSame(PlayerTimelineStatus::Playing, $playing->getStatus(new DateTimeImmutable('2024-06-01')));
+    }
+
+    public function testPlatformUsesPlayStation5Assets(): void
+    {
+        $this->assertTrue(Platform::usesPlayStation5Assets('PS5'));
+        $this->assertTrue(Platform::usesPlayStation5Assets('PS4, PSVR2'));
+        $this->assertFalse(Platform::usesPlayStation5Assets('PS4, PS3'));
+        $this->assertTrue(Platform::anyUsesPlayStation5Assets(['PS4', 'PS5']));
+        $this->assertFalse(Platform::anyUsesPlayStation5Assets(['PS4', 'PC']));
     }
 }

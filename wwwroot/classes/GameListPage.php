@@ -7,8 +7,6 @@ require_once __DIR__ . '/GameListFilter.php';
 
 final readonly class GameListPage
 {
-    private GameListService $gameListService;
-
     private GameListFilter $filter;
 
     private int $limit;
@@ -29,9 +27,10 @@ final readonly class GameListPage
      */
     private array $paginationParameters;
 
-    public function __construct(GameListService $gameListService, GameListFilter $filter)
-    {
-        $this->gameListService = $gameListService;
+    public function __construct(
+        private GameListService $gameListService,
+        GameListFilter $filter,
+    ) {
         $resolvedFilter = $filter->withPlayer($gameListService->resolvePlayer($filter->getPlayer()));
         $this->limit = $this->gameListService->getLimit();
 

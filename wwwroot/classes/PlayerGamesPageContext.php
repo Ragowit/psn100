@@ -18,12 +18,6 @@ require_once __DIR__ . '/PlayerUrlBuilder.php';
 
 final readonly class PlayerGamesPageContext
 {
-    private PlayerGamesPage $playerGamesPage;
-
-    private PlayerSummary $playerSummary;
-
-    private PlayerGamesFilter $filter;
-
     private PageMetaData $metaData;
 
     private string $title;
@@ -38,30 +32,21 @@ final readonly class PlayerGamesPageContext
 
     private string $playerOnlineId;
 
-    private int $playerAccountId;
-
-    private PlayerStatus $playerStatus;
-
     /**
      * @param array<string, mixed> $playerData
      */
     private function __construct(
-        PlayerGamesPage $playerGamesPage,
-        PlayerSummary $playerSummary,
-        PlayerGamesFilter $filter,
+        private PlayerGamesPage $playerGamesPage,
+        private PlayerSummary $playerSummary,
+        private PlayerGamesFilter $filter,
         array $playerData,
-        int $playerAccountId,
-        PlayerStatus $playerStatus
+        private int $playerAccountId,
+        private PlayerStatus $playerStatus,
     ) {
-        $this->playerGamesPage = $playerGamesPage;
-        $this->playerSummary = $playerSummary;
-        $this->filter = $filter;
         $this->metaData = $this->buildMetaData($playerData, $playerSummary);
         $this->title = $this->buildTitle($playerData);
         $this->playerSearch = $filter->getSearch();
         $this->sort = $filter->getSort();
-        $this->playerAccountId = $playerAccountId;
-        $this->playerStatus = $playerStatus;
         $this->playerOnlineId = $this->extractString($playerData['online_id'] ?? '');
         $this->playerNavigation = PlayerNavigation::forSection(
             $this->playerOnlineId,

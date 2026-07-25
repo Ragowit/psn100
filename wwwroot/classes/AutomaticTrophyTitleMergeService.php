@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/TrophyMergeMethod.php';
 require_once __DIR__ . '/TrophyMergeService.php';
 require_once __DIR__ . '/TrophySetComparator.php';
@@ -401,10 +402,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function hasPs5OrPsvr2(array $platforms): bool
     {
-        return array_any(
-            $platforms,
-            static fn (string $platform): bool => $platform === 'PS5' || $platform === 'PSVR2'
-        );
+        return Platform::anyUsesPlayStation5Assets($platforms);
     }
 
     /**

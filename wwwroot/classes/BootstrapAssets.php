@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/StaticAsset.php';
 
-final class BootstrapAssets
+final readonly class BootstrapAssets
 {
     public const string VERSION = '5.3.8';
     public const string POPPER_VERSION = '2.11.8';

@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Strips trophy-set boilerplate, normalises separators, and applies APA title case.
  */
-final class TrophyTitleNameFormatter
+final readonly class TrophyTitleNameFormatter
 {
     public function format(string $name): string
     {

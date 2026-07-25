@@ -6,8 +6,6 @@ require_once __DIR__ . '/AvatarService.php';
 
 final readonly class AvatarPage
 {
-    private AvatarService $avatarService;
-
     private int $currentPage;
 
     private int $limit;
@@ -21,9 +19,11 @@ final readonly class AvatarPage
      */
     private array $avatars;
 
-    public function __construct(AvatarService $avatarService, int $currentPage = 1, int $limit = 48)
-    {
-        $this->avatarService = $avatarService;
+    public function __construct(
+        private AvatarService $avatarService,
+        int $currentPage = 1,
+        int $limit = 48,
+    ) {
         $this->limit = max($limit, 1);
 
         $requestedPage = max($currentPage, 1);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class SiteUrl
+final readonly class SiteUrl
 {
     private const string ORIGIN = 'https://psn100.net';
 

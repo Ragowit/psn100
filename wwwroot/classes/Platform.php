@@ -64,4 +64,29 @@ enum Platform: string
 
         return $labels;
     }
+
+    /**
+     * Whether a platform field (comma-separated labels or a single label)
+     * should use PlayStation 5 artwork fallbacks.
+     */
+    #[\NoDiscard]
+    public static function usesPlayStation5Assets(string $platforms): bool
+    {
+        return array_any(
+            [self::Ps5->label(), self::PsVr2->label()],
+            static fn (string $label): bool => str_contains($platforms, $label),
+        );
+    }
+
+    /**
+     * @param list<string> $platforms
+     */
+    #[\NoDiscard]
+    public static function anyUsesPlayStation5Assets(array $platforms): bool
+    {
+        return array_any(
+            $platforms,
+            static fn (string $platform): bool => self::usesPlayStation5Assets($platform),
+        );
+    }
 }

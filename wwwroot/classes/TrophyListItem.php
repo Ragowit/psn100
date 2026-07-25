@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/TrophyType.php';
 require_once __DIR__ . '/Utility.php';
 
@@ -163,6 +164,6 @@ final readonly class TrophyListItem
 
     private function usesPlayStation5Assets(): bool
     {
-        return str_contains($this->platform, 'PS5');
+        return Platform::usesPlayStation5Assets($this->platform);
     }
 }

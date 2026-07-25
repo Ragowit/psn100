@@ -28,8 +28,6 @@ final readonly class GameTrophyRow
     private bool $hasRecordedEarnedTimestamp;
     private bool $hasExplicitNoTimestamp;
     private bool $isEarned;
-    private bool $usesPlayStation5Assets;
-    private Utility $utility;
 
     /**
      * @param array<string, mixed> $data
@@ -43,8 +41,11 @@ final readonly class GameTrophyRow
     /**
      * @param array<string, mixed> $data
      */
-    private function __construct(array $data, Utility $utility, bool $usesPlayStation5Assets)
-    {
+    private function __construct(
+        array $data,
+        private Utility $utility,
+        private bool $usesPlayStation5Assets,
+    ) {
         $this->id = (int) ($data['id'] ?? 0);
         $this->orderId = (int) ($data['order_id'] ?? 0);
         $this->type = TrophyType::fromMixed($data['type'] ?? null);
@@ -60,8 +61,6 @@ final readonly class GameTrophyRow
         $this->progress = isset($data['progress']) ? (int) $data['progress'] : null;
         $this->rewardName = isset($data['reward_name']) ? (string) $data['reward_name'] : null;
         $this->rewardImageUrl = isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null;
-        $this->utility = $utility;
-        $this->usesPlayStation5Assets = $usesPlayStation5Assets;
 
         $rawEarnedDate = isset($data['earned_date']) ? (string) $data['earned_date'] : null;
         $this->hasExplicitNoTimestamp = $rawEarnedDate === 'No Timestamp';

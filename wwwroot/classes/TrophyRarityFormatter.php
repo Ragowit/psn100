@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/TrophyRarity.php';
 require_once __DIR__ . '/TrophyMetaStatus.php';
 
-final class TrophyRarityFormatter
+final readonly class TrophyRarityFormatter
 {
     /**
      * @var list<array{max: float, label: string, class: string}>
