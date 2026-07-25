@@ -20,13 +20,44 @@ final class HourlyCronJobTest extends TestCase
         $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $populateBatchStatsQuery);
         $this->assertStringContainsString('FROM trophy_title_player ttp', $populateBatchStatsQuery);
         $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id', $populateBatchStatsQuery);
-        $this->assertStringContainsString('JOIN player_ranking pr ON pr.account_id = ttp.account_id AND pr.ranking <= 10000', $populateBatchStatsQuery);
+        $this->assertStringContainsString('JOIN tmp_hourly_ranked_players rp ON rp.account_id = ttp.account_id', $populateBatchStatsQuery);
+        $this->assertFalse(str_contains($populateBatchStatsQuery, 'player_ranking'));
         $this->assertStringContainsString('COUNT(*) AS owners', $populateBatchStatsQuery);
         $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $populateBatchStatsQuery);
         $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $populateBatchStatsQuery);
 
         $this->assertStringContainsString('UPDATE trophy_title_meta ttm', $updateMetaQuery);
         $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttm.np_communication_id', $updateMetaQuery);
+    }
+
+    public function testRankedPlayerSnapshotFreezesTopTenThousandFromPlayerRanking(): void
+    {
+        $class = new ReflectionClass(HourlyCronJob::class);
+        $create = $this->readPrivateConstantValue($class, 'CREATE_RANKED_PLAYER_SNAPSHOT_QUERY');
+        $populate = $this->readPrivateConstantValue($class, 'POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY');
+        $source = file_get_contents((string) $class->getFileName());
+        $this->assertTrue(is_string($source));
+
+        $this->assertStringContainsString('CREATE TEMPORARY TABLE tmp_hourly_ranked_players', $create);
+        $this->assertStringContainsString('PRIMARY KEY (account_id)', $create);
+        $this->assertStringContainsString('KEY idx_tmp_hourly_ranked_players_ranking (ranking, account_id)', $create);
+        $this->assertStringContainsString(
+            'INSERT INTO tmp_hourly_ranked_players (account_id, ranking)',
+            $populate,
+        );
+        $this->assertStringContainsString('FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)', $populate);
+        $this->assertStringContainsString('WHERE pr.ranking <= 10000', $populate);
+        $this->assertSame(10000, $this->readPrivateConstantInt($class, 'TOP_RANKED_PLAYERS'));
+
+        $initSource = $this->readMethodSource($class, 'initializeTemporaryTables');
+        $this->assertStringContainsString('prepareRankedPlayerSnapshot', $initSource);
+
+        $prepareSource = $this->readMethodSource($class, 'prepareRankedPlayerSnapshot');
+        $this->assertStringContainsString('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_ranked_players', $prepareSource);
+        $this->assertStringContainsString('CREATE_RANKED_PLAYER_SNAPSHOT_QUERY', $prepareSource);
+        $this->assertStringContainsString('POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY', $prepareSource);
+
+        $this->assertStringContainsString('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_ranked_players', $source);
     }
 
     public function testResetsBatchTitlesWithoutQualifyingPlayersToZeroValues(): void
@@ -95,6 +126,16 @@ final class HourlyCronJobTest extends TestCase
         $this->assertTrue($constant instanceof ReflectionClassConstant);
         $value = $constant->getValue();
         $this->assertTrue(is_string($value));
+
+        return $value;
+    }
+
+    private function readPrivateConstantInt(ReflectionClass $class, string $name): int
+    {
+        $constant = $class->getReflectionConstant($name);
+        $this->assertTrue($constant instanceof ReflectionClassConstant);
+        $value = $constant->getValue();
+        $this->assertTrue(is_int($value));
 
         return $value;
     }

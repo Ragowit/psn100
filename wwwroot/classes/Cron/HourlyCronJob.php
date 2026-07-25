@@ -8,6 +8,8 @@ final readonly class HourlyCronJob implements CronJobInterface
 {
     private const int BATCH_SIZE = 500;
 
+    private const int TOP_RANKED_PLAYERS = 10000;
+
     private const string CREATE_BATCH_TEMP_TABLE_QUERY = <<<'SQL'
         CREATE TEMPORARY TABLE IF NOT EXISTS tmp_hourly_batch (
             np_communication_id VARCHAR(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci PRIMARY KEY
@@ -23,6 +25,32 @@ final readonly class HourlyCronJob implements CronJobInterface
         )
         SQL;
 
+    /**
+     * Freeze the top-10k account set once so later player_ranking swaps (every
+     * 5th minute) cannot change which players qualify while title batches run.
+     *
+     * account_id is unique in player_ranking; RANK() ties may share the same
+     * ranking value, so membership is defined by ranking <= 10000 at snapshot
+     * time rather than by a dense top-N cut.
+     */
+    private const string CREATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
+        CREATE TEMPORARY TABLE tmp_hourly_ranked_players (
+            account_id BIGINT UNSIGNED NOT NULL,
+            ranking MEDIUMINT UNSIGNED NOT NULL,
+            PRIMARY KEY (account_id),
+            KEY idx_tmp_hourly_ranked_players_ranking (ranking, account_id)
+        )
+        SQL;
+
+    private const string POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY = <<<'SQL'
+        INSERT INTO tmp_hourly_ranked_players (account_id, ranking)
+        SELECT
+            pr.account_id,
+            pr.ranking
+        FROM player_ranking pr FORCE INDEX (idx_pr_ranking_account)
+        WHERE pr.ranking <= 10000
+        SQL;
+
     private const string POPULATE_BATCH_STATS_QUERY = <<<'SQL'
         INSERT INTO tmp_hourly_stats (np_communication_id, owners, owners_completed, recent_players)
         SELECT
@@ -32,7 +60,7 @@ final readonly class HourlyCronJob implements CronJobInterface
             SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players
         FROM trophy_title_player ttp
         JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id
-        JOIN player_ranking pr ON pr.account_id = ttp.account_id AND pr.ranking <= 10000
+        JOIN tmp_hourly_ranked_players rp ON rp.account_id = ttp.account_id
         GROUP BY ttp.np_communication_id
         SQL;
 
@@ -129,12 +157,26 @@ final readonly class HourlyCronJob implements CronJobInterface
     {
         $this->database->exec(self::CREATE_BATCH_TEMP_TABLE_QUERY);
         $this->database->exec(self::CREATE_STATS_TEMP_TABLE_QUERY);
+        $this->prepareRankedPlayerSnapshot();
+    }
+
+    /**
+     * Capture the current top-10k ranking set before any title batches run.
+     */
+    private function prepareRankedPlayerSnapshot(): void
+    {
+        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_ranked_players');
+        $this->database->exec(self::CREATE_RANKED_PLAYER_SNAPSHOT_QUERY);
+
+        $snapshot = $this->database->prepare(self::POPULATE_RANKED_PLAYER_SNAPSHOT_QUERY);
+        $snapshot->execute();
     }
 
     private function dropTemporaryTables(): void
     {
         $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_stats');
         $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_batch');
+        $this->database->exec('DROP TEMPORARY TABLE IF EXISTS tmp_hourly_ranked_players');
     }
 
     private function insertBatchIdsIntoTemporaryTable(array $batchIds): void
