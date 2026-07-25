@@ -45,4 +45,27 @@ final class PageMetaDataRendererTest extends TestCase
 
         $this->assertSame($expected, $result);
     }
+
+    public function testRenderMakesRelativeImageAndUrlAbsoluteForOpenGraph(): void
+    {
+        $metaData = (new PageMetaData)
+            ->withTitle('Relative Meta')
+            ->withImage('/img/title/my icon.png')
+            ->withUrl('/game/1-example');
+
+        $result = $this->renderer->render($metaData);
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="https://psn100.net/game/1-example" />',
+            $result
+        );
+        $this->assertStringContainsString(
+            '<meta property="og:url" content="https://psn100.net/game/1-example">',
+            $result
+        );
+        $this->assertStringContainsString(
+            '<meta property="og:image" content="https://psn100.net/img/title/my icon.png">',
+            $result
+        );
+    }
 }

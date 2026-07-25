@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Html.php';
+require_once __DIR__ . '/SiteUrl.php';
 
 final class PageMetaDataRenderer
 {
@@ -18,7 +19,7 @@ final class PageMetaDataRenderer
 
         $tags = [];
 
-        $canonicalUrl = $this->escape($metaData->getUrl());
+        $canonicalUrl = $this->escapeAbsoluteUrl($metaData->getUrl());
         if ($canonicalUrl !== null) {
             $tags[] = sprintf('<link rel="canonical" href="%s" />', $canonicalUrl);
             $tags[] = sprintf('<meta property="og:url" content="%s">', $canonicalUrl);
@@ -29,7 +30,7 @@ final class PageMetaDataRenderer
             $tags[] = sprintf('<meta property="og:description" content="%s">', $description);
         }
 
-        $image = $this->escape($metaData->getImage());
+        $image = $this->escapeAbsoluteUrl($metaData->getImage());
         if ($image !== null) {
             $tags[] = sprintf('<meta property="og:image" content="%s">', $image);
         }
@@ -45,6 +46,15 @@ final class PageMetaDataRenderer
         $tags[] = sprintf('<meta name="twitter:card" content="%s">', self::TWITTER_CARD);
 
         return implode(PHP_EOL, $tags);
+    }
+
+    private function escapeAbsoluteUrl(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return Html::escape(SiteUrl::absolute($value));
     }
 
     private function escape(?string $value): ?string
