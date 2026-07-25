@@ -7,7 +7,6 @@ require_once __DIR__ . '/classes/PlayerTimelineLayout.php';
 require_once __DIR__ . '/classes/PlayerTimelinePageContext.php';
 require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
-require_once __DIR__ . '/classes/SiteUrl.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -173,7 +172,7 @@ require_once("header.php");
                                     $width = $item->getDurationDays() * 5;
 
                                     echo "<li style='margin-left: ". $marginLeft ."px; width: ". $width ."px;'>";
-                                    echo "<a class='". Html::escape($class) ."' href='". Html::escape(SiteUrl::absolute($gamePath)) ."' title=\"". Html::escape($title) ."\">". Html::escape($entry->getName()) ."</a>";
+                                    echo "<a class='". Html::escape($class) ."' href='". Html::escape($gamePath) ."' title=\"". Html::escape($title) ."\">". Html::escape($entry->getName()) ."</a>";
                                     echo "</li>";
                                 }
                                 echo "</ul>";

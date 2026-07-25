@@ -15,7 +15,6 @@ require_once __DIR__ . '/PlayerSummary.php';
 require_once __DIR__ . '/PlayerSummaryService.php';
 require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
-require_once __DIR__ . '/SiteUrl.php';
 
 final readonly class PlayerGamesPageContext
 {
@@ -222,8 +221,8 @@ final readonly class PlayerGamesPageContext
     {
         $metaData = (new PageMetaData)
             ->withTitle($this->buildTitle($playerData))
-            ->withImage(SiteUrl::absolute('/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? '')))
-            ->withUrl(SiteUrl::absolute(PlayerUrlBuilder::playerPath($this->extractString($playerData['online_id'] ?? ''))));
+            ->withImage('/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
+            ->withUrl(PlayerUrlBuilder::playerPath($this->extractString($playerData['online_id'] ?? '')));
 
         $status = self::extractPlayerStatus($playerData);
 
