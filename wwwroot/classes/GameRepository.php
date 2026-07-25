@@ -14,7 +14,9 @@ class GameRepository
             return null;
         }
 
-        $id = (int) (($segment |> explode('-', ...) |> array_first(...)) ?? 0);
+        $id = (int) (($segment
+            |> (fn (string $value): array => explode('-', $value))
+            |> array_first(...)) ?? 0);
 
         if ($id <= 0) {
             return null;

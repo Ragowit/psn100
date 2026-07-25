@@ -178,7 +178,7 @@ final class FakeLeaderboardPageContext extends AbstractLeaderboardPageContext
     }
 }
 
-final class FakeLeaderboardRow extends AbstractLeaderboardRow
+final readonly class FakeLeaderboardRow extends AbstractLeaderboardRow
 {
     public function __construct(
         array $player,
