@@ -7,24 +7,24 @@ require_once __DIR__ . '/../wwwroot/classes/Cron/HourlyCronJob.php';
 
 final class HourlyCronJobTest extends TestCase
 {
-    public function testUsesBatchAndStatsTemporaryTablesForNonEmptyBatchUpdates(): void
+    public function testPrecomputesAllStatisticsOnceBeforeBatchUpdates(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);
         $createBatchTableQuery = $this->readPrivateConstantValue($class, 'CREATE_BATCH_TEMP_TABLE_QUERY');
         $createStatsTableQuery = $this->readPrivateConstantValue($class, 'CREATE_STATS_TEMP_TABLE_QUERY');
-        $populateBatchStatsQuery = $this->readPrivateConstantValue($class, 'POPULATE_BATCH_STATS_QUERY');
+        $populateAllStatsQuery = $this->readPrivateConstantValue($class, 'POPULATE_ALL_STATS_QUERY');
         $updateMetaQuery = $this->readPrivateConstantValue($class, 'UPDATE_META_QUERY');
 
         $this->assertStringContainsString('COLLATE utf8mb4_0900_ai_ci', $createBatchTableQuery);
         $this->assertStringContainsString('COLLATE utf8mb4_0900_ai_ci', $createStatsTableQuery);
-        $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $populateBatchStatsQuery);
-        $this->assertStringContainsString('FROM trophy_title_player ttp', $populateBatchStatsQuery);
-        $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttp.np_communication_id', $populateBatchStatsQuery);
-        $this->assertStringContainsString('JOIN tmp_hourly_ranked_players rp ON rp.account_id = ttp.account_id', $populateBatchStatsQuery);
-        $this->assertFalse(str_contains($populateBatchStatsQuery, 'player_ranking'));
-        $this->assertStringContainsString('COUNT(*) AS owners', $populateBatchStatsQuery);
-        $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $populateBatchStatsQuery);
-        $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $populateBatchStatsQuery);
+        $this->assertStringContainsString('INSERT INTO tmp_hourly_stats', $populateAllStatsQuery);
+        $this->assertStringContainsString('FROM trophy_title_player ttp', $populateAllStatsQuery);
+        $this->assertStringContainsString('JOIN tmp_hourly_ranked_players rp ON rp.account_id = ttp.account_id', $populateAllStatsQuery);
+        $this->assertFalse(str_contains($populateAllStatsQuery, 'tmp_hourly_batch'));
+        $this->assertFalse(str_contains($populateAllStatsQuery, 'player_ranking'));
+        $this->assertStringContainsString('COUNT(*) AS owners', $populateAllStatsQuery);
+        $this->assertStringContainsString('SUM(ttp.progress = 100) AS owners_completed', $populateAllStatsQuery);
+        $this->assertStringContainsString('SUM(ttp.last_updated_date >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)) AS recent_players', $populateAllStatsQuery);
 
         $this->assertStringContainsString('UPDATE trophy_title_meta ttm', $updateMetaQuery);
         $this->assertStringContainsString('JOIN tmp_hourly_batch b ON b.np_communication_id = ttm.np_communication_id', $updateMetaQuery);
@@ -80,23 +80,79 @@ final class HourlyCronJobTest extends TestCase
         $this->assertTrue(is_string($source));
 
         $this->assertStringContainsString('DELETE FROM tmp_hourly_batch', $source);
-        $this->assertStringContainsString('DELETE FROM tmp_hourly_stats', $source);
+        $this->assertFalse(str_contains($source, 'DELETE FROM tmp_hourly_stats'));
         $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_batch'));
         $this->assertFalse(str_contains($source, 'TRUNCATE TABLE tmp_hourly_stats'));
     }
 
-    public function testPopulatesStatisticsPerBatch(): void
+    public function testPopulatesAllStatisticsOnceBeforeBatchUpdates(): void
     {
         $class = new ReflectionClass(HourlyCronJob::class);
 
-        $this->assertFalse($class->hasMethod('populateAllStatistics'));
+        $this->assertTrue($class->hasMethod('populateAllStatistics'));
+        $this->assertFalse($class->hasConstant('POPULATE_BATCH_STATS_QUERY'));
 
         $batchSource = $this->readMethodSource($class, 'updateStatisticsForBatch');
-        $this->assertStringContainsString('POPULATE_BATCH_STATS_QUERY', $batchSource);
-        $this->assertStringContainsString('DELETE FROM tmp_hourly_stats', $batchSource);
+        $this->assertFalse(str_contains($batchSource, 'POPULATE_ALL_STATS_QUERY'));
+        $this->assertFalse(str_contains($batchSource, 'DELETE FROM tmp_hourly_stats'));
 
-        $updateSource = $this->readMethodSource($class, 'updateTrophyTitleStatistics');
-        $this->assertFalse(str_contains($updateSource, 'populateAllStatistics'));
+        $runSource = $this->readMethodSource($class, 'run');
+        $this->assertStringContainsString('prepareAndPopulateStatistics', $runSource);
+        $this->assertStringContainsString('applyStatisticsInBatchesWithRecovery', $runSource);
+
+        $prepareSource = $this->readMethodSource($class, 'prepareAndPopulateStatistics');
+        $this->assertStringContainsString('populateAllStatistics', $prepareSource);
+
+        $applySource = $this->readMethodSource($class, 'applyStatisticsInBatches');
+        $this->assertStringContainsString('while (true)', $applySource);
+        $this->assertFalse(str_contains($applySource, 'populateAllStatistics'));
+    }
+
+    public function testPopulateAndApplyRetryIndependently(): void
+    {
+        $class = new ReflectionClass(HourlyCronJob::class);
+        $runSource = $this->readMethodSource($class, 'run');
+
+        $this->assertStringContainsString(
+            '$this->executeWithRetry($this->prepareAndPopulateStatistics(...));',
+            $runSource,
+        );
+        $this->assertStringContainsString(
+            '$this->executeWithRetry($this->applyStatisticsInBatchesWithRecovery(...));',
+            $runSource,
+        );
+
+        $recoverySource = $this->readMethodSource($class, 'applyStatisticsInBatchesWithRecovery');
+        $this->assertStringContainsString('isMissingTempTableError', $recoverySource);
+        $this->assertStringContainsString('preparePopulateAndApplyStatistics', $recoverySource);
+    }
+
+    public function testIsMissingTempTableErrorDetectsHourlyTempTables(): void
+    {
+        $class = new ReflectionClass(HourlyCronJob::class);
+        $method = $class->getMethod('isMissingTempTableError');
+        $job = $class->newInstanceWithoutConstructor();
+
+        $this->assertTrue($method->invoke(
+            $job,
+            new RuntimeException("Table 'psn100.tmp_hourly_stats' doesn't exist")
+        ));
+        $this->assertTrue($method->invoke(
+            $job,
+            new RuntimeException('Base table or view not found: tmp_hourly_batch')
+        ));
+        $this->assertTrue($method->invoke(
+            $job,
+            new RuntimeException("Temporary table tmp_hourly_ranked_players does not exist")
+        ));
+        $this->assertFalse($method->invoke(
+            $job,
+            new RuntimeException('Lock wait timeout exceeded; try restarting transaction')
+        ));
+        $this->assertFalse($method->invoke(
+            $job,
+            new RuntimeException("Table 'psn100.trophy_title_meta' doesn't exist")
+        ));
     }
 
     public function testNoDynamicUnionAllSelectBatchPathExists(): void
@@ -118,6 +174,15 @@ final class HourlyCronJobTest extends TestCase
 
         $this->assertFalse($class->hasConstant('UPDATE_ALL_META_QUERY'));
         $this->assertStringContainsString('BATCH_SIZE', $source);
+    }
+
+    public function testFailedPopulateDropsTempTablesBeforeRethrow(): void
+    {
+        $class = new ReflectionClass(HourlyCronJob::class);
+        $prepareSource = $this->readMethodSource($class, 'prepareAndPopulateStatistics');
+
+        $this->assertStringContainsString('dropTemporaryTables', $prepareSource);
+        $this->assertStringContainsString('throw $exception', $prepareSource);
     }
 
     private function readPrivateConstantValue(ReflectionClass $class, string $name): string
