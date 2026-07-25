@@ -51,8 +51,8 @@ final readonly class TrophyPage
         $metaData = (new PageMetaData)
             ->withTitle($trophyName . ' Trophy')
             ->withDescription(Html::escape($trophy->getDetail()))
-            ->withImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())
-            ->withUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
+            ->withImage('/img/trophy/' . $trophy->getIconFileName())
+            ->withUrl('/trophy/' . $trophy->getTrophySlug($utility));
 
         $pageTitle = $trophyName . ' Trophy ~ PSN 100%';
         $metaRarity = $rarityFormatter->formatMeta($trophy->getRarityPercent(), $trophy->getStatus());

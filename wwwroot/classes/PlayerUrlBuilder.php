@@ -7,28 +7,35 @@ final class PlayerUrlBuilder
     #[\NoDiscard]
     public static function playerPath(string $onlineId): string
     {
-        return '/player/' . rawurlencode($onlineId);
+        return self::buildPath('player', rawurlencode($onlineId));
     }
 
     #[\NoDiscard]
     public static function playerReportPath(string $onlineId): string
     {
-        return self::playerPath($onlineId) . '/report';
+        return self::buildPath('player', rawurlencode($onlineId), 'report');
     }
 
     #[\NoDiscard]
     public static function gamePlayerPath(string $gameSlug, string $onlineId): string
     {
-        return '/game/' . $gameSlug . '/' . rawurlencode($onlineId);
+        return self::buildPath('game', $gameSlug, rawurlencode($onlineId));
     }
 
     #[\NoDiscard]
     public static function gamePath(string $gameSlug, ?string $onlineId = null): string
     {
         if ($onlineId === null || $onlineId === '') {
-            return '/game/' . $gameSlug;
+            return self::buildPath('game', $gameSlug);
         }
 
         return self::gamePlayerPath($gameSlug, $onlineId);
+    }
+
+    private static function buildPath(string ...$segments): string
+    {
+        $path = '/' . implode('/', $segments);
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 }

@@ -13,6 +13,9 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerQueueMessagePartType.php';
 require_once __DIR__ . '/../wwwroot/classes/JsonResponseStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyType.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyMetaStatus.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineStatus.php';
+require_once __DIR__ . '/../wwwroot/classes/HistoryIconType.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineEntry.php';
 
 final class Php85IdiomEnumsTest extends TestCase
 {
@@ -85,5 +88,40 @@ final class Php85IdiomEnumsTest extends TestCase
         $this->assertSame(TrophyMetaStatus::Unobtainable, TrophyMetaStatus::fromMixed('1'));
         $this->assertSame(TrophyMetaStatus::Obtainable, TrophyMetaStatus::fromMixed('0'));
         $this->assertSame(TrophyMetaStatus::Obtainable, TrophyMetaStatus::fromMixed('unknown'));
+    }
+
+    public function testPlayerTimelineStatusAndHistoryIconType(): void
+    {
+        $this->assertSame('completed', PlayerTimelineStatus::Completed->cssClass());
+        $this->assertSame('stalled', PlayerTimelineStatus::Stalled->value);
+        $this->assertSame('group', HistoryIconType::Group->value);
+        $this->assertSame('title', HistoryIconType::Title->display()['directory']);
+
+        $completed = PlayerTimelineEntry::fromRow([
+            'game_id' => 1,
+            'name' => 'Done',
+            'progress' => 100,
+            'first_trophy' => '2024-01-01',
+            'last_trophy' => '2024-01-02',
+        ]);
+        $this->assertSame(PlayerTimelineStatus::Completed, $completed->getStatus(new DateTimeImmutable('2024-06-01')));
+
+        $stalled = PlayerTimelineEntry::fromRow([
+            'game_id' => 2,
+            'name' => 'Idle',
+            'progress' => 40,
+            'first_trophy' => '2023-01-01',
+            'last_trophy' => '2023-01-02',
+        ]);
+        $this->assertSame(PlayerTimelineStatus::Stalled, $stalled->getStatus(new DateTimeImmutable('2024-06-01')));
+
+        $playing = PlayerTimelineEntry::fromRow([
+            'game_id' => 3,
+            'name' => 'Active',
+            'progress' => 40,
+            'first_trophy' => '2024-05-01',
+            'last_trophy' => '2024-05-20',
+        ]);
+        $this->assertSame(PlayerTimelineStatus::Playing, $playing->getStatus(new DateTimeImmutable('2024-06-01')));
     }
 }

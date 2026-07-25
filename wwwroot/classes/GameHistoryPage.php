@@ -114,8 +114,8 @@ final class GameHistoryPage
         return (new PageMetaData)
             ->withTitle($this->game->getName() . ' Trophy Data History')
             ->withDescription('Version history and trophy data changes for ' . $this->game->getName())
-            ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
-            ->withUrl('https://psn100.net/game-history/' . $this->game->getId() . '-' . $this->getGameSlug());
+            ->withImage('/img/title/' . $this->game->getIconUrl())
+            ->withUrl('/game-history/' . $this->game->getId() . '-' . $this->getGameSlug());
     }
 
     public function getPageTitle(): string

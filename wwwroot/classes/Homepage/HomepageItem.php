@@ -3,20 +3,21 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../CommaSeparatedValues.php';
+require_once __DIR__ . '/../HistoryIconType.php';
 
 abstract readonly class HomepageItem
 {
     private const string MISSING_PS5_ICON = '/img/missing-ps5-game-and-trophy.png';
     private const string MISSING_PS4_ICON = '/img/missing-ps4-game.png';
 
-    private string $iconDirectory;
+    private HistoryIconType $iconType;
 
     protected function __construct(
         private string $iconUrl,
         private string $platform,
-        string $iconDirectory,
+        HistoryIconType $iconType,
     ) {
-        $this->iconDirectory = trim($iconDirectory, '/');
+        $this->iconType = $iconType;
     }
 
     public function getIconPath(): string
@@ -25,7 +26,7 @@ abstract readonly class HomepageItem
             return $this->isPs5Title() ? self::MISSING_PS5_ICON : self::MISSING_PS4_ICON;
         }
 
-        return '/img/' . $this->iconDirectory . '/' . $this->iconUrl;
+        return '/img/' . $this->iconType->value . '/' . $this->iconUrl;
     }
 
     /**

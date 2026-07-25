@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../HistoryIconType.php';
+
 final readonly class HomepageDlc extends HomepageTitle
 {
     private function __construct(
@@ -15,7 +17,7 @@ final readonly class HomepageDlc extends HomepageTitle
         private int $silver,
         private int $bronze,
     ) {
-        parent::__construct($id, $gameName, $iconUrl, $platform, 'group');
+        parent::__construct($id, $gameName, $iconUrl, $platform, HistoryIconType::Group);
     }
 
     /**
@@ -65,6 +67,11 @@ final readonly class HomepageDlc extends HomepageTitle
     #[\Override]
     public function getRelativeUrl(Utility $utility): string
     {
-        return parent::getRelativeUrl($utility) . '#' . $this->groupId;
+        $path = parent::getRelativeUrl($utility);
+
+        return Uri\Rfc3986\Uri::parse($path)
+            ?->withFragment($this->groupId)
+            ->toRawString()
+            ?? $path . '#' . $this->groupId;
     }
 }

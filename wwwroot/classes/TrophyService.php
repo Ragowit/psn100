@@ -6,7 +6,7 @@ require_once __DIR__ . '/TrophyDetails.php';
 require_once __DIR__ . '/PlayerTrophyProgress.php';
 require_once __DIR__ . '/TrophyAchiever.php';
 
-class TrophyService
+final class TrophyService
 {
     public function __construct(private readonly PDO $database)
     {

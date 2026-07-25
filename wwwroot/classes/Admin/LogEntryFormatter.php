@@ -136,40 +136,38 @@ final class LogEntryFormatter
 
     private function buildGameHistoryLink(array $game, string $displayText): string
     {
-        $slug = $this->createSlug($game['name'] ?? '');
-        $url = '/game-history/' . $game['id'];
-
-        if ($slug !== '') {
-            $url .= '-' . $slug;
-        }
-
-        return $this->buildAnchor($url, $displayText);
+        return $this->buildAnchor($this->buildGamePath($game, '/game-history/'), $displayText);
     }
 
     private function buildGameLink(array $game, string $displayText): string
     {
-        $slug = $this->createSlug($game['name'] ?? '');
-        $url = '/game/' . $game['id'];
-
-        if ($slug !== '') {
-            $url .= '-' . $slug;
-        }
-
-        return $this->buildAnchor($url, $displayText);
+        return $this->buildAnchor($this->buildGamePath($game, '/game/'), $displayText);
     }
 
     private function buildGroupLink(array $game, string $groupId): string
     {
-        $slug = $this->createSlug($game['name'] ?? '');
-        $url = '/game/' . $game['id'];
-
-        if ($slug !== '') {
-            $url .= '-' . $slug;
-        }
-
-        $url .= '#' . rawurlencode($groupId);
+        $path = $this->buildGamePath($game, '/game/');
+        $url = Uri\Rfc3986\Uri::parse($path)
+            ?->withFragment(rawurlencode($groupId))
+            ->toRawString()
+            ?? $path . '#' . rawurlencode($groupId);
 
         return $this->buildAnchor($url, $groupId);
+    }
+
+    /**
+     * @param array{id?: int|string, name?: string} $game
+     */
+    private function buildGamePath(array $game, string $prefix): string
+    {
+        $slug = $this->createSlug($game['name'] ?? '');
+        $path = $prefix . $game['id'];
+
+        if ($slug !== '') {
+            $path .= '-' . $slug;
+        }
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 
     private function buildPlayerLink(string $onlineId): string

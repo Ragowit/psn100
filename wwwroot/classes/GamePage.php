@@ -199,8 +199,8 @@ final class GamePage
                 . $this->game->getGold() . ' Gold ~ '
                 . $this->game->getPlatinum() . ' Platinum'
             )
-            ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
-            ->withUrl('https://psn100.net/game/' . $this->game->getId() . '-' . $this->getGameSlug());
+            ->withImage('/img/title/' . $this->game->getIconUrl())
+            ->withUrl('/game/' . $this->game->getId() . '-' . $this->getGameSlug());
     }
 
     public function getPageTitle(): string

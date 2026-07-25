@@ -22,26 +22,31 @@ final class PlayerQueueResponseFactory
     {
     }
 
+    #[\NoDiscard]
     public function createEmptyNameResponse(): PlayerQueueResponse
     {
         return PlayerQueueResponse::error(self::EMPTY_NAME_MESSAGE);
     }
 
+    #[\NoDiscard]
     public function createInvalidNameResponse(): PlayerQueueResponse
     {
         return PlayerQueueResponse::error(PsnOnlineIdValidator::INVALID_MESSAGE);
     }
 
+    #[\NoDiscard]
     public function createQueueLimitResponse(): PlayerQueueResponse
     {
         return PlayerQueueResponse::error($this->createQueueLimitMessage());
     }
 
+    #[\NoDiscard]
     public function createBusyResponse(): PlayerQueueResponse
     {
         return PlayerQueueResponse::busy(self::BUSY_MESSAGE);
     }
 
+    #[\NoDiscard]
     public function createCheaterResponse(string $playerName, ?string $accountId): PlayerQueueResponse
     {
         $messageParts = PlayerQueueMessageBuilder::create()
@@ -55,6 +60,7 @@ final class PlayerQueueResponseFactory
         return PlayerQueueResponse::error($this->buildPlainText($messageParts), $messageParts);
     }
 
+    #[\NoDiscard]
     public function createQueuedForAdditionResponse(string $playerName): PlayerQueueResponse
     {
         $message = PlayerQueueMessageBuilder::create()
@@ -66,6 +72,7 @@ final class PlayerQueueResponseFactory
         return $this->createQueuedResponse($message);
     }
 
+    #[\NoDiscard]
     public function createQueuedForScanResponse(
         string $playerName,
         ?PlayerScanProgress $scanProgress = null
@@ -83,6 +90,7 @@ final class PlayerQueueResponseFactory
         return $this->createQueuedResponse($builder->build());
     }
 
+    #[\NoDiscard]
     public function createQueuePositionResponse(string $playerName, int|string $position): PlayerQueueResponse
     {
         $message = PlayerQueueMessageBuilder::create()
@@ -94,6 +102,7 @@ final class PlayerQueueResponseFactory
         return $this->createQueuedResponse($message);
     }
 
+    #[\NoDiscard]
     public function createQueueCompleteResponse(string $playerName): PlayerQueueResponse
     {
         $message = PlayerQueueMessageBuilder::create()
@@ -104,6 +113,7 @@ final class PlayerQueueResponseFactory
         return PlayerQueueResponse::complete($this->buildPlainText($message), $message);
     }
 
+    #[\NoDiscard]
     public function createPlayerNotFoundResponse(string $playerName): PlayerQueueResponse
     {
         $message = PlayerQueueMessageBuilder::create()

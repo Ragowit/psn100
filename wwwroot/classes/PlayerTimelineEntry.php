@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PlayerTimelineStatus.php';
+
 final readonly class PlayerTimelineEntry
 {
     private function __construct(
@@ -53,17 +55,23 @@ final readonly class PlayerTimelineEntry
         return $this->lastTrophyDate;
     }
 
-    public function getStatusClass(DateTimeImmutable $today): string
+    #[\NoDiscard]
+    public function getStatus(DateTimeImmutable $today): PlayerTimelineStatus
     {
         if ($this->progress >= 100) {
-            return 'completed';
+            return PlayerTimelineStatus::Completed;
         }
 
         $daysSince = (int) $this->lastTrophyDate->diff($today)->format('%r%a');
         if ($daysSince > 90) {
-            return 'stalled';
+            return PlayerTimelineStatus::Stalled;
         }
 
-        return 'playing';
+        return PlayerTimelineStatus::Playing;
+    }
+
+    public function getStatusClass(DateTimeImmutable $today): string
+    {
+        return $this->getStatus($today)->cssClass();
     }
 }

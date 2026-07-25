@@ -11,7 +11,7 @@ require_once __DIR__ . '/PlayerStatus.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/PsnOnlineIdValidator.php';
 
-class GameListService
+final class GameListService
 {
     private const int PAGE_LIMIT = 40;
 

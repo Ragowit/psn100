@@ -11,7 +11,7 @@ require_once __DIR__ . '/TrophyMergePlayerProgressRecalculator.php';
  * Resolves parent/child relationships, then delegates aggregate recalculation
  * to TrophyMergePlayerProgressRecalculator.
  */
-class TrophyMergePlayerProgressUpdater
+final class TrophyMergePlayerProgressUpdater
 {
     private readonly TrophyMergeRelationshipResolver $relationshipResolver;
     private readonly TrophyMergePlayerProgressRecalculator $progressRecalculator;

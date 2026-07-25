@@ -221,8 +221,8 @@ final readonly class PlayerGamesPageContext
     {
         $metaData = (new PageMetaData)
             ->withTitle($this->buildTitle($playerData))
-            ->withImage('https://psn100.net/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
-            ->withUrl('https://psn100.net' . PlayerUrlBuilder::playerPath($this->extractString($playerData['online_id'] ?? '')));
+            ->withImage('/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
+            ->withUrl(PlayerUrlBuilder::playerPath($this->extractString($playerData['online_id'] ?? '')));
 
         $status = self::extractPlayerStatus($playerData);
 
