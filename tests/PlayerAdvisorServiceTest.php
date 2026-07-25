@@ -104,43 +104,55 @@ final class PlayerAdvisorServiceTest extends TestCase
     public function testCountAdvisableTrophiesIgnoresEarnedAndUnselectedPlatforms(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES\n" .
-            "('NPWR-PS5-1', 'Game PS5', 'game-ps5.png', 'PS5'),\n" .
-            "('NPWR-PS5-2', 'Game PS5 Earned', 'game-ps5-earned.png', 'PS5'),\n" .
-            "('NPWR-PS4-1', 'Game PS4', 'game-ps4.png', 'PS4')"
+            <<<'SQL'
+            INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES
+                ('NPWR-PS5-1', 'Game PS5', 'game-ps5.png', 'PS5'),
+                ('NPWR-PS5-2', 'Game PS5 Earned', 'game-ps5-earned.png', 'PS5'),
+                ('NPWR-PS4-1', 'Game PS4', 'game-ps4.png', 'PS4')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
-            "('NPWR-PS5-1', 0),\n" .
-            "('NPWR-PS5-2', 0),\n" .
-            "('NPWR-PS4-1', 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title_meta (np_communication_id, status) VALUES
+                ('NPWR-PS5-1', 0),
+                ('NPWR-PS5-2', 0),
+                ('NPWR-PS4-1', 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url) VALUES\n" .
-            "(1, 'NPWR-PS5-1', 1, 'bronze', 'Unearned Trophy', 'Complete a task', 'trophy-1.png', NULL, NULL, NULL),\n" .
-            "(2, 'NPWR-PS5-2', 1, 'bronze', 'Earned Trophy', 'Already done', 'trophy-2.png', NULL, NULL, NULL),\n" .
-            "(3, 'NPWR-PS4-1', 1, 'bronze', 'Different Platform', 'Wrong platform', 'trophy-3.png', NULL, NULL, NULL)"
+            <<<'SQL'
+            INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url) VALUES
+                (1, 'NPWR-PS5-1', 1, 'bronze', 'Unearned Trophy', 'Complete a task', 'trophy-1.png', NULL, NULL, NULL),
+                (2, 'NPWR-PS5-2', 1, 'bronze', 'Earned Trophy', 'Already done', 'trophy-2.png', NULL, NULL, NULL),
+                (3, 'NPWR-PS4-1', 1, 'bronze', 'Different Platform', 'Wrong platform', 'trophy-3.png', NULL, NULL, NULL)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_meta (trophy_id, rarity_percent, status) VALUES\n" .
-            "(1, 12.5, 0),\n" .
-            "(2, 20.0, 0),\n" .
-            "(3, 30.0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_meta (trophy_id, rarity_percent, status) VALUES
+                (1, 12.5, 0),
+                (2, 20.0, 0),
+                (3, 30.0, 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES\n" .
-            "('NPWR-PS5-1', 42, '2024-01-01 10:00:00'),\n" .
-            "('NPWR-PS5-2', 42, '2024-01-01 11:00:00'),\n" .
-            "('NPWR-PS4-1', 42, '2024-01-01 12:00:00')"
+            <<<'SQL'
+            INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES
+                ('NPWR-PS5-1', 42, '2024-01-01 10:00:00'),
+                ('NPWR-PS5-2', 42, '2024-01-01 11:00:00'),
+                ('NPWR-PS4-1', 42, '2024-01-01 12:00:00')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_earned (np_communication_id, order_id, account_id, earned, progress) VALUES\n" .
-            "('NPWR-PS5-2', 1, 42, 1, NULL)"
+            <<<'SQL'
+            INSERT INTO trophy_earned (np_communication_id, order_id, account_id, earned, progress) VALUES
+                ('NPWR-PS5-2', 1, 42, 1, NULL)
+            SQL
         );
 
         $filter = PlayerAdvisorFilter::fromArray(['ps5' => '1']);
@@ -153,43 +165,55 @@ final class PlayerAdvisorServiceTest extends TestCase
     public function testGetAdvisableTrophiesReturnsOrderedTrophyCollection(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES\n" .
-            "('NPWR-1', 'First Game', 'game-1.png', 'PS4'),\n" .
-            "('NPWR-2', 'Second Game', 'game-2.png', 'PS4'),\n" .
-            "('NPWR-3', 'Third Game', 'game-3.png', 'PS4')"
+            <<<'SQL'
+            INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES
+                ('NPWR-1', 'First Game', 'game-1.png', 'PS4'),
+                ('NPWR-2', 'Second Game', 'game-2.png', 'PS4'),
+                ('NPWR-3', 'Third Game', 'game-3.png', 'PS4')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
-            "('NPWR-1', 0),\n" .
-            "('NPWR-2', 0),\n" .
-            "('NPWR-3', 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title_meta (np_communication_id, status) VALUES
+                ('NPWR-1', 0),
+                ('NPWR-2', 0),
+                ('NPWR-3', 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url) VALUES\n" .
-            "(1, 'NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png', NULL, NULL, NULL),\n" .
-            "(2, 'NPWR-2', 1, 'silver', 'Second Trophy', 'Description 2', 'trophy-2.png', NULL, NULL, NULL),\n" .
-            "(3, 'NPWR-3', 1, 'gold', 'Third Trophy', 'Description 3', 'trophy-3.png', 100, 'Reward', 'reward.png')"
+            <<<'SQL'
+            INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url, progress_target_value, reward_name, reward_image_url) VALUES
+                (1, 'NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png', NULL, NULL, NULL),
+                (2, 'NPWR-2', 1, 'silver', 'Second Trophy', 'Description 2', 'trophy-2.png', NULL, NULL, NULL),
+                (3, 'NPWR-3', 1, 'gold', 'Third Trophy', 'Description 3', 'trophy-3.png', 100, 'Reward', 'reward.png')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_meta (trophy_id, rarity_percent, status) VALUES\n" .
-            "(1, 15.0, 0),\n" .
-            "(2, 20.0, 0),\n" .
-            "(3, 15.0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_meta (trophy_id, rarity_percent, status) VALUES
+                (1, 15.0, 0),
+                (2, 20.0, 0),
+                (3, 15.0, 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES\n" .
-            "('NPWR-1', 99, '2024-01-02 08:00:00'),\n" .
-            "('NPWR-2', 99, '2024-01-01 09:00:00'),\n" .
-            "('NPWR-3', 99, '2024-01-03 07:00:00')"
+            <<<'SQL'
+            INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES
+                ('NPWR-1', 99, '2024-01-02 08:00:00'),
+                ('NPWR-2', 99, '2024-01-01 09:00:00'),
+                ('NPWR-3', 99, '2024-01-03 07:00:00')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_earned (np_communication_id, order_id, account_id, earned, progress) VALUES\n" .
-            "('NPWR-3', 1, 99, 0, 25.0)"
+            <<<'SQL'
+            INSERT INTO trophy_earned (np_communication_id, order_id, account_id, earned, progress) VALUES
+                ('NPWR-3', 1, 99, 0, 25.0)
+            SQL
         );
 
         $filter = PlayerAdvisorFilter::fromArray([]);
@@ -214,38 +238,48 @@ final class PlayerAdvisorServiceTest extends TestCase
     public function testGetAdvisableTrophiesSortsByInGameRarityWhenRequested(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES\n" .
-            "('NPWR-1', 'First Game', 'game-1.png', 'PS4'),\n" .
-            "('NPWR-2', 'Second Game', 'game-2.png', 'PS4'),\n" .
-            "('NPWR-3', 'Third Game', 'game-3.png', 'PS4')"
+            <<<'SQL'
+            INSERT INTO trophy_title (np_communication_id, name, icon_url, platform) VALUES
+                ('NPWR-1', 'First Game', 'game-1.png', 'PS4'),
+                ('NPWR-2', 'Second Game', 'game-2.png', 'PS4'),
+                ('NPWR-3', 'Third Game', 'game-3.png', 'PS4')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
-            "('NPWR-1', 0),\n" .
-            "('NPWR-2', 0),\n" .
-            "('NPWR-3', 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title_meta (np_communication_id, status) VALUES
+                ('NPWR-1', 0),
+                ('NPWR-2', 0),
+                ('NPWR-3', 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url) VALUES\n" .
-            "(1, 'NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png'),\n" .
-            "(2, 'NPWR-2', 1, 'bronze', 'Second Trophy', 'Description 2', 'trophy-2.png'),\n" .
-            "(3, 'NPWR-3', 1, 'bronze', 'Third Trophy', 'Description 3', 'trophy-3.png')"
+            <<<'SQL'
+            INSERT INTO trophy (id, np_communication_id, order_id, type, name, detail, icon_url) VALUES
+                (1, 'NPWR-1', 1, 'bronze', 'First Trophy', 'Description 1', 'trophy-1.png'),
+                (2, 'NPWR-2', 1, 'bronze', 'Second Trophy', 'Description 2', 'trophy-2.png'),
+                (3, 'NPWR-3', 1, 'bronze', 'Third Trophy', 'Description 3', 'trophy-3.png')
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_meta (trophy_id, rarity_percent, in_game_rarity_percent, status) VALUES\n" .
-            "(1, 30.0, 5.0, 0),\n" .
-            "(2, 10.0, 25.0, 0),\n" .
-            "(3, 5.0, 15.0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_meta (trophy_id, rarity_percent, in_game_rarity_percent, status) VALUES
+                (1, 30.0, 5.0, 0),
+                (2, 10.0, 25.0, 0),
+                (3, 5.0, 15.0, 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES\n" .
-            "('NPWR-1', 22, '2024-01-01 08:00:00'),\n" .
-            "('NPWR-2', 22, '2024-01-01 09:00:00'),\n" .
-            "('NPWR-3', 22, '2024-01-01 10:00:00')"
+            <<<'SQL'
+            INSERT INTO trophy_title_player (np_communication_id, account_id, last_updated_date) VALUES
+                ('NPWR-1', 22, '2024-01-01 08:00:00'),
+                ('NPWR-2', 22, '2024-01-01 09:00:00'),
+                ('NPWR-3', 22, '2024-01-01 10:00:00')
+            SQL
         );
 
         $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY]);
