@@ -65,25 +65,31 @@ final class PlayerSummaryServiceTest extends TestCase
     public function testGetSummaryAggregatesPlayerStatistics(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR001', 10, 5, 3, 1),\n" .
-            "('NPWR002', 5, 2, 1, 0),\n" .
-            "('NPWR003', 1, 1, 1, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES
+                ('NPWR001', 10, 5, 3, 1),
+                ('NPWR002', 5, 2, 1, 0),
+                ('NPWR003', 1, 1, 1, 0)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_meta (np_communication_id, status) VALUES\n" .
-            "('NPWR001', 0),\n" .
-            "('NPWR002', 0),\n" .
-            "('NPWR003', 1)"
+            <<<'SQL'
+            INSERT INTO trophy_title_meta (np_communication_id, status) VALUES
+                ('NPWR001', 0),
+                ('NPWR002', 0),
+                ('NPWR003', 1)
+            SQL
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR001', 42, 75, 8, 4, 2, 1),\n" .
-            "('NPWR002', 42, 100, 1, 1, 0, 0),\n" .
-            "('NPWR003', 42, 100, 1, 1, 1, 0),\n" .
-            "('NPWR001', 7, 50, 0, 0, 0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES
+                ('NPWR001', 42, 75, 8, 4, 2, 1),
+                ('NPWR002', 42, 100, 1, 1, 0, 0),
+                ('NPWR003', 42, 100, 1, 1, 1, 0),
+                ('NPWR001', 7, 50, 0, 0, 0, 0)
+            SQL
         );
 
         $summary = $this->service->getSummary(42);
@@ -97,8 +103,10 @@ final class PlayerSummaryServiceTest extends TestCase
     public function testGetSummaryReturnsEmptySummaryWhenPlayerHasNoVisibleGames(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR010', 2, 2, 1, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES
+                ('NPWR010', 2, 2, 1, 0)
+            SQL
         );
 
         $this->database->exec(
@@ -106,8 +114,10 @@ final class PlayerSummaryServiceTest extends TestCase
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR010', 42, 12, 1, 0, 0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES
+                ('NPWR010', 42, 12, 1, 0, 0, 0)
+            SQL
         );
 
         $summary = $this->service->getSummary(99);
@@ -121,8 +131,10 @@ final class PlayerSummaryServiceTest extends TestCase
     public function testGetSummaryDoesNotAllowNegativeUnearnedTrophies(): void
     {
         $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR020', 1, 0, 0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title (np_communication_id, bronze, silver, gold, platinum) VALUES
+                ('NPWR020', 1, 0, 0, 0)
+            SQL
         );
 
         $this->database->exec(
@@ -130,8 +142,10 @@ final class PlayerSummaryServiceTest extends TestCase
         );
 
         $this->database->exec(
-            "INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES\n" .
-            "('NPWR020', 42, 100, 5, 0, 0, 0)"
+            <<<'SQL'
+            INSERT INTO trophy_title_player (np_communication_id, account_id, progress, bronze, silver, gold, platinum) VALUES
+                ('NPWR020', 42, 100, 5, 0, 0, 0)
+            SQL
         );
 
         $summary = $this->service->getSummary(42);

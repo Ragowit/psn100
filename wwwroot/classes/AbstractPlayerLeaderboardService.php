@@ -77,7 +77,7 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
         bool $includeTotalCount,
     ): array {
         $normalStatus = PlayerStatus::NORMAL->value;
-        $totalCountProjection = $includeTotalCount ? ",\n                COUNT(*) OVER() AS total_rows" : '';
+        $totalCountProjection = $includeTotalCount ? ', COUNT(*) OVER() AS total_rows' : '';
 
         $sql = <<<SQL
             SELECT

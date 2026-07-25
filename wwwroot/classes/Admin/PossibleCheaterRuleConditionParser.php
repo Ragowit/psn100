@@ -40,6 +40,6 @@ final class PossibleCheaterRuleConditionParser
             return 'SELECT NULL AS np_communication_id, NULL AS order_id, NULL AS date_operator, NULL AS date_value WHERE 0';
         }
 
-        return implode("\nUNION ALL\n", $selects);
+        return implode(' UNION ALL ', $selects);
     }
 }

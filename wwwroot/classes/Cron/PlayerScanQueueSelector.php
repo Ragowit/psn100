@@ -263,6 +263,6 @@ final class PlayerScanQueueSelector
                 SQL;
         }
 
-        return implode("\n\n                UNION ALL\n\n", $branches);
+        return implode(' UNION ALL ', $branches);
     }
 }
