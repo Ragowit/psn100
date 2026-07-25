@@ -10,6 +10,7 @@ require_once __DIR__ . '/GameNotFoundException.php';
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/PageMetaData.php';
+require_once __DIR__ . '/SiteUrl.php';
 require_once __DIR__ . '/Utility.php';
 
 final class GameHistoryPage
@@ -114,8 +115,8 @@ final class GameHistoryPage
         return (new PageMetaData)
             ->withTitle($this->game->getName() . ' Trophy Data History')
             ->withDescription('Version history and trophy data changes for ' . $this->game->getName())
-            ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
-            ->withUrl('https://psn100.net/game-history/' . $this->game->getId() . '-' . $this->getGameSlug());
+            ->withImage(SiteUrl::absolute('/img/title/' . $this->game->getIconUrl()))
+            ->withUrl(SiteUrl::absolute('/game-history/' . $this->game->getId() . '-' . $this->getGameSlug()));
     }
 
     public function getPageTitle(): string

@@ -9,7 +9,7 @@ require_once __DIR__ . '/GameResetRequestResult.php';
 require_once __DIR__ . '/../GameResetAction.php';
 require_once __DIR__ . '/../GameResetService.php';
 
-class GameResetRequestHandler
+final class GameResetRequestHandler
 {
     public function __construct(private readonly GameResetService $gameResetService)
     {

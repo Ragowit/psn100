@@ -79,7 +79,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                     <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($idSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
                                         ID
                                         <?php if ($idSortIndicator !== '') { ?>
-                                            <span class="ms-1"><?= htmlspecialchars(trim($idSortIndicator), ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <span class="ms-1"><?= $idSortIndicator |> trim(...) |> Html::escape(...); ?></span>
                                         <?php } ?>
                                     </a>
                                 </th>
@@ -89,7 +89,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                     <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($scanStartSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
                                         Scan Start
                                         <?php if ($scanStartSortIndicator !== '') { ?>
-                                            <span class="ms-1"><?= htmlspecialchars(trim($scanStartSortIndicator), ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <span class="ms-1"><?= $scanStartSortIndicator |> trim(...) |> Html::escape(...); ?></span>
                                         <?php } ?>
                                     </a>
                                 </th>

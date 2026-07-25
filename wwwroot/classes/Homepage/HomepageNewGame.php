@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../HistoryIconType.php';
+
 final readonly class HomepageNewGame extends HomepageTitle
 {
     private function __construct(
@@ -14,7 +16,7 @@ final readonly class HomepageNewGame extends HomepageTitle
         private int $silver,
         private int $bronze,
     ) {
-        parent::__construct($id, $name, $iconUrl, $platform, 'title');
+        parent::__construct($id, $name, $iconUrl, $platform, HistoryIconType::Title);
     }
 
     /**

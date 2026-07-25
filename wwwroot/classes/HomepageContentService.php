@@ -12,7 +12,7 @@ require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlatformSql.php';
 
-class HomepageContentService
+final class HomepageContentService
 {
     private const int DEFAULT_NEW_GAME_LIMIT = 8;
     private const int DEFAULT_NEW_DLCS_LIMIT = 8;

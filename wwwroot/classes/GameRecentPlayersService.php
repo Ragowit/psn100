@@ -7,7 +7,7 @@ require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/GameRecentPlayer.php';
 require_once __DIR__ . '/GameRecentPlayersQueryBuilder.php';
 
-class GameRecentPlayersService
+final class GameRecentPlayersService
 {
     public const int RECENT_PLAYERS_LIMIT = 10;
 

@@ -14,6 +14,7 @@ require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/Game/GameTrophyRow.php';
 require_once __DIR__ . '/GameTrophySort.php';
 require_once __DIR__ . '/PageMetaData.php';
+require_once __DIR__ . '/SiteUrl.php';
 require_once __DIR__ . '/Utility.php';
 
 final class GamePage
@@ -199,8 +200,8 @@ final class GamePage
                 . $this->game->getGold() . ' Gold ~ '
                 . $this->game->getPlatinum() . ' Platinum'
             )
-            ->withImage('https://psn100.net/img/title/' . $this->game->getIconUrl())
-            ->withUrl('https://psn100.net/game/' . $this->game->getId() . '-' . $this->getGameSlug());
+            ->withImage(SiteUrl::absolute('/img/title/' . $this->game->getIconUrl()))
+            ->withUrl(SiteUrl::absolute('/game/' . $this->game->getId() . '-' . $this->getGameSlug()));
     }
 
     public function getPageTitle(): string

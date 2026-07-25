@@ -6,7 +6,7 @@ require_once __DIR__ . '/TrophyStatusUpdateResult.php';
 require_once __DIR__ . '/TrophyStatusProgressRecalculator.php';
 require_once __DIR__ . '/../TrophyMetaStatus.php';
 
-class TrophyStatusService
+final class TrophyStatusService
 {
     private readonly TrophyStatusProgressRecalculator $progressRecalculator;
 

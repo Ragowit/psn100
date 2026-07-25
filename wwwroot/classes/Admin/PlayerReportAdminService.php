@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ReportedPlayer.php';
 
-class PlayerReportAdminService
+final class PlayerReportAdminService
 {
     public function __construct(
         private readonly PDO $database,

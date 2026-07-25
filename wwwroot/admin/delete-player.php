@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 require_once '../classes/Admin/DeletePlayerService.php';
 require_once '../classes/Admin/DeletePlayerRequestHandler.php';
+require_once '../classes/PlayerUrlBuilder.php';
+require_once '../classes/SiteUrl.php';
 
 $service = new DeletePlayerService($database);
 $requestHandler = new DeletePlayerRequestHandler($service);
@@ -38,7 +40,7 @@ $encodedOnlineIdValue = htmlspecialchars($onlineIdValue, ENT_QUOTES, 'UTF-8');
 $confirmationOnlineId = $confirmation?->getOnlineId();
 $confirmationDisplayName = $confirmationOnlineId ?? $accountIdValue;
 $confirmationUrl = $confirmationOnlineId !== null
-    ? 'https://psn100.net/player/' . rawurlencode($confirmationOnlineId)
+    ? SiteUrl::absolute(PlayerUrlBuilder::playerPath($confirmationOnlineId))
     : null;
 $confirmationAccountId = $confirmation?->getAccountId();
 $encodedConfirmationAccountId = $confirmationAccountId === null ? '' : htmlspecialchars($confirmationAccountId, ENT_QUOTES, 'UTF-8');

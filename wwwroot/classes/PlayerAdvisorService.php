@@ -9,7 +9,7 @@ require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/TrophyMetaStatus.php';
 require_once __DIR__ . '/Utility.php';
 
-class PlayerAdvisorService
+final class PlayerAdvisorService
 {
     public const int PAGE_SIZE = 50;
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Html.php';
 
-class PageMetaDataRenderer
+final class PageMetaDataRenderer
 {
     private const string OG_SITE_NAME = 'PSN 100%';
     private const string TWITTER_CARD = 'summary_large_image';

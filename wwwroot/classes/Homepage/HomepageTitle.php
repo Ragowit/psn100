@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../HistoryIconType.php';
+
 readonly class HomepageTitle extends HomepageItem
 {
     protected function __construct(
@@ -9,9 +11,9 @@ readonly class HomepageTitle extends HomepageItem
         private string $name,
         string $iconUrl,
         string $platform,
-        string $iconDirectory,
+        HistoryIconType $iconType,
     ) {
-        parent::__construct($iconUrl, $platform, $iconDirectory);
+        parent::__construct($iconUrl, $platform, $iconType);
     }
 
     public function getId(): int
@@ -31,6 +33,8 @@ readonly class HomepageTitle extends HomepageItem
 
     public function getRelativeUrl(Utility $utility): string
     {
-        return '/game/' . $this->getSluggedId($utility);
+        $path = '/game/' . $this->getSluggedId($utility);
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 }

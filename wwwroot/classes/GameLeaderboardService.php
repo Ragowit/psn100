@@ -6,7 +6,7 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/GameLeaderboardRow.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-class GameLeaderboardService
+final class GameLeaderboardService
 {
     public const int PAGE_SIZE = 50;
 

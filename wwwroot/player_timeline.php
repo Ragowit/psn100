@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
 require_once __DIR__ . '/classes/PlayerPageAccessGuard.php';
 require_once __DIR__ . '/classes/PlayerTimelineLayout.php';
 require_once __DIR__ . '/classes/PlayerTimelinePageContext.php';
 require_once __DIR__ . '/classes/PlayerStatusNotice.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
+require_once __DIR__ . '/classes/SiteUrl.php';
 
 $playerPageAccessGuard = PlayerPageAccessGuard::fromAccountId($accountId ?? null);
 $accountId = $playerPageAccessGuard->requireAccountId();
@@ -158,20 +160,20 @@ require_once("header.php");
                                 foreach ($row as $item) {
                                     $entry = $item->getEntry();
                                     $gameSlug = $entry->getGameId() . '-' . $utility->slugify($entry->getName());
-                                    $gameUrl = $gameSlug;
-                                    if ($playerOnlineId !== '') {
-                                        $gameUrl .= '/' . rawurlencode($playerOnlineId);
-                                    }
+                                    $gamePath = PlayerUrlBuilder::gamePath(
+                                        $gameSlug,
+                                        $playerOnlineId !== '' ? $playerOnlineId : null
+                                    );
 
                                     $firstTrophy = $entry->getFirstTrophyDate()->format('Y-m-d');
                                     $lastTrophy = $entry->getLastTrophyDate()->format('Y-m-d');
                                     $title = sprintf('%s (%s - %s)', $entry->getName(), $firstTrophy, $lastTrophy);
-                                    $class = $entry->getStatusClass($today);
+                                    $class = $entry->getStatus($today)->cssClass();
                                     $marginLeft = $item->getOffsetDays() * 5;
                                     $width = $item->getDurationDays() * 5;
 
                                     echo "<li style='margin-left: ". $marginLeft ."px; width: ". $width ."px;'>";
-                                    echo "<a class='". $class ."' href='https://psn100.net/game/". $gameUrl ."' title=\"". htmlspecialchars($title, ENT_QUOTES) ."\">". htmlspecialchars($entry->getName(), ENT_QUOTES) ."</a>";
+                                    echo "<a class='". Html::escape($class) ."' href='". Html::escape(SiteUrl::absolute($gamePath)) ."' title=\"". Html::escape($title) ."\">". Html::escape($entry->getName()) ."</a>";
                                     echo "</li>";
                                 }
                                 echo "</ul>";

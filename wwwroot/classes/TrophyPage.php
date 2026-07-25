@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Html.php';
 
 require_once __DIR__ . '/PageMetaData.php';
+require_once __DIR__ . '/SiteUrl.php';
 require_once __DIR__ . '/TrophyService.php';
 require_once __DIR__ . '/TrophyRarityFormatter.php';
 require_once __DIR__ . '/TrophyNotFoundException.php';
@@ -51,8 +52,8 @@ final readonly class TrophyPage
         $metaData = (new PageMetaData)
             ->withTitle($trophyName . ' Trophy')
             ->withDescription(Html::escape($trophy->getDetail()))
-            ->withImage('https://psn100.net/img/trophy/' . $trophy->getIconFileName())
-            ->withUrl('https://psn100.net/trophy/' . $trophy->getTrophySlug($utility));
+            ->withImage(SiteUrl::absolute('/img/trophy/' . $trophy->getIconFileName()))
+            ->withUrl(SiteUrl::absolute('/trophy/' . $trophy->getTrophySlug($utility)));
 
         $pageTitle = $trophyName . ' Trophy ~ PSN 100%';
         $metaRarity = $rarityFormatter->formatMeta($trophy->getRarityPercent(), $trophy->getStatus());
