@@ -270,15 +270,11 @@ final readonly class GameListFilter
 
     private static function sanitizePage(mixed $value): int
     {
-        if (is_int($value)) {
-            $page = $value;
-        } elseif (is_string($value) && is_numeric($value)) {
-            $page = (int) $value;
-        } elseif (is_numeric($value)) {
-            $page = (int) $value;
-        } else {
-            $page = 1;
-        }
+        $page = match (true) {
+            is_int($value) => $value,
+            is_numeric($value) => (int) $value,
+            default => 1,
+        };
 
         return max($page, 1);
     }

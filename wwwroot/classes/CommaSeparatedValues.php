@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-final class CommaSeparatedValues
+final readonly class CommaSeparatedValues
 {
     /**
      * @return list<string>
      */
+    #[\NoDiscard]
     public static function parseTrimmed(string $value): array
     {
         if ($value === '') {
@@ -23,6 +24,7 @@ final class CommaSeparatedValues
     /**
      * @return list<string>
      */
+    #[\NoDiscard]
     public static function parseUppercaseTrimmed(string $value): array
     {
         return self::parseTrimmed($value)

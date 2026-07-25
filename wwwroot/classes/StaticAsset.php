@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-final class StaticAsset
+final readonly class StaticAsset
 {
+    #[\NoDiscard]
     public static function url(string $webPath): string
     {
         $webPath = '/' . ltrim($webPath, '/');

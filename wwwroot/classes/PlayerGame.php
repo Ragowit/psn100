@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
+require_once __DIR__ . '/Platform.php';
 
 final readonly class PlayerGame
 {
@@ -74,7 +75,7 @@ final readonly class PlayerGame
     public function getIconFileName(): string
     {
         if ($this->iconUrl === '.png') {
-            return str_contains($this->platform, 'PS5')
+            return Platform::usesPlayStation5Assets($this->platform)
                 ? '../missing-ps5-game-and-trophy.png'
                 : '../missing-ps4-game.png';
         }

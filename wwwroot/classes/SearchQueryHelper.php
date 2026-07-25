@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class SearchQueryHelper
+final readonly class SearchQueryHelper
 {
     private const int ROMAN_MIN = 1;
     private const int ROMAN_MAX = 3999;

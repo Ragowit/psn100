@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-final class RequestParameter
+final readonly class RequestParameter
 {
+    #[\NoDiscard]
     public static function firstScalar(mixed $value): mixed
     {
         if (is_array($value)) {
@@ -13,6 +14,7 @@ final class RequestParameter
         return $value;
     }
 
+    #[\NoDiscard]
     public static function lastScalar(mixed $value): mixed
     {
         if (is_array($value)) {

@@ -16,23 +16,11 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class PlayerRandomGamesPageContext
 {
-    private PlayerRandomGamesPage $playerRandomGamesPage;
-
-    private PlayerSummary $playerSummary;
-
-    private PlayerRandomGamesFilter $filter;
-
     private PlayerNavigation $playerNavigation;
 
     private PlayerPlatformFilterOptions $platformFilterOptions;
 
     private string $title;
-
-    private string $playerOnlineId;
-
-    private int $playerAccountId;
-
-    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -90,19 +78,13 @@ final readonly class PlayerRandomGamesPageContext
     }
 
     private function __construct(
-        PlayerRandomGamesPage $playerRandomGamesPage,
-        PlayerSummary $playerSummary,
-        PlayerRandomGamesFilter $filter,
-        string $playerOnlineId,
-        int $playerAccountId,
-        PlayerStatus $playerStatus
+        private PlayerRandomGamesPage $playerRandomGamesPage,
+        private PlayerSummary $playerSummary,
+        private PlayerRandomGamesFilter $filter,
+        private string $playerOnlineId,
+        private int $playerAccountId,
+        private PlayerStatus $playerStatus,
     ) {
-        $this->playerRandomGamesPage = $playerRandomGamesPage;
-        $this->playerSummary = $playerSummary;
-        $this->filter = $filter;
-        $this->playerOnlineId = $playerOnlineId;
-        $this->playerAccountId = $playerAccountId;
-        $this->playerStatus = $playerStatus;
         $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::RANDOM);
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(
             fn (string $platform): bool => $this->filter->isPlatformSelected($platform)

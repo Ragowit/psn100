@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
+require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/Utility.php';
 
 final readonly class GameListItem
@@ -181,6 +182,6 @@ final readonly class GameListItem
 
     private function isPlayStation5Title(): bool
     {
-        return str_contains($this->platformValue, 'PS5') || str_contains($this->platformValue, 'PSVR2');
+        return Platform::usesPlayStation5Assets($this->platformValue);
     }
 }

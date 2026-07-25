@@ -10,12 +10,6 @@ require_once __DIR__ . '/AbstractLeaderboardRow.php';
 
 abstract class AbstractLeaderboardPageContext
 {
-    private PlayerLeaderboardPage $leaderboardPage;
-
-    private PlayerLeaderboardFilter $filter;
-
-    private Utility $utility;
-
     /**
      * @var array<string, string>
      */
@@ -37,14 +31,11 @@ abstract class AbstractLeaderboardPageContext
      * @param array<string, mixed> $queryParameters
      */
     protected function __construct(
-        PlayerLeaderboardPage $leaderboardPage,
-        PlayerLeaderboardFilter $filter,
-        Utility $utility,
-        array $queryParameters
+        private PlayerLeaderboardPage $leaderboardPage,
+        private PlayerLeaderboardFilter $filter,
+        private Utility $utility,
+        array $queryParameters,
     ) {
-        $this->leaderboardPage = $leaderboardPage;
-        $this->filter = $filter;
-        $this->utility = $utility;
         $this->filterParameters = $leaderboardPage->getFilterParameters();
         $this->currentPageParameters = $leaderboardPage->getPageQueryParameters($leaderboardPage->getCurrentPage());
         $this->highlightedPlayerId = $this->resolveHighlightedPlayerId($queryParameters);

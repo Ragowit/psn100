@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/CommaSeparatedValues.php';
 require_once __DIR__ . '/classes/Html.php';
+require_once __DIR__ . '/classes/Platform.php';
 
 require_once __DIR__ . '/classes/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/classes/GameAvailabilityStatus.php';
@@ -135,7 +136,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
             $gameIconUrl = $game->getIconUrl();
             $gamePlatform = $game->getPlatform();
             $iconPath = ($gameIconUrl === '.png')
-                ? ((str_contains($gamePlatform, 'PS5') || str_contains($gamePlatform, 'PSVR2'))
+                ? (Platform::usesPlayStation5Assets($gamePlatform)
                     ? '../missing-ps5-game-and-trophy.png'
                     : '../missing-ps4-game.png')
                 : $gameIconUrl;

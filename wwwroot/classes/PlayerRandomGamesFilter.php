@@ -8,13 +8,11 @@ require_once __DIR__ . '/RequestParameter.php';
 final readonly class PlayerRandomGamesFilter
 {
     /**
-     * @var array<string, bool>
+     * @param array<string, bool> $selectedPlatforms
      */
-    private array $selectedPlatforms;
-
-    private function __construct(array $selectedPlatforms)
-    {
-        $this->selectedPlatforms = $selectedPlatforms;
+    private function __construct(
+        private array $selectedPlatforms,
+    ) {
     }
 
     /**

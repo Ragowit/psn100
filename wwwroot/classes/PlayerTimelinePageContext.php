@@ -15,19 +15,9 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class PlayerTimelinePageContext
 {
-    private PlayerTimelinePage $playerTimelinePage;
-
-    private PlayerSummary $playerSummary;
-
     private PlayerNavigation $playerNavigation;
 
     private string $title;
-
-    private string $playerOnlineId;
-
-    private int $playerAccountId;
-
-    private PlayerStatus $playerStatus;
 
     /**
      * @param array<string, mixed> $playerData
@@ -80,17 +70,12 @@ final readonly class PlayerTimelinePageContext
     }
 
     private function __construct(
-        PlayerTimelinePage $playerTimelinePage,
-        PlayerSummary $playerSummary,
-        string $playerOnlineId,
-        int $playerAccountId,
-        PlayerStatus $playerStatus
+        private PlayerTimelinePage $playerTimelinePage,
+        private PlayerSummary $playerSummary,
+        private string $playerOnlineId,
+        private int $playerAccountId,
+        private PlayerStatus $playerStatus,
     ) {
-        $this->playerTimelinePage = $playerTimelinePage;
-        $this->playerSummary = $playerSummary;
-        $this->playerOnlineId = $playerOnlineId;
-        $this->playerAccountId = $playerAccountId;
-        $this->playerStatus = $playerStatus;
         $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::TIMELINE);
         $this->title = sprintf("%s's Timeline ~ PSN 100%%", $playerOnlineId);
     }

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
 
-final class IpAddressResolver
+final readonly class IpAddressResolver
 {
     public const string UNKNOWN_CLIENT_IDENTIFIER = '__unknown__';
 
     /**
      * @param array<string, mixed> $serverParameters
      */
+    #[\NoDiscard]
     public static function resolveFromServer(array $serverParameters): string
     {
         return self::resolveFromServerWithTrustedProxies(
@@ -23,6 +24,7 @@ final class IpAddressResolver
      * @param array<string, mixed> $serverParameters
      * @param list<string> $trustedProxyIps
      */
+    #[\NoDiscard]
     public static function resolveFromServerWithTrustedProxies(
         array $serverParameters,
         array $trustedProxyIps,
@@ -41,6 +43,7 @@ final class IpAddressResolver
         return $remoteAddress;
     }
 
+    #[\NoDiscard]
     public static function resolve(mixed $remoteAddr): string
     {
         if (is_array($remoteAddr)) {
@@ -63,6 +66,7 @@ final class IpAddressResolver
         return is_string($validatedAddress) ? $validatedAddress : '';
     }
 
+    #[\NoDiscard]
     public static function normalizeForAbuseControls(string $ipAddress): string
     {
         return $ipAddress !== '' ? $ipAddress : self::UNKNOWN_CLIENT_IDENTIFIER;

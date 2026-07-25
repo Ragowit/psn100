@@ -72,23 +72,15 @@ final readonly class WorkerScanProgress
 
     public function getProgressSummary(): ?string
     {
-        if ($this->current !== null && $this->total !== null) {
-            if ($this->total > 0) {
-                return sprintf('%d / %d', $this->current, $this->total);
-            }
-
-            return null;
-        }
-
-        if ($this->current !== null && $this->total === null) {
-            return (string) $this->current;
-        }
-
-        if ($this->total !== null && $this->current === null) {
-            return sprintf('0 / %d', $this->total);
-        }
-
-        return null;
+        return match (true) {
+            $this->current !== null && $this->total !== null && $this->total > 0
+                => sprintf('%d / %d', $this->current, $this->total),
+            $this->current !== null && $this->total === null
+                => (string) $this->current,
+            $this->current === null && $this->total !== null
+                => sprintf('0 / %d', $this->total),
+            default => null,
+        };
     }
 
     public function getPercentage(): ?float

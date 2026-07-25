@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
+require_once __DIR__ . '/Platform.php';
 
 final readonly class PlayerRandomGame
 {
@@ -116,11 +117,9 @@ final readonly class PlayerRandomGame
     public function getIconUrl(): string
     {
         if ($this->iconUrl === '.png') {
-            if (str_contains($this->platform, 'PS5') || str_contains($this->platform, 'PSVR2')) {
-                return '../missing-ps5-game-and-trophy.png';
-            }
-
-            return '../missing-ps4-game.png';
+            return Platform::usesPlayStation5Assets($this->platform)
+                ? '../missing-ps5-game-and-trophy.png'
+                : '../missing-ps4-game.png';
         }
 
         return $this->iconUrl;

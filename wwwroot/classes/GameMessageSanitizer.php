@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Html.php';
 
-final class GameMessageSanitizer
+final readonly class GameMessageSanitizer
 {
+    #[\NoDiscard]
     public static function sanitize(string $message): string
     {
         if ($message === '') {
@@ -49,6 +50,7 @@ final class GameMessageSanitizer
         return $sanitized;
     }
 
+    #[\NoDiscard]
     public static function escapeTextareaContent(string $message): string
     {
         return preg_replace('/<\/textarea/i', '&lt;/textarea', $message) ?? $message;
