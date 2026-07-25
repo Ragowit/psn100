@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/SessionManager.php';
 
-final class PlayerQueuePollTokenManager
+final readonly class PlayerQueuePollTokenManager
 {
     private const string SESSION_KEY = 'queue_poll_tokens';
 
@@ -27,7 +27,7 @@ final class PlayerQueuePollTokenManager
         return $token;
     }
 
-    public function validate(string $playerName, string $submittedToken): bool
+    public function validate(string $playerName, #[\SensitiveParameter] string $submittedToken): bool
     {
         if ($playerName === '' || $submittedToken === '') {
             return false;

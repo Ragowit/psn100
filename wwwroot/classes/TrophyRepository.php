@@ -14,7 +14,7 @@ class TrophyRepository
             return null;
         }
 
-        $id = (int) (array_first(explode('-', $segment)) ?? 0);
+        $id = (int) (($segment |> explode('-', ...) |> array_first(...)) ?? 0);
 
         if ($id <= 0) {
             return null;

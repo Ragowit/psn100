@@ -13,6 +13,7 @@ final readonly class PlayerQueueResponse implements \JsonSerializable
         final private PlayerQueueStatus $status,
         final private string $message,
         final private ?array $messageParts = null,
+        #[\SensitiveParameter]
         final private ?string $pollToken = null,
         final private int $httpStatusCode = 200,
     ) {}
@@ -54,7 +55,7 @@ final readonly class PlayerQueueResponse implements \JsonSerializable
     }
 
     #[\NoDiscard]
-    public function withPollToken(string $pollToken): self
+    public function withPollToken(#[\SensitiveParameter] string $pollToken): self
     {
         return clone($this, ['pollToken' => $pollToken]);
     }

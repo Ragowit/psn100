@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AbstractLeaderboardRow.php';
 
-final class TrophyLeaderboardRow extends AbstractLeaderboardRow
+final readonly class TrophyLeaderboardRow extends AbstractLeaderboardRow
 {
     /**
      * @param array<string, mixed> $player

@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Shared by PSN lookup services and player scan profile synchronization.
  */
-final class PsnHttpExceptionClassifier
+final readonly class PsnHttpExceptionClassifier
 {
     public static function determineStatusCode(Throwable $exception): ?int
     {

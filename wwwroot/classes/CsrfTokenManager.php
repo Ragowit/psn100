@@ -26,7 +26,7 @@ final readonly class CsrfTokenManager
     }
 
     #[\NoDiscard]
-    public static function validate(string $scope, mixed $submittedToken): bool
+    public static function validate(string $scope, #[\SensitiveParameter] mixed $submittedToken): bool
     {
         SessionManager::ensureStarted();
 

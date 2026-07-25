@@ -45,7 +45,7 @@ final class LogEntryFormatter
 
     private function formatTrophyHistoryMessage(string $message): ?string
     {
-        if (!preg_match('/^(Recorded new trophy_title_history entry \d+ for trophy_title\\.id )(\d+)(.*)$/', $message, $matches)) {
+        if (preg_match('/^(Recorded new trophy_title_history entry \d+ for trophy_title\\.id )(\d+)(.*)$/', $message, $matches) !== 1) {
             return null;
         }
 
@@ -67,7 +67,7 @@ final class LogEntryFormatter
 
     private function formatSetVersionMessage(string $message): ?string
     {
-        if (!preg_match('/^SET VERSION for (.+)\s*\.\s*([A-Z0-9_]+),\s*([^,]+),\s*(.+)$/', $message, $matches, PREG_OFFSET_CAPTURE)) {
+        if (preg_match('/^SET VERSION for (.+)\s*\.\s*([A-Z0-9_]+),\s*([^,]+),\s*(.+)$/', $message, $matches, PREG_OFFSET_CAPTURE) !== 1) {
             return null;
         }
 
@@ -94,7 +94,7 @@ final class LogEntryFormatter
 
     private function formatNewTrophiesAddedMessage(string $message): ?string
     {
-        if (!preg_match('/^New trophies added for (.+)\s*\.\s*([A-Z0-9_]+),\s*([^,]+),\s*(.+)$/', $message, $matches, PREG_OFFSET_CAPTURE)) {
+        if (preg_match('/^New trophies added for (.+)\s*\.\s*([A-Z0-9_]+),\s*([^,]+),\s*(.+)$/', $message, $matches, PREG_OFFSET_CAPTURE) !== 1) {
             return null;
         }
 
@@ -121,7 +121,7 @@ final class LogEntryFormatter
 
     private function formatSonyIssuesMessage(string $message): ?string
     {
-        if (!preg_match('/^(Sony issues with )(.+?)(( \(\d+\)\.)$)/', $message, $matches, PREG_OFFSET_CAPTURE)) {
+        if (preg_match('/^(Sony issues with )(.+?)(( \(\d+\)\.)$)/', $message, $matches, PREG_OFFSET_CAPTURE) !== 1) {
             return null;
         }
 

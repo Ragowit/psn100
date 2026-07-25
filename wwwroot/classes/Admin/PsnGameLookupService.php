@@ -10,6 +10,7 @@ require_once __DIR__ . '/PsnTrophyApiPayloadInspector.php';
 require_once __DIR__ . '/PsnTrophyGroupAssembler.php';
 require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 require_once __DIR__ . '/../CommaSeparatedValues.php';
+require_once __DIR__ . '/../NpServiceName.php';
 
 use Tustin\PlayStation\Client;
 
@@ -191,7 +192,7 @@ final class PsnGameLookupService
         return $normalizedResponse;
     }
 
-    private function resolvePreferredNpServiceName(string $npCommunicationId): ?string
+    private function resolvePreferredNpServiceName(string $npCommunicationId): ?NpServiceName
     {
         $query = $this->database->prepare(
             'SELECT platform FROM trophy_title WHERE np_communication_id = :np_communication_id LIMIT 1'
@@ -210,12 +211,7 @@ final class PsnGameLookupService
             return null;
         }
 
-        $legacyPlatforms = ['PS3', 'PS4', 'PSVR', 'PSVITA'];
-
-        return array_any(
-            $platforms,
-            static fn (string $platformValue): bool => in_array($platformValue, $legacyPlatforms, true)
-        ) ? 'trophy' : 'trophy2';
+        return NpServiceName::preferForPlatformLabels($platforms);
     }
 
     /**
@@ -254,7 +250,7 @@ final class PsnGameLookupService
     private function executeLookupRequest(
         object $client,
         string $path,
-        ?string $preferredNpServiceName = null,
+        ?NpServiceName $preferredNpServiceName = null,
         ?array $pinnedQuery = null
     ): array
     {
@@ -293,7 +289,7 @@ final class PsnGameLookupService
     /**
      * @return list<array{npLanguage: string, npServiceName?: string}>
      */
-    private function buildLookupQueryVariants(?string $preferredNpServiceName): array
+    private function buildLookupQueryVariants(?NpServiceName $preferredNpServiceName): array
     {
         $queryVariants = [];
         $addVariant = static function (array $variant) use (&$queryVariants): void {
@@ -302,14 +298,14 @@ final class PsnGameLookupService
             }
         };
 
-        if ($preferredNpServiceName === 'trophy' || $preferredNpServiceName === 'trophy2') {
-            $addVariant(['npLanguage' => 'en-US', 'npServiceName' => $preferredNpServiceName]);
+        if ($preferredNpServiceName instanceof NpServiceName) {
+            $addVariant(['npLanguage' => 'en-US', 'npServiceName' => $preferredNpServiceName->value]);
         } else {
             $addVariant(['npLanguage' => 'en-US']);
         }
 
-        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy']);
-        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => 'trophy2']);
+        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => NpServiceName::Trophy->value]);
+        $addVariant(['npLanguage' => 'en-US', 'npServiceName' => NpServiceName::Trophy2->value]);
         $addVariant(['npLanguage' => 'en-US']);
 
         return $queryVariants;

@@ -2,23 +2,24 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PossibleCheaterDateOperator.php';
 require_once __DIR__ . '/PossibleCheaterRuleGroup.php';
 require_once __DIR__ . '/PossibleCheaterRuleTuple.php';
 
-final class PossibleCheaterRuleConditionParser
+final readonly class PossibleCheaterRuleConditionParser
 {
     private const string CONDITION_PATTERN = '/^te\.np_communication_id = \'([^\']+)\' AND te\.order_id = (\d+)(?: AND te\.earned_date (>=|<=|<) \'([^\']+)\')?$/';
 
     public function parse(string $condition): PossibleCheaterRuleTuple
     {
-        if (!preg_match(self::CONDITION_PATTERN, $condition, $matches)) {
+        if (preg_match(self::CONDITION_PATTERN, $condition, $matches) !== 1) {
             throw new InvalidArgumentException('Unsupported possible cheater rule condition: ' . $condition);
         }
 
         return new PossibleCheaterRuleTuple(
             $matches[1],
             (int) $matches[2],
-            isset($matches[3]) && $matches[3] !== '' ? $matches[3] : null,
+            PossibleCheaterDateOperator::tryFromMixed($matches[3] ?? null),
             isset($matches[4]) && $matches[4] !== '' ? $matches[4] : null
         );
     }

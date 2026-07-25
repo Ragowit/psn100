@@ -15,6 +15,10 @@ require_once __DIR__ . '/../wwwroot/classes/TrophyType.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyMetaStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/HistoryIconType.php';
+require_once __DIR__ . '/../wwwroot/classes/HistoryDiffTokenState.php';
+require_once __DIR__ . '/../wwwroot/classes/LeaderboardView.php';
+require_once __DIR__ . '/../wwwroot/classes/NpServiceName.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterDateOperator.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineEntry.php';
 require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 
@@ -133,5 +137,42 @@ final class Php85IdiomEnumsTest extends TestCase
         $this->assertFalse(Platform::usesPlayStation5Assets('PS4, PS3'));
         $this->assertTrue(Platform::anyUsesPlayStation5Assets(['PS4', 'PS5']));
         $this->assertFalse(Platform::anyUsesPlayStation5Assets(['PS4', 'PC']));
+        $this->assertSame(
+            ['PS3', 'PS4', 'PSVR', 'PSVITA'],
+            Platform::legacyTrophyServiceLabels()
+        );
+    }
+
+    public function testHistoryDiffTokenStateHelpers(): void
+    {
+        $this->assertTrue(HistoryDiffTokenState::Equal->isEqual());
+        $this->assertFalse(HistoryDiffTokenState::Removed->isEqual());
+        $this->assertSame('added', HistoryDiffTokenState::Added->value);
+    }
+
+    public function testLeaderboardViewIncludeFiles(): void
+    {
+        $this->assertSame('leaderboard_main.php', LeaderboardView::Main->includeFile());
+        $this->assertSame('leaderboard_main.php', LeaderboardView::Trophy->includeFile());
+        $this->assertSame('leaderboard_rarity.php', LeaderboardView::Rarity->includeFile());
+        $this->assertSame('leaderboard_in_game_rarity.php', LeaderboardView::InGameRarity->includeFile());
+        $this->assertSame(null, LeaderboardView::tryFrom('unknown'));
+    }
+
+    public function testNpServiceNamePreferForPlatformLabels(): void
+    {
+        $this->assertSame(NpServiceName::Trophy, NpServiceName::preferForPlatformLabels(['PS4']));
+        $this->assertSame(NpServiceName::Trophy2, NpServiceName::preferForPlatformLabels(['PS5']));
+        $this->assertSame(NpServiceName::Trophy2, NpServiceName::tryFromMixed(' TROPHY2 '));
+        $this->assertSame(null, NpServiceName::tryFromMixed('unknown'));
+    }
+
+    public function testPossibleCheaterDateOperatorTryFromMixed(): void
+    {
+        $this->assertSame(PossibleCheaterDateOperator::GreaterThanOrEqual, PossibleCheaterDateOperator::tryFromMixed('>='));
+        $this->assertSame(PossibleCheaterDateOperator::LessThanOrEqual, PossibleCheaterDateOperator::tryFromMixed('<='));
+        $this->assertSame(PossibleCheaterDateOperator::LessThan, PossibleCheaterDateOperator::tryFromMixed('<'));
+        $this->assertSame(null, PossibleCheaterDateOperator::tryFromMixed(''));
+        $this->assertSame(null, PossibleCheaterDateOperator::tryFromMixed(null));
     }
 }

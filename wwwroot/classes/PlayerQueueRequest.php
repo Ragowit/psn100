@@ -10,6 +10,7 @@ final readonly class PlayerQueueRequest
     private function __construct(
         final private string $playerName,
         final private string $ipAddress,
+        #[\SensitiveParameter]
         final private string $pollToken,
     ) {}
 

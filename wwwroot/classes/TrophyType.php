@@ -36,7 +36,7 @@ enum TrophyType: string
 
     public function label(): string
     {
-        return $this->value |> ucfirst(...);
+        return $this->value |> mb_ucfirst(...);
     }
 
     /**

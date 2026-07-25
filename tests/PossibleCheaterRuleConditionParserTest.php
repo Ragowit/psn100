@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TestCase.php';
+require_once __DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterDateOperator.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterRuleConditionParser.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterRulesCatalog.php';
 
@@ -31,7 +32,7 @@ final class PossibleCheaterRuleConditionParserTest extends TestCase
             "te.np_communication_id = 'NPWR00550_00' AND te.order_id = 4 AND te.earned_date >= '2015-01-01'"
         );
 
-        $this->assertSame('>=', $tuple->getDateOperator());
+        $this->assertSame(PossibleCheaterDateOperator::GreaterThanOrEqual, $tuple->getDateOperator());
         $this->assertSame('2015-01-01', $tuple->getDateValue());
     }
 
@@ -41,7 +42,7 @@ final class PossibleCheaterRuleConditionParserTest extends TestCase
             "te.np_communication_id = 'NPWR14225_00' AND te.order_id = 6 AND te.earned_date <= '2020-04-12'"
         );
 
-        $this->assertSame('<=', $tuple->getDateOperator());
+        $this->assertSame(PossibleCheaterDateOperator::LessThanOrEqual, $tuple->getDateOperator());
         $this->assertSame('2020-04-12', $tuple->getDateValue());
     }
 
@@ -51,7 +52,7 @@ final class PossibleCheaterRuleConditionParserTest extends TestCase
             "te.np_communication_id = 'NPWR18341_00' AND te.order_id = 0 AND te.earned_date < '2020-03-01'"
         );
 
-        $this->assertSame('<', $tuple->getDateOperator());
+        $this->assertSame(PossibleCheaterDateOperator::LessThan, $tuple->getDateOperator());
         $this->assertSame('2020-03-01', $tuple->getDateValue());
     }
 

@@ -6,6 +6,7 @@ require_once __DIR__ . '/GameRescanDifferenceTracker.php';
 require_once __DIR__ . '/GameRescanProgressReporter.php';
 require_once __DIR__ . '/GameRescanGroupDataFetcher.php';
 require_once __DIR__ . '/PsnTrophyLookupGroupDataProvider.php';
+require_once __DIR__ . '/../Platform.php';
 require_once __DIR__ . '/../TrophyMetaRepository.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
@@ -338,31 +339,36 @@ final class GameRescanCatalogUpdater
             |> array_unique(...)
             |> array_values(...);
 
-        if (in_array('PSVR2', $existingPlatforms, true)) {
-            if (!in_array('PSVR2', $platforms, true)) {
-                $platforms[] = 'PSVR2';
+        $psVr2 = Platform::PsVr2->label();
+        $ps5 = Platform::Ps5->label();
+        $psVr = Platform::PsVr->label();
+        $ps4 = Platform::Ps4->label();
+
+        if (in_array($psVr2, $existingPlatforms, true)) {
+            if (!in_array($psVr2, $platforms, true)) {
+                $platforms[] = $psVr2;
             }
 
-            if (!in_array('PS5', $existingPlatforms, true)) {
+            if (!in_array($ps5, $existingPlatforms, true)) {
                 $platforms = $platforms
                     |> (fn(array $items): array => array_filter(
                         $items,
-                        static fn(string $platform): bool => $platform !== 'PS5'
+                        static fn(string $platform): bool => $platform !== $ps5
                     ))
                     |> array_values(...);
             }
         }
 
-        if (in_array('PSVR', $existingPlatforms, true)) {
-            if (!in_array('PSVR', $platforms, true)) {
-                $platforms[] = 'PSVR';
+        if (in_array($psVr, $existingPlatforms, true)) {
+            if (!in_array($psVr, $platforms, true)) {
+                $platforms[] = $psVr;
             }
 
-            if (!in_array('PS4', $existingPlatforms, true)) {
+            if (!in_array($ps4, $existingPlatforms, true)) {
                 $platforms = $platforms
                     |> (fn(array $items): array => array_filter(
                         $items,
-                        static fn(string $platform): bool => $platform !== 'PS4'
+                        static fn(string $platform): bool => $platform !== $ps4
                     ))
                     |> array_values(...);
             }

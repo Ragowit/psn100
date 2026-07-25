@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PossibleCheaterDateOperator.php';
+
 final readonly class PossibleCheaterRuleTuple
 {
     public function __construct(
         private string $npCommunicationId,
         private int $orderId,
-        private ?string $dateOperator,
+        private ?PossibleCheaterDateOperator $dateOperator,
         private ?string $dateValue,
     ) {
     }
@@ -22,7 +24,7 @@ final readonly class PossibleCheaterRuleTuple
         return $this->orderId;
     }
 
-    public function getDateOperator(): ?string
+    public function getDateOperator(): ?PossibleCheaterDateOperator
     {
         return $this->dateOperator;
     }
@@ -36,7 +38,7 @@ final readonly class PossibleCheaterRuleTuple
     {
         $npCommunicationId = $this->quote($this->npCommunicationId);
         $orderId = $this->orderId;
-        $dateOperator = $this->dateOperator !== null ? $this->quote($this->dateOperator) : 'NULL';
+        $dateOperator = $this->dateOperator !== null ? $this->quote($this->dateOperator->value) : 'NULL';
         $dateValue = $this->dateValue !== null ? $this->quote($this->dateValue) : 'NULL';
 
         return 'SELECT '

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
+require_once __DIR__ . '/HistoryDiffTokenState.php';
 require_once __DIR__ . '/HistoryIconType.php';
 require_once __DIR__ . '/HistoryIconState.php';
 require_once __DIR__ . '/Html.php';
@@ -159,8 +160,8 @@ final readonly class GameHistoryRenderer
         $diff = $this->buildTokenDiff($previousTokens, $currentTokens);
 
         return [
-            'previous' => $this->renderHighlightedTokens($diff['previous'], $isMultiline, 'previous'),
-            'current' => $this->renderHighlightedTokens($diff['current'], $isMultiline, 'current'),
+            'previous' => $this->renderHighlightedTokens($diff['previous'], $isMultiline),
+            'current' => $this->renderHighlightedTokens($diff['current'], $isMultiline),
         ];
     }
 
@@ -181,7 +182,7 @@ final readonly class GameHistoryRenderer
     /**
      * @param list<string> $previousTokens
      * @param list<string> $currentTokens
-     * @return array{previous: list<array{value: string, state: string}>, current: list<array{value: string, state: string}>}
+     * @return array{previous: list<array{value: string, state: HistoryDiffTokenState}>, current: list<array{value: string, state: HistoryDiffTokenState}>}
      */
     private function buildTokenDiff(array $previousTokens, array $currentTokens): array
     {
@@ -207,30 +208,30 @@ final readonly class GameHistoryRenderer
 
         while ($i < $previousLength && $j < $currentLength) {
             if ($previousTokens[$i] === $currentTokens[$j]) {
-                $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'equal'];
-                $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'equal'];
+                $previousDiff[] = ['value' => $previousTokens[$i], 'state' => HistoryDiffTokenState::Equal];
+                $currentDiff[] = ['value' => $currentTokens[$j], 'state' => HistoryDiffTokenState::Equal];
                 $i++;
                 $j++;
                 continue;
             }
 
             if ($lcs[$i + 1][$j] >= $lcs[$i][$j + 1]) {
-                $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'removed'];
+                $previousDiff[] = ['value' => $previousTokens[$i], 'state' => HistoryDiffTokenState::Removed];
                 $i++;
                 continue;
             }
 
-            $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'added'];
+            $currentDiff[] = ['value' => $currentTokens[$j], 'state' => HistoryDiffTokenState::Added];
             $j++;
         }
 
         while ($i < $previousLength) {
-            $previousDiff[] = ['value' => $previousTokens[$i], 'state' => 'removed'];
+            $previousDiff[] = ['value' => $previousTokens[$i], 'state' => HistoryDiffTokenState::Removed];
             $i++;
         }
 
         while ($j < $currentLength) {
-            $currentDiff[] = ['value' => $currentTokens[$j], 'state' => 'added'];
+            $currentDiff[] = ['value' => $currentTokens[$j], 'state' => HistoryDiffTokenState::Added];
             $j++;
         }
 
@@ -238,9 +239,9 @@ final readonly class GameHistoryRenderer
     }
 
     /**
-     * @param list<array{value: string, state: string}> $tokens
+     * @param list<array{value: string, state: HistoryDiffTokenState}> $tokens
      */
-    private function renderHighlightedTokens(array $tokens, bool $isMultiline, string $state): string
+    private function renderHighlightedTokens(array $tokens, bool $isMultiline): string
     {
         $html = '';
         $highlightTokens = [];
@@ -269,7 +270,7 @@ final readonly class GameHistoryRenderer
                 $html .= $highlightTokens[$i]['value'];
             }
 
-            $html .= '<mark class="history-highlight history-highlight--' . $highlightState . '">';
+            $html .= '<mark class="history-highlight history-highlight--' . $highlightState->value . '">';
             for ($i = $firstNonWhitespaceIndex; $i <= $lastNonWhitespaceIndex; $i++) {
                 $html .= $highlightTokens[$i]['value'];
             }
@@ -291,7 +292,7 @@ final readonly class GameHistoryRenderer
                 $escaped = str_replace(["\r\n", "\n", "\r"], '<br>', $escaped);
             }
 
-            if ($token['state'] !== 'equal') {
+            if (!$token['state']->isEqual()) {
                 if ($highlightState !== $token['state']) {
                     $flushHighlight();
                 }

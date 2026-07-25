@@ -5,9 +5,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/../PlayerLeaderboardFilter.php';
 require_once __DIR__ . '/../Utility.php';
 
-abstract class AbstractLeaderboardRow
+abstract readonly class AbstractLeaderboardRow
 {
     private const int NEW_PLAYER_RANK_VALUE = 16777215;
+
+    private ?string $highlightedPlayerId;
 
     /**
      * @param array<string, mixed> $player
@@ -17,7 +19,7 @@ abstract class AbstractLeaderboardRow
         protected array $player,
         private PlayerLeaderboardFilter $filter,
         private Utility $utility,
-        private ?string $highlightedPlayerId,
+        ?string $highlightedPlayerId,
         /** @var array<string, int|string> */
         private array $filterParameters,
         private string $rankingField,
