@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/JsonResponseStatus.php';
 
-final class JsonResponseEmitter
+final readonly class JsonResponseEmitter
 {
     /**
      * @param array<string, mixed>|\JsonSerializable $payload
@@ -34,7 +34,8 @@ final class JsonResponseEmitter
         $encodedFallback = json_encode($fallbackPayload);
 
         if ($encodedFallback === false) {
-            echo '{"status":"error","message":"An unexpected error occurred while encoding the response.","shouldPoll":false}';
+            echo '{"status":"' . JsonResponseStatus::Error->value
+                . '","message":"An unexpected error occurred while encoding the response.","shouldPoll":false}';
 
             return;
         }

@@ -8,13 +8,14 @@ final readonly class WorkerCredentialRevealResult
 {
     private function __construct(
         final private bool $success,
+        #[\SensitiveParameter]
         final private ?string $credential,
         final private ?string $errorMessage,
     ) {
     }
 
     #[\NoDiscard]
-    public static function success(string $credential): self
+    public static function success(#[\SensitiveParameter] string $credential): self
     {
         return new self(true, $credential, null);
     }

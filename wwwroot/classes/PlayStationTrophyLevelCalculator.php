@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Converts PlayStation Network trophy points into PSN level and progress percentage.
  */
-final class PlayStationTrophyLevelCalculator
+final readonly class PlayStationTrophyLevelCalculator
 {
     /**
      * @return array{level: int, progress: int}

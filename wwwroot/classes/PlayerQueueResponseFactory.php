@@ -204,7 +204,7 @@ final class PlayerQueueResponseFactory
         }
 
         if (preg_match('/^(Updating|Fetching)\b/i', $normalizedTitle) === 1) {
-            return $normalizedTitle |> strtolower(...) |> ucfirst(...);
+            return $normalizedTitle |> strtolower(...) |> mb_ucfirst(...);
         }
 
         if ($this->isErrorProgressTitle($normalizedTitle)) {

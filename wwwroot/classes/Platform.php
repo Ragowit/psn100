@@ -34,6 +34,21 @@ enum Platform: string
     }
 
     /**
+     * Platforms that still prefer the legacy PSN trophy service name.
+     *
+     * @return list<string>
+     */
+    public static function legacyTrophyServiceLabels(): array
+    {
+        return [
+            self::Ps3->label(),
+            self::Ps4->label(),
+            self::PsVr->label(),
+            self::PsVita->label(),
+        ];
+    }
+
+    /**
      * Display / merge sort order for platform labels (e.g. "PS5", "PC").
      *
      * @return list<string>

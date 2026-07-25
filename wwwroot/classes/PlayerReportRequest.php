@@ -11,6 +11,7 @@ final readonly class PlayerReportRequest
         final private string $explanation,
         final private bool $explanationSubmitted,
         final private string $ipAddress,
+        #[\SensitiveParameter]
         final private string $csrfToken,
     ) {}
 

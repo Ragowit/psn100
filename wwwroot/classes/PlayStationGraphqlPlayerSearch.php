@@ -137,19 +137,11 @@ final class PlayStationGraphqlPlayerSearch
             return null;
         }
 
-        foreach ($results as $domainResponse) {
-            if (!is_object($domainResponse)) {
-                continue;
-            }
-
-            if ($this->extractStringProperty($domainResponse, 'domain') !== self::GRAPHQL_SEARCH_DOMAIN) {
-                continue;
-            }
-
-            return $domainResponse;
-        }
-
-        return null;
+        return array_find(
+            $results,
+            fn (mixed $domainResponse): bool => is_object($domainResponse)
+                && $this->extractStringProperty($domainResponse, 'domain') === self::GRAPHQL_SEARCH_DOMAIN
+        );
     }
 
     private function performDomainSearch(
