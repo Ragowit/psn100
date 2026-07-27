@@ -11,7 +11,7 @@ require_once __DIR__ . '/Platform.php';
  * PSVR2, so its predicate tokenizes after stripping spaces rather than using a
  * plain LIKE / REGEXP against the raw column.
  */
-final class PlatformSql
+final readonly class PlatformSql
 {
     public const string PSVR_TOKEN_MATCH =
         "CONCAT(',', REPLACE(tt.platform, ' ', ''), ',') LIKE '%,PSVR,%'";
@@ -33,6 +33,7 @@ final class PlatformSql
      * @param list<string> $platformKeys
      * @return non-empty-string|null Parenthesized OR expression, or null when empty.
      */
+    #[\NoDiscard]
     public static function buildOrExpression(array $platformKeys): ?string
     {
         $clauses = [];
@@ -54,6 +55,7 @@ final class PlatformSql
     /**
      * @param list<string> $platformKeys
      */
+    #[\NoDiscard]
     public static function buildOrClause(array $platformKeys): string
     {
         $expression = self::buildOrExpression($platformKeys);

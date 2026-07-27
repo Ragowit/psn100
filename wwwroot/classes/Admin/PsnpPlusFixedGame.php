@@ -47,7 +47,9 @@ final readonly class PsnpPlusFixedGame
 
     public function getTrophyIdQuery(): string
     {
-        return implode(',', array_map(strval(...), $this->trophyIds));
+        return $this->trophyIds
+            |> (fn (array $ids): array => array_map(strval(...), $ids))
+            |> (fn (array $ids): string => implode(',', $ids));
     }
 
     /**
@@ -55,6 +57,8 @@ final readonly class PsnpPlusFixedGame
      */
     private function formatList(array $values): string
     {
-        return implode(', ', array_map(strval(...), $values));
+        return $values
+            |> (fn (array $ids): array => array_map(strval(...), $ids))
+            |> (fn (array $ids): string => implode(', ', $ids));
     }
 }

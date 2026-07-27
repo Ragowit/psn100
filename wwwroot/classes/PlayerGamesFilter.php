@@ -8,14 +8,6 @@ require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerGamesFilter
 {
-    public const string SORT_DATE = PlayerGamesSort::Date->value;
-    public const string SORT_IN_GAME_MAX_RARITY = PlayerGamesSort::InGameMaxRarity->value;
-    public const string SORT_IN_GAME_RARITY = PlayerGamesSort::InGameRarity->value;
-    public const string SORT_MAX_RARITY = PlayerGamesSort::MaxRarity->value;
-    public const string SORT_NAME = PlayerGamesSort::Name->value;
-    public const string SORT_RARITY = PlayerGamesSort::Rarity->value;
-    public const string SORT_SEARCH = PlayerGamesSort::Search->value;
-
     private const int DEFAULT_LIMIT = 50;
 
     /**
@@ -105,13 +97,9 @@ final readonly class PlayerGamesFilter
         return $this->sort;
     }
 
-    public function isSort(PlayerGamesSort|string $sort): bool
+    public function isSort(PlayerGamesSort $sort): bool
     {
-        if ($sort instanceof PlayerGamesSort) {
-            return $this->sort === $sort;
-        }
-
-        return $this->sort->value === $sort;
+        return $this->sort === $sort;
     }
 
     public function isCompletedSelected(): bool

@@ -43,10 +43,11 @@ final class PlayerAdvisorFilterTest extends TestCase
 
     public function testFromArrayParsesSortWhenValid(): void
     {
-        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY]);
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorSort::InGameRarity->value]);
 
         $this->assertSame(PlayerAdvisorSort::InGameRarity, $filter->getSort());
         $this->assertTrue($filter->isSort(PlayerAdvisorSort::InGameRarity));
+        $this->assertFalse($filter->isSort(PlayerAdvisorSort::Rarity));
     }
 
     public function testFromArrayFallsBackToDefaultSortWhenUnknown(): void
@@ -75,13 +76,13 @@ final class PlayerAdvisorFilterTest extends TestCase
         $filter = PlayerAdvisorFilter::fromArray([
             'psvr' => '1',
             'psvita' => 'yes',
-            'sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY,
+            'sort' => PlayerAdvisorSort::InGameRarity->value,
         ]);
 
         $this->assertSame([
             'psvita' => 'true',
             'psvr' => 'true',
-            'sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY,
+            'sort' => PlayerAdvisorSort::InGameRarity->value,
         ], $filter->getFilterParameters());
     }
 

@@ -8,13 +8,6 @@ require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class GameListFilter
 {
-    public const string SORT_ADDED = GameListSort::Added->value;
-    public const string SORT_COMPLETION = GameListSort::Completion->value;
-    public const string SORT_OWNERS = GameListSort::Owners->value;
-    public const string SORT_RARITY = GameListSort::Rarity->value;
-    public const string SORT_IN_GAME_RARITY = GameListSort::InGameRarity->value;
-    public const string SORT_SEARCH = GameListSort::Search->value;
-
     private function __construct(
         final private ?string $player,
         final private GameListSort $sort,
@@ -97,13 +90,9 @@ final readonly class GameListFilter
         return $this->sort;
     }
 
-    public function isSort(GameListSort|string $sort): bool
+    public function isSort(GameListSort $sort): bool
     {
-        if ($sort instanceof GameListSort) {
-            return $this->sort === $sort;
-        }
-
-        return $this->sort->value === $sort;
+        return $this->sort === $sort;
     }
 
     public function hasExplicitSort(): bool

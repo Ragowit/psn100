@@ -31,6 +31,7 @@ final class AdminBootstrap
         }
     }
 
+    #[\NoDiscard]
     public static function createAuthService(): AdminAuthService
     {
         $database = self::requireDatabase();

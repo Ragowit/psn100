@@ -6,15 +6,7 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 class PlayerAdvisorPage
 {
-    private PlayerAdvisorService $playerAdvisorService;
-
-    private PlayerSummaryService $playerSummaryService;
-
     private PlayerAdvisorFilter $filter;
-
-    private int $accountId;
-
-    private PlayerStatus $playerStatus;
 
     private ?PlayerSummary $playerSummary = null;
 
@@ -26,17 +18,12 @@ class PlayerAdvisorPage
     private ?array $advisableTrophies = null;
 
     public function __construct(
-        PlayerAdvisorService $playerAdvisorService,
-        PlayerSummaryService $playerSummaryService,
+        private PlayerAdvisorService $playerAdvisorService,
+        private PlayerSummaryService $playerSummaryService,
         PlayerAdvisorFilter $filter,
-        int $accountId,
-        PlayerStatus $playerStatus
+        private int $accountId,
+        private PlayerStatus $playerStatus,
     ) {
-        $this->playerAdvisorService = $playerAdvisorService;
-        $this->playerSummaryService = $playerSummaryService;
-        $this->accountId = $accountId;
-        $this->playerStatus = $playerStatus;
-
         if ($this->shouldDisplayAdvisor()) {
             $this->totalTrophies = $this->playerAdvisorService->countAdvisableTrophies(
                 $this->accountId,
