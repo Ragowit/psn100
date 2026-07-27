@@ -44,11 +44,11 @@ enum TrophyType: string
      */
     public static function sqlFieldOrder(string $columnExpression): string
     {
-        $quotedValues = array_map(
-            static fn (self $type): string => "'" . $type->value . "'",
-            self::cases()
-        );
-
-        return 'FIELD(' . $columnExpression . ', ' . implode(', ', $quotedValues) . ')';
+        return self::cases()
+            |> (fn (array $types): array => array_map(
+                static fn (self $type): string => "'" . $type->value . "'",
+                $types,
+            ))
+            |> (fn (array $quotedValues): string => 'FIELD(' . $columnExpression . ', ' . implode(', ', $quotedValues) . ')');
     }
 }

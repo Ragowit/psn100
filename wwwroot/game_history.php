@@ -95,10 +95,10 @@ require_once 'header.php';
 
             <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Recent Players</a>
-                    <a class="btn btn-primary active" href="/game-history/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">History</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Recent Players</a>
+                    <a class="btn btn-primary active" href="/game-history/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">History</a>
                 </div>
             </div>
 
@@ -132,7 +132,7 @@ require_once 'header.php';
                                 </span>
                             </div>
                             <?php $discoveredAt = $entry['discoveredAt']; ?>
-                            <time class="text-body-secondary small js-localized-datetime" datetime="<?= htmlspecialchars($discoveredAt->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>" data-show-timezone="1">
+                            <time class="text-body-secondary small js-localized-datetime" datetime="<?= Html::escape($discoveredAt->format(DATE_ATOM)); ?>" data-show-timezone="1">
                                 <?= Html::escape($discoveredAt->format('Y-m-d H:i:s')); ?> UTC
                             </time>
                         </div>

@@ -9,11 +9,9 @@ final class ImageHashCalculator
     private const int GD_ALPHA_MAX = 127;
     private const int RGBA_CHANNEL_MAX = 255;
 
-    private ImageProcessorInterface $imageProcessor;
-
-    public function __construct(?ImageProcessorInterface $imageProcessor = null)
-    {
-        $this->imageProcessor = $imageProcessor ?? new GdImageProcessor();
+    public function __construct(
+        private ImageProcessorInterface $imageProcessor = new GdImageProcessor(),
+    ) {
     }
 
     /**

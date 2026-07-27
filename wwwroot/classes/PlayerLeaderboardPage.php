@@ -189,10 +189,6 @@ final readonly class PlayerLeaderboardPage
             return $this->requestedFilter;
         }
 
-        return new PlayerLeaderboardFilter(
-            $this->requestedFilter->getCountry(),
-            $this->requestedFilter->getAvatar(),
-            $page
-        );
+        return $this->requestedFilter->withPageNumber($page);
     }
 }

@@ -35,10 +35,10 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <meta name="csrf-token" content="<?= Html::escape(AdminBootstrap::getCsrfToken()); ?>">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin ~ Workers</title>
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/localized-date-formatter.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/admin-worker-credentials.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <script src="<?= Html::escape(StaticAsset::url('/js/localized-date-formatter.js')); ?>" defer></script>
+        <script src="<?= Html::escape(StaticAsset::url('/js/admin-worker-credentials.js')); ?>" defer></script>
     </head>
     <body>
         <div class="container py-4">
@@ -58,13 +58,13 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
 
             <?php if ($successMessage !== null) { ?>
                 <div class="alert alert-success" role="alert">
-                    <?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($successMessage); ?>
                 </div>
             <?php } ?>
 
             <?php if ($errorMessage !== null) { ?>
                 <div class="alert alert-danger" role="alert">
-                    <?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($errorMessage); ?>
                 </div>
             <?php } ?>
 
@@ -76,7 +76,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                         <thead>
                             <tr>
                                 <th scope="col" style="width: 4rem;">
-                                    <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($idSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                    <a class="text-decoration-none text-reset" href="<?= Html::escape($idSortUrl); ?>">
                                         ID
                                         <?php if ($idSortIndicator !== '') { ?>
                                             <span class="ms-1"><?= $idSortIndicator |> trim(...) |> Html::escape(...); ?></span>
@@ -86,7 +86,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                 <th scope="col" style="width: 24rem;">Credentials</th>
                                 <th scope="col" style="width: 16rem;">Scanning</th>
                                 <th scope="col" style="width: 16rem;">
-                                    <a class="text-decoration-none text-reset" href="<?= htmlspecialchars($scanStartSortUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                    <a class="text-decoration-none text-reset" href="<?= Html::escape($scanStartSortUrl); ?>">
                                         Scan Start
                                         <?php if ($scanStartSortIndicator !== '') { ?>
                                             <span class="ms-1"><?= $scanStartSortIndicator |> trim(...) |> Html::escape(...); ?></span>
@@ -102,24 +102,24 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                 <?php
                                 $scanStart = $worker->getScanStart();
                                 $scanning = $worker->getScanning();
-                                $scanningDisplay = htmlspecialchars($scanning, ENT_QUOTES, 'UTF-8');
+                                $scanningDisplay = Html::escape($scanning);
                                 $scanningLink = $scanning !== '' ? '/player/' . rawurlencode($scanning) : null;
                                 $scanProgress = $worker->getScanProgress();
                                 ?>
                                 <tr>
-                                    <td class="text-nowrap">#<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td class="text-nowrap">#<?= Html::escape((string) $worker->getId()); ?></td>
                                     <td>
                                         <div class="vstack gap-2">
                                             <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
                                                 <?php AdminBootstrap::renderCsrfField(); ?>
                                                 <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::UpdateRefreshToken->value); ?>">
-                                                <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
-                                                <label class="form-label small text-body-secondary mb-0 text-nowrap" for="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                                <input type="hidden" name="worker_id" value="<?= Html::escape((string) $worker->getId()); ?>">
+                                                <label class="form-label small text-body-secondary mb-0 text-nowrap" for="refresh-token-<?= Html::escape((string) $worker->getId()); ?>">
                                                     Refresh Token
                                                 </label>
                                                 <div class="d-flex gap-2 flex-grow-1" data-worker-credential-field>
                                                     <input
-                                                        id="refresh-token-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        id="refresh-token-<?= Html::escape((string) $worker->getId()); ?>"
                                                         type="password"
                                                         name="refresh_token"
                                                         class="form-control form-control-sm"
@@ -128,7 +128,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                         autocomplete="off"
                                                         data-worker-credential-input
                                                         data-worker-credential="refresh_token"
-                                                        data-worker-id="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        data-worker-id="<?= Html::escape((string) $worker->getId()); ?>"
                                                     >
                                                     <button
                                                         type="button"
@@ -144,13 +144,13 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                             <form method="post" class="d-flex gap-2 align-items-center" autocomplete="off">
                                                 <?php AdminBootstrap::renderCsrfField(); ?>
                                                 <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::UpdateNpsso->value); ?>">
-                                                <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
-                                                <label class="form-label small text-body-secondary mb-0 text-nowrap" for="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                                <input type="hidden" name="worker_id" value="<?= Html::escape((string) $worker->getId()); ?>">
+                                                <label class="form-label small text-body-secondary mb-0 text-nowrap" for="npsso-<?= Html::escape((string) $worker->getId()); ?>">
                                                     NPSSO
                                                 </label>
                                                 <div class="d-flex gap-2 flex-grow-1" data-worker-credential-field>
                                                     <input
-                                                        id="npsso-<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        id="npsso-<?= Html::escape((string) $worker->getId()); ?>"
                                                         type="password"
                                                         name="npsso"
                                                         class="form-control form-control-sm"
@@ -159,7 +159,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                         autocomplete="off"
                                                         data-worker-credential-input
                                                         data-worker-credential="npsso"
-                                                        data-worker-id="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        data-worker-id="<?= Html::escape((string) $worker->getId()); ?>"
                                                     >
                                                     <button
                                                         type="button"
@@ -176,7 +176,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                     </td>
                                     <td class="text-nowrap">
                                         <?php if ($scanningLink !== null) { ?>
-                                            <a href="<?= htmlspecialchars($scanningLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a href="<?= Html::escape($scanningLink); ?>">
                                                 <?= $scanningDisplay; ?>
                                             </a>
                                         <?php } else { ?>
@@ -186,9 +186,9 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                     <td class="text-nowrap">
                                         <time
                                             class="js-localized-datetime"
-                                            datetime="<?= htmlspecialchars($scanStart->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>"
+                                            datetime="<?= Html::escape($scanStart->format(DATE_ATOM)); ?>"
                                         >
-                                            <?= htmlspecialchars($scanStart->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= Html::escape($scanStart->format('Y-m-d H:i:s')); ?>
                                         </time>
                                     </td>
                                     <td>
@@ -202,7 +202,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                 <?php if ($title !== null) { ?>
                                                     <div>
                                                         <strong>Title:</strong>
-                                                        <?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?= Html::escape($title); ?>
                                                     </div>
                                                 <?php } ?>
                                                 <?php
@@ -212,9 +212,9 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                 <?php if ($progressSummary !== null) { ?>
                                                     <div>
                                                         <strong>Progress:</strong>
-                                                        <?= htmlspecialchars($progressSummary, ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?= Html::escape($progressSummary); ?>
                                                         <?php if ($percentage !== null) { ?>
-                                                            (<?= htmlspecialchars(number_format($percentage, 1), ENT_QUOTES, 'UTF-8'); ?>%)
+                                                            (<?= Html::escape(number_format($percentage, 1)); ?>%)
                                                         <?php } ?>
                                                     </div>
                                                 <?php } ?>
@@ -222,7 +222,7 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                 <?php if ($npCommunicationId !== null) { ?>
                                                     <div>
                                                         <strong>NP Communication ID:</strong>
-                                                        <?= htmlspecialchars($npCommunicationId, ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?= Html::escape($npCommunicationId); ?>
                                                     </div>
                                                 <?php } ?>
                                             </div>
@@ -231,11 +231,11 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                     <td>
                                         <form
                                             method="post"
-                                            onsubmit="return confirm('Restart worker #<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>?');"
+                                            onsubmit="return confirm('Restart worker #<?= Html::escape((string) $worker->getId()); ?>?');"
                                         >
                                             <?php AdminBootstrap::renderCsrfField(); ?>
                                             <input type="hidden" name="action" value="<?= Html::escape(WorkerAction::RestartWorker->value); ?>">
-                                            <input type="hidden" name="worker_id" value="<?= htmlspecialchars((string) $worker->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="hidden" name="worker_id" value="<?= Html::escape((string) $worker->getId()); ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-warning">
                                                 Restart
                                             </button>

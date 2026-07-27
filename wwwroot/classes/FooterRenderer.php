@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/FooterViewModel.php';
 require_once __DIR__ . '/Html.php';
 
-final class FooterRenderer
+final readonly class FooterRenderer
 {
     public function render(FooterViewModel $viewModel): string
     {

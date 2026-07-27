@@ -61,10 +61,10 @@ require_once("header.php");
 
             <div class="col-12 col-lg-6 mb-3 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-primary active" href="/game/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Leaderboard</a>
-                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Recent Players</a>
-                    <a class="btn btn-outline-primary" href="/game-history/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">History</a>
+                    <a class="btn btn-primary active" href="/game/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Leaderboard</a>
+                    <a class="btn btn-outline-primary" href="/game-recent-players/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game-history/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">History</a>
                 </div>
             </div>
 
@@ -122,13 +122,13 @@ require_once("header.php");
                     }
                     ?>
                     <div class="table-responsive-xxl">
-                        <table class="table" id="<?= htmlspecialchars($trophyGroupId, ENT_QUOTES, 'UTF-8'); ?>">
+                        <table class="table" id="<?= Html::escape($trophyGroupId); ?>">
                             <thead>
                                 <tr>
                                     <th scope="col" colspan="5" class="bg-dark-subtle">
                                         <div class="hstack gap-3">
                                             <div>
-                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= htmlspecialchars($trophyGroup->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($trophyGroup->getName()); ?>">
+                                                <img class="card-img object-fit-cover" style="height: 7rem;" src="/img/group/<?= Html::escape($trophyGroup->getIconPath()); ?>" alt="<?= Html::escape($trophyGroup->getName()); ?>">
                                             </div>
                                             
                                             <div>
@@ -230,7 +230,7 @@ require_once("header.php");
                                                 <img
                                                     class="card-img object-fit-scale"
                                                     style="height: 5rem;"
-                                                    src="/img/trophy/<?= htmlspecialchars($trophyRow->getIconPath(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    src="/img/trophy/<?= Html::escape($trophyRow->getIconPath()); ?>"
                                                     alt="<?= Html::escape($trophyRow->getName()); ?>"
                                                 >
                                             </div>
@@ -241,7 +241,7 @@ require_once("header.php");
                                                 <span>
                                                     <a
                                                         class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
-                                                        href="<?= htmlspecialchars($trophyLink, ENT_QUOTES, 'UTF-8'); ?>"
+                                                        href="<?= Html::escape($trophyLink); ?>"
                                                     >
                                                         <b><?= Html::escape($trophyRow->getName()); ?></b>
                                                     </a>
@@ -250,12 +250,12 @@ require_once("header.php");
                                                 <?php
                                                 $progressDisplay = $trophyRow->getProgressDisplay();
                                                 if ($progressDisplay !== null) {
-                                                    echo '<span>' . htmlspecialchars($progressDisplay, ENT_QUOTES, 'UTF-8') . '</span>';
+                                                    echo '<span>' . Html::escape($progressDisplay) . '</span>';
                                                 }
 
                                                 if ($trophyRow->hasReward()) {
-                                                    $rewardName = htmlspecialchars((string) $trophyRow->getRewardName(), ENT_QUOTES, 'UTF-8');
-                                                    $rewardImageUrl = htmlspecialchars((string) $trophyRow->getRewardImageUrl(), ENT_QUOTES, 'UTF-8');
+                                                    $rewardName = Html::escape((string) $trophyRow->getRewardName());
+                                                    $rewardImageUrl = Html::escape((string) $trophyRow->getRewardImageUrl());
                                                     echo "<span>Reward: <a class='link-underline link-underline-opacity-0 link-underline-opacity-100-hover' href='/img/reward/{$rewardImageUrl}'>"
                                                         . $rewardName
                                                         . '</a></span>';
@@ -264,7 +264,7 @@ require_once("header.php");
                                             </div>
                                         </td>
 
-                                        <td class="w-auto text-center align-middle<?= $earnedCellClass !== '' ? ' ' . $earnedCellClass : ''; ?>"<?= $earnedCellStyle !== '' ? ' style="' . htmlspecialchars($earnedCellStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>>
+                                        <td class="w-auto text-center align-middle<?= $earnedCellClass !== '' ? ' ' . $earnedCellClass : ''; ?>"<?= $earnedCellStyle !== '' ? ' style="' . Html::escape($earnedCellStyle) . '"' : ''; ?>>
                                             <?php
                                             if ($accountId !== null && $trophyRow->isEarned()) {
                                                 $earnedElementId = $trophyRow->getEarnedElementId();
@@ -273,7 +273,7 @@ require_once("header.php");
                                                     class="js-localized-date"
                                                     style="text-wrap: nowrap;"
                                                     <?php if ($trophyRow->hasRecordedEarnedDate()) { ?>
-                                                    data-timestamp="<?= htmlspecialchars($trophyRow->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-timestamp="<?= Html::escape($trophyRow->getEarnedDate()); ?>"
                                                     data-line-break="1"
                                                     <?php } elseif ($trophyRow->shouldDisplayNoTimestampMessage()) { ?>
                                                     data-fallback="No Timestamp"

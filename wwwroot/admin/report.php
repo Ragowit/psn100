@@ -20,9 +20,9 @@ $errorMessage = $pageResult->getErrorMessage();
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin ~ Reported Players</title>
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/admin-report-delete.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <script src="<?= Html::escape(StaticAsset::url('/js/admin-report-delete.js')); ?>" defer></script>
     </head>
     <body>
         <div class="p-4">

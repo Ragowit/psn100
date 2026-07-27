@@ -69,4 +69,17 @@ final class PlayerLeaderboardFilterTest extends TestCase
             $filter->withPage(0)
         );
     }
+
+    public function testWithPageNumberReturnsNewFilterInstance(): void
+    {
+        $filter = PlayerLeaderboardFilter::fromArray(['page' => '2', 'country' => 'us']);
+
+        $updated = $filter->withPageNumber(4);
+
+        $this->assertSame(2, $filter->getPage());
+        $this->assertSame(4, $updated->getPage());
+        $this->assertSame('us', $updated->getCountry());
+        $this->assertSame(150, $updated->getOffset(50));
+        $this->assertSame(1, $filter->withPageNumber(0)->getPage());
+    }
 }

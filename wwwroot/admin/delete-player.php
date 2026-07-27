@@ -33,8 +33,8 @@ if ($confirmation !== null) {
     $onlineIdValue = $confirmation->getOnlineId() ?? '';
 }
 
-$encodedAccountIdValue = htmlspecialchars($accountIdValue, ENT_QUOTES, 'UTF-8');
-$encodedOnlineIdValue = htmlspecialchars($onlineIdValue, ENT_QUOTES, 'UTF-8');
+$encodedAccountIdValue = Html::escape($accountIdValue);
+$encodedOnlineIdValue = Html::escape($onlineIdValue);
 
 $confirmationOnlineId = $confirmation?->getOnlineId();
 $confirmationDisplayName = $confirmationOnlineId ?? $accountIdValue;
@@ -42,10 +42,10 @@ $confirmationUrl = $confirmationOnlineId !== null
     ? PlayerUrlBuilder::playerPath($confirmationOnlineId)
     : null;
 $confirmationAccountId = $confirmation?->getAccountId();
-$encodedConfirmationAccountId = $confirmationAccountId === null ? '' : htmlspecialchars($confirmationAccountId, ENT_QUOTES, 'UTF-8');
-$encodedConfirmationOnlineId = $confirmationOnlineId === null ? '' : htmlspecialchars($confirmationOnlineId, ENT_QUOTES, 'UTF-8');
-$encodedConfirmationUrl = $confirmationUrl === null ? null : htmlspecialchars($confirmationUrl, ENT_QUOTES, 'UTF-8');
-$encodedConfirmationDisplayName = htmlspecialchars($confirmationDisplayName, ENT_QUOTES, 'UTF-8');
+$encodedConfirmationAccountId = $confirmationAccountId === null ? '' : Html::escape($confirmationAccountId);
+$encodedConfirmationOnlineId = $confirmationOnlineId === null ? '' : Html::escape($confirmationOnlineId);
+$encodedConfirmationUrl = $confirmationUrl === null ? null : Html::escape($confirmationUrl);
+$encodedConfirmationDisplayName = Html::escape($confirmationDisplayName);
 
 ?>
 <!doctype html>
@@ -54,7 +54,7 @@ $encodedConfirmationDisplayName = htmlspecialchars($confirmationDisplayName, ENT
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin ~ Delete Player</title>
     </head>
     <body>

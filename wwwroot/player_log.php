@@ -51,7 +51,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= htmlspecialchars(PlayerUrlBuilder::playerReportPath($player['online_id']), ENT_QUOTES, 'UTF-8'); ?>">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= Html::escape(PlayerUrlBuilder::playerReportPath($player['online_id'])); ?>">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
@@ -113,22 +113,22 @@ require_once("header.php");
                                     ?>
                                     <tr<?= $rowClassAttribute; ?>>
                                         <td scope="row" class="text-center align-middle">
-                                            <a href="<?= htmlspecialchars($gameUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconRelativePath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($trophy->getGameName()); ?>" title="<?= Html::escape($trophy->getGameName()); ?>" style="width: 10rem;" />
+                                            <a href="<?= Html::escape($gameUrl); ?>">
+                                                <img src="/img/title/<?= Html::escape($trophy->getGameIconRelativePath()); ?>" alt="<?= Html::escape($trophy->getGameName()); ?>" title="<?= Html::escape($trophy->getGameName()); ?>" style="width: 10rem;" />
                                             </a>
                                         </td>
                                         <td class="align-middle">
                                             <div class="hstack gap-3">
                                                 <div class="d-flex align-items-center justify-content-center">
-                                                    <a href="<?= htmlspecialchars($trophyUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                        <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconRelativePath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($trophy->getTrophyName()); ?>" title="<?= Html::escape($trophy->getTrophyName()); ?>" style="width: 5rem;" />
+                                                    <a href="<?= Html::escape($trophyUrl); ?>">
+                                                        <img src="/img/trophy/<?= Html::escape($trophy->getTrophyIconRelativePath()); ?>" alt="<?= Html::escape($trophy->getTrophyName()); ?>" title="<?= Html::escape($trophy->getTrophyName()); ?>" style="width: 5rem;" />
                                                     </a>
                                                 </div>
 
                                                 <div>
                                                     <div class="vstack">
                                                         <span>
-                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($trophyUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape($trophyUrl); ?>">
                                                                 <b><?= Html::escape($trophy->getTrophyName()); ?></b>
                                                             </a>
                                                         </span>
@@ -139,8 +139,8 @@ require_once("header.php");
                                                         }
 
                                                         if ($rewardName !== null && $rewardImageUrl !== null) {
-                                                            echo "<br>Reward: <a href='/img/reward/" . htmlspecialchars($rewardImageUrl, ENT_QUOTES, 'UTF-8') . "'>"
-                                                                . htmlspecialchars($rewardName, ENT_QUOTES, 'UTF-8')
+                                                            echo "<br>Reward: <a href='/img/reward/" . Html::escape($rewardImageUrl) . "'>"
+                                                                . Html::escape($rewardName)
                                                                 . '</a>';
                                                         }
                                                         ?>
@@ -148,7 +148,7 @@ require_once("header.php");
                                                             <span
                                                                 class="badge rounded-pill text-bg-success js-localized-date"
                                                                 data-prefix="Earned "
-                                                                data-timestamp="<?= htmlspecialchars($trophy->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                                data-timestamp="<?= Html::escape($trophy->getEarnedDate()); ?>"
                                                             ></span>
                                                         </div>
                                                     </div>
@@ -159,7 +159,7 @@ require_once("header.php");
                                             <div class="vstack gap-1">
                                                 <?php
                                                 foreach ($trophy->getPlatforms() as $platform) {
-                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . htmlspecialchars($platform, ENT_QUOTES, 'UTF-8') . '</span> ';
+                                                    echo "<span class=\"badge rounded-pill text-bg-primary p-2\">" . Html::escape($platform) . '</span> ';
                                                 }
                                                 ?>
                                             </div>

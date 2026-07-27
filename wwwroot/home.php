@@ -227,7 +227,7 @@ require_once("header.php");
     </div>
 </main>
 
-<script src="<?= htmlspecialchars(StaticAsset::url('/js/player-queue-manager.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?= Html::escape(StaticAsset::url('/js/player-queue-manager.js')); ?>" defer></script>
 
 <?php
 require_once("footer.php");

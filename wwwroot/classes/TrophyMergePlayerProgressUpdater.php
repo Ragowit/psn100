@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyMergeRelationshipResolver.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressRecalculator.php';
+require_once __DIR__ . '/MergeNpCommunicationId.php';
 
 /**
  * Orchestrates player progress updates for merged trophy titles.
@@ -49,7 +50,7 @@ final class TrophyMergePlayerProgressUpdater
 
     public function recomputeByParent(string $parentNpCommunicationId): void
     {
-        if (!str_starts_with($parentNpCommunicationId, 'MERGE')) {
+        if (!MergeNpCommunicationId::matches($parentNpCommunicationId)) {
             throw new InvalidArgumentException('Parent must be a merge title.');
         }
 

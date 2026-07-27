@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/GameResetAction.php';
+require_once __DIR__ . '/MergeNpCommunicationId.php';
 
 final readonly class GameResetService
 {
@@ -18,7 +19,7 @@ final readonly class GameResetService
             throw new InvalidArgumentException('Can only reset/delete merged game entries.');
         }
 
-        if (!str_starts_with($npCommunicationId, 'MERGE')) {
+        if (!MergeNpCommunicationId::matches($npCommunicationId)) {
             throw new InvalidArgumentException('Can only reset/delete merged game entries.');
         }
 

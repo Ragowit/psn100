@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Admin/GameCopyService.php';
 require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
+require_once __DIR__ . '/MergeNpCommunicationId.php';
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/TrophyMergeEarnedCopier.php';
 require_once __DIR__ . '/TrophyMergeMappingService.php';
@@ -43,7 +44,7 @@ class TrophyMergeService
 
         $parentTrophy = $this->getTrophyById($parentTrophyId);
 
-        if (!str_starts_with($parentTrophy['np_communication_id'], 'MERGE')) {
+        if (!MergeNpCommunicationId::matches($parentTrophy['np_communication_id'])) {
             throw new InvalidArgumentException('Parent must be a merge title.');
         }
 
@@ -53,7 +54,7 @@ class TrophyMergeService
             $childTrophyId = (int) $childTrophyId;
             $childTrophy = $this->getTrophyById($childTrophyId);
 
-            if (str_starts_with($childTrophy['np_communication_id'], 'MERGE')) {
+            if (MergeNpCommunicationId::matches($childTrophy['np_communication_id'])) {
                 throw new InvalidArgumentException("Child can't be a merge title.");
             }
 
@@ -100,13 +101,13 @@ class TrophyMergeService
         $method = TrophyMergeMethod::fromMixed($method);
         $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
 
-        if (str_starts_with($childNpCommunicationId, 'MERGE')) {
+        if (MergeNpCommunicationId::matches($childNpCommunicationId)) {
             throw new InvalidArgumentException("Child can't be a merge title.");
         }
 
         $parentNpCommunicationId = $this->getGameNpCommunicationId($parentGameId);
 
-        if (!str_starts_with($parentNpCommunicationId, 'MERGE')) {
+        if (!MergeNpCommunicationId::matches($parentNpCommunicationId)) {
             throw new InvalidArgumentException('Parent must be a merge title.');
         }
 

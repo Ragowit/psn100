@@ -71,13 +71,10 @@ enum Platform: string
      */
     public static function labelsByValue(): array
     {
-        $labels = [];
-
-        foreach (self::cases() as $platform) {
-            $labels[$platform->value] = $platform->label();
-        }
-
-        return $labels;
+        return array_combine(
+            array_column(self::cases(), 'value'),
+            array_map(static fn (self $platform): string => $platform->label(), self::cases()),
+        );
     }
 
     /**

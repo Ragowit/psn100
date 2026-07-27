@@ -14,7 +14,7 @@ require_once __DIR__ . '/classes/GameMessageSanitizer.php';
 /** @var GamePlayerProgress|null $gamePlayer */
 
 $encodedPlayer = isset($player) ? rawurlencode((string) $player) : null;
-$escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES, 'UTF-8') : null;
+$escapedPlayer = isset($player) ? Html::escape((string) $player) : null;
 ?>
 <div class="row">
     <?php
@@ -141,7 +141,7 @@ $escapedPlayer = isset($player) ? htmlspecialchars((string) $player, ENT_QUOTES,
                     : '../missing-ps4-game.png')
                 : $gameIconUrl;
             ?>
-            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($iconPath, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($game->getName()); ?>">
+            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= Html::escape($iconPath); ?>" alt="<?= Html::escape($game->getName()); ?>">
         </div>
 
         <div class="col-12 col-lg-6">

@@ -37,7 +37,7 @@ $status = TrophyMetaStatus::fromMixed($statusInput);
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin ~ Unobtainable Trophy</title>
     </head>
     <body>
@@ -48,7 +48,7 @@ $status = TrophyMetaStatus::fromMixed($statusInput);
                 Game ID:<br>
                 <input type="text" name="game" /><br>
                 Trophy ID:<br>
-                <textarea name="trophy" rows="10" cols="30"><?= htmlspecialchars(str_replace(",", PHP_EOL, $trophyInput), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></textarea>
+                <textarea name="trophy" rows="10" cols="30"><?= Html::escape(str_replace(",", PHP_EOL, $trophyInput)); ?></textarea>
                 <br>
                 Status:<br>
                 <select name="status">

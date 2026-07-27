@@ -24,6 +24,7 @@ final class LogEntryFormatter
     ) {
     }
 
+    #[\NoDiscard]
     public function format(string $message): string
     {
         return [

@@ -70,6 +70,12 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
         return $parameters;
     }
 
+    #[\NoDiscard]
+    public function withPageNumber(int $page): self
+    {
+        return clone($this, ['page' => max($page, 1)]);
+    }
+
     private static function normalizePage(mixed $value): int
     {
         if ($value === null || is_array($value) || !is_numeric($value)) {
