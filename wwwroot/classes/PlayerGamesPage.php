@@ -7,7 +7,7 @@ require_once __DIR__ . '/PlayerGamesFilter.php';
 require_once __DIR__ . '/PlayerGamesService.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-class PlayerGamesPage
+final class PlayerGamesPage
 {
     private PlayerGamesFilter $requestedFilter;
 

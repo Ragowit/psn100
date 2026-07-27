@@ -74,7 +74,9 @@ final readonly class TrophyStatusPage
 
                     $gameId = (int) $gameValue;
                     $trophyIds = $this->trophyStatusInputParser->getTrophyIdsForGame($gameId);
-                    $trophyInput = implode(',', array_map(strval(...), $trophyIds));
+                    $trophyInput = $trophyIds
+                        |> (fn (array $ids): array => array_map(strval(...), $ids))
+                        |> (fn (array $ids): string => implode(',', $ids));
                 } else {
                     $trophyInput = (string) ($postData['trophy'] ?? '');
                     $trophyIds = $this->trophyStatusInputParser->parseTrophyIds($trophyInput);

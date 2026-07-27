@@ -7,7 +7,7 @@ require_once __DIR__ . '/TrophyMergeMethod.php';
 /**
  * Compares two trophy sets to decide whether automatic title merges are safe.
  */
-final class TrophySetComparator
+final readonly class TrophySetComparator
 {
     /**
      * @param list<array{group_id:string, order_id:int, name:string, detail:string}> $leftTrophies
@@ -111,7 +111,7 @@ final class TrophySetComparator
             return false;
         }
 
-        return count($leftNames) === count(array_unique($leftNames));
+        return count($leftNames) === count($leftNames |> array_unique(...));
     }
 
     private function createTrophyKey(string $name, string $detail): string

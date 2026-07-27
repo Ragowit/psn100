@@ -8,10 +8,6 @@ require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerLogFilter
 {
-    public const string SORT_DATE = PlayerLogSort::Date->value;
-    public const string SORT_RARITY = PlayerLogSort::Rarity->value;
-    public const string SORT_IN_GAME_RARITY = PlayerLogSort::InGameRarity->value;
-
     private function __construct(
         final private PlayerLogSort $sort,
         final private int $page,
@@ -47,13 +43,9 @@ final readonly class PlayerLogFilter
         return $this->sort;
     }
 
-    public function isSort(PlayerLogSort|string $sort): bool
+    public function isSort(PlayerLogSort $sort): bool
     {
-        if ($sort instanceof PlayerLogSort) {
-            return $this->sort === $sort;
-        }
-
-        return $this->sort === PlayerLogSort::fromMixed($sort);
+        return $this->sort === $sort;
     }
 
     public function getPage(): int

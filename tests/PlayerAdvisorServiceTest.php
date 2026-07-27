@@ -282,7 +282,7 @@ final class PlayerAdvisorServiceTest extends TestCase
             SQL
         );
 
-        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorFilter::SORT_IN_GAME_RARITY]);
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorSort::InGameRarity->value]);
 
         $trophies = $this->service->getAdvisableTrophies(22, $filter, 0, 50);
 

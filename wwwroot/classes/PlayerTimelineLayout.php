@@ -5,12 +5,13 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerTimelineEntry.php';
 require_once __DIR__ . '/PlayerTimelineLayoutItem.php';
 
-final class PlayerTimelineLayout
+final readonly class PlayerTimelineLayout
 {
     /**
      * @param PlayerTimelineEntry[] $entries
      * @return list<list<PlayerTimelineLayoutItem>>
      */
+    #[\NoDiscard]
     public static function buildRows(DateTimeImmutable $startDate, array $entries): array
     {
         if ($entries === []) {

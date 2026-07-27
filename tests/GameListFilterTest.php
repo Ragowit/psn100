@@ -24,7 +24,7 @@ final class GameListFilterTest extends TestCase
         $this->assertTrue($filter->hasPlayer());
         $this->assertSame(GameListSort::Owners, $filter->getSort());
         $this->assertTrue($filter->isSort(GameListSort::Owners));
-        $this->assertTrue($filter->isSort(GameListFilter::SORT_OWNERS));
+        $this->assertFalse($filter->isSort(GameListSort::Added));
         $this->assertTrue($filter->hasExplicitSort());
         $this->assertSame('God of War', $filter->getSearch());
         $this->assertTrue($filter->hasSearch());

@@ -8,9 +8,6 @@ require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class PlayerAdvisorFilter
 {
-    public const string SORT_RARITY = PlayerAdvisorSort::Rarity->value;
-    public const string SORT_IN_GAME_RARITY = PlayerAdvisorSort::InGameRarity->value;
-
     private function __construct(
         final private int $page,
         final private PlayerAdvisorSort $sort,
@@ -83,13 +80,9 @@ final readonly class PlayerAdvisorFilter
         return $this->sort;
     }
 
-    public function isSort(PlayerAdvisorSort|string $sort): bool
+    public function isSort(PlayerAdvisorSort $sort): bool
     {
-        if ($sort instanceof PlayerAdvisorSort) {
-            return $this->sort === $sort;
-        }
-
-        return $this->sort->value === $sort;
+        return $this->sort === $sort;
     }
 
     /**

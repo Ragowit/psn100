@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/../classes/Admin/PsnpPlusService.php';
+require_once __DIR__ . '/../classes/TrophyMetaStatus.php';
 
 $psnpPlusService = new PsnpPlusService($database);
 $psnpPlusReport = null;
@@ -84,11 +85,11 @@ try {
                         </strong><br>
 
                         <?php if ($difference->hasUnobtainable()) { ?>
-                            <a href="unobtainable.php?status=1&amp;trophy=<?= $difference->getUnobtainableTrophyIdQuery(); ?>">Unobtainable</a>: <?= Html::escape($difference->getUnobtainableOrderList()); ?><br>
+                            <a href="unobtainable.php?status=<?= TrophyMetaStatus::Unobtainable->value ?>&amp;trophy=<?= $difference->getUnobtainableTrophyIdQuery(); ?>">Unobtainable</a>: <?= Html::escape($difference->getUnobtainableOrderList()); ?><br>
                         <?php } ?>
 
                         <?php if ($difference->hasObtainable()) { ?>
-                            <a href="unobtainable.php?status=0&amp;trophy=<?= $difference->getObtainableTrophyIdQuery(); ?>">Obtainable</a>: <?= Html::escape($difference->getObtainableOrderList()); ?><br>
+                            <a href="unobtainable.php?status=<?= TrophyMetaStatus::Obtainable->value ?>&amp;trophy=<?= $difference->getObtainableTrophyIdQuery(); ?>">Obtainable</a>: <?= Html::escape($difference->getObtainableOrderList()); ?><br>
                         <?php } ?>
                     </div>
                 <?php } ?>
@@ -104,7 +105,7 @@ try {
                         </strong><br>
 
                         <?php if ($fixedGame->hasTrophies()) { ?>
-                            <a href="unobtainable.php?status=0&amp;trophy=<?= $fixedGame->getTrophyIdQuery(); ?>">Obtainable</a>: <?= Html::escape($fixedGame->getTrophyIdList()); ?><br>
+                            <a href="unobtainable.php?status=<?= TrophyMetaStatus::Obtainable->value ?>&amp;trophy=<?= $fixedGame->getTrophyIdQuery(); ?>">Obtainable</a>: <?= Html::escape($fixedGame->getTrophyIdList()); ?><br>
                         <?php } ?>
                     </div>
                 <?php } ?>

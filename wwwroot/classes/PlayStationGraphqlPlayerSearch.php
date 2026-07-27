@@ -32,13 +32,10 @@ final class PlayStationGraphqlPlayerSearch
 
     private const int GRAPHQL_PAGE_SIZE = 20;
 
-    private object $client;
-
-    private int $resultLimit;
-
-    public function __construct(object $client, int $resultLimit = 50)
-    {
-        $this->client = $client;
+    public function __construct(
+        private object $client,
+        private int $resultLimit = 50,
+    ) {
         $this->resultLimit = max(1, $resultLimit);
     }
 

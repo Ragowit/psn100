@@ -51,8 +51,9 @@ final class CronJobRunner
     private function increaseMemoryLimitIfNeeded(): void
     {
         $currentLimit = ini_get('memory_limit');
+        $normalizedLimit = is_string($currentLimit) ? trim($currentLimit) : '';
 
-        if ($currentLimit === false || trim($currentLimit) === '' || trim($currentLimit) === '-1') {
+        if ($currentLimit === false || $normalizedLimit === '' || $normalizedLimit === '-1') {
             return;
         }
 
