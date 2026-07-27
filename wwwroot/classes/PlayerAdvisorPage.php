@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerStatus.php';
 
-final class PlayerAdvisorPage
+class PlayerAdvisorPage
 {
     private PlayerAdvisorFilter $filter;
 
