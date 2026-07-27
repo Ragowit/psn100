@@ -9,10 +9,13 @@ final readonly class PsnpPlusFixedGame
      */
     private array $trophyIds;
 
+    /**
+     * @param int[] $trophyIds
+     */
     public function __construct(
-        private int $gameId,
-        private string $gameName,
-        array $trophyIds
+        final private int $gameId,
+        final private string $gameName,
+        array $trophyIds,
     ) {
         $this->trophyIds = array_map(intval(...), $trophyIds);
     }

@@ -40,6 +40,7 @@ final readonly class GameLeaderboardFilter extends GamePlayerFilter
         return clone($this, ['page' => max($page, 1)]);
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;

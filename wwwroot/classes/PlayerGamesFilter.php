@@ -145,6 +145,7 @@ final readonly class PlayerGamesFilter
         return $this->limit;
     }
 
+    #[\NoDiscard]
     public function getOffset(): int
     {
         return ($this->page - 1) * $this->limit;
@@ -153,6 +154,7 @@ final readonly class PlayerGamesFilter
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         $parameters = [];

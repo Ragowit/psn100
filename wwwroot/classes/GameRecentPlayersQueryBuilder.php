@@ -51,7 +51,7 @@ final readonly class GameRecentPlayersQueryBuilder
     private int $limit;
 
     public function __construct(
-        private GamePlayerFilter $filter,
+        final private GamePlayerFilter $filter,
         int $limit,
     ) {
         $this->limit = max(1, $limit);

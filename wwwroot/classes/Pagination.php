@@ -25,6 +25,7 @@ final readonly class Pagination
     /**
      * @return list<PaginationItem>
      */
+    #[\NoDiscard]
     public function buildItems(): array
     {
         $items = [];

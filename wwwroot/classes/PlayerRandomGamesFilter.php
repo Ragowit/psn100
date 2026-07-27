@@ -11,7 +11,7 @@ final readonly class PlayerRandomGamesFilter
      * @param array<string, bool> $selectedPlatforms
      */
     private function __construct(
-        private array $selectedPlatforms,
+        final private array $selectedPlatforms,
     ) {
     }
 

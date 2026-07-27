@@ -49,6 +49,7 @@ readonly class GamePlayerFilter
     /**
      * @return array{country?: string, avatar?: string}
      */
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         $parameters = [];

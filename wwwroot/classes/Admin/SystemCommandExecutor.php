@@ -43,12 +43,9 @@ final class SystemCommandExecutor implements CommandExecutorInterface
 
     private function buildCommandString(array $command): string
     {
-        $escapedParts = array_map(
-            escapeshellarg(...),
-            $command
-        );
-
-        return implode(' ', $escapedParts);
+        return $command
+            |> (fn (array $parts): array => array_map(escapeshellarg(...), $parts))
+            |> (fn (array $escapedParts): string => implode(' ', $escapedParts));
     }
 
     private function combineOutput(?string $stdout, ?string $stderr): string

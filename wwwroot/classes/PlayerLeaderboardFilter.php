@@ -34,6 +34,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;
@@ -43,6 +44,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
      * @return array{country?: string, avatar?: string}
      */
     #[\Override]
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         return parent::getFilterParameters();

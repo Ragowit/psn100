@@ -52,6 +52,7 @@ final readonly class PlayerAdvisorFilter
         return clone($this, ['page' => max($page, 1)]);
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;
@@ -88,6 +89,7 @@ final readonly class PlayerAdvisorFilter
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         $parameters = [];

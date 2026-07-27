@@ -6,7 +6,7 @@ require_once '../classes/Admin/PossibleCheaterPage.php';
 require_once '../classes/Admin/PossibleCheaterService.php';
 
 $possibleCheaterService = new PossibleCheaterService($database);
-$possibleCheaterPage = new PossibleCheaterPage($possibleCheaterService);
+$possibleCheaterPage = PossibleCheaterPage::fromService($possibleCheaterService);
 $possibleCheaterReport = $possibleCheaterPage->getReport();
 ?>
 <!doctype html>

@@ -28,13 +28,12 @@ final class ChangelogService
 
     private static function filteredChangeTypesSql(): string
     {
-        return '(' . implode(
-            ', ',
-            array_map(
+        return self::filteredChangeTypes()
+            |> (fn (array $types): array => array_map(
                 static fn (string $type): string => "'" . $type . "'",
-                self::filteredChangeTypes()
-            )
-        ) . ')';
+                $types,
+            ))
+            |> (fn (array $quotedTypes): string => '(' . implode(', ', $quotedTypes) . ')');
     }
 
     public function getTotalChangeCount(): int

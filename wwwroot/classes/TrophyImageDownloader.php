@@ -15,9 +15,9 @@ final readonly class TrophyImageDownloader
     public const string PLACEHOLDER_FILENAME = '.png';
 
     public function __construct(
-        private readonly ImageHashCalculator $imageHashCalculator,
-        private readonly ?\Closure $logger = null,
-        private readonly ?\Closure $remoteFileFetcher = null,
+        final private ImageHashCalculator $imageHashCalculator,
+        final private ?\Closure $logger = null,
+        final private ?\Closure $remoteFileFetcher = null,
     ) {
     }
 

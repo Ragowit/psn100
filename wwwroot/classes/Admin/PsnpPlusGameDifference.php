@@ -31,10 +31,10 @@ final readonly class PsnpPlusGameDifference
      * @param int[] $obtainableTrophyIds
      */
     public function __construct(
-        private int $gameId,
-        private string $gameName,
-        private string $npCommunicationId,
-        private int $psnprofilesId,
+        final private int $gameId,
+        final private string $gameName,
+        final private string $npCommunicationId,
+        final private int $psnprofilesId,
         array $unobtainableOrders,
         array $unobtainableTrophyIds,
         array $obtainableOrders,

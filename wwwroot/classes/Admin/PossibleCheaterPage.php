@@ -7,11 +7,14 @@ require_once __DIR__ . '/PossibleCheaterService.php';
 
 final readonly class PossibleCheaterPage
 {
-    private PossibleCheaterReport $report;
-
-    public function __construct(PossibleCheaterService $service)
+    private function __construct(final private PossibleCheaterReport $report)
     {
-        $this->report = $service->createReport();
+    }
+
+    #[\NoDiscard]
+    public static function fromService(PossibleCheaterService $service): self
+    {
+        return new self($service->createReport());
     }
 
     public function getReport(): PossibleCheaterReport

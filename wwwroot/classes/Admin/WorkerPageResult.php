@@ -12,7 +12,7 @@ final readonly class WorkerPageResult
     /**
      * @var list<Worker>
      */
-    private readonly array $workers;
+    private array $workers;
 
     /**
      * @param list<Worker> $workers
@@ -20,11 +20,11 @@ final readonly class WorkerPageResult
      */
     public function __construct(
         array $workers,
-        private readonly ?string $successMessage,
-        private readonly ?string $errorMessage,
-        private readonly array $sortLinks,
-        private readonly WorkerSortField $sortField,
-        private readonly WorkerSortDirection $sortDirection,
+        final private ?string $successMessage,
+        final private ?string $errorMessage,
+        final private array $sortLinks,
+        final private WorkerSortField $sortField,
+        final private WorkerSortDirection $sortDirection,
     ) {
         $this->workers = array_values($workers);
     }

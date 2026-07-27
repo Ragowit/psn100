@@ -16,7 +16,7 @@ final readonly class ChangelogDateGroup
      */
     public function __construct(
         final private string $dateLabel,
-        array $entries
+        array $entries,
     ) {
         $this->entries = array_values($entries);
     }

@@ -31,6 +31,7 @@ final readonly class TrophyListFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;
@@ -39,6 +40,7 @@ final readonly class TrophyListFilter
     /**
      * @return array<string, int>
      */
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         return [];
