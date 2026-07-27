@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/classes/GameRecentPlayersPageContext.php';
 
 $pageContext = GameRecentPlayersPageContext::fromGlobals(
@@ -42,10 +44,10 @@ require_once("header.php");
 
             <div class="col-6 text-center">
                 <div class="btn-group">
-                    <a class="btn btn-outline-primary" href="/game/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Trophies</a>
-                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Leaderboard</a>
-                    <a class="btn btn-primary active" href="/game-recent-players/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">Recent Players</a>
-                    <a class="btn btn-outline-primary" href="/game-history/<?= htmlspecialchars($gameSlug . $encodedGamePlayer, ENT_QUOTES, 'UTF-8'); ?>">History</a>
+                    <a class="btn btn-outline-primary" href="/game/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Trophies</a>
+                    <a class="btn btn-outline-primary" href="/game-leaderboard/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Leaderboard</a>
+                    <a class="btn btn-primary active" href="/game-recent-players/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">Recent Players</a>
+                    <a class="btn btn-outline-primary" href="/game-history/<?= Html::escape($gameSlug . $encodedGamePlayer); ?>">History</a>
                 </div>
             </div>
 
@@ -83,12 +85,12 @@ require_once("header.php");
                                         <div class="hstack gap-3">
                                             <div>
                                                 <a href="?<?= http_build_query($paramsAvatar); ?>">
-                                                    <img src="/img/avatar/<?= htmlspecialchars($recentPlayer->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="" height="50" width="50" />
+                                                    <img src="/img/avatar/<?= Html::escape($recentPlayer->getAvatarUrl()); ?>" alt="" height="50" width="50" />
                                                 </a>
                                             </div>
 
                                             <div>
-                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $gameSlug; ?>/<?= rawurlencode($recentPlayer->getOnlineId()); ?>"><?= htmlspecialchars($recentPlayer->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
+                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= $gameSlug; ?>/<?= rawurlencode($recentPlayer->getOnlineId()); ?>"><?= Html::escape($recentPlayer->getOnlineId()); ?></a>
                                                 <?php if ($recentPlayer->hasHiddenTrophies()) { ?>
                                                     <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>
                                                 <?php } ?>
@@ -96,7 +98,7 @@ require_once("header.php");
 
                                             <div class="ms-auto">
                                                 <a href="?<?= http_build_query($paramsCountry); ?>">
-                                                    <img src="/img/country/<?= htmlspecialchars($recentPlayer->getCountryCode(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                                    <img src="/img/country/<?= Html::escape($recentPlayer->getCountryCode()); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
                                                 </a>
                                             </div>
                                         </div>
@@ -105,7 +107,7 @@ require_once("header.php");
                                     <td class="align-middle text-center" style="white-space: nowrap; width: 5rem;">
                                         <span
                                             class="js-recent-player-date"
-                                            data-timestamp="<?= htmlspecialchars($recentPlayer->getLastKnownDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-timestamp="<?= Html::escape($recentPlayer->getLastKnownDate()); ?>"
                                             data-line-break="1"
                                         ></span>
                                     </td>

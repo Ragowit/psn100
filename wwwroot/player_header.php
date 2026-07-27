@@ -28,14 +28,14 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
         <div class="hstack gap-3 bg-body-tertiary p-3 rounded">
             <!-- Avatar -->
             <div>
-                <img src="/img/avatar/<?= htmlspecialchars((string) $player['avatar_url'], ENT_QUOTES, 'UTF-8'); ?>" alt="" height="100" width="100" />
+                <img src="/img/avatar/<?= Html::escape((string) $player['avatar_url']); ?>" alt="" height="100" width="100" />
             </div>
 
             <!-- Online ID and About Me -->
             <div>
                 <figure>
                     <blockquote class="blockquote">
-                        <h1><?= htmlspecialchars((string) $player['online_id'], ENT_QUOTES, 'UTF-8'); ?></h1>
+                        <h1><?= Html::escape((string) $player['online_id']); ?></h1>
                     </blockquote>
                     <?php
                     $aboutMe = $playerHeaderViewModel->getAboutMe();
@@ -53,7 +53,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
             <!-- Country -->
             <div class="ms-auto">
                 <?php $countryName = Html::escape($playerHeaderViewModel->getCountryName()); ?>
-                <img src="/img/country/<?= htmlspecialchars($playerHeaderViewModel->getCountryCode(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                <img src="/img/country/<?= Html::escape($playerHeaderViewModel->getCountryCode()); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
             </div>
         </div>
     </div>
@@ -94,7 +94,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                 <small>Last Updated: <span
                     class="js-localized-date"
                     <?php if ($playerHeaderViewModel->hasLastUpdatedDate()) { ?>
-                    data-timestamp="<?= htmlspecialchars($playerHeaderViewModel->getLastUpdatedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                    data-timestamp="<?= Html::escape($playerHeaderViewModel->getLastUpdatedDate()); ?>"
                     <?php } ?>
                 ></span></small>
             </div>
@@ -199,12 +199,12 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                             <?php } ?>
 
                             <div class="w-50">
-                                <?= htmlspecialchars($rank->getLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                                <?= Html::escape($rank->getLabel()); ?><br>
                                 <?php if ($rank->isAvailable()) { ?>
                                     <h3>
                                         <?php $rankUrl = $rank->getUrl(); ?>
                                         <?php if ($rankUrl !== null) { ?>
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($rankUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= $rank->getRank(); ?></a>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape($rankUrl); ?>"><?= $rank->getRank(); ?></a>
                                         <?php } else { ?>
                                             <?= $rank->getRank(); ?>
                                         <?php } ?>
@@ -212,11 +212,11 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                                         <?php if ($change !== null && $change->shouldDisplay()) { ?>
                                             <?php $displayText = $change->getDisplayText(); ?>
                                             <?php if ($change->isNew()) { ?>
-                                                <span class="fs-6"><?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <span class="fs-6"><?= Html::escape($displayText); ?></span>
                                             <?php } else { ?>
                                                 <?php $color = $change->getColor(); ?>
-                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;"<?php } ?>>
-                                                    <?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?>
+                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= Html::escape($color); ?>;"<?php } ?>>
+                                                    <?= Html::escape($displayText); ?>
                                                 </span>
                                             <?php } ?>
                                         <?php } ?>
@@ -264,12 +264,12 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                             <?php } ?>
 
                             <div class="w-50">
-                                <?= htmlspecialchars($rank->getLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                                <?= Html::escape($rank->getLabel()); ?><br>
                                 <?php if ($rank->isAvailable()) { ?>
                                     <h3>
                                         <?php $rankUrl = $rank->getUrl(); ?>
                                         <?php if ($rankUrl !== null) { ?>
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($rankUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= $rank->getRank(); ?></a>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape($rankUrl); ?>"><?= $rank->getRank(); ?></a>
                                         <?php } else { ?>
                                             <?= $rank->getRank(); ?>
                                         <?php } ?>
@@ -277,11 +277,11 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                                         <?php if ($change !== null && $change->shouldDisplay()) { ?>
                                             <?php $displayText = $change->getDisplayText(); ?>
                                             <?php if ($change->isNew()) { ?>
-                                                <span class="fs-6"><?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <span class="fs-6"><?= Html::escape($displayText); ?></span>
                                             <?php } else { ?>
                                                 <?php $color = $change->getColor(); ?>
-                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;"<?php } ?>>
-                                                    <?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?>
+                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= Html::escape($color); ?>;"<?php } ?>>
+                                                    <?= Html::escape($displayText); ?>
                                                 </span>
                                             <?php } ?>
                                         <?php } ?>
@@ -329,12 +329,12 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                             <?php } ?>
 
                             <div class="w-50">
-                                <?= htmlspecialchars($rank->getLabel(), ENT_QUOTES, 'UTF-8'); ?><br>
+                                <?= Html::escape($rank->getLabel()); ?><br>
                                 <?php if ($rank->isAvailable()) { ?>
                                     <h3>
                                         <?php $rankUrl = $rank->getUrl(); ?>
                                         <?php if ($rankUrl !== null) { ?>
-                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($rankUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= $rank->getRank(); ?></a>
+                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape($rankUrl); ?>"><?= $rank->getRank(); ?></a>
                                         <?php } else { ?>
                                             <?= $rank->getRank(); ?>
                                         <?php } ?>
@@ -342,11 +342,11 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                                         <?php if ($change !== null && $change->shouldDisplay()) { ?>
                                             <?php $displayText = $change->getDisplayText(); ?>
                                             <?php if ($change->isNew()) { ?>
-                                                <span class="fs-6"><?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <span class="fs-6"><?= Html::escape($displayText); ?></span>
                                             <?php } else { ?>
                                                 <?php $color = $change->getColor(); ?>
-                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;"<?php } ?>>
-                                                    <?= htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8'); ?>
+                                                <span class="fs-6"<?php if ($color !== null) { ?> style="color: <?= Html::escape($color); ?>;"<?php } ?>>
+                                                    <?= Html::escape($displayText); ?>
                                                 </span>
                                             <?php } ?>
                                         <?php } ?>

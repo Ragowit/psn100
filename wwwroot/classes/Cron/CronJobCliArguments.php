@@ -20,7 +20,10 @@ final readonly class CronJobCliArguments
         $arguments = [];
 
         if (count($argv) > 1) {
-            parse_str(implode('&', array_slice($argv, 1)), $arguments);
+            parse_str(
+                array_slice($argv, 1) |> (fn (array $args): string => implode('&', $args)),
+                $arguments
+            );
 
             if (!is_array($arguments)) {
                 $arguments = [];

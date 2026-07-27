@@ -49,7 +49,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= htmlspecialchars(PlayerUrlBuilder::playerReportPath($player['online_id']), ENT_QUOTES, 'UTF-8'); ?>">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= Html::escape(PlayerUrlBuilder::playerReportPath($player['online_id'])); ?>">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
@@ -81,8 +81,8 @@ require_once("header.php");
                             <div>
                                 <div class="card">
                                     <div class="d-flex justify-content-center align-items-center" style="min-height: 11.5rem;">
-                                        <a href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
-                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= htmlspecialchars($game->getIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($game->getName()); ?>">
+                                        <a href="/game/<?= Html::escape($gameLink); ?>">
+                                            <img class="card-img object-fit-scale" style="height: 11.5rem;" src="/img/title/<?= Html::escape($game->getIconUrl()); ?>" alt="<?= Html::escape($game->getName()); ?>">
                                             <div class="card-img-overlay d-flex align-items-end p-2">
                                                 <?php
                                                 foreach ($game->getPlatforms() as $platform) {
@@ -102,7 +102,7 @@ require_once("header.php");
 
                             <!-- name -->
                             <div class="text-center">
-                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= Html::escape($gameLink); ?>">
                                     <?= Html::escape($game->getName()); ?>
                                 </a>
                             </div>

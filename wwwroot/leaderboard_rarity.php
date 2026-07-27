@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once 'classes/Leaderboard/RarityLeaderboardPageContext.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
@@ -56,7 +58,7 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
 
                         <tbody>
                             <?php foreach ($rows as $row) { ?>
-                                <tr id="<?= htmlspecialchars($row->getRowId(), ENT_QUOTES, 'UTF-8'); ?>"<?= $row->getRowCssClass() !== '' ? ' class="' . $row->getRowCssClass() . '"' : ''; ?>>
+                                <tr id="<?= Html::escape($row->getRowId()); ?>"<?= $row->getRowCssClass() !== '' ? ' class="' . $row->getRowCssClass() . '"' : ''; ?>>
                                     <th scope="row" class="text-center align-middle">
                                         <?= $row->getRankCellHtml(); ?>
                                     </th>
@@ -64,18 +66,18 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
                                         <div class="hstack gap-3">
                                             <div>
                                                 <a href="?<?= http_build_query($row->getAvatarQueryParameters()); ?>">
-                                                    <img src="/img/avatar/<?= htmlspecialchars($row->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="" height="50" width="50" />
+                                                    <img src="/img/avatar/<?= Html::escape($row->getAvatarUrl()); ?>" alt="" height="50" width="50" />
                                                 </a>
                                             </div>
 
                                             <div>
-                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars(PlayerUrlBuilder::playerPath($row->getOnlineId()), ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($row->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
+                                                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape(PlayerUrlBuilder::playerPath($row->getOnlineId())); ?>"><?= Html::escape($row->getOnlineId()); ?></a>
                                             </div>
 
                                             <div class="ms-auto">
                                                 <a href="?<?= http_build_query($row->getCountryQueryParameters()); ?>">
-                                                    <?php $countryName = htmlspecialchars($row->getCountryName(), ENT_QUOTES, 'UTF-8'); ?>
-                                                    <img src="/img/country/<?= htmlspecialchars($row->getCountryCode(), ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                                    <?php $countryName = Html::escape($row->getCountryName()); ?>
+                                                    <img src="/img/country/<?= Html::escape($row->getCountryCode()); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
                                                 </a>
                                             </div>
                                         </div>

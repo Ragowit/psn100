@@ -8,6 +8,7 @@ require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
 require_once __DIR__ . '/Game/GameHeaderStack.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/MergeNpCommunicationId.php';
 require_once __DIR__ . '/PsnpPlusClient.php';
 require_once __DIR__ . '/Html.php';
 require_once __DIR__ . '/TrophyMetaStatus.php';
@@ -32,7 +33,7 @@ class GameHeaderService
         }
 
         $stacks = [];
-        if ($npCommunicationId !== '' && str_starts_with($npCommunicationId, 'MERGE')) {
+        if ($npCommunicationId !== '' && MergeNpCommunicationId::matches($npCommunicationId)) {
             $stacks = $this->fetchStacks($npCommunicationId);
         }
 
@@ -200,7 +201,7 @@ class GameHeaderService
         }
 
         $npCommunicationId = $game->getNpCommunicationId();
-        if ($npCommunicationId !== '' && str_starts_with($npCommunicationId, 'MERGE')) {
+        if ($npCommunicationId !== '' && MergeNpCommunicationId::matches($npCommunicationId)) {
             $childPsnprofilesIds = $this->findChildPsnprofilesIds($npCommunicationId);
             foreach ($childPsnprofilesIds as $childPsnprofilesId) {
                 $note = $this->getPsnpPlusNote($childPsnprofilesId);

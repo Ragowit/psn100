@@ -14,7 +14,7 @@ $navigationItems = $navigation->getItems();
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin</title>
     </head>
     <body>
@@ -27,15 +27,15 @@ $navigationItems = $navigation->getItems();
                 <?php
                 $authenticatedUsername = AdminBootstrap::createAuthService()->getAuthenticatedUsername();
                 if ($authenticatedUsername !== null) {
-                    echo ' (' . htmlspecialchars($authenticatedUsername, ENT_QUOTES, 'UTF-8') . ')';
+                    echo ' (' . Html::escape($authenticatedUsername) . ')';
                 }
                 ?>
             </p>
             <ul>
                 <?php foreach ($navigationItems as $item) { ?>
                     <li>
-                        <a href="<?= htmlspecialchars($item->getHref(), ENT_QUOTES, 'UTF-8'); ?>">
-                            <?= htmlspecialchars($item->getLabel(), ENT_QUOTES, 'UTF-8'); ?>
+                        <a href="<?= Html::escape($item->getHref()); ?>">
+                            <?= Html::escape($item->getLabel()); ?>
                         </a>
                     </li>
                 <?php } ?>

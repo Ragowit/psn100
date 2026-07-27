@@ -15,24 +15,24 @@ $possibleCheaterReport = $possibleCheaterPage->getReport();
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin ~ Possible Cheaters</title>
     </head>
     <body>
         <div class="p-4">
             <a href="/admin/">Back</a><br><br>
             <?php foreach ($possibleCheaterReport->getGeneralCheaters() as $possibleCheater): ?>
-                <a href="<?= htmlspecialchars($possibleCheater->getProfileUrl($utility), ENT_QUOTES, 'UTF-8'); ?>">
-                    <?= htmlspecialchars($possibleCheater->getPlayerName(), ENT_QUOTES, 'UTF-8'); ?> (<?= $possibleCheater->getAccountId(); ?>)
+                <a href="<?= Html::escape($possibleCheater->getProfileUrl($utility)); ?>">
+                    <?= Html::escape($possibleCheater->getPlayerName()); ?> (<?= $possibleCheater->getAccountId(); ?>)
                 </a><br>
             <?php endforeach; ?>
 
             <?php foreach ($possibleCheaterReport->getSections() as $section): ?>
                 <br>
-                <?= htmlspecialchars($section->getTitle(), ENT_QUOTES, 'UTF-8'); ?><br>
+                <?= Html::escape($section->getTitle()); ?><br>
                 <?php foreach ($section->getEntries() as $entry): ?>
-                    <a href="<?= htmlspecialchars($entry->getUrl(), ENT_QUOTES, 'UTF-8'); ?>">
-                        <?= htmlspecialchars($entry->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?> (<?= $entry->getAccountId(); ?>)
+                    <a href="<?= Html::escape($entry->getUrl()); ?>">
+                        <?= Html::escape($entry->getOnlineId()); ?> (<?= $entry->getAccountId(); ?>)
                     </a><br>
                 <?php endforeach; ?>
             <?php endforeach; ?>

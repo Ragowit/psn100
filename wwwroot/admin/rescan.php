@@ -12,11 +12,11 @@ require_once '../classes/StaticAsset.php';
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <?php AdminBootstrap::renderCsrfMetaTag(); ?>
         <title>Admin ~ Rescan Game</title>
-        <link rel="stylesheet" href="<?= htmlspecialchars(StaticAsset::url('/css/admin-rescan.css'), ENT_QUOTES, 'UTF-8'); ?>">
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/admin-rescan-form.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <link rel="stylesheet" href="<?= Html::escape(StaticAsset::url('/css/admin-rescan.css')); ?>">
+        <script src="<?= Html::escape(StaticAsset::url('/js/admin-rescan-form.js')); ?>" defer></script>
     </head>
     <body>
         <div class="container py-4">

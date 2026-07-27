@@ -52,7 +52,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= htmlspecialchars(PlayerUrlBuilder::playerReportPath($playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= Html::escape(PlayerUrlBuilder::playerReportPath($playerOnlineId)); ?>">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
@@ -85,7 +85,7 @@ require_once("header.php");
                                 <th scope="col" class="text-center">Game</th>
                                 <th scope="col">Trophy</th>
                                 <th scope="col" class="text-center">Platform</th>
-                                <th scope="col" class="text-center"><?= htmlspecialchars($rarityColumnLabel, ENT_QUOTES, 'UTF-8'); ?></th>
+                                <th scope="col" class="text-center"><?= Html::escape($rarityColumnLabel); ?></th>
                                 <th scope="col" class="text-center">Type</th>
                             </tr>
                         </thead>
@@ -106,36 +106,36 @@ require_once("header.php");
                                     ?>
                                     <tr>
                                         <td scope="row" class="text-center align-middle">
-                                            <a href="/game/<?= htmlspecialchars($gameLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a href="/game/<?= Html::escape($gameLink); ?>">
                                                 <?php $gameName = Html::escape($trophy->getGameName()); ?>
-                                                <img src="/img/title/<?= htmlspecialchars($trophy->getGameIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= $gameName; ?>" title="<?= $gameName; ?>" style="width: 10rem;" />
+                                                <img src="/img/title/<?= Html::escape($trophy->getGameIconUrl()); ?>" alt="<?= $gameName; ?>" title="<?= $gameName; ?>" style="width: 10rem;" />
                                             </a>
                                         </td>
                                         <td class="align-middle">
                                             <div class="hstack gap-3">
                                                 <div class="d-flex align-items-center justify-content-center">
-                                                    <a href="/trophy/<?= htmlspecialchars($trophyLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <a href="/trophy/<?= Html::escape($trophyLink); ?>">
                                                         <?php $trophyName = Html::escape($trophy->getTrophyName()); ?>
-                                                        <img src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconUrl(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= $trophyName; ?>" title="<?= $trophyName; ?>" style="width: 5rem;" />
+                                                        <img src="/img/trophy/<?= Html::escape($trophy->getTrophyIconUrl()); ?>" alt="<?= $trophyName; ?>" title="<?= $trophyName; ?>" style="width: 5rem;" />
                                                     </a>
                                                 </div>
 
                                                 <div>
                                                     <div class="vstack">
                                                         <span>
-                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= htmlspecialchars($trophyLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/trophy/<?= Html::escape($trophyLink); ?>">
                                                                 <b><?= $trophyName; ?></b>
                                                             </a>
                                                         </span>
                                                         <?= nl2br(Html::escape($trophy->getTrophyDetail())); ?>
                                                         <?php
                                                         if ($progressLabel !== null) {
-                                                            echo '<br><b>' . htmlspecialchars($progressLabel, ENT_QUOTES, 'UTF-8') . '</b>';
+                                                            echo '<br><b>' . Html::escape($progressLabel) . '</b>';
                                                         }
 
                                                         if ($trophy->hasReward()) {
                                                             $rewardName = Html::escape((string) $trophy->getRewardName());
-                                                            $rewardImage = htmlspecialchars((string) $trophy->getRewardImageUrl(), ENT_QUOTES, 'UTF-8');
+                                                            $rewardImage = Html::escape((string) $trophy->getRewardImageUrl());
                                                             echo "<br>Reward: <a href='/img/reward/{$rewardImage}'>{$rewardName}</a>";
                                                         }
                                                         ?>

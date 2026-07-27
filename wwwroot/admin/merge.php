@@ -25,10 +25,10 @@ $message = $requestHandler->handle($_POST ?? []);
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <?php AdminBootstrap::renderCsrfMetaTag(); ?>
         <title>Admin ~ Merge Games</title>
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/admin-merge-form.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <script src="<?= Html::escape(StaticAsset::url('/js/admin-merge-form.js')); ?>" defer></script>
     </head>
     <body>
         <div class="p-4">

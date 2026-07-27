@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/MergeNpCommunicationId.php';
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/TrophyMergeMethod.php';
 require_once __DIR__ . '/TrophyMergeService.php';
@@ -12,23 +13,14 @@ require_once __DIR__ . '/Cron/PlayerScanNewTitleMergeHandler.php';
 
 final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeHandler
 {
-    private readonly PDO $database;
-
-    private readonly TrophyMergeService $trophyMergeService;
-
-    private readonly TrophySetComparator $trophySetComparator;
-
     /** @var array<string, list<array{group_id:string, order_id:int, name:string, detail:string}>> */
     private array $trophyCache = [];
 
     public function __construct(
-        PDO $database,
-        TrophyMergeService $trophyMergeService,
-        ?TrophySetComparator $trophySetComparator = null,
+        private readonly PDO $database,
+        private readonly TrophyMergeService $trophyMergeService,
+        private readonly TrophySetComparator $trophySetComparator = new TrophySetComparator(),
     ) {
-        $this->database = $database;
-        $this->trophyMergeService = $trophyMergeService;
-        $this->trophySetComparator = $trophySetComparator ?? new TrophySetComparator();
     }
 
     /**
@@ -229,7 +221,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
                 'np_communication_id' => $npCommunicationId,
                 'platform' => $platform,
                 'platforms' => $this->parsePlatforms($platform),
-                'is_clone' => str_starts_with($npCommunicationId, 'MERGE'),
+                'is_clone' => MergeNpCommunicationId::matches($npCommunicationId),
                 'matches_by_order' => $comparison['orderMatches'],
                 'status' => (int) ($row['status'] ?? 0),
             ];
@@ -265,7 +257,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
         ];
 
         foreach ($matches as $match) {
-            if (str_starts_with($match['np_communication_id'], 'MERGE')) {
+            if (MergeNpCommunicationId::matches($match['np_communication_id'])) {
                 continue;
             }
 
@@ -292,7 +284,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
      */
     private function selectGameToClone(array $games): ?array
     {
-        $isEligible = static fn (array $game): bool => !str_starts_with($game['np_communication_id'], 'MERGE')
+        $isEligible = static fn (array $game): bool => !MergeNpCommunicationId::matches($game['np_communication_id'])
             && $game['status'] !== GameAvailabilityStatus::MERGED->value;
 
         return array_find(

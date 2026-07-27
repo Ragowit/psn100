@@ -32,10 +32,10 @@ if ($pageResult->getTotalPages() > 1) {
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link href="<?= htmlspecialchars(BootstrapAssets::stylesheetUrl(), ENT_QUOTES, 'UTF-8'); ?>" rel="stylesheet">
+        <link href="<?= Html::escape(BootstrapAssets::stylesheetUrl()); ?>" rel="stylesheet">
         <title>Admin ~ Logs</title>
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/localized-date-formatter.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-        <script src="<?= htmlspecialchars(StaticAsset::url('/js/admin-log-bulk-actions.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <script src="<?= Html::escape(StaticAsset::url('/js/localized-date-formatter.js')); ?>" defer></script>
+        <script src="<?= Html::escape(StaticAsset::url('/js/admin-log-bulk-actions.js')); ?>" defer></script>
     </head>
     <body>
         <div class="container py-4">
@@ -45,13 +45,13 @@ if ($pageResult->getTotalPages() > 1) {
 
             <?php if ($pageResult->getSuccessMessage() !== null) { ?>
                 <div class="alert alert-success" role="alert">
-                    <?= htmlspecialchars($pageResult->getSuccessMessage(), ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($pageResult->getSuccessMessage()); ?>
                 </div>
             <?php } ?>
 
             <?php if ($pageResult->getErrorMessage() !== null) { ?>
                 <div class="alert alert-danger" role="alert">
-                    <?= htmlspecialchars($pageResult->getErrorMessage(), ENT_QUOTES, 'UTF-8'); ?>
+                    <?= Html::escape($pageResult->getErrorMessage()); ?>
                 </div>
             <?php } ?>
 
@@ -91,15 +91,15 @@ if ($pageResult->getTotalPages() > 1) {
                                                 type="checkbox"
                                                 class="form-check-input js-log-checkbox"
                                                 name="delete_ids[]"
-                                                value="<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?>"
-                                                aria-label="Select log entry #<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                value="<?= Html::escape((string) $entry->getId()); ?>"
+                                                aria-label="Select log entry #<?= Html::escape((string) $entry->getId()); ?>"
                                             >
                                         </td>
-                                        <td class="text-nowrap">#<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td class="text-nowrap">#<?= Html::escape((string) $entry->getId()); ?></td>
                                         <td>
                                             <?php $time = $entry->getTime(); ?>
-                                            <time class="small text-body-secondary js-localized-datetime" datetime="<?= htmlspecialchars($time->format(DATE_ATOM), ENT_QUOTES, 'UTF-8'); ?>">
-                                                <?= htmlspecialchars($time->format('Y-m-d H:i:s'), ENT_QUOTES, 'UTF-8'); ?>
+                                            <time class="small text-body-secondary js-localized-datetime" datetime="<?= Html::escape($time->format(DATE_ATOM)); ?>">
+                                                <?= Html::escape($time->format('Y-m-d H:i:s')); ?>
                                             </time>
                                         </td>
                                         <td><?= $entry->getFormattedMessage(); ?></td>
@@ -107,7 +107,7 @@ if ($pageResult->getTotalPages() > 1) {
                                             <button
                                                 type="submit"
                                                 name="delete_id"
-                                                value="<?= htmlspecialchars((string) $entry->getId(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                value="<?= Html::escape((string) $entry->getId()); ?>"
                                                 class="btn btn-sm btn-danger js-log-delete-button"
                                             >
                                                 Delete

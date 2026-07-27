@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once __DIR__ . '/init.php';
 require_once __DIR__ . '/classes/AboutPageService.php';
 require_once __DIR__ . '/classes/AboutPageContext.php';
@@ -105,8 +107,8 @@ require_once("header.php");
                                         $progress = $player->getProgress();
                                         $level = $player->getLevel();
                                         $encodedOnlineId = rawurlencode($onlineId);
-                                        $escapedOnlineId = htmlspecialchars($onlineId, ENT_QUOTES, 'UTF-8');
-                                        $escapedAvatarUrl = htmlspecialchars($player->getAvatarUrl(), ENT_QUOTES, 'UTF-8');
+                                        $escapedOnlineId = Html::escape($onlineId);
+                                        $escapedAvatarUrl = Html::escape($player->getAvatarUrl());
                                         $lastUpdateElementId = 'lastUpdate' . preg_replace('/[^a-zA-Z0-9_-]/', '', $onlineId);
                                         ?>
                                         <tr>
@@ -126,7 +128,7 @@ require_once("header.php");
                                                 <?php
                                                 if ($statusLabel !== null) {
                                                     echo '<span style="color: #9d9d9d;">('
-                                                        . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8')
+                                                        . Html::escape($statusLabel)
                                                         . ')</span>';
                                                 } elseif ($player->isNew()) {
                                                     echo '(New!)';
@@ -138,7 +140,7 @@ require_once("header.php");
                                             <td
                                                 class="align-middle text-center js-localized-date"
                                                 <?php if ($lastUpdatedDate !== null) { ?>
-                                                data-timestamp="<?= htmlspecialchars($lastUpdatedDate, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-timestamp="<?= Html::escape($lastUpdatedDate); ?>"
                                                 data-time-style="medium"
                                                 <?php } ?>
                                             ></td>
@@ -155,7 +157,7 @@ require_once("header.php");
                                                     </div>
 
                                                     <div class="ms-auto">
-                                                        <img src="/img/country/<?= htmlspecialchars($countryCode, ENT_QUOTES, 'UTF-8'); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
+                                                        <img src="/img/country/<?= Html::escape($countryCode); ?>.svg" alt="<?= $countryName; ?>" title="<?= $countryName; ?>" height="50" width="50" style="border-radius: 50%;" />
                                                     </div>
                                                 </div>
                                             </td>
@@ -183,7 +185,7 @@ require_once("header.php");
                     </div>
                 </div>
                 <?php if ($scanLogPlayersData !== []) { ?>
-                    <link rel="stylesheet" href="<?= htmlspecialchars(StaticAsset::url('/css/scan-log-renderer.css'), ENT_QUOTES, 'UTF-8'); ?>">
+                    <link rel="stylesheet" href="<?= Html::escape(StaticAsset::url('/css/scan-log-renderer.css')); ?>">
                     <?php
                     $scanLogConfig = [
                         'scanLogData' => $scanLogPlayersData,
@@ -195,7 +197,7 @@ require_once("header.php");
                     ];
                     ?>
                     <script type="application/json" id="scan-log-config"><?= json_encode($scanLogConfig, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
-                    <script src="<?= htmlspecialchars(StaticAsset::url('/js/scan-log-renderer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+                    <script src="<?= Html::escape(StaticAsset::url('/js/scan-log-renderer.js')); ?>" defer></script>
                 <?php } ?>
             </div>
         </div>

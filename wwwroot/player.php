@@ -50,7 +50,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= htmlspecialchars(PlayerUrlBuilder::playerReportPath($playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= Html::escape(PlayerUrlBuilder::playerReportPath($playerOnlineId)); ?>">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
@@ -146,18 +146,18 @@ require_once("header.php");
                                     <tr<?= $rowAttributes; ?>>
                                         <td scope="row">
                                             <div class="hstack gap-3">
-                                                <img src="/img/title/<?= htmlspecialchars($playerGame->getIconFileName(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= Html::escape($playerGame->getName()); ?>" width="100" />
+                                                <img src="/img/title/<?= Html::escape($playerGame->getIconFileName()); ?>" alt="<?= Html::escape($playerGame->getName()); ?>" width="100" />
 
                                                 <div class="vstack">
                                                     <span>
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars(PlayerUrlBuilder::gamePlayerPath($playerGame->getId() . '-' . $utility->slugify($playerGame->getName()), $playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape(PlayerUrlBuilder::gamePlayerPath($playerGame->getId() . '-' . $utility->slugify($playerGame->getName()), $playerOnlineId)); ?>">
                                                             <?= Html::escape($playerGame->getName()); ?>
                                                         </a>
                                                     </span>
 
                                                     <span
                                                         class="js-localized-date"
-                                                        data-timestamp="<?= htmlspecialchars($playerGame->getLastUpdatedDate(), ENT_QUOTES, 'UTF-8'); ?>"
+                                                        data-timestamp="<?= Html::escape($playerGame->getLastUpdatedDate()); ?>"
                                                     ></span>
 
                                                     <?php

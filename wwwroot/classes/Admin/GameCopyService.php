@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../ChangelogEntry.php';
 require_once __DIR__ . '/../TrophyRarityName.php';
+require_once __DIR__ . '/../MergeNpCommunicationId.php';
 require_once __DIR__ . '/MergeTrophyCopier.php';
 require_once __DIR__ . '/MergeTrophyGroupCopier.php';
 require_once __DIR__ . '/TrophyGroupConflictResolver.php';
@@ -198,14 +199,14 @@ class GameCopyService
 
     private function ensureChildIsNotMergeTitle(string $childNpCommunicationId): void
     {
-        if (str_starts_with($childNpCommunicationId, 'MERGE')) {
+        if (MergeNpCommunicationId::matches($childNpCommunicationId)) {
             throw new RuntimeException("Child can't be a merge title.");
         }
     }
 
     private function ensureParentIsMergeTitle(string $parentNpCommunicationId): void
     {
-        if (!str_starts_with($parentNpCommunicationId, 'MERGE')) {
+        if (!MergeNpCommunicationId::matches($parentNpCommunicationId)) {
             throw new RuntimeException('Parent must be a merge title.');
         }
     }

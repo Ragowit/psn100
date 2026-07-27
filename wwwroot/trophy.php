@@ -64,14 +64,14 @@ require_once("header.php");
         <div class="col-12">
             <div class="card rounded-4">
                 <div class="d-flex justify-content-center align-items-center">
-                    <img fetchpriority="high" class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= htmlspecialchars($trophy->getGameIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getGameName(), ENT_QUOTES, 'UTF-8'); ?>" />
+                    <img fetchpriority="high" class="card-img object-fit-cover rounded-4" style="height: 25rem;" src="/img/title/<?= Html::escape($trophy->getGameIconPath()); ?>" alt="<?= Html::escape($trophy->getGameName()); ?>" title="<?= Html::escape($trophy->getGameName()); ?>" />
                     <div class="card-img-overlay d-flex align-items-end">
                         <div class="bg-body-tertiary p-3 rounded w-100">
                             <div class="row">
                                 <div class="col-7">
                                     <div class="hstack gap-3">
                                         <div>
-                                            <img fetchpriority="high" src="/img/trophy/<?= htmlspecialchars($trophy->getTrophyIconPath(), ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" title="<?= htmlspecialchars($trophy->getName(), ENT_QUOTES, 'UTF-8'); ?>" style="width: 5rem;" />
+                                            <img fetchpriority="high" src="/img/trophy/<?= Html::escape($trophy->getTrophyIconPath()); ?>" alt="<?= Html::escape($trophy->getName()); ?>" title="<?= Html::escape($trophy->getName()); ?>" style="width: 5rem;" />
                                         </div>
 
                                         <div>
@@ -90,7 +90,7 @@ require_once("header.php");
                                                                 class="badge rounded-pill text-bg-success js-localized-date"
                                                                 <?php if ($earnedDate !== null) { ?>
                                                                 data-prefix="Earned "
-                                                                data-timestamp="<?= htmlspecialchars($earnedDate, ENT_QUOTES, 'UTF-8'); ?>"
+                                                                data-timestamp="<?= Html::escape($earnedDate); ?>"
                                                                 <?php } else { ?>
                                                                 data-fallback="Earned"
                                                                 <?php } ?>
@@ -108,7 +108,7 @@ require_once("header.php");
                                                     if ($progressTargetValue !== null) {
                                                         $progress = $playerTrophy?->getProgress();
                                                         ?>
-                                                        <br><b><?= htmlspecialchars($progress ?? '0', ENT_QUOTES, 'UTF-8'); ?>/<?= htmlspecialchars($progressTargetValue, ENT_QUOTES, 'UTF-8'); ?></b>
+                                                        <br><b><?= Html::escape($progress ?? '0'); ?>/<?= Html::escape($progressTargetValue); ?></b>
                                                         <?php
                                                     }
 
@@ -116,7 +116,7 @@ require_once("header.php");
                                                     $rewardImageUrl = $trophy->getRewardImageUrl();
                                                     if ($rewardName !== null && $rewardImageUrl !== null) {
                                                         ?>
-                                                        <br>Reward: <a href="/img/reward/<?= htmlspecialchars($rewardImageUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($rewardName, ENT_QUOTES, 'UTF-8'); ?></a>
+                                                        <br>Reward: <a href="/img/reward/<?= Html::escape($rewardImageUrl); ?>"><?= Html::escape($rewardName); ?></a>
                                                         <?php
                                                     }
                                                     ?>
@@ -130,7 +130,7 @@ require_once("header.php");
                                                         }
                                                         ?>
 
-                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= htmlspecialchars($trophy->getGameLink($utility, $playerOnlineId), ENT_QUOTES, 'UTF-8'); ?>"><?= Html::escape($trophy->getGameName()); ?></a>
+                                                        <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="<?= Html::escape($trophy->getGameLink($utility, $playerOnlineId)); ?>"><?= Html::escape($trophy->getGameName()); ?></a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -204,8 +204,8 @@ require_once("header.php");
                                             </th>
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
-                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($trophy->getGameSlug($utility), ENT_QUOTES, 'UTF-8'); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
+                                                    <img src="/img/avatar/<?= Html::escape($result->getAvatarUrl()); ?>" loading="lazy" alt="<?= Html::escape($result->getOnlineId()); ?>" height="60" />
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= Html::escape($trophy->getGameSlug($utility)); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= Html::escape($result->getOnlineId()); ?></a>
                                                     <?php
                                                     if ($result->hasHiddenTrophies()) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
@@ -213,7 +213,7 @@ require_once("header.php");
                                                     ?>
                                                 </div>
                                             </td>
-                                            <td class="align-middle text-center js-localized-date" style="white-space: nowrap;" data-timestamp="<?= htmlspecialchars($result->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>" data-line-break="1">
+                                            <td class="align-middle text-center js-localized-date" style="white-space: nowrap;" data-timestamp="<?= Html::escape($result->getEarnedDate()); ?>" data-line-break="1">
                                             </td>
                                         </tr>
                                         <?php
@@ -257,8 +257,8 @@ require_once("header.php");
                                             </th>
                                             <td class="w-100">
                                                 <div class="hstack gap-3">
-                                                    <img src="/img/avatar/<?= htmlspecialchars($result->getAvatarUrl(), ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" alt="<?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?>" height="60" />
-                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= htmlspecialchars($trophy->getGameSlug($utility), ENT_QUOTES, 'UTF-8'); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= htmlspecialchars($result->getOnlineId(), ENT_QUOTES, 'UTF-8'); ?></a>
+                                                    <img src="/img/avatar/<?= Html::escape($result->getAvatarUrl()); ?>" loading="lazy" alt="<?= Html::escape($result->getOnlineId()); ?>" height="60" />
+                                                    <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="/game/<?= Html::escape($trophy->getGameSlug($utility)); ?>/<?= rawurlencode($result->getOnlineId()); ?>"><?= Html::escape($result->getOnlineId()); ?></a>
                                                     <?php
                                                     if ($result->hasHiddenTrophies()) {
                                                         echo " <span style='color: #9d9d9d; font-weight: bold;'>(H)</span>";
@@ -266,7 +266,7 @@ require_once("header.php");
                                                     ?>
                                                 </div>
                                             </td>
-                                            <td class="align-middle text-center js-localized-date" style="white-space: nowrap;" data-timestamp="<?= htmlspecialchars($result->getEarnedDate(), ENT_QUOTES, 'UTF-8'); ?>" data-line-break="1">
+                                            <td class="align-middle text-center js-localized-date" style="white-space: nowrap;" data-timestamp="<?= Html::escape($result->getEarnedDate()); ?>" data-line-break="1">
                                             </td>
                                         </tr>
                                         <?php

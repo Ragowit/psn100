@@ -9,6 +9,7 @@ declare(strict_types=1);
  */
 final readonly class TrophyTitleNameFormatter
 {
+    #[\NoDiscard]
     public function format(string $name): string
     {
         return $name
@@ -16,6 +17,7 @@ final readonly class TrophyTitleNameFormatter
             |> $this->toApaTitleCase(...);
     }
 
+    #[\NoDiscard]
     public function sanitize(string $name): string
     {
         $name = trim($name);

@@ -141,6 +141,26 @@ final class Php85IdiomEnumsTest extends TestCase
             ['PS3', 'PS4', 'PSVR', 'PSVITA'],
             Platform::legacyTrophyServiceLabels()
         );
+        $this->assertSame(
+            [
+                'pc' => 'PC',
+                'ps3' => 'PS3',
+                'ps4' => 'PS4',
+                'ps5' => 'PS5',
+                'psvita' => 'PSVITA',
+                'psvr' => 'PSVR',
+                'psvr2' => 'PSVR2',
+            ],
+            Platform::labelsByValue()
+        );
+    }
+
+    public function testTrophyTypeSqlFieldOrderUsesPipeFriendlyCases(): void
+    {
+        $this->assertSame(
+            "FIELD(t.type, 'bronze', 'silver', 'gold', 'platinum')",
+            TrophyType::sqlFieldOrder('t.type')
+        );
     }
 
     public function testHistoryDiffTokenStateHelpers(): void

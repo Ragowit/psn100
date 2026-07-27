@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/NestedDatabaseTransactionRunner.php';
 require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/MergeNpCommunicationId.php';
 
 /**
  * Clones a trophy title into a new MERGE_* title, including catalog rows and history.
@@ -26,7 +27,7 @@ final class TrophyTitleCloneService
     {
         $childNpCommunicationId = $this->getGameNpCommunicationId($childGameId);
 
-        if (str_starts_with($childNpCommunicationId, 'MERGE')) {
+        if (MergeNpCommunicationId::matches($childNpCommunicationId)) {
             throw new InvalidArgumentException("Can't clone an already cloned game.");
         }
 
@@ -50,7 +51,7 @@ SQL
 
         $gameId = (int) $gameId;
 
-        $cloneNpCommunicationId = 'MERGE_' . str_pad((string) $gameId, 6, '0', STR_PAD_LEFT);
+        $cloneNpCommunicationId = MergeNpCommunicationId::forGameId($gameId);
 
         $cloneGameId = null;
 

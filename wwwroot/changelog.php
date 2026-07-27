@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/classes/Html.php';
+
 require_once 'classes/ChangelogPage.php';
 
 $changelogPage = ChangelogPage::create($database, $utility, $_GET ?? []);
@@ -28,7 +30,7 @@ require_once("header.php");
                             <?php $firstEntry = array_first($entries); ?>
                             <time
                                 class="js-localized-changelog-date"
-                                datetime="<?= htmlspecialchars($firstEntry->getIsoTimestamp(), ENT_QUOTES, 'UTF-8'); ?>"
+                                datetime="<?= Html::escape($firstEntry->getIsoTimestamp()); ?>"
                             >
                                 <?= $dateGroup->getDateLabel(); ?>
                             </time>
@@ -42,7 +44,7 @@ require_once("header.php");
                     <div class="col-4 col-sm-2 col-md-1 text-nowrap small text-body-secondary">
                         <time
                             class="js-localized-changelog-time"
-                            datetime="<?= htmlspecialchars($presenter->getIsoTimestamp(), ENT_QUOTES, 'UTF-8'); ?>"
+                            datetime="<?= Html::escape($presenter->getIsoTimestamp()); ?>"
                         >
                             <?= $presenter->getTimeLabel(); ?>
                         </time>

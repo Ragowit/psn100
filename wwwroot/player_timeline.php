@@ -44,7 +44,7 @@ require_once("header.php");
     <div class="p-3">
         <div class="row">
             <div class="col-12 col-lg-3">
-                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= htmlspecialchars(PlayerUrlBuilder::playerReportPath($player['online_id']), ENT_QUOTES, 'UTF-8'); ?>">Report Player</a>
+                <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover text-danger" href="<?= Html::escape(PlayerUrlBuilder::playerReportPath($player['online_id'])); ?>">Report Player</a>
             </div>
 
             <div class="col-12 col-lg-6 mb-3 text-center">
