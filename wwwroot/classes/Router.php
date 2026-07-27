@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/RouteResult.php';
+require_once __DIR__ . '/RouteName.php';
 require_once __DIR__ . '/GameRepository.php';
 require_once __DIR__ . '/TrophyRepository.php';
 require_once __DIR__ . '/PlayerRepository.php';
@@ -30,16 +31,16 @@ class Router
     ) {
         $this->defaultHandler = new HomeRouteHandler('home.php');
         $this->routeHandlers = [
-            'about' => new SimpleRouteHandler('about.php', '/about/'),
-            'avatar' => new SimpleRouteHandler('avatars.php', '/avatar/'),
-            'changelog' => new SimpleRouteHandler('changelog.php', '/changelog/'),
-            'game' => new GameRouteHandler($gameRepository, 'game.php', '/game/', 'games.php'),
-            'game-history' => new GameRouteHandler($gameRepository, 'game_history.php', '/game/'),
-            'game-leaderboard' => new GameRouteHandler($gameRepository, 'game_leaderboard.php', '/game/'),
-            'game-recent-players' => new GameRouteHandler($gameRepository, 'game_recent_players.php', '/game/'),
-            'leaderboard' => new LeaderboardRouteHandler(),
-            'player' => new PlayerRouteHandler($playerRepository),
-            'trophy' => new TrophyRouteHandler($trophyRepository),
+            RouteName::About->value => new SimpleRouteHandler('about.php', '/about/'),
+            RouteName::Avatar->value => new SimpleRouteHandler('avatars.php', '/avatar/'),
+            RouteName::Changelog->value => new SimpleRouteHandler('changelog.php', '/changelog/'),
+            RouteName::Game->value => new GameRouteHandler($gameRepository, 'game.php', '/game/', 'games.php'),
+            RouteName::GameHistory->value => new GameRouteHandler($gameRepository, 'game_history.php', '/game/'),
+            RouteName::GameLeaderboard->value => new GameRouteHandler($gameRepository, 'game_leaderboard.php', '/game/'),
+            RouteName::GameRecentPlayers->value => new GameRouteHandler($gameRepository, 'game_recent_players.php', '/game/'),
+            RouteName::Leaderboard->value => new LeaderboardRouteHandler(),
+            RouteName::Player->value => new PlayerRouteHandler($playerRepository),
+            RouteName::Trophy->value => new TrophyRouteHandler($trophyRepository),
         ];
     }
 
@@ -54,15 +55,18 @@ class Router
         }
 
         $segments = explode('/', $normalizedPath);
-        $route = array_first($segments);
-        $routeSegments = array_slice($segments, 1);
+        $routeName = RouteName::tryFrom(array_first($segments) ?? '');
 
-        $handler = $this->routeHandlers[$route] ?? null;
+        if ($routeName === null) {
+            return RouteResult::notFound();
+        }
+
+        $handler = $this->routeHandlers[$routeName->value] ?? null;
 
         if (!$handler instanceof RouteHandlerInterface) {
             return RouteResult::notFound();
         }
 
-        return $handler->handle($routeSegments);
+        return $handler->handle(array_slice($segments, 1));
     }
 }

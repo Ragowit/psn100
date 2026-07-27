@@ -8,7 +8,7 @@ require_once __DIR__ . '/RequestParameter.php';
 
 final readonly class GameTrophyFilter
 {
-    private function __construct(private bool $unearnedOnly)
+    private function __construct(final private bool $unearnedOnly)
     {
     }
 

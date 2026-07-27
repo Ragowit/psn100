@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../PlayerRepository.php';
+require_once __DIR__ . '/../PlayerRouteView.php';
 require_once __DIR__ . '/../PlayerUrlBuilder.php';
 require_once __DIR__ . '/RouteHandlerInterface.php';
 
@@ -38,22 +39,21 @@ final readonly class PlayerRouteHandler implements RouteHandlerInterface
             return RouteResult::redirect('/player/');
         }
 
-        $view = (string) (array_first($segments) ?? '');
-
+        $viewSegment = (string) (array_first($segments) ?? '');
         $variables = [
             'accountId' => $accountId,
             'player' => $player,
             'onlineId' => $onlineId,
         ];
 
-        return match ($view) {
-            '' => RouteResult::include('player.php', $variables),
-            'advisor' => RouteResult::include('player_advisor.php', $variables),
-            'log' => RouteResult::include('player_log.php', $variables),
-            'random' => RouteResult::include('player_random.php', $variables),
-            'report' => RouteResult::include('player_report.php', $variables),
-            'timeline' => RouteResult::include('player_timeline.php', $variables),
-            default => RouteResult::redirect(PlayerUrlBuilder::playerPath($onlineId)),
-        };
+        if ($viewSegment === '') {
+            return RouteResult::include('player.php', $variables);
+        }
+
+        $view = PlayerRouteView::tryFrom($viewSegment);
+
+        return $view !== null
+            ? RouteResult::include($view->includeFile(), $variables)
+            : RouteResult::redirect(PlayerUrlBuilder::playerPath($onlineId));
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/MaintenancePage.php';
 require_once __DIR__ . '/Html.php';
 
-final class MaintenancePageRenderer
+final readonly class MaintenancePageRenderer
 {
     public function render(MaintenancePage $page): string
     {
@@ -52,29 +52,29 @@ HTML
             return '';
         }
 
-        $links = array_map(
-            function (MaintenancePageStylesheet $stylesheet): string {
-                $attributes = [
-                    sprintf('rel="%s"', $this->escape($stylesheet->getRel())),
-                    sprintf('href="%s"', $this->escape($stylesheet->getHref())),
-                ];
+        return $stylesheets
+            |> (fn (array $sheets): array => array_map($this->renderStylesheetLink(...), $sheets))
+            |> (fn (array $links): string => implode("\n", $links));
+    }
 
-                $integrity = $stylesheet->getIntegrity();
-                if ($integrity !== null && $integrity !== '') {
-                    $attributes[] = sprintf('integrity="%s"', $this->escape($integrity));
-                }
+    private function renderStylesheetLink(MaintenancePageStylesheet $stylesheet): string
+    {
+        $attributes = [
+            sprintf('rel="%s"', $this->escape($stylesheet->getRel())),
+            sprintf('href="%s"', $this->escape($stylesheet->getHref())),
+        ];
 
-                $crossorigin = $stylesheet->getCrossorigin();
-                if ($crossorigin !== null && $crossorigin !== '') {
-                    $attributes[] = sprintf('crossorigin="%s"', $this->escape($crossorigin));
-                }
+        $integrity = $stylesheet->getIntegrity();
+        if ($integrity !== null && $integrity !== '') {
+            $attributes[] = sprintf('integrity="%s"', $this->escape($integrity));
+        }
 
-                return '        <link ' . implode(' ', $attributes) . '>';
-            },
-            $stylesheets
-        );
+        $crossorigin = $stylesheet->getCrossorigin();
+        if ($crossorigin !== null && $crossorigin !== '') {
+            $attributes[] = sprintf('crossorigin="%s"', $this->escape($crossorigin));
+        }
 
-        return implode("\n", $links);
+        return '        <link ' . implode(' ', $attributes) . '>';
     }
 
     private function escape(string $value): string

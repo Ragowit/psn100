@@ -109,12 +109,12 @@ SQL
         $this->updateParentPlatform($parentNpCommunicationId, $childNpCommunicationId);
     }
 
-    public function logChange(string $changeType, int $param1, int $param2): void
+    public function logChange(ChangelogEntryType $changeType, int $param1, int $param2): void
     {
         $query = $this->database->prepare(
             'INSERT INTO `psn100_change` (`change_type`, `param_1`, `param_2`) VALUES (:change_type, :param_1, :param_2)'
         );
-        $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
+        $query->bindValue(':change_type', $changeType->value, PDO::PARAM_STR);
         $query->bindValue(':param_1', $param1, PDO::PARAM_INT);
         $query->bindValue(':param_2', $param2, PDO::PARAM_INT);
         $query->execute();

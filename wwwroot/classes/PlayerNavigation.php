@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerNavigationSection.php';
+require_once __DIR__ . '/PlayerRouteView.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
 
 final readonly class PlayerNavigation
@@ -35,17 +36,17 @@ final readonly class PlayerNavigation
             ),
             new PlayerNavigationLink(
                 'Timeline',
-                $playerPath . '/timeline',
+                $playerPath . '/' . PlayerRouteView::Timeline->value,
                 $this->isActive(PlayerNavigationSection::TIMELINE)
             ),
             new PlayerNavigationLink(
                 'Log',
-                $playerPath . '/log',
+                $playerPath . '/' . PlayerRouteView::Log->value,
                 $this->isActive(PlayerNavigationSection::LOG)
             ),
             new PlayerNavigationLink(
                 'Trophy Advisor',
-                $playerPath . '/advisor',
+                $playerPath . '/' . PlayerRouteView::Advisor->value,
                 $this->isActive(PlayerNavigationSection::TROPHY_ADVISOR)
             ),
             new PlayerNavigationLink(
@@ -55,7 +56,7 @@ final readonly class PlayerNavigation
             ),
             new PlayerNavigationLink(
                 'Random Games',
-                $playerPath . '/random',
+                $playerPath . '/' . PlayerRouteView::Random->value,
                 $this->isActive(PlayerNavigationSection::RANDOM)
             ),
         ];

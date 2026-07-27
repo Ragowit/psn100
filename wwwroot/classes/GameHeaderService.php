@@ -8,6 +8,7 @@ require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
 require_once __DIR__ . '/Game/GameHeaderStack.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
+require_once __DIR__ . '/GameRegion.php';
 require_once __DIR__ . '/MergeNpCommunicationId.php';
 require_once __DIR__ . '/PsnpPlusClient.php';
 require_once __DIR__ . '/Html.php';
@@ -246,27 +247,22 @@ class GameHeaderService
     private function findChildPsnprofilesIds(string $parentNpCommunicationId): array
     {
         $query = $this->database->prepare(
-            <<<'SQL'
-            SELECT
-                psnprofiles_id
-            FROM
-                trophy_title_meta
-            WHERE
-                parent_np_communication_id = :parent_np_communication_id
-                AND psnprofiles_id IS NOT NULL
-            ORDER BY
-                CASE
-                    WHEN region = 'NA' THEN 0
-                    WHEN region = 'EU' THEN 1
-                    WHEN region IS NULL THEN 2
-                    WHEN region = 'HK' THEN 3
-                    WHEN region = 'JP' THEN 4
-                    WHEN region = 'AS' THEN 5
-                    ELSE 6
-                END,
-                region,
-                psnprofiles_id
-            SQL
+            sprintf(
+                <<<'SQL'
+                SELECT
+                    psnprofiles_id
+                FROM
+                    trophy_title_meta
+                WHERE
+                    parent_np_communication_id = :parent_np_communication_id
+                    AND psnprofiles_id IS NOT NULL
+                ORDER BY
+                    %s,
+                    region,
+                    psnprofiles_id
+                SQL,
+                GameRegion::sqlSortCaseExpression('region')
+            )
         );
         $query->bindValue(':parent_np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
         $query->execute();

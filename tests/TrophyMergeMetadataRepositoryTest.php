@@ -71,13 +71,13 @@ final class TrophyMergeMetadataRepositoryTest extends TestCase
 
     public function testLogChangeInsertsChangelogRow(): void
     {
-        $this->repository->logChange('GAME_MERGE', 10, 20);
+        $this->repository->logChange(ChangelogEntryType::GAME_MERGE, 10, 20);
 
         $row = $this->database
             ->query("SELECT change_type, param_1, param_2 FROM psn100_change")
             ->fetch(PDO::FETCH_ASSOC);
 
-        $this->assertSame('GAME_MERGE', $row['change_type']);
+        $this->assertSame(ChangelogEntryType::GAME_MERGE->value, $row['change_type']);
         $this->assertSame(10, (int) $row['param_1']);
         $this->assertSame(20, (int) $row['param_2']);
     }

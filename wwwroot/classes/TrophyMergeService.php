@@ -160,7 +160,7 @@ class TrophyMergeService
             $this->metadataRepository()->updateParentRelationship($childNpCommunicationId, $parentNpCommunicationId);
             $this->notifyProgress($progressListener, 96, 'Parent relationship updated.');
             $this->notifyProgress($progressListener, 98, 'Logging merge activity…');
-            $this->metadataRepository()->logChange('GAME_MERGE', $childGameId, $parentGameId);
+            $this->metadataRepository()->logChange(ChangelogEntryType::GAME_MERGE, $childGameId, $parentGameId);
             $this->notifyProgress($progressListener, 100, 'Merge process complete.');
         });
 
