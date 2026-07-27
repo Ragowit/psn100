@@ -6,7 +6,9 @@ require_once __DIR__ . '/GamePlayerFilter.php';
 
 final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
 {
-    public function __construct(?string $country, ?string $avatar, final private int $page)
+    private int $page;
+
+    public function __construct(?string $country, ?string $avatar, int $page)
     {
         parent::__construct($country, $avatar);
         $this->page = max($page, 1);

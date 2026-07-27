@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 final readonly class GameLeaderboardFilter extends GamePlayerFilter
 {
-    public function __construct(?string $country, ?string $avatar, final private int $page)
+    private int $page;
+
+    public function __construct(?string $country, ?string $avatar, int $page)
     {
         parent::__construct($country, $avatar);
         $this->page = max($page, 1);

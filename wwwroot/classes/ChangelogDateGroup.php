@@ -7,12 +7,16 @@ require_once __DIR__ . '/ChangelogEntryPresenter.php';
 final readonly class ChangelogDateGroup
 {
     /**
+     * @var ChangelogEntryPresenter[]
+     */
+    private array $entries;
+
+    /**
      * @param ChangelogEntryPresenter[] $entries
      */
     public function __construct(
         final private string $dateLabel,
-        /** @var ChangelogEntryPresenter[] */
-        final private array $entries,
+        array $entries,
     ) {
         $this->entries = array_values($entries);
     }

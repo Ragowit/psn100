@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 final readonly class TrophyListFilter
 {
-    public function __construct(final private int $page)
+    private int $page;
+
+    public function __construct(int $page)
     {
         $this->page = max($page, 1);
     }

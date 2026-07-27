@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 final readonly class PageMetaData
 {
+    private ?string $title;
+    private ?string $description;
+    private ?string $image;
+    private ?string $url;
+
     public function __construct(
-        final private ?string $title = null,
-        final private ?string $description = null,
-        final private ?string $image = null,
-        final private ?string $url = null,
+        ?string $title = null,
+        ?string $description = null,
+        ?string $image = null,
+        ?string $url = null,
     ) {
         $this->title = self::normalize($title);
         $this->description = self::normalize($description);

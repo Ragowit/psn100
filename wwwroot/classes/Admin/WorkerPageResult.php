@@ -10,12 +10,16 @@ require_once __DIR__ . '/WorkerSortDirection.php';
 final readonly class WorkerPageResult
 {
     /**
+     * @var list<Worker>
+     */
+    private array $workers;
+
+    /**
      * @param list<Worker> $workers
      * @param array<string, WorkerPageSortLink> $sortLinks
      */
     public function __construct(
-        /** @var list<Worker> */
-        final private array $workers,
+        array $workers,
         final private ?string $successMessage,
         final private ?string $errorMessage,
         final private array $sortLinks,

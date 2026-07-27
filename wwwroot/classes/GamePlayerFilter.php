@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 readonly class GamePlayerFilter
 {
-    public function __construct(
-        private ?string $country,
-        private ?string $avatar,
-    ) {
+    private ?string $country;
+
+    private ?string $avatar;
+
+    public function __construct(?string $country, ?string $avatar)
+    {
         $this->country = self::normalizeOptionalString($country);
         $this->avatar = self::normalizeOptionalString($avatar);
     }
