@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 final readonly class GameLeaderboardFilter extends GamePlayerFilter
 {
-    private int $page;
-
-    public function __construct(?string $country, ?string $avatar, int $page)
+    public function __construct(?string $country, ?string $avatar, final private int $page)
     {
         parent::__construct($country, $avatar);
         $this->page = max($page, 1);
@@ -40,6 +38,7 @@ final readonly class GameLeaderboardFilter extends GamePlayerFilter
         return clone($this, ['page' => max($page, 1)]);
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;

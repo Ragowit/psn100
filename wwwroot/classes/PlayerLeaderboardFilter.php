@@ -6,9 +6,7 @@ require_once __DIR__ . '/GamePlayerFilter.php';
 
 final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
 {
-    private int $page;
-
-    public function __construct(?string $country, ?string $avatar, int $page)
+    public function __construct(?string $country, ?string $avatar, final private int $page)
     {
         parent::__construct($country, $avatar);
         $this->page = max($page, 1);
@@ -34,6 +32,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;
@@ -43,6 +42,7 @@ final readonly class PlayerLeaderboardFilter extends GamePlayerFilter
      * @return array{country?: string, avatar?: string}
      */
     #[\Override]
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         return parent::getFilterParameters();

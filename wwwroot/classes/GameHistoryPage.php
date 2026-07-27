@@ -55,10 +55,10 @@ final class GameHistoryPage
     private ?array $historyEntries = null;
 
     public function __construct(
-        private GameService $gameService,
-        private GameHistoryService $historyService,
-        private GameHeaderService $gameHeaderService,
-        private Utility $utility,
+        private readonly GameService $gameService,
+        private readonly GameHistoryService $historyService,
+        private readonly GameHeaderService $gameHeaderService,
+        private readonly Utility $utility,
         int $gameId,
         ?GameHistoryChangeFilter $historyChangeFilter = null
     ) {

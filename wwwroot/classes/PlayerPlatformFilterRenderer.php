@@ -52,12 +52,9 @@ HTML;
 
     public function renderOptionItems(PlayerPlatformFilterOptions $options): string
     {
-        $optionItems = array_map(
-            $this->renderOption(...),
-            $options->getOptions()
-        );
-
-        return implode(PHP_EOL, $optionItems);
+        return $options->getOptions()
+            |> (fn (array $optionList): array => array_map($this->renderOption(...), $optionList))
+            |> (fn (array $optionItems): string => implode(PHP_EOL, $optionItems));
     }
 
     private function renderOption(PlayerPlatformFilterOption $option): string

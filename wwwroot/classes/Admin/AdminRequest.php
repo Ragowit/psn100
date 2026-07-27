@@ -13,7 +13,7 @@ final readonly class AdminRequest
      */
     public function __construct(
         string|HttpMethod $method,
-        private array $postData,
+        final private array $postData,
     ) {
         $this->method = $method instanceof HttpMethod ? $method : HttpMethod::fromMixed($method);
     }

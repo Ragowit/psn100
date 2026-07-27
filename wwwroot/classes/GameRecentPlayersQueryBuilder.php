@@ -48,11 +48,9 @@ final readonly class GameRecentPlayersQueryBuilder
         LIMIT :limit
     SQL;
 
-    private int $limit;
-
     public function __construct(
-        private GamePlayerFilter $filter,
-        int $limit,
+        final private GamePlayerFilter $filter,
+        final private int $limit,
     ) {
         $this->limit = max(1, $limit);
     }

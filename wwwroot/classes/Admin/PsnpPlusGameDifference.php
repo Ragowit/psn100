@@ -5,40 +5,24 @@ declare(strict_types=1);
 final readonly class PsnpPlusGameDifference
 {
     /**
-     * @var int[]
-     */
-    private array $unobtainableOrders;
-
-    /**
-     * @var int[]
-     */
-    private array $unobtainableTrophyIds;
-
-    /**
-     * @var int[]
-     */
-    private array $obtainableOrders;
-
-    /**
-     * @var int[]
-     */
-    private array $obtainableTrophyIds;
-
-    /**
      * @param int[] $unobtainableOrders
      * @param int[] $unobtainableTrophyIds
      * @param int[] $obtainableOrders
      * @param int[] $obtainableTrophyIds
      */
     public function __construct(
-        private int $gameId,
-        private string $gameName,
-        private string $npCommunicationId,
-        private int $psnprofilesId,
-        array $unobtainableOrders,
-        array $unobtainableTrophyIds,
-        array $obtainableOrders,
-        array $obtainableTrophyIds,
+        final private int $gameId,
+        final private string $gameName,
+        final private string $npCommunicationId,
+        final private int $psnprofilesId,
+        /** @var int[] */
+        final private array $unobtainableOrders,
+        /** @var int[] */
+        final private array $unobtainableTrophyIds,
+        /** @var int[] */
+        final private array $obtainableOrders,
+        /** @var int[] */
+        final private array $obtainableTrophyIds,
     ) {
         $this->unobtainableOrders = array_map(intval(...), $unobtainableOrders);
         $this->unobtainableTrophyIds = array_map(intval(...), $unobtainableTrophyIds);

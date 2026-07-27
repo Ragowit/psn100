@@ -53,6 +53,7 @@ final readonly class PlayerLogFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;
@@ -79,6 +80,7 @@ final readonly class PlayerLogFilter
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         $parameters = [];

@@ -6,12 +6,10 @@ require_once __DIR__ . '/PaginationItem.php';
 
 final readonly class Pagination
 {
-    private int $currentPage;
-
-    private int $totalPages;
-
-    public function __construct(int $currentPage, int $totalPages)
-    {
+    public function __construct(
+        final private int $currentPage,
+        final private int $totalPages,
+    ) {
         $this->totalPages = max(1, $totalPages);
         $this->currentPage = min(max(1, $currentPage), $this->totalPages);
     }
@@ -25,6 +23,7 @@ final readonly class Pagination
     /**
      * @return list<PaginationItem>
      */
+    #[\NoDiscard]
     public function buildItems(): array
     {
         $items = [];

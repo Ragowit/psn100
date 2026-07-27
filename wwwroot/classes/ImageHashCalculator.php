@@ -10,7 +10,7 @@ final class ImageHashCalculator
     private const int RGBA_CHANNEL_MAX = 255;
 
     public function __construct(
-        private ImageProcessorInterface $imageProcessor = new GdImageProcessor(),
+        private readonly ImageProcessorInterface $imageProcessor = new GdImageProcessor(),
     ) {
     }
 

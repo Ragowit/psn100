@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 final readonly class TrophyListFilter
 {
-    private int $page;
-
-    public function __construct(int $page)
+    public function __construct(final private int $page)
     {
         $this->page = max($page, 1);
     }
@@ -31,6 +29,7 @@ final readonly class TrophyListFilter
         return $this->page;
     }
 
+    #[\NoDiscard]
     public function getOffset(int $limit): int
     {
         return ($this->page - 1) * $limit;
@@ -39,6 +38,7 @@ final readonly class TrophyListFilter
     /**
      * @return array<string, int>
      */
+    #[\NoDiscard]
     public function getFilterParameters(): array
     {
         return [];

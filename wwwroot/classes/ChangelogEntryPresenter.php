@@ -119,15 +119,15 @@ final readonly class ChangelogEntryPresenter
             return '';
         }
 
-        $badges = array_map(
-            static fn(string $platform): string => sprintf(
-                '<span class="badge rounded-pill text-bg-primary">%s</span>',
-                Html::escape($platform)
-            ),
-            $platforms
-        );
-
-        return implode(' ', $badges);
+        return $platforms
+            |> (fn (array $platformList): array => array_map(
+                static fn (string $platform): string => sprintf(
+                    '<span class="badge rounded-pill text-bg-primary">%s</span>',
+                    Html::escape($platform)
+                ),
+                $platformList,
+            ))
+            |> (fn (array $badges): string => implode(' ', $badges));
     }
 
     private function buildRegionBadge(?string $region): string

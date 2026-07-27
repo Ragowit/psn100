@@ -7,16 +7,19 @@ require_once __DIR__ . '/GameRescanProgressListener.php';
 final class CallableGameRescanProgressListener implements GameRescanProgressListener
 {
     /**
-     * @var \Closure(int, string):void
+     * @param Closure(int, string):void $callback
      */
-    private readonly \Closure $callback;
+    public function __construct(private readonly \Closure $callback)
+    {
+    }
 
     /**
      * @param callable(int, string):void $callback
      */
-    public function __construct(callable $callback)
+    #[\NoDiscard]
+    public static function fromCallable(callable $callback): self
     {
-        $this->callback = $callback(...);
+        return new self($callback(...));
     }
 
     #[\Override]

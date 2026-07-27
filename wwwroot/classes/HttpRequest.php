@@ -17,16 +17,19 @@ readonly class HttpRequest
         return new self($_SERVER ?? []);
     }
 
+    #[\NoDiscard]
     public function getScriptUrl(): ?string
     {
         return $this->getStringServerValue('SCRIPT_URL');
     }
 
+    #[\NoDiscard]
     public function getRequestUri(): ?string
     {
         return $this->getStringServerValue('REQUEST_URI');
     }
 
+    #[\NoDiscard]
     public function getResolvedUri(): string
     {
         $scriptUrl = $this->getScriptUrl();
