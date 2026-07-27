@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Utility
+class Utility
 {
     private const string SLUG_TRANSLITERATOR_RULES = ':: Any-Latin;'
         . ':: NFD;'
