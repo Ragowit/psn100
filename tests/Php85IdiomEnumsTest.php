@@ -17,6 +17,10 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/HistoryIconType.php';
 require_once __DIR__ . '/../wwwroot/classes/HistoryDiffTokenState.php';
 require_once __DIR__ . '/../wwwroot/classes/LeaderboardView.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerRouteView.php';
+require_once __DIR__ . '/../wwwroot/classes/RouteName.php';
+require_once __DIR__ . '/../wwwroot/classes/AvatarSize.php';
+require_once __DIR__ . '/../wwwroot/classes/GameRegion.php';
 require_once __DIR__ . '/../wwwroot/classes/NpServiceName.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterDateOperator.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineEntry.php';
@@ -177,6 +181,45 @@ final class Php85IdiomEnumsTest extends TestCase
         $this->assertSame('leaderboard_rarity.php', LeaderboardView::Rarity->includeFile());
         $this->assertSame('leaderboard_in_game_rarity.php', LeaderboardView::InGameRarity->includeFile());
         $this->assertSame(null, LeaderboardView::tryFrom('unknown'));
+    }
+
+    public function testPlayerRouteViewIncludeFiles(): void
+    {
+        $this->assertSame('player_advisor.php', PlayerRouteView::Advisor->includeFile());
+        $this->assertSame('player_log.php', PlayerRouteView::Log->includeFile());
+        $this->assertSame('player_random.php', PlayerRouteView::Random->includeFile());
+        $this->assertSame('player_report.php', PlayerRouteView::Report->includeFile());
+        $this->assertSame('player_timeline.php', PlayerRouteView::Timeline->includeFile());
+        $this->assertSame(null, PlayerRouteView::tryFrom('unknown'));
+    }
+
+    public function testRouteNameValues(): void
+    {
+        $this->assertSame('game-history', RouteName::GameHistory->value);
+        $this->assertSame('player', RouteName::Player->value);
+        $this->assertSame(RouteName::Trophy, RouteName::tryFrom('trophy'));
+        $this->assertSame(null, RouteName::tryFrom('unknown'));
+    }
+
+    public function testAvatarSizePreferenceOrder(): void
+    {
+        $this->assertSame(
+            [AvatarSize::Xl, AvatarSize::L, AvatarSize::M, AvatarSize::S],
+            AvatarSize::preferenceOrder()
+        );
+        $this->assertSame('xl', AvatarSize::Xl->value);
+    }
+
+    public function testGameRegionSqlSortCaseExpression(): void
+    {
+        $this->assertSame(0, GameRegion::Na->sortRank());
+        $this->assertSame(3, GameRegion::Hk->sortRank());
+
+        $expression = GameRegion::sqlSortCaseExpression('region');
+        $this->assertStringContainsString("WHEN region = 'NA' THEN 0", $expression);
+        $this->assertStringContainsString('WHEN region IS NULL THEN 2', $expression);
+        $this->assertStringContainsString("WHEN region = 'AS' THEN 5", $expression);
+        $this->assertStringContainsString('ELSE 6', $expression);
     }
 
     public function testNpServiceNamePreferForPlatformLabels(): void

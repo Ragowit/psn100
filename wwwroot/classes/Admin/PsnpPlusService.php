@@ -133,7 +133,8 @@ final class PsnpPlusService
 
         $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        return array_map(intval(...), $rows === false ? [] : $rows);
+        return ($rows === false ? [] : $rows)
+            |> (fn (array $values): array => array_map(intval(...), $values));
     }
 
     /**
@@ -193,7 +194,8 @@ final class PsnpPlusService
 
         $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        return array_map(strval(...), $rows === false ? [] : $rows);
+        return ($rows === false ? [] : $rows)
+            |> (fn (array $values): array => array_map(strval(...), $values));
     }
 
     private function findGameByNpCommunicationId(string $npCommunicationId): ?PsnpPlusGame
@@ -224,8 +226,10 @@ final class PsnpPlusService
             return [];
         }
 
-        $zeroBasedOrders = array_map(static fn (int $order): int => $order - 1, $orders);
-        $placeholders = implode(',', array_fill(0, count($zeroBasedOrders), '?'));
+        $zeroBasedOrders = $orders
+            |> (fn (array $values): array => array_map(static fn (int $order): int => $order - 1, $values));
+        $placeholders = $zeroBasedOrders
+            |> (fn (array $values): string => implode(',', array_fill(0, count($values), '?')));
 
         $sql = sprintf(
             'SELECT order_id, id FROM trophy WHERE np_communication_id = ? AND order_id IN (%s)',
@@ -281,6 +285,7 @@ final class PsnpPlusService
 
         $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        return array_map(intval(...), $rows === false ? [] : $rows);
+        return ($rows === false ? [] : $rows)
+            |> (fn (array $values): array => array_map(intval(...), $values));
     }
 }

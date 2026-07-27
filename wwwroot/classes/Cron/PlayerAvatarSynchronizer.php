@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../ImageHashCalculator.php';
+require_once __DIR__ . '/../AvatarSize.php';
 
 /**
  * Downloads PSN profile avatars, deduplicates them via perceptual hash, and caches
@@ -25,8 +26,8 @@ final class PlayerAvatarSynchronizer
         $avatarUrls = $user->avatarUrls();
         $avatarFilename = '';
 
-        foreach (['xl', 'l', 'm', 's'] as $size) {
-            $avatarUrl = $avatarUrls[$size];
+        foreach (AvatarSize::preferenceOrder() as $size) {
+            $avatarUrl = $avatarUrls[$size->value];
 
             $query = $this->database->prepare(
                 'SELECT md5_hash, extension FROM psn100_avatars WHERE avatar_url = :avatar_url'
@@ -73,7 +74,7 @@ final class PlayerAvatarSynchronizer
                     'INSERT INTO psn100_avatars(size, avatar_url, md5_hash, extension)
                     VALUES(:size, :avatar_url, :md5_hash, :extension)'
                 );
-                $query->bindValue(':size', $size, PDO::PARAM_STR);
+                $query->bindValue(':size', $size->value, PDO::PARAM_STR);
                 $query->bindValue(':avatar_url', $avatarUrl, PDO::PARAM_STR);
                 $query->bindValue(':md5_hash', $newPHash, PDO::PARAM_STR);
                 $query->bindValue(':extension', $extension, PDO::PARAM_STR);

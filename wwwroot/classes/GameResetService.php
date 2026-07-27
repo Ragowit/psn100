@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/ChangelogEntry.php';
 require_once __DIR__ . '/GameResetAction.php';
 require_once __DIR__ . '/MergeNpCommunicationId.php';
 
@@ -67,7 +68,7 @@ final readonly class GameResetService
             );
         });
 
-        $this->logChange('GAME_RESET', $gameId);
+        $this->logChange(ChangelogEntryType::GAME_RESET, $gameId);
 
         return sprintf('Game %d was reset.', $gameId);
     }
@@ -109,7 +110,7 @@ final readonly class GameResetService
             );
         });
 
-        $this->logChange('GAME_DELETE', $gameId, $gameName);
+        $this->logChange(ChangelogEntryType::GAME_DELETE, $gameId, $gameName);
 
         return sprintf('Game %d was deleted.', $gameId);
     }
@@ -157,15 +158,15 @@ final readonly class GameResetService
         return $gameName === false ? null : (string) $gameName;
     }
 
-    private function logChange(string $changeType, int $gameId, ?string $extra = null): void
+    private function logChange(ChangelogEntryType $changeType, int $gameId, ?string $extra = null): void
     {
         if ($extra === null) {
             $query = $this->database->prepare('INSERT INTO `psn100_change` (`change_type`, `param_1`) VALUES (:change_type, :param_1)');
-            $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
+            $query->bindValue(':change_type', $changeType->value, PDO::PARAM_STR);
             $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
         } else {
             $query = $this->database->prepare('INSERT INTO `psn100_change` (`change_type`, `param_1`, `extra`) VALUES (:change_type, :param_1, :extra)');
-            $query->bindValue(':change_type', $changeType, PDO::PARAM_STR);
+            $query->bindValue(':change_type', $changeType->value, PDO::PARAM_STR);
             $query->bindValue(':param_1', $gameId, PDO::PARAM_INT);
             $query->bindValue(':extra', $extra, PDO::PARAM_STR);
         }
