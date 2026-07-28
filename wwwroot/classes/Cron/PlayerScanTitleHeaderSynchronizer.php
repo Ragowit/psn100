@@ -6,6 +6,7 @@ require_once __DIR__ . '/../TrophyCatalogSynchronizer.php';
 require_once __DIR__ . '/../TrophyImageDirectories.php';
 require_once __DIR__ . '/../TrophyImageDownloader.php';
 require_once __DIR__ . '/../TrophyTitleNameFormatter.php';
+require_once __DIR__ . '/../Platform.php';
 require_once __DIR__ . '/PlayerScanTitleHeaderSyncResult.php';
 require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
 
@@ -111,7 +112,7 @@ final class PlayerScanTitleHeaderSynchronizer
         foreach ($trophyTitle->platform() as $platform) {
             $platformValue = $platform->value;
             if ($platformValue === 'PSPC') {
-                $platformValue = 'PC';
+                $platformValue = Platform::Pc->label();
             }
 
             $platforms .= $platformValue . ',';

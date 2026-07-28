@@ -121,13 +121,13 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                     <input
                                                         id="refresh-token-<?= Html::escape((string) $worker->getId()); ?>"
                                                         type="password"
-                                                        name="refresh_token"
+                                                        name="<?= Html::escape(WorkerCredentialField::RefreshToken->value); ?>"
                                                         class="form-control form-control-sm"
                                                         placeholder="<?= Html::escape(WorkerCredentialMasker::mask($worker->getRefreshToken())); ?>"
                                                         maxlength="36"
                                                         autocomplete="off"
                                                         data-worker-credential-input
-                                                        data-worker-credential="refresh_token"
+                                                        data-worker-credential="<?= Html::escape(WorkerCredentialField::RefreshToken->value); ?>"
                                                         data-worker-id="<?= Html::escape((string) $worker->getId()); ?>"
                                                     >
                                                     <button
@@ -152,13 +152,13 @@ $scanStartSortIndicator = $scanStartSortLink?->getIndicator() ?? '';
                                                     <input
                                                         id="npsso-<?= Html::escape((string) $worker->getId()); ?>"
                                                         type="password"
-                                                        name="npsso"
+                                                        name="<?= Html::escape(WorkerCredentialField::Npsso->value); ?>"
                                                         class="form-control form-control-sm"
                                                         placeholder="<?= Html::escape(WorkerCredentialMasker::mask($worker->getNpsso())); ?>"
                                                         maxlength="64"
                                                         autocomplete="off"
                                                         data-worker-credential-input
-                                                        data-worker-credential="npsso"
+                                                        data-worker-credential="<?= Html::escape(WorkerCredentialField::Npsso->value); ?>"
                                                         data-worker-id="<?= Html::escape((string) $worker->getId()); ?>"
                                                     >
                                                     <button

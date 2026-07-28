@@ -37,7 +37,7 @@ final readonly class AboutPagePlayer
             isset($row['level']) ? (int) $row['level'] : null,
             isset($row['progress']) ? (string) $row['progress'] : null,
             isset($row['rank_last_week']) ? (int) $row['rank_last_week'] : 0,
-            PlayerStatus::fromValue(isset($row['status']) ? (int) $row['status'] : 0),
+            PlayerStatus::fromValue(isset($row['status']) ? (int) $row['status'] : PlayerStatus::NORMAL->value),
             isset($row['trophy_count_npwr']) ? (int) $row['trophy_count_npwr'] : 0,
             isset($row['trophy_count_sony']) ? (int) $row['trophy_count_sony'] : 0,
             isset($row['ranking']) ? (int) $row['ranking'] : null,

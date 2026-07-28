@@ -54,7 +54,7 @@ final readonly class GameTrophyRow
         $this->iconUrl = (string) ($data['icon_url'] ?? '');
         $this->rarityPercent = (float) ($data['rarity_percent'] ?? 0.0);
         $this->inGameRarityPercent = (float) ($data['in_game_rarity_percent'] ?? 0.0);
-        $this->status = TrophyMetaStatus::fromMixed($data['status'] ?? 0);
+        $this->status = TrophyMetaStatus::fromMixed($data['status'] ?? TrophyMetaStatus::Obtainable->value);
         $this->progressTargetValue = isset($data['progress_target_value'])
             ? (int) $data['progress_target_value']
             : null;

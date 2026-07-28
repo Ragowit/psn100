@@ -10,8 +10,6 @@ require_once __DIR__ . '/PlayerStatus.php';
 
 final readonly class PlayerRandomGamesPage
 {
-    private PlayerRandomGamesFilter $filter;
-
     private PlayerSummary $playerSummary;
 
     /**
@@ -19,18 +17,14 @@ final readonly class PlayerRandomGamesPage
      */
     private array $randomGames;
 
-    private PlayerStatus $playerStatus;
-
     public function __construct(
         PlayerRandomGamesService $randomGamesService,
         PlayerSummaryService $summaryService,
-        PlayerRandomGamesFilter $filter,
+        private PlayerRandomGamesFilter $filter,
         int $accountId,
-        PlayerStatus $playerStatus,
+        private PlayerStatus $playerStatus,
     ) {
-        $this->filter = $filter;
         $this->playerSummary = $summaryService->getSummary($accountId);
-        $this->playerStatus = $playerStatus;
         $this->randomGames = $this->shouldLoadRandomGames()
             ? $randomGamesService->getRandomGames($accountId, $filter)
             : [];

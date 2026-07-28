@@ -103,8 +103,6 @@ class GameCopyService
             )
         SQL;
 
-    private readonly PDO $database;
-
     private readonly TrophyHistoryRecorder $historyRecorder;
 
     private readonly TrophyGroupConflictResolver $groupConflictResolver;
@@ -114,13 +112,12 @@ class GameCopyService
     private readonly MergeTrophyCopier $trophyCopier;
 
     public function __construct(
-        PDO $database,
+        private readonly PDO $database,
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?TrophyGroupConflictResolver $groupConflictResolver = null,
         ?MergeTrophyGroupCopier $groupCopier = null,
         ?MergeTrophyCopier $trophyCopier = null,
     ) {
-        $this->database = $database;
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
         $this->groupConflictResolver = $groupConflictResolver ?? new TrophyGroupConflictResolver();
         $this->groupCopier = $groupCopier ?? new MergeTrophyGroupCopier($database, $this->groupConflictResolver);

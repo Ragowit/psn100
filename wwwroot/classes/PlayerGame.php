@@ -42,7 +42,7 @@ final readonly class PlayerGame
             (string) ($row['name'] ?? ''),
             (string) ($row['icon_url'] ?? ''),
             (string) ($row['platform'] ?? ''),
-            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0)),
+            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
             (int) ($row['max_rarity_points'] ?? 0),
             (int) ($row['max_in_game_rarity_points'] ?? 0),
             (int) ($row['bronze'] ?? 0),

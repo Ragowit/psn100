@@ -33,8 +33,8 @@ $error = $result->getErrorMessage();
                 <input type="number" name="game"><br>
                 Reset or Delete:<br>
                 <select name="status">
-                    <option value="0">Reset</option>
-                    <option value="1">Delete</option>
+                    <option value="<?= Html::escape((string) GameResetAction::RESET->value); ?>">Reset</option>
+                    <option value="<?= Html::escape((string) GameResetAction::DELETE->value); ?>">Delete</option>
                 </select><br><br>
                 <input type="submit" value="Submit">
             </form>

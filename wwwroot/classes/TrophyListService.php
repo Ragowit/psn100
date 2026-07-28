@@ -6,7 +6,7 @@ require_once __DIR__ . '/TrophyListItem.php';
 require_once __DIR__ . '/TrophyMetaStatus.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 
-final class TrophyListService
+final readonly class TrophyListService
 {
     public const int PAGE_SIZE = 50;
 

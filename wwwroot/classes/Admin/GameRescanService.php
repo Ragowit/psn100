@@ -24,9 +24,6 @@ use Tustin\PlayStation\Client;
 
 final class GameRescanService
 {
-    private readonly PDO $database;
-    private readonly TrophyCalculator $trophyCalculator;
-
     private readonly TrophyHistoryRecorder $historyRecorder;
 
     private readonly ImageHashCalculator $imageHashCalculator;
@@ -44,8 +41,8 @@ final class GameRescanService
     private ?\Closure $logListener = null;
 
     public function __construct(
-        PDO $database,
-        TrophyCalculator $trophyCalculator,
+        private readonly PDO $database,
+        private readonly TrophyCalculator $trophyCalculator,
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?PsnGameLookupService $psnGameLookupService = null,
@@ -58,8 +55,6 @@ final class GameRescanService
         ?GameRescanCatalogUpdater $catalogUpdater = null,
     )
     {
-        $this->database = $database;
-        $this->trophyCalculator = $trophyCalculator;
         $this->historyRecorder = $historyRecorder ?? new TrophyHistoryRecorder($database);
         $this->imageHashCalculator = $imageHashCalculator ?? new ImageHashCalculator();
         $this->psnGameLookupService = $psnGameLookupService ?? PsnGameLookupService::fromDatabase($database);

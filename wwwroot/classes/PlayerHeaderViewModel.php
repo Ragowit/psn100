@@ -227,7 +227,7 @@ final readonly class PlayerHeaderViewModel
 
     private function getStatus(): PlayerStatus
     {
-        return PlayerStatus::fromValue((int) ($this->player['status'] ?? 0));
+        return PlayerStatus::fromValue((int) ($this->player['status'] ?? PlayerStatus::NORMAL->value));
     }
 
     private function hasHiddenTrophies(): bool

@@ -14,7 +14,7 @@ $formatter = new LogEntryFormatter($database, $utility);
 $logService = new LogService($database, $formatter);
 $logPage = new LogPage($logService);
 
-$pageResult = $logPage->handle($_GET, $_POST, $_SERVER['REQUEST_METHOD'] ?? 'GET');
+$pageResult = $logPage->handle($_GET, $_POST, $_SERVER['REQUEST_METHOD'] ?? HttpMethod::Get->value);
 
 $pagination = '';
 

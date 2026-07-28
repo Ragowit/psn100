@@ -12,18 +12,15 @@ final readonly class PlayerTimelinePage
 {
     private PlayerSummary $playerSummary;
 
-    private PlayerStatus $playerStatus;
-
     private ?PlayerTimelineData $timelineData;
 
     public function __construct(
         PlayerTimelineService $timelineService,
         PlayerSummaryService $summaryService,
         int $accountId,
-        PlayerStatus $playerStatus,
+        private PlayerStatus $playerStatus,
     ) {
         $this->playerSummary = $summaryService->getSummary($accountId);
-        $this->playerStatus = $playerStatus;
         $this->timelineData = $this->shouldLoadTimeline()
             ? $timelineService->getTimelineData($accountId)
             : null;
@@ -38,14 +35,6 @@ final readonly class PlayerTimelinePage
     {
         return $this->timelineData;
     }
-
-    // /**
-    //  * @return PlayerTimeline[]
-    //  */
-    // public function getTimeline(): array
-    // {
-    //     return $this->timelines;
-    // }
 
     public function shouldShowFlaggedMessage(): bool
     {

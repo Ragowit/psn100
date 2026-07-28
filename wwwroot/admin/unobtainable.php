@@ -21,7 +21,7 @@ $trophyStatusInputParser = new TrophyStatusInputParser($database);
 $trophyStatusService = new TrophyStatusService($database);
 $trophyStatusPage = new TrophyStatusPage($trophyStatusInputParser, $trophyStatusService);
 
-$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? HttpMethod::Get->value;
 $postData = $_POST ?? [];
 $queryData = $_GET ?? [];
 

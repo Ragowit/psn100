@@ -178,7 +178,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
             'name' => (string) $row['name'],
             'platform' => $platform,
             'platforms' => $this->parsePlatforms($platform),
-            'status' => (int) ($row['status'] ?? 0),
+            'status' => (int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value),
         ];
     }
 
@@ -223,7 +223,7 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
                 'platforms' => $this->parsePlatforms($platform),
                 'is_clone' => MergeNpCommunicationId::matches($npCommunicationId),
                 'matches_by_order' => $comparison['orderMatches'],
-                'status' => (int) ($row['status'] ?? 0),
+                'status' => (int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value),
             ];
         }
 

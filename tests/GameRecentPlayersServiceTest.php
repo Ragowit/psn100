@@ -8,7 +8,7 @@ require_once __DIR__ . '/../wwwroot/classes/GamePlayerFilter.php';
 
 final class GameRecentPlayersServiceTest extends TestCase
 {
-    private const NP_COMMUNICATION_ID = 'NPWR00001';
+    private const string NP_COMMUNICATION_ID = 'NPWR00001';
 
     private PDO $pdo;
 

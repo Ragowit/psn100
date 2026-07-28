@@ -373,7 +373,7 @@ class PlayerQueueService
      */
     private function toOptionalString(array $row, string $key): ?string
     {
-        if (!array_key_exists($key, $row) || $row[$key] === null) {
+        if (!isset($row[$key])) {
             return null;
         }
 
@@ -385,7 +385,7 @@ class PlayerQueueService
      */
     private function toOptionalInt(array $row, string $key): ?int
     {
-        if (!array_key_exists($key, $row) || $row[$key] === null) {
+        if (!isset($row[$key])) {
             return null;
         }
 

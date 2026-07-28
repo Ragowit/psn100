@@ -17,8 +17,6 @@ class TrophyMergeService
 {
     private readonly NestedDatabaseTransactionRunner $transactionRunner;
 
-    private ?TrophyMergeEarnedCopier $earnedCopier = null;
-
     private ?TrophyMergeMappingService $mappingService = null;
 
     private ?TrophyMergeMetadataRepository $metadataRepository = null;
@@ -30,10 +28,9 @@ class TrophyMergeService
     public function __construct(
         private readonly PDO $database,
         ?NestedDatabaseTransactionRunner $transactionRunner = null,
-        ?TrophyMergeEarnedCopier $earnedCopier = null,
+        private ?TrophyMergeEarnedCopier $earnedCopier = null,
     ) {
         $this->transactionRunner = $transactionRunner ?? new NestedDatabaseTransactionRunner($database);
-        $this->earnedCopier = $earnedCopier;
     }
 
     public function mergeSpecificTrophies(int $parentTrophyId, array $childTrophyIds): string

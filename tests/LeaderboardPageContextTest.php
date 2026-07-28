@@ -130,7 +130,7 @@ final class LeaderboardPageContextTest extends TestCase
 
 final class FakeLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
-    public const TITLE = 'Fake Leaderboard Title';
+    public const string TITLE = 'Fake Leaderboard Title';
 
     private static ?PlayerLeaderboardDataProvider $dataProvider = null;
 

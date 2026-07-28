@@ -258,7 +258,7 @@ final class GameHistoryService
      */
     private static function toNullableInt(array $row, string $key): ?int
     {
-        if (!array_key_exists($key, $row) || $row[$key] === null) {
+        if (!isset($row[$key])) {
             return null;
         }
 

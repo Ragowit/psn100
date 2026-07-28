@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AdminRequest.php';
 require_once __DIR__ . '/WorkerAction.php';
+require_once __DIR__ . '/WorkerCredentialField.php';
 require_once __DIR__ . '/WorkerService.php';
 require_once __DIR__ . '/CommandExecutionResult.php';
 require_once __DIR__ . '/WorkerPageSortLink.php';
@@ -73,7 +74,7 @@ final class WorkerPage
             return [null, 'Invalid worker selected.'];
         }
 
-        $npsso = $request->getPostString('npsso');
+        $npsso = $request->getPostString(WorkerCredentialField::Npsso->value);
 
         if ($npsso === '') {
             return [null, 'The NPSSO value cannot be empty.'];
@@ -107,7 +108,7 @@ final class WorkerPage
             return [null, 'Invalid worker selected.'];
         }
 
-        $refreshToken = $request->getPostString('refresh_token');
+        $refreshToken = $request->getPostString(WorkerCredentialField::RefreshToken->value);
 
         if ($refreshToken === '') {
             return [null, 'The refresh token cannot be empty.'];

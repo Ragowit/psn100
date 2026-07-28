@@ -250,7 +250,7 @@ final readonly class PlayerGamesPageContext
      */
     private static function extractPlayerStatus(array $playerData): PlayerStatus
     {
-        return PlayerStatus::fromValue((int) ($playerData['status'] ?? 0));
+        return PlayerStatus::fromValue((int) ($playerData['status'] ?? PlayerStatus::NORMAL->value));
     }
 
     private function extractString(mixed $value): string
