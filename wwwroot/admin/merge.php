@@ -47,9 +47,9 @@ $message = $requestHandler->handle($_POST ?? []);
                     <div class="col-12 col-md-6 col-xl-4">
                         <label class="form-label" for="merge-method">Method</label>
                         <select class="form-select" id="merge-method" name="method">
-                            <option value="order">Order</option>
-                            <option value="name">Name</option>
-                            <option value="icon">Icon</option>
+                            <option value="<?= Html::escape(TrophyMergeMethod::Order->value); ?>">Order</option>
+                            <option value="<?= Html::escape(TrophyMergeMethod::Name->value); ?>">Name</option>
+                            <option value="<?= Html::escape(TrophyMergeMethod::Icon->value); ?>">Icon</option>
                         </select>
                     </div>
                 </div>

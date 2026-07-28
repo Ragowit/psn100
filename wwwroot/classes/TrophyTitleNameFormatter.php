@@ -59,7 +59,7 @@ final readonly class TrophyTitleNameFormatter
         }
 
         if (str_ends_with($name, ' -')) {
-            $name = rtrim(substr($name, 0, -2));
+            $name = substr($name, 0, -2) |> rtrim(...);
         }
 
         $separatorPosition = strpos($name, ' - ');

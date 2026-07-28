@@ -9,8 +9,6 @@ require_once __DIR__ . '/PlayerLeaderboardFilter.php';
 
 final readonly class PlayerLeaderboardPage
 {
-    private PlayerLeaderboardFilter $requestedFilter;
-
     private ChangelogPaginator $paginator;
 
     /**
@@ -18,13 +16,13 @@ final readonly class PlayerLeaderboardPage
      */
     private array $players;
 
-    public function __construct(PlayerLeaderboardDataProvider $service, PlayerLeaderboardFilter $filter)
-    {
-        $this->requestedFilter = $filter;
-
-        if ($filter->getPage() === 1 && $service instanceof AbstractPlayerLeaderboardService) {
-            $result = $service->getPlayersWithTotal($filter, $service->getPageSize());
-            $totalPlayers = $result->totalPlayers ?? $service->countPlayers($filter);
+    public function __construct(
+        PlayerLeaderboardDataProvider $service,
+        private PlayerLeaderboardFilter $requestedFilter,
+    ) {
+        if ($this->requestedFilter->getPage() === 1 && $service instanceof AbstractPlayerLeaderboardService) {
+            $result = $service->getPlayersWithTotal($this->requestedFilter, $service->getPageSize());
+            $totalPlayers = $result->totalPlayers ?? $service->countPlayers($this->requestedFilter);
             $this->paginator = new ChangelogPaginator(
                 1,
                 $totalPlayers,
@@ -32,9 +30,9 @@ final readonly class PlayerLeaderboardPage
             );
             $this->players = $result->players;
         } else {
-            $totalPlayers = $service->countPlayers($filter);
+            $totalPlayers = $service->countPlayers($this->requestedFilter);
             $this->paginator = new ChangelogPaginator(
-                $filter->getPage(),
+                $this->requestedFilter->getPage(),
                 $totalPlayers,
                 $service->getPageSize()
             );

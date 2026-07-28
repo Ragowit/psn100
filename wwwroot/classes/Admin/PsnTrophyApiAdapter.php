@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PsnTrophyTypeApiAdapter.php';
+require_once __DIR__ . '/../TrophyType.php';
 
 final readonly class PsnTrophyApiAdapter
 {
@@ -25,7 +26,7 @@ final readonly class PsnTrophyApiAdapter
 
     public function type(): PsnTrophyTypeApiAdapter
     {
-        return new PsnTrophyTypeApiAdapter((string) ($this->rawTrophy['trophyType'] ?? 'bronze'));
+        return new PsnTrophyTypeApiAdapter((string) ($this->rawTrophy['trophyType'] ?? TrophyType::Bronze->value));
     }
 
     public function name(): string

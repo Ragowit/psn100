@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class AdminUserRepository
+final readonly class AdminUserRepository
 {
     private const string SQL_ADMIN_COUNT = <<<'SQL'
         SELECT

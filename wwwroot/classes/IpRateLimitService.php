@@ -8,7 +8,7 @@ require_once __DIR__ . '/IpRateLimitBucket.php';
 /**
  * Fixed-window IP rate limiting backed by the ip_rate_limit table.
  */
-final class IpRateLimitService
+final readonly class IpRateLimitService
 {
     public function __construct(private readonly PDO $database)
     {

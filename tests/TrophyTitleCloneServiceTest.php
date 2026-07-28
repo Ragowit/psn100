@@ -294,7 +294,7 @@ final class TrophyTitleCloneServiceTest extends TestCase
  */
 final class TrophyTitleCloneServiceTestDatabase extends PDO
 {
-    private const NEXT_TROPHY_TITLE_ID = 2;
+    private const int NEXT_TROPHY_TITLE_ID = 2;
 
     public function __construct()
     {

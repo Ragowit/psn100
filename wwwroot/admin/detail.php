@@ -59,7 +59,7 @@ $requestedNpCommunicationId = (string) ($_GET['np_communication_id'] ?? '');
                 </p>
                 <form method="post" autocomplete="off">
                     <?php AdminBootstrap::renderCsrfField(); ?>
-                    <input type="hidden" name="action" value="update-detail">
+                    <input type="hidden" name="action" value="<?= Html::escape(GameDetailAction::UpdateDetail->value); ?>">
                     <input type="hidden" name="game" value="<?= $gameDetail->getId(); ?>"><br>
                     Name:<br>
                     <input type="text" name="name" style="width: 859px;" value="<?= Html::escape($gameDetail->getName()); ?>"><br>

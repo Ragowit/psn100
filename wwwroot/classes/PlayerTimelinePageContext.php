@@ -161,6 +161,6 @@ final readonly class PlayerTimelinePageContext
      */
     private static function extractPlayerStatus(array $playerData): PlayerStatus
     {
-        return PlayerStatus::fromValue((int) ($playerData['status'] ?? 0));
+        return PlayerStatus::fromValue((int) ($playerData['status'] ?? PlayerStatus::NORMAL->value));
     }
 }

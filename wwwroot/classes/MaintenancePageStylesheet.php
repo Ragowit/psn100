@@ -30,13 +30,6 @@ final readonly class MaintenancePageStylesheet
         return new self(BootstrapAssets::stylesheetUrl());
     }
 
-    #[\Deprecated(message: 'Use bootstrap() for the self-hosted stylesheet.')]
-    #[\NoDiscard]
-    public static function bootstrapCdn(string $version = BootstrapAssets::VERSION): self
-    {
-        return self::bootstrap($version);
-    }
-
     public function getHref(): string
     {
         return $this->href;

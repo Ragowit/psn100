@@ -32,7 +32,7 @@ final readonly class GameDetail
         $setVersion = (string) ($row['set_version'] ?? '');
         $region = isset($row['region']) ? (string) $row['region'] : null;
         $psnprofilesId = isset($row['psnprofiles_id']) ? (string) $row['psnprofiles_id'] : null;
-        $status = GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0));
+        $status = GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value));
         $obsoleteIds = isset($row['obsolete_ids']) ? (string) $row['obsolete_ids'] : null;
 
         return new self(

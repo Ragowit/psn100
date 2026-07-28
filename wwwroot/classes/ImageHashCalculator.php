@@ -177,7 +177,7 @@ final class ImageHashCalculator
     {
         $hex = '';
         foreach (str_split($bin, 4) as $chunk) {
-            $hex .= dechex(bindec($chunk));
+            $hex .= $chunk |> bindec(...) |> dechex(...);
         }
         return $hex;
     }

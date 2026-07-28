@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class AdminLoginThrottleService
+final readonly class AdminLoginThrottleService
 {
     public const int MAX_FAILURES = 5;
 

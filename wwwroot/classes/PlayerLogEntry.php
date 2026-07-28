@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/TrophyType.php';
+require_once __DIR__ . '/TrophyMetaStatus.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 
 final readonly class PlayerLogEntry
 {
@@ -45,7 +47,7 @@ final readonly class PlayerLogEntry
             trophyIcon: (string) ($row['trophy_icon'] ?? ''),
             rarityPercent: self::toNullableString($row['rarity_percent'] ?? null),
             inGameRarityPercent: self::toNullableString($row['in_game_rarity_percent'] ?? null),
-            trophyStatus: (int) ($row['trophy_status'] ?? 0),
+            trophyStatus: (int) ($row['trophy_status'] ?? TrophyMetaStatus::Obtainable->value),
             progressTargetValue: self::toNullableInt($row['progress_target_value'] ?? null),
             progress: self::toNullableInt($row['progress'] ?? null),
             isEarned: (int) ($row['earned'] ?? 0) === 1,
@@ -53,7 +55,7 @@ final readonly class PlayerLogEntry
             rewardImageUrl: self::toNullableString($row['reward_image_url'] ?? null),
             gameId: (int) ($row['game_id'] ?? 0),
             gameName: (string) ($row['game_name'] ?? ''),
-            gameStatus: (int) ($row['game_status'] ?? 0),
+            gameStatus: (int) ($row['game_status'] ?? GameAvailabilityStatus::NORMAL->value),
             gameIcon: (string) ($row['game_icon'] ?? ''),
             platforms: (string) ($row['platform'] ?? ''),
             earnedDate: (string) ($row['earned_date'] ?? '')
@@ -192,7 +194,8 @@ final readonly class PlayerLogEntry
 
     public function requiresWarning(): bool
     {
-        return $this->gameStatus !== 0 || $this->trophyStatus !== 0;
+        return $this->gameStatus !== GameAvailabilityStatus::NORMAL->value
+            || $this->trophyStatus !== TrophyMetaStatus::Obtainable->value;
     }
 
     public function getEarnedDate(): string

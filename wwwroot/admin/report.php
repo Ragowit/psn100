@@ -8,7 +8,7 @@ require_once '../classes/Admin/PlayerReportAdminPage.php';
 
 $playerReportAdminService = new PlayerReportAdminService($database);
 $playerReportAdminPage = new PlayerReportAdminPage($playerReportAdminService);
-$pageResult = $playerReportAdminPage->handle($_GET ?? [], $_POST ?? [], $_SERVER['REQUEST_METHOD'] ?? 'GET');
+$pageResult = $playerReportAdminPage->handle($_GET ?? [], $_POST ?? [], $_SERVER['REQUEST_METHOD'] ?? HttpMethod::Get->value);
 
 $reportedPlayers = $pageResult->getReportedPlayers();
 $successMessage = $pageResult->getSuccessMessage();

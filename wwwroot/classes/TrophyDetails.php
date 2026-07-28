@@ -53,7 +53,7 @@ final readonly class TrophyDetails
             (string) ($data['trophy_icon'] ?? ''),
             (float) ($data['rarity_percent'] ?? 0.0),
             (float) ($data['in_game_rarity_percent'] ?? 0.0),
-            TrophyMetaStatus::fromMixed($data['status'] ?? 0),
+            TrophyMetaStatus::fromMixed($data['status'] ?? TrophyMetaStatus::Obtainable->value),
             isset($data['progress_target_value']) ? (string) $data['progress_target_value'] : null,
             isset($data['reward_name']) ? (string) $data['reward_name'] : null,
             isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null,

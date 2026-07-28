@@ -167,10 +167,7 @@ final readonly class ChangelogPage
         $grouped = [];
         foreach ($presenters as $presenter) {
             $dateLabel = $presenter->getDateLabel();
-            if (!array_key_exists($dateLabel, $grouped)) {
-                $grouped[$dateLabel] = [];
-            }
-
+            $grouped[$dateLabel] ??= [];
             $grouped[$dateLabel][] = $presenter;
         }
 

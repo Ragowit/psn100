@@ -38,10 +38,10 @@ final readonly class PossibleCheaterRuleGroup
         $label = (string) ($data['label'] ?? '');
         $conditions = is_array($data['conditions'] ?? null) ? $data['conditions'] : [];
 
-        $rules = [];
-        foreach ($conditions as $condition) {
-            $rules[] = PossibleCheaterRule::fromString((string) $condition);
-        }
+        $rules = array_map(
+            static fn (mixed $condition): PossibleCheaterRule => PossibleCheaterRule::fromString((string) $condition),
+            $conditions,
+        );
 
         return new self($label, $rules);
     }

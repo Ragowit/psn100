@@ -62,7 +62,7 @@ final readonly class GameDetails
             (int) ($row['owners_completed'] ?? 0),
             (int) ($row['owners'] ?? 0),
             (string) ($row['difficulty'] ?? '0'),
-            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? 0)),
+            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
             (int) ($row['rarity_points'] ?? 0),
             (int) ($row['in_game_rarity_points'] ?? 0),
             self::parseObsoleteIds($row['obsolete_ids'] ?? null),

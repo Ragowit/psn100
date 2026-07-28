@@ -11,7 +11,7 @@ require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/DateDurationSummary.php';
 require_once __DIR__ . '/TrophyGroupId.php';
 
-final class PlayerGamesService
+final readonly class PlayerGamesService
 {
     public function __construct(
         private readonly PDO $database,

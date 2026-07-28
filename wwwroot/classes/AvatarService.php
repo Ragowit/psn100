@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Avatar.php';
 require_once __DIR__ . '/PlayerStatus.php';
 
-final class AvatarService
+final readonly class AvatarService
 {
     public function __construct(private readonly PDO $database)
     {
