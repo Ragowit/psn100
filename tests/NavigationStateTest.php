@@ -61,4 +61,15 @@ final class NavigationStateTest extends TestCase
         $this->assertSame('', $navigationState->getHomeClass());
         $this->assertTrue($navigationState->isSectionActive('trophy'));
     }
+
+    public function testGameSectionActiveWhenUriContainsDecodedUnicode(): void
+    {
+        $server = ['REQUEST_URI' => '/game/1163-collar-' . "\u{00D7}" . '-malice-unlimited'];
+
+        $navigationState = NavigationState::fromGlobals($server, []);
+
+        $this->assertSame(' active', $navigationState->getGameClass());
+        $this->assertSame('', $navigationState->getHomeClass());
+        $this->assertTrue($navigationState->isSectionActive('game'));
+    }
 }

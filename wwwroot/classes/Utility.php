@@ -22,16 +22,17 @@ class Utility
             |> (fn(string $value): string => str_replace(['&', '%', ' - '], ['and', 'percent', ' '], $value));
 
         $slug = self::getSlugTransliterator()->transliterate($text);
-        if (is_string($slug) && $slug !== '') {
-            return $slug;
+        if (!is_string($slug) || $slug === '') {
+            $slug = $text;
         }
 
-        $slug = $text
+        // Always collapse to ASCII URL-safe characters. ICU leaves symbols such as
+        // "×" (U+00D7) in place after punctuation removal, and those break routing
+        // when Apache exposes a decoded SCRIPT_URL to PHP.
+        return $slug
             |> strtolower(...)
             |> (fn(string $value): string => preg_replace('/[^a-z0-9]+/', '-', $value) ?? $value)
             |> (fn(string $value): string => trim($value, '-'));
-
-        return $slug;
     }
 
     #[\NoDiscard]

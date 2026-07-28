@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/RouteResult.php';
 require_once __DIR__ . '/RouteName.php';
+require_once __DIR__ . '/RequestUriPath.php';
 require_once __DIR__ . '/GameRepository.php';
 require_once __DIR__ . '/TrophyRepository.php';
 require_once __DIR__ . '/PlayerRepository.php';
@@ -47,8 +48,7 @@ class Router
     #[\NoDiscard]
     public function dispatch(string $requestUri): RouteResult
     {
-        $normalizedPath = (Uri\Rfc3986\Uri::parse($requestUri)?->getPath() ?? '')
-            |> (fn (string $path): string => trim($path, '/'));
+        $normalizedPath = trim(RequestUriPath::fromUri($requestUri), '/');
 
         if ($normalizedPath === '') {
             return $this->defaultHandler->handle([]);
