@@ -43,13 +43,15 @@ final class AdminWorkerPageTest extends TestCase
         $this->assertSame(WorkerSortField::Id, $result->getSortField());
         $this->assertSame(WorkerSortDirection::Desc, $result->getSortDirection());
 
-        $idSortLink = $result->getSortLink('id');
+        $idSortLink = $result->getSortLink(WorkerSortField::Id);
         $this->assertTrue($idSortLink instanceof WorkerPageSortLink);
+        $this->assertSame(WorkerSortField::Id, $idSortLink->getField());
         $this->assertSame('?sort=id&direction=asc', $idSortLink->getUrl());
         $this->assertSame(' ▼', $idSortLink->getIndicator());
 
-        $scanSortLink = $result->getSortLink('scan_start');
+        $scanSortLink = $result->getSortLink(WorkerSortField::ScanStart);
         $this->assertTrue($scanSortLink instanceof WorkerPageSortLink);
+        $this->assertSame(WorkerSortField::ScanStart, $scanSortLink->getField());
         $this->assertSame('?sort=scan_start&direction=asc', $scanSortLink->getUrl());
         $this->assertSame('', $scanSortLink->getIndicator());
     }

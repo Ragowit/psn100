@@ -7,9 +7,9 @@ require_once __DIR__ . '/DeletePlayerConfirmation.php';
 final readonly class DeletePlayerRequestResult
 {
     private function __construct(
-        private ?string $successMessage,
-        private ?string $errorMessage,
-        private ?DeletePlayerConfirmation $confirmation
+        final private ?string $successMessage,
+        final private ?string $errorMessage,
+        final private ?DeletePlayerConfirmation $confirmation
     ) {
     }
 

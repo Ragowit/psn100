@@ -9,6 +9,7 @@ require_once __DIR__ . '/../MergeNpCommunicationId.php';
 require_once __DIR__ . '/MergeTrophyCopier.php';
 require_once __DIR__ . '/MergeTrophyGroupCopier.php';
 require_once __DIR__ . '/TrophyGroupConflictResolver.php';
+require_once __DIR__ . '/../TrophyGroupId.php';
 
 class GameCopyService
 {
@@ -340,7 +341,7 @@ class GameCopyService
              LIMIT 1'
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':group_id', 'default', PDO::PARAM_STR);
+        $query->bindValue(':group_id', TrophyGroupId::Default->value, PDO::PARAM_STR);
         $query->execute();
 
         $isBaseList = $query->fetchColumn() !== false;

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 require_once __DIR__ . '/PlayerAvatarSynchronizer.php';
 require_once __DIR__ . '/../ImageHashCalculator.php';
 require_once __DIR__ . '/PlayerCountryResolver.php';
+require_once __DIR__ . '/../PlayerCountryCode.php';
 require_once __DIR__ . '/PlayerScanPrivacyService.php';
 require_once __DIR__ . '/../PlayerRepository.php';
 require_once __DIR__ . '/../PlayerStatus.php';
@@ -70,7 +71,7 @@ final class PlayerScanProfileSynchronizer
         }
 
         $user = $resolved->user;
-        $country = $resolved->country ?? 'zz';
+        $country = PlayerCountryCode::orUnknown($resolved->country);
 
         if ($user === null) {
             return PlayerScanProfileSyncResult::skipPlayer();
@@ -161,7 +162,7 @@ final class PlayerScanProfileSynchronizer
                 $originalOnlineId = (string) $player['online_id'];
                 $existingAccountId = $this->normalizeAccountIdValue($player['account_id'] ?? null);
                 $profileLookup = $this->lookupPlayerProfile($client, $originalOnlineId);
-                $country = 'zz';
+                $country = PlayerCountryCode::Unknown->value;
 
                 if ($profileLookup !== null) {
                     $profile = $profileLookup['profile'] ?? null;

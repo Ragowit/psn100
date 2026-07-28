@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerNavigationSection.php';
 require_once __DIR__ . '/PlayerRouteView.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
+require_once __DIR__ . '/GameListSort.php';
 
 final readonly class PlayerNavigation
 {
@@ -25,38 +26,35 @@ final readonly class PlayerNavigation
      */
     public function getLinks(): array
     {
-        $playerPath = PlayerUrlBuilder::playerPath($this->onlineId);
-        $encodedOnlineId = rawurlencode($this->onlineId);
-
         return [
             new PlayerNavigationLink(
                 'Games',
-                $playerPath,
+                PlayerUrlBuilder::playerPath($this->onlineId),
                 $this->isActive(PlayerNavigationSection::GAMES)
             ),
             new PlayerNavigationLink(
                 'Timeline',
-                $playerPath . '/' . PlayerRouteView::Timeline->value,
+                PlayerUrlBuilder::playerViewPath($this->onlineId, PlayerRouteView::Timeline),
                 $this->isActive(PlayerNavigationSection::TIMELINE)
             ),
             new PlayerNavigationLink(
                 'Log',
-                $playerPath . '/' . PlayerRouteView::Log->value,
+                PlayerUrlBuilder::playerViewPath($this->onlineId, PlayerRouteView::Log),
                 $this->isActive(PlayerNavigationSection::LOG)
             ),
             new PlayerNavigationLink(
                 'Trophy Advisor',
-                $playerPath . '/' . PlayerRouteView::Advisor->value,
+                PlayerUrlBuilder::playerViewPath($this->onlineId, PlayerRouteView::Advisor),
                 $this->isActive(PlayerNavigationSection::TROPHY_ADVISOR)
             ),
             new PlayerNavigationLink(
                 'Game Advisor',
-                '/game?sort=completion&filter=true&player=' . $encodedOnlineId,
+                PlayerUrlBuilder::gameAdvisorPath($this->onlineId),
                 $this->isActive(PlayerNavigationSection::GAME_ADVISOR)
             ),
             new PlayerNavigationLink(
                 'Random Games',
-                $playerPath . '/' . PlayerRouteView::Random->value,
+                PlayerUrlBuilder::playerViewPath($this->onlineId, PlayerRouteView::Random),
                 $this->isActive(PlayerNavigationSection::RANDOM)
             ),
         ];

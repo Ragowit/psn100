@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../TrophyGroupId.php';
+
 final readonly class GameTrophyGroup
 {
     /**
@@ -64,7 +66,7 @@ final readonly class GameTrophyGroup
 
     public function isDefaultGroup(): bool
     {
-        return $this->id === 'default';
+        return $this->id === TrophyGroupId::Default->value;
     }
 
     public function getBronzeCount(): int

@@ -11,7 +11,7 @@ final readonly class HomepagePopularGame extends HomepageTitle
         string $name,
         string $iconUrl,
         string $platform,
-        private int $recentPlayers,
+        final private int $recentPlayers,
     ) {
         parent::__construct($id, $name, $iconUrl, $platform, HistoryIconType::Title);
     }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 final readonly class AdminNavigationItem
 {
     public function __construct(
-        private string $label,
-        private string $href,
+        final private string $label,
+        final private string $href,
     ) {
     }
 

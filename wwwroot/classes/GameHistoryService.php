@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyMetaStatus.php';
+require_once __DIR__ . '/TrophyGroupId.php';
 
 final class GameHistoryService
 {
@@ -102,8 +103,9 @@ final class GameHistoryService
      */
     private function fetchGroupChanges(array $historyIds): array
     {
+        $defaultGroupId = TrophyGroupId::Default->toSqlLiteral();
         $rows = $this->fetchRows(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 title_history_id,
                 group_id,
@@ -115,8 +117,8 @@ final class GameHistoryService
             WHERE
                 title_history_id IN (%s)
             ORDER BY
-                CASE WHEN group_id = 'default' THEN 0 ELSE 1 END,
-                CASE WHEN group_id = 'default' THEN 0 ELSE group_id + 0 END,
+                CASE WHEN group_id = {$defaultGroupId} THEN 0 ELSE 1 END,
+                CASE WHEN group_id = {$defaultGroupId} THEN 0 ELSE group_id + 0 END,
                 group_id
             SQL,
             $historyIds
@@ -143,8 +145,9 @@ final class GameHistoryService
     */
     private function fetchTrophyChanges(array $historyIds): array
     {
+        $defaultGroupId = TrophyGroupId::Default->toSqlLiteral();
         $rows = $this->fetchRows(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 th.title_history_id,
                 th.group_id,
@@ -165,8 +168,8 @@ final class GameHistoryService
             WHERE
                 th.title_history_id IN (%s)
             ORDER BY
-                CASE WHEN th.group_id = 'default' THEN 0 ELSE 1 END,
-                CASE WHEN th.group_id = 'default' THEN 0 ELSE th.group_id + 0 END,
+                CASE WHEN th.group_id = {$defaultGroupId} THEN 0 ELSE 1 END,
+                CASE WHEN th.group_id = {$defaultGroupId} THEN 0 ELSE th.group_id + 0 END,
                 th.order_id
             SQL,
             $historyIds

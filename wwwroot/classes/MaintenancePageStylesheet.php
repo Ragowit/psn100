@@ -31,6 +31,7 @@ final readonly class MaintenancePageStylesheet
     }
 
     #[\Deprecated(message: 'Use bootstrap() for the self-hosted stylesheet.')]
+    #[\NoDiscard]
     public static function bootstrapCdn(string $version = BootstrapAssets::VERSION): self
     {
         return self::bootstrap($version);

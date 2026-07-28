@@ -18,6 +18,7 @@ enum GameAvailabilityStatus: int
         return self::tryFrom($status) ?? self::NORMAL;
     }
 
+    #[\NoDiscard]
     public function isUnavailable(): bool
     {
         return match ($this) {
@@ -29,6 +30,7 @@ enum GameAvailabilityStatus: int
         };
     }
 
+    #[\NoDiscard]
     public function changeType(): ChangelogEntryType
     {
         return match ($this) {
@@ -40,6 +42,7 @@ enum GameAvailabilityStatus: int
         };
     }
 
+    #[\NoDiscard]
     public function statusText(): string
     {
         return match ($this) {
@@ -51,6 +54,7 @@ enum GameAvailabilityStatus: int
         };
     }
 
+    #[\NoDiscard]
     public function label(): string
     {
         return match ($this) {
@@ -62,6 +66,7 @@ enum GameAvailabilityStatus: int
         };
     }
 
+    #[\NoDiscard]
     public function warningMessage(): ?string
     {
         return match ($this) {
@@ -73,6 +78,7 @@ enum GameAvailabilityStatus: int
         };
     }
 
+    #[\NoDiscard]
     public function badgeLabel(): ?string
     {
         return match ($this) {

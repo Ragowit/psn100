@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Tustin\PlayStation\Client;
 
+require_once __DIR__ . '/../PlayerCountryCode.php';
+
 /**
  * Resolves and persists player country codes during PSN profile scans.
  *
@@ -48,16 +50,16 @@ final class PlayerCountryResolver
     ): string {
         $country = $countryFromNpId;
 
-        if ($country === null || strtolower($country) === 'zz') {
+        if (PlayerCountryCode::isUnknown($country)) {
             $storedCountry = $this->fetchStoredCountryByAccountId($accountId);
 
             if (is_string($storedCountry) && $storedCountry !== '') {
                 $country = $storedCountry;
             } else {
-                $country = 'zz';
+                $country = PlayerCountryCode::Unknown->value;
             }
 
-            if (strtolower($country) === 'zz') {
+            if (PlayerCountryCode::isUnknown($country)) {
                 $resolvedCountry = $this->findPlayerCountry($client, $onlineId);
 
                 if ($resolvedCountry !== null) {
@@ -69,11 +71,7 @@ final class PlayerCountryResolver
             $this->updatePlayerCountry($accountId, $country);
         }
 
-        if (!is_string($country) || $country === '') {
-            return 'zz';
-        }
-
-        return $country;
+        return PlayerCountryCode::orUnknown(is_string($country) ? $country : null);
     }
 
     public function fetchStoredCountryByAccountId(string $accountId): ?string
@@ -105,9 +103,9 @@ final class PlayerCountryResolver
                         return null;
                     }
 
-                    $normalizedCountry = strtolower($country);
+                    $normalizedCountry = PlayerCountryCode::normalize($country);
 
-                    if ($normalizedCountry === 'zz') {
+                    if ($normalizedCountry === null || PlayerCountryCode::isUnknown($normalizedCountry)) {
                         return null;
                     }
 

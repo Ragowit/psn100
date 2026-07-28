@@ -7,9 +7,9 @@ require_once __DIR__ . '/GameDetail.php';
 final readonly class GameDetailPageResult
 {
     public function __construct(
-        private ?GameDetail $gameDetail,
-        private ?string $successMessage,
-        private ?string $errorMessage,
+        final private ?GameDetail $gameDetail,
+        final private ?string $successMessage,
+        final private ?string $errorMessage,
     ) {
     }
 

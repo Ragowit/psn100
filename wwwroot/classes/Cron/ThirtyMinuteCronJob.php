@@ -30,6 +30,7 @@ require_once __DIR__ . '/PlayerScanTrophySummaryAccessResult.php';
 require_once __DIR__ . '/PlayerScanTrophyTitleRefresher.php';
 require_once __DIR__ . '/PlayerScanTrophyTitleLoop.php';
 require_once __DIR__ . '/PlayerScanTrophyTitleLoopResult.php';
+require_once __DIR__ . '/../PlayerCountryCode.php';
 
 use Tustin\Haste\Exception\NotFoundHttpException;
 use Tustin\Haste\Exception\UnauthorizedHttpException;
@@ -195,7 +196,7 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
 
             $player = $profileSyncResult->player;
             $user = $profileSyncResult->user;
-            $country = $profileSyncResult->country ?? 'zz';
+            $country = PlayerCountryCode::orUnknown($profileSyncResult->country);
 
             if ($user === null) {
                 continue;

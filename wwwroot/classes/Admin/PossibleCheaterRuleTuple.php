@@ -7,10 +7,10 @@ require_once __DIR__ . '/PossibleCheaterDateOperator.php';
 final readonly class PossibleCheaterRuleTuple
 {
     public function __construct(
-        private string $npCommunicationId,
-        private int $orderId,
-        private ?PossibleCheaterDateOperator $dateOperator,
-        private ?string $dateValue,
+        final private string $npCommunicationId,
+        final private int $orderId,
+        final private ?PossibleCheaterDateOperator $dateOperator,
+        final private ?string $dateValue,
     ) {
     }
 

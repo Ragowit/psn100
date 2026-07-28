@@ -32,8 +32,8 @@ final class WorkerPage
         $workers = $this->workerService->fetchWorkers($sortField, $sortDirection);
 
         $sortLinks = [
-            'id' => $this->createSortLink(WorkerSortField::Id, $sortField, $sortDirection),
-            'scan_start' => $this->createSortLink(WorkerSortField::ScanStart, $sortField, $sortDirection),
+            WorkerSortField::Id->value => $this->createSortLink(WorkerSortField::Id, $sortField, $sortDirection),
+            WorkerSortField::ScanStart->value => $this->createSortLink(WorkerSortField::ScanStart, $sortField, $sortDirection),
         ];
 
         return new WorkerPageResult(
@@ -211,6 +211,6 @@ final class WorkerPage
             'direction' => $nextDirection->value,
         ];
 
-        return new WorkerPageSortLink($field->value, '?' . http_build_query($query), $indicator);
+        return new WorkerPageSortLink($field, '?' . http_build_query($query), $indicator);
     }
 }
