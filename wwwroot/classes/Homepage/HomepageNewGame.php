@@ -11,10 +11,10 @@ final readonly class HomepageNewGame extends HomepageTitle
         string $name,
         string $iconUrl,
         string $platform,
-        private int $platinum,
-        private int $gold,
-        private int $silver,
-        private int $bronze,
+        final private int $platinum,
+        final private int $gold,
+        final private int $silver,
+        final private int $bronze,
     ) {
         parent::__construct($id, $name, $iconUrl, $platform, HistoryIconType::Title);
     }

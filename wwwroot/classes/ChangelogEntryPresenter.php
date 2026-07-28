@@ -146,7 +146,8 @@ final readonly class ChangelogEntryPresenter
     {
         $idPart = $id !== null ? (string) $id : '';
         $name = $name ?? '';
-        $url = '/game/' . $idPart . '-' . $this->utility->slugify($name);
+        $path = '/game/' . $idPart . '-' . $this->utility->slugify($name);
+        $url = Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
 
         return sprintf(
             '<a href="%s">%s</a>',

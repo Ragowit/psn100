@@ -8,11 +8,11 @@ final readonly class PsnPlayerLookupRequestResult
      * @param array<string, mixed>|null $result
      */
     public function __construct(
-        private string $normalizedOnlineId,
-        private ?array $result,
-        private ?string $errorMessage,
-        private ?string $decodedNpId,
-        private ?string $npCountry
+        final private string $normalizedOnlineId,
+        final private ?array $result,
+        final private ?string $errorMessage,
+        final private ?string $decodedNpId,
+        final private ?string $npCountry
     ) {
     }
 

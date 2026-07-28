@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final readonly class DeletePlayerConfirmation
 {
-    public function __construct(private string $accountId, private ?string $onlineId)
+    public function __construct(final private string $accountId, final private ?string $onlineId)
     {
     }
 

@@ -154,12 +154,16 @@ final readonly class TrophyListItem
 
     public function getGameUrl(Utility $utility): string
     {
-        return '/game/' . $this->gameId . '-' . $utility->slugify($this->gameName);
+        $path = '/game/' . $this->gameId . '-' . $utility->slugify($this->gameName);
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 
     public function getTrophyUrl(Utility $utility): string
     {
-        return '/trophy/' . $this->trophyId . '-' . $utility->slugify($this->trophyName);
+        $path = '/trophy/' . $this->trophyId . '-' . $utility->slugify($this->trophyName);
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 
     private function usesPlayStation5Assets(): bool

@@ -11,6 +11,7 @@ require_once __DIR__ . '/HomepagePopularGamesFilter.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/Platform.php';
 require_once __DIR__ . '/PlatformSql.php';
+require_once __DIR__ . '/TrophyGroupId.php';
 
 final class HomepageContentService
 {
@@ -65,6 +66,7 @@ final class HomepageContentService
     public function getNewDlcs(int $limit = self::DEFAULT_NEW_DLCS_LIMIT): array
     {
         $mergedStatus = GameAvailabilityStatus::MERGED->value;
+        $defaultGroupId = TrophyGroupId::Default->toSqlLiteral();
 
         $query = $this->database->prepare(
             <<<SQL
@@ -84,7 +86,7 @@ final class HomepageContentService
                 JOIN trophy_title_meta ttm USING (np_communication_id)
             WHERE
                 ttm.status <> {$mergedStatus}
-                AND tg.group_id <> 'default'
+                AND tg.group_id <> {$defaultGroupId}
             ORDER BY
                 tg.id DESC
             LIMIT

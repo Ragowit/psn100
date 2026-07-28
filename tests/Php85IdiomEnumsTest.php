@@ -25,6 +25,8 @@ require_once __DIR__ . '/../wwwroot/classes/NpServiceName.php';
 require_once __DIR__ . '/../wwwroot/classes/Admin/PossibleCheaterDateOperator.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerTimelineEntry.php';
 require_once __DIR__ . '/../wwwroot/classes/Platform.php';
+require_once __DIR__ . '/../wwwroot/classes/TrophyGroupId.php';
+require_once __DIR__ . '/../wwwroot/classes/PlayerCountryCode.php';
 
 final class Php85IdiomEnumsTest extends TestCase
 {
@@ -237,5 +239,24 @@ final class Php85IdiomEnumsTest extends TestCase
         $this->assertSame(PossibleCheaterDateOperator::LessThan, PossibleCheaterDateOperator::tryFromMixed('<'));
         $this->assertSame(null, PossibleCheaterDateOperator::tryFromMixed(''));
         $this->assertSame(null, PossibleCheaterDateOperator::tryFromMixed(null));
+    }
+
+    public function testTrophyGroupIdDefaultSqlLiteral(): void
+    {
+        $this->assertSame('default', TrophyGroupId::Default->value);
+        $this->assertSame("'default'", TrophyGroupId::Default->toSqlLiteral());
+        $this->assertTrue(TrophyGroupId::Default->isDefault());
+    }
+
+    public function testPlayerCountryCodeUnknownHelpers(): void
+    {
+        $this->assertSame('zz', PlayerCountryCode::Unknown->value);
+        $this->assertTrue(PlayerCountryCode::isUnknown(null));
+        $this->assertTrue(PlayerCountryCode::isUnknown(''));
+        $this->assertTrue(PlayerCountryCode::isUnknown(' ZZ '));
+        $this->assertFalse(PlayerCountryCode::isUnknown('us'));
+        $this->assertSame('us', PlayerCountryCode::normalize(' US '));
+        $this->assertSame('zz', PlayerCountryCode::orUnknown(null));
+        $this->assertSame('se', PlayerCountryCode::orUnknown('SE'));
     }
 }

@@ -5,9 +5,9 @@ declare(strict_types=1);
 final readonly class ReportedPlayer
 {
     public function __construct(
-        private int $reportId,
-        private string $onlineId,
-        private string $explanation
+        final private int $reportId,
+        final private string $onlineId,
+        final private string $explanation
     ) {}
 
     public function getReportId(): int

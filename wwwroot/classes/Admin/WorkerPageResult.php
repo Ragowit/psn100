@@ -55,9 +55,11 @@ final readonly class WorkerPageResult
         return $this->sortLinks;
     }
 
-    public function getSortLink(string $field): ?WorkerPageSortLink
+    public function getSortLink(WorkerSortField|string $field): ?WorkerPageSortLink
     {
-        return $this->sortLinks[$field] ?? null;
+        $key = $field instanceof WorkerSortField ? $field->value : $field;
+
+        return $this->sortLinks[$key] ?? null;
     }
 
     public function getSortField(): WorkerSortField

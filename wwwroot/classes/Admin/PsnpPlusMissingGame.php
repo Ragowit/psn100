@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final readonly class PsnpPlusMissingGame
 {
-    public function __construct(private int $psnprofilesId)
+    public function __construct(final private int $psnprofilesId)
     {
     }
 
@@ -15,6 +15,8 @@ final readonly class PsnpPlusMissingGame
 
     public function getPsnprofilesUrl(): string
     {
-        return 'https://psnprofiles.com/trophies/' . $this->psnprofilesId;
+        $path = 'https://psnprofiles.com/trophies/' . $this->psnprofilesId;
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 }

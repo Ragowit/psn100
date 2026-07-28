@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/WorkerSortField.php';
+
 final readonly class WorkerPageSortLink
 {
     public function __construct(
-        private string $field,
-        private string $url,
-        private string $indicator,
+        final private WorkerSortField $field,
+        final private string $url,
+        final private string $indicator,
     ) {
     }
 
-    public function getField(): string
+    public function getField(): WorkerSortField
     {
         return $this->field;
     }

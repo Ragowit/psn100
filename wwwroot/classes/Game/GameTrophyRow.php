@@ -193,7 +193,9 @@ final readonly class GameTrophyRow
             ? '/' . $playerOnlineId
             : '';
 
-        return '/trophy/' . $this->id . '-' . $slug . $playerSegment;
+        $path = '/trophy/' . $this->id . '-' . $slug . $playerSegment;
+
+        return Uri\Rfc3986\Uri::parse($path)?->toRawString() ?? $path;
     }
 
     public function getTypeColor(): string

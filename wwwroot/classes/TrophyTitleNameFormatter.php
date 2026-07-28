@@ -20,13 +20,8 @@ final readonly class TrophyTitleNameFormatter
     #[\NoDiscard]
     public function sanitize(string $name): string
     {
-        $name = trim($name);
-
-        if ($name === '') {
-            return $name;
-        }
-
         $name = $name
+            |> trim(...)
             |> (fn(string $value): string => str_replace(['™', '®', '©'], '', $value))
             |> (fn(string $value): string => str_replace('–', '-', $value))
             |> (fn(string $value): string => str_replace(['’', '´', '`'], '\'', $value))

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/PlayerRouteView.php';
 require_once __DIR__ . '/RouteName.php';
+require_once __DIR__ . '/GameListSort.php';
 
 final readonly class PlayerUrlBuilder
 {
@@ -16,11 +17,38 @@ final readonly class PlayerUrlBuilder
     #[\NoDiscard]
     public static function playerReportPath(string $onlineId): string
     {
+        return self::playerViewPath($onlineId, PlayerRouteView::Report);
+    }
+
+    #[\NoDiscard]
+    public static function playerViewPath(string $onlineId, PlayerRouteView $view): string
+    {
         return self::buildPath(
             RouteName::Player->value,
             rawurlencode($onlineId),
-            PlayerRouteView::Report->value
+            $view->value
         );
+    }
+
+    #[\NoDiscard]
+    public static function gameAdvisorPath(string $onlineId): string
+    {
+        $path = '/' . RouteName::Game->value;
+        $query = http_build_query(
+            [
+                'sort' => GameListSort::Completion->value,
+                'filter' => 'true',
+                'player' => $onlineId,
+            ],
+            '',
+            '&',
+            PHP_QUERY_RFC3986
+        );
+
+        return Uri\Rfc3986\Uri::parse($path)
+            ?->withQuery($query)
+            ->toRawString()
+            ?? $path . '?' . $query;
     }
 
     #[\NoDiscard]

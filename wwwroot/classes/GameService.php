@@ -6,6 +6,7 @@ require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
 require_once __DIR__ . '/GameTrophySort.php';
+require_once __DIR__ . '/TrophyGroupId.php';
 require_once __DIR__ . '/TrophyType.php';
 
 class GameService
@@ -134,8 +135,9 @@ class GameService
      */
     public function getTrophyGroups(string $npCommunicationId): array
     {
+        $defaultGroupId = TrophyGroupId::Default->toSqlLiteral();
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 *
             FROM
@@ -143,7 +145,7 @@ class GameService
             WHERE
                 np_communication_id = :np_communication_id
             ORDER BY
-                (group_id != 'default'),
+                (group_id != {$defaultGroupId}),
                 group_id
             SQL
         );

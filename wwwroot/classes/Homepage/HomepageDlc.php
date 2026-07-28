@@ -9,13 +9,13 @@ final readonly class HomepageDlc extends HomepageTitle
     private function __construct(
         int $id,
         string $gameName,
-        private string $groupId,
-        private string $groupName,
+        final private string $groupId,
+        final private string $groupName,
         string $iconUrl,
         string $platform,
-        private int $gold,
-        private int $silver,
-        private int $bronze,
+        final private int $gold,
+        final private int $silver,
+        final private int $bronze,
     ) {
         parent::__construct($id, $gameName, $iconUrl, $platform, HistoryIconType::Group);
     }

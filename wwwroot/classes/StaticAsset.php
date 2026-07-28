@@ -14,6 +14,11 @@ final readonly class StaticAsset
             return $webPath;
         }
 
-        return $webPath . '?v=' . filemtime($fullPath);
+        $versionQuery = 'v=' . filemtime($fullPath);
+
+        return Uri\Rfc3986\Uri::parse($webPath)
+            ?->withQuery($versionQuery)
+            ->toRawString()
+            ?? $webPath . '?' . $versionQuery;
     }
 }

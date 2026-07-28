@@ -84,10 +84,12 @@ final readonly class HourlyCronJob implements CronJobInterface
             )
         SQL;
 
+    private const \Closure DEFAULT_SLEEPER = sleep(...);
+
     public function __construct(
         final private PDO $database,
         final private int $retryDelaySeconds = 3,
-        final private \Closure $sleeper = sleep(...),
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

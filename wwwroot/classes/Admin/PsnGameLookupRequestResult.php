@@ -8,9 +8,9 @@ final readonly class PsnGameLookupRequestResult
      * @param array<string, mixed>|null $result
      */
     public function __construct(
-        private string $normalizedGameId,
-        private ?array $result,
-        private ?string $errorMessage
+        final private string $normalizedGameId,
+        final private ?array $result,
+        final private ?string $errorMessage
     ) {
     }
 

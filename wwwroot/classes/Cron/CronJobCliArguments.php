@@ -7,7 +7,7 @@ final readonly class CronJobCliArguments
     /**
      * @param array<string, mixed> $arguments
      */
-    private function __construct(private array $arguments)
+    private function __construct(final private array $arguments)
     {
     }
 

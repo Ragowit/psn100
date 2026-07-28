@@ -10,9 +10,9 @@ final readonly class PlayerReportAdminPageResult
      * @param ReportedPlayer[] $reportedPlayers
      */
     public function __construct(
-        private array $reportedPlayers,
-        private ?string $successMessage = null,
-        private ?string $errorMessage = null,
+        final private array $reportedPlayers,
+        final private ?string $successMessage = null,
+        final private ?string $errorMessage = null,
     ) {
     }
 

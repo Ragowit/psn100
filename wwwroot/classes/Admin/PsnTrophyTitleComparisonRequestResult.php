@@ -8,10 +8,10 @@ final readonly class PsnTrophyTitleComparisonRequestResult
      * @param array<string, mixed>|null $result
      */
     public function __construct(
-        private string $normalizedAccountId,
-        private string $normalizedSource,
-        private ?array $result,
-        private ?string $errorMessage,
+        final private string $normalizedAccountId,
+        final private string $normalizedSource,
+        final private ?array $result,
+        final private ?string $errorMessage,
     ) {
     }
 

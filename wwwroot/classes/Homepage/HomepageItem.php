@@ -12,9 +12,9 @@ abstract readonly class HomepageItem
     private const string MISSING_PS4_ICON = '/img/missing-ps4-game.png';
 
     protected function __construct(
-        private string $iconUrl,
-        private string $platform,
-        private HistoryIconType $iconType,
+        final private string $iconUrl,
+        final private string $platform,
+        final private HistoryIconType $iconType,
     ) {
     }
 

@@ -7,8 +7,8 @@ require_once __DIR__ . '/../HistoryIconType.php';
 readonly class HomepageTitle extends HomepageItem
 {
     protected function __construct(
-        private int $id,
-        private string $name,
+        final private int $id,
+        final private string $name,
         string $iconUrl,
         string $platform,
         HistoryIconType $iconType,

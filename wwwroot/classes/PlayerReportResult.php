@@ -6,7 +6,7 @@ require_once __DIR__ . '/Html.php';
 
 final readonly class PlayerReportResult
 {
-    private function __construct(private bool $hasMessage, private bool $success, private string $message)
+    private function __construct(final private bool $hasMessage, final private bool $success, final private string $message)
     {
     }
 

@@ -9,6 +9,7 @@ require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/SearchQueryHelper.php';
 require_once __DIR__ . '/DateDurationSummary.php';
+require_once __DIR__ . '/TrophyGroupId.php';
 
 final class PlayerGamesService
 {
@@ -115,9 +116,9 @@ final class PlayerGamesService
             return '';
         }
 
-        return "JOIN trophy_group_player tgp ON tgp.account_id = ttp.account_id
+        return 'JOIN trophy_group_player tgp ON tgp.account_id = ttp.account_id
                 AND tgp.np_communication_id = ttp.np_communication_id
-                AND tgp.group_id = 'default'";
+                AND tgp.group_id = ' . TrophyGroupId::Default->toSqlLiteral();
     }
 
     private function buildWhereClause(PlayerGamesFilter $filter): string

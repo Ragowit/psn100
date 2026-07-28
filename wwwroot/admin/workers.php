@@ -20,8 +20,8 @@ $workers = $pageResult->getWorkers();
 $successMessage = $pageResult->getSuccessMessage();
 $errorMessage = $pageResult->getErrorMessage();
 
-$idSortLink = $pageResult->getSortLink('id');
-$scanStartSortLink = $pageResult->getSortLink('scan_start');
+$idSortLink = $pageResult->getSortLink(WorkerSortField::Id);
+$scanStartSortLink = $pageResult->getSortLink(WorkerSortField::ScanStart);
 
 $idSortUrl = $idSortLink?->getUrl() ?? '?sort=id&direction=asc';
 $scanStartSortUrl = $scanStartSortLink?->getUrl() ?? '?sort=scan_start&direction=asc';
