@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/NavigationSection.php';
 require_once __DIR__ . '/NavigationSectionState.php';
 require_once __DIR__ . '/RequestParameter.php';
+require_once __DIR__ . '/RequestUriPath.php';
 require_once __DIR__ . '/Html.php';
 
 final readonly class NavigationState
@@ -24,7 +25,7 @@ final readonly class NavigationState
     #[\NoDiscard]
     public static function fromGlobals(array $server, array $queryParameters): self
     {
-        $requestPath = Uri\Rfc3986\Uri::parse((string) ($server['REQUEST_URI'] ?? '/'))?->getPath() ?? '/';
+        $requestPath = RequestUriPath::fromUri((string) ($server['REQUEST_URI'] ?? '/')) ?: '/';
 
         $sort = self::sanitizeQueryValue($queryParameters['sort'] ?? '');
         $player = self::sanitizeQueryValue($queryParameters['player'] ?? '');

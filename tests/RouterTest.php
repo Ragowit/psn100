@@ -153,6 +153,46 @@ final class RouterTest extends TestCase
         );
     }
 
+    public function testDispatchRoutesGameUrlsWithDecodedUnicodeSlug(): void
+    {
+        // Apache SCRIPT_URL often contains decoded UTF-8 (×) rather than %C3%97.
+        // RequestUriPath re-encodes before parsing, so the handler sees the encoded segment.
+        $encodedSegment = '1163-collar-%C3%97-malice-unlimited';
+        $this->gameRepository->idsBySegment[$encodedSegment] = 1163;
+
+        $result = $this->router->dispatch('/game/1163-collar-' . "\u{00D7}" . '-malice-unlimited');
+
+        $this->assertSame([$encodedSegment], array_filter($this->gameRepository->receivedSegments));
+        $this->assertTrue($result->shouldInclude());
+        $this->assertSame('game.php', $result->getInclude());
+        $this->assertSame(
+            [
+                'gameId' => 1163,
+                'player' => null,
+            ],
+            $result->getVariables()
+        );
+    }
+
+    public function testDispatchRoutesGameUrlsWithPercentEncodedUnicodeSlug(): void
+    {
+        $segment = '1163-collar-%C3%97-malice-unlimited';
+        $this->gameRepository->idsBySegment[$segment] = 1163;
+
+        $result = $this->router->dispatch('/game/' . $segment);
+
+        $this->assertSame([$segment], array_filter($this->gameRepository->receivedSegments));
+        $this->assertTrue($result->shouldInclude());
+        $this->assertSame('game.php', $result->getInclude());
+        $this->assertSame(
+            [
+                'gameId' => 1163,
+                'player' => null,
+            ],
+            $result->getVariables()
+        );
+    }
+
     public function testDispatchIgnoresInvalidGamePlayerSegment(): void
     {
         $this->gameRepository->idsBySegment['123-example'] = 123;

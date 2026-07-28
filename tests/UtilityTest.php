@@ -24,6 +24,19 @@ final class UtilityTest extends TestCase
         $this->assertSame('100percent-ready-for-2024', $slug);
     }
 
+    public function testSlugifyRemovesMultiplicationSignAndOtherSymbols(): void
+    {
+        $utility = new Utility();
+
+        $this->assertSame(
+            'collar-malice-unlimited',
+            $utility->slugify('Collar × Malice: Unlimited')
+        );
+        $this->assertSame('game', $utility->slugify('★ game'));
+        $this->assertSame('hello-world', $utility->slugify('Hello → World'));
+        $this->assertSame('cafe', $utility->slugify('Café™'));
+    }
+
     public function testGetCountryNameReturnsLocaleDisplayNameWhenAvailable(): void
     {
         $utility = new Utility();
