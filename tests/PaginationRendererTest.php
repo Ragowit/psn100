@@ -53,7 +53,7 @@ final class PaginationRendererTest extends TestCase
         $renderer = new PaginationRenderer();
 
         try {
-            $renderer->render(
+            (void) $renderer->render(
                 1,
                 1,
                 static fn (int $page): string => 'page=' . $page,
