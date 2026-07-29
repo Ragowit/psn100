@@ -13,6 +13,7 @@ final readonly class PsnOnlineIdValidator
     public const string INVALID_MESSAGE = 'PSN name must contain between three and 16 characters, start with a letter, and can consist of letters, numbers, hyphens (-) and underscores (_). Letters are not case-sensitive.';
     private const string PATTERN = '/^[a-zA-Z][a-zA-Z0-9_-]{2,15}$/';
 
+    #[\NoDiscard('The validation result must be checked before accepting a PSN online ID.')]
     public static function isValidOnlineId(string $onlineId): bool
     {
         return $onlineId !== '' && preg_match(self::PATTERN, $onlineId) === 1;

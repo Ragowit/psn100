@@ -31,9 +31,9 @@ abstract class AbstractLeaderboardPageContext
      * @param array<string, mixed> $queryParameters
      */
     protected function __construct(
-        private PlayerLeaderboardPage $leaderboardPage,
-        private PlayerLeaderboardFilter $filter,
-        private Utility $utility,
+        final private PlayerLeaderboardPage $leaderboardPage,
+        final private PlayerLeaderboardFilter $filter,
+        final private Utility $utility,
         array $queryParameters,
     ) {
         $this->filterParameters = $leaderboardPage->getFilterParameters();

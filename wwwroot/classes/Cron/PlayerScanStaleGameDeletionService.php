@@ -7,9 +7,9 @@ declare(strict_types=1);
  *
  * Encapsulates missing-game deletion logic that was previously embedded in ThirtyMinuteCronJob.
  */
-final class PlayerScanStaleGameDeletionService
+final readonly class PlayerScanStaleGameDeletionService
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(private PDO $database)
     {
     }
 

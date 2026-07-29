@@ -9,11 +9,11 @@ require_once __DIR__ . '/../TrophyCalculator.php';
 require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/ThirtyMinuteCronJob.php';
 
-final class ThirtyMinuteCronJobApplication
+final readonly class ThirtyMinuteCronJobApplication
 {
     private function __construct(
-        private readonly CronJobEntryPoint $entryPoint,
-        private readonly CronJobCliArguments $cliArguments,
+        private CronJobEntryPoint $entryPoint,
+        private CronJobCliArguments $cliArguments,
     ) {
     }
 

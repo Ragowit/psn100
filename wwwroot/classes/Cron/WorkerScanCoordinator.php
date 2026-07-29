@@ -8,13 +8,13 @@ declare(strict_types=1);
  * Encapsulates setting table updates that were previously embedded in
  * ThirtyMinuteCronJob so the main scan loop can focus on PSN API orchestration.
  */
-final class WorkerScanCoordinator
+final readonly class WorkerScanCoordinator
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
+        private PDO $database,
+        private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

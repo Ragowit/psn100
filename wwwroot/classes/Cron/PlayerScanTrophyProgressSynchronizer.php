@@ -15,14 +15,14 @@ use Tustin\Haste\Exception\NotFoundHttpException;
  * Encapsulates per-title trophy progress synchronization that was previously embedded in
  * ThirtyMinuteCronJob.
  */
-final class PlayerScanTrophyProgressSynchronizer
+final readonly class PlayerScanTrophyProgressSynchronizer
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyCalculator $trophyCalculator,
-        private readonly Psn100Logger $logger,
-        private readonly PlayerEarnedTrophyPersister $earnedTrophyPersister,
-        private readonly AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService,
+        private PDO $database,
+        private TrophyCalculator $trophyCalculator,
+        private Psn100Logger $logger,
+        private PlayerEarnedTrophyPersister $earnedTrophyPersister,
+        private AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService,
     ) {
     }
 

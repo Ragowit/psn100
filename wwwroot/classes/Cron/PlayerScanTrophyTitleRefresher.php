@@ -12,12 +12,12 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  * Encapsulates PSN title icon and last-updated-date retry logic that was
  * previously embedded in ThirtyMinuteCronJob.
  */
-final class PlayerScanTrophyTitleRefresher
+final readonly class PlayerScanTrophyTitleRefresher
 {
     public function __construct(
-        private readonly Psn100Logger $logger,
-        private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper,
-        private readonly WorkerScanCoordinator $workerScanCoordinator,
+        private Psn100Logger $logger,
+        private PlayerScanTitleMetadataHelper $titleMetadataHelper,
+        private WorkerScanCoordinator $workerScanCoordinator,
     ) {
     }
 

@@ -233,6 +233,7 @@ class PlayerQueueService
         return new IpSubmissionLockExecutor($this->requireDatabase());
     }
 
+    #[\NoDiscard('The validation result must be checked before accepting a queue player name.')]
     public function isValidPlayerName(string $playerName): bool
     {
         return PsnOnlineIdValidator::isValidOnlineId($playerName);

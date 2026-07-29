@@ -110,7 +110,7 @@ final readonly class GameMessageSanitizer
 
     private static function isSafeHttpUrl(string $url): bool
     {
-        $scheme = Uri\Rfc3986\Uri::parse($url)?->getScheme();
+        $scheme = Uri\WhatWg\Url::parse($url)?->getScheme();
 
         return $scheme === 'http' || $scheme === 'https';
     }

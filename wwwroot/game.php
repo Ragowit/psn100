@@ -133,7 +133,7 @@ require_once("header.php");
                                             
                                             <div>
                                                 <b><?= Html::escape($trophyGroup->getName()); ?></b><br>
-                                                <?= nl2br(Html::escape($trophyGroup->getDetail())); ?>
+                                                <?= $trophyGroup->getDetail() |> Html::escape(...) |> nl2br(...); ?>
                                             </div>
 
                                             <div class="ms-auto">
@@ -246,7 +246,7 @@ require_once("header.php");
                                                         <b><?= Html::escape($trophyRow->getName()); ?></b>
                                                     </a>
                                                 </span>
-                                                <?= nl2br(Html::escape($trophyRow->getDetail())); ?>
+                                                <?= $trophyRow->getDetail() |> Html::escape(...) |> nl2br(...); ?>
                                                 <?php
                                                 $progressDisplay = $trophyRow->getProgressDisplay();
                                                 if ($progressDisplay !== null) {

@@ -91,7 +91,7 @@ final class AdminAuthServiceTest extends TestCase
     {
         $this->insertAdmin('admin-user', password_hash('secret-password', PASSWORD_DEFAULT));
         $service = $this->createAuthService();
-        $service->login('admin-user', 'secret-password', '192.0.2.32');
+        (void) $service->login('admin-user', 'secret-password', '192.0.2.32');
 
         $service->logout();
 
@@ -107,7 +107,7 @@ final class AdminAuthServiceTest extends TestCase
         $ipAddress = '192.0.2.33';
 
         for ($index = 0; $index < AdminLoginThrottleService::MAX_FAILURES; $index++) {
-            $service->login('admin-user', 'wrong-password', $ipAddress);
+            (void) $service->login('admin-user', 'wrong-password', $ipAddress);
         }
 
         $this->assertTrue($service->isLoginLocked($ipAddress));

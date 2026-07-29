@@ -14,6 +14,7 @@ final readonly class IpRateLimitService
     {
     }
 
+    #[\NoDiscard('Check whether the IP is still within its rate limit.')]
     public function isAllowed(string $ipAddress, IpRateLimitBucket $bucket): bool
     {
         [$maxRequests, $windowSeconds] = $bucket->limits();
@@ -36,9 +37,10 @@ final readonly class IpRateLimitService
 
     public function recordRequest(string $ipAddress, IpRateLimitBucket $bucket): void
     {
-        $this->checkAndRecord($ipAddress, $bucket);
+        (void) $this->checkAndRecord($ipAddress, $bucket);
     }
 
+    #[\NoDiscard('Check the allow/deny result; use recordRequest() when it is intentionally irrelevant.')]
     public function checkAndRecord(string $ipAddress, IpRateLimitBucket $bucket): bool
     {
         [$maxRequests, $windowSeconds] = $bucket->limits();

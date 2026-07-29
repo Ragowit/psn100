@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GameRescanProgressListener.php';
 
-final class CallableGameRescanProgressListener implements GameRescanProgressListener
+final readonly class CallableGameRescanProgressListener implements GameRescanProgressListener
 {
     /**
      * @param Closure(int, string):void $callback
      */
-    public function __construct(private readonly \Closure $callback)
+    public function __construct(private \Closure $callback)
     {
     }
 

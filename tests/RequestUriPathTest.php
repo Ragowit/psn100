@@ -31,4 +31,28 @@ final class RequestUriPathTest extends TestCase
             RequestUriPath::fromUri('/game/1163-collar-%C3%97-malice-unlimited')
         );
     }
+
+    public function testFromUriStripsQueryAndFragment(): void
+    {
+        $this->assertSame(
+            '/player/example',
+            RequestUriPath::fromUri('/player/example?tab=log#latest')
+        );
+    }
+
+    public function testFromUriReturnsRootForEmptyInput(): void
+    {
+        $this->assertSame('/', RequestUriPath::fromUri(''));
+        $this->assertSame('/', RequestUriPath::fromUri('/'));
+    }
+
+    public function testFromUriReturnsEmptyStringForMalformedAbsoluteUri(): void
+    {
+        $this->assertSame('', RequestUriPath::fromUri('http://['));
+    }
+
+    public function testFromUriPercentEncodesSpaces(): void
+    {
+        $this->assertSame('/a%20b', RequestUriPath::fromUri('/a b'));
+    }
 }

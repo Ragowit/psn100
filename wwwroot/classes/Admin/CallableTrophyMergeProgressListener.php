@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyMergeProgressListener.php';
 
-final class CallableTrophyMergeProgressListener implements TrophyMergeProgressListener
+final readonly class CallableTrophyMergeProgressListener implements TrophyMergeProgressListener
 {
     /**
      * @param Closure(int, string):void $callback
      */
-    public function __construct(private readonly \Closure $callback)
+    public function __construct(private \Closure $callback)
     {
     }
 

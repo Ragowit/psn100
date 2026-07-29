@@ -307,7 +307,7 @@ class GameHeaderService
 
             $url = trim($matches['url'][0]);
             $linkText = $matches['text'][0];
-            $scheme = Uri\Rfc3986\Uri::parse($url)?->getScheme();
+            $scheme = Uri\WhatWg\Url::parse($url)?->getScheme();
 
             if ($scheme === 'http' || $scheme === 'https') {
                 $formatted .= sprintf(

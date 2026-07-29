@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/ImageProcessor.php';
 
-final class ImageHashCalculator
+final readonly class ImageHashCalculator
 {
     private const int GD_ALPHA_MAX = 127;
     private const int RGBA_CHANNEL_MAX = 255;
 
     public function __construct(
-        private readonly ImageProcessorInterface $imageProcessor = new GdImageProcessor(),
+        private ImageProcessorInterface $imageProcessor = new GdImageProcessor(),
     ) {
     }
 

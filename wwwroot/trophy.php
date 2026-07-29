@@ -102,7 +102,7 @@ require_once("header.php");
                                                 </div>
 
                                                 <div>
-                                                    <?= nl2br(Html::escape($trophy->getDetail())); ?>
+                                                    <?= $trophy->getDetail() |> Html::escape(...) |> nl2br(...); ?>
                                                     <?php
                                                     $progressTargetValue = $trophy->getProgressTargetValue();
                                                     if ($progressTargetValue !== null) {
