@@ -20,6 +20,7 @@ final readonly class PlayerPlatformFilterRenderer
     /**
      * @param array<string, string> $hiddenInputs
      */
+    #[\NoDiscard]
     public function render(PlayerPlatformFilterOptions $options, array $hiddenInputs = []): string
     {
         $dropdownControls = $this->renderDropdownControls($options);
@@ -35,6 +36,7 @@ final readonly class PlayerPlatformFilterRenderer
 HTML;
     }
 
+    #[\NoDiscard]
     public function renderDropdownControls(PlayerPlatformFilterOptions $options): string
     {
         $buttonLabel = Html::escape($this->buttonLabel);
@@ -50,6 +52,7 @@ HTML;
 HTML;
     }
 
+    #[\NoDiscard]
     public function renderOptionItems(PlayerPlatformFilterOptions $options): string
     {
         return $options->getOptions()

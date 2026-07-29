@@ -6,9 +6,9 @@ require_once __DIR__ . '/../wwwroot/classes/PlayerLeaderboardFilter.php';
 
 final class PlayerLeaderboardFilterTest extends TestCase
 {
-    public function testConstructorNormalizesInputs(): void
+    public function testCreateNormalizesInputs(): void
     {
-        $filter = new PlayerLeaderboardFilter('  US  ', "  cat-01  ", 0);
+        $filter = PlayerLeaderboardFilter::create('  US  ', "  cat-01  ", 0);
 
         $this->assertSame('US', $filter->getCountry());
         $this->assertSame('cat-01', $filter->getAvatar());
@@ -17,9 +17,9 @@ final class PlayerLeaderboardFilterTest extends TestCase
         $this->assertTrue($filter->hasAvatar());
     }
 
-    public function testConstructorTreatsEmptyStringsAsNull(): void
+    public function testCreateTreatsEmptyStringsAsNull(): void
     {
-        $filter = new PlayerLeaderboardFilter('   ', "", 2);
+        $filter = PlayerLeaderboardFilter::create('   ', "", 2);
 
         $this->assertSame(null, $filter->getCountry());
         $this->assertSame(null, $filter->getAvatar());
@@ -49,14 +49,14 @@ final class PlayerLeaderboardFilterTest extends TestCase
 
     public function testGetFilterParametersOnlyIncludesDefinedFilters(): void
     {
-        $filter = new PlayerLeaderboardFilter(null, 'ghost', 4);
+        $filter = PlayerLeaderboardFilter::create(null, 'ghost', 4);
 
         $this->assertSame(['avatar' => 'ghost'], $filter->getFilterParameters());
     }
 
     public function testOffsetAndQueryParameterHelpers(): void
     {
-        $filter = new PlayerLeaderboardFilter('JP', null, 5);
+        $filter = PlayerLeaderboardFilter::create('JP', null, 5);
 
         $this->assertSame(40, $filter->getOffset(10));
         $this->assertSame(

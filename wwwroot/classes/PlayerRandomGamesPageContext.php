@@ -78,12 +78,12 @@ final readonly class PlayerRandomGamesPageContext
     }
 
     private function __construct(
-        private PlayerRandomGamesPage $playerRandomGamesPage,
-        private PlayerSummary $playerSummary,
-        private PlayerRandomGamesFilter $filter,
-        private string $playerOnlineId,
-        private int $playerAccountId,
-        private PlayerStatus $playerStatus,
+        final private PlayerRandomGamesPage $playerRandomGamesPage,
+        final private PlayerSummary $playerSummary,
+        final private PlayerRandomGamesFilter $filter,
+        final private string $playerOnlineId,
+        final private int $playerAccountId,
+        final private PlayerStatus $playerStatus,
     ) {
         $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::RANDOM);
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(

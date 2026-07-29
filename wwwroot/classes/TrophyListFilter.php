@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 final readonly class TrophyListFilter
 {
-    private int $page;
+    private function __construct(
+        final private int $page,
+    ) {
+    }
 
-    public function __construct(int $page)
+    #[\NoDiscard]
+    public static function fromPage(int $page): self
     {
-        $this->page = max($page, 1);
+        return new self(max($page, 1));
     }
 
     /**
@@ -23,7 +27,7 @@ final readonly class TrophyListFilter
             $page = 1;
         }
 
-        return new self((int) $page);
+        return self::fromPage((int) $page);
     }
 
     public function getPage(): int

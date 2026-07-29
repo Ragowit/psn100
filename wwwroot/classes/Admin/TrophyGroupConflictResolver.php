@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 final readonly class TrophyGroupConflictResolver
 {
+    #[\NoDiscard]
     public function parseNumericGroupId(string $groupId): ?int
     {
         if (!ctype_digit($groupId)) {
@@ -19,6 +20,7 @@ final readonly class TrophyGroupConflictResolver
         return (int) $trimmed;
     }
 
+    #[\NoDiscard]
     public function formatGroupId(int $numericValue, string $originalGroupId): string
     {
         $length = max(strlen($originalGroupId), 3);
@@ -29,6 +31,7 @@ final readonly class TrophyGroupConflictResolver
     /**
      * @param array<string, string> $existingGroupMappings
      */
+    #[\NoDiscard]
     public function determinePreferredGroupOffset(array $existingGroupMappings): ?int
     {
         $parentGroupId = array_find(
@@ -51,6 +54,7 @@ final readonly class TrophyGroupConflictResolver
     /**
      * @param array<string, bool> $existingGroupIds
      */
+    #[\NoDiscard]
     public function determineGroupOffset(array $existingGroupIds): int
     {
         $maxBlock = -1;
@@ -83,6 +87,7 @@ final readonly class TrophyGroupConflictResolver
      * @param array<string, string[]> $parentGroupTrophyNames
      * @param array<string, bool> $usedParentGroups
      */
+    #[\NoDiscard]
     public function findMatchingParentGroupId(
         string $childGroupId,
         array $childGroupTrophyNames,
@@ -109,6 +114,7 @@ final readonly class TrophyGroupConflictResolver
      * @param array<string, bool> $existingGroupIds
      * @return array{groupId: string, preferredOffset: ?int, groupOffset: int}
      */
+    #[\NoDiscard]
     public function allocateNonConflictingGroupId(
         int $numericGroupId,
         string $originalGroupId,

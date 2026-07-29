@@ -101,6 +101,7 @@ final readonly class PlayerQueueResponse implements \JsonSerializable
     /**
      * @return array<string, mixed>
      */
+    #[\NoDiscard]
     public function toArray(): array
     {
         $payload = [

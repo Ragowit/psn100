@@ -12,11 +12,11 @@ require_once __DIR__ . '/GameLeaderboardPlayerNotFoundException.php';
 final readonly class GameRecentPlayersPageContext
 {
     private function __construct(
-        private ?GameRecentPlayersPage $page,
-        private ?string $title,
-        private ?string $gameSlug,
-        private ?string $redirectLocation,
-        private int $redirectStatusCode,
+        final private ?GameRecentPlayersPage $page,
+        final private ?string $title,
+        final private ?string $gameSlug,
+        final private ?string $redirectLocation,
+        final private int $redirectStatusCode,
     ) {
     }
 

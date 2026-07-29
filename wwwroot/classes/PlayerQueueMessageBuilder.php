@@ -93,11 +93,13 @@ final class PlayerQueueMessageBuilder
     /**
      * @return list<array<string, mixed>>
      */
+    #[\NoDiscard]
     public function build(): array
     {
         return $this->parts;
     }
 
+    #[\NoDiscard]
     public function toPlainText(): string
     {
         $text = '';

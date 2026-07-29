@@ -9,8 +9,8 @@ require_once __DIR__ . '/Html.php';
 final readonly class NavigationBarRenderer
 {
     private function __construct(
-        private NavigationState $state,
-        private NavigationMenu $menu,
+        final private NavigationState $state,
+        final private NavigationMenu $menu,
     ) {
     }
 
@@ -20,6 +20,7 @@ final readonly class NavigationBarRenderer
         return new self($state, $menu ?? NavigationMenu::createDefault($state));
     }
 
+    #[\NoDiscard]
     public function render(): string
     {
         $sort = $this->state->getSort();

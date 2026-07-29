@@ -48,6 +48,7 @@ final readonly class PaginationItem
     /**
      * @param callable(int):string $urlBuilder
      */
+    #[\NoDiscard]
     public function render(callable $urlBuilder): string
     {
         $classNames = ['page-item'];

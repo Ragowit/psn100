@@ -72,15 +72,13 @@ final readonly class TrophyTitleNameFormatter
             }
         }
 
-        $name = rtrim($name);
-
-        if ($name !== '') {
-            $name = rtrim($name, '.');
-        }
-
-        return trim($name);
+        return $name
+            |> rtrim(...)
+            |> (fn (string $value): string => $value === '' ? $value : rtrim($value, '.'))
+            |> trim(...);
     }
 
+    #[\NoDiscard]
     public function toApaTitleCase(string $title): string
     {
         $title = trim($title);

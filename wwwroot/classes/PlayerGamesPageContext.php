@@ -36,12 +36,12 @@ final readonly class PlayerGamesPageContext
      * @param array<string, mixed> $playerData
      */
     private function __construct(
-        private PlayerGamesPage $playerGamesPage,
-        private PlayerSummary $playerSummary,
-        private PlayerGamesFilter $filter,
+        final private PlayerGamesPage $playerGamesPage,
+        final private PlayerSummary $playerSummary,
+        final private PlayerGamesFilter $filter,
         array $playerData,
-        private int $playerAccountId,
-        private PlayerStatus $playerStatus,
+        final private int $playerAccountId,
+        final private PlayerStatus $playerStatus,
     ) {
         $this->metaData = $this->buildMetaData($playerData, $playerSummary);
         $this->title = $this->buildTitle($playerData);

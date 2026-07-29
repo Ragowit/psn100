@@ -39,6 +39,7 @@ final readonly class TrophyRarity
         return $this->unobtainable;
     }
 
+    #[\NoDiscard]
     public function renderSpan(string $separator = '<br>', bool $includePercentWhenUnobtainable = false): string
     {
         $parts = [];

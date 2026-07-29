@@ -8,6 +8,7 @@ require_once __DIR__ . '/PsnPlayerLookupRequestResult.php';
 
 final class PsnPlayerLookupRequestHandler
 {
+    #[\NoDiscard]
     public static function handle(PsnPlayerLookupService $lookupService, string $onlineId): PsnPlayerLookupRequestResult
     {
         $normalizedOnlineId = trim($onlineId);
@@ -58,13 +59,8 @@ final class PsnPlayerLookupRequestHandler
             return [null, null];
         }
 
-        $decoded = base64_decode($npId, true);
-
-        if ($decoded === false || $decoded === '') {
-            return [null, null];
-        }
-
-        $trimmed = trim($decoded);
+        $trimmed = base64_decode($npId, true)
+            |> (fn (string|false $decoded): string => $decoded === false ? '' : trim($decoded));
 
         if ($trimmed === '') {
             return [null, null];
