@@ -137,7 +137,7 @@ final readonly class NavigationState
     {
         $value = RequestParameter::firstScalar($value) ?? '';
 
-        return Html::escape((string) $value);
+        return ((string) $value) |> Html::escape(...);
     }
 
     private static function resolveActiveSection(string $requestPath): NavigationSection

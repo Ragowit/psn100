@@ -241,8 +241,9 @@ final class PsnPlayerLookupService
 
         if (is_object($profile)) {
             try {
-                $encoded = json_encode($profile, JSON_THROW_ON_ERROR);
-                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
+                $decoded = $profile
+                    |> (fn (object $value): string => json_encode($value, JSON_THROW_ON_ERROR))
+                    |> (fn (string $json): mixed => json_decode($json, true, 512, JSON_THROW_ON_ERROR));
 
                 if (is_array($decoded)) {
                     return $decoded;

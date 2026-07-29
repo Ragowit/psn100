@@ -6,11 +6,11 @@ require_once __DIR__ . '/NavigationState.php';
 require_once __DIR__ . '/NavigationMenu.php';
 require_once __DIR__ . '/Html.php';
 
-final class NavigationBarRenderer
+final readonly class NavigationBarRenderer
 {
     private function __construct(
-        private readonly NavigationState $state,
-        private readonly NavigationMenu $menu,
+        private NavigationState $state,
+        private NavigationMenu $menu,
     ) {
     }
 

@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Filters raw game history rows down to entries with meaningful changes and
  * annotates each row with field-level diff metadata for rendering.
  */
-final class GameHistoryChangeFilter
+final readonly class GameHistoryChangeFilter
 {
     /**
      * @param array<int, array{

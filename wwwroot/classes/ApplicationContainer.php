@@ -105,6 +105,7 @@ class ApplicationContainer
         return $this->templateRenderer;
     }
 
+    #[\NoDiscard]
     public function createApplication(HttpRequest $request): Application
     {
         return new Application(
@@ -114,6 +115,7 @@ class ApplicationContainer
         );
     }
 
+    #[\NoDiscard]
     public function createRequestFromGlobals(): HttpRequest
     {
         return HttpRequest::fromGlobals();

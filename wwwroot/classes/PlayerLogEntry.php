@@ -244,6 +244,8 @@ final readonly class PlayerLogEntry
 
     private function usesPs5Assets(): bool
     {
-        return Platform::usesPlayStation5Assets(strtoupper($this->platforms));
+        return $this->platforms
+            |> strtoupper(...)
+            |> Platform::usesPlayStation5Assets(...);
     }
 }

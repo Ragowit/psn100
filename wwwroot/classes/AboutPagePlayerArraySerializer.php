@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AboutPagePlayer.php';
 
-final class AboutPagePlayerArraySerializer
+final readonly class AboutPagePlayerArraySerializer
 {
     /**
      * @return array<string, mixed>

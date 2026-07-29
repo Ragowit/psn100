@@ -9,7 +9,7 @@ declare(strict_types=1);
  * under trophyGroups are used. Group metadata from the trophyGroups endpoint
  * wins when present.
  */
-final class PsnTrophyGroupAssembler
+final readonly class PsnTrophyGroupAssembler
 {
     /**
      * @return array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}>

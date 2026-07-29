@@ -32,7 +32,7 @@ final readonly class PlayerStatusNotice
     {
         $message = sprintf(
             'This player seems to have a <a class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="%s">private</a> profile.',
-            Html::escape(self::PRIVATE_PROFILE_URL)
+            self::PRIVATE_PROFILE_URL |> Html::escape(...)
         );
 
         return new self(PlayerStatusNoticeType::Private, $message);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class WorkerCredentialMasker
+final readonly class WorkerCredentialMasker
 {
     private const string MASK_CHAR = '•';
     private const int MASK_LENGTH = 8;
@@ -22,6 +22,7 @@ final class WorkerCredentialMasker
             . substr($secret, -self::VISIBLE_SUFFIX_LENGTH);
     }
 
+    #[\NoDiscard('Check whether a worker credential is configured before treating it as usable.')]
     public static function isConfigured(#[\SensitiveParameter] string $secret): bool
     {
         return $secret !== '';

@@ -6,7 +6,7 @@ require_once __DIR__ . '/PageMetaData.php';
 require_once __DIR__ . '/Html.php';
 require_once __DIR__ . '/SiteUrl.php';
 
-final class PageMetaDataRenderer
+final readonly class PageMetaDataRenderer
 {
     private const string OG_SITE_NAME = 'PSN 100%';
     private const string TWITTER_CARD = 'summary_large_image';
@@ -54,7 +54,7 @@ final class PageMetaDataRenderer
             return null;
         }
 
-        return Html::escape(SiteUrl::absolute($value));
+        return SiteUrl::absolute($value) |> Html::escape(...);
     }
 
     private function escape(?string $value): ?string

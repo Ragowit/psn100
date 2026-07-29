@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class TrophyGroupConflictResolver
+final readonly class TrophyGroupConflictResolver
 {
     public function parseNumericGroupId(string $groupId): ?int
     {

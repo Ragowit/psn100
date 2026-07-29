@@ -9,7 +9,7 @@ declare(strict_types=1);
  * Extracted from ThirtyMinuteCronJob so timestamp/set-version rules can be tested
  * without reflection on the cron orchestrator.
  */
-final class PlayerScanTitleMetadataHelper
+final readonly class PlayerScanTitleMetadataHelper
 {
     public function gameTimestampsMatch(string $sonyTimestamp, string $dbTimestamp): bool
     {
@@ -103,7 +103,8 @@ final class PlayerScanTitleMetadataHelper
             return false;
         }
 
-        return version_compare(trim($newVersion), $normalizedCurrentVersion, '<');
+        return trim($newVersion)
+            |> (fn (string $version): bool => version_compare($version, $normalizedCurrentVersion, '<'));
     }
 
     public function resolveSetVersionForUpdate(string $newVersion, mixed $currentVersion): string
@@ -114,7 +115,10 @@ final class PlayerScanTitleMetadataHelper
             return trim($newVersion);
         }
 
-        if (version_compare(trim($newVersion), $normalizedCurrentVersion, '<')) {
+        if (
+            trim($newVersion)
+                |> (fn (string $version): bool => version_compare($version, $normalizedCurrentVersion, '<'))
+        ) {
             return $normalizedCurrentVersion;
         }
 

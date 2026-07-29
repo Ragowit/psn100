@@ -303,7 +303,7 @@ class GameHeaderService
             $matchText = $matches[0][0];
             $matchPosition = $matches[0][1];
 
-            $formatted .= Html::escape(substr($note, $offset, $matchPosition - $offset));
+            $formatted .= substr($note, $offset, $matchPosition - $offset) |> Html::escape(...);
 
             $url = trim($matches['url'][0]);
             $linkText = $matches['text'][0];
@@ -322,7 +322,7 @@ class GameHeaderService
             $offset = $matchPosition + strlen($matchText);
         }
 
-        $formatted .= Html::escape(substr($note, $offset));
+        $formatted .= substr($note, $offset) |> Html::escape(...);
 
         return $formatted;
     }

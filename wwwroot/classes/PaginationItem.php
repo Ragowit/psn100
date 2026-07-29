@@ -40,7 +40,7 @@ final readonly class PaginationItem
     }
 
     #[\NoDiscard]
-    public function setAriaLabel(?string $ariaLabel): self
+    public function withAriaLabel(?string $ariaLabel): self
     {
         return clone($this, ['ariaLabel' => $ariaLabel]);
     }
@@ -87,7 +87,7 @@ final readonly class PaginationItem
 
         $label = Html::escape($this->label);
         $href = Html::escape($href);
-        $classAttribute = Html::escape(implode(' ', $classNames));
+        $classAttribute = implode(' ', $classNames) |> Html::escape(...);
 
         return '<li class="' . $classAttribute . '"><a class="page-link" href="' . $href . '"'
             . $attributesString . '>' . $label . '</a></li>';

@@ -70,12 +70,12 @@ final readonly class GameMessageSanitizer
             $matchText = $matches[0][0];
             $matchPosition = $matches[0][1];
 
-            $sanitized .= Html::escape(substr($text, $offset, $matchPosition - $offset));
+            $sanitized .= substr($text, $offset, $matchPosition - $offset) |> Html::escape(...);
             $sanitized .= '<br>';
             $offset = $matchPosition + strlen($matchText);
         }
 
-        $sanitized .= Html::escape(substr($text, $offset));
+        $sanitized .= substr($text, $offset) |> Html::escape(...);
 
         return $sanitized;
     }
