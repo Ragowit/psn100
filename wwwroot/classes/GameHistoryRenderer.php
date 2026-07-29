@@ -20,6 +20,7 @@ final readonly class GameHistoryRenderer
     /**
      * @param array{previous: mixed, current: mixed}|null $diff
      */
+    #[\NoDiscard]
     public function renderTextDiff(?array $diff, bool $isMultiline = false, bool $hidePrevious = false): string
     {
         if ($diff === null) {
@@ -44,6 +45,7 @@ final readonly class GameHistoryRenderer
     /**
      * @param array{previous: mixed, current: mixed}|null $diff
      */
+    #[\NoDiscard]
     public function renderNumberDiff(?array $diff, bool $hidePrevious = false): string
     {
         if ($diff === null) {
@@ -56,11 +58,13 @@ final readonly class GameHistoryRenderer
         return $this->renderDiffBlocks($previous, $current, $hidePrevious);
     }
 
+    #[\NoDiscard]
     public function renderSingleText(?string $value, bool $isMultiline = false): string
     {
         return $this->formatText($value, $isMultiline);
     }
 
+    #[\NoDiscard]
     public function renderSingleNumber(?int $value): string
     {
         return $this->formatNumber($value);
@@ -69,6 +73,7 @@ final readonly class GameHistoryRenderer
     /**
      * @param array{previous: mixed, current: mixed}|null $diff
      */
+    #[\NoDiscard]
     public function renderIconDiff(
         ?array $diff,
         GameDetails $game,
@@ -98,6 +103,7 @@ final readonly class GameHistoryRenderer
         return $this->renderDiffBlocks($previous, $current, $hidePrevious);
     }
 
+    #[\NoDiscard]
     public function renderSingleIcon(?string $iconUrl, GameDetails $game, HistoryIconType $type, ?string $name): string
     {
         $resolvedPath = $this->resolveIconPath($iconUrl, $game, $type);

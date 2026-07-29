@@ -7,6 +7,7 @@ require_once __DIR__ . '/Html.php';
 
 final readonly class MaintenancePageRenderer
 {
+    #[\NoDiscard]
     public function render(MaintenancePage $page): string
     {
         $title = $this->escape($page->getTitle());

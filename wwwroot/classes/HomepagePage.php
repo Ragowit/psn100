@@ -56,6 +56,7 @@ final readonly class HomepagePage
         return clone($this, ['popularGamesFilter' => $filter]);
     }
 
+    #[\NoDiscard]
     public function buildViewModel(): HomepageViewModel
     {
         $newGames = $this->newGamesLimit === null

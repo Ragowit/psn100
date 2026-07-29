@@ -70,11 +70,11 @@ final readonly class PlayerTimelinePageContext
     }
 
     private function __construct(
-        private PlayerTimelinePage $playerTimelinePage,
-        private PlayerSummary $playerSummary,
-        private string $playerOnlineId,
-        private int $playerAccountId,
-        private PlayerStatus $playerStatus,
+        final private PlayerTimelinePage $playerTimelinePage,
+        final private PlayerSummary $playerSummary,
+        final private string $playerOnlineId,
+        final private int $playerAccountId,
+        final private PlayerStatus $playerStatus,
     ) {
         $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::TIMELINE);
         $this->title = sprintf("%s's Timeline ~ PSN 100%%", $playerOnlineId);

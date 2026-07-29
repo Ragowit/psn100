@@ -23,19 +23,19 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
 
     public function testCountPlayersAppliesCountryAndAvatarFilters(): void
     {
-        $filter = new PlayerLeaderboardFilter('US', 'cat', 1);
+        $filter = PlayerLeaderboardFilter::create('US', 'cat', 1);
         $this->assertSame(1, $this->service->countPlayers($filter));
 
-        $countryOnlyFilter = new PlayerLeaderboardFilter('US', null, 1);
+        $countryOnlyFilter = PlayerLeaderboardFilter::create('US', null, 1);
         $this->assertSame(2, $this->service->countPlayers($countryOnlyFilter));
 
-        $avatarOnlyFilter = new PlayerLeaderboardFilter(null, 'fox', 1);
+        $avatarOnlyFilter = PlayerLeaderboardFilter::create(null, 'fox', 1);
         $this->assertSame(2, $this->service->countPlayers($avatarOnlyFilter));
     }
 
     public function testGetPlayersReturnsOrderedResultsAndHonorsPagination(): void
     {
-        $filter = new PlayerLeaderboardFilter(null, null, 1);
+        $filter = PlayerLeaderboardFilter::create(null, null, 1);
         $firstPage = $this->service->getPlayers($filter, 2);
 
         $this->assertCount(2, $firstPage);
@@ -45,7 +45,7 @@ final class PlayerRarityLeaderboardServiceTest extends TestCase
         $this->assertSame('1', $firstPage[1]['account_id']);
         $this->assertSame(2, (int) $firstPage[1]['ranking']);
 
-        $secondPage = $this->service->getPlayers(new PlayerLeaderboardFilter(null, null, 2), 2);
+        $secondPage = $this->service->getPlayers(PlayerLeaderboardFilter::create(null, null, 2), 2);
         $this->assertCount(1, $secondPage);
         $this->assertSame('3', $secondPage[0]['account_id']);
         $this->assertSame(3, (int) $secondPage[0]['ranking']);

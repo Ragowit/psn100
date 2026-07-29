@@ -7,6 +7,7 @@ require_once __DIR__ . '/Html.php';
 
 final readonly class PlayerNavigationRenderer
 {
+    #[\NoDiscard]
     public function render(PlayerNavigation $navigation): string
     {
         $linksHtml = $navigation->getLinks()

@@ -15,6 +15,7 @@ final readonly class PaginationRenderer
     /**
      * @param \Closure(int):array<string, string> $queryParametersFactory
      */
+    #[\NoDiscard]
     public function render(
         int $currentPage,
         int $totalPages,

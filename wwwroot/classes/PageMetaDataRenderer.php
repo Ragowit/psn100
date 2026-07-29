@@ -11,6 +11,7 @@ final readonly class PageMetaDataRenderer
     private const string OG_SITE_NAME = 'PSN 100%';
     private const string TWITTER_CARD = 'summary_large_image';
 
+    #[\NoDiscard]
     public function render(PageMetaData $metaData): string
     {
         if ($metaData->isEmpty()) {

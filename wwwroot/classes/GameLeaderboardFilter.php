@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 final readonly class GameLeaderboardFilter extends GamePlayerFilter
 {
-    private int $page;
-
-    public function __construct(?string $country, ?string $avatar, int $page)
-    {
+    private function __construct(
+        ?string $country,
+        ?string $avatar,
+        final private int $page,
+    ) {
         parent::__construct($country, $avatar);
-        $this->page = max($page, 1);
     }
 
     /**
@@ -26,7 +26,7 @@ final readonly class GameLeaderboardFilter extends GamePlayerFilter
         $pageValue = $queryParameters['page'] ?? 1;
         $page = is_numeric($pageValue) ? (int) $pageValue : 1;
 
-        return new self($country, $avatar, $page);
+        return new self($country, $avatar, max($page, 1));
     }
 
     public function getPage(): int

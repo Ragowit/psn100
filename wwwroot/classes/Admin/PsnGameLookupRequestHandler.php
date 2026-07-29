@@ -8,6 +8,7 @@ require_once __DIR__ . '/PsnGameLookupRequestResult.php';
 
 final class PsnGameLookupRequestHandler
 {
+    #[\NoDiscard]
     public static function handle(PsnGameLookupService $lookupService, string $gameId): PsnGameLookupRequestResult
     {
         $normalizedGameId = trim($gameId);

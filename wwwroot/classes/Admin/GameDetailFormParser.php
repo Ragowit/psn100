@@ -13,11 +13,13 @@ final readonly class GameDetailFormParser
     /**
      * @return list<string>
      */
+    #[\NoDiscard]
     public function getPlatformOptions(): array
     {
         return Platform::labelOrder();
     }
 
+    #[\NoDiscard]
     public function parseNpCommunicationId(mixed $value): ?string
     {
         if (!is_string($value)) {
@@ -29,6 +31,7 @@ final readonly class GameDetailFormParser
         return $trimmed === '' ? null : $trimmed;
     }
 
+    #[\NoDiscard]
     public function parseGameId(mixed $value): ?int
     {
         if (is_int($value)) {
@@ -55,11 +58,13 @@ final readonly class GameDetailFormParser
         return (int) $trimmed;
     }
 
+    #[\NoDiscard]
     public function parseAction(mixed $value): ?GameDetailAction
     {
         return GameDetailAction::tryFromMixed($value);
     }
 
+    #[\NoDiscard]
     public function parseStatus(mixed $value): ?GameAvailabilityStatus
     {
         if (is_int($value)) {
@@ -85,6 +90,7 @@ final readonly class GameDetailFormParser
     /**
      * @param array<string, mixed> $postData
      */
+    #[\NoDiscard]
     public function createGameDetailFromPost(int $gameId, array $postData, GameAvailabilityStatus $status): GameDetail
     {
         $npCommunicationId = $this->normalizeOptionalString($postData['np_communication_id'] ?? null);
@@ -107,6 +113,7 @@ final readonly class GameDetailFormParser
         );
     }
 
+    #[\NoDiscard]
     public function normalizePlatforms(mixed $value): string
     {
         $candidates = [];
@@ -140,6 +147,7 @@ final readonly class GameDetailFormParser
             |> (fn(array $platforms): string => implode(',', $platforms));
     }
 
+    #[\NoDiscard]
     public function normalizeOptionalString(mixed $value): ?string
     {
         if (!is_string($value)) {
@@ -151,6 +159,7 @@ final readonly class GameDetailFormParser
         return $trimmed === '' ? null : $trimmed;
     }
 
+    #[\NoDiscard]
     public function normalizeObsoleteIds(mixed $value): ?string
     {
         if (!is_string($value)) {

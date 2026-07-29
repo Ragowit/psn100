@@ -7,6 +7,7 @@ require_once __DIR__ . '/../Html.php';
 
 final readonly class TrophyStatusUpdateResultPresenter
 {
+    #[\NoDiscard]
     public function renderToHtml(TrophyStatusUpdateResult $result): string
     {
         $html = '<p>';

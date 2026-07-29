@@ -9,6 +9,7 @@ require_once __DIR__ . '/PsnTrophyTitleComparisonSource.php';
 
 final class PsnTrophyTitleComparisonRequestHandler
 {
+    #[\NoDiscard]
     public static function handle(PsnTrophyTitleComparisonService $service, string $accountId, string $source): PsnTrophyTitleComparisonRequestResult
     {
         $normalizedAccountId = trim($accountId);

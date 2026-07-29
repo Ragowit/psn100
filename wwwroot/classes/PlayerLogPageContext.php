@@ -76,12 +76,12 @@ final readonly class PlayerLogPageContext
     }
 
     private function __construct(
-        private PlayerLogPage $playerLogPage,
-        private PlayerSummary $playerSummary,
-        private PlayerLogFilter $filter,
-        private string $playerOnlineId,
-        private int $playerAccountId,
-        private PlayerStatus $playerStatus,
+        final private PlayerLogPage $playerLogPage,
+        final private PlayerSummary $playerSummary,
+        final private PlayerLogFilter $filter,
+        final private string $playerOnlineId,
+        final private int $playerAccountId,
+        final private PlayerStatus $playerStatus,
     ) {
         $this->playerNavigation = PlayerNavigation::forSection($playerOnlineId, PlayerNavigationSection::LOG);
         $this->platformFilterOptions = PlayerPlatformFilterOptions::fromSelectionCallback(

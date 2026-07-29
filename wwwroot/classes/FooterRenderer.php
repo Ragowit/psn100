@@ -7,6 +7,7 @@ require_once __DIR__ . '/Html.php';
 
 final readonly class FooterRenderer
 {
+    #[\NoDiscard]
     public function render(FooterViewModel $viewModel): string
     {
         $yearRangeLabel = Html::escape($viewModel->getYearRangeLabel());

@@ -86,13 +86,13 @@ final readonly class PlayerAdvisorPageContext
     }
 
     private function __construct(
-        private PlayerAdvisorPage $playerAdvisorPage,
-        private PlayerSummary $playerSummary,
-        private PlayerAdvisorFilter $filter,
-        private string $playerOnlineId,
-        private int $playerAccountId,
-        private PlayerStatus $playerStatus,
-        private ?string $playerAccountIdValue,
+        final private PlayerAdvisorPage $playerAdvisorPage,
+        final private PlayerSummary $playerSummary,
+        final private PlayerAdvisorFilter $filter,
+        final private string $playerOnlineId,
+        final private int $playerAccountId,
+        final private PlayerStatus $playerStatus,
+        final private ?string $playerAccountIdValue,
     ) {
         $this->playerNavigation = PlayerNavigation::forSection(
             $playerOnlineId,

@@ -6,10 +6,10 @@ require_once __DIR__ . '/../wwwroot/classes/TrophyListFilter.php';
 
 final class TrophyListFilterTest extends TestCase
 {
-    public function testConstructorNormalizesPageToMinimumOfOne(): void
+    public function testFromPageNormalizesPageToMinimumOfOne(): void
     {
-        $zeroPageFilter = new TrophyListFilter(0);
-        $negativePageFilter = new TrophyListFilter(-10);
+        $zeroPageFilter = TrophyListFilter::fromPage(0);
+        $negativePageFilter = TrophyListFilter::fromPage(-10);
 
         $this->assertSame(1, $zeroPageFilter->getPage());
         $this->assertSame(1, $negativePageFilter->getPage());
@@ -31,21 +31,21 @@ final class TrophyListFilterTest extends TestCase
 
     public function testGetOffsetUsesCurrentPage(): void
     {
-        $filter = new TrophyListFilter(4);
+        $filter = TrophyListFilter::fromPage(4);
 
         $this->assertSame(75, $filter->getOffset(25));
     }
 
     public function testToQueryParametersIncludesNormalizedPage(): void
     {
-        $filter = new TrophyListFilter(-2);
+        $filter = TrophyListFilter::fromPage(-2);
 
         $this->assertSame(['page' => 1], $filter->toQueryParameters());
     }
 
     public function testWithPageNormalizesPageParameter(): void
     {
-        $filter = new TrophyListFilter(2);
+        $filter = TrophyListFilter::fromPage(2);
 
         $this->assertSame(['page' => 5], $filter->withPage(5));
         $this->assertSame(['page' => 1], $filter->withPage(0));
@@ -53,7 +53,7 @@ final class TrophyListFilterTest extends TestCase
 
     public function testWithPageNumberReturnsClonedFilter(): void
     {
-        $filter = new TrophyListFilter(2);
+        $filter = TrophyListFilter::fromPage(2);
         $updated = $filter->withPageNumber(5);
 
         $this->assertSame(2, $filter->getPage());

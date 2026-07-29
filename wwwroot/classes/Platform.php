@@ -12,6 +12,7 @@ enum Platform: string
     case PsVr = 'psvr';
     case PsVr2 = 'psvr2';
 
+    #[\NoDiscard]
     public function label(): string
     {
         return match ($this) {
@@ -28,6 +29,7 @@ enum Platform: string
     /**
      * @return list<string>
      */
+    #[\NoDiscard]
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
@@ -38,6 +40,7 @@ enum Platform: string
      *
      * @return list<string>
      */
+    #[\NoDiscard]
     public static function legacyTrophyServiceLabels(): array
     {
         return [
@@ -53,6 +56,7 @@ enum Platform: string
      *
      * @return list<string>
      */
+    #[\NoDiscard]
     public static function labelOrder(): array
     {
         return [
@@ -69,6 +73,7 @@ enum Platform: string
     /**
      * @return array<string, string>
      */
+    #[\NoDiscard]
     public static function labelsByValue(): array
     {
         return self::cases()
