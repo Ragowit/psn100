@@ -5,9 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/PlayerPlatformFilterOptions.php';
 require_once __DIR__ . '/Html.php';
 
-final class PlayerPlatformFilterRenderer
+final readonly class PlayerPlatformFilterRenderer
 {
-    public function __construct(private readonly string $buttonLabel = 'Filter')
+    public function __construct(private string $buttonLabel = 'Filter')
     {
     }
 

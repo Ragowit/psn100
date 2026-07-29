@@ -11,7 +11,7 @@ require_once __DIR__ . '/classes/StaticAsset.php';
 require_once __DIR__ . '/classes/BootstrapAssets.php';
 
 SessionManager::ensureStarted();
-$publicCsrfToken = Html::escape(CsrfTokenManager::getToken('public'));
+$publicCsrfToken = CsrfTokenManager::getToken('public') |> Html::escape(...);
 
 $metaTagHtml = '';
 if (isset($metaData) && $metaData instanceof PageMetaData) {

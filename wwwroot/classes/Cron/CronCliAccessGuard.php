@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Apache should also deny web access (see wwwroot/cron/.htaccess.example). This guard
  * covers the PHP built-in server, misconfigured virtual hosts, and other SAPIs.
  */
-final class CronCliAccessGuard
+final readonly class CronCliAccessGuard
 {
     public static function requireCliExecution(): void
     {

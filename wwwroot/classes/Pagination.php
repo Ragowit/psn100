@@ -32,7 +32,7 @@ final readonly class Pagination
 
         if ($this->currentPage > 1) {
             $items[] = PaginationItem::forPage($this->currentPage - 1, '<')
-                ->setAriaLabel('Previous');
+                ->withAriaLabel('Previous');
         }
 
         if ($this->currentPage > 3) {
@@ -66,7 +66,7 @@ final readonly class Pagination
 
         if ($this->currentPage < $this->totalPages) {
             $items[] = PaginationItem::forPage($this->currentPage + 1, '>')
-                ->setAriaLabel('Next');
+                ->withAriaLabel('Next');
         }
 
         return $items;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/TrophyStatusUpdateResult.php';
 require_once __DIR__ . '/../Html.php';
 
-final class TrophyStatusUpdateResultPresenter
+final readonly class TrophyStatusUpdateResultPresenter
 {
     public function renderToHtml(TrophyStatusUpdateResult $result): string
     {

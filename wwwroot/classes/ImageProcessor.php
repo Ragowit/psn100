@@ -26,7 +26,7 @@ interface ImageProcessorInterface
     public function getColorComponents(\GdImage $image, int $color): array;
 }
 
-final class GdImageProcessor implements ImageProcessorInterface
+final readonly class GdImageProcessor implements ImageProcessorInterface
 {
     #[\Override]
     public function isSupported(): bool

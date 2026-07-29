@@ -33,24 +33,16 @@ final readonly class RequestParameter
     #[\NoDiscard]
     public static function toBool(mixed $value): bool
     {
-        if ($value === null) {
-            return false;
-        }
-
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value !== 0;
-        }
-
-        if (!is_string($value) && !is_numeric($value)) {
-            return false;
-        }
-
-        $normalized = ((string) $value) |> trim(...) |> strtolower(...);
-
-        return !in_array($normalized, ['', '0', 'false', 'off', 'no'], true);
+        return match (true) {
+            $value === null => false,
+            is_bool($value) => $value,
+            is_int($value) => $value !== 0,
+            !is_string($value) && !is_numeric($value) => false,
+            default => !in_array(
+                ((string) $value) |> trim(...) |> strtolower(...),
+                ['', '0', 'false', 'off', 'no'],
+                true,
+            ),
+        };
     }
 }

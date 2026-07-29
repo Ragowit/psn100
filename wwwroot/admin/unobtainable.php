@@ -48,7 +48,7 @@ $status = TrophyMetaStatus::fromMixed($statusInput);
                 Game ID:<br>
                 <input type="text" name="game" /><br>
                 Trophy ID:<br>
-                <textarea name="trophy" rows="10" cols="30"><?= Html::escape(str_replace(",", PHP_EOL, $trophyInput)); ?></textarea>
+                <textarea name="trophy" rows="10" cols="30"><?= str_replace(",", PHP_EOL, $trophyInput) |> Html::escape(...); ?></textarea>
                 <br>
                 Status:<br>
                 <select name="status">

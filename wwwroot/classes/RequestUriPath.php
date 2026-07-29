@@ -9,7 +9,7 @@ declare(strict_types=1);
  * URL parser accepts those bytes and percent-encodes the resulting path the
  * same way browsers do, so Unicode game URLs route correctly.
  */
-final class RequestUriPath
+final readonly class RequestUriPath
 {
     private const string BASE_URI = 'http://localhost/';
 

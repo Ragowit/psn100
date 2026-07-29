@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class SystemCommandExecutor implements CommandExecutorInterface
+final readonly class SystemCommandExecutor implements CommandExecutorInterface
 {
     /**
      * @param array<int, string> $command

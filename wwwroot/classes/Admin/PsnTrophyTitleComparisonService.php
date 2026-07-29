@@ -327,8 +327,9 @@ final class PsnTrophyTitleComparisonService
 
         if (is_object($payload)) {
             try {
-                $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
-                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
+                $decoded = $payload
+                    |> (fn (object $value): string => json_encode($value, JSON_THROW_ON_ERROR))
+                    |> (fn (string $json): mixed => json_decode($json, true, 512, JSON_THROW_ON_ERROR));
 
                 if (is_array($decoded)) {
                     return $decoded;

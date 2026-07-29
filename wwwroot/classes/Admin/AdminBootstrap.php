@@ -10,7 +10,7 @@ require_once __DIR__ . '/AdminAuthService.php';
 require_once __DIR__ . '/AdminLoginThrottleService.php';
 require_once __DIR__ . '/AdminUserRepository.php';
 
-final class AdminBootstrap
+final readonly class AdminBootstrap
 {
     public static function requireAuthenticatedAdminPage(): void
     {
@@ -54,7 +54,7 @@ final class AdminBootstrap
 
     public static function renderCsrfMetaTag(): void
     {
-        $token = Html::escape(self::getCsrfToken());
+        $token = self::getCsrfToken() |> Html::escape(...);
         echo '<meta name="csrf-token" content="' . $token . '">';
     }
 

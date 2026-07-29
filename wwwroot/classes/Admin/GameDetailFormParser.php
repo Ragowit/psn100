@@ -8,7 +8,7 @@ require_once __DIR__ . '/GameDetailAction.php';
 require_once __DIR__ . '/../CommaSeparatedValues.php';
 require_once __DIR__ . '/../GameAvailabilityStatus.php';
 
-final class GameDetailFormParser
+final readonly class GameDetailFormParser
 {
     /**
      * @return list<string>

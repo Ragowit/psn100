@@ -71,10 +71,11 @@ enum Platform: string
      */
     public static function labelsByValue(): array
     {
-        return array_combine(
-            array_column(self::cases(), 'value'),
-            array_map(static fn (self $platform): string => $platform->label(), self::cases()),
-        );
+        return self::cases()
+            |> (fn (array $platforms): array => array_combine(
+                array_column($platforms, 'value'),
+                array_map(static fn (self $platform): string => $platform->label(), $platforms),
+            ));
     }
 
     /**

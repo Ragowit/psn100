@@ -7,7 +7,7 @@ require_once __DIR__ . '/PsnGameLookupException.php';
 /**
  * Normalizes PSN trophy API payloads and validates npCommunicationId integrity.
  */
-final class PsnTrophyApiPayloadInspector
+final readonly class PsnTrophyApiPayloadInspector
 {
     /**
      * @return array<string, mixed>
@@ -20,8 +20,9 @@ final class PsnTrophyApiPayloadInspector
 
         if (is_object($response)) {
             try {
-                $encoded = json_encode($response, JSON_THROW_ON_ERROR);
-                $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
+                $decoded = $response
+                    |> (fn (object $value): string => json_encode($value, JSON_THROW_ON_ERROR))
+                    |> (fn (string $json): mixed => json_decode($json, true, 512, JSON_THROW_ON_ERROR));
 
                 if (is_array($decoded)) {
                     return $decoded;

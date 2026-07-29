@@ -160,9 +160,15 @@ final readonly class ImageHashCalculator
             $hash .= $this->binToHex($aBits);
 
             // Calculate average color across all 72 sampled pixels
-            $hash .= str_pad(dechex((int) ($rTotal / 72)), 2, '0', STR_PAD_LEFT);
-            $hash .= str_pad(dechex((int) ($gTotal / 72)), 2, '0', STR_PAD_LEFT);
-            $hash .= str_pad(dechex((int) ($bTotal / 72)), 2, '0', STR_PAD_LEFT);
+            $hash .= (int) ($rTotal / 72)
+                |> dechex(...)
+                |> (fn (string $hex): string => str_pad($hex, 2, '0', STR_PAD_LEFT));
+            $hash .= (int) ($gTotal / 72)
+                |> dechex(...)
+                |> (fn (string $hex): string => str_pad($hex, 2, '0', STR_PAD_LEFT));
+            $hash .= (int) ($bTotal / 72)
+                |> dechex(...)
+                |> (fn (string $hex): string => str_pad($hex, 2, '0', STR_PAD_LEFT));
 
             return $hash;
         } finally {

@@ -10,7 +10,7 @@ final class PaginationItemTest extends TestCase
     {
         $item = PaginationItem::forPage(2, 'Page 2')
             ->markAsActive()
-            ->setAriaLabel('Current Page');
+            ->withAriaLabel('Current Page');
 
         $html = $item->render(static fn (int $page): string => '/page/' . $page);
 
@@ -23,7 +23,7 @@ final class PaginationItemTest extends TestCase
     public function testRenderEscapesLabelAndUrl(): void
     {
         $item = PaginationItem::forPage(5, '<Next>')
-            ->setAriaLabel('Go to >');
+            ->withAriaLabel('Go to >');
 
         $html = $item->render(static fn (int $page): string => '/page/' . $page . '?q=<script>');
 
