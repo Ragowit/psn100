@@ -24,11 +24,13 @@ final readonly class AdminUserRepository
     {
     }
 
+    #[\NoDiscard('Check whether any admin account exists before treating the install as configured.')]
     public function hasAnyAdmin(): bool
     {
         return (int) $this->database->query(self::SQL_ADMIN_COUNT)->fetchColumn() > 0;
     }
 
+    #[\NoDiscard('The credential verification result must be checked before granting admin access.')]
     public function verifyCredentials(string $username, #[\SensitiveParameter] string $password): bool
     {
         if ($username === '' || $password === '') {

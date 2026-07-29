@@ -19,11 +19,11 @@ require_once __DIR__ . '/../PlayerStatus.php';
  * Stale-player cutoffs are computed with MySQL NOW() so they stay aligned with
  * the database session clock and INTERVAL month arithmetic.
  */
-final class PlayerScanQueueSelector
+final readonly class PlayerScanQueueSelector
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly ?string $selectionSql = null,
+        private PDO $database,
+        private ?string $selectionSql = null,
     ) {
     }
 

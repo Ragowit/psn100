@@ -177,7 +177,7 @@ final readonly class TrophyImageDownloader
             $hash = md5($contents);
         }
 
-        $path = Uri\Rfc3986\Uri::parse($url)?->getPath() ?? '';
+        $path = Uri\WhatWg\Url::parse($url)?->getPath() ?? '';
         $extension = pathinfo($path, PATHINFO_EXTENSION) |> strtolower(...);
         $extension = $extension === '' ? '' : '.' . $extension;
 

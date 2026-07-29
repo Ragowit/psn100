@@ -43,9 +43,10 @@ final readonly class CsrfTokenManager
         return hash_equals($expectedToken, $submittedToken);
     }
 
+    #[\NoDiscard]
     public static function hiddenField(string $scope): string
     {
-        $token = Html::escape(self::getToken($scope));
+        $token = self::getToken($scope) |> Html::escape(...);
 
         return '<input type="hidden" name="_csrf_token" value="' . $token . '">';
     }

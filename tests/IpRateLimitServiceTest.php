@@ -40,7 +40,7 @@ final class IpRateLimitServiceTest extends TestCase
     public function testCheckAndRecordBlocksRequestsAboveLimit(): void
     {
         for ($index = 0; $index < 60; $index++) {
-            $this->service->checkAndRecord('192.0.2.11', IpRateLimitBucket::QueuePoll);
+            (void) $this->service->checkAndRecord('192.0.2.11', IpRateLimitBucket::QueuePoll);
         }
 
         $this->assertFalse(
@@ -51,7 +51,7 @@ final class IpRateLimitServiceTest extends TestCase
     public function testDifferentBucketsTrackSeparately(): void
     {
         for ($index = 0; $index < 30; $index++) {
-            $this->service->checkAndRecord('192.0.2.12', IpRateLimitBucket::ScanLogPoll);
+            (void) $this->service->checkAndRecord('192.0.2.12', IpRateLimitBucket::ScanLogPoll);
         }
 
         $this->assertFalse(
@@ -78,7 +78,7 @@ final class IpRateLimitServiceTest extends TestCase
     public function testQueueSubmitBucketTracksSeparatelyFromQueuePoll(): void
     {
         for ($index = 0; $index < 10; $index++) {
-            $this->service->checkAndRecord('192.0.2.14', IpRateLimitBucket::QueueSubmit);
+            (void) $this->service->checkAndRecord('192.0.2.14', IpRateLimitBucket::QueueSubmit);
         }
 
         $this->assertFalse(
@@ -105,7 +105,7 @@ final class IpRateLimitServiceTest extends TestCase
     public function testUnknownClientBucketIsSeparateFromKnownIp(): void
     {
         for ($index = 0; $index < 10; $index++) {
-            $this->service->checkAndRecord('', IpRateLimitBucket::QueueSubmit);
+            (void) $this->service->checkAndRecord('', IpRateLimitBucket::QueueSubmit);
         }
 
         $this->assertFalse(
@@ -132,7 +132,7 @@ final class IpRateLimitServiceTest extends TestCase
     public function testPlayerReportBucketTracksSeparatelyFromQueueSubmit(): void
     {
         for ($index = 0; $index < 5; $index++) {
-            $this->service->checkAndRecord('192.0.2.17', IpRateLimitBucket::PlayerReport);
+            (void) $this->service->checkAndRecord('192.0.2.17', IpRateLimitBucket::PlayerReport);
         }
 
         $this->assertFalse(

@@ -16,16 +16,16 @@ abstract readonly class AbstractLeaderboardRow
      * @param array<string, int|string> $filterParameters
      */
     public function __construct(
-        protected array $player,
-        private PlayerLeaderboardFilter $filter,
-        private Utility $utility,
+        final protected array $player,
+        final private PlayerLeaderboardFilter $filter,
+        final private Utility $utility,
         ?string $highlightedPlayerId,
         /** @var array<string, int|string> */
-        private array $filterParameters,
-        private string $rankingField,
-        private string $rankingLastWeekField,
-        private string $countryRankingField,
-        private string $countryRankingLastWeekField,
+        final private array $filterParameters,
+        final private string $rankingField,
+        final private string $rankingLastWeekField,
+        final private string $countryRankingField,
+        final private string $countryRankingLastWeekField,
     ) {
         $this->highlightedPlayerId = $highlightedPlayerId !== null ? trim($highlightedPlayerId) : null;
     }

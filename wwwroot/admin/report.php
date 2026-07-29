@@ -43,7 +43,7 @@ $errorMessage = $pageResult->getErrorMessage();
                         <?= Html::escape($reportedPlayer->getOnlineId()); ?>
                     </a>
                     <div class="mt-2">
-                        <?= nl2br(Html::escape($reportedPlayer->getExplanation())); ?>
+                        <?= $reportedPlayer->getExplanation() |> Html::escape(...) |> nl2br(...); ?>
                     </div>
                     <div class="mt-2">
                         <form method="post" class="d-inline js-report-delete-form">

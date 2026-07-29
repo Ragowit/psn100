@@ -127,7 +127,7 @@ require_once("header.php");
                                                                 <b><?= $trophyName; ?></b>
                                                             </a>
                                                         </span>
-                                                        <?= nl2br(Html::escape($trophy->getTrophyDetail())); ?>
+                                                        <?= $trophy->getTrophyDetail() |> Html::escape(...) |> nl2br(...); ?>
                                                         <?php
                                                         if ($progressLabel !== null) {
                                                             echo '<br><b>' . Html::escape($progressLabel) . '</b>';

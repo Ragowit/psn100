@@ -13,9 +13,9 @@ require_once __DIR__ . '/../TrophyRarityName.php';
  *
  * Encapsulates post-scan aggregation that was previously embedded in ThirtyMinuteCronJob.
  */
-final class PlayerScanCompletionService
+final readonly class PlayerScanCompletionService
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(private PDO $database)
     {
     }
 

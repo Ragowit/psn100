@@ -44,6 +44,7 @@ final readonly class PlayerReportDeletionRequest
         return $this->deleteId !== null || $this->errorMessage !== null;
     }
 
+    #[\NoDiscard('Check whether the deletion request is valid before deleting a report.')]
     public function isValidDeletion(): bool
     {
         return $this->deleteId !== null && !$this->hasError();

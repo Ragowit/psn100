@@ -27,6 +27,7 @@ final readonly class PlayerQueuePollTokenManager
         return $token;
     }
 
+    #[\NoDiscard('The poll-token validation result must be checked before serving queue status.')]
     public function validate(string $playerName, #[\SensitiveParameter] string $submittedToken): bool
     {
         if ($playerName === '' || $submittedToken === '') {

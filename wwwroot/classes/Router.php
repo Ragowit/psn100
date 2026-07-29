@@ -48,7 +48,9 @@ class Router
     #[\NoDiscard]
     public function dispatch(string $requestUri): RouteResult
     {
-        $normalizedPath = trim(RequestUriPath::fromUri($requestUri), '/');
+        $normalizedPath = $requestUri
+            |> RequestUriPath::fromUri(...)
+            |> (fn (string $path): string => trim($path, '/'));
 
         if ($normalizedPath === '') {
             return $this->defaultHandler->handle([]);

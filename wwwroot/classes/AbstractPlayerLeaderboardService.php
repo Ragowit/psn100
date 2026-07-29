@@ -21,7 +21,7 @@ abstract readonly class AbstractPlayerLeaderboardService implements PlayerLeader
             p.status = 
         SQL . PlayerStatus::NORMAL->value;
 
-    public function __construct(protected \PDO $database)
+    public function __construct(final protected \PDO $database)
     {
     }
 
