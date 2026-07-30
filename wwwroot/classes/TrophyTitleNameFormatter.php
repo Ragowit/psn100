@@ -18,14 +18,24 @@ final readonly class TrophyTitleNameFormatter
     }
 
     /**
-     * True when $storedName is only missing normalization that format() would apply,
-     * so rewriting it to $formattedName will not overwrite an intentional rename.
+     * True when $storedName is specifically a legacy Arcade/Console Archives title
+     * missing the series colon, and formatting it yields $formattedName.
+     *
+     * Other formatter differences (colon spacing, title case, etc.) are treated as
+     * intentional stored values and are not rewritten on scan.
      */
     #[\NoDiscard]
     public function shouldRewriteStoredName(string $storedName, string $formattedName): bool
     {
-        return $storedName !== $formattedName
-            && $this->format($storedName) === $formattedName;
+        if ($storedName === $formattedName) {
+            return false;
+        }
+
+        if ($this->ensureArchiveSeriesColon($storedName) === $storedName) {
+            return false;
+        }
+
+        return $this->format($storedName) === $formattedName;
     }
 
     #[\NoDiscard]

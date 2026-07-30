@@ -203,4 +203,30 @@ final class TrophyCatalogSynchronizerTest extends TestCase
 
         $this->assertSame('Dig Dug (Arcade Archives)', $query->fetchColumn());
     }
+
+    public function testUpdateTrophyTitleNameUsesBinaryCollationOnMysql(): void
+    {
+        $method = new ReflectionMethod(TrophyCatalogSynchronizer::class, 'exactNameMatchSql');
+
+        $mysqlPdo = new class ('sqlite::memory:') extends PDO {
+            public function getAttribute(int $attribute): mixed
+            {
+                if ($attribute === PDO::ATTR_DRIVER_NAME) {
+                    return 'mysql';
+                }
+
+                return parent::getAttribute($attribute);
+            }
+        };
+
+        $synchronizer = (new ReflectionClass(TrophyCatalogSynchronizer::class))
+            ->newInstanceWithoutConstructor();
+        $databaseProperty = new ReflectionProperty(TrophyCatalogSynchronizer::class, 'database');
+        $databaseProperty->setValue($synchronizer, $mysqlPdo);
+
+        $this->assertSame(
+            'name COLLATE utf8mb4_bin = :expected_current_name',
+            $method->invoke($synchronizer)
+        );
+    }
 }
