@@ -74,4 +74,48 @@ final class TrophyTitleNamingTest extends TestCase
     {
         $this->assertSame('', $this->formatter->format('   '));
     }
+
+    public function testArcadeArchives2TitlesGetAColonAfterTheSeriesPrefix(): void
+    {
+        $formatted = $this->formatter->format('Arcade Archives 2 Ace Driver');
+
+        $this->assertSame('Arcade Archives 2: Ace Driver', $formatted);
+    }
+
+    public function testArcadeArchivesTitlesGetAColonAfterTheSeriesPrefix(): void
+    {
+        $formatted = $this->formatter->format('Arcade Archives Ace Driver');
+
+        $this->assertSame('Arcade Archives: Ace Driver', $formatted);
+    }
+
+    public function testConsoleArchivesTitlesGetAColonAfterTheSeriesPrefix(): void
+    {
+        $formatted = $this->formatter->format('Console Archives Cool Boarders');
+
+        $this->assertSame('Console Archives: Cool Boarders', $formatted);
+    }
+
+    public function testArchiveSeriesTitlesThatAlreadyHaveAColonAreUnchanged(): void
+    {
+        $this->assertSame(
+            'Arcade Archives 2: Ace Driver',
+            $this->formatter->format('Arcade Archives 2: Ace Driver')
+        );
+        $this->assertSame(
+            'Arcade Archives: Ace Driver',
+            $this->formatter->format('Arcade Archives: Ace Driver')
+        );
+        $this->assertSame(
+            'Console Archives: Cool Boarders',
+            $this->formatter->format('Console Archives: Cool Boarders')
+        );
+    }
+
+    public function testArcadeArchives2IsPreferredOverArcadeArchives(): void
+    {
+        $formatted = $this->formatter->format('arcade archives 2 raiden fighters');
+
+        $this->assertSame('Arcade Archives 2: Raiden Fighters', $formatted);
+    }
 }

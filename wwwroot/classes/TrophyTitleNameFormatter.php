@@ -75,7 +75,46 @@ final readonly class TrophyTitleNameFormatter
         return $name
             |> rtrim(...)
             |> (fn (string $value): string => $value === '' ? $value : rtrim($value, '.'))
-            |> trim(...);
+            |> trim(...)
+            |> $this->ensureArchiveSeriesColon(...);
+    }
+
+    /**
+     * Inserts a colon after known archive-series prefixes when missing.
+     *
+     * Longer prefixes are matched first so "Arcade Archives 2" wins over "Arcade Archives".
+     */
+    private function ensureArchiveSeriesColon(string $name): string
+    {
+        if ($name === '') {
+            return $name;
+        }
+
+        $prefixes = [
+            'Arcade Archives 2',
+            'Arcade Archives',
+            'Console Archives',
+        ];
+
+        foreach ($prefixes as $prefix) {
+            if (preg_match('/^' . preg_quote($prefix, '/') . '\b/i', $name, $matches) !== 1) {
+                continue;
+            }
+
+            $remainder = substr($name, strlen($matches[0]));
+
+            if (preg_match('/^\s*:/', $remainder) === 1) {
+                return $name;
+            }
+
+            if (preg_match('/^\s+(\S.*)$/u', $remainder, $rest) !== 1) {
+                return $name;
+            }
+
+            return $matches[0] . ': ' . $rest[1];
+        }
+
+        return $name;
     }
 
     #[\NoDiscard]
