@@ -155,4 +155,27 @@ final class TrophyCatalogSynchronizerTest extends TestCase
         $this->assertSame(7, $method->getNumberOfParameters());
         $this->assertSame('int', (string) $method->getReturnType());
     }
+
+    public function testUpdateTrophyTitleNameUpdatesExistingRow(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
+            VALUES ('NPWR00001_00', 'Arcade Archives Ace Driver', 'Details', 'icon.png', 'PS5', '01.00')"
+        );
+
+        $affected = $this->synchronizer->updateTrophyTitleName(
+            'NPWR00001_00',
+            'Arcade Archives: Ace Driver'
+        );
+
+        $this->assertSame(1, $affected);
+
+        $query = $this->database->prepare(
+            'SELECT name FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', 'NPWR00001_00', PDO::PARAM_STR);
+        $query->execute();
+
+        $this->assertSame('Arcade Archives: Ace Driver', $query->fetchColumn());
+    }
 }

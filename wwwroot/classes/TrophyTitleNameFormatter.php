@@ -17,6 +17,17 @@ final readonly class TrophyTitleNameFormatter
             |> $this->toApaTitleCase(...);
     }
 
+    /**
+     * True when $storedName is only missing normalization that format() would apply,
+     * so rewriting it to $formattedName will not overwrite an intentional rename.
+     */
+    #[\NoDiscard]
+    public function shouldRewriteStoredName(string $storedName, string $formattedName): bool
+    {
+        return $storedName !== $formattedName
+            && $this->format($storedName) === $formattedName;
+    }
+
     #[\NoDiscard]
     public function sanitize(string $name): string
     {

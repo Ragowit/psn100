@@ -124,6 +124,56 @@ final class PlayerScanTitleHeaderSynchronizerTest extends TestCase
         $this->assertSame('02.00', $row['set_version']);
     }
 
+    public function testSyncRewritesStoredNameWhenOnlyMissingFormatterNormalization(): void
+    {
+        file_put_contents($this->titleIconDirectory . 'existing.png', 'icon-bytes');
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
+            VALUES ('NPWR12345_00', 'Arcade Archives Ace Driver', 'Details', 'existing.png', 'PS5', '01.00')"
+        );
+
+        $result = $this->synchronizer->sync(new PlayerScanTitleHeaderTestTrophyTitle(
+            'NPWR12345_00',
+            name: 'Arcade Archives Ace Driver',
+        ));
+
+        $this->assertTrue($result->titleDataChanged);
+        $this->assertFalse($result->titleNeedsUpdate);
+        $this->assertFalse($result->isNewTitle);
+
+        $query = $this->database->prepare(
+            'SELECT name FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', 'NPWR12345_00', PDO::PARAM_STR);
+        $query->execute();
+
+        $this->assertSame('Arcade Archives: Ace Driver', $query->fetchColumn());
+    }
+
+    public function testSyncDoesNotOverwriteIntentionalTitleRename(): void
+    {
+        file_put_contents($this->titleIconDirectory . 'existing.png', 'icon-bytes');
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
+            VALUES ('NPWR12345_00', 'Dig Dug (Arcade Archives)', 'Details', 'existing.png', 'PS5', '01.00')"
+        );
+
+        $result = $this->synchronizer->sync(new PlayerScanTitleHeaderTestTrophyTitle(
+            'NPWR12345_00',
+            name: 'Arcade Archives Dig Dug',
+        ));
+
+        $this->assertFalse($result->titleDataChanged);
+
+        $query = $this->database->prepare(
+            'SELECT name FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', 'NPWR12345_00', PDO::PARAM_STR);
+        $query->execute();
+
+        $this->assertSame('Dig Dug (Arcade Archives)', $query->fetchColumn());
+    }
+
     private function removeDirectory(string $directory): void
     {
         if (!is_dir($directory)) {
@@ -169,6 +219,7 @@ final class PlayerScanTitleHeaderTestTrophyTitle
         private readonly array $platforms = [new PlayerScanTitleHeaderTestPlatform('PS5')],
         private readonly string $detail = 'Details',
         private readonly string $trophySetVersion = '01.00',
+        private readonly string $name = 'Example Game',
     ) {
     }
 
@@ -179,7 +230,7 @@ final class PlayerScanTitleHeaderTestTrophyTitle
 
     public function name(): string
     {
-        return 'Example Game';
+        return $this->name;
     }
 
     public function detail(): string

@@ -163,6 +163,20 @@ final class TrophyCatalogSynchronizer
         return $row === false ? null : $row;
     }
 
+    public function updateTrophyTitleName(string $npCommunicationId, string $name): int
+    {
+        $query = $this->database->prepare(
+            'UPDATE trophy_title
+            SET name = :name
+            WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':name', $name, PDO::PARAM_STR);
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        return (int) $query->rowCount();
+    }
+
     public function upsertTrophyTitle(
         string $npCommunicationId,
         string $name,

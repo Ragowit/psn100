@@ -87,6 +87,20 @@ final class PlayerScanTitleHeaderSynchronizer
             }
         }
 
+        if (
+            $existingTitle !== null
+            && $this->titleFormatter()->shouldRewriteStoredName(
+                (string) ($existingTitle['name'] ?? ''),
+                $sanitizedTitleName,
+            )
+        ) {
+            $nameAffectedRows = $this->catalogSynchronizer->updateTrophyTitleName($npid, $sanitizedTitleName);
+
+            if ($nameAffectedRows > 0) {
+                $titleDataChanged = true;
+            }
+        }
+
         $metaQuery = $this->database->prepare('INSERT IGNORE INTO trophy_title_meta (
                 np_communication_id,
                 message

@@ -118,4 +118,26 @@ final class TrophyTitleNamingTest extends TestCase
 
         $this->assertSame('Arcade Archives 2: Raiden Fighters', $formatted);
     }
+
+    public function testShouldRewriteStoredNameWhenOnlyMissingNormalization(): void
+    {
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives Ace Driver',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives: Ace Driver',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'Dig Dug (Arcade Archives)',
+                'Arcade Archives: Dig Dug'
+            )
+        );
+    }
 }
