@@ -94,7 +94,12 @@ final class PlayerScanTitleHeaderSynchronizer
                 $sanitizedTitleName,
             )
         ) {
-            $nameAffectedRows = $this->catalogSynchronizer->updateTrophyTitleName($npid, $sanitizedTitleName);
+            $storedName = (string) ($existingTitle['name'] ?? '');
+            $nameAffectedRows = $this->catalogSynchronizer->updateTrophyTitleName(
+                $npid,
+                $sanitizedTitleName,
+                $storedName,
+            );
 
             if ($nameAffectedRows > 0) {
                 $titleDataChanged = true;

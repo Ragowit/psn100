@@ -163,15 +163,26 @@ final class TrophyCatalogSynchronizer
         return $row === false ? null : $row;
     }
 
-    public function updateTrophyTitleName(string $npCommunicationId, string $name): int
-    {
+    /**
+     * Conditionally rewrite a title name only when it still matches $expectedCurrentName.
+     *
+     * The expected-name predicate prevents a concurrent admin rename from being
+     * overwritten by a stale header-sync snapshot.
+     */
+    public function updateTrophyTitleName(
+        string $npCommunicationId,
+        string $name,
+        string $expectedCurrentName,
+    ): int {
         $query = $this->database->prepare(
             'UPDATE trophy_title
             SET name = :name
-            WHERE np_communication_id = :np_communication_id'
+            WHERE np_communication_id = :np_communication_id
+                AND name = :expected_current_name'
         );
         $query->bindValue(':name', $name, PDO::PARAM_STR);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':expected_current_name', $expectedCurrentName, PDO::PARAM_STR);
         $query->execute();
 
         return (int) $query->rowCount();
