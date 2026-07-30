@@ -74,4 +74,106 @@ final class TrophyTitleNamingTest extends TestCase
     {
         $this->assertSame('', $this->formatter->format('   '));
     }
+
+    public function testArcadeArchives2TitlesGetAColonAfterTheSeriesPrefix(): void
+    {
+        $formatted = $this->formatter->format('Arcade Archives 2 Ace Driver');
+
+        $this->assertSame('Arcade Archives 2: Ace Driver', $formatted);
+    }
+
+    public function testArcadeArchivesTitlesGetAColonAfterTheSeriesPrefix(): void
+    {
+        $formatted = $this->formatter->format('Arcade Archives Ace Driver');
+
+        $this->assertSame('Arcade Archives: Ace Driver', $formatted);
+    }
+
+    public function testConsoleArchivesTitlesGetAColonAfterTheSeriesPrefix(): void
+    {
+        $formatted = $this->formatter->format('Console Archives Cool Boarders');
+
+        $this->assertSame('Console Archives: Cool Boarders', $formatted);
+    }
+
+    public function testArchiveSeriesTitlesThatAlreadyHaveAColonAreUnchanged(): void
+    {
+        $this->assertSame(
+            'Arcade Archives 2: Ace Driver',
+            $this->formatter->format('Arcade Archives 2: Ace Driver')
+        );
+        $this->assertSame(
+            'Arcade Archives: Ace Driver',
+            $this->formatter->format('Arcade Archives: Ace Driver')
+        );
+        $this->assertSame(
+            'Console Archives: Cool Boarders',
+            $this->formatter->format('Console Archives: Cool Boarders')
+        );
+    }
+
+    public function testArcadeArchives2IsPreferredOverArcadeArchives(): void
+    {
+        $formatted = $this->formatter->format('arcade archives 2 raiden fighters');
+
+        $this->assertSame('Arcade Archives 2: Raiden Fighters', $formatted);
+    }
+
+    public function testShouldRewriteStoredNameOnlyForLegacyArchiveColonForms(): void
+    {
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives Ace Driver',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives 2 Ace Driver',
+                'Arcade Archives 2: Ace Driver'
+            )
+        );
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Console Archives Cool Boarders',
+                'Console Archives: Cool Boarders'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives: Ace Driver',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'Dig Dug (Arcade Archives)',
+                'Arcade Archives: Dig Dug'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'Bus Simulator : World Tour',
+                'Bus Simulator: World Tour'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'BUS SIMULATOR: WORLD TOUR',
+                'Bus Simulator: World Tour'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'ARCADE ARCHIVES ACE DRIVER',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'arcade archives ace driver',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+    }
 }

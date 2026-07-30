@@ -155,4 +155,78 @@ final class TrophyCatalogSynchronizerTest extends TestCase
         $this->assertSame(7, $method->getNumberOfParameters());
         $this->assertSame('int', (string) $method->getReturnType());
     }
+
+    public function testUpdateTrophyTitleNameUpdatesExistingRow(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
+            VALUES ('NPWR00001_00', 'Arcade Archives Ace Driver', 'Details', 'icon.png', 'PS5', '01.00')"
+        );
+
+        $affected = $this->synchronizer->updateTrophyTitleName(
+            'NPWR00001_00',
+            'Arcade Archives: Ace Driver',
+            'Arcade Archives Ace Driver'
+        );
+
+        $this->assertSame(1, $affected);
+
+        $query = $this->database->prepare(
+            'SELECT name FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', 'NPWR00001_00', PDO::PARAM_STR);
+        $query->execute();
+
+        $this->assertSame('Arcade Archives: Ace Driver', $query->fetchColumn());
+    }
+
+    public function testUpdateTrophyTitleNameSkipsWhenStoredNameChanged(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
+            VALUES ('NPWR00001_00', 'Dig Dug (Arcade Archives)', 'Details', 'icon.png', 'PS5', '01.00')"
+        );
+
+        $affected = $this->synchronizer->updateTrophyTitleName(
+            'NPWR00001_00',
+            'Arcade Archives: Dig Dug',
+            'Arcade Archives Dig Dug'
+        );
+
+        $this->assertSame(0, $affected);
+
+        $query = $this->database->prepare(
+            'SELECT name FROM trophy_title WHERE np_communication_id = :np_communication_id'
+        );
+        $query->bindValue(':np_communication_id', 'NPWR00001_00', PDO::PARAM_STR);
+        $query->execute();
+
+        $this->assertSame('Dig Dug (Arcade Archives)', $query->fetchColumn());
+    }
+
+    public function testUpdateTrophyTitleNameUsesBinaryCollationOnMysql(): void
+    {
+        $method = new ReflectionMethod(TrophyCatalogSynchronizer::class, 'exactNameMatchSql');
+
+        $mysqlPdo = new class ('sqlite::memory:') extends PDO {
+            public function getAttribute(int $attribute): mixed
+            {
+                if ($attribute === PDO::ATTR_DRIVER_NAME) {
+                    return 'mysql';
+                }
+
+                return parent::getAttribute($attribute);
+            }
+        };
+
+        $synchronizer = (new ReflectionClass(TrophyCatalogSynchronizer::class))
+            ->newInstanceWithoutConstructor();
+        $databaseProperty = new ReflectionProperty(TrophyCatalogSynchronizer::class, 'database');
+        $databaseProperty->setValue($synchronizer, $mysqlPdo);
+
+        $this->assertSame(
+            'name COLLATE utf8mb4_bin = :expected_current_name',
+            $method->invoke($synchronizer)
+        );
+    }
 }
