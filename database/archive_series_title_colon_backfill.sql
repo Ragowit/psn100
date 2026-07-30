@@ -15,7 +15,7 @@ UPDATE trophy_title
 SET name = REGEXP_REPLACE(name, '^(Arcade Archives)[[:space:]]+', '$1: ', 1, 0, 'i')
 WHERE REGEXP_LIKE(name, '^Arcade Archives[[:space:]]+', 'i')
   AND NOT REGEXP_LIKE(name, '^Arcade Archives[[:space:]]*:', 'i')
-  AND NOT REGEXP_LIKE(name, '^Arcade Archives 2[[:space:]]', 'i');
+  AND NOT REGEXP_LIKE(name, '^Arcade Archives 2($|[[:space:]]|:)', 'i');
 
 UPDATE trophy_title
 SET name = REGEXP_REPLACE(name, '^(Console Archives)[[:space:]]+', '$1: ', 1, 0, 'i')

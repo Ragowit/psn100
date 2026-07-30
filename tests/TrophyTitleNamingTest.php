@@ -129,6 +129,12 @@ final class TrophyTitleNamingTest extends TestCase
         );
         $this->assertTrue(
             $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives 2 Ace Driver',
+                'Arcade Archives 2: Ace Driver'
+            )
+        );
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
                 'Console Archives Cool Boarders',
                 'Console Archives: Cool Boarders'
             )
@@ -155,6 +161,18 @@ final class TrophyTitleNamingTest extends TestCase
             $this->formatter->shouldRewriteStoredName(
                 'BUS SIMULATOR: WORLD TOUR',
                 'Bus Simulator: World Tour'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'ARCADE ARCHIVES ACE DRIVER',
+                'Arcade Archives: Ace Driver'
+            )
+        );
+        $this->assertFalse(
+            $this->formatter->shouldRewriteStoredName(
+                'arcade archives ace driver',
+                'Arcade Archives: Ace Driver'
             )
         );
     }

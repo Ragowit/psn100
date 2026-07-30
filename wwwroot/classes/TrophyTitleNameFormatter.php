@@ -19,10 +19,10 @@ final readonly class TrophyTitleNameFormatter
 
     /**
      * True when $storedName is specifically a legacy Arcade/Console Archives title
-     * missing the series colon, and formatting it yields $formattedName.
+     * missing only the series colon relative to $formattedName.
      *
-     * Other formatter differences (colon spacing, title case, etc.) are treated as
-     * intentional stored values and are not rewritten on scan.
+     * Compares the colon-only transformation directly so intentional casing or other
+     * formatter differences are preserved on scan.
      */
     #[\NoDiscard]
     public function shouldRewriteStoredName(string $storedName, string $formattedName): bool
@@ -31,11 +31,7 @@ final readonly class TrophyTitleNameFormatter
             return false;
         }
 
-        if ($this->ensureArchiveSeriesColon($storedName) === $storedName) {
-            return false;
-        }
-
-        return $this->format($storedName) === $formattedName;
+        return $this->ensureArchiveSeriesColon($storedName) === $formattedName;
     }
 
     #[\NoDiscard]
