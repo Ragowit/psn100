@@ -26,7 +26,7 @@ final class GameResetServiceTest extends TestCase
         $this->insertMergedGame('MERGE-123', 1, 'Merged Game', 25, 10);
         $this->insertChildGame('NPWR-OTHER', 2, 'Child Game', 'MERGE-123', GameAvailabilityStatus::MERGED);
 
-        $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-123')");
+        $this->insertTrophyMerge('NPWR-OTHER', 'MERGE-123');
         $this->database->exec("INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES ('MERGE-123', 1001)");
         $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-123', 1001)");
         $this->database->exec("INSERT INTO trophy_group_player (np_communication_id) VALUES ('MERGE-123')");
@@ -75,7 +75,7 @@ final class GameResetServiceTest extends TestCase
         $this->insertMergedGame('MERGE-456', 1, 'Merged Game', 12, 4);
         $this->insertChildGame('NPWR-OTHER', 2, 'Child Game', 'MERGE-456', GameAvailabilityStatus::MERGED);
 
-        $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-456')");
+        $this->insertTrophyMerge('NPWR-OTHER', 'MERGE-456');
         $this->database->exec("INSERT INTO trophy (np_communication_id) VALUES ('MERGE-456')");
         $this->database->exec("INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES ('MERGE-456', 1002)");
         $this->database->exec("INSERT INTO trophy_earned (np_communication_id, account_id) VALUES ('MERGE-456', 1002)");
@@ -139,6 +139,9 @@ final class GameResetServiceTest extends TestCase
             "INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id, status)
              VALUES ('NPWR-DELISTED', 1, 0, 'MERGE-789', " . GameAvailabilityStatus::DELISTED->value . ')'
         );
+        $this->insertTrophyMerge('NPWR-CHILD-A', 'MERGE-789');
+        $this->insertTrophyMerge('NPWR-CHILD-B', 'MERGE-789');
+        $this->insertTrophyMerge('NPWR-OTHER-PARENT', 'MERGE-OTHER');
 
         $this->service->process(1, GameResetAction::DELETE);
 
@@ -156,6 +159,43 @@ final class GameResetServiceTest extends TestCase
             ->fetch(PDO::FETCH_ASSOC);
         $this->assertSame(null, $delistedSibling['parent_np_communication_id']);
         $this->assertSame(GameAvailabilityStatus::DELISTED->value, (int) $delistedSibling['status']);
+    }
+
+    public function testProcessDeleteRestoresTrophyOnlyMergedChildrenWithoutParentLink(): void
+    {
+        $this->insertMergedGame('MERGE-TROPHY', 1, 'Merged Game', 4, 1);
+        // Trophy-only merges mark status MERGED but never set parent_np_communication_id.
+        $this->insertChildGame('NPWR-TROPHY-CHILD', 2, 'Trophy Child', null, GameAvailabilityStatus::MERGED);
+        $this->insertTrophyMerge('NPWR-TROPHY-CHILD', 'MERGE-TROPHY');
+
+        $this->service->process(1, GameResetAction::DELETE);
+
+        $this->assertChildRestoredToNormal('NPWR-TROPHY-CHILD');
+        $this->assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM trophy_merge')->fetchColumn());
+    }
+
+    public function testProcessResetKeepsMergedStatusWhenChildStillMappedToAnotherParent(): void
+    {
+        $this->insertMergedGame('MERGE-ONE', 1, 'Merged Game One', 4, 1);
+        $this->insertMergedGame('MERGE-TWO', 2, 'Merged Game Two', 3, 1);
+        $this->insertChildGame('NPWR-SHARED', 3, 'Shared Child', null, GameAvailabilityStatus::MERGED);
+        $this->insertTrophyMerge('NPWR-SHARED', 'MERGE-ONE');
+        $this->insertTrophyMerge('NPWR-SHARED', 'MERGE-TWO');
+
+        $this->service->process(1, GameResetAction::RESET);
+
+        $child = $this->database
+            ->query("SELECT parent_np_communication_id, status FROM trophy_title_meta WHERE np_communication_id = 'NPWR-SHARED'")
+            ->fetch(PDO::FETCH_ASSOC);
+        $this->assertTrue($child !== false);
+        $this->assertSame(null, $child['parent_np_communication_id']);
+        $this->assertSame(GameAvailabilityStatus::MERGED->value, (int) $child['status']);
+        $this->assertSame(
+            1,
+            (int) $this->database->query(
+                "SELECT COUNT(*) FROM trophy_merge WHERE parent_np_communication_id = 'MERGE-TWO'"
+            )->fetchColumn()
+        );
     }
 
     public function testProcessThrowsWhenGameEntryIsMissing(): void
@@ -203,7 +243,7 @@ final class GameResetServiceTest extends TestCase
     public function testProcessRollsBackWhenStatementFails(): void
     {
         $this->insertMergedGame('MERGE-999', 9, 'Merge Failure Game', 33, 12);
-        $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-999')");
+        $this->insertTrophyMerge('NPWR-FAIL', 'MERGE-999');
         $this->database->exec('CREATE TRIGGER fail_delete BEFORE DELETE ON trophy_merge BEGIN SELECT RAISE(ABORT, "delete failure"); END;');
 
         try {
@@ -242,7 +282,10 @@ final class GameResetServiceTest extends TestCase
             obsolete_ids TEXT NULL,
             psnprofiles_id TEXT NULL
         )');
-        $this->database->exec('CREATE TABLE trophy_merge (parent_np_communication_id TEXT)');
+        $this->database->exec('CREATE TABLE trophy_merge (
+            child_np_communication_id TEXT NOT NULL,
+            parent_np_communication_id TEXT NOT NULL
+        )');
         $this->database->exec('CREATE TABLE trophy_earned (
             np_communication_id TEXT,
             account_id INTEGER
@@ -287,7 +330,7 @@ final class GameResetServiceTest extends TestCase
         string $npCommunicationId,
         int $gameId,
         string $name,
-        string $parentNpCommunicationId,
+        ?string $parentNpCommunicationId,
         GameAvailabilityStatus $status
     ): void {
         $statement = $this->database->prepare('INSERT INTO trophy_title (id, np_communication_id, name) VALUES (:id, :np, :name)');
@@ -301,8 +344,18 @@ final class GameResetServiceTest extends TestCase
              VALUES (:np, 5, 2, :parent, :status)'
         );
         $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
-        $statement->bindValue(':parent', $parentNpCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':parent', $parentNpCommunicationId, $parentNpCommunicationId === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $statement->bindValue(':status', $status->value, PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    private function insertTrophyMerge(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $statement = $this->database->prepare(
+            'INSERT INTO trophy_merge (child_np_communication_id, parent_np_communication_id) VALUES (:child, :parent)'
+        );
+        $statement->bindValue(':child', $childNpCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':parent', $parentNpCommunicationId, PDO::PARAM_STR);
         $statement->execute();
     }
 
