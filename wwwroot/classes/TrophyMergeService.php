@@ -10,6 +10,7 @@ require_once __DIR__ . '/TrophyMergeEarnedCopier.php';
 require_once __DIR__ . '/TrophyMergeMappingService.php';
 require_once __DIR__ . '/TrophyMergeMetadataRepository.php';
 require_once __DIR__ . '/TrophyMergeMethod.php';
+require_once __DIR__ . '/TrophyMergeParentOwnershipGuard.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressUpdater.php';
 require_once __DIR__ . '/TrophyTitleCloneService.php';
 
@@ -20,6 +21,8 @@ class TrophyMergeService
     private ?TrophyMergeMappingService $mappingService = null;
 
     private ?TrophyMergeMetadataRepository $metadataRepository = null;
+
+    private ?TrophyMergeParentOwnershipGuard $parentOwnershipGuard = null;
 
     private ?TrophyMergePlayerProgressUpdater $playerProgressUpdater = null;
 
@@ -56,7 +59,10 @@ class TrophyMergeService
                 throw new InvalidArgumentException("Child can't be a merge title.");
             }
 
-            $this->assertChildCanUseParent($childTrophy['np_communication_id'], $parentNpCommunicationId);
+            $this->parentOwnershipGuard()->assertChildCanUseParent(
+                $childTrophy['np_communication_id'],
+                $parentNpCommunicationId
+            );
 
             $childTrophies[] = [
                 'id' => $childTrophyId,
@@ -65,7 +71,7 @@ class TrophyMergeService
         }
 
         $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $parentNpCommunicationId, $childTrophies): void {
-            $this->lockAndAssertChildrenCanUseParent(
+            $this->parentOwnershipGuard()->lockAndAssertChildrenCanUseParent(
                 array_map(
                     static fn (array $childData): string => $childData['trophy']['np_communication_id'],
                     $childTrophies
@@ -124,7 +130,10 @@ class TrophyMergeService
         }
 
         $this->notifyProgress($progressListener, 10, 'Validating merge configuration…');
-        $this->assertChildCanUseParent($childNpCommunicationId, $parentNpCommunicationId);
+        $this->parentOwnershipGuard()->assertChildCanUseParent(
+            $childNpCommunicationId,
+            $parentNpCommunicationId
+        );
 
         $message = '';
 
@@ -137,7 +146,10 @@ class TrophyMergeService
             $progressListener,
             &$message
         ): void {
-            $this->lockAndAssertChildrenCanUseParent([$childNpCommunicationId], $parentNpCommunicationId);
+            $this->parentOwnershipGuard()->lockAndAssertChildrenCanUseParent(
+                [$childNpCommunicationId],
+                $parentNpCommunicationId
+            );
 
             $this->notifyProgress($progressListener, 30, $method->progressLabel());
 
@@ -238,141 +250,6 @@ SQL
         return $trophy;
     }
 
-    /**
-     * Lock child meta rows in sorted order, then enforce the single-parent rule using
-     * current-read values from the locks (safe under MySQL REPEATABLE READ).
-     *
-     * @param list<string> $childNpCommunicationIds
-     */
-    private function lockAndAssertChildrenCanUseParent(
-        array $childNpCommunicationIds,
-        string $parentNpCommunicationId
-    ): void {
-        $uniqueChildNpCommunicationIds = array_values(array_unique($childNpCommunicationIds));
-        sort($uniqueChildNpCommunicationIds, SORT_STRING);
-
-        foreach ($uniqueChildNpCommunicationIds as $childNpCommunicationId) {
-            $lockedMetaParent = $this->metadataRepository()->lockChildMetaForParentAssignment(
-                $childNpCommunicationId
-            );
-            $this->assertChildOwnership(
-                $childNpCommunicationId,
-                $parentNpCommunicationId,
-                $lockedMetaParent,
-                currentReadMergeParents: true
-            );
-        }
-    }
-
-    /**
-     * A parent may have many children, but each child game may only have one parent.
-     * Merging additional trophies into the same parent is allowed.
-     */
-    private function assertChildCanUseParent(string $childNpCommunicationId, string $parentNpCommunicationId): void
-    {
-        $this->assertChildOwnership(
-            $childNpCommunicationId,
-            $parentNpCommunicationId,
-            $this->readMetaParent($childNpCommunicationId),
-            currentReadMergeParents: false
-        );
-    }
-
-    private function assertChildOwnership(
-        string $childNpCommunicationId,
-        string $parentNpCommunicationId,
-        ?string $metaParent,
-        bool $currentReadMergeParents
-    ): void {
-        $mergeParents = $this->findParentsFromTrophyMerge(
-            $childNpCommunicationId,
-            forUpdate: $currentReadMergeParents
-                && $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite'
-        );
-
-        if (count($mergeParents) > 1) {
-            throw new InvalidArgumentException(
-                'A child game can only have one parent. This game has conflicting merge mappings to '
-                . implode(', ', $mergeParents)
-                . ' and must be repaired before merging again.'
-            );
-        }
-
-        $mergeParent = $mergeParents === [] ? null : array_first($mergeParents);
-
-        if (
-            $metaParent !== null
-            && $mergeParent !== null
-            && $metaParent !== $mergeParent
-        ) {
-            throw new InvalidArgumentException(
-                'A child game can only have one parent. This game has conflicting parents '
-                . $metaParent
-                . ' and '
-                . $mergeParent
-                . ' and must be repaired before merging again.'
-            );
-        }
-
-        $existingParent = $metaParent ?? $mergeParent;
-
-        if ($existingParent === null || $existingParent === $parentNpCommunicationId) {
-            return;
-        }
-
-        throw new InvalidArgumentException(
-            'A child game can only have one parent. This game is already merged into '
-            . $existingParent
-            . '.'
-        );
-    }
-
-    private function readMetaParent(string $childNpCommunicationId): ?string
-    {
-        $metaQuery = $this->database->prepare(
-            <<<'SQL'
-            SELECT parent_np_communication_id
-            FROM trophy_title_meta
-            WHERE np_communication_id = :np_communication_id
-            SQL
-        );
-        $metaQuery->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-        $metaQuery->execute();
-
-        $parentFromMeta = $metaQuery->fetchColumn();
-        if ($parentFromMeta === false || $parentFromMeta === null || $parentFromMeta === '') {
-            return null;
-        }
-
-        return (string) $parentFromMeta;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function findParentsFromTrophyMerge(string $childNpCommunicationId, bool $forUpdate): array
-    {
-        $sql = <<<'SQL'
-            SELECT DISTINCT parent_np_communication_id
-            FROM trophy_merge
-            WHERE child_np_communication_id = :np_communication_id
-            ORDER BY parent_np_communication_id
-            SQL;
-
-        if ($forUpdate) {
-            $sql .= "\nFOR UPDATE";
-        }
-
-        $mergeQuery = $this->database->prepare($sql);
-        $mergeQuery->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
-        $mergeQuery->execute();
-
-        /** @var list<string> $parents */
-        $parents = $mergeQuery->fetchAll(PDO::FETCH_COLUMN);
-
-        return $parents;
-    }
-
     private function getGameIdByTrophyId(int $trophyId): int
     {
         $query = $this->database->prepare(
@@ -420,6 +297,14 @@ SQL
         return $this->metadataRepository ??= new TrophyMergeMetadataRepository(
             $this->database,
             $this->transactionRunner
+        );
+    }
+
+    private function parentOwnershipGuard(): TrophyMergeParentOwnershipGuard
+    {
+        return $this->parentOwnershipGuard ??= new TrophyMergeParentOwnershipGuard(
+            $this->database,
+            $this->metadataRepository()
         );
     }
 

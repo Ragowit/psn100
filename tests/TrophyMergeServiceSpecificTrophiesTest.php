@@ -191,7 +191,7 @@ final class TrophyMergeServiceSpecificTrophiesTest extends TestCase
         } catch (InvalidArgumentException $exception) {
             $this->assertSame(
                 'A child game can only have one parent. This game has conflicting merge mappings to '
-                . 'MERGE_000008, MERGE_000009 and must be repaired before merging again.',
+                . 'MERGE_000008, MERGE_000009 and must be repaired before continuing.',
                 $exception->getMessage()
             );
         }
@@ -215,7 +215,7 @@ final class TrophyMergeServiceSpecificTrophiesTest extends TestCase
         } catch (InvalidArgumentException $exception) {
             $this->assertSame(
                 'A child game can only have one parent. This game has conflicting parents '
-                . 'MERGE_000010 and MERGE_000011 and must be repaired before merging again.',
+                . 'MERGE_000010 and MERGE_000011 and must be repaired before continuing.',
                 $exception->getMessage()
             );
         }
