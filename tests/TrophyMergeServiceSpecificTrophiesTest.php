@@ -170,6 +170,57 @@ final class TrophyMergeServiceSpecificTrophiesTest extends TestCase
         }
     }
 
+    public function testMergeSpecificTrophiesRejectsLegacyConflictingMergeMappings(): void
+    {
+        $this->insertTitle(1, 'MERGE_000008', 'PS5');
+        $this->insertTitle(2, 'MERGE_000009', 'PS5');
+        $this->insertTitle(3, 'NPWR_CHILD01', 'PS4');
+        $this->insertMeta('MERGE_000008');
+        $this->insertMeta('MERGE_000009');
+        $this->insertMeta('NPWR_CHILD01');
+        $this->insertTrophy(10, 'MERGE_000008', 'default', 1);
+        $this->insertTrophy(20, 'NPWR_CHILD01', 'default', 3);
+        // Legacy state: trophies from the same child were mapped to two different parents.
+        $this->insertTrophyMergeMapping('NPWR_CHILD01', 'default', 1, 'MERGE_000008', 'default', 1);
+        $this->insertTrophyMergeMapping('NPWR_CHILD01', 'default', 2, 'MERGE_000009', 'default', 1);
+
+        try {
+            // Even merging into the lexicographically first parent must fail until repaired.
+            $this->service->mergeSpecificTrophies(10, [20]);
+            $this->fail('Expected InvalidArgumentException was not thrown.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame(
+                'A child game can only have one parent. This game has conflicting merge mappings to '
+                . 'MERGE_000008, MERGE_000009 and must be repaired before merging again.',
+                $exception->getMessage()
+            );
+        }
+    }
+
+    public function testMergeSpecificTrophiesRejectsMetaAndMergeParentMismatch(): void
+    {
+        $this->insertTitle(1, 'MERGE_000010', 'PS5');
+        $this->insertTitle(2, 'MERGE_000011', 'PS5');
+        $this->insertTitle(3, 'NPWR_CHILD01', 'PS4');
+        $this->insertMeta('MERGE_000010');
+        $this->insertMeta('MERGE_000011');
+        $this->insertMeta('NPWR_CHILD01', 'MERGE_000010');
+        $this->insertTrophy(10, 'MERGE_000010', 'default', 1);
+        $this->insertTrophy(20, 'NPWR_CHILD01', 'default', 2);
+        $this->insertTrophyMergeMapping('NPWR_CHILD01', 'default', 1, 'MERGE_000011', 'default', 1);
+
+        try {
+            $this->service->mergeSpecificTrophies(10, [20]);
+            $this->fail('Expected InvalidArgumentException was not thrown.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame(
+                'A child game can only have one parent. This game has conflicting parents '
+                . 'MERGE_000010 and MERGE_000011 and must be repaired before merging again.',
+                $exception->getMessage()
+            );
+        }
+    }
+
     private function createTables(): void
     {
         $this->database->exec(
@@ -254,6 +305,40 @@ final class TrophyMergeServiceSpecificTrophiesTest extends TestCase
         $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
         $statement->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $statement->bindValue(':order_id', $orderId, PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    private function insertTrophyMergeMapping(
+        string $childNpCommunicationId,
+        string $childGroupId,
+        int $childOrderId,
+        string $parentNpCommunicationId,
+        string $parentGroupId,
+        int $parentOrderId
+    ): void {
+        $statement = $this->database->prepare(
+            'INSERT INTO trophy_merge (
+                child_np_communication_id,
+                child_group_id,
+                child_order_id,
+                parent_np_communication_id,
+                parent_group_id,
+                parent_order_id
+             ) VALUES (
+                :child_np,
+                :child_group,
+                :child_order,
+                :parent_np,
+                :parent_group,
+                :parent_order
+             )'
+        );
+        $statement->bindValue(':child_np', $childNpCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':child_group', $childGroupId, PDO::PARAM_STR);
+        $statement->bindValue(':child_order', $childOrderId, PDO::PARAM_INT);
+        $statement->bindValue(':parent_np', $parentNpCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':parent_group', $parentGroupId, PDO::PARAM_STR);
+        $statement->bindValue(':parent_order', $parentOrderId, PDO::PARAM_INT);
         $statement->execute();
     }
 }

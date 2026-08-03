@@ -255,9 +255,12 @@ SQL
             $lockedMetaParent = $this->metadataRepository()->lockChildMetaForParentAssignment(
                 $childNpCommunicationId
             );
-            $existingParent = $lockedMetaParent
-                ?? $this->findCurrentParentFromTrophyMerge($childNpCommunicationId);
-            $this->assertExistingParentAllowed($existingParent, $parentNpCommunicationId);
+            $this->assertChildOwnership(
+                $childNpCommunicationId,
+                $parentNpCommunicationId,
+                $lockedMetaParent,
+                currentReadMergeParents: true
+            );
         }
     }
 
@@ -267,14 +270,52 @@ SQL
      */
     private function assertChildCanUseParent(string $childNpCommunicationId, string $parentNpCommunicationId): void
     {
-        $this->assertExistingParentAllowed(
-            $this->findExistingParent($childNpCommunicationId),
-            $parentNpCommunicationId
+        $this->assertChildOwnership(
+            $childNpCommunicationId,
+            $parentNpCommunicationId,
+            $this->readMetaParent($childNpCommunicationId),
+            currentReadMergeParents: false
         );
     }
 
-    private function assertExistingParentAllowed(?string $existingParent, string $parentNpCommunicationId): void
-    {
+    private function assertChildOwnership(
+        string $childNpCommunicationId,
+        string $parentNpCommunicationId,
+        ?string $metaParent,
+        bool $currentReadMergeParents
+    ): void {
+        $mergeParents = $this->findParentsFromTrophyMerge(
+            $childNpCommunicationId,
+            forUpdate: $currentReadMergeParents
+                && $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite'
+        );
+
+        if (count($mergeParents) > 1) {
+            throw new InvalidArgumentException(
+                'A child game can only have one parent. This game has conflicting merge mappings to '
+                . implode(', ', $mergeParents)
+                . ' and must be repaired before merging again.'
+            );
+        }
+
+        $mergeParent = $mergeParents === [] ? null : array_first($mergeParents);
+
+        if (
+            $metaParent !== null
+            && $mergeParent !== null
+            && $metaParent !== $mergeParent
+        ) {
+            throw new InvalidArgumentException(
+                'A child game can only have one parent. This game has conflicting parents '
+                . $metaParent
+                . ' and '
+                . $mergeParent
+                . ' and must be repaired before merging again.'
+            );
+        }
+
+        $existingParent = $metaParent ?? $mergeParent;
+
         if ($existingParent === null || $existingParent === $parentNpCommunicationId) {
             return;
         }
@@ -286,7 +327,7 @@ SQL
         );
     }
 
-    private function findExistingParent(string $childNpCommunicationId): ?string
+    private function readMetaParent(string $childNpCommunicationId): ?string
     {
         $metaQuery = $this->database->prepare(
             <<<'SQL'
@@ -299,26 +340,17 @@ SQL
         $metaQuery->execute();
 
         $parentFromMeta = $metaQuery->fetchColumn();
-        if ($parentFromMeta !== false && $parentFromMeta !== null && $parentFromMeta !== '') {
-            return (string) $parentFromMeta;
+        if ($parentFromMeta === false || $parentFromMeta === null || $parentFromMeta === '') {
+            return null;
         }
 
-        return $this->findParentFromTrophyMerge($childNpCommunicationId, forUpdate: false);
+        return (string) $parentFromMeta;
     }
 
     /**
-     * Current-read lookup of legacy trophy_merge parents. FOR UPDATE avoids REPEATABLE READ
-     * snapshot staleness after waiting on the child meta row lock.
+     * @return list<string>
      */
-    private function findCurrentParentFromTrophyMerge(string $childNpCommunicationId): ?string
-    {
-        return $this->findParentFromTrophyMerge(
-            $childNpCommunicationId,
-            forUpdate: $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite'
-        );
-    }
-
-    private function findParentFromTrophyMerge(string $childNpCommunicationId, bool $forUpdate): ?string
+    private function findParentsFromTrophyMerge(string $childNpCommunicationId, bool $forUpdate): array
     {
         $sql = <<<'SQL'
             SELECT DISTINCT parent_np_communication_id
@@ -338,7 +370,7 @@ SQL
         /** @var list<string> $parents */
         $parents = $mergeQuery->fetchAll(PDO::FETCH_COLUMN);
 
-        return $parents === [] ? null : array_first($parents);
+        return $parents;
     }
 
     private function getGameIdByTrophyId(int $trophyId): int
