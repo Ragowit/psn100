@@ -82,6 +82,10 @@ class TrophyMergeService
 
                 $this->updateTrophyGroupPlayer($childGameId);
                 $this->updateTrophyTitlePlayer($childGameId);
+                $this->metadataRepository()->updateParentRelationship(
+                    $childTrophy['np_communication_id'],
+                    $parentTrophy['np_communication_id']
+                );
             }
         });
 
