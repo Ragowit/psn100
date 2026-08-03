@@ -21,7 +21,7 @@ final readonly class GameMessageSanitizer
             $matchText = $matches[0][0];
             $matchPosition = $matches[0][1];
 
-            $sanitized .= self::sanitizePlainText(substr($message, $offset, $matchPosition - $offset));
+            $sanitized .= substr($message, $offset, $matchPosition - $offset) |> self::sanitizePlainText(...);
 
             $attributes = $matches[1][0];
             $linkContent = $matches[2][0];
@@ -45,7 +45,7 @@ final readonly class GameMessageSanitizer
             $offset = $matchPosition + strlen($matchText);
         }
 
-        $sanitized .= self::sanitizePlainText(substr($message, $offset));
+        $sanitized .= substr($message, $offset) |> self::sanitizePlainText(...);
 
         return $sanitized;
     }

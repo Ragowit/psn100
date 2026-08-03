@@ -7,9 +7,9 @@ require_once __DIR__ . '/WorkerCredentialField.php';
 require_once __DIR__ . '/WorkerCredentialRevealResult.php';
 require_once __DIR__ . '/WorkerService.php';
 
-final class WorkerCredentialRevealHandler
+final readonly class WorkerCredentialRevealHandler
 {
-    public function __construct(private readonly WorkerService $workerService)
+    public function __construct(final private WorkerService $workerService)
     {
     }
 

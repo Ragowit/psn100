@@ -19,7 +19,7 @@ final readonly class HomepageContentService
     private const int DEFAULT_NEW_DLCS_LIMIT = 8;
     private const int DEFAULT_POPULAR_GAME_LIMIT = 10;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

@@ -20,7 +20,7 @@ final readonly class AdminUserRepository
         LIMIT 1
         SQL;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

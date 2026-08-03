@@ -8,7 +8,7 @@ final readonly class AdminLoginThrottleService
 
     public const int LOCK_SECONDS = 900;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

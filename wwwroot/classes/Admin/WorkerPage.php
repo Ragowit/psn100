@@ -12,9 +12,9 @@ require_once __DIR__ . '/WorkerPageResult.php';
 require_once __DIR__ . '/WorkerSortField.php';
 require_once __DIR__ . '/WorkerSortDirection.php';
 
-final class WorkerPage
+final readonly class WorkerPage
 {
-    public function __construct(private readonly WorkerService $workerService)
+    public function __construct(final private WorkerService $workerService)
     {
     }
 

@@ -11,7 +11,7 @@ final readonly class GameRecentPlayersService
 {
     public const int RECENT_PLAYERS_LIMIT = 10;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

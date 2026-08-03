@@ -17,15 +17,15 @@ use Tustin\PlayStation\Client;
 /**
  * Refreshes trophy title, group, and trophy catalog rows during admin game rescans.
  */
-final class GameRescanCatalogUpdater
+final readonly class GameRescanCatalogUpdater
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyCatalogSynchronizer $trophyCatalogSynchronizer,
-        private readonly TrophyMetaRepository $trophyMetaRepository,
-        private readonly GameRescanGroupDataFetcher $groupDataFetcher,
-        private readonly TrophyImageDirectories $imageDirectories,
-        private readonly TrophyImageDownloader $imageDownloader,
+        final private PDO $database,
+        final private TrophyCatalogSynchronizer $trophyCatalogSynchronizer,
+        final private TrophyMetaRepository $trophyMetaRepository,
+        final private GameRescanGroupDataFetcher $groupDataFetcher,
+        final private TrophyImageDirectories $imageDirectories,
+        final private TrophyImageDownloader $imageDownloader,
     ) {
     }
 

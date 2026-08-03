@@ -7,7 +7,7 @@ require_once __DIR__ . '/PsnTrophyTitleComparisonRequestResult.php';
 require_once __DIR__ . '/PsnTrophyTitleComparisonService.php';
 require_once __DIR__ . '/PsnTrophyTitleComparisonSource.php';
 
-final class PsnTrophyTitleComparisonRequestHandler
+final readonly class PsnTrophyTitleComparisonRequestHandler
 {
     #[\NoDiscard]
     public static function handle(PsnTrophyTitleComparisonService $service, string $accountId, string $source): PsnTrophyTitleComparisonRequestResult

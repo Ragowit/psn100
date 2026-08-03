@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../PlayerStatus.php';
 
-final class CheaterService
+final readonly class CheaterService
 {
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
     ) {
     }
 

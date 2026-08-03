@@ -12,11 +12,11 @@ require_once __DIR__ . '/MergeNpCommunicationId.php';
  *
  * Encapsulates clone persistence that was previously embedded in TrophyMergeService.
  */
-final class TrophyTitleCloneService
+final readonly class TrophyTitleCloneService
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly NestedDatabaseTransactionRunner $transactionRunner,
+        final private PDO $database,
+        final private NestedDatabaseTransactionRunner $transactionRunner,
     ) {
     }
 

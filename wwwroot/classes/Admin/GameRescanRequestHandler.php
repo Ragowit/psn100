@@ -8,9 +8,9 @@ require_once __DIR__ . '/AdminStreamEventType.php';
 require_once __DIR__ . '/GameRescanProgressListener.php';
 require_once __DIR__ . '/CallableGameRescanProgressListener.php';
 
-final class GameRescanRequestHandler
+final readonly class GameRescanRequestHandler
 {
-    public function __construct(private readonly GameRescanService $gameRescanService)
+    public function __construct(final private GameRescanService $gameRescanService)
     {
     }
 

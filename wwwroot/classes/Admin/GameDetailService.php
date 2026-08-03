@@ -7,7 +7,7 @@ require_once __DIR__ . '/../ChangelogEntry.php';
 final readonly class GameDetailService
 {
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
     ) {
     }
 

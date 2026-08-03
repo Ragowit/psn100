@@ -5,9 +5,9 @@ declare(strict_types=1);
 /**
  * Matches child trophies to parent merge-title trophies and persists trophy_merge rows.
  */
-final class TrophyMergeMappingService
+final readonly class TrophyMergeMappingService
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

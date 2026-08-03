@@ -14,8 +14,8 @@ require_once __DIR__ . '/TrophyGroupId.php';
 final readonly class PlayerGamesService
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly SearchQueryHelper $searchQueryHelper
+        final private PDO $database,
+        final private SearchQueryHelper $searchQueryHelper
     ) {
     }
 
