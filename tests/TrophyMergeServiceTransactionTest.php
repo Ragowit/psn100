@@ -185,6 +185,14 @@ final class MergeGamesTransactionPDO extends PDO
             return new MergeGamesNpCommunicationIdStatement();
         }
 
+        if (str_starts_with($normalized, 'SELECT parent_np_communication_id FROM trophy_title_meta')) {
+            return new MergeGamesEmptyParentStatement();
+        }
+
+        if (str_starts_with($normalized, 'SELECT DISTINCT parent_np_communication_id FROM trophy_merge')) {
+            return new MergeGamesEmptyParentListStatement();
+        }
+
         if (str_starts_with($normalized, 'UPDATE trophy_title_meta SET status = 2 WHERE np_communication_id = :np_communication_id')) {
             throw new RuntimeException('Failed while marking child game as merged.');
         }
@@ -195,6 +203,42 @@ final class MergeGamesTransactionPDO extends PDO
     public function recordMappingInsert(): void
     {
         $this->mappingInserted = true;
+    }
+}
+
+final class MergeGamesEmptyParentStatement extends PDOStatement
+{
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+    {
+        return true;
+    }
+
+    public function execute(?array $params = null): bool
+    {
+        return true;
+    }
+
+    public function fetchColumn(int $column = 0): false
+    {
+        return false;
+    }
+}
+
+final class MergeGamesEmptyParentListStatement extends PDOStatement
+{
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+    {
+        return true;
+    }
+
+    public function execute(?array $params = null): bool
+    {
+        return true;
+    }
+
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    {
+        return [];
     }
 }
 

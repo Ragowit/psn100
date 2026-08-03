@@ -174,30 +174,6 @@ final class GameResetServiceTest extends TestCase
         $this->assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM trophy_merge')->fetchColumn());
     }
 
-    public function testProcessResetKeepsMergedStatusWhenChildStillMappedToAnotherParent(): void
-    {
-        $this->insertMergedGame('MERGE-ONE', 1, 'Merged Game One', 4, 1);
-        $this->insertMergedGame('MERGE-TWO', 2, 'Merged Game Two', 3, 1);
-        $this->insertChildGame('NPWR-SHARED', 3, 'Shared Child', null, GameAvailabilityStatus::MERGED);
-        $this->insertTrophyMerge('NPWR-SHARED', 'MERGE-ONE');
-        $this->insertTrophyMerge('NPWR-SHARED', 'MERGE-TWO');
-
-        $this->service->process(1, GameResetAction::RESET);
-
-        $child = $this->database
-            ->query("SELECT parent_np_communication_id, status FROM trophy_title_meta WHERE np_communication_id = 'NPWR-SHARED'")
-            ->fetch(PDO::FETCH_ASSOC);
-        $this->assertTrue($child !== false);
-        $this->assertSame(null, $child['parent_np_communication_id']);
-        $this->assertSame(GameAvailabilityStatus::MERGED->value, (int) $child['status']);
-        $this->assertSame(
-            1,
-            (int) $this->database->query(
-                "SELECT COUNT(*) FROM trophy_merge WHERE parent_np_communication_id = 'MERGE-TWO'"
-            )->fetchColumn()
-        );
-    }
-
     public function testProcessThrowsWhenGameEntryIsMissing(): void
     {
         try {

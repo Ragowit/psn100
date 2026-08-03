@@ -46,6 +46,7 @@ class TrophyMergeService
         }
 
         $childTrophies = [];
+        $parentNpCommunicationId = $parentTrophy['np_communication_id'];
 
         foreach ($childTrophyIds as $childTrophyId) {
             $childTrophyId = (int) $childTrophyId;
@@ -55,16 +56,21 @@ class TrophyMergeService
                 throw new InvalidArgumentException("Child can't be a merge title.");
             }
 
+            $this->assertChildCanUseParent($childTrophy['np_communication_id'], $parentNpCommunicationId);
+
             $childTrophies[] = [
                 'id' => $childTrophyId,
                 'trophy' => $childTrophy,
             ];
         }
 
-        $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $childTrophies): void {
+        $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $parentNpCommunicationId, $childTrophies): void {
             foreach ($childTrophies as $childData) {
                 $childTrophyId = $childData['id'];
                 $childTrophy = $childData['trophy'];
+
+                // Re-check inside the transaction in case another merge landed first.
+                $this->assertChildCanUseParent($childTrophy['np_communication_id'], $parentNpCommunicationId);
 
                 $this->insertTrophyMergeMappingFromIds($childTrophyId, $parentTrophyId);
                 $this->metadataRepository()->markGameAsMergedByNpId($childTrophy['np_communication_id']);
@@ -75,7 +81,7 @@ class TrophyMergeService
                     $childTrophy['np_communication_id'],
                     $childTrophy['group_id'],
                     (int) $childTrophy['order_id'],
-                    $parentTrophy['np_communication_id'],
+                    $parentNpCommunicationId,
                     $parentTrophy['group_id'],
                     (int) $parentTrophy['order_id']
                 );
@@ -84,7 +90,7 @@ class TrophyMergeService
                 $this->updateTrophyTitlePlayer($childGameId);
                 $this->metadataRepository()->updateParentRelationship(
                     $childTrophy['np_communication_id'],
-                    $parentTrophy['np_communication_id']
+                    $parentNpCommunicationId
                 );
             }
         });
@@ -113,6 +119,7 @@ class TrophyMergeService
         }
 
         $this->notifyProgress($progressListener, 10, 'Validating merge configuration…');
+        $this->assertChildCanUseParent($childNpCommunicationId, $parentNpCommunicationId);
 
         $message = '';
 
@@ -125,6 +132,9 @@ class TrophyMergeService
             $progressListener,
             &$message
         ): void {
+            // Re-check inside the transaction in case another merge landed first.
+            $this->assertChildCanUseParent($childNpCommunicationId, $parentNpCommunicationId);
+
             $this->notifyProgress($progressListener, 30, $method->progressLabel());
 
             match ($method) {
@@ -222,6 +232,59 @@ SQL
         $trophy['order_id'] = (int) $trophy['order_id'];
 
         return $trophy;
+    }
+
+    /**
+     * A parent may have many children, but each child game may only have one parent.
+     * Merging additional trophies into the same parent is allowed.
+     */
+    private function assertChildCanUseParent(string $childNpCommunicationId, string $parentNpCommunicationId): void
+    {
+        $existingParent = $this->findExistingParent($childNpCommunicationId);
+
+        if ($existingParent === null || $existingParent === $parentNpCommunicationId) {
+            return;
+        }
+
+        throw new InvalidArgumentException(
+            'A child game can only have one parent. This game is already merged into '
+            . $existingParent
+            . '.'
+        );
+    }
+
+    private function findExistingParent(string $childNpCommunicationId): ?string
+    {
+        $metaQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT parent_np_communication_id
+            FROM trophy_title_meta
+            WHERE np_communication_id = :np_communication_id
+            SQL
+        );
+        $metaQuery->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $metaQuery->execute();
+
+        $parentFromMeta = $metaQuery->fetchColumn();
+        if ($parentFromMeta !== false && $parentFromMeta !== null && $parentFromMeta !== '') {
+            return (string) $parentFromMeta;
+        }
+
+        $mergeQuery = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT parent_np_communication_id
+            FROM trophy_merge
+            WHERE child_np_communication_id = :np_communication_id
+            ORDER BY parent_np_communication_id
+            SQL
+        );
+        $mergeQuery->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $mergeQuery->execute();
+
+        /** @var list<string> $parents */
+        $parents = $mergeQuery->fetchAll(PDO::FETCH_COLUMN);
+
+        return $parents === [] ? null : array_first($parents);
     }
 
     private function getGameIdByTrophyId(int $trophyId): int

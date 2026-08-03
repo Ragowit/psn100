@@ -82,6 +82,94 @@ final class TrophyMergeServiceSpecificTrophiesTest extends TestCase
         $this->assertSame('MERGE_000002', $childBParent);
     }
 
+    public function testMergeSpecificTrophiesAllowsAdditionalTrophiesForSameParent(): void
+    {
+        $this->insertTitle(1, 'MERGE_000003', 'PS5');
+        $this->insertTitle(2, 'NPWR_CHILD01', 'PS4');
+        $this->insertMeta('MERGE_000003');
+        $this->insertMeta('NPWR_CHILD01');
+        $this->insertTrophy(10, 'MERGE_000003', 'default', 1);
+        $this->insertTrophy(11, 'MERGE_000003', 'default', 2);
+        $this->insertTrophy(20, 'NPWR_CHILD01', 'default', 1);
+        $this->insertTrophy(21, 'NPWR_CHILD01', 'default', 2);
+
+        $this->service->mergeSpecificTrophies(10, [20]);
+        $message = $this->service->mergeSpecificTrophies(11, [21]);
+
+        $this->assertSame('The trophies have been merged.', $message);
+        $this->assertSame(
+            'MERGE_000003',
+            $this->database
+                ->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR_CHILD01'")
+                ->fetchColumn()
+        );
+        $this->assertSame(
+            2,
+            (int) $this->database->query(
+                "SELECT COUNT(*) FROM trophy_merge WHERE child_np_communication_id = 'NPWR_CHILD01'"
+            )->fetchColumn()
+        );
+    }
+
+    public function testMergeSpecificTrophiesRejectsSecondParent(): void
+    {
+        $this->insertTitle(1, 'MERGE_000004', 'PS5');
+        $this->insertTitle(2, 'MERGE_000005', 'PS5');
+        $this->insertTitle(3, 'NPWR_CHILD01', 'PS4');
+        $this->insertMeta('MERGE_000004');
+        $this->insertMeta('MERGE_000005');
+        $this->insertMeta('NPWR_CHILD01');
+        $this->insertTrophy(10, 'MERGE_000004', 'default', 1);
+        $this->insertTrophy(11, 'MERGE_000005', 'default', 1);
+        $this->insertTrophy(20, 'NPWR_CHILD01', 'default', 1);
+        $this->insertTrophy(21, 'NPWR_CHILD01', 'default', 2);
+
+        $this->service->mergeSpecificTrophies(10, [20]);
+
+        try {
+            $this->service->mergeSpecificTrophies(11, [21]);
+            $this->fail('Expected InvalidArgumentException was not thrown.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame(
+                'A child game can only have one parent. This game is already merged into MERGE_000004.',
+                $exception->getMessage()
+            );
+        }
+
+        $this->assertSame(
+            'MERGE_000004',
+            $this->database
+                ->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR_CHILD01'")
+                ->fetchColumn()
+        );
+        $this->assertSame(
+            0,
+            (int) $this->database->query(
+                "SELECT COUNT(*) FROM trophy_merge WHERE parent_np_communication_id = 'MERGE_000005'"
+            )->fetchColumn()
+        );
+    }
+
+    public function testMergeGamesRejectsSecondParent(): void
+    {
+        $this->insertTitle(1, 'MERGE_000006', 'PS5');
+        $this->insertTitle(2, 'MERGE_000007', 'PS5');
+        $this->insertTitle(3, 'NPWR_CHILD01', 'PS4');
+        $this->insertMeta('MERGE_000006');
+        $this->insertMeta('MERGE_000007');
+        $this->insertMeta('NPWR_CHILD01', 'MERGE_000006');
+
+        try {
+            $this->service->mergeGames(3, 2, TrophyMergeMethod::Order);
+            $this->fail('Expected InvalidArgumentException was not thrown.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame(
+                'A child game can only have one parent. This game is already merged into MERGE_000006.',
+                $exception->getMessage()
+            );
+        }
+    }
+
     private function createTables(): void
     {
         $this->database->exec(
@@ -134,13 +222,25 @@ final class TrophyMergeServiceSpecificTrophiesTest extends TestCase
         $statement->execute();
     }
 
-    private function insertMeta(string $npCommunicationId): void
+    private function insertMeta(string $npCommunicationId, ?string $parentNpCommunicationId = null): void
     {
         $statement = $this->database->prepare(
             'INSERT INTO trophy_title_meta (np_communication_id, status, parent_np_communication_id, message)
-             VALUES (:np, 0, NULL, \'\')'
+             VALUES (:np, :status, :parent, \'\')'
         );
         $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(
+            ':status',
+            $parentNpCommunicationId === null
+                ? GameAvailabilityStatus::NORMAL->value
+                : GameAvailabilityStatus::MERGED->value,
+            PDO::PARAM_INT
+        );
+        $statement->bindValue(
+            ':parent',
+            $parentNpCommunicationId,
+            $parentNpCommunicationId === null ? PDO::PARAM_NULL : PDO::PARAM_STR
+        );
         $statement->execute();
     }
 
