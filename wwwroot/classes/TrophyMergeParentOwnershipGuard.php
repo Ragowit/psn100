@@ -7,11 +7,11 @@ require_once __DIR__ . '/TrophyMergeMetadataRepository.php';
 /**
  * Enforces that a child trophy title may belong to at most one merge parent.
  */
-final class TrophyMergeParentOwnershipGuard
+final readonly class TrophyMergeParentOwnershipGuard
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyMergeMetadataRepository $metadataRepository
+        final private PDO $database,
+        final private TrophyMergeMetadataRepository $metadataRepository
     ) {
     }
 
@@ -38,7 +38,9 @@ final class TrophyMergeParentOwnershipGuard
         array $childNpCommunicationIds,
         string $parentNpCommunicationId
     ): void {
-        $uniqueChildNpCommunicationIds = array_values(array_unique($childNpCommunicationIds));
+        $uniqueChildNpCommunicationIds = $childNpCommunicationIds
+            |> array_unique(...)
+            |> array_values(...);
         sort($uniqueChildNpCommunicationIds, SORT_STRING);
 
         foreach ($uniqueChildNpCommunicationIds as $childNpCommunicationId) {

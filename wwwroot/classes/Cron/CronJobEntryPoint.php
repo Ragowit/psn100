@@ -12,9 +12,9 @@ require_once __DIR__ . '/CronJobInterface.php';
  * job should run while this class takes care of configuring the environment
  * and validating the job factory.
  */
-final class CronJobEntryPoint
+final readonly class CronJobEntryPoint
 {
-    private function __construct(private readonly CronJobBootstrapper $bootstrapper)
+    private function __construct(final private CronJobBootstrapper $bootstrapper)
     {
     }
 

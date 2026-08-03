@@ -14,8 +14,8 @@ final readonly class PlayerAdvisorService
     public const int PAGE_SIZE = 50;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly Utility $utility,
+        final private PDO $database,
+        final private Utility $utility,
     ) {
     }
 

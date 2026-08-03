@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final readonly class DeletePlayerService
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

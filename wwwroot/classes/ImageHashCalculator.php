@@ -189,13 +189,10 @@ final readonly class ImageHashCalculator
     }
 
     /**
-     * Calculates the Hamming Distance between two hashes.
-     * * @param string $h1 First hash (38 chars)
-     * @param string $h2 Second hash (38 chars)
-     * @return int Number of differing bits. 
-     * A distance <= 10 is usually considered the same image.
+     * Hamming distance between two equal-length hex hashes.
+     * Distance <= 10 is usually treated as the same image.
      */
-    public function getHammingDistance(string $h1, string $h2): int 
+    public function getHammingDistance(string $h1, string $h2): int
     {
         if (strlen($h1) !== strlen($h2)) return 152;
 

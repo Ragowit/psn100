@@ -12,10 +12,10 @@ use Tustin\PlayStation\Client;
 /**
  * Fetches PSN trophy group data and adapts raw API payloads to objects used during game rescans.
  */
-final class PsnTrophyLookupGroupDataProvider implements GameRescanGroupDataFetcher
+final readonly class PsnTrophyLookupGroupDataProvider implements GameRescanGroupDataFetcher
 {
     public function __construct(
-        private readonly PsnGameLookupService $psnGameLookupService,
+        final private PsnGameLookupService $psnGameLookupService,
     ) {
     }
 

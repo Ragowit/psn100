@@ -5,9 +5,9 @@ declare(strict_types=1);
 /**
  * Resolves admin trophy-status form input into trophy IDs.
  */
-final class TrophyStatusInputParser
+final readonly class TrophyStatusInputParser
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

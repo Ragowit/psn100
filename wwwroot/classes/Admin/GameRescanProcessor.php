@@ -7,9 +7,9 @@ require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/GameRescanService.php';
 require_once __DIR__ . '/GameRescanRequestHandler.php';
 
-final class GameRescanProcessor
+final readonly class GameRescanProcessor
 {
-    public function __construct(private readonly GameRescanRequestHandler $requestHandler)
+    public function __construct(final private GameRescanRequestHandler $requestHandler)
     {
     }
 

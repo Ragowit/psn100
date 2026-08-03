@@ -7,9 +7,9 @@ require_once __DIR__ . '/DeletePlayerRequestResult.php';
 require_once __DIR__ . '/DeletePlayerService.php';
 require_once __DIR__ . '/../Html.php';
 
-final class DeletePlayerRequestHandler
+final readonly class DeletePlayerRequestHandler
 {
-    public function __construct(private readonly DeletePlayerService $service)
+    public function __construct(final private DeletePlayerService $service)
     {
     }
 

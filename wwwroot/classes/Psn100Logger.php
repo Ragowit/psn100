@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-final class Psn100Logger
+final readonly class Psn100Logger
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

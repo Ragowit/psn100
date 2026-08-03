@@ -6,7 +6,7 @@ require_once __DIR__ . '/PsnGameLookupService.php';
 require_once __DIR__ . '/PsnGameLookupException.php';
 require_once __DIR__ . '/PsnGameLookupRequestResult.php';
 
-final class PsnGameLookupRequestHandler
+final readonly class PsnGameLookupRequestHandler
 {
     #[\NoDiscard]
     public static function handle(PsnGameLookupService $lookupService, string $gameId): PsnGameLookupRequestResult

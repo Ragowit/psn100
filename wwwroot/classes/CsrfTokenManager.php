@@ -18,7 +18,7 @@ final readonly class CsrfTokenManager
         $token = $_SESSION[$sessionKey] ?? null;
 
         if (!is_string($token) || $token === '') {
-            $token = bin2hex(random_bytes(32));
+            $token = random_bytes(32) |> bin2hex(...);
             $_SESSION[$sessionKey] = $token;
         }
 

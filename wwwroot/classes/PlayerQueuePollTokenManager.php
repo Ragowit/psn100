@@ -15,7 +15,7 @@ final readonly class PlayerQueuePollTokenManager
     {
         SessionManager::ensureStarted();
 
-        $token = bin2hex(random_bytes(32));
+        $token = random_bytes(32) |> bin2hex(...);
         $tokens = $this->readTokens();
         $this->purgeExpired($tokens);
         $tokens[$playerName] = [

@@ -5,11 +5,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/TrophyMetaStatus.php';
 require_once __DIR__ . '/TrophyGroupId.php';
 
-final class GameHistoryService
+final readonly class GameHistoryService
 {
     private const int INVALID_HISTORY_ID = 0;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

@@ -56,11 +56,11 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
     private readonly PlayerScanTrophyTitleLoop $trophyTitleLoop;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyCalculator $trophyCalculator,
-        private readonly Psn100Logger $logger,
-        private readonly TrophyHistoryRecorder $historyRecorder,
-        private readonly int $workerId,
+        final private PDO $database,
+        final private TrophyCalculator $trophyCalculator,
+        final private Psn100Logger $logger,
+        final private TrophyHistoryRecorder $historyRecorder,
+        final private int $workerId,
         ?AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?WorkerScanCoordinator $workerScanCoordinator = null,

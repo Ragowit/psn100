@@ -12,8 +12,8 @@ final readonly class AboutPageService implements AboutPageDataProviderInterface
     private const int DEFAULT_SCAN_LOG_LIMIT = 10;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly Utility $utility
+        final private PDO $database,
+        final private Utility $utility
     ) {
     }
 

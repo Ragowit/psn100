@@ -10,7 +10,7 @@ final readonly class GameLeaderboardService
 {
     public const int PAGE_SIZE = 50;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

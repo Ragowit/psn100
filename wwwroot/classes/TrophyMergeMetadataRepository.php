@@ -10,11 +10,11 @@ require_once __DIR__ . '/GameAvailabilityStatus.php';
 /**
  * Persists trophy-title merge metadata: merged status, parent links, platform union, and changelog rows.
  */
-final class TrophyMergeMetadataRepository
+final readonly class TrophyMergeMetadataRepository
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly NestedDatabaseTransactionRunner $transactionRunner
+        final private PDO $database,
+        final private NestedDatabaseTransactionRunner $transactionRunner
     ) {
     }
 

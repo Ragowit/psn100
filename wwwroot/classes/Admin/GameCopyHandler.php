@@ -5,9 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Html.php';
 require_once __DIR__ . '/../RequestParameter.php';
 
-final class GameCopyHandler
+final readonly class GameCopyHandler
 {
-    public function __construct(private readonly GameCopyService $gameCopyService)
+    public function __construct(final private GameCopyService $gameCopyService)
     {
     }
 

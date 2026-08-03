@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TrophyMetaStatus.php';
 
-final class TrophyCalculator
+final readonly class TrophyCalculator
 {
     private const int BRONZE_SCORE = 15;
     private const int SILVER_SCORE = 30;
@@ -38,7 +38,7 @@ final class TrophyCalculator
             last_updated_date = %s';
 
     public function __construct(
-        private readonly PDO $database
+        final private PDO $database
     ) {
     }
 

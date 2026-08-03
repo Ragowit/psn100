@@ -5,9 +5,9 @@ declare(strict_types=1);
 /**
  * Resolves parent/child relationships for merged trophy titles from trophy_merge and trophy_title_meta.
  */
-final class TrophyMergeRelationshipResolver
+final readonly class TrophyMergeRelationshipResolver
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 
