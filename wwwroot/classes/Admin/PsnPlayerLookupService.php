@@ -9,7 +9,7 @@ require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 
 use Tustin\PlayStation\Client;
 
-final class PsnPlayerLookupService
+final readonly class PsnPlayerLookupService
 {
     private const \Closure DEFAULT_CLIENT_FACTORY = static function (): object {
         return new Client();
@@ -24,16 +24,16 @@ final class PsnPlayerLookupService
     /**
      * @var \Closure(): iterable<Worker>
      */
-    private readonly \Closure $workerFetcher;
+    private \Closure $workerFetcher;
 
     /**
      * @var \Closure(): object
      */
-    private readonly \Closure $clientFactory;
+    private \Closure $clientFactory;
     /**
      * @var \Closure(int, string): void
      */
-    private readonly \Closure $refreshTokenSaver;
+    private \Closure $refreshTokenSaver;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher

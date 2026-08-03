@@ -11,19 +11,19 @@ require_once __DIR__ . '/IpRateLimitService.php';
 require_once __DIR__ . '/IpRateLimitBucket.php';
 require_once __DIR__ . '/IpAddressResolver.php';
 
-final class AboutPageScanLogController
+final readonly class AboutPageScanLogController
 {
     private const int DEFAULT_LIMIT = 30;
     private const int MIN_LIMIT = 1;
     private const int MAX_LIMIT = 100;
 
     public function __construct(
-        private readonly AboutPageDataProviderInterface $aboutPageService,
-        private readonly JsonResponseEmitter $jsonResponder,
-        private readonly ?IpRateLimitService $rateLimitService = null,
-        private readonly int $defaultLimit = self::DEFAULT_LIMIT,
-        private readonly int $minLimit = self::MIN_LIMIT,
-        private readonly int $maxLimit = self::MAX_LIMIT,
+        final private AboutPageDataProviderInterface $aboutPageService,
+        final private JsonResponseEmitter $jsonResponder,
+        final private ?IpRateLimitService $rateLimitService = null,
+        final private int $defaultLimit = self::DEFAULT_LIMIT,
+        final private int $minLimit = self::MIN_LIMIT,
+        final private int $maxLimit = self::MAX_LIMIT,
     ) {
     }
 

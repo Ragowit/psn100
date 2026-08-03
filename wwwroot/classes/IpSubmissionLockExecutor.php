@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/IpSubmissionLockUnavailableException.php';
 
-class IpSubmissionLockExecutor
+readonly class IpSubmissionLockExecutor
 {
     private const string LOCK_NAME_PREFIX = 'psn100:ip:';
 
     private const int MYSQL_LOCK_NAME_MAX_LENGTH = 64;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

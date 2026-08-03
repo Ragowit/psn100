@@ -14,14 +14,14 @@ require_once __DIR__ . '/../NpServiceName.php';
 
 use Tustin\PlayStation\Client;
 
-final class PsnGameLookupService
+final readonly class PsnGameLookupService
 {
-    private readonly PlayStationWorkerAuthenticator $workerAuthenticator;
-    private readonly PsnTrophyApiPayloadInspector $payloadInspector;
-    private readonly PsnTrophyGroupAssembler $trophyGroupAssembler;
+    private PlayStationWorkerAuthenticator $workerAuthenticator;
+    private PsnTrophyApiPayloadInspector $payloadInspector;
+    private PsnTrophyGroupAssembler $trophyGroupAssembler;
 
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
         callable $workerFetcher,
         ?callable $clientFactory = null,
         ?callable $refreshTokenSaver = null,

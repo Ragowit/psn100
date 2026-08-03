@@ -107,7 +107,7 @@ final class PlayerTimelinePageContextTest extends TestCase
         ?PlayerTimelineData $timelineData,
         PlayerStatus $status
     ): PlayerTimelinePage {
-        $summaryService = new class($summary) extends PlayerSummaryService {
+        $summaryService = new readonly class($summary) extends PlayerSummaryService {
             private PlayerSummary $summary;
 
             public function __construct(PlayerSummary $summary)

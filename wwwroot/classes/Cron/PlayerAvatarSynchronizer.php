@@ -12,12 +12,12 @@ require_once __DIR__ . '/../AvatarSize.php';
  * Encapsulates avatar filesystem and catalog logic that was previously embedded in
  * PlayerScanProfileSynchronizer.
  */
-final class PlayerAvatarSynchronizer
+final readonly class PlayerAvatarSynchronizer
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly ImageHashCalculator $imageHashCalculator,
-        private readonly string $avatarStorageDirectory = '/home/psn100/public_html/img/avatar/',
+        final private PDO $database,
+        final private ImageHashCalculator $imageHashCalculator,
+        final private string $avatarStorageDirectory = '/home/psn100/public_html/img/avatar/',
     ) {
     }
 

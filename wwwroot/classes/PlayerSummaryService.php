@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 
-class PlayerSummaryService
+readonly class PlayerSummaryService
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

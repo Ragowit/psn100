@@ -17,21 +17,21 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  * Encapsulates the per-title iteration, retry guards, and stale-game cleanup that
  * were previously embedded in ThirtyMinuteCronJob.
  */
-final class PlayerScanTrophyTitleLoop
+final readonly class PlayerScanTrophyTitleLoop
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly Psn100Logger $logger,
-        private readonly WorkerScanCoordinator $workerScanCoordinator,
-        private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper,
-        private readonly PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer,
-        private readonly PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer,
-        private readonly PlayerScanStaleGameDeletionService $staleGameDeletionService,
-        private readonly PlayerScanCompletionService $scanCompletionService,
-        private readonly PlayerScanTrophyTitleRefresher $trophyTitleRefresher,
-        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private PDO $database,
+        final private Psn100Logger $logger,
+        final private WorkerScanCoordinator $workerScanCoordinator,
+        final private PlayerScanTitleMetadataHelper $titleMetadataHelper,
+        final private PlayerScanTitleCatalogSynchronizer $titleCatalogSynchronizer,
+        final private PlayerScanTrophyProgressSynchronizer $trophyProgressSynchronizer,
+        final private PlayerScanStaleGameDeletionService $staleGameDeletionService,
+        final private PlayerScanCompletionService $scanCompletionService,
+        final private PlayerScanTrophyTitleRefresher $trophyTitleRefresher,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

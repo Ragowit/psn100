@@ -14,11 +14,11 @@ require_once __DIR__ . '/PsnpPlusClient.php';
 require_once __DIR__ . '/Html.php';
 require_once __DIR__ . '/TrophyMetaStatus.php';
 
-class GameHeaderService
+readonly class GameHeaderService
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly PsnpPlusClient $psnpPlusClient = new PsnpPlusClient()
+        final private PDO $database,
+        final private PsnpPlusClient $psnpPlusClient = new PsnpPlusClient()
     ) {
     }
 

@@ -11,14 +11,14 @@ require_once __DIR__ . '/PlayerScanTrophySummaryAccessResult.php';
  * Encapsulates private-profile detection and persistence that were previously
  * embedded in ThirtyMinuteCronJob and PlayerScanProfileSynchronizer.
  */
-final class PlayerScanPrivacyService
+final readonly class PlayerScanPrivacyService
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly WorkerScanCoordinator $workerScanCoordinator,
-        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private PDO $database,
+        final private WorkerScanCoordinator $workerScanCoordinator,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

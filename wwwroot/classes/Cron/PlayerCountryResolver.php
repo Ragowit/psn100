@@ -12,10 +12,10 @@ require_once __DIR__ . '/../PlayerCountryCode.php';
  * Encapsulates npId decoding, stored-country lookup, live PSN search, and
  * country persistence that were previously embedded in PlayerScanProfileSynchronizer.
  */
-final class PlayerCountryResolver
+final readonly class PlayerCountryResolver
 {
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
     ) {
     }
 

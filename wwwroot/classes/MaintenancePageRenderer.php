@@ -14,7 +14,7 @@ final readonly class MaintenancePageRenderer
         $heading = $this->escape($page->getHeading());
         $description = $this->escape($page->getDescription());
         $author = $this->escape($page->getAuthor());
-        $message = nl2br($this->escape($page->getMessage()));
+        $message = $page->getMessage() |> $this->escape(...) |> nl2br(...);
         $stylesheets = $this->renderStylesheets($page->getStylesheets());
 
         return <<<HTML

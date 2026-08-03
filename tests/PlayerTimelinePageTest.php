@@ -82,7 +82,7 @@ final class PlayerTimelinePageTest extends TestCase
 
     private function createSummaryService(PlayerSummary $summary): PlayerSummaryService
     {
-        return new class($summary) extends PlayerSummaryService {
+        return new readonly class($summary) extends PlayerSummaryService {
             private PlayerSummary $summary;
 
             public function __construct(PlayerSummary $summary)

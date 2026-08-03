@@ -6,12 +6,12 @@ require_once __DIR__ . '/TrophyStatusUpdateResult.php';
 require_once __DIR__ . '/TrophyStatusProgressRecalculator.php';
 require_once __DIR__ . '/../TrophyMetaStatus.php';
 
-final class TrophyStatusService
+final readonly class TrophyStatusService
 {
-    private readonly TrophyStatusProgressRecalculator $progressRecalculator;
+    private TrophyStatusProgressRecalculator $progressRecalculator;
 
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
         ?TrophyStatusProgressRecalculator $progressRecalculator = null,
     ) {
         $this->progressRecalculator = $progressRecalculator ?? new TrophyStatusProgressRecalculator($database);

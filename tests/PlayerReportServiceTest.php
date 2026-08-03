@@ -161,7 +161,7 @@ final class PlayerReportServiceTest extends TestCase
     }
 }
 
-final class UnavailableIpSubmissionLockExecutor extends IpSubmissionLockExecutor
+final readonly class UnavailableIpSubmissionLockExecutor extends IpSubmissionLockExecutor
 {
     public function __construct()
     {

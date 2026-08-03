@@ -9,9 +9,9 @@ require_once __DIR__ . '/GameTrophySort.php';
 require_once __DIR__ . '/TrophyGroupId.php';
 require_once __DIR__ . '/TrophyType.php';
 
-class GameService
+readonly class GameService
 {
-    public function __construct(private readonly PDO $database) {}
+    public function __construct(final private PDO $database) {}
 
     public function getGame(int $gameId): ?GameDetails
     {

@@ -8,11 +8,11 @@ require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/TrophyMetaStatus.php';
 
-class PlayerLogService
+readonly class PlayerLogService
 {
     public const int PAGE_SIZE = 50;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

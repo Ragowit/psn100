@@ -7,13 +7,13 @@ require_once __DIR__ . '/PossibleCheaterRulesCatalog.php';
 require_once __DIR__ . '/PossibleCheaterReport.php';
 require_once __DIR__ . '/../PlayerStatus.php';
 
-final class PossibleCheaterService
+final readonly class PossibleCheaterService
 {
-    private readonly PossibleCheaterRulesCatalog $rulesCatalog;
-    private readonly PossibleCheaterRuleConditionParser $conditionParser;
+    private PossibleCheaterRulesCatalog $rulesCatalog;
+    private PossibleCheaterRuleConditionParser $conditionParser;
 
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
         ?PossibleCheaterRulesCatalog $rulesCatalog = null,
         ?PossibleCheaterRuleConditionParser $conditionParser = null,
     ) {

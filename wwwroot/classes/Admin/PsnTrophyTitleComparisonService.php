@@ -10,7 +10,7 @@ require_once __DIR__ . '/../PsnHttpExceptionClassifier.php';
 
 use Tustin\PlayStation\Client;
 
-final class PsnTrophyTitleComparisonService
+final readonly class PsnTrophyTitleComparisonService
 {
     public const string SOURCE_DIRECT = PsnTrophyTitleComparisonSource::Direct->value;
     public const string SOURCE_TUSTIN = PsnTrophyTitleComparisonSource::Tustin->value;
@@ -32,21 +32,21 @@ final class PsnTrophyTitleComparisonService
     /**
      * @var \Closure(): iterable<Worker>
      */
-    private readonly \Closure $workerFetcher;
+    private \Closure $workerFetcher;
 
     /**
      * @var \Closure(): object
      */
-    private readonly \Closure $clientFactory;
+    private \Closure $clientFactory;
     /**
      * @var \Closure(int, string): void
      */
-    private readonly \Closure $refreshTokenSaver;
+    private \Closure $refreshTokenSaver;
 
     /**
      * @var \Closure(): float
      */
-    private readonly \Closure $timeProvider;
+    private \Closure $timeProvider;
 
     /**
      * @param callable(): iterable<Worker> $workerFetcher

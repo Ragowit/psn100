@@ -112,7 +112,7 @@ final class PlayerRandomGamesPageContextTest extends TestCase
         PlayerStatus $playerStatus,
         int $accountId
     ): PlayerRandomGamesPage {
-        $randomGamesService = new class($randomGames) extends PlayerRandomGamesService {
+        $randomGamesService = new readonly class($randomGames) extends PlayerRandomGamesService {
             /** @var PlayerRandomGame[] */
             private array $randomGames;
 
@@ -127,7 +127,7 @@ final class PlayerRandomGamesPageContextTest extends TestCase
             }
         };
 
-        $summaryService = new class($playerSummary) extends PlayerSummaryService {
+        $summaryService = new readonly class($playerSummary) extends PlayerSummaryService {
             private PlayerSummary $summary;
 
             public function __construct(PlayerSummary $summary)

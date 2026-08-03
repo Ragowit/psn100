@@ -12,13 +12,13 @@ require_once __DIR__ . '/MergeNpCommunicationId.php';
  * Resolves parent/child relationships, then delegates aggregate recalculation
  * to TrophyMergePlayerProgressRecalculator.
  */
-final class TrophyMergePlayerProgressUpdater
+final readonly class TrophyMergePlayerProgressUpdater
 {
-    private readonly TrophyMergeRelationshipResolver $relationshipResolver;
-    private readonly TrophyMergePlayerProgressRecalculator $progressRecalculator;
+    private TrophyMergeRelationshipResolver $relationshipResolver;
+    private TrophyMergePlayerProgressRecalculator $progressRecalculator;
 
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
         ?TrophyMergeRelationshipResolver $relationshipResolver = null,
         ?TrophyMergePlayerProgressRecalculator $progressRecalculator = null,
     ) {
