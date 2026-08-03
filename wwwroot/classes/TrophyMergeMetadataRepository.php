@@ -21,29 +21,38 @@ final class TrophyMergeMetadataRepository
     /**
      * Ensure the child meta row exists and lock it for the rest of the current transaction.
      *
+     * Returns the current parent from the locked row. Callers must use this value for ownership
+     * checks — under MySQL REPEATABLE READ, a later non-locking SELECT can still see a stale
+     * snapshot even after FOR UPDATE waits for a concurrent merger to commit.
+     *
      * This serializes concurrent merges of the same child title so two parents cannot be assigned
      * when different trophies are merged at the same time.
      */
-    public function lockChildMetaForParentAssignment(string $childNpCommunicationId): void
+    public function lockChildMetaForParentAssignment(string $childNpCommunicationId): ?string
     {
         $this->ensureChildMetaRowExists($childNpCommunicationId);
 
-        if ($this->isSqlite()) {
-            return;
-        }
-
-        $query = $this->database->prepare(
-            <<<'SQL'
+        $sql = <<<'SQL'
             SELECT parent_np_communication_id
             FROM trophy_title_meta
             WHERE np_communication_id = :np_communication_id
             LIMIT 1
-            FOR UPDATE
-            SQL
-        );
+            SQL;
+
+        if (!$this->isSqlite()) {
+            $sql .= "\nFOR UPDATE";
+        }
+
+        $query = $this->database->prepare($sql);
         $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $query->execute();
-        $query->fetchColumn();
+
+        $parent = $query->fetchColumn();
+        if ($parent === false || $parent === null || $parent === '') {
+            return null;
+        }
+
+        return (string) $parent;
     }
 
     public function markGameAsMergedByNpId(string $npCommunicationId): void

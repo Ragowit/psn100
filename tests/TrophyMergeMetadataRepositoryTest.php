@@ -86,7 +86,9 @@ final class TrophyMergeMetadataRepositoryTest extends TestCase
     {
         $this->insertGame(1, 'NP_CHILD', 'PS4');
 
-        $this->repository->lockChildMetaForParentAssignment('NP_CHILD');
+        $lockedParent = $this->repository->lockChildMetaForParentAssignment('NP_CHILD');
+
+        $this->assertSame(null, $lockedParent);
 
         $row = $this->database
             ->query("SELECT message, status, parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NP_CHILD'")
@@ -98,17 +100,14 @@ final class TrophyMergeMetadataRepositoryTest extends TestCase
         $this->assertSame(null, $row['parent_np_communication_id']);
     }
 
-    public function testLockChildMetaForParentAssignmentKeepsExistingParent(): void
+    public function testLockChildMetaForParentAssignmentReturnsExistingParent(): void
     {
         $this->insertGame(1, 'NP_CHILD', 'PS4');
         $this->insertMeta('NP_CHILD', 'MERGE_000001', 2);
 
-        $this->repository->lockChildMetaForParentAssignment('NP_CHILD');
+        $lockedParent = $this->repository->lockChildMetaForParentAssignment('NP_CHILD');
 
-        $parent = $this->database
-            ->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NP_CHILD'")
-            ->fetchColumn();
-        $this->assertSame('MERGE_000001', $parent);
+        $this->assertSame('MERGE_000001', $lockedParent);
     }
 
     private function createTables(): void

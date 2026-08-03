@@ -239,7 +239,8 @@ SQL
     }
 
     /**
-     * Lock child meta rows in sorted order, then enforce the single-parent rule.
+     * Lock child meta rows in sorted order, then enforce the single-parent rule using
+     * current-read values from the locks (safe under MySQL REPEATABLE READ).
      *
      * @param list<string> $childNpCommunicationIds
      */
@@ -251,8 +252,12 @@ SQL
         sort($uniqueChildNpCommunicationIds, SORT_STRING);
 
         foreach ($uniqueChildNpCommunicationIds as $childNpCommunicationId) {
-            $this->metadataRepository()->lockChildMetaForParentAssignment($childNpCommunicationId);
-            $this->assertChildCanUseParent($childNpCommunicationId, $parentNpCommunicationId);
+            $lockedMetaParent = $this->metadataRepository()->lockChildMetaForParentAssignment(
+                $childNpCommunicationId
+            );
+            $existingParent = $lockedMetaParent
+                ?? $this->findCurrentParentFromTrophyMerge($childNpCommunicationId);
+            $this->assertExistingParentAllowed($existingParent, $parentNpCommunicationId);
         }
     }
 
@@ -262,8 +267,14 @@ SQL
      */
     private function assertChildCanUseParent(string $childNpCommunicationId, string $parentNpCommunicationId): void
     {
-        $existingParent = $this->findExistingParent($childNpCommunicationId);
+        $this->assertExistingParentAllowed(
+            $this->findExistingParent($childNpCommunicationId),
+            $parentNpCommunicationId
+        );
+    }
 
+    private function assertExistingParentAllowed(?string $existingParent, string $parentNpCommunicationId): void
+    {
         if ($existingParent === null || $existingParent === $parentNpCommunicationId) {
             return;
         }
@@ -292,14 +303,35 @@ SQL
             return (string) $parentFromMeta;
         }
 
-        $mergeQuery = $this->database->prepare(
-            <<<'SQL'
+        return $this->findParentFromTrophyMerge($childNpCommunicationId, forUpdate: false);
+    }
+
+    /**
+     * Current-read lookup of legacy trophy_merge parents. FOR UPDATE avoids REPEATABLE READ
+     * snapshot staleness after waiting on the child meta row lock.
+     */
+    private function findCurrentParentFromTrophyMerge(string $childNpCommunicationId): ?string
+    {
+        return $this->findParentFromTrophyMerge(
+            $childNpCommunicationId,
+            forUpdate: $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite'
+        );
+    }
+
+    private function findParentFromTrophyMerge(string $childNpCommunicationId, bool $forUpdate): ?string
+    {
+        $sql = <<<'SQL'
             SELECT DISTINCT parent_np_communication_id
             FROM trophy_merge
             WHERE child_np_communication_id = :np_communication_id
             ORDER BY parent_np_communication_id
-            SQL
-        );
+            SQL;
+
+        if ($forUpdate) {
+            $sql .= "\nFOR UPDATE";
+        }
+
+        $mergeQuery = $this->database->prepare($sql);
         $mergeQuery->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
         $mergeQuery->execute();
 
