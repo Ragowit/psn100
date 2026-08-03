@@ -65,12 +65,17 @@ class TrophyMergeService
         }
 
         $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $parentNpCommunicationId, $childTrophies): void {
+            $this->lockAndAssertChildrenCanUseParent(
+                array_map(
+                    static fn (array $childData): string => $childData['trophy']['np_communication_id'],
+                    $childTrophies
+                ),
+                $parentNpCommunicationId
+            );
+
             foreach ($childTrophies as $childData) {
                 $childTrophyId = $childData['id'];
                 $childTrophy = $childData['trophy'];
-
-                // Re-check inside the transaction in case another merge landed first.
-                $this->assertChildCanUseParent($childTrophy['np_communication_id'], $parentNpCommunicationId);
 
                 $this->insertTrophyMergeMappingFromIds($childTrophyId, $parentTrophyId);
                 $this->metadataRepository()->markGameAsMergedByNpId($childTrophy['np_communication_id']);
@@ -132,8 +137,7 @@ class TrophyMergeService
             $progressListener,
             &$message
         ): void {
-            // Re-check inside the transaction in case another merge landed first.
-            $this->assertChildCanUseParent($childNpCommunicationId, $parentNpCommunicationId);
+            $this->lockAndAssertChildrenCanUseParent([$childNpCommunicationId], $parentNpCommunicationId);
 
             $this->notifyProgress($progressListener, 30, $method->progressLabel());
 
@@ -232,6 +236,24 @@ SQL
         $trophy['order_id'] = (int) $trophy['order_id'];
 
         return $trophy;
+    }
+
+    /**
+     * Lock child meta rows in sorted order, then enforce the single-parent rule.
+     *
+     * @param list<string> $childNpCommunicationIds
+     */
+    private function lockAndAssertChildrenCanUseParent(
+        array $childNpCommunicationIds,
+        string $parentNpCommunicationId
+    ): void {
+        $uniqueChildNpCommunicationIds = array_values(array_unique($childNpCommunicationIds));
+        sort($uniqueChildNpCommunicationIds, SORT_STRING);
+
+        foreach ($uniqueChildNpCommunicationIds as $childNpCommunicationId) {
+            $this->metadataRepository()->lockChildMetaForParentAssignment($childNpCommunicationId);
+            $this->assertChildCanUseParent($childNpCommunicationId, $parentNpCommunicationId);
+        }
     }
 
     /**

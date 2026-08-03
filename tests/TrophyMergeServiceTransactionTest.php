@@ -185,6 +185,10 @@ final class MergeGamesTransactionPDO extends PDO
             return new MergeGamesNpCommunicationIdStatement();
         }
 
+        if (str_starts_with($normalized, 'SELECT 1 FROM trophy_title_meta')) {
+            return new MergeGamesMetaExistsStatement();
+        }
+
         if (str_starts_with($normalized, 'SELECT parent_np_communication_id FROM trophy_title_meta')) {
             return new MergeGamesEmptyParentStatement();
         }
@@ -200,9 +204,37 @@ final class MergeGamesTransactionPDO extends PDO
         throw new RuntimeException('Unexpected SQL in mergeGames transaction test: ' . $statement);
     }
 
+    public function getAttribute(int $attribute): mixed
+    {
+        if ($attribute === PDO::ATTR_DRIVER_NAME) {
+            // Exercise the SQLite lock path so this fake PDO does not need FOR UPDATE stubs.
+            return 'sqlite';
+        }
+
+        return parent::getAttribute($attribute);
+    }
+
     public function recordMappingInsert(): void
     {
         $this->mappingInserted = true;
+    }
+}
+
+final class MergeGamesMetaExistsStatement extends PDOStatement
+{
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+    {
+        return true;
+    }
+
+    public function execute(?array $params = null): bool
+    {
+        return true;
+    }
+
+    public function fetchColumn(int $column = 0): int
+    {
+        return 1;
     }
 }
 

@@ -82,6 +82,35 @@ final class TrophyMergeMetadataRepositoryTest extends TestCase
         $this->assertSame(20, (int) $row['param_2']);
     }
 
+    public function testLockChildMetaForParentAssignmentCreatesMissingMetaRow(): void
+    {
+        $this->insertGame(1, 'NP_CHILD', 'PS4');
+
+        $this->repository->lockChildMetaForParentAssignment('NP_CHILD');
+
+        $row = $this->database
+            ->query("SELECT message, status, parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NP_CHILD'")
+            ->fetch(PDO::FETCH_ASSOC);
+
+        $this->assertTrue($row !== false);
+        $this->assertSame('', $row['message']);
+        $this->assertSame(0, (int) $row['status']);
+        $this->assertSame(null, $row['parent_np_communication_id']);
+    }
+
+    public function testLockChildMetaForParentAssignmentKeepsExistingParent(): void
+    {
+        $this->insertGame(1, 'NP_CHILD', 'PS4');
+        $this->insertMeta('NP_CHILD', 'MERGE_000001', 2);
+
+        $this->repository->lockChildMetaForParentAssignment('NP_CHILD');
+
+        $parent = $this->database
+            ->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NP_CHILD'")
+            ->fetchColumn();
+        $this->assertSame('MERGE_000001', $parent);
+    }
+
     private function createTables(): void
     {
         $this->database->exec(
@@ -95,6 +124,7 @@ final class TrophyMergeMetadataRepositoryTest extends TestCase
         $this->database->exec(
             'CREATE TABLE trophy_title_meta (
                 np_communication_id TEXT PRIMARY KEY,
+                message TEXT NOT NULL DEFAULT \'\',
                 parent_np_communication_id TEXT NULL,
                 status INTEGER NOT NULL DEFAULT 0,
                 obsolete_ids TEXT NULL,
