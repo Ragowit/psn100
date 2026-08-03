@@ -10,6 +10,7 @@ require_once __DIR__ . '/TrophyMergeEarnedCopier.php';
 require_once __DIR__ . '/TrophyMergeMappingService.php';
 require_once __DIR__ . '/TrophyMergeMetadataRepository.php';
 require_once __DIR__ . '/TrophyMergeMethod.php';
+require_once __DIR__ . '/TrophyMergeParentOwnershipGuard.php';
 require_once __DIR__ . '/TrophyMergePlayerProgressUpdater.php';
 require_once __DIR__ . '/TrophyTitleCloneService.php';
 
@@ -20,6 +21,8 @@ class TrophyMergeService
     private ?TrophyMergeMappingService $mappingService = null;
 
     private ?TrophyMergeMetadataRepository $metadataRepository = null;
+
+    private ?TrophyMergeParentOwnershipGuard $parentOwnershipGuard = null;
 
     private ?TrophyMergePlayerProgressUpdater $playerProgressUpdater = null;
 
@@ -46,6 +49,7 @@ class TrophyMergeService
         }
 
         $childTrophies = [];
+        $parentNpCommunicationId = $parentTrophy['np_communication_id'];
 
         foreach ($childTrophyIds as $childTrophyId) {
             $childTrophyId = (int) $childTrophyId;
@@ -55,13 +59,26 @@ class TrophyMergeService
                 throw new InvalidArgumentException("Child can't be a merge title.");
             }
 
+            $this->parentOwnershipGuard()->assertChildCanUseParent(
+                $childTrophy['np_communication_id'],
+                $parentNpCommunicationId
+            );
+
             $childTrophies[] = [
                 'id' => $childTrophyId,
                 'trophy' => $childTrophy,
             ];
         }
 
-        $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $childTrophies): void {
+        $this->transactionRunner->execute(function () use ($parentTrophy, $parentTrophyId, $parentNpCommunicationId, $childTrophies): void {
+            $this->parentOwnershipGuard()->lockAndAssertChildrenCanUseParent(
+                array_map(
+                    static fn (array $childData): string => $childData['trophy']['np_communication_id'],
+                    $childTrophies
+                ),
+                $parentNpCommunicationId
+            );
+
             foreach ($childTrophies as $childData) {
                 $childTrophyId = $childData['id'];
                 $childTrophy = $childData['trophy'];
@@ -75,13 +92,17 @@ class TrophyMergeService
                     $childTrophy['np_communication_id'],
                     $childTrophy['group_id'],
                     (int) $childTrophy['order_id'],
-                    $parentTrophy['np_communication_id'],
+                    $parentNpCommunicationId,
                     $parentTrophy['group_id'],
                     (int) $parentTrophy['order_id']
                 );
 
                 $this->updateTrophyGroupPlayer($childGameId);
                 $this->updateTrophyTitlePlayer($childGameId);
+                $this->metadataRepository()->updateParentRelationship(
+                    $childTrophy['np_communication_id'],
+                    $parentNpCommunicationId
+                );
             }
         });
 
@@ -109,6 +130,10 @@ class TrophyMergeService
         }
 
         $this->notifyProgress($progressListener, 10, 'Validating merge configuration…');
+        $this->parentOwnershipGuard()->assertChildCanUseParent(
+            $childNpCommunicationId,
+            $parentNpCommunicationId
+        );
 
         $message = '';
 
@@ -121,6 +146,11 @@ class TrophyMergeService
             $progressListener,
             &$message
         ): void {
+            $this->parentOwnershipGuard()->lockAndAssertChildrenCanUseParent(
+                [$childNpCommunicationId],
+                $parentNpCommunicationId
+            );
+
             $this->notifyProgress($progressListener, 30, $method->progressLabel());
 
             match ($method) {
@@ -267,6 +297,14 @@ SQL
         return $this->metadataRepository ??= new TrophyMergeMetadataRepository(
             $this->database,
             $this->transactionRunner
+        );
+    }
+
+    private function parentOwnershipGuard(): TrophyMergeParentOwnershipGuard
+    {
+        return $this->parentOwnershipGuard ??= new TrophyMergeParentOwnershipGuard(
+            $this->database,
+            $this->metadataRepository()
         );
     }
 

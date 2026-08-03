@@ -34,7 +34,7 @@ final class GameCopyHandler
                 $copyIconUrl,
                 $copySetVersion
             );
-        } catch (RuntimeException $exception) {
+        } catch (InvalidArgumentException | RuntimeException $exception) {
             return $this->escape($exception->getMessage());
         } catch (Throwable $exception) {
             return 'An unexpected error occurred while copying game data.';

@@ -6,6 +6,9 @@ require_once __DIR__ . '/../TrophyHistoryRecorder.php';
 require_once __DIR__ . '/../ChangelogEntry.php';
 require_once __DIR__ . '/../TrophyRarityName.php';
 require_once __DIR__ . '/../MergeNpCommunicationId.php';
+require_once __DIR__ . '/../NestedDatabaseTransactionRunner.php';
+require_once __DIR__ . '/../TrophyMergeMetadataRepository.php';
+require_once __DIR__ . '/../TrophyMergeParentOwnershipGuard.php';
 require_once __DIR__ . '/MergeTrophyCopier.php';
 require_once __DIR__ . '/MergeTrophyGroupCopier.php';
 require_once __DIR__ . '/TrophyGroupConflictResolver.php';
@@ -13,6 +16,8 @@ require_once __DIR__ . '/../TrophyGroupId.php';
 
 class GameCopyService
 {
+    private ?TrophyMergeParentOwnershipGuard $parentOwnershipGuard = null;
+
     private const string TROPHY_UPDATE_QUERY = <<<'SQL'
         WITH
             tg_org AS(
@@ -138,6 +143,11 @@ class GameCopyService
 
             $this->ensureChildIsNotMergeTitle($childNpCommunicationId);
             $this->ensureParentIsMergeTitle($parentNpCommunicationId);
+            // Prevent trophy_merge rewrites from moving a child that already belongs to another parent.
+            $this->parentOwnershipGuard()->lockAndAssertChildrenCanUseParent(
+                [$childNpCommunicationId],
+                $parentNpCommunicationId
+            );
 
             $this->copyTrophyTitle(
                 $childNpCommunicationId,
@@ -207,6 +217,17 @@ class GameCopyService
         if (!MergeNpCommunicationId::matches($parentNpCommunicationId)) {
             throw new RuntimeException('Parent must be a merge title.');
         }
+    }
+
+    private function parentOwnershipGuard(): TrophyMergeParentOwnershipGuard
+    {
+        return $this->parentOwnershipGuard ??= new TrophyMergeParentOwnershipGuard(
+            $this->database,
+            new TrophyMergeMetadataRepository(
+                $this->database,
+                new NestedDatabaseTransactionRunner($this->database)
+            )
+        );
     }
 
     private function copyTrophyTitle(

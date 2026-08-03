@@ -18,6 +18,43 @@ final class TrophyMergeMetadataRepository
     ) {
     }
 
+    /**
+     * Ensure the child meta row exists and lock it for the rest of the current transaction.
+     *
+     * Returns the current parent from the locked row. Callers must use this value for ownership
+     * checks — under MySQL REPEATABLE READ, a later non-locking SELECT can still see a stale
+     * snapshot even after FOR UPDATE waits for a concurrent merger to commit.
+     *
+     * This serializes concurrent merges of the same child title so two parents cannot be assigned
+     * when different trophies are merged at the same time.
+     */
+    public function lockChildMetaForParentAssignment(string $childNpCommunicationId): ?string
+    {
+        $this->ensureChildMetaRowExists($childNpCommunicationId);
+
+        $sql = <<<'SQL'
+            SELECT parent_np_communication_id
+            FROM trophy_title_meta
+            WHERE np_communication_id = :np_communication_id
+            LIMIT 1
+            SQL;
+
+        if (!$this->isSqlite()) {
+            $sql .= "\nFOR UPDATE";
+        }
+
+        $query = $this->database->prepare($sql);
+        $query->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $query->execute();
+
+        $parent = $query->fetchColumn();
+        if ($parent === false || $parent === null || $parent === '') {
+            return null;
+        }
+
+        return (string) $parent;
+    }
+
     public function markGameAsMergedByNpId(string $npCommunicationId): void
     {
         $this->transactionRunner->execute(function () use ($npCommunicationId): void {
@@ -118,6 +155,58 @@ SQL
         $query->bindValue(':param_1', $param1, PDO::PARAM_INT);
         $query->bindValue(':param_2', $param2, PDO::PARAM_INT);
         $query->execute();
+    }
+
+    private function ensureChildMetaRowExists(string $childNpCommunicationId): void
+    {
+        $exists = $this->database->prepare(
+            'SELECT 1 FROM trophy_title_meta WHERE np_communication_id = :np_communication_id'
+        );
+        $exists->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+        $exists->execute();
+
+        if ($exists->fetchColumn() !== false) {
+            return;
+        }
+
+        try {
+            $insert = $this->database->prepare(
+                <<<'SQL'
+                INSERT INTO trophy_title_meta (
+                    np_communication_id,
+                    message,
+                    status
+                ) VALUES (
+                    :np_communication_id,
+                    '',
+                    0
+                )
+                SQL
+            );
+            $insert->bindValue(':np_communication_id', $childNpCommunicationId, PDO::PARAM_STR);
+            $insert->execute();
+        } catch (PDOException $exception) {
+            if (!$this->isDuplicateKeyException($exception)) {
+                throw $exception;
+            }
+        }
+    }
+
+    private function isDuplicateKeyException(PDOException $exception): bool
+    {
+        if ($exception->getCode() === '23000') {
+            return true;
+        }
+
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'UNIQUE constraint failed')
+            || str_contains($message, 'Duplicate entry');
+    }
+
+    private function isSqlite(): bool
+    {
+        return $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
     }
 
     private function updateParentPlatform(string $parentNpCommunicationId, string $childNpCommunicationId): void

@@ -44,6 +44,25 @@ final class GameCopyHandlerTest extends TestCase
         $this->assertSame('&lt;script&gt;alert(&quot;copy&quot;)&lt;/script&gt;', $message);
     }
 
+    public function testHandleEscapesInvalidArgumentExceptionMessage(): void
+    {
+        $handler = new GameCopyHandler(
+            new ThrowingGameCopyService(
+                new InvalidArgumentException('A child game can only have one parent. This game is already merged into MERGE_000001.')
+            )
+        );
+
+        $message = $handler->handle([
+            'child' => '1',
+            'parent' => '2',
+        ]);
+
+        $this->assertSame(
+            'A child game can only have one parent. This game is already merged into MERGE_000001.',
+            $message
+        );
+    }
+
     public function testHandleReturnsGenericMessageForUnexpectedErrors(): void
     {
         $handler = new GameCopyHandler(

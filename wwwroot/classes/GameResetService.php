@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/ChangelogEntry.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameResetAction.php';
 require_once __DIR__ . '/MergeNpCommunicationId.php';
 
@@ -44,10 +45,7 @@ final readonly class GameResetService
     private function resetGame(int $gameId, string $npCommunicationId): string
     {
         $this->executeWithinTransaction(function () use ($npCommunicationId): void {
-            $this->executeStatement(
-                'DELETE FROM trophy_merge WHERE parent_np_communication_id = :np_communication_id',
-                [':np_communication_id' => $npCommunicationId]
-            );
+            $this->detachChildrenFromParent($npCommunicationId);
             // Per-partition deletes on trophy_earned (see deleteTrophyEarnedForTitle).
             $this->deleteTrophyEarnedForTitle($npCommunicationId);
             $this->executeStatement(
@@ -62,10 +60,6 @@ final readonly class GameResetService
                 'UPDATE trophy_title_meta SET owners = 0, owners_completed = 0 WHERE np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
-            $this->executeStatement(
-                'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
-                [':np_communication_id' => $npCommunicationId]
-            );
         });
 
         $this->logChange(ChangelogEntryType::GAME_RESET, $gameId);
@@ -78,10 +72,8 @@ final readonly class GameResetService
         $gameName = $this->getGameName($gameId) ?? '';
 
         $this->executeWithinTransaction(function () use ($npCommunicationId): void {
-            $this->executeStatement(
-                'DELETE FROM trophy_merge WHERE parent_np_communication_id = :np_communication_id',
-                [':np_communication_id' => $npCommunicationId]
-            );
+            // Unmerge children before deleting the parent title so they are not left hidden as MERGED.
+            $this->detachChildrenFromParent($npCommunicationId);
             $this->executeStatement(
                 'DELETE FROM trophy WHERE np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
@@ -104,15 +96,108 @@ final readonly class GameResetService
                 'DELETE FROM trophy_title WHERE np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
-            $this->executeStatement(
-                'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
-                [':np_communication_id' => $npCommunicationId]
-            );
         });
 
         $this->logChange(ChangelogEntryType::GAME_DELETE, $gameId, $gameName);
 
         return sprintf('Game %d was deleted.', $gameId);
+    }
+
+    /**
+     * Remove this parent's trophy_merge mappings, clear parent links, and restore orphaned
+     * MERGED children to NORMAL. Includes trophy-only merges that never set parent_np_communication_id.
+     */
+    private function detachChildrenFromParent(string $npCommunicationId): void
+    {
+        $childNpCommunicationIds = $this->collectChildNpCommunicationIds($npCommunicationId);
+
+        $this->executeStatement(
+            'DELETE FROM trophy_merge WHERE parent_np_communication_id = :np_communication_id',
+            [':np_communication_id' => $npCommunicationId]
+        );
+
+        $this->executeStatement(
+            'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
+            [':np_communication_id' => $npCommunicationId]
+        );
+
+        $this->restoreOrphanedMergedChildren($childNpCommunicationIds);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function collectChildNpCommunicationIds(string $parentNpCommunicationId): array
+    {
+        $childIds = [];
+
+        $mappedChildren = $this->database->prepare(
+            <<<'SQL'
+            SELECT DISTINCT child_np_communication_id
+            FROM trophy_merge
+            WHERE parent_np_communication_id = :np_communication_id
+            SQL
+        );
+        $mappedChildren->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $mappedChildren->execute();
+
+        while (($childId = $mappedChildren->fetchColumn()) !== false) {
+            $childIds[(string) $childId] = true;
+        }
+
+        $linkedChildren = $this->database->prepare(
+            <<<'SQL'
+            SELECT np_communication_id
+            FROM trophy_title_meta
+            WHERE parent_np_communication_id = :np_communication_id
+            SQL
+        );
+        $linkedChildren->bindValue(':np_communication_id', $parentNpCommunicationId, PDO::PARAM_STR);
+        $linkedChildren->execute();
+
+        while (($childId = $linkedChildren->fetchColumn()) !== false) {
+            $childIds[(string) $childId] = true;
+        }
+
+        return array_keys($childIds);
+    }
+
+    /**
+     * @param list<string> $childNpCommunicationIds
+     */
+    private function restoreOrphanedMergedChildren(array $childNpCommunicationIds): void
+    {
+        if ($childNpCommunicationIds === []) {
+            return;
+        }
+
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+        $normalStatus = GameAvailabilityStatus::NORMAL->value;
+        $placeholders = [];
+        $parameters = [];
+
+        foreach ($childNpCommunicationIds as $index => $childNpCommunicationId) {
+            $placeholder = ':child_' . $index;
+            $placeholders[] = $placeholder;
+            $parameters[$placeholder] = $childNpCommunicationId;
+        }
+
+        $placeholderList = implode(', ', $placeholders);
+
+        $this->executeStatement(
+            <<<SQL
+            UPDATE trophy_title_meta
+            SET status = {$normalStatus}
+            WHERE np_communication_id IN ({$placeholderList})
+              AND status = {$mergedStatus}
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM trophy_merge
+                  WHERE trophy_merge.child_np_communication_id = trophy_title_meta.np_communication_id
+              )
+            SQL,
+            $parameters
+        );
     }
 
     /**
