@@ -16,15 +16,15 @@ require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
  * Extracted from PlayerScanTitleCatalogSynchronizer so per-title catalog sync can
  * delegate title-row persistence separately from group and trophy iteration.
  */
-final class PlayerScanTitleHeaderSynchronizer
+final readonly class PlayerScanTitleHeaderSynchronizer
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyCatalogSynchronizer $catalogSynchronizer,
-        private readonly TrophyImageDirectories $imageDirectories,
-        private readonly TrophyImageDownloader $imageDownloader,
-        private readonly ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
-        private readonly ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
+        final private PDO $database,
+        final private TrophyCatalogSynchronizer $catalogSynchronizer,
+        final private TrophyImageDirectories $imageDirectories,
+        final private TrophyImageDownloader $imageDownloader,
+        final private ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
+        final private ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
     ) {
     }
 

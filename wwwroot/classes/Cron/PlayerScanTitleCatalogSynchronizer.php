@@ -23,24 +23,24 @@ require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
  * Encapsulates per-title catalog synchronization that was previously embedded in
  * ThirtyMinuteCronJob.
  */
-final class PlayerScanTitleCatalogSynchronizer
+final readonly class PlayerScanTitleCatalogSynchronizer
 {
     /**
      * @param null|\Closure(string, object): array<string, mixed> $trophyDataFetcher
      */
     public function __construct(
-        private readonly PDO $database,
-        private readonly Psn100Logger $logger,
-        private readonly ?PsnGameLookupService $psnGameLookupService = null,
-        private readonly ?TrophyImageDirectories $imageDirectories = null,
-        private readonly ?TrophyImageDownloader $imageDownloader = null,
-        private readonly ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
-        private readonly ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
-        private readonly ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
-        private readonly ?TrophyMetaRepository $trophyMetaRepository = null,
-        private readonly ?PlayerScanCatalogSideEffects $catalogSideEffects = null,
-        private readonly ?\Closure $trophyDataFetcher = null,
-        private readonly ?PlayerScanTitleHeaderSynchronizer $titleHeaderSynchronizer = null,
+        final private PDO $database,
+        final private Psn100Logger $logger,
+        final private ?PsnGameLookupService $psnGameLookupService = null,
+        final private ?TrophyImageDirectories $imageDirectories = null,
+        final private ?TrophyImageDownloader $imageDownloader = null,
+        final private ?TrophyTitleNameFormatter $trophyTitleNameFormatter = null,
+        final private ?TrophyCatalogSynchronizer $trophyCatalogSynchronizer = null,
+        final private ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
+        final private ?TrophyMetaRepository $trophyMetaRepository = null,
+        final private ?PlayerScanCatalogSideEffects $catalogSideEffects = null,
+        final private ?\Closure $trophyDataFetcher = null,
+        final private ?PlayerScanTitleHeaderSynchronizer $titleHeaderSynchronizer = null,
     ) {
     }
 

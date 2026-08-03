@@ -11,9 +11,9 @@ require_once __DIR__ . '/CronJobRunner.php';
  * the scripts become easier to read and are now focused solely on describing
  * which job to execute.
  */
-final class CronJobApplication
+final readonly class CronJobApplication
 {
-    private function __construct(private readonly CronJobRunner $runner)
+    private function __construct(final private CronJobRunner $runner)
     {
     }
 

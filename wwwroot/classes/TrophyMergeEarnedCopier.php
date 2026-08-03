@@ -9,9 +9,9 @@ require_once __DIR__ . '/Admin/TrophyMergeProgressListener.php';
  *
  * Previously embedded in TrophyMergeService.
  */
-final class TrophyMergeEarnedCopier
+final readonly class TrophyMergeEarnedCopier
 {
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

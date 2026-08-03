@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Psn100Logger.php';
 require_once __DIR__ . '/../PlayerStatus.php';
 
-final class PlayerRankingUpdater
+final readonly class PlayerRankingUpdater
 {
     private const string TEMPORARY_TABLE = 'player_ranking_new';
     private const string PRIMARY_TABLE = 'player_ranking';
@@ -52,11 +52,11 @@ WHERE `status` =
 SQL . PlayerStatus::NORMAL->value;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly int $retryDelaySeconds = self::DEFAULT_RETRY_DELAY_SECONDS,
-        private readonly int $maxRetryDelaySeconds = self::DEFAULT_MAX_RETRY_DELAY_SECONDS,
-        private readonly ?Psn100Logger $logger = null,
-        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private PDO $database,
+        final private int $retryDelaySeconds = self::DEFAULT_RETRY_DELAY_SECONDS,
+        final private int $maxRetryDelaySeconds = self::DEFAULT_MAX_RETRY_DELAY_SECONDS,
+        final private ?Psn100Logger $logger = null,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

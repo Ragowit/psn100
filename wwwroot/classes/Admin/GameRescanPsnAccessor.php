@@ -10,15 +10,15 @@ require_once __DIR__ . '/PlayStationWorkerAuthenticator.php';
  * Extracted from GameRescanService so rescan orchestration stays separate from
  * database title resolution and PlayStation API player discovery.
  */
-final class GameRescanPsnAccessor
+final readonly class GameRescanPsnAccessor
 {
     private const string ORIGINAL_GAME_PREFIX = 'NPWR';
     private const int LOGIN_RETRY_DELAY_SECONDS = 300;
     private const int ACCESSIBLE_PLAYER_PROBE_BATCH_SIZE = 100;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly PlayStationWorkerAuthenticator $workerAuthenticator,
+        final private PDO $database,
+        final private PlayStationWorkerAuthenticator $workerAuthenticator,
     ) {
     }
 

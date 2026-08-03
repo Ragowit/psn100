@@ -75,7 +75,7 @@ final class PlayerAdvisorPageTest extends TestCase
         );
 
         $this->advisorService = new PlayerAdvisorService($this->database, new Utility());
-        $this->summaryService = new class($this->database) extends PlayerSummaryService {
+        $this->summaryService = new readonly class($this->database) extends PlayerSummaryService {
             public function getSummary(int $accountId): PlayerSummary
             {
                 return new PlayerSummary(0, 0, null, 0);

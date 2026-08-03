@@ -20,19 +20,19 @@ use Tustin\PlayStation\Client;
  * Encapsulates profile lookup, country resolution, and player persistence that were
  * previously embedded in ThirtyMinuteCronJob.
  */
-final class PlayerScanProfileSynchronizer
+final readonly class PlayerScanProfileSynchronizer
 {
     private const int MAX_INVALID_API_RESPONSE_ATTEMPTS = 2;
 
-    private readonly PlayerAvatarSynchronizer $avatarSynchronizer;
-    private readonly PlayerCountryResolver $countryResolver;
-    private readonly PlayerScanPrivacyService $privacyService;
-    private readonly PlayerRepository $playerRepository;
+    private PlayerAvatarSynchronizer $avatarSynchronizer;
+    private PlayerCountryResolver $countryResolver;
+    private PlayerScanPrivacyService $privacyService;
+    private PlayerRepository $playerRepository;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly Psn100Logger $logger,
-        private readonly WorkerScanCoordinator $workerScanCoordinator,
+        final private PDO $database,
+        final private Psn100Logger $logger,
+        final private WorkerScanCoordinator $workerScanCoordinator,
         ?PlayerAvatarSynchronizer $avatarSynchronizer = null,
         ?PlayerCountryResolver $countryResolver = null,
         ?PlayerScanPrivacyService $privacyService = null,

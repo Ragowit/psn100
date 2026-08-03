@@ -7,13 +7,13 @@ use Random\Randomizer;
 require_once __DIR__ . '/PlatformSql.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 
-class PlayerRandomGamesService
+readonly class PlayerRandomGamesService
 {
-    private readonly Randomizer $randomizer;
+    private Randomizer $randomizer;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly Utility $utility,
+        final private PDO $database,
+        final private Utility $utility,
         ?Randomizer $randomizer = null,
     ) {
         $this->randomizer = $randomizer ?? new Randomizer();

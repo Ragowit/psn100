@@ -70,7 +70,7 @@ final class GameHistoryPageTest extends TestCase
             'rarity_points' => 0,
         ]);
 
-        $gameService = new class ($game) extends GameService {
+        $gameService = new readonly class ($game) extends GameService {
             private GameDetails $game;
 
             public function __construct(GameDetails $game)
@@ -86,7 +86,7 @@ final class GameHistoryPageTest extends TestCase
 
         $historyService = new GameHistoryService($database);
 
-        $headerService = new class extends GameHeaderService {
+        $headerService = new readonly class extends GameHeaderService {
             public function __construct()
             {
             }

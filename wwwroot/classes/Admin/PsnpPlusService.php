@@ -10,7 +10,7 @@ require_once __DIR__ . '/PsnpPlusGame.php';
 require_once __DIR__ . '/../PsnpPlusClient.php';
 require_once __DIR__ . '/../TrophyMetaStatus.php';
 
-final class PsnpPlusService
+final readonly class PsnpPlusService
 {
     /**
      * @var list<int>
@@ -24,10 +24,10 @@ final class PsnpPlusService
         35758, 40301,
     ];
 
-    private readonly PsnpPlusClient $psnpPlusClient;
+    private PsnpPlusClient $psnpPlusClient;
 
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
         ?PsnpPlusClient $psnpPlusClient = null,
     ) {
         $this->psnpPlusClient = $psnpPlusClient ?? new PsnpPlusClient();

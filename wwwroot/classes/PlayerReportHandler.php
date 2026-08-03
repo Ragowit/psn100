@@ -8,11 +8,11 @@ require_once __DIR__ . '/PlayerReportRequest.php';
 require_once __DIR__ . '/IpRateLimitService.php';
 require_once __DIR__ . '/IpRateLimitBucket.php';
 
-final class PlayerReportHandler
+final readonly class PlayerReportHandler
 {
     public function __construct(
-        private readonly PlayerReportService $playerReportService,
-        private readonly ?IpRateLimitService $rateLimitService = null,
+        final private PlayerReportService $playerReportService,
+        final private ?IpRateLimitService $rateLimitService = null,
     ) {
     }
 

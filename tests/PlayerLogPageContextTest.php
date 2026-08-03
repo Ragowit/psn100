@@ -110,7 +110,7 @@ final class PlayerLogPageContextTest extends TestCase
         PlayerStatus $playerStatus,
         int $accountId
     ): PlayerLogPage {
-        $service = new class($entries) extends PlayerLogService {
+        $service = new readonly class($entries) extends PlayerLogService {
             /** @var PlayerLogEntry[] */
             private array $entries;
 

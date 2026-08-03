@@ -11,14 +11,14 @@ require_once __DIR__ . '/PlayerQueueMessageBuilder.php';
 require_once __DIR__ . '/PlayerQueueMessagePartType.php';
 require_once __DIR__ . '/PlayerUrlBuilder.php';
 
-final class PlayerQueueResponseFactory
+final readonly class PlayerQueueResponseFactory
 {
     private const string EMPTY_NAME_MESSAGE = "PSN name can't be empty.";
 
 
     private const string BUSY_MESSAGE = 'The server is busy processing another request. Please try again in a moment.';
 
-    public function __construct(private readonly PlayerQueueService $service)
+    public function __construct(final private PlayerQueueService $service)
     {
     }
 

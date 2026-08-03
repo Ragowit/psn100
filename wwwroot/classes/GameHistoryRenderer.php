@@ -142,9 +142,9 @@ final readonly class GameHistoryRenderer
             return '<span class="history-diff__empty">&mdash;</span>';
         }
 
-        $escaped = Html::escape($value);
+        $escaped = $value |> Html::escape(...);
 
-        return $isMultiline ? nl2br($escaped) : $escaped;
+        return $isMultiline ? ($escaped |> nl2br(...)) : $escaped;
     }
 
     private function formatNumber(?int $value): string

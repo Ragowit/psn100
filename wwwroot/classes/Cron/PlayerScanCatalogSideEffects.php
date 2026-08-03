@@ -15,12 +15,12 @@ require_once __DIR__ . '/PlayerScanNewTitleMergeHandler.php';
  * Encapsulates history recording, automatic merge triggers, and changelog insertion that
  * were previously embedded in PlayerScanTitleCatalogSynchronizer.
  */
-final class PlayerScanCatalogSideEffects
+final readonly class PlayerScanCatalogSideEffects
 {
     public function __construct(
-        private readonly PDO $database,
-        private readonly ?TrophyHistoryRecorder $historyRecorder = null,
-        private readonly ?PlayerScanNewTitleMergeHandler $newTitleMergeHandler = null,
+        final private PDO $database,
+        final private ?TrophyHistoryRecorder $historyRecorder = null,
+        final private ?PlayerScanNewTitleMergeHandler $newTitleMergeHandler = null,
     ) {
     }
 

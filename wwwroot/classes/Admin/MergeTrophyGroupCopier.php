@@ -7,7 +7,7 @@ require_once __DIR__ . '/TrophyGroupConflictResolver.php';
 /**
  * Copies trophy groups from a child title into a MERGE parent during admin copy.
  */
-final class MergeTrophyGroupCopier
+final readonly class MergeTrophyGroupCopier
 {
     private const string TROPHY_GROUP_UPDATE_QUERY = <<<'SQL'
         WITH
@@ -72,8 +72,8 @@ final class MergeTrophyGroupCopier
         SQL;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyGroupConflictResolver $groupConflictResolver = new TrophyGroupConflictResolver()
+        final private PDO $database,
+        final private TrophyGroupConflictResolver $groupConflictResolver = new TrophyGroupConflictResolver()
     ) {
     }
 

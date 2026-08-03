@@ -82,7 +82,7 @@ final class GameLeaderboardPageTest extends TestCase
 
         $this->insertGame(1, 'NPWR00001_00', 'Example Game');
         $this->leaderboardService = new GameLeaderboardService($this->database);
-        $this->headerService = new class extends GameHeaderService {
+        $this->headerService = new readonly class extends GameHeaderService {
             public function __construct()
             {
             }

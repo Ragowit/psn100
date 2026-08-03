@@ -12,16 +12,16 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
  * Extracted from ThirtyMinuteCronJob so login backoff and release behavior can be
  * tested without running the full player scan loop.
  */
-final class CronWorkerLoginSession
+final readonly class CronWorkerLoginSession
 {
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly PlayStationWorkerAuthenticator $workerAuthenticator,
-        private readonly WorkerScanCoordinator $workerScanCoordinator,
-        private readonly Psn100Logger $logger,
-        private readonly \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private PDO $database,
+        final private PlayStationWorkerAuthenticator $workerAuthenticator,
+        final private WorkerScanCoordinator $workerScanCoordinator,
+        final private Psn100Logger $logger,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

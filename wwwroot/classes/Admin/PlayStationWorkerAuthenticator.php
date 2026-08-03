@@ -13,7 +13,7 @@ use Tustin\PlayStation\Client;
  * Centralizes login orchestration that was previously duplicated across
  * PsnGameLookupService, GameRescanService, and ThirtyMinuteCronJob.
  */
-final class PlayStationWorkerAuthenticator
+final readonly class PlayStationWorkerAuthenticator
 {
     private const \Closure DEFAULT_CLIENT_FACTORY = static function (): object {
         return new Client();
@@ -30,27 +30,27 @@ final class PlayStationWorkerAuthenticator
     /**
      * @var \Closure(): iterable<Worker>
      */
-    private readonly \Closure $workerFetcher;
+    private \Closure $workerFetcher;
 
     /**
      * @var \Closure(): object
      */
-    private readonly \Closure $clientFactory;
+    private \Closure $clientFactory;
 
     /**
      * @var \Closure(int, string): void
      */
-    private readonly \Closure $refreshTokenSaver;
+    private \Closure $refreshTokenSaver;
 
     /**
      * @var \Closure(int): void
      */
-    private readonly \Closure $sleeper;
+    private \Closure $sleeper;
 
     /**
      * @var \Closure(int, string): void|null
      */
-    private readonly ?\Closure $refreshTokenPersistenceFailureHandler;
+    private ?\Closure $refreshTokenPersistenceFailureHandler;
 
     public function __construct(
         callable $workerFetcher,

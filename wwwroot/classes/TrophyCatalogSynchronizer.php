@@ -7,10 +7,10 @@ require_once __DIR__ . '/CommaSeparatedValues.php';
 /**
  * Persists trophy catalog rows shared between player scans and admin rescans.
  */
-final class TrophyCatalogSynchronizer
+final readonly class TrophyCatalogSynchronizer
 {
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
     ) {
     }
 

@@ -10,12 +10,12 @@ require_once __DIR__ . '/PlayerScanTitleMetadataHelper.php';
  *
  * Encapsulates trophy_earned upsert logic that was previously embedded in ThirtyMinuteCronJob.
  */
-final class PlayerEarnedTrophyPersister
+final readonly class PlayerEarnedTrophyPersister
 {
-    private readonly PlayerScanTitleMetadataHelper $titleMetadataHelper;
+    private PlayerScanTitleMetadataHelper $titleMetadataHelper;
 
     public function __construct(
-        private readonly PDO $database,
+        final private PDO $database,
         ?PlayerScanTitleMetadataHelper $titleMetadataHelper = null,
     ) {
         $this->titleMetadataHelper = $titleMetadataHelper ?? new PlayerScanTitleMetadataHelper();
