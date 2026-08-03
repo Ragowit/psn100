@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../wwwroot/classes/GameAvailabilityStatus.php';
 require_once __DIR__ . '/../wwwroot/classes/GameResetAction.php';
 require_once __DIR__ . '/../wwwroot/classes/GameResetService.php';
 
@@ -23,8 +24,7 @@ final class GameResetServiceTest extends TestCase
     public function testProcessResetsMergedGame(): void
     {
         $this->insertMergedGame('MERGE-123', 1, 'Merged Game', 25, 10);
-        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (2, 'NPWR-OTHER', 'Child Game')");
-        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-OTHER', 5, 2, 'MERGE-123')");
+        $this->insertChildGame('NPWR-OTHER', 2, 'Child Game', 'MERGE-123', GameAvailabilityStatus::MERGED);
 
         $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-123')");
         $this->database->exec("INSERT INTO trophy_title_player (np_communication_id, account_id) VALUES ('MERGE-123', 1001)");
@@ -45,8 +45,7 @@ final class GameResetServiceTest extends TestCase
         $this->assertSame(0, (int) $owners);
         $this->assertSame(0, (int) $ownersCompleted);
 
-        $childParent = $this->database->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR-OTHER'")->fetchColumn();
-        $this->assertSame(null, $childParent);
+        $this->assertChildRestoredToNormal('NPWR-OTHER');
 
         $changes = $this->database
             ->query('SELECT change_type, param_1, extra FROM psn100_change')
@@ -74,8 +73,7 @@ final class GameResetServiceTest extends TestCase
     public function testProcessDeletesMergedGame(): void
     {
         $this->insertMergedGame('MERGE-456', 1, 'Merged Game', 12, 4);
-        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (2, 'NPWR-OTHER', 'Child Game')");
-        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-OTHER', 5, 2, 'MERGE-456')");
+        $this->insertChildGame('NPWR-OTHER', 2, 'Child Game', 'MERGE-456', GameAvailabilityStatus::MERGED);
 
         $this->database->exec("INSERT INTO trophy_merge (parent_np_communication_id) VALUES ('MERGE-456')");
         $this->database->exec("INSERT INTO trophy (np_communication_id) VALUES ('MERGE-456')");
@@ -104,8 +102,7 @@ final class GameResetServiceTest extends TestCase
         $remainingTitle = $this->database->query('SELECT COUNT(*) FROM trophy_title WHERE id = 1')->fetchColumn();
         $this->assertSame(0, (int) $remainingTitle);
 
-        $childParent = $this->database->query("SELECT parent_np_communication_id FROM trophy_title_meta WHERE np_communication_id = 'NPWR-OTHER'")->fetchColumn();
-        $this->assertSame(null, $childParent);
+        $this->assertChildRestoredToNormal('NPWR-OTHER');
 
         $changes = $this->database
             ->query('SELECT change_type, param_1, extra FROM psn100_change')
@@ -130,6 +127,37 @@ final class GameResetServiceTest extends TestCase
         );
     }
 
+    public function testProcessDeleteRestoresMultipleMergedChildrenToNormal(): void
+    {
+        $this->insertMergedGame('MERGE-789', 1, 'Merged Game', 8, 3);
+        $this->insertChildGame('NPWR-CHILD-A', 2, 'Child A', 'MERGE-789', GameAvailabilityStatus::MERGED);
+        $this->insertChildGame('NPWR-CHILD-B', 3, 'Child B', 'MERGE-789', GameAvailabilityStatus::MERGED);
+        // Unrelated title must keep its own status and parent link.
+        $this->insertChildGame('NPWR-OTHER-PARENT', 4, 'Other Child', 'MERGE-OTHER', GameAvailabilityStatus::MERGED);
+        $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (5, 'NPWR-DELISTED', 'Delisted Sibling')");
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id, status)
+             VALUES ('NPWR-DELISTED', 1, 0, 'MERGE-789', " . GameAvailabilityStatus::DELISTED->value . ')'
+        );
+
+        $this->service->process(1, GameResetAction::DELETE);
+
+        $this->assertChildRestoredToNormal('NPWR-CHILD-A');
+        $this->assertChildRestoredToNormal('NPWR-CHILD-B');
+
+        $otherChild = $this->database
+            ->query("SELECT parent_np_communication_id, status FROM trophy_title_meta WHERE np_communication_id = 'NPWR-OTHER-PARENT'")
+            ->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame('MERGE-OTHER', $otherChild['parent_np_communication_id']);
+        $this->assertSame(GameAvailabilityStatus::MERGED->value, (int) $otherChild['status']);
+
+        $delistedSibling = $this->database
+            ->query("SELECT parent_np_communication_id, status FROM trophy_title_meta WHERE np_communication_id = 'NPWR-DELISTED'")
+            ->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(null, $delistedSibling['parent_np_communication_id']);
+        $this->assertSame(GameAvailabilityStatus::DELISTED->value, (int) $delistedSibling['status']);
+    }
+
     public function testProcessThrowsWhenGameEntryIsMissing(): void
     {
         try {
@@ -143,7 +171,10 @@ final class GameResetServiceTest extends TestCase
     public function testProcessThrowsWhenGameIsNotMerged(): void
     {
         $this->database->exec("INSERT INTO trophy_title (id, np_communication_id, name) VALUES (5, 'NPWR-123', 'Regular Game')");
-        $this->database->exec("INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES ('NPWR-123', 1, 0, NULL)");
+        $this->database->exec(
+            "INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id, status)
+             VALUES ('NPWR-123', 1, 0, NULL, " . GameAvailabilityStatus::NORMAL->value . ')'
+        );
 
         try {
             $this->service->process(5, GameResetAction::RESET);
@@ -207,6 +238,7 @@ final class GameResetServiceTest extends TestCase
             rarity_points INTEGER NOT NULL DEFAULT 0,
             in_game_rarity_points INTEGER NOT NULL DEFAULT 0,
             parent_np_communication_id TEXT,
+            status INTEGER NOT NULL DEFAULT 0,
             obsolete_ids TEXT NULL,
             psnprofiles_id TEXT NULL
         )');
@@ -240,10 +272,51 @@ final class GameResetServiceTest extends TestCase
         $statement->bindValue(':name', $name, PDO::PARAM_STR);
         $statement->execute();
 
-        $statement = $this->database->prepare('INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id) VALUES (:np, :owners, :owners_completed, NULL)');
+        $statement = $this->database->prepare(
+            'INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id, status)
+             VALUES (:np, :owners, :owners_completed, NULL, :status)'
+        );
         $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
         $statement->bindValue(':owners', $owners, PDO::PARAM_INT);
         $statement->bindValue(':owners_completed', $ownersCompleted, PDO::PARAM_INT);
+        $statement->bindValue(':status', GameAvailabilityStatus::NORMAL->value, PDO::PARAM_INT);
         $statement->execute();
+    }
+
+    private function insertChildGame(
+        string $npCommunicationId,
+        int $gameId,
+        string $name,
+        string $parentNpCommunicationId,
+        GameAvailabilityStatus $status
+    ): void {
+        $statement = $this->database->prepare('INSERT INTO trophy_title (id, np_communication_id, name) VALUES (:id, :np, :name)');
+        $statement->bindValue(':id', $gameId, PDO::PARAM_INT);
+        $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':name', $name, PDO::PARAM_STR);
+        $statement->execute();
+
+        $statement = $this->database->prepare(
+            'INSERT INTO trophy_title_meta (np_communication_id, owners, owners_completed, parent_np_communication_id, status)
+             VALUES (:np, 5, 2, :parent, :status)'
+        );
+        $statement->bindValue(':np', $npCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':parent', $parentNpCommunicationId, PDO::PARAM_STR);
+        $statement->bindValue(':status', $status->value, PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    private function assertChildRestoredToNormal(string $npCommunicationId): void
+    {
+        $child = $this->database
+            ->query(
+                "SELECT parent_np_communication_id, status FROM trophy_title_meta WHERE np_communication_id = "
+                . $this->database->quote($npCommunicationId)
+            )
+            ->fetch(PDO::FETCH_ASSOC);
+
+        $this->assertNotFalse($child);
+        $this->assertSame(null, $child['parent_np_communication_id']);
+        $this->assertSame(GameAvailabilityStatus::NORMAL->value, (int) $child['status']);
     }
 }

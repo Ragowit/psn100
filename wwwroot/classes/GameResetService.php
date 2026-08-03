@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/ChangelogEntry.php';
+require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameResetAction.php';
 require_once __DIR__ . '/MergeNpCommunicationId.php';
 
@@ -62,10 +63,7 @@ final readonly class GameResetService
                 'UPDATE trophy_title_meta SET owners = 0, owners_completed = 0 WHERE np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
-            $this->executeStatement(
-                'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
-                [':np_communication_id' => $npCommunicationId]
-            );
+            $this->restoreChildGamesForParent($npCommunicationId);
         });
 
         $this->logChange(ChangelogEntryType::GAME_RESET, $gameId);
@@ -100,12 +98,10 @@ final readonly class GameResetService
                 'DELETE FROM trophy_group WHERE np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
+            // Unmerge children before deleting the parent title so they are not left hidden as MERGED.
+            $this->restoreChildGamesForParent($npCommunicationId);
             $this->executeStatement(
                 'DELETE FROM trophy_title WHERE np_communication_id = :np_communication_id',
-                [':np_communication_id' => $npCommunicationId]
-            );
-            $this->executeStatement(
-                'UPDATE trophy_title_meta SET parent_np_communication_id = NULL WHERE parent_np_communication_id = :np_communication_id',
                 [':np_communication_id' => $npCommunicationId]
             );
         });
@@ -113,6 +109,25 @@ final readonly class GameResetService
         $this->logChange(ChangelogEntryType::GAME_DELETE, $gameId, $gameName);
 
         return sprintf('Game %d was deleted.', $gameId);
+    }
+
+    /**
+     * Clear the merge parent link and restore MERGED children to NORMAL so they remain visible.
+     */
+    private function restoreChildGamesForParent(string $npCommunicationId): void
+    {
+        $mergedStatus = GameAvailabilityStatus::MERGED->value;
+        $normalStatus = GameAvailabilityStatus::NORMAL->value;
+
+        $this->executeStatement(
+            <<<SQL
+            UPDATE trophy_title_meta
+            SET parent_np_communication_id = NULL,
+                status = CASE WHEN status = {$mergedStatus} THEN {$normalStatus} ELSE status END
+            WHERE parent_np_communication_id = :np_communication_id
+            SQL,
+            [':np_communication_id' => $npCommunicationId]
+        );
     }
 
     /**
