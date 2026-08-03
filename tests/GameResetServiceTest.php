@@ -315,7 +315,7 @@ final class GameResetServiceTest extends TestCase
             )
             ->fetch(PDO::FETCH_ASSOC);
 
-        $this->assertNotFalse($child);
+        $this->assertTrue($child !== false, 'Expected child trophy_title_meta row to exist.');
         $this->assertSame(null, $child['parent_np_communication_id']);
         $this->assertSame(GameAvailabilityStatus::NORMAL->value, (int) $child['status']);
     }
