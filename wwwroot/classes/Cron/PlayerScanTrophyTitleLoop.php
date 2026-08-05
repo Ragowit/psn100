@@ -390,11 +390,12 @@ final readonly class PlayerScanTrophyTitleLoop
         array &$trophyTitleCountRetry,
         array &$invalidTitleDateRetry,
     ): PlayerScanTrophyTitleLoopResult {
-        $this->logger->log(sprintf(
-            'Failed to fetch trophy summary for %s: %s. Waiting 5 seconds before retrying.',
-            $onlineId,
-            $exception->getMessage()
-        ));
+        // This is a transient failure, so we don't want to log it as an error.
+        // $this->logger->log(sprintf(
+        //     'Failed to fetch trophy summary for %s: %s. Waiting 5 seconds before retrying.',
+        //     $onlineId,
+        //     $exception->getMessage()
+        // ));
         $this->workerScanCoordinator->setWaitingScanProgress(
             $workerId,
             'Encountered a problem while fetching trophy summary. Waiting 5 seconds before retrying.'
