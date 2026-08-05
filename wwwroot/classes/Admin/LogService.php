@@ -166,7 +166,7 @@ final class LogService
 
     private function createDateTime(?string $value): DateTimeImmutable
     {
-        $trimmedValue = trim((string) ($value ?? ''));
+        $trimmedValue = ((string) ($value ?? '')) |> trim(...);
 
         if ($trimmedValue === '') {
             return (new DateTimeImmutable('@0'))->setTimezone(new DateTimeZone('UTC'));

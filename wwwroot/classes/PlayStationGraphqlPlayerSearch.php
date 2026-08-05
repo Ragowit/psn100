@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class PlayStationGraphqlPlayerSearch
+final readonly class PlayStationGraphqlPlayerSearch
 {
     private const string GRAPHQL_OPERATION_CONTEXT = 'metGetContextSearchResults';
 
@@ -32,9 +32,11 @@ final class PlayStationGraphqlPlayerSearch
 
     private const int GRAPHQL_PAGE_SIZE = 20;
 
+    private int $resultLimit;
+
     public function __construct(
-        private object $client,
-        private int $resultLimit = 50,
+        final private object $client,
+        int $resultLimit = 50,
     ) {
         $this->resultLimit = max(1, $resultLimit);
     }

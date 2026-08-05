@@ -111,4 +111,13 @@ final class GameTrophyRowTest extends TestCase
         $this->assertSame('/img/trophy-platinum.svg', $row->getTypeIconPath());
         $this->assertSame('#667fb2', $row->getTypeColor());
     }
+
+    public function testGetTrophyLinkEncodesPlayerOnlineId(): void
+    {
+        $row = $this->createRow(['id' => 42, 'name' => 'Example Trophy']);
+
+        $this->assertSame('/trophy/42-example-trophy', $row->getTrophyLink());
+        $this->assertSame('/trophy/42-example-trophy/Player_Name', $row->getTrophyLink('Player_Name'));
+        $this->assertSame('/trophy/42-example-trophy/Player%2FName', $row->getTrophyLink('Player/Name'));
+    }
 }

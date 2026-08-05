@@ -186,11 +186,12 @@ final readonly class GameTrophyRow
         return $this->status;
     }
 
+    #[\NoDiscard]
     public function getTrophyLink(?string $playerOnlineId = null): string
     {
         $slug = $this->utility->slugify($this->name);
         $playerSegment = ($playerOnlineId !== null && $playerOnlineId !== '')
-            ? '/' . $playerOnlineId
+            ? '/' . rawurlencode($playerOnlineId)
             : '';
 
         $path = '/trophy/' . $this->id . '-' . $slug . $playerSegment;

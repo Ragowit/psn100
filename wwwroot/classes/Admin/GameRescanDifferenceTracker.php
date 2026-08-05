@@ -5,9 +5,9 @@ declare(strict_types=1);
 final class GameRescanDifferenceTracker
 {
     /**
-     * @var array<int, array<string, mixed>>
+     * @var list<array<string, mixed>>
      */
-    private array $differences = [];
+    public private(set) array $differences = [];
 
     public function recordTitleChange(string $field, mixed $previous, mixed $current): void
     {
@@ -44,14 +44,6 @@ final class GameRescanDifferenceTracker
         );
 
         $this->addDifference($context, $field, $previous, $current);
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    public function getDifferences(): array
-    {
-        return $this->differences;
     }
 
     private function addDifference(string $context, string $field, mixed $previous, mixed $current): void

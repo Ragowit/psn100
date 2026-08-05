@@ -40,7 +40,7 @@ final class TrophyStatusInputParserTest extends TestCase
         $parser = new TrophyStatusInputParser(new TrophyStatusInputParserPDO());
 
         try {
-            $parser->parseTrophyIds('1,abc');
+            (void) $parser->parseTrophyIds('1,abc');
             $this->fail('Expected InvalidArgumentException for non-numeric trophy ID.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Invalid trophy ID: abc', $exception->getMessage());
@@ -52,7 +52,7 @@ final class TrophyStatusInputParserTest extends TestCase
         $parser = new TrophyStatusInputParser(new TrophyStatusInputParserPDO());
 
         try {
-            $parser->parseTrophyIds('   ');
+            (void) $parser->parseTrophyIds('   ');
             $this->fail('Expected InvalidArgumentException for empty trophy input.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('No trophies were provided.', $exception->getMessage());

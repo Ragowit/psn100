@@ -134,7 +134,7 @@ abstract class AbstractLeaderboardPageContext
             return null;
         }
 
-        $highlightedPlayer = trim((string) $highlightedPlayer);
+        $highlightedPlayer = ((string) $highlightedPlayer) |> trim(...);
 
         return $highlightedPlayer !== '' ? $highlightedPlayer : null;
     }

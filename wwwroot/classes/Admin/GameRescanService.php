@@ -116,7 +116,7 @@ final class GameRescanService
             if (!$this->psnAccessor->isOriginalGame($npCommunicationId)) {
                 return new GameRescanResult(
                     'Can only rescan original game entries.',
-                    $differenceTracker->getDifferences()
+                    $differenceTracker->differences
                 );
             }
 
@@ -165,13 +165,13 @@ final class GameRescanService
             $progressReporter->notify(90, 'Recording rescan details…');
             $this->recordRescan($gameId);
 
-            if ($differenceTracker->getDifferences() !== []) {
+            if ($differenceTracker->differences !== []) {
                 $this->historyRecorder->recordByTitleId($gameId);
             }
 
             $message = "Game {$gameId} have been rescanned.";
 
-            return new GameRescanResult($message, $differenceTracker->getDifferences());
+            return new GameRescanResult($message, $differenceTracker->differences);
         } finally {
             $this->logListener = $previousLogListener;
             $this->imageDownloader = $previousImageDownloader;

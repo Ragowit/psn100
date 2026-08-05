@@ -113,6 +113,7 @@ final readonly class PlayerScanProfileSynchronizer
         return $fallbackOnlineId;
     }
 
+    #[\NoDiscard]
     public function normalizeAccountIdValue(mixed $accountId): ?string
     {
         if (is_int($accountId)) {

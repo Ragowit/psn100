@@ -7,12 +7,12 @@ require_once __DIR__ . '/LogPageResult.php';
 require_once __DIR__ . '/LogDeletionRequest.php';
 require_once __DIR__ . '/../HttpMethod.php';
 
-final class LogPage
+final readonly class LogPage
 {
     private int $entriesPerPage;
 
     public function __construct(
-        private LogService $logService,
+        final private LogService $logService,
         int $entriesPerPage = 50,
     ) {
         $this->entriesPerPage = max(1, $entriesPerPage);

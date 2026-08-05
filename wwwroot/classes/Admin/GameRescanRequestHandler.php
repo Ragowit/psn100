@@ -101,7 +101,7 @@ final readonly class GameRescanRequestHandler
             return null;
         }
 
-        $rawGameId = trim((string) $rawGameId);
+        $rawGameId = ((string) $rawGameId) |> trim(...);
 
         if ($rawGameId === '' || !ctype_digit($rawGameId)) {
             return null;

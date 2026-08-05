@@ -51,7 +51,7 @@ final readonly class AdminRequest
             return '';
         }
 
-        return trim((string) $value);
+        return ((string) $value) |> trim(...);
     }
 
     public function getPostInt(string $key): ?int

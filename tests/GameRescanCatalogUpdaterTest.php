@@ -114,7 +114,7 @@ final class GameRescanCatalogUpdaterTest extends TestCase
         );
 
         $this->assertSame([], $groups);
-        $this->assertSame([], $differenceTracker->getDifferences());
+        $this->assertSame([], $differenceTracker->differences);
 
         $detail = $this->database->query(
             "SELECT detail FROM trophy_title WHERE np_communication_id = 'NPWR00001_00'"
@@ -145,7 +145,7 @@ final class GameRescanCatalogUpdaterTest extends TestCase
             $differenceTracker,
         );
 
-        $differences = $differenceTracker->getDifferences();
+        $differences = $differenceTracker->differences;
         $detailDifference = null;
         foreach ($differences as $difference) {
             if ($difference['field'] === 'Detail') {

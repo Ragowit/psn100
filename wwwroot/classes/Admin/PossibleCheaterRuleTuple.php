@@ -34,6 +34,7 @@ final readonly class PossibleCheaterRuleTuple
         return $this->dateValue;
     }
 
+    #[\NoDiscard]
     public function toUnionSelect(): string
     {
         $npCommunicationId = $this->quote($this->npCommunicationId);

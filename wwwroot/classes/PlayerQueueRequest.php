@@ -60,6 +60,6 @@ final readonly class PlayerQueueRequest
             return '';
         }
 
-        return trim((string) ($value ?? ''));
+        return ((string) ($value ?? '')) |> trim(...);
     }
 }

@@ -34,6 +34,7 @@ final readonly class PossibleCheaterSectionDefinition
         return $this->query;
     }
 
+    #[\NoDiscard]
     public function buildLink(string $onlineId): string
     {
         return sprintf($this->linkPattern, rawurlencode($onlineId));

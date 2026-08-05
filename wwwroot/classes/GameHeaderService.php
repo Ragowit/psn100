@@ -22,6 +22,7 @@ readonly class GameHeaderService
     ) {
     }
 
+    #[\NoDiscard]
     public function buildHeaderData(GameDetails $game): GameHeaderData
     {
         $status = $game->getStatus();

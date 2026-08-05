@@ -33,6 +33,7 @@ final readonly class PsnpPlusService
         $this->psnpPlusClient = $psnpPlusClient ?? new PsnpPlusClient();
     }
 
+    #[\NoDiscard]
     public function buildReport(): PsnpPlusReport
     {
         $psnpPlusList = $this->fetchPsnpPlusList();
