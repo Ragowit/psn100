@@ -32,4 +32,33 @@ final readonly class DateDurationSummary
             |> array_values(...)
             |> (fn(array $parts): array => array_slice($parts, 0, $maxParts));
     }
+
+    /**
+     * Locale-aware conjunction list of the most significant duration parts.
+     */
+    #[\NoDiscard]
+    public static function format(
+        \DateTimeInterface $start,
+        \DateTimeInterface $end,
+        int $maxParts = 2,
+        ?string $locale = null,
+    ): ?string {
+        $parts = self::significantParts($start, $end, $maxParts);
+        if ($parts === []) {
+            return null;
+        }
+
+        $resolvedLocale = $locale ?? \Locale::getDefault();
+        if ($resolvedLocale === '') {
+            $resolvedLocale = 'en';
+        }
+
+        $formatter = new \IntlListFormatter(
+            $resolvedLocale,
+            \IntlListFormatter::TYPE_AND,
+            \IntlListFormatter::WIDTH_WIDE,
+        );
+
+        return $formatter->format($parts);
+    }
 }

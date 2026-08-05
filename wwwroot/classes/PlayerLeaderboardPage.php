@@ -18,7 +18,7 @@ final readonly class PlayerLeaderboardPage
 
     public function __construct(
         PlayerLeaderboardDataProvider $service,
-        private PlayerLeaderboardFilter $requestedFilter,
+        final private PlayerLeaderboardFilter $requestedFilter,
     ) {
         if ($this->requestedFilter->getPage() === 1 && $service instanceof AbstractPlayerLeaderboardService) {
             $result = $service->getPlayersWithTotal($this->requestedFilter, $service->getPageSize());

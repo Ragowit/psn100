@@ -13,8 +13,8 @@ final readonly class WorkerScanCoordinator
     private const \Closure DEFAULT_SLEEPER = sleep(...);
 
     public function __construct(
-        private PDO $database,
-        private \Closure $sleeper = self::DEFAULT_SLEEPER,
+        final private PDO $database,
+        final private \Closure $sleeper = self::DEFAULT_SLEEPER,
     ) {
     }
 

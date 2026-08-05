@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final readonly class PossibleCheaterRule
 {
-    public function __construct(private string $condition)
+    public function __construct(final private string $condition)
     {
     }
 
@@ -25,7 +25,7 @@ final readonly class PossibleCheaterRuleGroup
     /**
      * @param PossibleCheaterRule[] $rules
      */
-    public function __construct(private string $label, private array $rules)
+    public function __construct(final private string $label, final private array $rules)
     {
     }
 

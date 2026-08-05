@@ -7,7 +7,7 @@ require_once __DIR__ . '/Html.php';
 
 final readonly class PlayerPlatformFilterRenderer
 {
-    public function __construct(private string $buttonLabel = 'Filter')
+    public function __construct(final private string $buttonLabel = 'Filter')
     {
     }
 

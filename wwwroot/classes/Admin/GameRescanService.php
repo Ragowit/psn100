@@ -41,8 +41,8 @@ final class GameRescanService
     private ?\Closure $logListener = null;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyCalculator $trophyCalculator,
+        final private readonly PDO $database,
+        final private readonly TrophyCalculator $trophyCalculator,
         ?TrophyHistoryRecorder $historyRecorder = null,
         ?ImageHashCalculator $imageHashCalculator = null,
         ?PsnGameLookupService $psnGameLookupService = null,

@@ -9,7 +9,7 @@ declare(strict_types=1);
  */
 final readonly class PlayerScanStaleGameDeletionService
 {
-    public function __construct(private PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 

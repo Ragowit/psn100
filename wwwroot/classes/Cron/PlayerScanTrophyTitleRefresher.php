@@ -15,9 +15,9 @@ require_once __DIR__ . '/WorkerScanCoordinator.php';
 final readonly class PlayerScanTrophyTitleRefresher
 {
     public function __construct(
-        private Psn100Logger $logger,
-        private PlayerScanTitleMetadataHelper $titleMetadataHelper,
-        private WorkerScanCoordinator $workerScanCoordinator,
+        final private Psn100Logger $logger,
+        final private PlayerScanTitleMetadataHelper $titleMetadataHelper,
+        final private WorkerScanCoordinator $workerScanCoordinator,
     ) {
     }
 

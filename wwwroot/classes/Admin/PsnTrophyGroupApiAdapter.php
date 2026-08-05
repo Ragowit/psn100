@@ -8,8 +8,8 @@ final readonly class PsnTrophyGroupApiAdapter
      * @param array<string, mixed> $rawGroup
      */
     public function __construct(
-        private string $groupId,
-        private array $rawGroup,
+        final private string $groupId,
+        final private array $rawGroup,
     ) {
     }
 

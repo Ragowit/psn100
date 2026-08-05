@@ -9,7 +9,7 @@ final class MergeTrophyCopier
 {
     private ?PDOStatement $findTrophyIdStatement = null;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private readonly PDO $database)
     {
     }
 

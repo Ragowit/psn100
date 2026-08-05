@@ -17,7 +17,7 @@ final readonly class TrophyListPage
 
     public function __construct(
         TrophyListService $service,
-        private TrophyListFilter $filter,
+        final private TrophyListFilter $filter,
     ) {
         $totalTrophies = $service->countTrophies();
         $this->paginator = new ChangelogPaginator(

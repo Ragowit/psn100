@@ -205,7 +205,7 @@ final class PlayerGamesServiceTest extends TestCase
         $this->assertSame(111, $game->getInGameRarityPoints());
         $this->assertSame(654, $game->getMaxRarityPoints());
         $this->assertSame(222, $game->getMaxInGameRarityPoints());
-        $this->assertSame('Completed in 4 days, 1 hours', $game->getCompletionDurationLabel());
+        $this->assertSame('Completed in 4 days and 1 hours', $game->getCompletionDurationLabel());
     }
 
     public function testFormatCompletionLabelIncludesCalendarUnits(): void
@@ -215,7 +215,7 @@ final class PlayerGamesServiceTest extends TestCase
 
         $label = $method->invoke($this->service, '2024-01-01 00:00:00', '2025-03-05 06:07:08');
 
-        $this->assertSame('Completed in 1 years, 2 months', $label);
+        $this->assertSame('Completed in 1 years and 2 months', $label);
     }
 
 

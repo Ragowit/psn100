@@ -18,7 +18,7 @@ final class TrophyMetaRepository
     private ?PDOStatement $selectTrophyIdStatement = null;
     private ?PDOStatement $insertMetaStatement = null;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private readonly PDO $database)
     {
     }
 

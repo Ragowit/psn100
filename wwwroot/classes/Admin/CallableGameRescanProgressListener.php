@@ -9,7 +9,7 @@ final readonly class CallableGameRescanProgressListener implements GameRescanPro
     /**
      * @param Closure(int, string):void $callback
      */
-    public function __construct(private \Closure $callback)
+    public function __construct(final private \Closure $callback)
     {
     }
 

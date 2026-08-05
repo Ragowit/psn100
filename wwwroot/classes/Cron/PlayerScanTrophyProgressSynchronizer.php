@@ -18,11 +18,11 @@ use Tustin\Haste\Exception\NotFoundHttpException;
 final readonly class PlayerScanTrophyProgressSynchronizer
 {
     public function __construct(
-        private PDO $database,
-        private TrophyCalculator $trophyCalculator,
-        private Psn100Logger $logger,
-        private PlayerEarnedTrophyPersister $earnedTrophyPersister,
-        private AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService,
+        final private PDO $database,
+        final private TrophyCalculator $trophyCalculator,
+        final private Psn100Logger $logger,
+        final private PlayerEarnedTrophyPersister $earnedTrophyPersister,
+        final private AutomaticTrophyTitleMergeService $automaticTrophyTitleMergeService,
     ) {
     }
 

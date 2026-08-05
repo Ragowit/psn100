@@ -127,17 +127,17 @@ final readonly class PlayerScanTitleHeaderSynchronizer
 
     public function formatPlatformListFromTitle(object $trophyTitle): string
     {
-        $platforms = '';
+        $platforms = [];
         foreach ($trophyTitle->platform() as $platform) {
             $platformValue = $platform->value;
             if ($platformValue === 'PSPC') {
                 $platformValue = Platform::Pc->label();
             }
 
-            $platforms .= $platformValue . ',';
+            $platforms[] = $platformValue;
         }
 
-        return rtrim($platforms, ',');
+        return implode(',', $platforms);
     }
 
     private function titleFormatter(): TrophyTitleNameFormatter

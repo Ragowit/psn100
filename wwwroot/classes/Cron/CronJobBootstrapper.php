@@ -13,7 +13,7 @@ final class CronJobBootstrapper
 
     private function __construct(
         string $projectRoot,
-        private readonly CronJobApplication $application,
+        final private readonly CronJobApplication $application,
     ) {
         $this->projectRoot = rtrim($projectRoot, '/\\');
     }

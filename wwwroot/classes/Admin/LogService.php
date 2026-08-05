@@ -11,8 +11,8 @@ final class LogService
     private ?int $cachedEntryCount = null;
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly LogEntryFormatter $formatter,
+        final private readonly PDO $database,
+        final private readonly LogEntryFormatter $formatter,
     ) {
     }
 

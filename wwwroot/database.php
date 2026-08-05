@@ -5,11 +5,11 @@ declare(strict_types=1);
 final readonly class DatabaseConfig
 {
     public function __construct(
-        private string $host,
-        private string $database,
-        private string $user,
+        final private string $host,
+        final private string $database,
+        final private string $user,
         #[\SensitiveParameter]
-        private string $password,
+        final private string $password,
     ) {
     }
 

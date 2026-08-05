@@ -17,9 +17,9 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
     private array $trophyCache = [];
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly TrophyMergeService $trophyMergeService,
-        private readonly TrophySetComparator $trophySetComparator = new TrophySetComparator(),
+        final private readonly PDO $database,
+        final private readonly TrophyMergeService $trophyMergeService,
+        final private readonly TrophySetComparator $trophySetComparator = new TrophySetComparator(),
     ) {
     }
 

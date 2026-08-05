@@ -15,7 +15,7 @@ require_once __DIR__ . '/../TrophyRarityName.php';
  */
 final readonly class PlayerScanCompletionService
 {
-    public function __construct(private PDO $database)
+    public function __construct(final private PDO $database)
     {
     }
 
