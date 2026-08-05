@@ -51,6 +51,6 @@ final class DateDurationSummaryTest extends TestCase
     {
         $moment = new DateTimeImmutable('2020-01-01 00:00:00');
 
-        $this->assertNull(DateDurationSummary::format($moment, $moment, locale: 'en'));
+        $this->assertSame(null, DateDurationSummary::format($moment, $moment, locale: 'en'));
     }
 }
