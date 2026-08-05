@@ -249,9 +249,9 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $this->assertTrue(is_string($scanProgress));
         $this->assertStringContainsString('trophy summary', $scanProgress);
 
-        $logMessage = $this->database->query('SELECT message FROM log ORDER BY rowid DESC LIMIT 1')->fetchColumn();
-        $this->assertStringContainsString('ResponseInterface', (string) $logMessage);
-        $this->assertStringContainsString('ExampleUser', (string) $logMessage);
+        // Transient trophy-summary failures are no longer written to the error log.
+        $logCount = $this->database->query('SELECT COUNT(*) FROM log')->fetchColumn();
+        $this->assertSame(0, (int) $logCount);
     }
 
     public function testProcessAccessibleTrophyTitlesRetriesTrophySummaryTypeErrorAtEnd(): void
