@@ -35,4 +35,22 @@ final class DateDurationSummaryTest extends TestCase
 
         $this->assertSame([], DateDurationSummary::significantParts($moment, $moment));
     }
+
+    public function testFormatJoinsPartsWithLocaleAwareConjunction(): void
+    {
+        $start = new DateTimeImmutable('2020-01-01 00:00:00');
+        $end = new DateTimeImmutable('2021-03-05 06:07:08');
+
+        $this->assertSame(
+            '1 years and 2 months',
+            DateDurationSummary::format($start, $end, locale: 'en')
+        );
+    }
+
+    public function testFormatReturnsNullForZeroInterval(): void
+    {
+        $moment = new DateTimeImmutable('2020-01-01 00:00:00');
+
+        $this->assertNull(DateDurationSummary::format($moment, $moment, locale: 'en'));
+    }
 }

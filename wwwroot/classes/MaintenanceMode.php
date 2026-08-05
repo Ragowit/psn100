@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final readonly class MaintenanceMode
 {
-    private function __construct(private bool $enabled, private string $templatePath)
+    private function __construct(final private bool $enabled, final private string $templatePath)
     {
     }
 

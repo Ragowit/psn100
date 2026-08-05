@@ -12,7 +12,7 @@ final class GameRescanProgressReporter
     private int $lastProgress = 0;
 
     public function __construct(
-        private readonly ?GameRescanProgressListener $listener = null,
+        final private readonly ?GameRescanProgressListener $listener = null,
     ) {
     }
 

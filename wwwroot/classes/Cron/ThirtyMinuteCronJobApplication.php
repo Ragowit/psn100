@@ -12,8 +12,8 @@ require_once __DIR__ . '/ThirtyMinuteCronJob.php';
 final readonly class ThirtyMinuteCronJobApplication
 {
     private function __construct(
-        private CronJobEntryPoint $entryPoint,
-        private CronJobCliArguments $cliArguments,
+        final private CronJobEntryPoint $entryPoint,
+        final private CronJobCliArguments $cliArguments,
     ) {
     }
 

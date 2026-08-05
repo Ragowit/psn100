@@ -288,10 +288,10 @@ require_once("header.php");
                                                     try {
                                                         $start = new DateTimeImmutable($previousTimeStamp);
                                                         $end = new DateTimeImmutable($trophyRow->getEarnedDate());
-                                                        $completionTimes = DateDurationSummary::significantParts($start, $end);
+                                                        $completionTimes = DateDurationSummary::format($start, $end);
 
-                                                        if ($completionTimes !== []) {
-                                                            echo '<br>(+' . Html::escape(implode(', ', $completionTimes)) . ')';
+                                                        if ($completionTimes !== null) {
+                                                            echo '<br>(+' . Html::escape($completionTimes) . ')';
                                                         }
                                                     } catch (DateMalformedStringException) {
                                                     }

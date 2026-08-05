@@ -11,7 +11,7 @@ final class ChangelogService
 
     private ?int $cachedTotalChangeCount = null;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private readonly PDO $database)
     {
     }
 

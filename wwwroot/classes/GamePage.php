@@ -50,9 +50,9 @@ final class GamePage
      * @param array<string, mixed> $queryParameters
      */
     public function __construct(
-        private readonly GameService $gameService,
-        private readonly GameHeaderService $gameHeaderService,
-        private readonly Utility $utility,
+        final private readonly GameService $gameService,
+        final private readonly GameHeaderService $gameHeaderService,
+        final private readonly Utility $utility,
         int $gameId,
         array $queryParameters = [],
         ?string $playerOnlineId = null

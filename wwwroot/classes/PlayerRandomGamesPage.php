@@ -20,9 +20,9 @@ final readonly class PlayerRandomGamesPage
     public function __construct(
         PlayerRandomGamesService $randomGamesService,
         PlayerSummaryService $summaryService,
-        private PlayerRandomGamesFilter $filter,
+        final private PlayerRandomGamesFilter $filter,
         int $accountId,
-        private PlayerStatus $playerStatus,
+        final private PlayerStatus $playerStatus,
     ) {
         $this->playerSummary = $summaryService->getSummary($accountId);
         $this->randomGames = $this->shouldLoadRandomGames()

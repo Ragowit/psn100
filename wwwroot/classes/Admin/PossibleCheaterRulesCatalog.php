@@ -21,8 +21,8 @@ final class PossibleCheaterRulesCatalog
     private ?array $sectionDefinitions = null;
 
     public function __construct(
-        private readonly string $generalRulesFile = self::DEFAULT_GENERAL_RULES_FILE,
-        private readonly string $sectionsFile = self::DEFAULT_SECTIONS_FILE,
+        final private readonly string $generalRulesFile = self::DEFAULT_GENERAL_RULES_FILE,
+        final private readonly string $sectionsFile = self::DEFAULT_SECTIONS_FILE,
     ) {
     }
 

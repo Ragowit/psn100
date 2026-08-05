@@ -13,7 +13,7 @@ final class NestedDatabaseTransactionRunner
 {
     private int $transactionDepth = 0;
 
-    public function __construct(private readonly PDO $database)
+    public function __construct(final private readonly PDO $database)
     {
     }
 

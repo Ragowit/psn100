@@ -19,8 +19,8 @@ final class LogEntryFormatter
     private array $gameCacheByNpId = [];
 
     public function __construct(
-        private readonly PDO $database,
-        private readonly Utility $utility,
+        final private readonly PDO $database,
+        final private readonly Utility $utility,
     ) {
     }
 

@@ -7,7 +7,7 @@ require_once __DIR__ . '/PlayerRankingUpdater.php';
 
 final readonly class PlayerRankingCronJob implements CronJobInterface
 {
-    public function __construct(private PlayerRankingUpdater $playerRankingUpdater)
+    public function __construct(final private PlayerRankingUpdater $playerRankingUpdater)
     {
     }
 

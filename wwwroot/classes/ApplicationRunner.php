@@ -11,8 +11,8 @@ final readonly class ApplicationRunner
     private MaintenanceResponder $maintenanceResponder;
 
     public function __construct(
-        private ApplicationContainer $applicationContainer,
-        private MaintenanceMode $maintenanceMode,
+        final private ApplicationContainer $applicationContainer,
+        final private MaintenanceMode $maintenanceMode,
         ?MaintenanceResponder $maintenanceResponder = null
     ) {
         $this->maintenanceResponder = $maintenanceResponder ?? new MaintenanceResponder();

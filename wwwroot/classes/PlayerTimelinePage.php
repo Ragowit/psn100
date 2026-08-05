@@ -18,7 +18,7 @@ final readonly class PlayerTimelinePage
         PlayerTimelineService $timelineService,
         PlayerSummaryService $summaryService,
         int $accountId,
-        private PlayerStatus $playerStatus,
+        final private PlayerStatus $playerStatus,
     ) {
         $this->playerSummary = $summaryService->getSummary($accountId);
         $this->timelineData = $this->shouldLoadTimeline()

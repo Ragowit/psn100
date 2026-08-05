@@ -22,8 +22,8 @@ require_once __DIR__ . '/../PlayerStatus.php';
 final readonly class PlayerScanQueueSelector
 {
     public function __construct(
-        private PDO $database,
-        private ?string $selectionSql = null,
+        final private PDO $database,
+        final private ?string $selectionSql = null,
     ) {
     }
 

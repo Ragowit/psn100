@@ -43,8 +43,8 @@ final readonly class GameTrophyRow
      */
     private function __construct(
         array $data,
-        private Utility $utility,
-        private bool $usesPlayStation5Assets,
+        final private Utility $utility,
+        final private bool $usesPlayStation5Assets,
     ) {
         $this->id = (int) ($data['id'] ?? 0);
         $this->orderId = (int) ($data['order_id'] ?? 0);

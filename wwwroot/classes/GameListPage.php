@@ -28,7 +28,7 @@ final readonly class GameListPage
     private array $paginationParameters;
 
     public function __construct(
-        private GameListService $gameListService,
+        final private GameListService $gameListService,
         GameListFilter $filter,
     ) {
         $resolvedFilter = $filter->withPlayer($gameListService->resolvePlayer($filter->getPlayer()));

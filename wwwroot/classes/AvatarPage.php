@@ -20,7 +20,7 @@ final readonly class AvatarPage
     private array $avatars;
 
     public function __construct(
-        private AvatarService $avatarService,
+        final private AvatarService $avatarService,
         int $currentPage = 1,
         int $limit = 48,
     ) {

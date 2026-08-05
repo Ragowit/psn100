@@ -10,7 +10,7 @@ final readonly class NavigationMenu
     /**
      * @param NavigationMenuItem[] $items
      */
-    private function __construct(private array $items)
+    private function __construct(final private array $items)
     {
     }
 
@@ -40,7 +40,7 @@ final readonly class NavigationMenu
 
 final readonly class NavigationMenuItem
 {
-    public function __construct(private string $label, private string $href, private bool $active)
+    public function __construct(final private string $label, final private string $href, final private bool $active)
     {
     }
 

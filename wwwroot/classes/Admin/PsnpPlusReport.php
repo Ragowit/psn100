@@ -14,9 +14,9 @@ final readonly class PsnpPlusReport
      * @param PsnpPlusFixedGame[] $fixedGames
      */
     public function __construct(
-        private array $missingGames,
-        private array $gameDifferences,
-        private array $fixedGames,
+        final private array $missingGames,
+        final private array $gameDifferences,
+        final private array $fixedGames,
     ) {
     }
 

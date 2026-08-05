@@ -292,11 +292,11 @@ final readonly class PlayerGamesService
             return null;
         }
 
-        $summary = DateDurationSummary::significantParts($start, $end);
-        if ($summary === []) {
+        $summary = DateDurationSummary::format($start, $end);
+        if ($summary === null) {
             return null;
         }
 
-        return 'Completed in ' . implode(', ', $summary);
+        return 'Completed in ' . $summary;
     }
 }

@@ -64,7 +64,7 @@ final readonly class PlayerReportRequest
         return ((string) $explanation) |> trim(...);
     }
 
-    private static function sanitizeCsrfToken(mixed $csrfToken): string
+    private static function sanitizeCsrfToken(#[\SensitiveParameter] mixed $csrfToken): string
     {
         if (!is_scalar($csrfToken)) {
             return '';

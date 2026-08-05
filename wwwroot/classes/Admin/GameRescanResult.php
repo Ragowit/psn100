@@ -13,7 +13,7 @@ final readonly class GameRescanResult
      * @param array<int, array<string, mixed>> $differences
      */
     public function __construct(
-        private string $message,
+        final private string $message,
         array $differences
     ) {
         $this->differences = array_values($differences);

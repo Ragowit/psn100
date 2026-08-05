@@ -11,8 +11,8 @@ final readonly class AdminAuthService
     private const string SESSION_USERNAME_KEY = 'admin_username';
 
     public function __construct(
-        private AdminUserRepository $adminUserRepository,
-        private ?AdminLoginThrottleService $loginThrottle = null,
+        final private AdminUserRepository $adminUserRepository,
+        final private ?AdminLoginThrottleService $loginThrottle = null,
     ) {
     }
 

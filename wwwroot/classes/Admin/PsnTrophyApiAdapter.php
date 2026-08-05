@@ -10,7 +10,7 @@ final readonly class PsnTrophyApiAdapter
     /**
      * @param array<string, mixed> $rawTrophy
      */
-    public function __construct(private array $rawTrophy)
+    public function __construct(final private array $rawTrophy)
     {
     }
 
