@@ -236,7 +236,7 @@ final readonly class GameListFilter
         }
 
         if (is_string($value) || is_numeric($value)) {
-            $trimmed = trim((string) $value);
+            $trimmed = ((string) $value) |> trim(...);
 
             return $trimmed === '' ? null : $trimmed;
         }
@@ -251,7 +251,7 @@ final readonly class GameListFilter
         }
 
         if (is_string($value) || is_numeric($value)) {
-            return trim((string) $value);
+            return ((string) $value) |> trim(...);
         }
 
         return '';

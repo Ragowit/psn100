@@ -32,6 +32,7 @@ final readonly class PsnTrophyGroupAssembler
      * @param array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}> $groupedTrophies
      * @return array<int, array{trophyGroupId: string, trophyGroupName: string, trophyGroupDetail: string, trophyGroupIconUrl: string, trophies: array<int, array<string, mixed>>}>
      */
+    #[\NoDiscard]
     public function buildTrophyGroups(mixed $rawGroups, array $groupedTrophies): array
     {
         $trophiesByGroupId = [];

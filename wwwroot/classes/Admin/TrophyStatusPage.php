@@ -66,7 +66,7 @@ final readonly class TrophyStatusPage
             $statusInput = (string) $status->value;
 
             try {
-                $gameValue = trim((string) ($postData['game'] ?? ''));
+                $gameValue = ((string) ($postData['game'] ?? '')) |> trim(...);
                 if ($gameValue !== '') {
                     if (!ctype_digit($gameValue)) {
                         throw new \InvalidArgumentException('Game ID must be numeric.');

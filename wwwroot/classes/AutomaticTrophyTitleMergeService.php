@@ -359,8 +359,8 @@ final class AutomaticTrophyTitleMergeService implements PlayerScanNewTitleMergeH
             $trophies[] = [
                 'group_id' => (string) $row['group_id'],
                 'order_id' => (int) $row['order_id'],
-                'name' => trim((string) $row['name']),
-                'detail' => trim((string) ($row['detail'] ?? '')),
+                'name' => ((string) $row['name']) |> trim(...),
+                'detail' => ((string) ($row['detail'] ?? '')) |> trim(...),
             ];
         }
 

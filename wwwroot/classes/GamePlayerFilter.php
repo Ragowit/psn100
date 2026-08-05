@@ -130,7 +130,7 @@ readonly class GamePlayerFilter
             return null;
         }
 
-        $value = trim($value);
+        $value = $value |> trim(...);
 
         return $value === '' ? null : $value;
     }

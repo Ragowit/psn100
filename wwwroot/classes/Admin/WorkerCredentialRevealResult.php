@@ -44,6 +44,7 @@ final readonly class WorkerCredentialRevealResult
     /**
      * @return array{status: string, credential?: string, message?: string}
      */
+    #[\NoDiscard]
     public function toPayload(): array
     {
         if ($this->success) {

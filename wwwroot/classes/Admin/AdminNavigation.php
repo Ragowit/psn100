@@ -21,28 +21,23 @@ final readonly class AdminNavigationItem
     }
 }
 
-final class AdminNavigation
+final readonly class AdminNavigation
 {
     /**
-     * @var AdminNavigationItem[]
+     * @var list<AdminNavigationItem>
      */
     private array $items;
 
     /**
-     * @param AdminNavigationItem[] $items
+     * @param list<AdminNavigationItem> $items
      */
     public function __construct(array $items = [])
     {
         $this->items = $items === [] ? self::createDefaultItems() : $items;
     }
 
-    public function addItem(AdminNavigationItem $item): void
-    {
-        $this->items[] = $item;
-    }
-
     /**
-     * @return AdminNavigationItem[]
+     * @return list<AdminNavigationItem>
      */
     public function getItems(): array
     {
@@ -50,7 +45,7 @@ final class AdminNavigation
     }
 
     /**
-     * @return AdminNavigationItem[]
+     * @return list<AdminNavigationItem>
      */
     private static function createDefaultItems(): array
     {

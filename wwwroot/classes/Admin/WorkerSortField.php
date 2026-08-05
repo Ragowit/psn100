@@ -17,6 +17,7 @@ enum WorkerSortField: string
         return self::tryFrom($value |> trim(...) |> strtolower(...)) ?? self::ScanStart;
     }
 
+    #[\NoDiscard]
     public function toSqlColumn(): string
     {
         return $this->value;

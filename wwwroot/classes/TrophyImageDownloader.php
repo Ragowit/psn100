@@ -170,6 +170,7 @@ final readonly class TrophyImageDownloader
         return null;
     }
 
+    #[\NoDiscard]
     public function buildFilename(string $url, string $contents): string
     {
         $hash = $this->imageHashCalculator->calculate($contents);

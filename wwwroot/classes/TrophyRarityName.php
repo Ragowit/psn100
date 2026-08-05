@@ -28,6 +28,7 @@ enum TrophyRarityName: string
     /**
      * Quote the enum value for safe embedding in SQL string literals.
      */
+    #[\NoDiscard]
     public function toSqlLiteral(): string
     {
         return "'" . $this->value . "'";

@@ -19,7 +19,7 @@ final class GameRescanDifferenceTrackerTest extends TestCase
                 'previous' => 'Old Name',
                 'current' => 'New Name',
             ],
-        ], $tracker->getDifferences());
+        ], $tracker->differences);
     }
 
     public function testRecordTitleChangeSkipsRecordingWhenValuesNormalizeToSameResult(): void
@@ -29,7 +29,7 @@ final class GameRescanDifferenceTrackerTest extends TestCase
         $tracker->recordTitleChange('Description', '', null);
         $tracker->recordTitleChange('Subtitle', null, '');
 
-        $this->assertSame([], $tracker->getDifferences());
+        $this->assertSame([], $tracker->differences);
     }
 
     public function testRecordGroupChangeUsesGroupLabelWhenProvided(): void
@@ -45,7 +45,7 @@ final class GameRescanDifferenceTrackerTest extends TestCase
                 'previous' => 'Gold',
                 'current' => 'Platinum',
             ],
-        ], $tracker->getDifferences());
+        ], $tracker->differences);
     }
 
     public function testRecordGroupChangeUsesGroupIdWhenLabelMissingAndNormalizesBooleanValues(): void
@@ -61,7 +61,7 @@ final class GameRescanDifferenceTrackerTest extends TestCase
                 'previous' => 'false',
                 'current' => 'true',
             ],
-        ], $tracker->getDifferences());
+        ], $tracker->differences);
     }
 
     public function testRecordTrophyChangeFormatsContextWithFallbacksAndEncodesComplexValues(): void
@@ -85,6 +85,6 @@ final class GameRescanDifferenceTrackerTest extends TestCase
                 'previous' => '{"coins":2}',
                 'current' => '{"coins":5}',
             ],
-        ], $tracker->getDifferences());
+        ], $tracker->differences);
     }
 }

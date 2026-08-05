@@ -38,6 +38,7 @@ final readonly class ApplicationBootstrapper
         return $this->applicationContainer->getPaginationRenderer();
     }
 
+    #[\NoDiscard]
     public function createApplicationRunner(MaintenanceMode $maintenanceMode): ApplicationRunner
     {
         return ApplicationRunner::create(

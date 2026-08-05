@@ -30,14 +30,14 @@ final readonly class PlayerScanTrophyTitleRefresher
         $npCommunicationId = (string) $trophyTitle->npCommunicationId();
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            $iconUrl = trim((string) $trophyTitle->iconUrl());
+            $iconUrl = ((string) $trophyTitle->iconUrl()) |> trim(...);
 
             if ($iconUrl !== '') {
                 return $trophyTitle;
             }
 
             if ($attempt === $maxAttempts) {
-                $titleName = trim((string) $trophyTitle->name());
+                $titleName = ((string) $trophyTitle->name()) |> trim(...);
                 $titleNameForLog = $titleName === '' ? $npCommunicationId : $titleName;
 
                 $this->logger->log(sprintf(
@@ -74,7 +74,7 @@ final readonly class PlayerScanTrophyTitleRefresher
             }
 
             if ($attempt === $maxAttempts) {
-                $titleName = trim((string) $trophyTitle->name());
+                $titleName = ((string) $trophyTitle->name()) |> trim(...);
                 $titleNameForLog = $titleName === '' ? $npCommunicationId : $titleName;
 
                 $this->logger->log(sprintf(

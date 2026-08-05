@@ -49,7 +49,7 @@ final class GameRescanServiceSetVersionTest extends TestCase
         )->fetchColumn();
 
         $this->assertSame('01.10', $updatedVersion);
-        $this->assertSame([], $differenceTracker->getDifferences());
+        $this->assertSame([], $differenceTracker->differences);
     }
 
     public function testRescanPreservesInjectedImageDownloader(): void

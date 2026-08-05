@@ -14,6 +14,7 @@ final readonly class TrophyStatusInputParser
     /**
      * @return int[]
      */
+    #[\NoDiscard]
     public function parseTrophyIds(string $input): array
     {
         $values = preg_split('/[\s,]+/', trim($input));

@@ -56,7 +56,7 @@ final readonly class IpAddressResolver
             return '';
         }
 
-        $ipAddress = trim((string) ($remoteAddr ?? ''));
+        $ipAddress = ((string) ($remoteAddr ?? '')) |> trim(...);
         if ($ipAddress === '') {
             return '';
         }

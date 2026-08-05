@@ -17,11 +17,13 @@ enum WorkerSortDirection: string
         return self::tryFrom($value |> trim(...) |> strtolower(...)) ?? self::Asc;
     }
 
+    #[\NoDiscard]
     public function toSqlKeyword(): string
     {
-        return strtoupper($this->value);
+        return $this->value |> strtoupper(...);
     }
 
+    #[\NoDiscard]
     public function indicator(): string
     {
         return $this === self::Asc ? ' ▲' : ' ▼';

@@ -79,7 +79,8 @@ final readonly class PageMetaData
             return null;
         }
 
-        $trimmed = trim($value);
+        $trimmed = $value |> trim(...);
+
         return $trimmed === '' ? null : $trimmed;
     }
 }

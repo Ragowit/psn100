@@ -121,7 +121,7 @@ class TrophyMergeProcessor
             return null;
         }
 
-        $value = trim((string) $value);
+        $value = ((string) $value) |> trim(...);
 
         if ($value === '' || !ctype_digit($value)) {
             return null;

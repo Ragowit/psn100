@@ -20,7 +20,7 @@ final readonly class GameHeaderStack
     {
         $region = $row['region'] ?? null;
         if ($region !== null) {
-            $region = trim((string) $region);
+            $region = ((string) $region) |> trim(...);
             if ($region === '') {
                 $region = null;
             }

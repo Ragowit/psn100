@@ -61,7 +61,7 @@ final readonly class PlayerReportRequest
             return '';
         }
 
-        return trim((string) $explanation);
+        return ((string) $explanation) |> trim(...);
     }
 
     private static function sanitizeCsrfToken(mixed $csrfToken): string
@@ -70,6 +70,6 @@ final readonly class PlayerReportRequest
             return '';
         }
 
-        return trim((string) $csrfToken);
+        return ((string) $csrfToken) |> trim(...);
     }
 }

@@ -82,6 +82,7 @@ final readonly class PlayerScanTitleMetadataHelper
         return $dateTime?->format('Y-m-d H:i:s');
     }
 
+    #[\NoDiscard]
     public function parseDateTime(?string $value): ?DateTimeImmutable
     {
         if ($value === null || $value === '') {
@@ -125,6 +126,7 @@ final readonly class PlayerScanTitleMetadataHelper
         return trim($newVersion);
     }
 
+    #[\NoDiscard]
     public function normalizeSetVersion(mixed $version): ?string
     {
         if (!is_string($version)) {

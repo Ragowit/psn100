@@ -6,11 +6,6 @@ require_once __DIR__ . '/LogEntry.php';
 
 final readonly class LogPageResult
 {
-    /**
-     * @var list<LogEntry>
-     */
-    private array $entries;
-
     private int $currentPage;
 
     private int $totalPages;
@@ -19,13 +14,12 @@ final readonly class LogPageResult
      * @param list<LogEntry> $entries
      */
     public function __construct(
-        array $entries,
+        final private array $entries,
         int $currentPage,
         int $totalPages,
-        private ?string $successMessage,
-        private ?string $errorMessage,
+        final private ?string $successMessage,
+        final private ?string $errorMessage,
     ) {
-        $this->entries = $entries;
         $this->currentPage = max(1, $currentPage);
         $this->totalPages = max(1, $totalPages);
     }

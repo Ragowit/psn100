@@ -52,12 +52,18 @@ final readonly class SystemCommandExecutor implements CommandExecutorInterface
     {
         $parts = [];
 
-        if (is_string($stdout) && trim($stdout) !== '') {
-            $parts[] = trim($stdout);
+        if (is_string($stdout)) {
+            $trimmedStdout = $stdout |> trim(...);
+            if ($trimmedStdout !== '') {
+                $parts[] = $trimmedStdout;
+            }
         }
 
-        if (is_string($stderr) && trim($stderr) !== '') {
-            $parts[] = trim($stderr);
+        if (is_string($stderr)) {
+            $trimmedStderr = $stderr |> trim(...);
+            if ($trimmedStderr !== '') {
+                $parts[] = $trimmedStderr;
+            }
         }
 
         return implode(PHP_EOL, $parts);

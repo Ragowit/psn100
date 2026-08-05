@@ -21,6 +21,7 @@ final readonly class PossibleCheaterService
         $this->conditionParser = $conditionParser ?? new PossibleCheaterRuleConditionParser();
     }
 
+    #[\NoDiscard]
     public function createReport(): PossibleCheaterReport
     {
         $this->beginReadOnlyTransaction();
