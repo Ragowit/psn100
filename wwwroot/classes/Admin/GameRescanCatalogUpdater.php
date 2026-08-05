@@ -327,7 +327,12 @@ final readonly class GameRescanCatalogUpdater
     {
         $platforms = [];
         foreach ($trophyTitle->platform() as $platform) {
-            $platforms[] = $platform->value;
+            $platformValue = $platform->value;
+            if ($platformValue === 'PSPC') {
+                $platformValue = Platform::Pc->label();
+            }
+
+            $platforms[] = $platformValue;
         }
 
         $platforms = $platforms

@@ -195,6 +195,40 @@ final class GameRescanCatalogUpdaterTest extends TestCase
 
         $this->assertSame('PSVR2', $platform);
     }
+
+    public function testUpdateFromPsnMapsPspcPlatformToPc(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, detail, icon_url, platform, set_version)
+            VALUES ('NPWR00001_00', 'Details', 'title.png', 'PS5', '01.00')"
+        );
+        $this->groupDataFetcher->setGroupData([]);
+
+        $differenceTracker = new GameRescanDifferenceTracker();
+        $progressReporter = new GameRescanProgressReporter();
+        $trophyTitle = new GameRescanCatalogUpdaterTestTrophyTitle(
+            detail: 'Details',
+            setVersion: '01.00',
+            platforms: [
+                new GameRescanCatalogUpdaterTestPlatform('PS5'),
+                new GameRescanCatalogUpdaterTestPlatform('PSPC'),
+            ],
+        );
+
+        $this->catalogUpdater->updateFromPsn(
+            new \Tustin\PlayStation\Client(),
+            $trophyTitle,
+            'NPWR00001_00',
+            $progressReporter,
+            $differenceTracker,
+        );
+
+        $platform = $this->database->query(
+            "SELECT platform FROM trophy_title WHERE np_communication_id = 'NPWR00001_00'"
+        )->fetchColumn();
+
+        $this->assertSame('PS5,PC', $platform);
+    }
 }
 
 final class StubGameRescanGroupDataFetcher implements GameRescanGroupDataFetcher
