@@ -61,12 +61,13 @@ final readonly class PlayerScanTitleCatalogSynchronizer
         try {
             $trophyData = $this->fetchTrophyData($npid, $client);
         } catch (Throwable $exception) {
-            $this->logger->log(sprintf(
-                'Unable to fetch trophy data for %s (%s): %s',
-                $trophyTitle->name(),
-                $npid,
-                $exception->getMessage()
-            ));
+            // TODO: Log this error in a way that doesn't spam the logs, but still allows us to see it if it happens frequently.
+            // $this->logger->log(sprintf(
+            //     'Unable to fetch trophy data for %s (%s): %s',
+            //     $trophyTitle->name(),
+            //     $npid,
+            //     $exception->getMessage()
+            // ));
 
             return PlayerScanTitleCatalogSyncResult::restartScan();
         }
