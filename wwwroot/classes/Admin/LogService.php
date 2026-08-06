@@ -169,14 +169,14 @@ final class LogService
         $trimmedValue = ((string) ($value ?? '')) |> trim(...);
 
         if ($trimmedValue === '') {
-            return (new DateTimeImmutable('@0'))->setTimezone(new DateTimeZone('UTC'));
+            return new DateTimeImmutable('@0')->setTimezone(new DateTimeZone('UTC'));
         }
 
         try {
-            return (new DateTimeImmutable($trimmedValue, new DateTimeZone('UTC')))
+            return new DateTimeImmutable($trimmedValue, new DateTimeZone('UTC'))
                 ->setTimezone(new DateTimeZone('UTC'));
         } catch (Throwable $exception) {
-            return (new DateTimeImmutable('@0'))->setTimezone(new DateTimeZone('UTC'));
+            return new DateTimeImmutable('@0')->setTimezone(new DateTimeZone('UTC'));
         }
     }
 

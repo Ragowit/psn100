@@ -13,15 +13,15 @@ final readonly class GameTrophyGroup
     public static function fromArray(array $data, bool $usesPlayStation5Assets): self
     {
         return new self(
-            (string) ($data['group_id'] ?? ''),
-            (string) ($data['name'] ?? ''),
-            (string) ($data['detail'] ?? ''),
-            (string) ($data['icon_url'] ?? ''),
-            (int) ($data['bronze'] ?? 0),
-            (int) ($data['silver'] ?? 0),
-            (int) ($data['gold'] ?? 0),
-            (int) ($data['platinum'] ?? 0),
-            $usesPlayStation5Assets,
+            id: (string) ($data['group_id'] ?? ''),
+            name: (string) ($data['name'] ?? ''),
+            detail: (string) ($data['detail'] ?? ''),
+            iconUrl: (string) ($data['icon_url'] ?? ''),
+            bronzeCount: (int) ($data['bronze'] ?? 0),
+            silverCount: (int) ($data['silver'] ?? 0),
+            goldCount: (int) ($data['gold'] ?? 0),
+            platinumCount: (int) ($data['platinum'] ?? 0),
+            usesPlayStation5Assets: $usesPlayStation5Assets,
         );
     }
 

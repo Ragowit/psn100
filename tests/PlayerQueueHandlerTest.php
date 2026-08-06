@@ -212,7 +212,7 @@ final class PlayerQueueHandlerTest extends TestCase
 
     private function createPollToken(string $playerName): string
     {
-        return (new PlayerQueuePollTokenManager())->issue($playerName);
+        return new PlayerQueuePollTokenManager()->issue($playerName);
     }
 
     private function createQueuePositionRequest(string $playerName, string $ipAddress): PlayerQueueRequest

@@ -52,7 +52,7 @@ final class PlayerQueueServiceTest extends TestCase
     public function testThrowsMeaningfulExceptionWhenDatabaseNotConfigured(): void
     {
         try {
-            (new PlayerQueueService())->getIpSubmissionCount('127.0.0.1');
+            new PlayerQueueService()->getIpSubmissionCount('127.0.0.1');
             $this->fail('Expected an exception to be thrown.');
         } catch (LogicException $exception) {
             $this->assertStringContainsString('database connection', $exception->getMessage());

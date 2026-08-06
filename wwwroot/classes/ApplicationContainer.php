@@ -54,55 +54,35 @@ class ApplicationContainer
 
     public function getGameRepository(): GameRepository
     {
-        if ($this->gameRepository === null) {
-            $this->gameRepository = new GameRepository($this->database);
-        }
-
-        return $this->gameRepository;
+        return $this->gameRepository ??= new GameRepository($this->database);
     }
 
     public function getTrophyRepository(): TrophyRepository
     {
-        if ($this->trophyRepository === null) {
-            $this->trophyRepository = new TrophyRepository($this->database);
-        }
-
-        return $this->trophyRepository;
+        return $this->trophyRepository ??= new TrophyRepository($this->database);
     }
 
     public function getPlayerRepository(): PlayerRepository
     {
-        if ($this->playerRepository === null) {
-            $this->playerRepository = new PlayerRepository($this->database);
-        }
-
-        return $this->playerRepository;
+        return $this->playerRepository ??= new PlayerRepository($this->database);
     }
 
     public function getRouter(): Router
     {
-        if ($this->router === null) {
-            $this->router = new Router(
-                $this->getGameRepository(),
-                $this->getTrophyRepository(),
-                $this->getPlayerRepository()
-            );
-        }
-
-        return $this->router;
+        return $this->router ??= new Router(
+            $this->getGameRepository(),
+            $this->getTrophyRepository(),
+            $this->getPlayerRepository()
+        );
     }
 
     public function getTemplateRenderer(): TemplateRenderer
     {
-        if ($this->templateRenderer === null) {
-            $this->templateRenderer = new TemplateRenderer(
-                $this->getDatabase(),
-                $this->getUtility(),
-                $this->getPaginationRenderer()
-            );
-        }
-
-        return $this->templateRenderer;
+        return $this->templateRenderer ??= new TemplateRenderer(
+            $this->getDatabase(),
+            $this->getUtility(),
+            $this->getPaginationRenderer()
+        );
     }
 
     #[\NoDiscard]

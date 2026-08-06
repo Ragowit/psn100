@@ -31,14 +31,10 @@ final class PossibleCheaterRulesCatalog
      */
     public function getGeneralRuleGroups(): array
     {
-        if ($this->generalRuleGroups === null) {
-            $this->generalRuleGroups = array_map(
-                PossibleCheaterRuleGroup::fromArray(...),
-                $this->loadArrayFile($this->generalRulesFile)
-            );
-        }
-
-        return $this->generalRuleGroups;
+        return $this->generalRuleGroups ??= array_map(
+            PossibleCheaterRuleGroup::fromArray(...),
+            $this->loadArrayFile($this->generalRulesFile)
+        );
     }
 
     /**
@@ -46,14 +42,10 @@ final class PossibleCheaterRulesCatalog
      */
     public function getSectionDefinitions(): array
     {
-        if ($this->sectionDefinitions === null) {
-            $this->sectionDefinitions = array_map(
-                PossibleCheaterSectionDefinition::fromArray(...),
-                $this->loadArrayFile($this->sectionsFile)
-            );
-        }
-
-        return $this->sectionDefinitions;
+        return $this->sectionDefinitions ??= array_map(
+            PossibleCheaterSectionDefinition::fromArray(...),
+            $this->loadArrayFile($this->sectionsFile)
+        );
     }
 
     /**

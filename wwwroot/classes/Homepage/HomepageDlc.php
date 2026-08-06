@@ -27,15 +27,15 @@ final readonly class HomepageDlc extends HomepageTitle
     public static function fromArray(array $row): self
     {
         return new self(
-            (int) ($row['id'] ?? 0),
-            (string) ($row['game_name'] ?? ''),
-            (string) ($row['group_id'] ?? ''),
-            (string) ($row['group_name'] ?? ''),
-            (string) ($row['icon_url'] ?? ''),
-            (string) ($row['platform'] ?? ''),
-            (int) ($row['gold'] ?? 0),
-            (int) ($row['silver'] ?? 0),
-            (int) ($row['bronze'] ?? 0)
+            id: (int) ($row['id'] ?? 0),
+            gameName: (string) ($row['game_name'] ?? ''),
+            groupId: (string) ($row['group_id'] ?? ''),
+            groupName: (string) ($row['group_name'] ?? ''),
+            iconUrl: (string) ($row['icon_url'] ?? ''),
+            platform: (string) ($row['platform'] ?? ''),
+            gold: (int) ($row['gold'] ?? 0),
+            silver: (int) ($row['silver'] ?? 0),
+            bronze: (int) ($row['bronze'] ?? 0),
         );
     }
 

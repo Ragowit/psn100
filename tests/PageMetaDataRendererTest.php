@@ -23,7 +23,7 @@ final class PageMetaDataRendererTest extends TestCase
 
     public function testRenderProducesExpectedTagsWithEscapedValues(): void
     {
-        $metaData = (new PageMetaData)
+        $metaData = new PageMetaData()
             ->withTitle('Title "special" & more')
             ->withDescription("Description with 'quote' & <tag>")
             ->withImage('https://example.com/image.png?foo=1&bar=2')
@@ -48,7 +48,7 @@ final class PageMetaDataRendererTest extends TestCase
 
     public function testRenderMakesRelativeImageAndUrlAbsoluteForOpenGraph(): void
     {
-        $metaData = (new PageMetaData)
+        $metaData = new PageMetaData()
             ->withTitle('Relative Meta')
             ->withImage('/img/title/my icon.png')
             ->withUrl('/game/1-example');

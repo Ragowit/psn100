@@ -39,20 +39,20 @@ final readonly class GameListItem
     public static function fromArray(array $row): self
     {
         return new self(
-            (int) ($row['id'] ?? 0),
-            (string) ($row['name'] ?? ''),
-            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
-            (string) ($row['icon_url'] ?? ''),
-            (string) ($row['platform'] ?? ''),
-            (int) ($row['owners'] ?? 0),
-            (int) ($row['rarity_points'] ?? 0),
-            (int) ($row['in_game_rarity_points'] ?? 0),
-            (string) ($row['difficulty'] ?? '0'),
-            (int) ($row['platinum'] ?? 0),
-            (int) ($row['gold'] ?? 0),
-            (int) ($row['silver'] ?? 0),
-            (int) ($row['bronze'] ?? 0),
-            (int) ($row['progress'] ?? 0)
+            id: (int) ($row['id'] ?? 0),
+            name: (string) ($row['name'] ?? ''),
+            status: GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
+            iconUrl: (string) ($row['icon_url'] ?? ''),
+            platformValue: (string) ($row['platform'] ?? ''),
+            owners: (int) ($row['owners'] ?? 0),
+            rarityPoints: (int) ($row['rarity_points'] ?? 0),
+            inGameRarityPoints: (int) ($row['in_game_rarity_points'] ?? 0),
+            difficulty: (string) ($row['difficulty'] ?? '0'),
+            platinum: (int) ($row['platinum'] ?? 0),
+            gold: (int) ($row['gold'] ?? 0),
+            silver: (int) ($row['silver'] ?? 0),
+            bronze: (int) ($row['bronze'] ?? 0),
+            progress: (int) ($row['progress'] ?? 0),
         );
     }
 

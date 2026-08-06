@@ -146,13 +146,10 @@ final class GameRescanCatalogUpdaterTest extends TestCase
         );
 
         $differences = $differenceTracker->differences;
-        $detailDifference = null;
-        foreach ($differences as $difference) {
-            if ($difference['field'] === 'Detail') {
-                $detailDifference = $difference;
-                break;
-            }
-        }
+        $detailDifference = array_find(
+            $differences,
+            static fn (array $difference): bool => $difference['field'] === 'Detail'
+        );
 
         $this->assertTrue($detailDifference !== null);
         $this->assertSame('Trophy Title', $detailDifference['context']);

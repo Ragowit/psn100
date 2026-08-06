@@ -48,7 +48,7 @@ final readonly class TrophyPage
         }
 
         $trophyName = $trophy->getName();
-        $metaData = (new PageMetaData)
+        $metaData = new PageMetaData()
             ->withTitle($trophyName . ' Trophy')
             ->withDescription(Html::escape($trophy->getDetail()))
             ->withImage('/img/trophy/' . $trophy->getIconFileName())
@@ -86,16 +86,16 @@ final readonly class TrophyPage
         $latestAchievers = $trophyService->getLatestAchievers($npCommunicationId, $orderId);
 
         return new self(
-            $trophy,
-            $playerTrophy,
-            $firstAchievers,
-            $latestAchievers,
-            $playerAccountId,
-            $playerOnlineId,
-            $metaData,
-            $pageTitle,
-            $metaRarity,
-            $inGameRarity
+            trophy: $trophy,
+            playerTrophy: $playerTrophy,
+            firstAchievers: $firstAchievers,
+            latestAchievers: $latestAchievers,
+            playerAccountId: $playerAccountId,
+            playerOnlineId: $playerOnlineId,
+            metaData: $metaData,
+            pageTitle: $pageTitle,
+            metaRarity: $metaRarity,
+            inGameRarity: $inGameRarity,
         );
     }
 

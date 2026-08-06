@@ -204,7 +204,7 @@ final readonly class PlayerGamesPageContext
      */
     private function buildMetaData(array $playerData, PlayerSummary $playerSummary): PageMetaData
     {
-        $metaData = (new PageMetaData)
+        $metaData = new PageMetaData()
             ->withTitle($this->buildTitle($playerData))
             ->withImage('/img/avatar/' . $this->extractString($playerData['avatar_url'] ?? ''))
             ->withUrl(PlayerUrlBuilder::playerPath($this->extractString($playerData['online_id'] ?? '')));
