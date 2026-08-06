@@ -42,14 +42,14 @@ final readonly class AboutPageContext
         $serializedScanLogPlayers = AboutPagePlayerArraySerializer::serializeCollection($scanLogPlayers);
 
         return new self(
-            $scanSummary,
-            $scanLogPlayers,
-            $initialScanLogPlayers,
-            $serializedScanLogPlayers,
-            $scanLogLimit,
-            $initialDisplayCount,
-            $maxInitialDisplayCount,
-            $title
+            scanSummary: $scanSummary,
+            scanLogPlayers: $scanLogPlayers,
+            initialScanLogPlayers: $initialScanLogPlayers,
+            serializedScanLogPlayers: $serializedScanLogPlayers,
+            scanLogLimit: $scanLogLimit,
+            initialDisplayCount: $initialDisplayCount,
+            maxInitialDisplayCount: $maxInitialDisplayCount,
+            title: $title,
         );
     }
 

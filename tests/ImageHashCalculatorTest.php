@@ -131,7 +131,7 @@ final class ImageHashCalculatorTest extends TestCase
         imagepng($image);
         $contents = (string) ob_get_clean();
 
-        $hash = (new ImageHashCalculator())->calculatePHash($contents);
+        $hash = new ImageHashCalculator()->calculatePHash($contents);
 
         $this->assertTrue(is_string($hash));
         $this->assertSame(38, strlen((string) $hash));

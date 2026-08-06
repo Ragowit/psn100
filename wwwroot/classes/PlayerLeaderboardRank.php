@@ -31,13 +31,13 @@ final readonly class PlayerLeaderboardRank
         bool $isActive
     ): self {
         return new self(
-            'World Rank',
-            $basePath,
-            [],
-            $onlineId,
-            max(0, $rank),
-            max(0, $previousRank),
-            $isActive
+            label: 'World Rank',
+            basePath: $basePath,
+            additionalQueryParameters: [],
+            onlineId: $onlineId,
+            rank: max(0, $rank),
+            previousRank: max(0, $previousRank),
+            isActive: $isActive,
         );
     }
 
@@ -51,13 +51,13 @@ final readonly class PlayerLeaderboardRank
         bool $isActive
     ): self {
         return new self(
-            'Country Rank',
-            $basePath,
-            ['country' => $countryCode],
-            $onlineId,
-            max(0, $rank),
-            max(0, $previousRank),
-            $isActive
+            label: 'Country Rank',
+            basePath: $basePath,
+            additionalQueryParameters: ['country' => $countryCode],
+            onlineId: $onlineId,
+            rank: max(0, $rank),
+            previousRank: max(0, $previousRank),
+            isActive: $isActive,
         );
     }
 

@@ -192,7 +192,7 @@ final class GamePage
     #[\NoDiscard]
     public function createMetaData(): PageMetaData
     {
-        return (new PageMetaData)
+        return new PageMetaData()
             ->withTitle($this->game->getName() . ' Trophies')
             ->withDescription(
                 $this->game->getBronze() . ' Bronze ~ '

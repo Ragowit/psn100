@@ -37,14 +37,10 @@ final class PlayerTimelinePageContextTest extends TestCase
         $this->assertSame($timelineData, $context->getTimelineData());
 
         $links = $context->getPlayerNavigation()->getLinks();
-        $timelineLink = null;
-
-        foreach ($links as $link) {
-            if ($link->getLabel() === 'Timeline') {
-                $timelineLink = $link;
-                break;
-            }
-        }
+        $timelineLink = array_find(
+            $links,
+            static fn ($link): bool => $link->getLabel() === 'Timeline'
+        );
 
         $this->assertTrue($timelineLink instanceof PlayerNavigationLink);
         $this->assertTrue($timelineLink->isActive());

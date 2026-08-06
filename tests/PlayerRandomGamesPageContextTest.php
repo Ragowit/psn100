@@ -57,13 +57,10 @@ final class PlayerRandomGamesPageContextTest extends TestCase
         $this->assertTrue($links[5]->isActive());
 
         $platformOptions = $context->getPlatformFilterOptions()->getOptions();
-        $ps5Option = null;
-        foreach ($platformOptions as $option) {
-            if ($option->getInputName() === 'ps5') {
-                $ps5Option = $option;
-                break;
-            }
-        }
+        $ps5Option = array_find(
+            $platformOptions,
+            static fn ($option): bool => $option->getInputName() === 'ps5'
+        );
 
         $this->assertTrue($ps5Option instanceof PlayerPlatformFilterOption);
         $this->assertTrue($ps5Option->isSelected());

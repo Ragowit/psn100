@@ -42,11 +42,7 @@ class PlayerAdvisorPage
 
     public function getPlayerSummary(): PlayerSummary
     {
-        if ($this->playerSummary === null) {
-            $this->playerSummary = $this->playerSummaryService->getSummary($this->accountId);
-        }
-
-        return $this->playerSummary;
+        return $this->playerSummary ??= $this->playerSummaryService->getSummary($this->accountId);
     }
 
     public function getFilter(): PlayerAdvisorFilter
@@ -80,14 +76,10 @@ class PlayerAdvisorPage
             return 0;
         }
 
-        if ($this->totalTrophies === null) {
-            $this->totalTrophies = $this->playerAdvisorService->countAdvisableTrophies(
-                $this->accountId,
-                $this->filter
-            );
-        }
-
-        return $this->totalTrophies;
+        return $this->totalTrophies ??= $this->playerAdvisorService->countAdvisableTrophies(
+            $this->accountId,
+            $this->filter
+        );
     }
 
     /**
@@ -99,16 +91,12 @@ class PlayerAdvisorPage
             return [];
         }
 
-        if ($this->advisableTrophies === null) {
-            $this->advisableTrophies = $this->playerAdvisorService->getAdvisableTrophies(
-                $this->accountId,
-                $this->filter,
-                $this->getOffset(),
-                $this->getPageSize()
-            );
-        }
-
-        return $this->advisableTrophies;
+        return $this->advisableTrophies ??= $this->playerAdvisorService->getAdvisableTrophies(
+            $this->accountId,
+            $this->filter,
+            $this->getOffset(),
+            $this->getPageSize()
+        );
     }
 
     public function getTotalPages(): int

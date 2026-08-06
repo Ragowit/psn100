@@ -47,14 +47,14 @@ final readonly class GameListFilter
         }
 
         return new self(
-            $player,
-            $sort,
-            $sortSpecified,
-            $search,
-            $page,
-            $uncompletedOnly,
-            $platformFilters,
-            $originalParameters
+            player: $player,
+            sort: $sort,
+            sortSpecified: $sortSpecified,
+            search: $search,
+            page: $page,
+            uncompletedOnly: $uncompletedOnly,
+            platformFilters: $platformFilters,
+            originalParameters: $originalParameters,
         );
     }
 

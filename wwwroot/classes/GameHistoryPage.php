@@ -100,18 +100,15 @@ final class GameHistoryPage
      */
     public function getHistoryEntries(): array
     {
-        if ($this->historyEntries === null) {
-            $history = $this->historyService->getHistoryForGame($this->game->getId());
-            $this->historyEntries = $this->historyChangeFilter->filter($history);
-        }
-
-        return $this->historyEntries;
+        return $this->historyEntries ??= $this->historyChangeFilter->filter(
+            $this->historyService->getHistoryForGame($this->game->getId())
+        );
     }
 
     #[\NoDiscard]
     public function createMetaData(): PageMetaData
     {
-        return (new PageMetaData)
+        return new PageMetaData()
             ->withTitle($this->game->getName() . ' Trophy Data History')
             ->withDescription('Version history and trophy data changes for ' . $this->game->getName())
             ->withImage('/img/title/' . $this->game->getIconUrl())

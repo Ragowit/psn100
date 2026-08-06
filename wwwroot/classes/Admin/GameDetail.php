@@ -36,17 +36,17 @@ final readonly class GameDetail
         $obsoleteIds = isset($row['obsolete_ids']) ? (string) $row['obsolete_ids'] : null;
 
         return new self(
-            $id,
-            $npCommunicationId,
-            $name,
-            $iconUrl,
-            $platform,
-            $message,
-            $setVersion,
-            $region,
-            $psnprofilesId,
-            $status,
-            $obsoleteIds
+            id: $id,
+            npCommunicationId: $npCommunicationId,
+            name: $name,
+            iconUrl: $iconUrl,
+            platform: $platform,
+            message: $message,
+            setVersion: $setVersion,
+            region: $region,
+            psnprofilesId: $psnprofilesId,
+            status: $status,
+            obsoleteIds: $obsoleteIds,
         );
     }
 

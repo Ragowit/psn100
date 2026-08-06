@@ -43,29 +43,29 @@ final readonly class GameDetails
     public static function fromArray(array $row): self
     {
         return new self(
-            (int) ($row['id'] ?? 0),
-            (string) ($row['name'] ?? ''),
-            (string) ($row['np_communication_id'] ?? ''),
-            isset($row['parent_np_communication_id'])
+            id: (int) ($row['id'] ?? 0),
+            name: (string) ($row['name'] ?? ''),
+            npCommunicationId: (string) ($row['np_communication_id'] ?? ''),
+            parentNpCommunicationId: isset($row['parent_np_communication_id'])
                 ? self::toNullableString($row['parent_np_communication_id'])
                 : null,
-            self::toNullableInt($row['psnprofiles_id'] ?? null),
-            (string) ($row['platform'] ?? ''),
-            (string) ($row['icon_url'] ?? ''),
-            (string) ($row['set_version'] ?? ''),
-            self::toNullableString($row['region'] ?? null),
-            self::toNullableString($row['message'] ?? null),
-            (int) ($row['platinum'] ?? 0),
-            (int) ($row['gold'] ?? 0),
-            (int) ($row['silver'] ?? 0),
-            (int) ($row['bronze'] ?? 0),
-            (int) ($row['owners_completed'] ?? 0),
-            (int) ($row['owners'] ?? 0),
-            (string) ($row['difficulty'] ?? '0'),
-            GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
-            (int) ($row['rarity_points'] ?? 0),
-            (int) ($row['in_game_rarity_points'] ?? 0),
-            self::parseObsoleteIds($row['obsolete_ids'] ?? null),
+            psnprofilesId: self::toNullableInt($row['psnprofiles_id'] ?? null),
+            platform: (string) ($row['platform'] ?? ''),
+            iconUrl: (string) ($row['icon_url'] ?? ''),
+            setVersion: (string) ($row['set_version'] ?? ''),
+            region: self::toNullableString($row['region'] ?? null),
+            message: self::toNullableString($row['message'] ?? null),
+            platinum: (int) ($row['platinum'] ?? 0),
+            gold: (int) ($row['gold'] ?? 0),
+            silver: (int) ($row['silver'] ?? 0),
+            bronze: (int) ($row['bronze'] ?? 0),
+            ownersCompleted: (int) ($row['owners_completed'] ?? 0),
+            owners: (int) ($row['owners'] ?? 0),
+            difficulty: (string) ($row['difficulty'] ?? '0'),
+            status: GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
+            rarityPoints: (int) ($row['rarity_points'] ?? 0),
+            inGameRarityPoints: (int) ($row['in_game_rarity_points'] ?? 0),
+            obsoleteGameIds: self::parseObsoleteIds($row['obsolete_ids'] ?? null),
         );
     }
 

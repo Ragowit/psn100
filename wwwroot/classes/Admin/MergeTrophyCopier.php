@@ -361,13 +361,9 @@ final class MergeTrophyCopier
 
     private function findTrophyId(string $npCommunicationId, string $groupId, int $orderId): int
     {
-        if ($this->findTrophyIdStatement === null) {
-            $this->findTrophyIdStatement = $this->database->prepare(
-                'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id'
-            );
-        }
-
-        $statement = $this->findTrophyIdStatement;
+        $statement = $this->findTrophyIdStatement ??= $this->database->prepare(
+            'SELECT id FROM trophy WHERE np_communication_id = :np_communication_id AND group_id = :group_id AND order_id = :order_id'
+        );
         $statement->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $statement->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $statement->bindValue(':order_id', $orderId, PDO::PARAM_INT);

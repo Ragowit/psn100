@@ -43,24 +43,24 @@ final readonly class TrophyDetails
     public static function fromArray(array $data): self
     {
         return new self(
-            (int) ($data['trophy_id'] ?? 0),
-            (string) ($data['np_communication_id'] ?? ''),
-            (int) ($data['group_id'] ?? 0),
-            (int) ($data['order_id'] ?? 0),
-            TrophyType::fromMixed($data['trophy_type'] ?? null),
-            (string) ($data['trophy_name'] ?? ''),
-            (string) ($data['trophy_detail'] ?? ''),
-            (string) ($data['trophy_icon'] ?? ''),
-            (float) ($data['rarity_percent'] ?? 0.0),
-            (float) ($data['in_game_rarity_percent'] ?? 0.0),
-            TrophyMetaStatus::fromMixed($data['status'] ?? TrophyMetaStatus::Obtainable->value),
-            isset($data['progress_target_value']) ? (string) $data['progress_target_value'] : null,
-            isset($data['reward_name']) ? (string) $data['reward_name'] : null,
-            isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null,
-            (int) ($data['game_id'] ?? 0),
-            (string) ($data['game_name'] ?? ''),
-            (string) ($data['game_icon'] ?? ''),
-            (string) ($data['platform'] ?? '')
+            id: (int) ($data['trophy_id'] ?? 0),
+            npCommunicationId: (string) ($data['np_communication_id'] ?? ''),
+            groupId: (int) ($data['group_id'] ?? 0),
+            orderId: (int) ($data['order_id'] ?? 0),
+            type: TrophyType::fromMixed($data['trophy_type'] ?? null),
+            name: (string) ($data['trophy_name'] ?? ''),
+            detail: (string) ($data['trophy_detail'] ?? ''),
+            iconFileName: (string) ($data['trophy_icon'] ?? ''),
+            rarityPercent: (float) ($data['rarity_percent'] ?? 0.0),
+            inGameRarityPercent: (float) ($data['in_game_rarity_percent'] ?? 0.0),
+            status: TrophyMetaStatus::fromMixed($data['status'] ?? TrophyMetaStatus::Obtainable->value),
+            progressTargetValue: isset($data['progress_target_value']) ? (string) $data['progress_target_value'] : null,
+            rewardName: isset($data['reward_name']) ? (string) $data['reward_name'] : null,
+            rewardImageUrl: isset($data['reward_image_url']) ? (string) $data['reward_image_url'] : null,
+            gameId: (int) ($data['game_id'] ?? 0),
+            gameName: (string) ($data['game_name'] ?? ''),
+            gameIconFileName: (string) ($data['game_icon'] ?? ''),
+            platform: (string) ($data['platform'] ?? ''),
         );
     }
 
