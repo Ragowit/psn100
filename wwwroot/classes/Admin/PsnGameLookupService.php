@@ -47,7 +47,7 @@ final readonly class PsnGameLookupService
             $database,
             static fn (): array => $workerService->fetchWorkers(),
             null,
-            static fn (int $workerId, string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken),
+            static fn (int $workerId, #[\SensitiveParameter] string $refreshToken): bool => $workerService->updateWorkerRefreshToken($workerId, $refreshToken),
             PlayStationWorkerAuthenticator::fromWorkerService($workerService),
         );
     }

@@ -108,6 +108,7 @@ final readonly class PsnTrophyTitleComparisonService
         ];
     }
 
+    #[\NoDiscard]
     public static function normalizeSource(string $source): ?PsnTrophyTitleComparisonSource
     {
         return PsnTrophyTitleComparisonSource::tryFrom($source |> trim(...) |> strtolower(...));

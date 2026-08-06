@@ -316,8 +316,7 @@ final readonly class GameRescanCatalogUpdater
             return true;
         }
 
-        return trim($newVersion)
-            |> (fn (string $version): bool => version_compare($version, $normalizedCurrentVersion, '>='));
+        return version_compare(trim($newVersion), $normalizedCurrentVersion, '>=');
     }
 
     /**

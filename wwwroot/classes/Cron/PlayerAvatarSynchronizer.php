@@ -61,8 +61,9 @@ final readonly class PlayerAvatarSynchronizer
                     $newPHash = $matchedPHash;
                 }
 
-                $path = Uri\WhatWg\Url::parse($avatarUrl)?->getPath() ?? '';
-                $extension = pathinfo($path, PATHINFO_EXTENSION) |> strtolower(...);
+                $extension = (Uri\WhatWg\Url::parse($avatarUrl)?->getPath() ?? '')
+                    |> (fn (string $path): string => pathinfo($path, PATHINFO_EXTENSION))
+                    |> strtolower(...);
                 $avatarFilename = $newPHash . '.' . $extension;
                 $avatarPath = $this->avatarStorageDirectory . $avatarFilename;
 

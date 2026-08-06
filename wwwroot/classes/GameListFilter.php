@@ -71,12 +71,7 @@ final readonly class GameListFilter
     #[\NoDiscard]
     public function withPlayer(?string $player): self
     {
-        if ($player !== null) {
-            $player = trim($player);
-            $player = $player === '' ? null : $player;
-        }
-
-        return clone($this, ['player' => $player]);
+        return clone($this, ['player' => self::sanitizeNullableString($player)]);
     }
 
     #[\NoDiscard]
@@ -137,10 +132,7 @@ final readonly class GameListFilter
 
     public function hasPlatformFilters(): bool
     {
-        return array_any(
-            $this->platformFilters,
-            static fn (bool $selected): bool => $selected
-        );
+        return in_array(true, $this->platformFilters, true);
     }
 
     public function isPlatformSelected(string $platform): bool
@@ -154,10 +146,7 @@ final readonly class GameListFilter
     public function getSelectedPlatforms(): array
     {
         return $this->platformFilters
-            |> (fn (array $filters): array => array_filter(
-                $filters,
-                static fn (bool $selected): bool => $selected,
-            ))
+            |> array_filter(...)
             |> array_keys(...);
     }
 
