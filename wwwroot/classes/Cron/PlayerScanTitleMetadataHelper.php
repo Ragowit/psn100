@@ -104,26 +104,24 @@ final readonly class PlayerScanTitleMetadataHelper
             return false;
         }
 
-        return trim($newVersion)
-            |> (fn (string $version): bool => version_compare($version, $normalizedCurrentVersion, '<'));
+        return version_compare(trim($newVersion), $normalizedCurrentVersion, '<');
     }
 
+    #[\NoDiscard]
     public function resolveSetVersionForUpdate(string $newVersion, mixed $currentVersion): string
     {
+        $trimmedNewVersion = trim($newVersion);
         $normalizedCurrentVersion = $this->normalizeSetVersion($currentVersion);
 
         if ($normalizedCurrentVersion === null) {
-            return trim($newVersion);
+            return $trimmedNewVersion;
         }
 
-        if (
-            trim($newVersion)
-                |> (fn (string $version): bool => version_compare($version, $normalizedCurrentVersion, '<'))
-        ) {
+        if (version_compare($trimmedNewVersion, $normalizedCurrentVersion, '<')) {
             return $normalizedCurrentVersion;
         }
 
-        return trim($newVersion);
+        return $trimmedNewVersion;
     }
 
     #[\NoDiscard]

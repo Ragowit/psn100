@@ -10,6 +10,7 @@ final readonly class PossibleCheaterRuleConditionParser
 {
     private const string CONDITION_PATTERN = '/^te\.np_communication_id = \'([^\']+)\' AND te\.order_id = (\d+)(?: AND te\.earned_date (>=|<=|<) \'([^\']+)\')?$/';
 
+    #[\NoDiscard]
     public function parse(string $condition): PossibleCheaterRuleTuple
     {
         if (preg_match(self::CONDITION_PATTERN, $condition, $matches) !== 1) {
@@ -27,6 +28,7 @@ final readonly class PossibleCheaterRuleConditionParser
     /**
      * @param PossibleCheaterRuleGroup[] $groups
      */
+    #[\NoDiscard]
     public function buildRuleDerivedTableSql(array $groups): string
     {
         $selects = [];

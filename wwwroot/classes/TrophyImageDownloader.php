@@ -31,6 +31,7 @@ final readonly class TrophyImageDownloader
      * Player-scan flow: log download failures when no usable cache exists and
      * fall back to the shared placeholder filename.
      */
+    #[\NoDiscard]
     public function downloadMandatoryForScan(
         string $url,
         string $directory,
@@ -54,6 +55,7 @@ final readonly class TrophyImageDownloader
     /**
      * Player-scan flow for optional reward images.
      */
+    #[\NoDiscard]
     public function downloadOptionalForScan(
         ?string $url,
         string $directory,
@@ -82,6 +84,7 @@ final readonly class TrophyImageDownloader
      * Admin rescan flow: reuse an existing cached filename when the remote file
      * is unavailable, otherwise throw so the rescan can abort visibly.
      */
+    #[\NoDiscard]
     public function downloadMandatoryForRescan(
         string $url,
         string $directory,
@@ -108,6 +111,7 @@ final readonly class TrophyImageDownloader
     /**
      * Admin rescan flow for optional reward images.
      */
+    #[\NoDiscard]
     public function downloadOptionalForRescan(
         ?string $url,
         string $directory,
@@ -173,14 +177,11 @@ final readonly class TrophyImageDownloader
     #[\NoDiscard]
     public function buildFilename(string $url, string $contents): string
     {
-        $hash = $this->imageHashCalculator->calculate($contents);
-        if ($hash === null) {
-            $hash = md5($contents);
-        }
-
-        $path = Uri\WhatWg\Url::parse($url)?->getPath() ?? '';
-        $extension = pathinfo($path, PATHINFO_EXTENSION) |> strtolower(...);
-        $extension = $extension === '' ? '' : '.' . $extension;
+        $hash = $this->imageHashCalculator->calculate($contents) ?? md5($contents);
+        $extension = (Uri\WhatWg\Url::parse($url)?->getPath() ?? '')
+            |> (fn (string $path): string => pathinfo($path, PATHINFO_EXTENSION))
+            |> strtolower(...)
+            |> (fn (string $ext): string => $ext === '' ? '' : '.' . $ext);
 
         return $hash . $extension;
     }

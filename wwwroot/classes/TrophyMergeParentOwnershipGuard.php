@@ -76,7 +76,7 @@ final readonly class TrophyMergeParentOwnershipGuard
             );
         }
 
-        $mergeParent = $mergeParents === [] ? null : array_first($mergeParents);
+        $mergeParent = array_first($mergeParents);
 
         if (
             $metaParent !== null

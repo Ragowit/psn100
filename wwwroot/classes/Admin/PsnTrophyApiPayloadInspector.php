@@ -12,6 +12,7 @@ final readonly class PsnTrophyApiPayloadInspector
     /**
      * @return array<string, mixed>
      */
+    #[\NoDiscard]
     public function normalize(mixed $response): array
     {
         if (is_array($response)) {

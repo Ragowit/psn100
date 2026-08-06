@@ -63,8 +63,9 @@ final readonly class DatabaseConfig
                 return $value;
             }
 
-            if (trim($value) !== '') {
-                return trim($value);
+            $trimmed = trim($value);
+            if ($trimmed !== '') {
+                return $trimmed;
             }
         }
 
@@ -74,8 +75,9 @@ final readonly class DatabaseConfig
                 return $fallback;
             }
 
-            if (trim($fallback) !== '') {
-                return trim($fallback);
+            $trimmedFallback = trim($fallback);
+            if ($trimmedFallback !== '') {
+                return $trimmedFallback;
             }
         }
 
