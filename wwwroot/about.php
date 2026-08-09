@@ -267,9 +267,9 @@ require_once("header.php");
                 <p>We use two distinct rarity scales based on player data from the top 10,000 players.</p>
 
                 <div class="row">
-                    <!-- Leaderboard Rarity -->
+                    <!-- Rarity % -->
                     <div class="col-md-6">
-                        <h4 class="h5 text-decoration-underline">Leaderboard Rarity</h4>
+                        <h4 class="h5 text-decoration-underline">Rarity %</h4>
                         <p class="small text-muted">Calculated against the entire top 10,000 player pool.</p>
                         <ul class="list-unstyled">
                             <li><span class="trophy-legendary">0.00 - 0.02% ~ Legendary</span></li>
@@ -280,9 +280,9 @@ require_once("header.php");
                         </ul>
                     </div>
 
-                    <!-- Game Rarity -->
+                    <!-- Difficulty % -->
                     <div class="col-md-6">
-                        <h4 class="h5 text-decoration-underline">Difficulty Rarity</h4>
+                        <h4 class="h5 text-decoration-underline">Difficulty %</h4>
                         <p class="small text-muted">Calculated against owners of the specific game within the top 10,000.</p>
                         <ul class="list-unstyled">
                             <li><span class="trophy-legendary">0.00 - 1.00% ~ Legendary</span></li>
