@@ -235,7 +235,7 @@ final class PlayerAdvisorServiceTest extends TestCase
         $this->assertSame('25/100', $trophies[1]->getProgressTargetLabel());
     }
 
-    public function testGetAdvisableTrophiesSortsByInGameRarityWhenRequested(): void
+    public function testGetAdvisableTrophiesSortsByDifficultyWhenRequested(): void
     {
         $this->database->exec(
             <<<'SQL'
@@ -282,7 +282,7 @@ final class PlayerAdvisorServiceTest extends TestCase
             SQL
         );
 
-        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorSort::InGameRarity->value]);
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorSort::Difficulty->value]);
 
         $trophies = $this->service->getAdvisableTrophies(22, $filter, 0, 50);
 

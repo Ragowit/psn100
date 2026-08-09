@@ -38,10 +38,12 @@ final readonly class PlayerScanCompletionService
         $query->bindValue(':account_id', $accountId, PDO::PARAM_STR);
         $query->execute();
         $trophies = $query->fetch();
-        $points = $trophies['bronze'] * 15
-            + $trophies['silver'] * 30
-            + $trophies['gold'] * 90
-            + $trophies['platinum'] * 300;
+        $points = PlayStationTrophyLevelCalculator::calculateTrophyPoints(
+            (int) $trophies['bronze'],
+            (int) $trophies['silver'],
+            (int) $trophies['gold'],
+            (int) $trophies['platinum']
+        );
         $levelAndProgress = PlayStationTrophyLevelCalculator::calculate($points);
 
         $query = $this->database->prepare("UPDATE player

@@ -150,7 +150,7 @@ require_once("header.php");
                                 </div>
 
                                 <div class="col-2 text-center align-self-center">
-                                    <div class="small text-uppercase text-secondary">Rarity (Game)</div>
+                                    <div class="small text-uppercase text-secondary">Difficulty</div>
                                     <div>
                                         <?php if ($inGameRarity->isUnobtainable()) { ?>
                                             <?= $inGameRarity->getLabel(); ?>

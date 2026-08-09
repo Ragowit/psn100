@@ -206,7 +206,7 @@ final readonly class GameListService
         $conditions = [
             match ($filter->getSort()) {
                 GameListSort::Completion => "ttm.status = {$normalStatus} AND (tt.bronze + tt.silver + tt.gold + tt.platinum) != 0",
-                GameListSort::Rarity, GameListSort::InGameRarity => "ttm.status = {$normalStatus}",
+                GameListSort::Rarity, GameListSort::Difficulty => "ttm.status = {$normalStatus}",
                 default => "ttm.status != {$mergedStatus}",
             },
         ];
@@ -248,7 +248,7 @@ final readonly class GameListService
             GameListSort::Completion => 'ORDER BY difficulty DESC, owners DESC, `name`',
             GameListSort::Owners => 'ORDER BY owners DESC, `name`',
             GameListSort::Rarity => 'ORDER BY rarity_points DESC, owners DESC, `name`',
-            GameListSort::InGameRarity => 'ORDER BY in_game_rarity_points DESC, owners DESC, `name`',
+            GameListSort::Difficulty => 'ORDER BY in_game_rarity_points DESC, owners DESC, `name`',
             GameListSort::Search => 'ORDER BY exact_match DESC, prefix_match DESC, score DESC, `name`, tt.id',
             default => 'ORDER BY id DESC',
         };

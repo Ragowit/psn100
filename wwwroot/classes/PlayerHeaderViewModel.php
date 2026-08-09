@@ -173,18 +173,18 @@ final readonly class PlayerHeaderViewModel
     /**
      * @return PlayerLeaderboardRank[]
      */
-    public function getInGameRarityLeaderboardRanks(): array
+    public function getDifficultyLeaderboardRanks(): array
     {
         return [
             PlayerLeaderboardRank::createWorldRank(
-                '/leaderboard/in-game-rarity',
+                '/leaderboard/difficulty',
                 $this->getOnlineId(),
                 (int) ($this->player['in_game_rarity_ranking'] ?? 0),
                 (int) ($this->player['in_game_rarity_rank_last_week'] ?? 0),
                 $this->isLeaderboardRankAvailable()
             ),
             PlayerLeaderboardRank::createCountryRank(
-                '/leaderboard/in-game-rarity',
+                '/leaderboard/difficulty',
                 $this->getOnlineId(),
                 $this->getCountryCode(),
                 (int) ($this->player['in_game_rarity_ranking_country'] ?? 0),

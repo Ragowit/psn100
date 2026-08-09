@@ -7,6 +7,22 @@ declare(strict_types=1);
  */
 final readonly class PlayStationTrophyLevelCalculator
 {
+    private const int BRONZE_POINTS = 15;
+    private const int SILVER_POINTS = 30;
+    private const int GOLD_POINTS = 90;
+    private const int PLATINUM_POINTS = 300;
+
+    /**
+     * Returns the PSN trophy score for the given trophy counts.
+     */
+    public static function calculateTrophyPoints(int $bronze, int $silver, int $gold, int $platinum): int
+    {
+        return ($bronze * self::BRONZE_POINTS)
+            + ($silver * self::SILVER_POINTS)
+            + ($gold * self::GOLD_POINTS)
+            + ($platinum * self::PLATINUM_POINTS);
+    }
+
     /**
      * @return array{level: int, progress: int}
      */

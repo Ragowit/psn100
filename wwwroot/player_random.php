@@ -126,7 +126,7 @@ require_once("header.php");
                             <!-- rarity (in-game) points -->
                             <div>
                                 <?php
-                                echo number_format($game->getInGameRarityPoints()) . " Rarity (Game) Points";
+                                echo number_format($game->getInGameRarityPoints()) . " Difficulty Points";
                                 ?>
                             </div>
                         </div>

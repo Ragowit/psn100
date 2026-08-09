@@ -99,4 +99,12 @@ final class GameListFilterTest extends TestCase
 
         $this->assertSame(1, $filter->withPage(0)->getPage());
     }
+
+    public function testFromArrayAcceptsLegacyInGameRaritySortValue(): void
+    {
+        $filter = GameListFilter::fromArray(['sort' => 'in-game-rarity']);
+
+        $this->assertSame(GameListSort::Difficulty, $filter->getSort());
+        $this->assertTrue($filter->isSort(GameListSort::Difficulty));
+    }
 }

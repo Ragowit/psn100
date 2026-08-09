@@ -6,9 +6,9 @@ enum GameListSort: string
 {
     case Added = 'added';
     case Completion = 'completion';
+    case Difficulty = 'difficulty';
     case Owners = 'owners';
     case Rarity = 'rarity';
-    case InGameRarity = 'in-game-rarity';
     case Search = 'search';
 
     #[\NoDiscard]
@@ -18,6 +18,11 @@ enum GameListSort: string
             return null;
         }
 
-        return self::tryFrom($value |> trim(...) |> strtolower(...));
+        $normalized = $value |> trim(...) |> strtolower(...);
+
+        return match ($normalized) {
+            'in-game-rarity' => self::Difficulty,
+            default => self::tryFrom($normalized),
+        };
     }
 }

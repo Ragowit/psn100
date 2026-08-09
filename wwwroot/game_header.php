@@ -269,7 +269,7 @@ $escapedPlayer = isset($player) ? Html::escape((string) $player) : null;
 
                     if ($game->shouldShowRarityPoints()) {
                         $details[] = number_format($game->getRarityPoints()) . ' Rarity Points';
-                        $details[] = number_format($game->getInGameRarityPoints()) . ' Rarity (Game) Points';
+                        $details[] = number_format($game->getInGameRarityPoints()) . ' Difficulty Points';
                     } else {
                         $statusBadge = $game->getStatusBadge();
                         if ($statusBadge !== null) {

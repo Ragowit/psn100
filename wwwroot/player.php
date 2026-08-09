@@ -95,11 +95,11 @@ require_once("header.php");
                             <option disabled>Sort by...</option>
                             <option value="<?= PlayerGamesSort::Search->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Search) ? ' selected' : ''); ?>>Best Match</option>
                             <option value="<?= PlayerGamesSort::Date->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Date) ? ' selected' : ''); ?>>Date</option>
+                            <option value="<?= PlayerGamesSort::Difficulty->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Difficulty) ? ' selected' : ''); ?>>Difficulty</option>
+                            <option value="<?= PlayerGamesSort::MaxDifficulty->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::MaxDifficulty) ? ' selected' : ''); ?>>Max Difficulty</option>
                             <option value="<?= PlayerGamesSort::MaxRarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::MaxRarity) ? ' selected' : ''); ?>>Max Rarity</option>
-                            <option value="<?= PlayerGamesSort::InGameMaxRarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::InGameMaxRarity) ? ' selected' : ''); ?>>Max Rarity (Game)</option>
                             <option value="<?= PlayerGamesSort::Name->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Name) ? ' selected' : ''); ?>>Name</option>
                             <option value="<?= PlayerGamesSort::Rarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Rarity) ? ' selected' : ''); ?>>Rarity</option>
-                            <option value="<?= PlayerGamesSort::InGameRarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::InGameRarity) ? ' selected' : ''); ?>>Rarity (Game)</option>
                         </select>
                     </div>
                 </form>
@@ -117,7 +117,7 @@ require_once("header.php");
                                 <th scope="col">Game</th>
                                 <th scope="col" class="text-center">Platform</th>
                                 <th scope="col" class="text-center">Progress</th>
-                                <th scope="col" class="text-center">Rarity Points</th>
+                                <th scope="col" class="text-center">Points</th>
                             </tr>
                         </thead>
 
@@ -202,19 +202,25 @@ require_once("header.php");
                                         <td class="align-middle text-center">
                                             <?php
                                             if ($playerGame->shouldShowRarityPoints()) {
-                                                echo number_format($playerGame->getRarityPoints());
+                                                echo number_format($playerGame->getTrophyPoints());
                                                 if (!$playerGame->isCompleted()) {
-                                                    echo '/'. number_format($playerGame->getMaxRarityPoints());
+                                                    echo '/' . number_format($playerGame->getMaxTrophyPoints());
                                                 }
+                                                echo ' <span class="text-body-secondary small">Trophy</span>';
+
+                                                echo '<div>'
+                                                    . number_format($playerGame->getRarityPoints());
+                                                if (!$playerGame->isCompleted()) {
+                                                    echo '/' . number_format($playerGame->getMaxRarityPoints());
+                                                }
+                                                echo ' <span class="text-body-secondary small">Rarity</span></div>';
 
                                                 echo '<div>'
                                                     . number_format($playerGame->getInGameRarityPoints());
-
                                                 if (!$playerGame->isCompleted()) {
                                                     echo '/' . number_format($playerGame->getMaxInGameRarityPoints());
                                                 }
-
-                                                echo ' <span class="text-body-secondary small">(Game)</span></div>';
+                                                echo ' <span class="text-body-secondary small">Difficulty</span></div>';
                                             } else {
                                                 $statusBadge = $playerGame->getStatusBadge();
                                                 if ($statusBadge !== null) {

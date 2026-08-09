@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/Html.php';
 
-require_once 'classes/Leaderboard/InGameRarityLeaderboardPageContext.php';
+require_once 'classes/Leaderboard/DifficultyLeaderboardPageContext.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
-$leaderboardPageContext = InGameRarityLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
+$leaderboardPageContext = DifficultyLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
 $title = $leaderboardPageContext->getTitle();
 require_once("header.php");
 
@@ -20,14 +20,14 @@ $shouldShowCountryRank = $leaderboardPageContext->shouldShowCountryRank();
 <main class="container">
     <div class="row">
         <div class="col-6">
-            <h1>PSN Rarity (Game) Leaderboard</h1>
+            <h1>PSN Difficulty Leaderboard</h1>
         </div>
         <div class="col-6 d-flex justify-content-end">
             <div class="bg-body-tertiary p-3 rounded">
                 <div class="btn-group">
                     <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($filterParameters); ?>">Trophy</a>
                     <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity</a>
-                    <a class="btn btn-primary active" href="/leaderboard/in-game-rarity">Rarity (Game)</a>
+                    <a class="btn btn-primary active" href="/leaderboard/difficulty">Difficulty</a>
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@ $shouldShowCountryRank = $leaderboardPageContext->shouldShowCountryRank();
                                 <th scope="col" class="text-center">Rare</th>
                                 <th scope="col" class="text-center">Uncommon</th>
                                 <th scope="col" class="text-center">Common</th>
-                                <th scope="col" class="text-center">Game Points</th>
+                                <th scope="col" class="text-center">Points</th>
                             </tr>
                         </thead>
 

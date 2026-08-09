@@ -52,6 +52,10 @@ final readonly class PlayerGamesService
             'tt.name',
             'tt.icon_url',
             'tt.platform',
+            'tt.bronze AS max_bronze',
+            'tt.silver AS max_silver',
+            'tt.gold AS max_gold',
+            'tt.platinum AS max_platinum',
             'ttm.status AS status',
             'ttm.rarity_points AS max_rarity_points',
             'ttm.in_game_rarity_points AS max_in_game_rarity_points',
@@ -161,8 +165,8 @@ final readonly class PlayerGamesService
     private function buildOrderByClause(PlayerGamesFilter $filter): string
     {
         return match ($filter->getSort()) {
-            PlayerGamesSort::InGameMaxRarity => 'ORDER BY max_in_game_rarity_points DESC, `name`',
-            PlayerGamesSort::InGameRarity => 'ORDER BY in_game_rarity_points DESC, `name`',
+            PlayerGamesSort::MaxDifficulty => 'ORDER BY max_in_game_rarity_points DESC, `name`',
+            PlayerGamesSort::Difficulty => 'ORDER BY in_game_rarity_points DESC, `name`',
             PlayerGamesSort::MaxRarity => 'ORDER BY max_rarity_points DESC, `name`',
             PlayerGamesSort::Name => 'ORDER BY `name`',
             PlayerGamesSort::Rarity => 'ORDER BY rarity_points DESC, `name`',

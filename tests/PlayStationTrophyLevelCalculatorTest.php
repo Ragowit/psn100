@@ -7,6 +7,13 @@ require_once __DIR__ . '/../wwwroot/classes/PlayStationTrophyLevelCalculator.php
 
 final class PlayStationTrophyLevelCalculatorTest extends TestCase
 {
+    public function testCalculateTrophyPointsUsesStandardPsnWeights(): void
+    {
+        $points = PlayStationTrophyLevelCalculator::calculateTrophyPoints(1, 2, 3, 1);
+
+        $this->assertSame(645, $points);
+    }
+
     public function testCalculateUsesFirstTierFormula(): void
     {
         $result = PlayStationTrophyLevelCalculator::calculate(120);

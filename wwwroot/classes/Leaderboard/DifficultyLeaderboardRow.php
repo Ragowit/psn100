@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AbstractLeaderboardRow.php';
 
-final readonly class InGameRarityLeaderboardRow extends AbstractLeaderboardRow
+final readonly class DifficultyLeaderboardRow extends AbstractLeaderboardRow
 {
     /**
      * @param array<string, mixed> $player

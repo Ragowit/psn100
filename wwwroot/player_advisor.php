@@ -36,8 +36,8 @@ $platformFilterOptions = $playerAdvisorPageContext->getPlatformFilterOptions();
 $platformFilterRenderer = PlayerPlatformFilterRenderer::createDefault();
 $playerStatusNotice = $playerAdvisorPageContext->getPlayerStatusNotice();
 $playerOnlineId = $playerAdvisorPageContext->getPlayerOnlineId();
-$rarityColumnLabel = $playerAdvisorFilter->isSort(PlayerAdvisorSort::InGameRarity)
-    ? 'Rarity (Game)'
+$rarityColumnLabel = $playerAdvisorFilter->isSort(PlayerAdvisorSort::Difficulty)
+    ? 'Difficulty'
     : 'Rarity';
 
 $title = $playerAdvisorPageContext->getTitle();
@@ -66,8 +66,8 @@ require_once("header.php");
 
                         <select class="form-select" name="sort" onChange="this.form.submit()">
                             <option disabled>Sort by...</option>
+                            <option value="<?= PlayerAdvisorSort::Difficulty->value; ?>"<?php if ($playerAdvisorFilter->isSort(PlayerAdvisorSort::Difficulty)) { echo ' selected'; } ?>>Difficulty</option>
                             <option value="<?= PlayerAdvisorSort::Rarity->value; ?>"<?php if ($playerAdvisorFilter->isSort(PlayerAdvisorSort::Rarity)) { echo ' selected'; } ?>>Rarity</option>
-                            <option value="<?= PlayerAdvisorSort::InGameRarity->value; ?>"<?php if ($playerAdvisorFilter->isSort(PlayerAdvisorSort::InGameRarity)) { echo ' selected'; } ?>>Rarity (Game)</option>
                         </select>
                     </div>
                 </form>
@@ -154,7 +154,7 @@ require_once("header.php");
                                         </td>
                                         <td class="text-center align-middle">
                                         <?php
-                                        $rarityPercent = $playerAdvisorFilter->isSort(PlayerAdvisorSort::InGameRarity)
+                                        $rarityPercent = $playerAdvisorFilter->isSort(PlayerAdvisorSort::Difficulty)
                                             ? $trophy->getInGameRarityPercent()
                                             : $trophy->getRarityPercent();
                                         $trophyRarity = $trophyRarityFormatter->format($rarityPercent);
