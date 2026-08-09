@@ -282,7 +282,7 @@ require_once("header.php");
 
                     <!-- Game Rarity -->
                     <div class="col-md-6">
-                        <h4 class="h5 text-decoration-underline">Game Rarity</h4>
+                        <h4 class="h5 text-decoration-underline">Difficulty Rarity</h4>
                         <p class="small text-muted">Calculated against owners of the specific game within the top 10,000.</p>
                         <ul class="list-unstyled">
                             <li><span class="trophy-legendary">0.00 - 1.00% ~ Legendary</span></li>
