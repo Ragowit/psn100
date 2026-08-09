@@ -25,7 +25,11 @@ final class PlayerGamesServiceTest extends TestCase
                 np_communication_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 icon_url TEXT,
-                platform TEXT
+                platform TEXT,
+                bronze INTEGER NOT NULL DEFAULT 0,
+                silver INTEGER NOT NULL DEFAULT 0,
+                gold INTEGER NOT NULL DEFAULT 0,
+                platinum INTEGER NOT NULL DEFAULT 0
             )
             SQL
         );
@@ -177,7 +181,11 @@ final class PlayerGamesServiceTest extends TestCase
             rarityPoints: 321,
             maxRarityPoints: 654,
             inGameRarityPoints: 111,
-            maxInGameRarityPoints: 222
+            maxInGameRarityPoints: 222,
+            maxBronze: 2,
+            maxSilver: 3,
+            maxGold: 4,
+            maxPlatinum: 1
         );
 
         $this->pdo->exec(
@@ -205,6 +213,10 @@ final class PlayerGamesServiceTest extends TestCase
         $this->assertSame(111, $game->getInGameRarityPoints());
         $this->assertSame(654, $game->getMaxRarityPoints());
         $this->assertSame(222, $game->getMaxInGameRarityPoints());
+        // 1*15 + 2*30 + 3*90 + 1*300 = 645
+        $this->assertSame(645, $game->getTrophyPoints());
+        // 2*15 + 3*30 + 4*90 + 1*300 = 780
+        $this->assertSame(780, $game->getMaxTrophyPoints());
         $this->assertSame('Completed in 4 days and 1 hours', $game->getCompletionDurationLabel());
     }
 
@@ -263,11 +275,15 @@ final class PlayerGamesServiceTest extends TestCase
         int $rarityPoints = 0,
         int $maxRarityPoints = 0,
         int $inGameRarityPoints = 0,
-        int $maxInGameRarityPoints = 0
+        int $maxInGameRarityPoints = 0,
+        int $maxBronze = 0,
+        int $maxSilver = 0,
+        int $maxGold = 0,
+        int $maxPlatinum = 0
     ): void {
         $statement = $this->pdo->prepare(
-            'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform) '
-            . 'VALUES (:id, :np, :name, :icon, :platform)'
+            'INSERT INTO trophy_title (id, np_communication_id, name, icon_url, platform, bronze, silver, gold, platinum) '
+            . 'VALUES (:id, :np, :name, :icon, :platform, :bronze, :silver, :gold, :platinum)'
         );
         $statement->execute([
             ':id' => $id,
@@ -275,6 +291,10 @@ final class PlayerGamesServiceTest extends TestCase
             ':name' => $name,
             ':icon' => 'icon.png',
             ':platform' => $platform,
+            ':bronze' => $maxBronze > 0 ? $maxBronze : $bronze,
+            ':silver' => $maxSilver > 0 ? $maxSilver : $silver,
+            ':gold' => $maxGold > 0 ? $maxGold : $gold,
+            ':platinum' => $maxPlatinum > 0 ? $maxPlatinum : $platinum,
         ]);
 
         $statement = $this->pdo->prepare(

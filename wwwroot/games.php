@@ -78,7 +78,7 @@ require_once("header.php");
                         <option value="<?= GameListSort::Completion->value; ?>"<?= ($filter->isSort(GameListSort::Completion) ? ' selected' : ''); ?>>Completion Rate</option>
                         <option value="<?= GameListSort::Owners->value; ?>"<?= ($filter->isSort(GameListSort::Owners) ? ' selected' : ''); ?>>Owners</option>
                         <option value="<?= GameListSort::Rarity->value; ?>"<?= ($filter->isSort(GameListSort::Rarity) ? ' selected' : ''); ?>>Rarity Points</option>
-                        <option value="<?= GameListSort::InGameRarity->value; ?>"<?= ($filter->isSort(GameListSort::InGameRarity) ? ' selected' : ''); ?>>Rarity (Game) Points</option>
+                        <option value="<?= GameListSort::InGameRarity->value; ?>"<?= ($filter->isSort(GameListSort::InGameRarity) ? ' selected' : ''); ?>>Difficulty Points</option>
                     </select>
                 </div>
             </form>
@@ -147,7 +147,7 @@ require_once("header.php");
                             if ($game->shouldShowRarityPoints() && $filter->isSort(GameListSort::Rarity)) {
                                 echo number_format($rarityPoints) . ' Rarity Points';
                             } elseif ($game->shouldShowRarityPoints() && $filter->isSort(GameListSort::InGameRarity)) {
-                                echo number_format($inGameRarityPoints) . ' Rarity (Game) Points';
+                                echo number_format($inGameRarityPoints) . ' Difficulty Points';
                             } elseif ($statusBadge !== null) {
                                 ?>
                                 <span class="<?= $statusBadge->getCssClass(); ?>" title="<?= $statusBadge->getTooltip(); ?>"><?= $statusBadge->getLabel(); ?></span>

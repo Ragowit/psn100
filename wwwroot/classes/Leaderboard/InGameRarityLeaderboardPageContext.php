@@ -8,7 +8,7 @@ require_once __DIR__ . '/InGameRarityLeaderboardRow.php';
 
 final class InGameRarityLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
-    private const string TITLE = 'PSN Rarity (Game) Leaderboard ~ PSN 100%';
+    private const string TITLE = 'PSN Difficulty Leaderboard ~ PSN 100%';
 
     #[\Override]
     public function getTitle(): string

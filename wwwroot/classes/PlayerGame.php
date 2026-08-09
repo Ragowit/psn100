@@ -6,6 +6,7 @@ require_once __DIR__ . '/CommaSeparatedValues.php';
 require_once __DIR__ . '/GameAvailabilityStatus.php';
 require_once __DIR__ . '/GameStatusBadge.php';
 require_once __DIR__ . '/Platform.php';
+require_once __DIR__ . '/PlayStationTrophyLevelCalculator.php';
 
 final readonly class PlayerGame
 {
@@ -18,6 +19,7 @@ final readonly class PlayerGame
         final private GameAvailabilityStatus $status,
         final private int $maxRarityPoints,
         final private int $maxInGameRarityPoints,
+        final private int $maxTrophyPoints,
         final private int $bronze,
         final private int $silver,
         final private int $gold,
@@ -36,6 +38,15 @@ final readonly class PlayerGame
     #[\NoDiscard]
     public static function fromArray(array $row, ?string $completionDurationLabel = null): self
     {
+        $bronze = (int) ($row['bronze'] ?? 0);
+        $silver = (int) ($row['silver'] ?? 0);
+        $gold = (int) ($row['gold'] ?? 0);
+        $platinum = (int) ($row['platinum'] ?? 0);
+        $maxBronze = (int) ($row['max_bronze'] ?? 0);
+        $maxSilver = (int) ($row['max_silver'] ?? 0);
+        $maxGold = (int) ($row['max_gold'] ?? 0);
+        $maxPlatinum = (int) ($row['max_platinum'] ?? 0);
+
         return new self(
             (int) ($row['id'] ?? 0),
             (string) ($row['np_communication_id'] ?? ''),
@@ -45,10 +56,11 @@ final readonly class PlayerGame
             GameAvailabilityStatus::fromInt((int) ($row['status'] ?? GameAvailabilityStatus::NORMAL->value)),
             (int) ($row['max_rarity_points'] ?? 0),
             (int) ($row['max_in_game_rarity_points'] ?? 0),
-            (int) ($row['bronze'] ?? 0),
-            (int) ($row['silver'] ?? 0),
-            (int) ($row['gold'] ?? 0),
-            (int) ($row['platinum'] ?? 0),
+            PlayStationTrophyLevelCalculator::calculateTrophyPoints($maxBronze, $maxSilver, $maxGold, $maxPlatinum),
+            $bronze,
+            $silver,
+            $gold,
+            $platinum,
             (int) ($row['progress'] ?? 0),
             (string) ($row['last_updated_date'] ?? ''),
             (int) ($row['rarity_points'] ?? 0),
@@ -174,6 +186,21 @@ final readonly class PlayerGame
     public function getLastUpdatedDate(): string
     {
         return $this->lastUpdatedDate;
+    }
+
+    public function getTrophyPoints(): int
+    {
+        return PlayStationTrophyLevelCalculator::calculateTrophyPoints(
+            $this->bronze,
+            $this->silver,
+            $this->gold,
+            $this->platinum
+        );
+    }
+
+    public function getMaxTrophyPoints(): int
+    {
+        return $this->maxTrophyPoints;
     }
 
     public function getRarityPoints(): int

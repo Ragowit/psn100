@@ -27,7 +27,7 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
                 <div class="btn-group">
                     <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($filterParameters); ?>">Trophy</a>
                     <a class="btn btn-primary active" href="/leaderboard/rarity">Rarity</a>
-                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Rarity (Game)</a>
+                    <a class="btn btn-outline-primary" href="/leaderboard/in-game-rarity?<?= http_build_query($filterParameters); ?>">Difficulty</a>
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@ $shouldShowCountryRank = $rarityLeaderboardPageContext->shouldShowCountryRank();
                                 <th scope="col" class="text-center">Rare</th>
                                 <th scope="col" class="text-center">Uncommon</th>
                                 <th scope="col" class="text-center">Common</th>
-                                <th scope="col" class="text-center">Leaderboard Points</th>
+                                <th scope="col" class="text-center">Points</th>
                             </tr>
                         </thead>
 
