@@ -266,7 +266,7 @@ final readonly class GameListFilter
             GameListSort::Completion,
             GameListSort::Owners,
             GameListSort::Rarity,
-            GameListSort::InGameRarity => $sort,
+            GameListSort::Difficulty => $sort,
             GameListSort::Search => ($search !== '' || $sortSpecified) ? GameListSort::Search : GameListSort::Added,
             null => $search !== '' ? GameListSort::Search : GameListSort::Added,
         };

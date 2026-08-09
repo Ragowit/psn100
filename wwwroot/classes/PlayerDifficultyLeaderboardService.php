@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AbstractPlayerLeaderboardService.php';
 
-final readonly class PlayerInGameRarityLeaderboardService extends AbstractPlayerLeaderboardService
+final readonly class PlayerDifficultyLeaderboardService extends AbstractPlayerLeaderboardService
 {
     #[\Override]
     protected function getRankingProjection(): string

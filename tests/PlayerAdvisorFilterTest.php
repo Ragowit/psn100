@@ -43,10 +43,10 @@ final class PlayerAdvisorFilterTest extends TestCase
 
     public function testFromArrayParsesSortWhenValid(): void
     {
-        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorSort::InGameRarity->value]);
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => PlayerAdvisorSort::Difficulty->value]);
 
-        $this->assertSame(PlayerAdvisorSort::InGameRarity, $filter->getSort());
-        $this->assertTrue($filter->isSort(PlayerAdvisorSort::InGameRarity));
+        $this->assertSame(PlayerAdvisorSort::Difficulty, $filter->getSort());
+        $this->assertTrue($filter->isSort(PlayerAdvisorSort::Difficulty));
         $this->assertFalse($filter->isSort(PlayerAdvisorSort::Rarity));
     }
 
@@ -55,6 +55,13 @@ final class PlayerAdvisorFilterTest extends TestCase
         $filter = PlayerAdvisorFilter::fromArray(['sort' => 'unknown']);
 
         $this->assertSame(PlayerAdvisorSort::Rarity, $filter->getSort());
+    }
+
+    public function testFromArrayAcceptsLegacyInGameRaritySortValue(): void
+    {
+        $filter = PlayerAdvisorFilter::fromArray(['sort' => 'in_game_rarity']);
+
+        $this->assertSame(PlayerAdvisorSort::Difficulty, $filter->getSort());
     }
 
     public function testPageIsNeverBelowOne(): void
@@ -76,13 +83,13 @@ final class PlayerAdvisorFilterTest extends TestCase
         $filter = PlayerAdvisorFilter::fromArray([
             'psvr' => '1',
             'psvita' => 'yes',
-            'sort' => PlayerAdvisorSort::InGameRarity->value,
+            'sort' => PlayerAdvisorSort::Difficulty->value,
         ]);
 
         $this->assertSame([
             'psvita' => 'true',
             'psvr' => 'true',
-            'sort' => PlayerAdvisorSort::InGameRarity->value,
+            'sort' => PlayerAdvisorSort::Difficulty->value,
         ], $filter->getFilterParameters());
     }
 

@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/AbstractLeaderboardPageContext.php';
-require_once __DIR__ . '/../PlayerInGameRarityLeaderboardService.php';
-require_once __DIR__ . '/InGameRarityLeaderboardRow.php';
+require_once __DIR__ . '/../PlayerDifficultyLeaderboardService.php';
+require_once __DIR__ . '/DifficultyLeaderboardRow.php';
 
-final class InGameRarityLeaderboardPageContext extends AbstractLeaderboardPageContext
+final class DifficultyLeaderboardPageContext extends AbstractLeaderboardPageContext
 {
     private const string TITLE = 'PSN Difficulty Leaderboard ~ PSN 100%';
 
@@ -19,7 +19,7 @@ final class InGameRarityLeaderboardPageContext extends AbstractLeaderboardPageCo
     #[\Override]
     protected static function createDataProvider(PDO $database): PlayerLeaderboardDataProvider
     {
-        return new PlayerInGameRarityLeaderboardService($database);
+        return new PlayerDifficultyLeaderboardService($database);
     }
 
     /**
@@ -33,7 +33,7 @@ final class InGameRarityLeaderboardPageContext extends AbstractLeaderboardPageCo
         ?string $highlightedPlayerId,
         array $filterParameters
     ): AbstractLeaderboardRow {
-        return new InGameRarityLeaderboardRow(
+        return new DifficultyLeaderboardRow(
             $player,
             $filter,
             $utility,

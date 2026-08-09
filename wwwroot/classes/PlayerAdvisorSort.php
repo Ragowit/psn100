@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 enum PlayerAdvisorSort: string
 {
+    case Difficulty = 'difficulty';
     case Rarity = 'rarity';
-    case InGameRarity = 'in_game_rarity';
 
     #[\NoDiscard]
     public static function tryFromMixed(mixed $value): ?self
@@ -14,6 +14,11 @@ enum PlayerAdvisorSort: string
             return null;
         }
 
-        return self::tryFrom($value |> trim(...) |> strtolower(...));
+        $normalized = $value |> trim(...) |> strtolower(...);
+
+        return match ($normalized) {
+            'in_game_rarity', 'in-game-rarity' => self::Difficulty,
+            default => self::tryFrom($normalized),
+        };
     }
 }

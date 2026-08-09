@@ -165,8 +165,8 @@ final readonly class PlayerGamesService
     private function buildOrderByClause(PlayerGamesFilter $filter): string
     {
         return match ($filter->getSort()) {
-            PlayerGamesSort::InGameMaxRarity => 'ORDER BY max_in_game_rarity_points DESC, `name`',
-            PlayerGamesSort::InGameRarity => 'ORDER BY in_game_rarity_points DESC, `name`',
+            PlayerGamesSort::MaxDifficulty => 'ORDER BY max_in_game_rarity_points DESC, `name`',
+            PlayerGamesSort::Difficulty => 'ORDER BY in_game_rarity_points DESC, `name`',
             PlayerGamesSort::MaxRarity => 'ORDER BY max_rarity_points DESC, `name`',
             PlayerGamesSort::Name => 'ORDER BY `name`',
             PlayerGamesSort::Rarity => 'ORDER BY rarity_points DESC, `name`',

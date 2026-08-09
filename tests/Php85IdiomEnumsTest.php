@@ -181,8 +181,10 @@ final class Php85IdiomEnumsTest extends TestCase
         $this->assertSame('leaderboard_main.php', LeaderboardView::Main->includeFile());
         $this->assertSame('leaderboard_main.php', LeaderboardView::Trophy->includeFile());
         $this->assertSame('leaderboard_rarity.php', LeaderboardView::Rarity->includeFile());
-        $this->assertSame('leaderboard_in_game_rarity.php', LeaderboardView::InGameRarity->includeFile());
+        $this->assertSame('leaderboard_difficulty.php', LeaderboardView::Difficulty->includeFile());
         $this->assertSame(null, LeaderboardView::tryFrom('unknown'));
+        $this->assertTrue(LeaderboardView::isLegacyPath('in-game-rarity'));
+        $this->assertFalse(LeaderboardView::isLegacyPath('difficulty'));
     }
 
     public function testPlayerRouteViewIncludeFiles(): void

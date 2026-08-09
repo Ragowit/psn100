@@ -10,7 +10,7 @@ $playerHeaderViewModel = new PlayerHeaderViewModel($player, $playerSummary, $uti
 $alerts = $playerHeaderViewModel->getAlerts();
 $trophyLeaderboardRanks = $playerHeaderViewModel->getTrophyLeaderboardRanks();
 $rarityLeaderboardRanks = $playerHeaderViewModel->getRarityLeaderboardRanks();
-$inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboardRanks();
+$difficultyLeaderboardRanks = $playerHeaderViewModel->getDifficultyLeaderboardRanks();
 ?>
 
 <div class="row">
@@ -323,7 +323,7 @@ $inGameRarityLeaderboardRanks = $playerHeaderViewModel->getInGameRarityLeaderboa
                     </div>
 
                     <div class="hstack gap-3">
-                        <?php foreach ($inGameRarityLeaderboardRanks as $index => $rank) { ?>
+                        <?php foreach ($difficultyLeaderboardRanks as $index => $rank) { ?>
                             <?php if ($index > 0) { ?>
                                 <div class="vr"></div>
                             <?php } ?>

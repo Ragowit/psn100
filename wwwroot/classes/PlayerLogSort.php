@@ -5,8 +5,8 @@ declare(strict_types=1);
 enum PlayerLogSort: string
 {
     case Date = 'date';
+    case Difficulty = 'difficulty';
     case Rarity = 'rarity';
-    case InGameRarity = 'in-game-rarity';
 
     #[\NoDiscard]
     public static function fromMixed(mixed $value): self
@@ -15,6 +15,11 @@ enum PlayerLogSort: string
             return self::Date;
         }
 
-        return self::tryFrom($value |> trim(...) |> strtolower(...)) ?? self::Date;
+        $normalized = $value |> trim(...) |> strtolower(...);
+
+        return match ($normalized) {
+            'in-game-rarity' => self::Difficulty,
+            default => self::tryFrom($normalized) ?? self::Date,
+        };
     }
 }

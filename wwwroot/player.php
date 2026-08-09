@@ -95,11 +95,11 @@ require_once("header.php");
                             <option disabled>Sort by...</option>
                             <option value="<?= PlayerGamesSort::Search->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Search) ? ' selected' : ''); ?>>Best Match</option>
                             <option value="<?= PlayerGamesSort::Date->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Date) ? ' selected' : ''); ?>>Date</option>
+                            <option value="<?= PlayerGamesSort::Difficulty->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Difficulty) ? ' selected' : ''); ?>>Difficulty</option>
+                            <option value="<?= PlayerGamesSort::MaxDifficulty->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::MaxDifficulty) ? ' selected' : ''); ?>>Max Difficulty</option>
                             <option value="<?= PlayerGamesSort::MaxRarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::MaxRarity) ? ' selected' : ''); ?>>Max Rarity</option>
-                            <option value="<?= PlayerGamesSort::InGameMaxRarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::InGameMaxRarity) ? ' selected' : ''); ?>>Max Difficulty</option>
                             <option value="<?= PlayerGamesSort::Name->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Name) ? ' selected' : ''); ?>>Name</option>
                             <option value="<?= PlayerGamesSort::Rarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::Rarity) ? ' selected' : ''); ?>>Rarity</option>
-                            <option value="<?= PlayerGamesSort::InGameRarity->value; ?>"<?= ($playerGamesFilter->isSort(PlayerGamesSort::InGameRarity) ? ' selected' : ''); ?>>Difficulty</option>
                         </select>
                     </div>
                 </form>

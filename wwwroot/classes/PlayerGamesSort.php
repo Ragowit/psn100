@@ -5,8 +5,8 @@ declare(strict_types=1);
 enum PlayerGamesSort: string
 {
     case Date = 'date';
-    case InGameMaxRarity = 'max-in-game-rarity';
-    case InGameRarity = 'in-game-rarity';
+    case Difficulty = 'difficulty';
+    case MaxDifficulty = 'max-difficulty';
     case MaxRarity = 'max-rarity';
     case Name = 'name';
     case Rarity = 'rarity';
@@ -19,6 +19,12 @@ enum PlayerGamesSort: string
             return null;
         }
 
-        return self::tryFrom($value |> trim(...) |> strtolower(...));
+        $normalized = $value |> trim(...) |> strtolower(...);
+
+        return match ($normalized) {
+            'in-game-rarity' => self::Difficulty,
+            'max-in-game-rarity' => self::MaxDifficulty,
+            default => self::tryFrom($normalized),
+        };
     }
 }

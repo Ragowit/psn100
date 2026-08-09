@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/classes/Html.php';
 
-require_once 'classes/Leaderboard/InGameRarityLeaderboardPageContext.php';
+require_once 'classes/Leaderboard/DifficultyLeaderboardPageContext.php';
 require_once __DIR__ . '/classes/PlayerUrlBuilder.php';
 
-$leaderboardPageContext = InGameRarityLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
+$leaderboardPageContext = DifficultyLeaderboardPageContext::fromGlobals($database, $utility, $_GET ?? []);
 $title = $leaderboardPageContext->getTitle();
 require_once("header.php");
 
@@ -27,7 +27,7 @@ $shouldShowCountryRank = $leaderboardPageContext->shouldShowCountryRank();
                 <div class="btn-group">
                     <a class="btn btn-outline-primary" href="/leaderboard/trophy?<?= http_build_query($filterParameters); ?>">Trophy</a>
                     <a class="btn btn-outline-primary" href="/leaderboard/rarity?<?= http_build_query($filterParameters); ?>">Rarity</a>
-                    <a class="btn btn-primary active" href="/leaderboard/in-game-rarity">Difficulty</a>
+                    <a class="btn btn-primary active" href="/leaderboard/difficulty">Difficulty</a>
                 </div>
             </div>
         </div>

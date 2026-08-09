@@ -114,7 +114,7 @@ readonly class PlayerLogService
     {
         return match ($filter->getSort()) {
             PlayerLogSort::Rarity => PHP_EOL . '            ORDER BY tm.rarity_percent, te.earned_date',
-            PlayerLogSort::InGameRarity => PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date',
+            PlayerLogSort::Difficulty => PHP_EOL . '            ORDER BY tm.in_game_rarity_percent, te.earned_date',
             default => PHP_EOL . '            ORDER BY te.earned_date DESC',
         };
     }
