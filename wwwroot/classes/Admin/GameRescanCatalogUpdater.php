@@ -38,12 +38,10 @@ final readonly class GameRescanCatalogUpdater
     ): array {
         $existingTitleInfo = $this->trophyCatalogSynchronizer->fetchExistingTrophyTitleInfo($npCommunicationId);
 
-        if (!self::isSetVersionAtLeastCurrent((string) $trophyTitle->trophySetVersion(), $existingTitleInfo['set_version'])) {
-            $progressReporter->notify(70, 'Skipping trophy refresh because incoming set version is lower.');
-
-            return [];
-        }
-
+        // A rescan is an explicit request to refresh the catalog. PSN can return
+        // corrected metadata without increasing (and occasionally while reporting
+        // an older) set version, so the version must not gate these updates. The
+        // service still prevents the stored set_version itself from being downgraded.
         $existingGroupData = $this->trophyCatalogSynchronizer->fetchExistingTrophyGroupData($npCommunicationId);
         $existingTrophyData = $this->trophyCatalogSynchronizer->fetchExistingTrophyData($npCommunicationId);
 
