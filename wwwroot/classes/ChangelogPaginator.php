@@ -87,7 +87,7 @@ final readonly class ChangelogPaginator
 
     public function getNextPage(): int
     {
-        return min($this->currentPage + 1, $this->getLastPageNumber());
+        return $this->hasNextPage() ? $this->currentPage + 1 : $this->currentPage;
     }
 
     public function getLastPageNumber(): int

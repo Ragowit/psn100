@@ -85,4 +85,13 @@ final class ChangelogPaginatorTest extends TestCase
         $this->assertSame(PHP_INT_MAX, $paginator->getRangeStart());
         $this->assertSame(PHP_INT_MAX, $paginator->getRangeEnd());
     }
+
+    public function testNextPageAvoidsIntegerOverflowOnMaximumPage(): void
+    {
+        $paginator = new ChangelogPaginator(PHP_INT_MAX, PHP_INT_MAX, 1);
+
+        $this->assertSame(PHP_INT_MAX, $paginator->getCurrentPage());
+        $this->assertFalse($paginator->hasNextPage());
+        $this->assertSame(PHP_INT_MAX, $paginator->getNextPage());
+    }
 }
