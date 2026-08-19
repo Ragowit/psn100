@@ -22,6 +22,14 @@ final class PlayStationTrophyLevelCalculatorTest extends TestCase
         $this->assertSame(0, $result['progress']);
     }
 
+    public function testCalculateUsesExactIntegerProgressWithinTier(): void
+    {
+        $result = PlayStationTrophyLevelCalculator::calculate(59);
+
+        $this->assertSame(1, $result['level']);
+        $this->assertSame(98, $result['progress']);
+    }
+
     public function testCalculateUsesSecondTierFormula(): void
     {
         $result = PlayStationTrophyLevelCalculator::calculate(6030);
@@ -36,5 +44,16 @@ final class PlayStationTrophyLevelCalculatorTest extends TestCase
 
         $this->assertSame(211, $result['level']);
         $this->assertSame(24, $result['progress']);
+    }
+
+    public function testCalculationMethodsRequireTheirResultsToBeUsed(): void
+    {
+        $pointsAttribute = new ReflectionMethod(PlayStationTrophyLevelCalculator::class, 'calculateTrophyPoints')
+            ->getAttributes(NoDiscard::class);
+        $levelAttribute = new ReflectionMethod(PlayStationTrophyLevelCalculator::class, 'calculate')
+            ->getAttributes(NoDiscard::class);
+
+        $this->assertSame(1, count($pointsAttribute));
+        $this->assertSame(1, count($levelAttribute));
     }
 }
