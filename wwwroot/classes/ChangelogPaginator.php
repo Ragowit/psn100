@@ -61,7 +61,13 @@ final readonly class ChangelogPaginator
 
     public function getRangeEnd(): int
     {
-        return $this->hasResults() ? min($this->getOffset() + $this->limit, $this->totalCount) : 0;
+        if (!$this->hasResults()) {
+            return 0;
+        }
+
+        $offset = $this->getOffset();
+
+        return $offset + min($this->limit, $this->totalCount - $offset);
     }
 
     public function hasPreviousPage(): bool

@@ -52,9 +52,8 @@ final readonly class Pagination
             ->markAsActive();
 
         for ($i = 1; $i <= 2; $i++) {
-            $nextPage = $this->currentPage + $i;
-
-            if ($nextPage <= $this->totalPages) {
+            if ($this->currentPage <= $this->totalPages - $i) {
+                $nextPage = $this->currentPage + $i;
                 $items[] = PaginationItem::forPage($nextPage, (string) $nextPage);
             }
         }
