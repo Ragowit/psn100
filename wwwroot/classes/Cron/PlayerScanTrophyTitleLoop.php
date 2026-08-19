@@ -45,6 +45,7 @@ final readonly class PlayerScanTrophyTitleLoop
      */
     public function processAccessibleTrophyTitles(
         object $client,
+        object $verificationClient,
         object $user,
         array $player,
         array $worker,
@@ -243,7 +244,11 @@ final readonly class PlayerScanTrophyTitleLoop
                 continue;
             }
 
-            $catalogSyncResult = $this->titleCatalogSynchronizer->synchronizeCatalog($trophyTitle, $client);
+            $catalogSyncResult = $this->titleCatalogSynchronizer->synchronizeCatalog(
+                $trophyTitle,
+                $client,
+                $verificationClient,
+            );
             if ($catalogSyncResult->restartScan) {
                 $restartScan = true;
 

@@ -150,6 +150,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
+            new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
                 new RuntimeException('cURL error 18: transfer closed with outstanding read data remaining')
             ),
@@ -189,6 +190,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
+            new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
                 new TypeError('Unexpected trophyTitles payload')
             ),
@@ -220,6 +222,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $invalidTitleDateRetry = ['ExampleUser:NPWR12345_00' => true];
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+            new stdClass(),
             new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophySummary(
                 new TypeError(
@@ -268,6 +271,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $invalidTitleDateRetry = [];
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+            new stdClass(),
             new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnEndTrophySummary(
                 new TypeError(

@@ -163,6 +163,18 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
             $worker = $loginResult['worker'];
 
             try {
+                $verificationClient = $this->workerAuthenticator->authenticateWithDifferentWorker((int) $worker['id']);
+            } catch (Throwable $exception) {
+                $this->workerScanCoordinator->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'No different verification worker is available. Waiting 1 minute before retrying.'
+                );
+                sleep(60);
+
+                continue;
+            }
+
+            try {
                 $player = $this->playerScanQueueSelector->selectNextCandidate((int) $worker['id']);
                 $player = $this->workerScanCoordinator->reservePlayerForScanning((int) $worker['id'], $player);
             } catch (Exception $e) {
@@ -229,22 +241,35 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
             try {
                 if (!$privateUser) {
                     if ($level !== 0) {
-                        $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
-                            $client,
-                            $user,
-                            $player,
-                            $worker,
-                            $onlineId,
-                            $recheck,
-                            $missingGameDeletionCheck,
-                            $missingTrophyTitleRetry,
-                            $trophyTitleCountRetry,
-                            $invalidTitleDateRetry,
-                        );
+                        $this->database->beginTransaction();
+
+                        try {
+                            $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+                                $client,
+                                $verificationClient,
+                                $user,
+                                $player,
+                                $worker,
+                                $onlineId,
+                                $recheck,
+                                $missingGameDeletionCheck,
+                                $missingTrophyTitleRetry,
+                                $trophyTitleCountRetry,
+                                $invalidTitleDateRetry,
+                            );
+                        } catch (Throwable $exception) {
+                            $this->database->rollBack();
+
+                            throw $exception;
+                        }
 
                         if ($loopResult->shouldContinueLoop()) {
+                            $this->database->rollBack();
+
                             continue;
                         }
+
+                        $this->database->commit();
                     }
 
                     $this->scanCompletionService->updateRarityPointsForActivePlayer((string) $user->accountId());

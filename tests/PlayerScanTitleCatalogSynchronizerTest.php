@@ -46,6 +46,33 @@ final class PlayerScanTitleCatalogSynchronizerTest extends TestCase
         $this->assertSame(42, $result->titleId);
         $this->assertSame(['NPWR99999_00'], $result->mergeParentsToRecompute);
     }
+
+    public function testSynchronizeCatalogRestartsBeforeWritingWhenWorkerPayloadsDiffer(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $database->exec('CREATE TABLE log (message TEXT NOT NULL)');
+        $fetches = 0;
+        $synchronizer = new PlayerScanTitleCatalogSynchronizer(
+            $database,
+            new Psn100Logger($database),
+            trophyDataFetcher: static function () use (&$fetches): array {
+                $fetches++;
+
+                return ['trophies' => [['trophyId' => 1, 'trophyName' => $fetches === 1 ? 'Expected' : 'Wrong']]];
+            },
+        );
+
+        $result = $synchronizer->synchronizeCatalog(
+            new PlayerScanTitleCatalogTestTrophyTitle('NPWR12345_00'),
+            new stdClass(),
+            new stdClass(),
+        );
+
+        $this->assertTrue($result->restartScan);
+        $this->assertSame(2, $fetches);
+        $this->assertSame(1, (int) $database->query('SELECT COUNT(*) FROM log')->fetchColumn());
+    }
 }
 
 final class PlayerScanTitleCatalogTestPlatform

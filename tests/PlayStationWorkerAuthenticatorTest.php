@@ -147,6 +147,27 @@ final class PlayStationWorkerAuthenticatorTest extends TestCase
         }
     }
 
+    public function testAuthenticateWithDifferentWorkerSkipsExcludedWorker(): void
+    {
+        $excludedWorker = new Worker(20, '', 'excluded', '', new DateTimeImmutable('2024-01-01'), null);
+        $verificationWorker = new Worker(21, '', 'verification', '', new DateTimeImmutable('2024-01-01'), null);
+        $clients = [];
+        $authenticator = new PlayStationWorkerAuthenticator(
+            static fn (): array => [$excludedWorker, $verificationWorker],
+            static function () use (&$clients): object {
+                $client = new WorkerAuthStubClient();
+                $clients[] = $client;
+
+                return $client;
+            },
+        );
+
+        $authenticator->authenticateWithDifferentWorker(20);
+
+        $this->assertSame(1, count($clients));
+        $this->assertSame(['npsso:verification'], $clients[0]->loginMethods);
+    }
+
     public function testAuthenticateWithRetrySleepsBetweenAttempts(): void
     {
         $worker = new Worker(13, '', 'valid-npsso', '', new DateTimeImmutable('2024-01-01'), null);
