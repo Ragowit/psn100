@@ -120,6 +120,27 @@ final readonly class PlayStationWorkerAuthenticator
         throw new RuntimeException('Unable to login to any worker accounts.');
     }
 
+    /** @return object Authenticated PlayStation API client for a worker other than the excluded worker. */
+    public function authenticateWithDifferentWorker(int $excludedWorkerId): object
+    {
+        foreach (($this->workerFetcher)() as $worker) {
+            if (!$worker instanceof Worker || $worker->getId() === $excludedWorkerId) {
+                continue;
+            }
+
+            try {
+                return $this->authenticateWorker($worker);
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
+        throw new RuntimeException(sprintf(
+            'Unable to login to a verification worker other than worker %d.',
+            $excludedWorkerId,
+        ));
+    }
+
   /**
    * @param callable(int, Throwable): void|null $onLoginFailure
    * @return object Authenticated PlayStation API client.

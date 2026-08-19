@@ -99,6 +99,14 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $this->assertSame(0, $result);
     }
 
+    public function testCatalogVerificationRestartBacksOffBeforeRetrying(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/PlayerScanTrophyTitleLoop.php');
+
+        $this->assertStringContainsString('Trophy catalog verification failed. Waiting 1 minute before retrying.', $source);
+        $this->assertStringContainsString('($this->sleeper)(60);', $source);
+    }
+
     public function testDetermineScanStartIndexRescansWhenInvalidTimestampsMatch(): void
     {
         $invalidTimestamp = 'not-a-valid-date';
@@ -150,6 +158,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
+            static fn (): object => new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
                 new RuntimeException('cURL error 18: transfer closed with outstanding read data remaining')
             ),
@@ -189,6 +198,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
+            static fn (): object => new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
                 new TypeError('Unexpected trophyTitles payload')
             ),
@@ -221,6 +231,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
+            static fn (): object => new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophySummary(
                 new TypeError(
                     'GuzzleHttp\Middleware::{closure}(): Argument #1 ($response) must be of type'
@@ -269,6 +280,9 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
+            static function (): never {
+                throw new RuntimeException('Verification worker should not be requested for an unchanged catalog.');
+            },
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnEndTrophySummary(
                 new TypeError(
                     'GuzzleHttp\Middleware::{closure}(): Argument #1 ($response) must be of type'

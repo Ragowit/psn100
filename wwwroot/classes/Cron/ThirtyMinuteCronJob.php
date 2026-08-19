@@ -229,8 +229,14 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
             try {
                 if (!$privateUser) {
                     if ($level !== 0) {
+                        // Do not hold database locks while the title loop performs PSN
+                        // requests, image downloads, or its intentional retry sleeps.
+                        // This also keeps live worker progress and diagnostics visible.
                         $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
                             $client,
+                            fn (): object => $this->workerAuthenticator->authenticateWithDifferentWorker(
+                                (int) $worker['id']
+                            ),
                             $user,
                             $player,
                             $worker,

@@ -38,6 +38,7 @@ final readonly class PlayerScanTrophyTitleLoop
     /**
      * @param array<string, mixed> $player
      * @param array<string, mixed> $worker
+     * @param callable(): object $verificationClientFactory
      * @param array<string, bool> $missingGameDeletionCheck
      * @param array<string, bool> $missingTrophyTitleRetry
      * @param array<string, bool> $trophyTitleCountRetry
@@ -45,6 +46,7 @@ final readonly class PlayerScanTrophyTitleLoop
      */
     public function processAccessibleTrophyTitles(
         object $client,
+        callable $verificationClientFactory,
         object $user,
         array $player,
         array $worker,
@@ -165,6 +167,7 @@ final readonly class PlayerScanTrophyTitleLoop
         $currentScanPosition = 0;
         $scannedGames = [];
         $restartScan = false;
+        $verificationClient = null;
 
         foreach ($trophyTitles as $index => $trophyTitle) {
             $npid = $trophyTitle->npCommunicationId();
@@ -243,8 +246,30 @@ final readonly class PlayerScanTrophyTitleLoop
                 continue;
             }
 
-            $catalogSyncResult = $this->titleCatalogSynchronizer->synchronizeCatalog($trophyTitle, $client);
+            try {
+                $verificationClient ??= $verificationClientFactory();
+            } catch (Throwable) {
+                $this->workerScanCoordinator->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'No different verification worker is available. Waiting 1 minute before retrying.'
+                );
+                ($this->sleeper)(60);
+                $restartScan = true;
+
+                break;
+            }
+
+            $catalogSyncResult = $this->titleCatalogSynchronizer->synchronizeCatalog(
+                $trophyTitle,
+                $client,
+                $verificationClient,
+            );
             if ($catalogSyncResult->restartScan) {
+                $this->workerScanCoordinator->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'Trophy catalog verification failed. Waiting 1 minute before retrying.'
+                );
+                ($this->sleeper)(60);
                 $restartScan = true;
 
                 break;

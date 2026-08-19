@@ -44,7 +44,11 @@ final readonly class PlayerScanTitleCatalogSynchronizer
     ) {
     }
 
-    public function synchronizeCatalog(object $trophyTitle, object $client): PlayerScanTitleCatalogSyncResult
+    public function synchronizeCatalog(
+        object $trophyTitle,
+        object $client,
+        object $verificationClient,
+    ): PlayerScanTitleCatalogSyncResult
     {
         $npid = (string) $trophyTitle->npCommunicationId();
         $newTrophies = false;
@@ -53,13 +57,9 @@ final readonly class PlayerScanTitleCatalogSynchronizer
         $titleId = null;
         $directories = $this->directories();
 
-        $headerSyncResult = $this->titleHeaderSynchronizer()->sync($trophyTitle);
-        $titleDataChanged = $headerSyncResult->titleDataChanged;
-        $titleNeedsUpdate = $headerSyncResult->titleNeedsUpdate;
-        $isNewTitle = $headerSyncResult->isNewTitle;
-
         try {
             $trophyData = $this->fetchTrophyData($npid, $client);
+            $verificationTrophyData = $this->fetchTrophyData($npid, $verificationClient);
         } catch (Throwable $exception) {
             // TODO: Log this error in a way that doesn't spam the logs, but still allows us to see it if it happens frequently.
             // $this->logger->log(sprintf(
@@ -71,6 +71,23 @@ final readonly class PlayerScanTitleCatalogSynchronizer
 
             return PlayerScanTitleCatalogSyncResult::restartScan();
         }
+
+        if ($this->canonicalizeApiData($trophyData) !== $this->canonicalizeApiData($verificationTrophyData)) {
+            $this->logger->log(sprintf(
+                'Trophy data fetched by two workers did not match for %s (%s). Restarting scan without inserting it.',
+                $trophyTitle->name(),
+                $npid,
+            ));
+
+            return PlayerScanTitleCatalogSyncResult::restartScan();
+        }
+
+        // No catalog write may happen until two independently authenticated workers
+        // have returned the same payload.
+        $headerSyncResult = $this->titleHeaderSynchronizer()->sync($trophyTitle);
+        $titleDataChanged = $headerSyncResult->titleDataChanged;
+        $titleNeedsUpdate = $headerSyncResult->titleNeedsUpdate;
+        $isNewTitle = $headerSyncResult->isNewTitle;
 
         $trophyGroups = $trophyData['trophyGroups'] ?? [];
         if (!is_array($trophyGroups)) {
@@ -363,6 +380,26 @@ final readonly class PlayerScanTitleCatalogSynchronizer
         }
 
         return $this->psnGameLookup()->fetchTrophyDataForNpCommunicationId($npCommunicationId, $client);
+    }
+
+    /**
+     * Ignore JSON object key order while retaining list order and scalar types.
+     *
+     * @return array<string|int, mixed>
+     */
+    private function canonicalizeApiData(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = $this->canonicalizeApiData($value);
+            }
+        }
+
+        if (!array_is_list($data)) {
+            ksort($data);
+        }
+
+        return $data;
     }
 
     private function psnGameLookup(): PsnGameLookupService
