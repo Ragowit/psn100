@@ -158,7 +158,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
-            new stdClass(),
+            static fn (): object => new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
                 new RuntimeException('cURL error 18: transfer closed with outstanding read data remaining')
             ),
@@ -198,7 +198,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
-            new stdClass(),
+            static fn (): object => new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophyTitles(
                 new TypeError('Unexpected trophyTitles payload')
             ),
@@ -231,7 +231,7 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
-            new stdClass(),
+            static fn (): object => new stdClass(),
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnTrophySummary(
                 new TypeError(
                     'GuzzleHttp\Middleware::{closure}(): Argument #1 ($response) must be of type'
@@ -280,7 +280,9 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
 
         $result = $this->trophyTitleLoop->processAccessibleTrophyTitles(
             new stdClass(),
-            new stdClass(),
+            static function (): never {
+                throw new RuntimeException('Verification worker should not be requested for an unchanged catalog.');
+            },
             new PlayerScanTrophyTitleLoopTestUserThatThrowsOnEndTrophySummary(
                 new TypeError(
                     'GuzzleHttp\Middleware::{closure}(): Argument #1 ($response) must be of type'

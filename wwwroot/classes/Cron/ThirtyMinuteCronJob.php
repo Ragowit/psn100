@@ -163,18 +163,6 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
             $worker = $loginResult['worker'];
 
             try {
-                $verificationClient = $this->workerAuthenticator->authenticateWithDifferentWorker((int) $worker['id']);
-            } catch (Throwable $exception) {
-                $this->workerScanCoordinator->setWaitingScanProgress(
-                    (int) $worker['id'],
-                    'No different verification worker is available. Waiting 1 minute before retrying.'
-                );
-                sleep(60);
-
-                continue;
-            }
-
-            try {
                 $player = $this->playerScanQueueSelector->selectNextCandidate((int) $worker['id']);
                 $player = $this->workerScanCoordinator->reservePlayerForScanning((int) $worker['id'], $player);
             } catch (Exception $e) {
@@ -246,7 +234,9 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
                         // This also keeps live worker progress and diagnostics visible.
                         $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
                             $client,
-                            $verificationClient,
+                            fn (): object => $this->workerAuthenticator->authenticateWithDifferentWorker(
+                                (int) $worker['id']
+                            ),
                             $user,
                             $player,
                             $worker,
