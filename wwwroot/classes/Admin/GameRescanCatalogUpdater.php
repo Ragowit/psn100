@@ -109,7 +109,18 @@ final readonly class GameRescanCatalogUpdater
                 ? $groupLabel
                 : ($existingGroup['name'] ?? ($existingGroup['detail'] ?? $groupId));
             $contextLabel = (string) $contextLabel;
+            $incomingGroupName = $trophyGroup->name();
+            $groupName = $incomingGroupName !== ''
+                ? $incomingGroupName
+                : (string) ($existingGroup['name'] ?? '');
 
+            $differenceTracker->recordGroupChange(
+                $groupId,
+                $contextLabel,
+                'Name',
+                $existingGroup['name'],
+                $groupName
+            );
             $differenceTracker->recordGroupChange(
                 $groupId,
                 $contextLabel,
@@ -128,10 +139,9 @@ final readonly class GameRescanCatalogUpdater
             $this->trophyCatalogSynchronizer->upsertTrophyGroup(
                 $npCommunicationId,
                 (string) $trophyGroup->id(),
-                $trophyGroup->name(),
+                $groupName,
                 (string) $trophyGroup->detail(),
                 $groupIconFilename,
-                false,
             );
 
             $processedGroups++;

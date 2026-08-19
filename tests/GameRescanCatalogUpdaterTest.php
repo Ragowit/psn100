@@ -165,6 +165,89 @@ final class GameRescanCatalogUpdaterTest extends TestCase
         $this->assertSame('New detail', $detail);
     }
 
+    public function testUpdateFromPsnUpdatesAndRecordsTrophyGroupNameChanges(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, detail, icon_url, platform, set_version)
+            VALUES ('NPWR00001_00', 'Details', 'title.png', 'PS5', '01.00')"
+        );
+        $this->database->exec(
+            "INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url)
+            VALUES ('NPWR00001_00', 'default', 'Old group name', 'Group detail', 'group.png')"
+        );
+        $this->groupDataFetcher->setGroupData([[
+            'group' => new PsnTrophyGroupApiAdapter('default', [
+                'trophyGroupName' => 'New group name',
+                'trophyGroupDetail' => 'Group detail',
+                'trophyGroupIconUrl' => 'https://example.test/group.png',
+            ]),
+            'trophies' => [],
+        ]]);
+
+        $differenceTracker = new GameRescanDifferenceTracker();
+        $this->catalogUpdater->updateFromPsn(
+            new \Tustin\PlayStation\Client(),
+            new GameRescanCatalogUpdaterTestTrophyTitle('Details', '01.00'),
+            'NPWR00001_00',
+            new GameRescanProgressReporter(),
+            $differenceTracker,
+        );
+
+        $name = $this->database->query(
+            "SELECT name FROM trophy_group WHERE np_communication_id = 'NPWR00001_00' AND group_id = 'default'"
+        )->fetchColumn();
+
+        $this->assertSame('New group name', $name);
+        $nameDifference = null;
+        foreach ($differenceTracker->differences as $difference) {
+            if ($difference['field'] === 'Name' && str_contains($difference['context'], 'Group')) {
+                $nameDifference = $difference;
+                break;
+            }
+        }
+
+        $this->assertTrue($nameDifference !== null);
+        $this->assertSame('Old group name', $nameDifference['previous']);
+        $this->assertSame('New group name', $nameDifference['current']);
+    }
+
+    public function testUpdateFromPsnPreservesTrophyGroupNameWhenIncomingNameIsMissing(): void
+    {
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, detail, icon_url, platform, set_version)
+            VALUES ('NPWR00001_00', 'Details', 'title.png', 'PS5', '01.00')"
+        );
+        $this->database->exec(
+            "INSERT INTO trophy_group (np_communication_id, group_id, name, detail, icon_url)
+            VALUES ('NPWR00001_00', 'default', 'Existing group name', 'Group detail', 'group.png')"
+        );
+        $this->groupDataFetcher->setGroupData([[
+            'group' => new PsnTrophyGroupApiAdapter('default', [
+                'trophyGroupDetail' => 'Group detail',
+                'trophyGroupIconUrl' => 'https://example.test/group.png',
+            ]),
+            'trophies' => [],
+        ]]);
+
+        $differenceTracker = new GameRescanDifferenceTracker();
+        $this->catalogUpdater->updateFromPsn(
+            new \Tustin\PlayStation\Client(),
+            new GameRescanCatalogUpdaterTestTrophyTitle('Details', '01.00'),
+            'NPWR00001_00',
+            new GameRescanProgressReporter(),
+            $differenceTracker,
+        );
+
+        $name = $this->database->query(
+            "SELECT name FROM trophy_group WHERE np_communication_id = 'NPWR00001_00' AND group_id = 'default'"
+        )->fetchColumn();
+
+        $this->assertSame('Existing group name', $name);
+        foreach ($differenceTracker->differences as $difference) {
+            $this->assertFalse($difference['field'] === 'Name' && str_contains($difference['context'], 'Group'));
+        }
+    }
+
     public function testUpdateFromPsnPreservesPsvr2PlatformWhenMissingFromIncomingTitle(): void
     {
         $this->database->exec(
