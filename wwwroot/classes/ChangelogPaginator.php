@@ -13,9 +13,8 @@ final readonly class ChangelogPaginator
     {
         $normalizedTotalCount = max($totalCount, 0);
         $normalizedLimit = max($limit, 1);
-        $computedTotalPages = $normalizedTotalCount > 0
-            ? (int) ceil($normalizedTotalCount / $normalizedLimit)
-            : 0;
+        $computedTotalPages = intdiv($normalizedTotalCount, $normalizedLimit)
+            + (int) ($normalizedTotalCount % $normalizedLimit !== 0);
 
         $this->totalCount = $normalizedTotalCount;
         $this->limit = $normalizedLimit;

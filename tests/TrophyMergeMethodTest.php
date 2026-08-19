@@ -31,7 +31,7 @@ final class TrophyMergeMethodTest extends TestCase
     public function testFromMixedThrowsForUnknownValues(): void
     {
         try {
-            TrophyMergeMethod::fromMixed('unknown');
+            (void) TrophyMergeMethod::fromMixed('unknown');
             $this->fail('Expected InvalidArgumentException for unknown merge method.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Wrong input', $exception->getMessage());

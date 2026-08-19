@@ -67,7 +67,7 @@ final class MaintenancePageTest extends TestCase
     public function testBootstrapThrowsForUnsupportedVersion(): void
     {
         try {
-            MaintenancePageStylesheet::bootstrap('5.3.0');
+            (void) MaintenancePageStylesheet::bootstrap('5.3.0');
             $this->fail('Expected InvalidArgumentException for unsupported Bootstrap version.');
         } catch (InvalidArgumentException $exception) {
             $this->assertSame('Unsupported Bootstrap version: 5.3.0', $exception->getMessage());

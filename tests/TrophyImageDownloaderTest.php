@@ -152,7 +152,7 @@ final class TrophyImageDownloaderTest extends TestCase
         $downloader = $this->createDownloader(static fn (string $url): ?string => null);
 
         try {
-            $downloader->downloadMandatoryForRescan(
+            (void) $downloader->downloadMandatoryForRescan(
                 'https://example.test/title.png',
                 $this->tempDirectory,
             );

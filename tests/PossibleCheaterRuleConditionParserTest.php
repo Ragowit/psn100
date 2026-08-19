@@ -89,7 +89,7 @@ final class PossibleCheaterRuleConditionParserTest extends TestCase
     public function testRejectsUnsupportedCondition(): void
     {
         try {
-            $this->parser->parse('te.progress > 0');
+            (void) $this->parser->parse('te.progress > 0');
             $this->fail('Expected InvalidArgumentException was not thrown.');
         } catch (InvalidArgumentException $exception) {
             $this->assertStringContainsString('Unsupported possible cheater rule condition', $exception->getMessage());
