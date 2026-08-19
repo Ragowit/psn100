@@ -19,9 +19,9 @@ final readonly class TrophyTitleNameFormatter
 
     /**
      * True when $storedName is specifically a legacy Arcade/Console Archives title
-     * missing only the series colon relative to $formattedName.
+     * missing only canonical series punctuation relative to $formattedName.
      *
-     * Compares the colon-only transformation directly so intentional casing or other
+     * Compares the punctuation-only transformation directly so intentional casing or other
      * formatter differences are preserved on scan.
      */
     #[\NoDiscard]
@@ -31,7 +31,7 @@ final readonly class TrophyTitleNameFormatter
             return false;
         }
 
-        return $this->ensureArchiveSeriesColon($storedName) === $formattedName;
+        return $this->normalizeArchiveSeriesPunctuation($storedName) === $formattedName;
     }
 
     #[\NoDiscard]
@@ -93,7 +93,21 @@ final readonly class TrophyTitleNameFormatter
             |> rtrim(...)
             |> (fn (string $value): string => $value === '' ? $value : rtrim($value, '.'))
             |> trim(...)
-            |> $this->ensureArchiveSeriesColon(...);
+            |> $this->normalizeArchiveSeriesPunctuation(...);
+    }
+
+    /**
+     * Applies punctuation that is part of known archive-series title branding.
+     */
+    private function normalizeArchiveSeriesPunctuation(string $name): string
+    {
+        $name = $this->ensureArchiveSeriesColon($name);
+
+        return preg_replace(
+            '/^(Arcade Archives 2|Arcade Archives|Console Archives): ([^:]+): (.+)$/i',
+            '$1: $2 - $3',
+            $name,
+        ) ?? $name;
     }
 
     /**
@@ -212,7 +226,8 @@ final readonly class TrophyTitleNameFormatter
 
             $convertedWords[] = $leadingPunctuation . $processedCore . $trailingPunctuation;
 
-            $capitalizeNext = $this->shouldCapitalizeAfterPunctuation($trailingPunctuation);
+            $capitalizeNext = $coreWord === '-'
+                || $this->shouldCapitalizeAfterPunctuation($trailingPunctuation);
         }
 
         return implode(' ', $convertedWords);

@@ -96,6 +96,28 @@ final class TrophyTitleNamingTest extends TestCase
         $this->assertSame('Console Archives: Cool Boarders', $formatted);
     }
 
+    public function testArchiveSeriesSubtitlesUseCanonicalHyphenSeparators(): void
+    {
+        $this->assertSame(
+            'Console Archives: Rhapsody II - Ballad of the Little Princess',
+            $this->formatter->format(
+                'Console Archives Rhapsody II: Ballad of the Little Princess'
+            ),
+        );
+        $this->assertSame(
+            'Arcade Archives: Alpha Beta - Gamma Delta',
+            $this->formatter->format('Arcade Archives Alpha Beta: Gamma Delta'),
+        );
+        $this->assertSame(
+            'Arcade Archives 2: Alpha Beta - Gamma Delta',
+            $this->formatter->format('Arcade Archives 2 Alpha Beta: Gamma Delta'),
+        );
+        $this->assertSame(
+            'Console Archives: Example Game - The Subtitle',
+            $this->formatter->format('Console Archives Example Game: the Subtitle'),
+        );
+    }
+
     public function testArchiveSeriesTitlesThatAlreadyHaveAColonAreUnchanged(): void
     {
         $this->assertSame(
@@ -137,6 +159,24 @@ final class TrophyTitleNamingTest extends TestCase
             $this->formatter->shouldRewriteStoredName(
                 'Console Archives Cool Boarders',
                 'Console Archives: Cool Boarders'
+            )
+        );
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Console Archives: Rhapsody II: Ballad of the Little Princess',
+                'Console Archives: Rhapsody II - Ballad of the Little Princess'
+            )
+        );
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives: Alpha Beta: Gamma Delta',
+                'Arcade Archives: Alpha Beta - Gamma Delta'
+            )
+        );
+        $this->assertTrue(
+            $this->formatter->shouldRewriteStoredName(
+                'Arcade Archives 2: Alpha Beta: Gamma Delta',
+                'Arcade Archives 2: Alpha Beta - Gamma Delta'
             )
         );
         $this->assertFalse(
