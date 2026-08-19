@@ -264,8 +264,7 @@ final readonly class TrophyCatalogSynchronizer
             ? 'name = new.name, detail = new.detail, icon_url = new.icon_url'
             : 'detail = new.detail, icon_url = new.icon_url';
 
-        $query = $this->database->prepare(
-            "INSERT INTO trophy_group (
+        $insert = "INSERT INTO trophy_group (
                 np_communication_id,
                 group_id,
                 name,
@@ -278,10 +277,13 @@ final readonly class TrophyCatalogSynchronizer
                 :name,
                 :detail,
                 :icon_url
-            ) AS new
-            ON DUPLICATE KEY UPDATE
-                {$duplicateUpdate}"
-        );
+            )";
+        $query = $this->database->prepare($this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? $insert . ' ON CONFLICT (np_communication_id, group_id) DO UPDATE SET '
+                . ($updateNameOnDuplicate
+                    ? 'name = excluded.name, detail = excluded.detail, icon_url = excluded.icon_url'
+                    : 'detail = excluded.detail, icon_url = excluded.icon_url')
+            : $insert . " AS new ON DUPLICATE KEY UPDATE {$duplicateUpdate}");
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
         $query->bindValue(':name', $name, PDO::PARAM_STR);

@@ -113,6 +113,13 @@ final readonly class GameRescanCatalogUpdater
             $differenceTracker->recordGroupChange(
                 $groupId,
                 $contextLabel,
+                'Name',
+                $existingGroup['name'],
+                $trophyGroup->name()
+            );
+            $differenceTracker->recordGroupChange(
+                $groupId,
+                $contextLabel,
                 'Detail',
                 $existingGroup['detail'],
                 (string) $trophyGroup->detail()
@@ -131,7 +138,6 @@ final readonly class GameRescanCatalogUpdater
                 $trophyGroup->name(),
                 (string) $trophyGroup->detail(),
                 $groupIconFilename,
-                false,
             );
 
             $processedGroups++;
