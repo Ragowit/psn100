@@ -78,4 +78,27 @@ final class PaginationTest extends TestCase
         $this->assertStringContainsString('aria-current="page"', $html);
         $this->assertStringContainsString('>1<', $html);
     }
+
+    public function testBuildItemsAvoidsOverflowAtMaximumPage(): void
+    {
+        $items = Pagination::create(PHP_INT_MAX, PHP_INT_MAX)->buildItems();
+
+        $this->assertCount(6, $items);
+
+        $renderedItems = array_map(
+            static fn (PaginationItem $item): string => $item->render(
+                static fn (int $page): string => '/page/' . $page
+            ),
+            $items
+        );
+
+        $this->assertStringContainsString(
+            'href="/page/' . PHP_INT_MAX . '" aria-current="page"',
+            $renderedItems[5]
+        );
+        $this->assertStringContainsString(
+            'href="/page/' . (PHP_INT_MAX - 1) . '" aria-label="Previous"',
+            $renderedItems[0]
+        );
+    }
 }

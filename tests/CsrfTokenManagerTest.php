@@ -43,7 +43,7 @@ final class CsrfTokenManagerTest extends TestCase
 
     public function testValidateRejectsMismatchedToken(): void
     {
-        CsrfTokenManager::getToken('admin');
+        (void) CsrfTokenManager::getToken('admin');
 
         $this->assertFalse(CsrfTokenManager::validate('admin', 'invalid-token'));
     }

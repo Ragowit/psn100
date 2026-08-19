@@ -38,7 +38,7 @@ final class PlayerQueuePollTokenManagerTest extends TestCase
     public function testValidateRejectsMissingOrMismatchedToken(): void
     {
         $manager = new PlayerQueuePollTokenManager();
-        $manager->issue('ExamplePlayer');
+        (void) $manager->issue('ExamplePlayer');
 
         $this->assertFalse($manager->validate('ExamplePlayer', ''));
         $this->assertFalse($manager->validate('ExamplePlayer', 'invalid-token'));

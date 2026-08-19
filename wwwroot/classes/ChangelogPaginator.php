@@ -13,9 +13,8 @@ final readonly class ChangelogPaginator
     {
         $normalizedTotalCount = max($totalCount, 0);
         $normalizedLimit = max($limit, 1);
-        $computedTotalPages = $normalizedTotalCount > 0
-            ? (int) ceil($normalizedTotalCount / $normalizedLimit)
-            : 0;
+        $computedTotalPages = intdiv($normalizedTotalCount, $normalizedLimit)
+            + (int) ($normalizedTotalCount % $normalizedLimit !== 0);
 
         $this->totalCount = $normalizedTotalCount;
         $this->limit = $normalizedLimit;
@@ -62,7 +61,13 @@ final readonly class ChangelogPaginator
 
     public function getRangeEnd(): int
     {
-        return $this->hasResults() ? min($this->getOffset() + $this->limit, $this->totalCount) : 0;
+        if (!$this->hasResults()) {
+            return 0;
+        }
+
+        $offset = $this->getOffset();
+
+        return $offset + min($this->limit, $this->totalCount - $offset);
     }
 
     public function hasPreviousPage(): bool
@@ -82,7 +87,7 @@ final readonly class ChangelogPaginator
 
     public function getNextPage(): int
     {
-        return min($this->currentPage + 1, $this->getLastPageNumber());
+        return $this->hasNextPage() ? $this->currentPage + 1 : $this->currentPage;
     }
 
     public function getLastPageNumber(): int

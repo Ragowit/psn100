@@ -68,4 +68,30 @@ final class ChangelogPaginatorTest extends TestCase
         $this->assertFalse($paginator->hasNextPage());
         $this->assertSame(1, $paginator->getLastPageNumber());
     }
+
+    public function testTotalPagesUsesExactIntegerArithmetic(): void
+    {
+        $paginator = new ChangelogPaginator(1, PHP_INT_MAX, 3);
+
+        $this->assertSame(intdiv(PHP_INT_MAX, 3) + 1, $paginator->getTotalPages());
+    }
+
+    public function testLastPageRangeAvoidsIntegerOverflow(): void
+    {
+        $paginator = new ChangelogPaginator(PHP_INT_MAX, PHP_INT_MAX, 3);
+
+        $this->assertSame(intdiv(PHP_INT_MAX, 3) + 1, $paginator->getCurrentPage());
+        $this->assertSame(PHP_INT_MAX - 1, $paginator->getOffset());
+        $this->assertSame(PHP_INT_MAX, $paginator->getRangeStart());
+        $this->assertSame(PHP_INT_MAX, $paginator->getRangeEnd());
+    }
+
+    public function testNextPageAvoidsIntegerOverflowOnMaximumPage(): void
+    {
+        $paginator = new ChangelogPaginator(PHP_INT_MAX, PHP_INT_MAX, 1);
+
+        $this->assertSame(PHP_INT_MAX, $paginator->getCurrentPage());
+        $this->assertFalse($paginator->hasNextPage());
+        $this->assertSame(PHP_INT_MAX, $paginator->getNextPage());
+    }
 }
