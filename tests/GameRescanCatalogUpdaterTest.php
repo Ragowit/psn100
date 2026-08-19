@@ -91,7 +91,7 @@ final class GameRescanCatalogUpdaterTest extends TestCase
         );
     }
 
-    public function testUpdateFromPsnSkipsWhenIncomingSetVersionIsLower(): void
+    public function testUpdateFromPsnRefreshesTitleWhenIncomingSetVersionIsLower(): void
     {
         $this->database->exec(
             "INSERT INTO trophy_title (np_communication_id, detail, icon_url, platform, set_version)
@@ -114,12 +114,14 @@ final class GameRescanCatalogUpdaterTest extends TestCase
         );
 
         $this->assertSame([], $groups);
-        $this->assertSame([], $differenceTracker->differences);
+        $this->assertSame(2, count($differenceTracker->differences));
 
-        $detail = $this->database->query(
-            "SELECT detail FROM trophy_title WHERE np_communication_id = 'NPWR00001_00'"
-        )->fetchColumn();
-        $this->assertSame('Old detail', $detail);
+        $title = $this->database->query(
+            "SELECT detail, icon_url, set_version FROM trophy_title WHERE np_communication_id = 'NPWR00001_00'"
+        )->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame('New detail', $title['detail']);
+        $this->assertSame(md5('image-bytes') . '.png', $title['icon_url']);
+        $this->assertSame('01.10', $title['set_version']);
     }
 
     public function testUpdateFromPsnRecordsTitleDetailChanges(): void
