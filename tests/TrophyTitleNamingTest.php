@@ -112,6 +112,10 @@ final class TrophyTitleNamingTest extends TestCase
             'Arcade Archives 2: Alpha Beta - Gamma Delta',
             $this->formatter->format('Arcade Archives 2 Alpha Beta: Gamma Delta'),
         );
+        $this->assertSame(
+            'Console Archives: Example Game - The Subtitle',
+            $this->formatter->format('Console Archives Example Game: the Subtitle'),
+        );
     }
 
     public function testArchiveSeriesTitlesThatAlreadyHaveAColonAreUnchanged(): void

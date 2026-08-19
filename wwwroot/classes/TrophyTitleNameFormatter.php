@@ -226,7 +226,8 @@ final readonly class TrophyTitleNameFormatter
 
             $convertedWords[] = $leadingPunctuation . $processedCore . $trailingPunctuation;
 
-            $capitalizeNext = $this->shouldCapitalizeAfterPunctuation($trailingPunctuation);
+            $capitalizeNext = $coreWord === '-'
+                || $this->shouldCapitalizeAfterPunctuation($trailingPunctuation);
         }
 
         return implode(' ', $convertedWords);
