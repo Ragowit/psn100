@@ -241,35 +241,26 @@ final readonly class ThirtyMinuteCronJob implements CronJobInterface
             try {
                 if (!$privateUser) {
                     if ($level !== 0) {
-                        $this->database->beginTransaction();
-
-                        try {
-                            $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
-                                $client,
-                                $verificationClient,
-                                $user,
-                                $player,
-                                $worker,
-                                $onlineId,
-                                $recheck,
-                                $missingGameDeletionCheck,
-                                $missingTrophyTitleRetry,
-                                $trophyTitleCountRetry,
-                                $invalidTitleDateRetry,
-                            );
-                        } catch (Throwable $exception) {
-                            $this->database->rollBack();
-
-                            throw $exception;
-                        }
+                        // Do not hold database locks while the title loop performs PSN
+                        // requests, image downloads, or its intentional retry sleeps.
+                        // This also keeps live worker progress and diagnostics visible.
+                        $loopResult = $this->trophyTitleLoop->processAccessibleTrophyTitles(
+                            $client,
+                            $verificationClient,
+                            $user,
+                            $player,
+                            $worker,
+                            $onlineId,
+                            $recheck,
+                            $missingGameDeletionCheck,
+                            $missingTrophyTitleRetry,
+                            $trophyTitleCountRetry,
+                            $invalidTitleDateRetry,
+                        );
 
                         if ($loopResult->shouldContinueLoop()) {
-                            $this->database->rollBack();
-
                             continue;
                         }
-
-                        $this->database->commit();
                     }
 
                     $this->scanCompletionService->updateRarityPointsForActivePlayer((string) $user->accountId());

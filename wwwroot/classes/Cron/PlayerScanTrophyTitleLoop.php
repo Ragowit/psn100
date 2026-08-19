@@ -250,6 +250,11 @@ final readonly class PlayerScanTrophyTitleLoop
                 $verificationClient,
             );
             if ($catalogSyncResult->restartScan) {
+                $this->workerScanCoordinator->setWaitingScanProgress(
+                    (int) $worker['id'],
+                    'Trophy catalog verification failed. Waiting 1 minute before retrying.'
+                );
+                ($this->sleeper)(60);
                 $restartScan = true;
 
                 break;

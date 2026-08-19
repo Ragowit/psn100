@@ -114,6 +114,19 @@ final class ThirtyMinuteCronJobWorkerValidationTest extends TestCase
         $this->assertStringContainsString("=== 1213", $source);
     }
 
+    public function testTitleLoopDoesNotRunInsideLongLivedDatabaseTransaction(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/ThirtyMinuteCronJob.php');
+
+        $this->assertFalse(str_contains($source, '$this->database->beginTransaction()'));
+        $this->assertFalse(str_contains($source, '$this->database->rollBack()'));
+        $this->assertFalse(str_contains($source, '$this->database->commit()'));
+        $this->assertStringContainsString(
+            'Do not hold database locks while the title loop performs PSN',
+            $source
+        );
+    }
+
     public function testIsLockWaitTimeoutExceptionDetectsMysqlError1205(): void
     {
         $method = new ReflectionMethod(ThirtyMinuteCronJob::class, 'isLockWaitTimeoutException');

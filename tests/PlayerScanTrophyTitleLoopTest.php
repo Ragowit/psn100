@@ -99,6 +99,14 @@ final class PlayerScanTrophyTitleLoopTest extends TestCase
         $this->assertSame(0, $result);
     }
 
+    public function testCatalogVerificationRestartBacksOffBeforeRetrying(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../wwwroot/classes/Cron/PlayerScanTrophyTitleLoop.php');
+
+        $this->assertStringContainsString('Trophy catalog verification failed. Waiting 1 minute before retrying.', $source);
+        $this->assertStringContainsString('($this->sleeper)(60);', $source);
+    }
+
     public function testDetermineScanStartIndexRescansWhenInvalidTimestampsMatch(): void
     {
         $invalidTimestamp = 'not-a-valid-date';
