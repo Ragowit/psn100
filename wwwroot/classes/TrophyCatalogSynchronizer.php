@@ -163,41 +163,6 @@ final readonly class TrophyCatalogSynchronizer
         return $row === false ? null : $row;
     }
 
-    /**
-     * Conditionally rewrite a title name only when it still matches $expectedCurrentName.
-     *
-     * The expected-name predicate prevents a concurrent admin rename from being
-     * overwritten by a stale header-sync snapshot. MySQL compares with utf8mb4_bin
-     * so case- or accent-only renames are treated as changes.
-     */
-    public function updateTrophyTitleName(
-        string $npCommunicationId,
-        string $name,
-        string $expectedCurrentName,
-    ): int {
-        $query = $this->database->prepare(
-            'UPDATE trophy_title
-            SET name = :name
-            WHERE np_communication_id = :np_communication_id
-                AND ' . $this->exactNameMatchSql()
-        );
-        $query->bindValue(':name', $name, PDO::PARAM_STR);
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':expected_current_name', $expectedCurrentName, PDO::PARAM_STR);
-        $query->execute();
-
-        return (int) $query->rowCount();
-    }
-
-    private function exactNameMatchSql(): string
-    {
-        $driver = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-        return $driver === 'mysql'
-            ? 'name COLLATE utf8mb4_bin = :expected_current_name'
-            : 'name = :expected_current_name';
-    }
-
     public function upsertTrophyTitle(
         string $npCommunicationId,
         string $name,
