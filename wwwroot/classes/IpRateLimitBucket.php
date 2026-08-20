@@ -9,8 +9,8 @@ enum IpRateLimitBucket: string
     case PlayerReport = 'player_report';
     case ScanLogPoll = 'scan_log_poll';
 
-    private const int QUEUE_POLL_MAX_REQUESTS = 60;
-    private const int QUEUE_POLL_WINDOW_SECONDS = 60;
+    private const int QUEUE_POLL_MAX_REQUESTS = 120;
+    private const int QUEUE_POLL_WINDOW_SECONDS = 120;
     private const int QUEUE_SUBMIT_MAX_REQUESTS = 10;
     private const int QUEUE_SUBMIT_WINDOW_SECONDS = 60;
     private const int PLAYER_REPORT_MAX_REQUESTS = 5;
