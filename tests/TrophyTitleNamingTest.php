@@ -96,7 +96,7 @@ final class TrophyTitleNamingTest extends TestCase
         $this->assertSame('Console Archives: Cool Boarders', $formatted);
     }
 
-    public function testArchiveSeriesSubtitlesUseCanonicalHyphenSeparators(): void
+    public function testArchiveSeriesSubtitleUsesHyphenAfterPrefixColon(): void
     {
         $this->assertSame(
             'Console Archives: Rhapsody II - Ballad of the Little Princess',
@@ -104,17 +104,40 @@ final class TrophyTitleNamingTest extends TestCase
                 'Console Archives Rhapsody II: Ballad of the Little Princess'
             ),
         );
+    }
+
+    public function testSubtitleColonPrecedesAdditionalContentHyphen(): void
+    {
         $this->assertSame(
-            'Arcade Archives: Alpha Beta - Gamma Delta',
-            $this->formatter->format('Arcade Archives Alpha Beta: Gamma Delta'),
+            'Pathfinder: Kingmaker - Definitive Edition',
+            $this->formatter->format('Pathfinder: Kingmaker: Definitive Edition'),
         );
         $this->assertSame(
-            'Arcade Archives 2: Alpha Beta - Gamma Delta',
-            $this->formatter->format('Arcade Archives 2 Alpha Beta: Gamma Delta'),
+            "Tom Clancy's Rainbow Six: Siege - Operation Grim Sky",
+            $this->formatter->format("Tom Clancy's Rainbow Six: Siege - Operation Grim Sky"),
         );
         $this->assertSame(
-            'Console Archives: Example Game - The Subtitle',
-            $this->formatter->format('Console Archives Example Game: the Subtitle'),
+            'The Witcher 3: Wild Hunt - Heart of Stone',
+            $this->formatter->format('The Witcher 3: Wild Hunt - Heart of Stone'),
+        );
+    }
+
+    public function testSeparatorSpacingAndOrderAreNormalized(): void
+    {
+        $this->assertSame('Game: Title - Test', $this->formatter->format('Game - Title - Test'));
+        $this->assertSame('Game: Title - Test', $this->formatter->format('Game - Title: Test'));
+        $this->assertSame('Game: Title - Test', $this->formatter->format('Game : Title- Test'));
+        $this->assertSame('Game: Title-Test', $this->formatter->format('Game : Title-Test'));
+        $this->assertSame('Game: Title', $this->formatter->format('Game -Title-'));
+    }
+
+    public function testSeparatorConventionResetsAfterAdditionalContentHyphen(): void
+    {
+        $this->assertSame(
+            'Resident Evil: Revelations 2 - Extra Episode 2: Little Miss',
+            $this->formatter->format(
+                'Resident Evil: Revelations 2 - Extra Episode 2: Little Miss'
+            ),
         );
     }
 
@@ -141,79 +164,4 @@ final class TrophyTitleNamingTest extends TestCase
         $this->assertSame('Arcade Archives 2: Raiden Fighters', $formatted);
     }
 
-    public function testShouldRewriteStoredNameOnlyForLegacyArchiveColonForms(): void
-    {
-        $this->assertTrue(
-            $this->formatter->shouldRewriteStoredName(
-                'Arcade Archives Ace Driver',
-                'Arcade Archives: Ace Driver'
-            )
-        );
-        $this->assertTrue(
-            $this->formatter->shouldRewriteStoredName(
-                'Arcade Archives 2 Ace Driver',
-                'Arcade Archives 2: Ace Driver'
-            )
-        );
-        $this->assertTrue(
-            $this->formatter->shouldRewriteStoredName(
-                'Console Archives Cool Boarders',
-                'Console Archives: Cool Boarders'
-            )
-        );
-        $this->assertTrue(
-            $this->formatter->shouldRewriteStoredName(
-                'Console Archives: Rhapsody II: Ballad of the Little Princess',
-                'Console Archives: Rhapsody II - Ballad of the Little Princess'
-            )
-        );
-        $this->assertTrue(
-            $this->formatter->shouldRewriteStoredName(
-                'Arcade Archives: Alpha Beta: Gamma Delta',
-                'Arcade Archives: Alpha Beta - Gamma Delta'
-            )
-        );
-        $this->assertTrue(
-            $this->formatter->shouldRewriteStoredName(
-                'Arcade Archives 2: Alpha Beta: Gamma Delta',
-                'Arcade Archives 2: Alpha Beta - Gamma Delta'
-            )
-        );
-        $this->assertFalse(
-            $this->formatter->shouldRewriteStoredName(
-                'Arcade Archives: Ace Driver',
-                'Arcade Archives: Ace Driver'
-            )
-        );
-        $this->assertFalse(
-            $this->formatter->shouldRewriteStoredName(
-                'Dig Dug (Arcade Archives)',
-                'Arcade Archives: Dig Dug'
-            )
-        );
-        $this->assertFalse(
-            $this->formatter->shouldRewriteStoredName(
-                'Bus Simulator : World Tour',
-                'Bus Simulator: World Tour'
-            )
-        );
-        $this->assertFalse(
-            $this->formatter->shouldRewriteStoredName(
-                'BUS SIMULATOR: WORLD TOUR',
-                'Bus Simulator: World Tour'
-            )
-        );
-        $this->assertFalse(
-            $this->formatter->shouldRewriteStoredName(
-                'ARCADE ARCHIVES ACE DRIVER',
-                'Arcade Archives: Ace Driver'
-            )
-        );
-        $this->assertFalse(
-            $this->formatter->shouldRewriteStoredName(
-                'arcade archives ace driver',
-                'Arcade Archives: Ace Driver'
-            )
-        );
-    }
 }

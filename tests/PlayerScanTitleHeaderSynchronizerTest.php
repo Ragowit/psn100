@@ -124,22 +124,16 @@ final class PlayerScanTitleHeaderSynchronizerTest extends TestCase
         $this->assertSame('02.00', $row['set_version']);
     }
 
-    public function testSyncRewritesStoredNameWhenOnlyMissingFormatterNormalization(): void
+    public function testSyncFormatsArchivePrefixWhenInsertingTitle(): void
     {
-        file_put_contents($this->titleIconDirectory . 'existing.png', 'icon-bytes');
-        $this->database->exec(
-            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
-            VALUES ('NPWR12345_00', 'Arcade Archives Ace Driver', 'Details', 'existing.png', 'PS5', '01.00')"
-        );
-
         $result = $this->synchronizer->sync(new PlayerScanTitleHeaderTestTrophyTitle(
             'NPWR12345_00',
             name: 'Arcade Archives Ace Driver',
         ));
 
         $this->assertTrue($result->titleDataChanged);
-        $this->assertFalse($result->titleNeedsUpdate);
-        $this->assertFalse($result->isNewTitle);
+        $this->assertTrue($result->titleNeedsUpdate);
+        $this->assertTrue($result->isNewTitle);
 
         $query = $this->database->prepare(
             'SELECT name FROM trophy_title WHERE np_communication_id = :np_communication_id'
@@ -148,6 +142,29 @@ final class PlayerScanTitleHeaderSynchronizerTest extends TestCase
         $query->execute();
 
         $this->assertSame('Arcade Archives: Ace Driver', $query->fetchColumn());
+    }
+
+    public function testSyncRetainsFormattedArchivePrefixDuringNormalUpdate(): void
+    {
+        file_put_contents($this->titleIconDirectory . 'existing.png', 'icon-bytes');
+        $this->database->exec(
+            "INSERT INTO trophy_title (np_communication_id, name, detail, icon_url, platform, set_version)
+            VALUES ('NPWR12345_00', 'Console Archives: Cool Boarders', 'Old details', 'existing.png', 'PS5', '01.00')"
+        );
+
+        $result = $this->synchronizer->sync(new PlayerScanTitleHeaderTestTrophyTitle(
+            'NPWR12345_00',
+            detail: 'Updated details',
+            name: 'Console Archives Cool Boarders',
+        ));
+
+        $this->assertTrue($result->titleDataChanged);
+        $this->assertTrue($result->titleNeedsUpdate);
+
+        $query = $this->database->query(
+            "SELECT name FROM trophy_title WHERE np_communication_id = 'NPWR12345_00'"
+        );
+        $this->assertSame('Console Archives: Cool Boarders', $query->fetchColumn());
     }
 
     public function testSyncDoesNotOverwriteIntentionalTitleRename(): void
@@ -261,6 +278,20 @@ final class PlayerScanTitleHeaderSynchronizerTestPDO extends PDO
 {
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (str_contains($query, 'INSERT INTO trophy_title(')) {
+            $query = 'INSERT INTO trophy_title (
+                    np_communication_id, name, detail, icon_url, platform, set_version
+                ) VALUES (
+                    :np_communication_id, :name, :detail, :icon_url, :platform, :set_version
+                ) ON CONFLICT (np_communication_id) DO UPDATE SET
+                    detail = CASE
+                        WHEN :incoming_version_is_older = 1 THEN trophy_title.detail
+                        ELSE excluded.detail
+                    END,
+                    icon_url = excluded.icon_url,
+                    set_version = excluded.set_version';
+        }
+
         return parent::prepare(
             str_replace('INSERT IGNORE', 'INSERT OR IGNORE', $query),
             $options,

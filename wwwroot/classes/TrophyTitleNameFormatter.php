@@ -17,23 +17,6 @@ final readonly class TrophyTitleNameFormatter
             |> $this->toApaTitleCase(...);
     }
 
-    /**
-     * True when $storedName is specifically a legacy Arcade/Console Archives title
-     * missing only canonical series punctuation relative to $formattedName.
-     *
-     * Compares the punctuation-only transformation directly so intentional casing or other
-     * formatter differences are preserved on scan.
-     */
-    #[\NoDiscard]
-    public function shouldRewriteStoredName(string $storedName, string $formattedName): bool
-    {
-        if ($storedName === $formattedName) {
-            return false;
-        }
-
-        return $this->normalizeArchiveSeriesPunctuation($storedName) === $formattedName;
-    }
-
     #[\NoDiscard]
     public function sanitize(string $name): string
     {
@@ -42,7 +25,8 @@ final readonly class TrophyTitleNameFormatter
             |> (fn(string $value): string => str_replace(['™', '®', '©'], '', $value))
             |> (fn(string $value): string => str_replace('–', '-', $value))
             |> (fn(string $value): string => str_replace(['’', '´', '`'], '\'', $value))
-            |> (fn(string $value): string => preg_replace('/\s*:\s*/', ': ', $value) ?? $value);
+            |> (fn(string $value): string => preg_replace('/\s*:\s*/', ': ', $value) ?? $value)
+            |> (fn(string $value): string => preg_replace('/(?:\s+-\s*|\s*-\s+)/', ' - ', $value) ?? $value);
 
         if ($name === '') {
             return $name;
@@ -75,39 +59,18 @@ final readonly class TrophyTitleNameFormatter
             $name = preg_replace($matchingSuffix, '', $name) ?? $name;
         }
 
-        if (str_ends_with($name, ' -')) {
-            $name = substr($name, 0, -2) |> rtrim(...);
+        if (str_ends_with($name, '-')) {
+            $name = substr($name, 0, -1) |> rtrim(...);
         }
 
-        $separatorPosition = strpos($name, ' - ');
+        $name = $this->ensureArchiveSeriesPrefixColon($name);
 
-        if ($separatorPosition !== false) {
-            $prefix = substr($name, 0, $separatorPosition);
-
-            if (!str_contains($prefix, ':')) {
-                $name = substr_replace($name, ': ', $separatorPosition, 3);
-            }
-        }
+        $name = $this->normalizeTitleSeparators($name);
 
         return $name
             |> rtrim(...)
             |> (fn (string $value): string => $value === '' ? $value : rtrim($value, '.'))
-            |> trim(...)
-            |> $this->normalizeArchiveSeriesPunctuation(...);
-    }
-
-    /**
-     * Applies punctuation that is part of known archive-series title branding.
-     */
-    private function normalizeArchiveSeriesPunctuation(string $name): string
-    {
-        $name = $this->ensureArchiveSeriesColon($name);
-
-        return preg_replace(
-            '/^(Arcade Archives 2|Arcade Archives|Console Archives): ([^:]+): (.+)$/i',
-            '$1: $2 - $3',
-            $name,
-        ) ?? $name;
+            |> trim(...);
     }
 
     /**
@@ -115,7 +78,7 @@ final readonly class TrophyTitleNameFormatter
      *
      * Longer prefixes are matched first so "Arcade Archives 2" wins over "Arcade Archives".
      */
-    private function ensureArchiveSeriesColon(string $name): string
+    private function ensureArchiveSeriesPrefixColon(string $name): string
     {
         if ($name === '') {
             return $name;
@@ -146,6 +109,28 @@ final readonly class TrophyTitleNameFormatter
         }
 
         return $name;
+    }
+
+    /**
+     * Alternates subtitle and additional-content separators within each title section.
+     *
+     * A colon introduces a subtitle and a hyphen introduces the next content section.
+     * After a hyphen, the convention starts over so that section may have its own subtitle.
+     */
+    private function normalizeTitleSeparators(string $name): string
+    {
+        $hasSubtitle = false;
+
+        return preg_replace_callback(
+            '/: | - /',
+            static function (array $_matches) use (&$hasSubtitle): string {
+                $separator = $hasSubtitle ? ' - ' : ': ';
+                $hasSubtitle = !$hasSubtitle;
+
+                return $separator;
+            },
+            $name,
+        ) ?? $name;
     }
 
     #[\NoDiscard]
