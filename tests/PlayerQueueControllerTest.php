@@ -128,7 +128,7 @@ final class PlayerQueueControllerTest extends TestCase
         $handler = new PlayerQueueHandlerSpy(PlayerQueueResponse::complete('unused'));
         $controller = new PlayerQueueController($handler, $rateLimitService);
 
-        for ($index = 0; $index < 60; $index++) {
+        for ($index = 0; $index < 120; $index++) {
             $controller->handleQueuePosition(['q' => 'QueueUser', 'poll_token' => 'token'], ['REMOTE_ADDR' => '192.0.2.44']);
         }
 
