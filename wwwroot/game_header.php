@@ -152,11 +152,15 @@ $escapedPlayer = isset($player) ? Html::escape((string) $player) : null;
                     </div>
 
                     <?php
-                    if ($gameHeaderData->hasStacks()) {
-                        $stacks = $gameHeaderData->getStacks();
+                    if ($gameHeaderData->hasStacks() || $gameHeaderData->hasReplacedTitles()) {
                         ?>
-                        <!-- Stacks -->
-                        <div class="dropdown ms-auto align-self-start">
+                        <div class="hstack gap-2 ms-auto align-self-start">
+                        <?php
+                        if ($gameHeaderData->hasStacks()) {
+                            $stacks = $gameHeaderData->getStacks();
+                            ?>
+                            <!-- Stacks -->
+                            <div class="dropdown">
                             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Stacks (<?= count($stacks); ?>)
                             </button>
@@ -187,6 +191,37 @@ $escapedPlayer = isset($player) ? Html::escape((string) $player) : null;
                                 }
                                 ?>
                             </ul>
+                            </div>
+                            <?php
+                        }
+
+                        if ($gameHeaderData->hasReplacedTitles()) {
+                            $replacedTitles = $gameHeaderData->getReplacedTitles();
+                            ?>
+                            <!-- Replaced games -->
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Replaces (<?= count($replacedTitles); ?>)
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <?php
+                                    foreach ($replacedTitles as $replacedTitle) {
+                                        $replacedTitleLink = $replacedTitle->getId() . '-' . $utility->slugify($replacedTitle->getName());
+                                        if ($encodedPlayer !== null) {
+                                            $replacedTitleLink .= '/' . $encodedPlayer;
+                                        }
+                                        ?>
+                                        <li>
+                                            <a class="dropdown-item" href="/game/<?= $replacedTitleLink; ?>"><?= Html::escape($replacedTitle->getName()); ?></a>
+                                        </li>
+                                        <?php
+                                    }
+                                    ?>
+                                </ul>
+                            </div>
+                            <?php
+                        }
+                        ?>
                         </div>
                         <?php
                     }

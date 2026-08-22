@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameObsoleteReplacement.php';
+require_once __DIR__ . '/Game/GameReplacedTitle.php';
 require_once __DIR__ . '/Game/GameDetails.php';
 require_once __DIR__ . '/Game/GameHeaderData.php';
 require_once __DIR__ . '/Game/GameHeaderParent.php';
@@ -51,7 +52,9 @@ readonly class GameHeaderService
 
         $psnpPlusNote = $this->findPsnpPlusNote($game);
 
-        return new GameHeaderData($parentGame, $stacks, $unobtainableTrophyCount, $obsoleteReplacements, $psnpPlusNote);
+        $replacedTitles = $this->fetchReplacedTitles($game->getId());
+
+        return new GameHeaderData($parentGame, $stacks, $unobtainableTrophyCount, $obsoleteReplacements, $psnpPlusNote, $replacedTitles);
     }
 
     private function fetchParentGame(string $npCommunicationId): ?GameHeaderParent
@@ -179,6 +182,42 @@ readonly class GameHeaderService
         }
 
         return $ordered;
+    }
+
+    /**
+     * @return GameReplacedTitle[]
+     */
+    private function fetchReplacedTitles(int $gameId): array
+    {
+        $obsoleteIdCondition = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? "INSTR(',' || REPLACE(ttm.obsolete_ids, ' ', '') || ',', ',' || :game_id || ',') > 0"
+            : "FIND_IN_SET(:game_id, REPLACE(ttm.obsolete_ids, ' ', '')) > 0";
+
+        $query = $this->database->prepare(
+            <<<SQL
+            SELECT
+                tt.id,
+                tt.`name`
+            FROM
+                trophy_title tt
+                JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
+            WHERE
+                {$obsoleteIdCondition}
+            ORDER BY
+                tt.`name`,
+                tt.id
+            SQL
+        );
+
+        $query->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+        $query->execute();
+
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return array_map(GameReplacedTitle::fromArray(...), $rows);
     }
 
     private function findPsnpPlusNote(GameDetails $game): ?string

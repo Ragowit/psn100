@@ -14,6 +14,8 @@ final readonly class GameHeaderData
         final private int $unobtainableTrophyCount,
         final private array $obsoleteReplacements,
         final private ?string $psnpPlusNote,
+        /** @var GameReplacedTitle[] */
+        final private array $replacedTitles = [],
     ) {
     }
 
@@ -61,6 +63,19 @@ final readonly class GameHeaderData
     public function hasObsoleteReplacements(): bool
     {
         return $this->obsoleteReplacements !== [];
+    }
+
+    /**
+     * @return GameReplacedTitle[]
+     */
+    public function getReplacedTitles(): array
+    {
+        return $this->replacedTitles;
+    }
+
+    public function hasReplacedTitles(): bool
+    {
+        return $this->replacedTitles !== [];
     }
 
     public function getPsnpPlusNote(): ?string

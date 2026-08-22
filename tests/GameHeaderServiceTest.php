@@ -126,6 +126,26 @@ final class GameHeaderServiceTest extends TestCase
         ]);
 
         $this->insertTrophyTitle([
+            'id' => 301,
+            'np_communication_id' => 'OBSOLETE-1',
+            'parent_np_communication_id' => null,
+            'name' => 'Older Game',
+            'platform' => 'PS4',
+            'region' => null,
+            'obsolete_ids' => '999, 1',
+        ]);
+
+        $this->insertTrophyTitle([
+            'id' => 302,
+            'np_communication_id' => 'OBSOLETE-OTHER',
+            'parent_np_communication_id' => null,
+            'name' => 'Unrelated Older Game',
+            'platform' => 'PS4',
+            'region' => null,
+            'obsolete_ids' => '11',
+        ]);
+
+        $this->insertTrophyTitle([
             'id' => 202,
             'np_communication_id' => 'REPL-2',
             'parent_np_communication_id' => null,
@@ -179,6 +199,10 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertSame('Replacement Two', $headerData->getObsoleteReplacements()[0]->getName());
         $this->assertSame(201, $headerData->getObsoleteReplacements()[1]->getId());
         $this->assertSame('Replacement One', $headerData->getObsoleteReplacements()[1]->getName());
+        $this->assertTrue($headerData->hasReplacedTitles());
+        $this->assertCount(1, $headerData->getReplacedTitles());
+        $this->assertSame(301, $headerData->getReplacedTitles()[0]->getId());
+        $this->assertSame('Older Game', $headerData->getReplacedTitles()[0]->getName());
     }
 
     public function testBuildHeaderDataOmitsOptionalDataWhenNotAvailable(): void
@@ -199,6 +223,8 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertFalse($headerData->hasUnobtainableTrophies());
         $this->assertFalse($headerData->hasObsoleteReplacements());
         $this->assertSame([], $headerData->getObsoleteReplacements());
+        $this->assertFalse($headerData->hasReplacedTitles());
+        $this->assertSame([], $headerData->getReplacedTitles());
         $this->assertFalse($headerData->hasPsnpPlusNote());
     }
 
