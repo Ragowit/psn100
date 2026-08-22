@@ -210,9 +210,21 @@ $escapedPlayer = isset($player) ? Html::escape((string) $player) : null;
                                         if ($encodedPlayer !== null) {
                                             $replacedTitleLink .= '/' . $encodedPlayer;
                                         }
+
+                                        $region = $replacedTitle->getRegion();
                                         ?>
                                         <li>
-                                            <a class="dropdown-item" href="/game/<?= $replacedTitleLink; ?>"><?= Html::escape($replacedTitle->getName()); ?></a>
+                                            <a class="dropdown-item" href="/game/<?= $replacedTitleLink; ?>">
+                                                <?= Html::escape($replacedTitle->getName()); ?>
+                                                <span class="badge rounded-pill text-bg-primary"><?= Html::escape($replacedTitle->getPlatform()); ?></span>
+                                                <?php
+                                                if ($region !== null) {
+                                                    ?>
+                                                    <span class="badge rounded-pill text-bg-primary"><?= Html::escape($region); ?></span>
+                                                    <?php
+                                                }
+                                                ?>
+                                            </a>
                                         </li>
                                         <?php
                                     }

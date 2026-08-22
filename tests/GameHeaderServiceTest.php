@@ -131,7 +131,7 @@ final class GameHeaderServiceTest extends TestCase
             'parent_np_communication_id' => null,
             'name' => 'Older Game',
             'platform' => 'PS4',
-            'region' => null,
+            'region' => 'EU',
             'obsolete_ids' => '999, 1',
         ]);
 
@@ -203,6 +203,8 @@ final class GameHeaderServiceTest extends TestCase
         $this->assertCount(1, $headerData->getReplacedTitles());
         $this->assertSame(301, $headerData->getReplacedTitles()[0]->getId());
         $this->assertSame('Older Game', $headerData->getReplacedTitles()[0]->getName());
+        $this->assertSame('PS4', $headerData->getReplacedTitles()[0]->getPlatform());
+        $this->assertSame('EU', $headerData->getReplacedTitles()[0]->getRegion());
     }
 
     public function testBuildHeaderDataOmitsOptionalDataWhenNotAvailable(): void

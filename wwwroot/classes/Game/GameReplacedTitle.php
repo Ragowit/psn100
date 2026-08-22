@@ -7,6 +7,8 @@ final readonly class GameReplacedTitle
     private function __construct(
         final private int $id,
         final private string $name,
+        final private string $platform,
+        final private ?string $region,
     ) {
     }
 
@@ -16,9 +18,19 @@ final readonly class GameReplacedTitle
     #[\NoDiscard]
     public static function fromArray(array $row): self
     {
+        $region = $row['region'] ?? null;
+        if ($region !== null) {
+            $region = ((string) $region) |> trim(...);
+            if ($region === '') {
+                $region = null;
+            }
+        }
+
         return new self(
             (int) ($row['id'] ?? 0),
-            (string) ($row['name'] ?? '')
+            (string) ($row['name'] ?? ''),
+            (string) ($row['platform'] ?? ''),
+            $region
         );
     }
 
@@ -30,5 +42,15 @@ final readonly class GameReplacedTitle
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getPlatform(): string
+    {
+        return $this->platform;
+    }
+
+    public function getRegion(): ?string
+    {
+        return $this->region;
     }
 }

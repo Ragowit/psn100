@@ -197,7 +197,9 @@ readonly class GameHeaderService
             <<<SQL
             SELECT
                 tt.id,
-                tt.`name`
+                tt.`name`,
+                tt.platform,
+                ttm.region
             FROM
                 trophy_title tt
                 JOIN trophy_title_meta ttm ON ttm.np_communication_id = tt.np_communication_id
@@ -205,6 +207,8 @@ readonly class GameHeaderService
                 {$obsoleteIdCondition}
             ORDER BY
                 tt.`name`,
+                tt.platform,
+                ttm.region,
                 tt.id
             SQL
         );
