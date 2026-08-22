@@ -39,7 +39,7 @@ final class IpRateLimitServiceTest extends TestCase
 
     public function testCheckAndRecordBlocksRequestsAboveLimit(): void
     {
-        for ($index = 0; $index < 60; $index++) {
+        for ($index = 0; $index < 120; $index++) {
             (void) $this->service->checkAndRecord('192.0.2.11', IpRateLimitBucket::QueuePoll);
         }
 
