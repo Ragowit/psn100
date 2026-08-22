@@ -191,7 +191,7 @@ readonly class GameHeaderService
     {
         $obsoleteIdCondition = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
             ? "INSTR(',' || REPLACE(ttm.obsolete_ids, ' ', '') || ',', ',' || :game_id || ',') > 0"
-            : "FIND_IN_SET(:game_id, REPLACE(ttm.obsolete_ids, ' ', '')) > 0";
+            : 'CAST(:game_id AS UNSIGNED) MEMBER OF (ttm.obsolete_ids_json)';
 
         $query = $this->database->prepare(
             <<<SQL
