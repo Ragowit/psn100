@@ -423,6 +423,7 @@ CREATE TABLE `trophy_title_meta` (
   `parent_np_communication_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `region` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `obsolete_ids` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `obsolete_ids_json` json GENERATED ALWAYS AS (cast(concat('[',`obsolete_ids`,']') as json)) STORED,
   `rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   `in_game_rarity_points` int UNSIGNED NOT NULL DEFAULT '0',
   CONSTRAINT `chk_ttm_status` CHECK (`status` IN (0, 1, 2, 3, 4))
@@ -633,7 +634,8 @@ ALTER TABLE `trophy_title_meta`
   ADD KEY `idx_ttm_status_rarity_owners` (`status`,`rarity_points` DESC,`owners` DESC),
   ADD KEY `idx_ttm_status_igrp_owners` (`status`,`in_game_rarity_points` DESC,`owners` DESC),
   ADD KEY `idx_ttm_parent_np_communication_id` (`parent_np_communication_id`),
-  ADD KEY `idx_ttm_psnprofiles_id` (`psnprofiles_id`);
+  ADD KEY `idx_ttm_psnprofiles_id` (`psnprofiles_id`),
+  ADD KEY `idx_ttm_obsolete_ids` ((CAST(`obsolete_ids_json` AS UNSIGNED ARRAY)));
 
 --
 -- Indexes for table `trophy_title_player`
