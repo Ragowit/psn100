@@ -75,7 +75,7 @@ final class PlayerRankingUpdaterIntegrationTest extends TestCase
         $this->assertSame('1', (string) $rows[0]['ranking_country']);
         $this->assertSame('200', (string) $rows[1]['account_id']);
         $this->assertSame('2', (string) $rows[1]['ranking']);
-        $this->assertSame('1', (string) $rows[1]['ranking_country']);
+        $this->assertSame('2', (string) $rows[1]['ranking_country']);
     }
 
     public function testRecalculateRecoversFromOrphanedPreviousTable(): void

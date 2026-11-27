@@ -79,6 +79,10 @@ SQL . PlayerStatus::NORMAL->value;
                 'build'
             );
 
+            if ($this->usesMysql()) {
+                $this->executeWithRetry($this->analyzeTemporaryTable(...), 'analyze');
+            }
+
             $this->executeWithRetry(
                 function (): void {
                     $this->swapRankingTablesIfNeeded();
@@ -156,7 +160,35 @@ SQL . PlayerStatus::NORMAL->value;
     private function populateTemporaryTable(): void
     {
         $sql = sprintf(self::INSERT_TEMPLATE, self::TEMPORARY_TABLE);
-        $this->database->exec($sql);
+        if ($this->database->exec($sql) === false) {
+            throw new RuntimeException('Unable to populate ' . self::TEMPORARY_TABLE);
+        }
+    }
+
+    private function analyzeTemporaryTable(): void
+    {
+        $sql = 'ANALYZE TABLE ' . self::TEMPORARY_TABLE;
+        $statement = $this->database->query($sql);
+        if ($statement === false) {
+            throw new RuntimeException($sql . ' failed: ' . ($this->database->errorInfo()[2] ?? 'unknown error'));
+        }
+
+        $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $success = false;
+        foreach ($results as $result) {
+            if ($result['Msg_type'] === 'error') {
+                throw new RuntimeException($sql . ' failed: ' . $result['Msg_text']);
+            }
+
+            if ($result['Msg_type'] === 'status' && $result['Msg_text'] === 'OK') {
+                $success = true;
+            }
+        }
+
+        if (!$success) {
+            $messages = implode(', ', array_column($results, 'Msg_text'));
+            throw new RuntimeException($sql . ' returned no OK status: ' . ($messages ?: 'no result rows'));
+        }
     }
 
     private function swapRankingTablesIfNeeded(): void
@@ -247,7 +279,7 @@ SQL . PlayerStatus::NORMAL->value;
 
     private function acquireLock(): bool
     {
-        if (!$this->supportsNamedLocks()) {
+        if (!$this->usesMysql()) {
             return true;
         }
 
@@ -276,7 +308,7 @@ SQL . PlayerStatus::NORMAL->value;
 
     private function releaseLock(): void
     {
-        if (!$this->supportsNamedLocks()) {
+        if (!$this->usesMysql()) {
             return;
         }
 
@@ -285,7 +317,7 @@ SQL . PlayerStatus::NORMAL->value;
         $releaseStatement->execute();
     }
 
-    private function supportsNamedLocks(): bool
+    private function usesMysql(): bool
     {
         return $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql';
     }
