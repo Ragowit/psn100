@@ -32,34 +32,45 @@ final readonly class TrophyStatusService
             throw new InvalidArgumentException('No trophies were provided.');
         }
 
-        $trophyNames = [];
-        $trophyGroups = [];
-        $trophyTitles = [];
+        $this->database->beginTransaction();
+        try {
+            $trophyNames = [];
+            $trophyGroups = [];
+            $trophyTitles = [];
 
-        foreach ($trophyIds as $trophyId) {
-            $trophy = $this->updateTrophyStatus((int) $trophyId, $metaStatus);
-            $trophyNames[] = $trophy['label'];
-            if (!isset($trophyGroups[$trophy['groupKey']])) {
-                $trophyGroups[$trophy['groupKey']] = [
-                    'np_communication_id' => $trophy['np_communication_id'],
-                    'group_id' => $trophy['group_id'],
-                    'trophy_ids' => [],
-                ];
+            foreach ($trophyIds as $trophyId) {
+                $trophy = $this->updateTrophyStatus((int) $trophyId, $metaStatus);
+                $trophyNames[] = $trophy['label'];
+                if (!isset($trophyGroups[$trophy['groupKey']])) {
+                    $trophyGroups[$trophy['groupKey']] = [
+                        'np_communication_id' => $trophy['np_communication_id'],
+                        'group_id' => $trophy['group_id'],
+                        'trophy_ids' => [],
+                    ];
+                }
+                $trophyGroups[$trophy['groupKey']]['trophy_ids'][] = $trophy['id'];
+                $trophyTitles[$trophy['np_communication_id']][] = $trophy['id'];
             }
-            $trophyGroups[$trophy['groupKey']]['trophy_ids'][] = $trophy['id'];
-            $trophyTitles[$trophy['np_communication_id']][] = $trophy['id'];
-        }
 
-        foreach ($trophyGroups as $group) {
-            $this->progressRecalculator->recalculateGroup(
-                $group['np_communication_id'],
-                $group['group_id'],
-                $group['trophy_ids'],
-            );
-        }
+            foreach ($trophyGroups as $group) {
+                $this->progressRecalculator->recalculateGroup(
+                    $group['np_communication_id'],
+                    $group['group_id'],
+                    $group['trophy_ids'],
+                );
+            }
 
-        foreach ($trophyTitles as $npCommunicationId => $titleTrophyIds) {
-            $this->progressRecalculator->recalculateTitle((string) $npCommunicationId, $metaStatus, $titleTrophyIds);
+            foreach ($trophyTitles as $npCommunicationId => $titleTrophyIds) {
+                $this->progressRecalculator->recalculateTitle((string) $npCommunicationId, $metaStatus, $titleTrophyIds);
+            }
+
+            $this->database->commit();
+        } catch (Throwable $exception) {
+            if ($this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+
+            throw $exception;
         }
 
         return new TrophyStatusUpdateResult($trophyNames, $metaStatus->label());
@@ -70,22 +81,10 @@ final readonly class TrophyStatusService
      */
     private function updateTrophyStatus(int $trophyId, TrophyMetaStatus $status): array
     {
-        try {
-            $this->database->beginTransaction();
-
-            $query = $this->database->prepare('UPDATE trophy_meta SET status = :status WHERE trophy_id = :trophy_id');
-            $query->bindValue(':status', $status->value, PDO::PARAM_INT);
-            $query->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
-            $query->execute();
-
-            $this->database->commit();
-        } catch (Throwable $exception) {
-            if ($this->database->inTransaction()) {
-                $this->database->rollBack();
-            }
-
-            throw $exception;
-        }
+        $query = $this->database->prepare('UPDATE trophy_meta SET status = :status WHERE trophy_id = :trophy_id');
+        $query->bindValue(':status', $status->value, PDO::PARAM_INT);
+        $query->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
+        $query->execute();
 
         $query = $this->database->prepare('SELECT np_communication_id, group_id, name FROM trophy WHERE id = :trophy_id');
         $query->bindValue(':trophy_id', $trophyId, PDO::PARAM_INT);
