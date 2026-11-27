@@ -11,7 +11,7 @@ final class GameTrophyGroupPlayerTest extends TestCase
         $player = GameTrophyGroupPlayer::fromArray([
             'np_communication_id' => 'NPWR12345',
             'group_id' => 'default',
-            'account_id' => '42',
+            'account_id' => '18446744073709551615',
             'bronze' => '10',
             'silver' => '5',
             'gold' => '2',
@@ -21,7 +21,7 @@ final class GameTrophyGroupPlayerTest extends TestCase
 
         $this->assertSame('NPWR12345', $player->getNpCommunicationId());
         $this->assertSame('default', $player->getGroupId());
-        $this->assertSame(42, $player->getAccountId());
+        $this->assertSame('18446744073709551615', $player->getAccountId());
         $this->assertSame(10, $player->getBronzeCount());
         $this->assertSame(5, $player->getSilverCount());
         $this->assertSame(2, $player->getGoldCount());

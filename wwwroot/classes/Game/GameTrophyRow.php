@@ -204,7 +204,7 @@ final readonly class GameTrophyRow
         return $this->type->color();
     }
 
-    public function getRowAttributes(?int $accountId): string
+    public function getRowAttributes(int|string|null $accountId): string
     {
         $attributes = [];
 

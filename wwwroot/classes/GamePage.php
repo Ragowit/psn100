@@ -25,7 +25,7 @@ final class GamePage
 
     private GameTrophySort $sort;
 
-    private ?int $playerAccountId;
+    private ?string $playerAccountId;
 
     private ?GamePlayerProgress $gamePlayer;
 
@@ -79,7 +79,7 @@ final class GamePage
         return $game;
     }
 
-    private function resolvePlayerAccountId(): ?int
+    private function resolvePlayerAccountId(): ?string
     {
         if ($this->playerOnlineId === null || $this->playerOnlineId === '') {
             return null;
@@ -112,7 +112,7 @@ final class GamePage
         return $this->sort;
     }
 
-    public function getPlayerAccountId(): ?int
+    public function getPlayerAccountId(): ?string
     {
         return $this->playerAccountId;
     }

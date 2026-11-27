@@ -46,7 +46,7 @@ final class GameTrophyRowTest extends TestCase
     {
         $row = $this->createRow(['earned' => 1]);
 
-        $attributes = $row->getRowAttributes(123);
+        $attributes = $row->getRowAttributes('18446744073709551615');
 
         $this->assertSame(' class="table-success"', $attributes);
     }
