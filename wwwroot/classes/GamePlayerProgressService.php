@@ -42,8 +42,12 @@ final readonly class GamePlayerProgressService
 
     public function getGamePlayer(string $npCommunicationId, string $accountId): ?GamePlayerProgress
     {
+        // Cast the parameter in MySQL to keep comparisons exact for BIGINT UNSIGNED.
+        $accountIdParameter = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
+            ? 'CAST(:account_id AS UNSIGNED)'
+            : ':account_id';
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 np_communication_id,
                 account_id,
@@ -56,7 +60,7 @@ final readonly class GamePlayerProgressService
                 trophy_title_player
             WHERE
                 np_communication_id = :np_communication_id
-                AND account_id = :account_id
+                AND account_id = {$accountIdParameter}
             SQL
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);

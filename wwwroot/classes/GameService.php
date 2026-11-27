@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Game/GameDetails.php';
-require_once __DIR__ . '/Game/GamePlayerProgress.php';
 require_once __DIR__ . '/Game/GameTrophyGroupPlayer.php';
+require_once __DIR__ . '/GamePlayerProgressService.php';
 require_once __DIR__ . '/GameTrophySort.php';
 require_once __DIR__ . '/TrophyGroupId.php';
 require_once __DIR__ . '/TrophyType.php';
@@ -68,66 +68,14 @@ readonly class GameService
         return GameTrophySort::fromMixed($queryParameters['sort'] ?? null);
     }
 
-    public function getPlayerAccountId(string $onlineId): ?int
+    public function getPlayerAccountId(string $onlineId): ?string
     {
-        $onlineId = trim($onlineId);
-
-        if ($onlineId === '') {
-            return null;
-        }
-
-        $query = $this->database->prepare(
-            <<<'SQL'
-            SELECT
-                account_id
-            FROM
-                player
-            WHERE
-                online_id = :online_id
-            SQL
-        );
-        $query->bindValue(':online_id', $onlineId, PDO::PARAM_STR);
-        $query->execute();
-
-        $accountId = $query->fetchColumn();
-
-        if ($accountId === false) {
-            return null;
-        }
-
-        return (int) $accountId;
+        return (new GamePlayerProgressService($this->database))->getPlayerAccountId($onlineId);
     }
 
-    public function getGamePlayer(string $npCommunicationId, int $accountId): ?GamePlayerProgress
+    public function getGamePlayer(string $npCommunicationId, int|string $accountId): ?GamePlayerProgress
     {
-        $query = $this->database->prepare(
-            <<<'SQL'
-            SELECT
-                np_communication_id,
-                account_id,
-                bronze,
-                silver,
-                gold,
-                platinum,
-                progress
-            FROM
-                trophy_title_player
-            WHERE
-                np_communication_id = :np_communication_id
-                AND account_id = :account_id
-            SQL
-        );
-        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
-        $query->execute();
-
-        $gamePlayer = $query->fetch(PDO::FETCH_ASSOC);
-
-        if (!is_array($gamePlayer)) {
-            return null;
-        }
-
-        return GamePlayerProgress::fromArray($gamePlayer);
+        return (new GamePlayerProgressService($this->database))->getGamePlayer($npCommunicationId, (string) $accountId);
     }
 
     /**
@@ -157,10 +105,11 @@ readonly class GameService
         return is_array($groups) ? $groups : [];
     }
 
-    public function getTrophyGroupPlayer(string $npCommunicationId, string $groupId, int $accountId): ?GameTrophyGroupPlayer
+    public function getTrophyGroupPlayer(string $npCommunicationId, string $groupId, int|string $accountId): ?GameTrophyGroupPlayer
     {
+        $accountIdParameter = $this->getAccountIdParameter();
         $query = $this->database->prepare(
-            <<<'SQL'
+            <<<SQL
             SELECT
                 np_communication_id,
                 group_id,
@@ -175,12 +124,12 @@ readonly class GameService
             WHERE
                 np_communication_id = :np_communication_id
                 AND group_id = :group_id
-                AND account_id = :account_id
+                AND account_id = {$accountIdParameter}
             SQL
         );
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':group_id', $groupId, PDO::PARAM_STR);
-        $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+        $query->bindValue(':account_id', (string) $accountId, PDO::PARAM_STR);
         $query->execute();
 
         $trophyGroupPlayer = $query->fetch(PDO::FETCH_ASSOC);
@@ -195,10 +144,11 @@ readonly class GameService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function getTrophies(string $npCommunicationId, string $groupId, ?int $accountId, GameTrophySort $sort): array
+    public function getTrophies(string $npCommunicationId, string $groupId, int|string|null $accountId, GameTrophySort $sort): array
     {
         if ($accountId !== null) {
-            $sql = <<<'SQL'
+            $accountIdParameter = $this->getAccountIdParameter();
+            $sql = <<<SQL
                 WITH account_trophy_earned AS (
                     SELECT
                         np_communication_id,
@@ -210,7 +160,7 @@ readonly class GameService
                     FROM
                         trophy_earned
                     WHERE
-                        account_id = :account_id
+                        account_id = {$accountIdParameter}
                         AND np_communication_id = :np_communication_id
                         AND group_id = :group_id
                 )
@@ -242,7 +192,7 @@ readonly class GameService
             $sql .= $this->buildAccountSortSql($sort);
 
             $query = $this->database->prepare($sql);
-            $query->bindValue(':account_id', $accountId, PDO::PARAM_INT);
+            $query->bindValue(':account_id', (string) $accountId, PDO::PARAM_STR);
         } else {
             $sql = <<<'SQL'
                 SELECT
@@ -278,6 +228,14 @@ readonly class GameService
         $trophies = $query->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($trophies) ? $trophies : [];
+    }
+
+    private function getAccountIdParameter(): string
+    {
+        // MySQL can compare a string and a BIGINT as floating-point numbers.
+        return $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
+            ? 'CAST(:account_id AS UNSIGNED)'
+            : ':account_id';
     }
 
     private function buildAccountSortSql(GameTrophySort $sort): string

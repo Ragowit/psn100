@@ -13,7 +13,7 @@ final readonly class GameTrophyGroupPlayer
         return new self(
             (string) ($data['np_communication_id'] ?? ''),
             (string) ($data['group_id'] ?? ''),
-            (int) ($data['account_id'] ?? 0),
+            (string) ($data['account_id'] ?? '0'),
             (int) ($data['bronze'] ?? 0),
             (int) ($data['silver'] ?? 0),
             (int) ($data['gold'] ?? 0),
@@ -25,7 +25,7 @@ final readonly class GameTrophyGroupPlayer
     private function __construct(
         final private string $npCommunicationId,
         final private string $groupId,
-        final private int $accountId,
+        final private string $accountId,
         final private int $bronzeCount,
         final private int $silverCount,
         final private int $goldCount,
@@ -44,7 +44,7 @@ final readonly class GameTrophyGroupPlayer
         return $this->groupId;
     }
 
-    public function getAccountId(): int
+    public function getAccountId(): string
     {
         return $this->accountId;
     }
