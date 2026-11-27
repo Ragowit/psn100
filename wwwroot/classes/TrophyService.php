@@ -8,6 +8,8 @@ require_once __DIR__ . '/TrophyAchiever.php';
 
 final readonly class TrophyService
 {
+    private const int FIRST_ACHIEVER_LIMIT = 50;
+
     public function __construct(final private PDO $database)
     {
     }
@@ -110,7 +112,84 @@ final readonly class TrophyService
      */
     public function getFirstAchievers(string $npCommunicationId, int $orderId): array
     {
-        return $this->getAchievers($npCommunicationId, $orderId, false);
+        $achievers = $this->fetchFirstAchieverRows($npCommunicationId, $orderId, true, self::FIRST_ACHIEVER_LIMIT);
+        $remaining = self::FIRST_ACHIEVER_LIMIT - count($achievers);
+
+        if ($remaining > 0) {
+            // Separate reads let the ranking swap proceed between queries. Exclude players
+            // already selected in case a trophy timestamp changes before the fallback.
+            $achievers = array_merge($achievers, $this->fetchFirstAchieverRows(
+                $npCommunicationId,
+                $orderId,
+                false,
+                $remaining,
+                array_column($achievers, 'account_id')
+            ));
+        }
+
+        return array_map(TrophyAchiever::fromArray(...), $achievers);
+    }
+
+    /**
+     * @param list<int|string> $excludedAccountIds
+     * @return list<array<string, mixed>>
+     */
+    private function fetchFirstAchieverRows(
+        string $npCommunicationId,
+        int $orderId,
+        bool $withTimestamp,
+        int $limit,
+        array $excludedAccountIds = []
+    ): array {
+        $mysql = $this->database->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql';
+        $indexHint = $mysql ? 'FORCE INDEX (idx_te_npcomm_order_earned_date)' : '';
+        $join = $mysql ? 'STRAIGHT_JOIN' : 'JOIN';
+        $dateFilter = $withTimestamp ? 'IS NOT NULL' : 'IS NULL';
+        $orderClause = $withTimestamp ? 'ORDER BY te.earned_date ASC' : '';
+
+        $accountBindings = [];
+        $accountExpressions = [];
+        foreach ($excludedAccountIds as $index => $accountId) {
+            $parameter = ':excluded_account_' . $index;
+            $accountBindings[$parameter] = (string) $accountId;
+            // Account IDs can exceed PHP_INT_MAX. Compare values using exact arithmetic.
+            $accountExpressions[] = "CAST($parameter AS DECIMAL(20, 0))";
+        }
+        $accountFilter = $accountExpressions === []
+            ? ''
+            : 'AND te.account_id NOT IN (' . implode(', ', $accountExpressions) . ')';
+
+        $query = $this->database->prepare(
+            <<<SQL
+            SELECT
+                te.account_id,
+                p.avatar_url,
+                p.online_id,
+                p.trophy_count_npwr,
+                p.trophy_count_sony,
+                IFNULL(te.earned_date, 'No Timestamp') AS earned_date
+            FROM trophy_earned te $indexHint
+            $join player_ranking r ON r.account_id = te.account_id
+            $join player p ON p.account_id = te.account_id
+            WHERE te.np_communication_id = :np_communication_id
+                AND te.order_id = :order_id
+                AND te.earned = 1
+                AND te.earned_date $dateFilter
+                AND r.ranking <= 10000
+                $accountFilter
+            $orderClause
+            LIMIT :limit
+            SQL
+        );
+        $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
+        $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
+        $query->bindValue(':limit', $limit, PDO::PARAM_INT);
+        foreach ($accountBindings as $parameter => $accountId) {
+            $query->bindValue($parameter, $accountId, PDO::PARAM_STR);
+        }
+        $query->execute();
+
+        return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -118,21 +197,9 @@ final readonly class TrophyService
      */
     public function getLatestAchievers(string $npCommunicationId, int $orderId): array
     {
-        return $this->getAchievers($npCommunicationId, $orderId, true);
-    }
-
-    /**
-     * @return list<TrophyAchiever>
-     */
-    private function getAchievers(string $npCommunicationId, int $orderId, bool $latest): array
-    {
-        $orderClause = $latest
-            ? 'ORDER BY te.earned_date DESC'
-            : 'ORDER BY te.earned_date IS NULL, te.earned_date';
-
         // Drive from player_ranking so trophy_earned is probed by account_id
         // (HASH partition key) instead of scanning all partitions by title.
-        $sql = <<<SQL
+        $query = $this->database->prepare(<<<'SQL'
             SELECT
                 p.avatar_url,
                 p.online_id,
@@ -149,11 +216,9 @@ final readonly class TrophyService
                 JOIN player p ON r.account_id = p.account_id
             WHERE
                 r.ranking <= 10000
-            %s
+            ORDER BY te.earned_date DESC
             LIMIT 50
-        SQL;
-
-        $query = $this->database->prepare(sprintf($sql, $orderClause));
+        SQL);
         $query->bindValue(':np_communication_id', $npCommunicationId, PDO::PARAM_STR);
         $query->bindValue(':order_id', $orderId, PDO::PARAM_INT);
         $query->execute();
