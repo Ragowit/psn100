@@ -20,7 +20,7 @@ Apache rules should be enabled on every production server.
 
 - **Apache 2.4+** with `AllowOverride` enabled for `wwwroot/` so `.htaccess` files are read
 - **`mod_auth_basic`** enabled (admin HTTP Basic authentication)
-- **PHP 8.5** with extensions used by the app (`pdo_mysql`, `curl`, `gd`, `mbstring`, `intl`, `bcmath`, `gmp`, `zip`)
+- **PHP 8.6** with extensions used by the app (`pdo_mysql`, `curl`, `gd`, `mbstring`, `intl`, `bcmath`, `gmp`, `zip`)
 - **MySQL 8.4+** (production target; the structure-only schema may import on 8.0 for local smoke tests, but `database/mysql84_histograms.sql` requires 8.4 `AUTO UPDATE` histograms)
 - Paths to password files and cron runner IP addresses decided before go-live
 

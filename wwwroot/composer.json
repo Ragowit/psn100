@@ -1,10 +1,10 @@
 {
     "require": {
-        "php": "^8.5"
+        "php": "^8.6"
     },
     "config": {
         "platform": {
-            "php": "8.5.0"
+            "php": "8.6.0"
         }
     },
     "require-dev": {
