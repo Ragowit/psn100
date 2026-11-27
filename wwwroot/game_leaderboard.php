@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/classes/Html.php';
 
 require_once __DIR__ . '/classes/GameLeaderboardPageContext.php';
+require_once __DIR__ . '/classes/GamePlayerProgressService.php';
 
 $pageContext = GameLeaderboardPageContext::fromGlobals(
     $database,
@@ -28,6 +29,9 @@ $offset = $pageContext->getOffset();
 $totalPagesCount = $pageContext->getTotalPagesCount();
 $rows = $pageContext->getRows();
 $accountId = $pageContext->getPlayerAccountId();
+$gamePlayer = $accountId !== null
+    ? (new GamePlayerProgressService($database))->getGamePlayer($game->getNpCommunicationId(), $accountId)
+    : null;
 $gameSlug = $pageContext->getGameSlug();
 $encodedGamePlayer = isset($player) ? '/' . rawurlencode((string) $player) : '';
 
