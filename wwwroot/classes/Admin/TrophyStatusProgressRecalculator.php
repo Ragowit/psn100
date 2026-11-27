@@ -96,11 +96,14 @@ WITH max_score AS (
         tgp.progress = IF(
             ms.points = 0,
             100,
-            IF(
-                us.points != 0
-                AND FLOOR(us.points / ms.points * 100) = 0,
-                1,
-                FLOOR(us.points / ms.points * 100)
+            LEAST(
+                100,
+                IF(
+                    us.points != 0
+                    AND FLOOR(us.points / ms.points * 100) = 0,
+                    1,
+                    FLOOR(us.points / ms.points * 100)
+                )
             )
         )
     WHERE
@@ -209,11 +212,14 @@ WITH user_score AS (
         ttp.progress = IF(
             :max_score = 0,
             100,
-            IF(
-                us.points != 0
-                AND FLOOR(us.points / :max_score * 100) = 0,
-                1,
-                FLOOR(us.points / :max_score * 100)
+            LEAST(
+                100,
+                IF(
+                    us.points != 0
+                    AND FLOOR(us.points / :max_score * 100) = 0,
+                    1,
+                    FLOOR(us.points / :max_score * 100)
+                )
             )
         )
     WHERE
