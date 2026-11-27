@@ -5,6 +5,7 @@ require_once __DIR__ . '/classes/Html.php';
 
 require_once __DIR__ . '/classes/GameHistoryPage.php';
 require_once __DIR__ . '/classes/GameHistoryRenderer.php';
+require_once __DIR__ . '/classes/GamePlayerProgressService.php';
 
 if (!isset($gameId)) {
     header('Location: /game/', true, 303);
@@ -32,6 +33,14 @@ $game = $gameHistoryPage->getGame();
 $gameSlug = $game->getId() . '-' . $utility->slugify($game->getName());
 $encodedGamePlayer = isset($player) ? '/' . rawurlencode((string) $player) : '';
 $gameHeaderData = $gameHistoryPage->getGameHeaderData();
+$gamePlayer = null;
+if (isset($player)) {
+    $playerProgressService = new GamePlayerProgressService($database);
+    $accountId = $playerProgressService->getPlayerAccountId((string) $player);
+    if ($accountId !== null) {
+        $gamePlayer = $playerProgressService->getGamePlayer($game->getNpCommunicationId(), $accountId);
+    }
+}
 $historyEntries = $gameHistoryPage->getHistoryEntries();
 $metaData = $gameHistoryPage->createMetaData();
 $title = $gameHistoryPage->getPageTitle();
