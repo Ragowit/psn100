@@ -28,7 +28,7 @@ require_once __DIR__ . '/../wwwroot/classes/Platform.php';
 require_once __DIR__ . '/../wwwroot/classes/TrophyGroupId.php';
 require_once __DIR__ . '/../wwwroot/classes/PlayerCountryCode.php';
 
-final class Php85IdiomEnumsTest extends TestCase
+final class EnumBehaviorTest extends TestCase
 {
     public function testGameTrophySortFromMixedNormalizesValues(): void
     {

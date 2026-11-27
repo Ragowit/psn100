@@ -1,13 +1,13 @@
 # AGENTS.md
 
-PSN 100% is a PHP 8.5 + MySQL web application that tracks PlayStation trophies. The
+PSN 100% is a PHP 8.6 + MySQL web application that tracks PlayStation trophies. The
 web frontend lives in `wwwroot/` (custom front controller in `wwwroot/index.php`),
 domain logic in `wwwroot/classes/`, and a custom test suite in `tests/`.
 
 ## Cursor Cloud specific instructions
 
-PHP 8.5 (CLI + `pdo_mysql`, `sqlite3`, `curl`, `gd`, `mbstring`, `intl`, `bcmath`,
-`gmp`, `zip`), Composer, and MySQL 8.0 are already installed in the VM image. The
+Use PHP 8.6 (CLI + `pdo_mysql`, `sqlite3`, `curl`, `gd`, `mbstring`, `intl`, `bcmath`,
+`gmp`, `zip`). The VM image includes Composer and MySQL 8.0. The
 startup update script runs `composer install` for `wwwroot/`. The notes below cover
 the non-obvious steps to actually run the services.
 
@@ -107,8 +107,8 @@ updating if a cron run gives up.
 ### Tests
 
 - Run the full suite with `php tests/run.php` (custom runner, no PHPUnit). It does not
-  need MySQL — DB-backed tests use in-memory SQLite, so `php8.5-sqlite3` must be
-  installed (it is, in the image).
+  need MySQL — DB-backed tests use in-memory SQLite, so `php8.6-sqlite3` must be
+  installed.
 - Optional MySQL integration tests are skipped unless `PSN100_INTEGRATION_TEST_DB=1` and
   `DB_HOST` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` point at a reachable database.
 

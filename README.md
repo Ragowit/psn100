@@ -12,7 +12,7 @@ PSN 100% is not a community for discussion (forum), gaming/boosting sessions or 
 
 ## Stack
 
-- **PHP:** 8.5
+- **PHP:** 8.6
 - **MySQL:** 8.4
 
 ## Configuration
