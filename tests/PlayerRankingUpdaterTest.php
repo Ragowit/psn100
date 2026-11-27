@@ -174,6 +174,52 @@ final class PlayerRankingUpdaterTest extends TestCase
         $this->assertSame([1, 1], $sleepCalls);
     }
 
+    public function testRecalculateRetriesAnalysisBeforeSwappingUnderTheNamedLock(): void
+    {
+        $database = new PlayerRankingUpdaterLockTestDatabase(1, analysisResults: [
+            [['Msg_type' => 'error', 'Msg_text' => 'Unable to gather statistics']],
+            [['Msg_type' => 'status', 'Msg_text' => 'Operation failed']],
+            [],
+            [
+                ['Msg_type' => 'note', 'Msg_text' => 'Updating statistics'],
+                ['Msg_type' => 'status', 'Msg_text' => 'OK'],
+            ],
+        ]);
+        $logDatabase = new PDO('sqlite::memory:');
+        $logDatabase->exec('CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL)');
+        $sleepCalls = [];
+        $updater = new PlayerRankingUpdater(
+            $database,
+            logger: new Psn100Logger($logDatabase),
+            sleeper: function (int $seconds) use ($database, &$sleepCalls): void {
+                $sleepCalls[] = $seconds;
+                $this->assertTrue(count($sleepCalls) <= 3, 'Expected analysis to succeed on its fourth attempt.');
+                $this->assertFalse(in_array('rename', $database->operations, true));
+                $this->assertFalse(in_array('release lock', $database->operations, true));
+            },
+        );
+
+        $updater->recalculate();
+
+        $this->assertSame([3, 6, 12], $sleepCalls);
+        $this->assertSame([
+            'acquire lock',
+            'populate',
+            'ANALYZE TABLE player_ranking_new',
+            'ANALYZE TABLE player_ranking_new',
+            'ANALYZE TABLE player_ranking_new',
+            'ANALYZE TABLE player_ranking_new',
+            'rename',
+            'release lock',
+        ], $database->operations);
+        $messages = $logDatabase->query('SELECT message FROM log ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
+        $this->assertCount(3, $messages);
+        $this->assertStringContainsString('analyze failed (attempt 1)', $messages[0]);
+        $this->assertStringContainsString('Unable to gather statistics', $messages[0]);
+        $this->assertStringContainsString('Operation failed', $messages[1]);
+        $this->assertStringContainsString('no result rows', $messages[2]);
+    }
+
     public function testRecalculateSkipsWhenLockIsAlreadyHeld(): void
     {
         $database = new PlayerRankingUpdaterLockTestDatabase(0);
@@ -196,6 +242,7 @@ final class PlayerRankingUpdaterTest extends TestCase
         $messages = $query->fetchAll(PDO::FETCH_COLUMN);
         $this->assertCount(1, $messages);
         $this->assertStringContainsString('skipped because another run is in progress', $messages[0]);
+        $this->assertSame(['acquire lock'], $database->operations);
     }
 
     public function testSwapPhaseRetriesSafelyAfterRenameCommittedButClientLostConnection(): void
@@ -459,8 +506,12 @@ final class PlayerRankingUpdaterRetryTestDatabase extends PDO
         if (str_contains($statement, 'INSERT INTO player_ranking_new')) {
             $this->populateAttempts++;
 
-            if ($this->populateAttempts < 3) {
+            if ($this->populateAttempts === 1) {
                 throw new RuntimeException('Simulated populate failure.');
+            }
+
+            if ($this->populateAttempts === 2) {
+                return false;
             }
 
             return 0;
@@ -499,14 +550,19 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
 {
     private int $lockAttempts = 0;
 
+    /** @var list<string> */
+    public array $operations = [];
+
     /** @var array<string, true> */
     private array $tables = [
         'player_ranking' => true,
     ];
 
+    /** @param list<list<array{Msg_type: string, Msg_text: string}>> $analysisResults */
     public function __construct(
         private readonly mixed $lockResult,
         private readonly ?int $failuresBeforeSuccess = null,
+        private array $analysisResults = [],
     ) {
     }
 
@@ -522,10 +578,14 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
         if (str_contains($query, 'GET_LOCK')) {
+            $this->operations[] = 'acquire lock';
+
             return new PlayerRankingUpdaterLockTestStatement($this->resolveLockResult());
         }
 
         if (str_contains($query, 'RELEASE_LOCK')) {
+            $this->operations[] = 'release lock';
+
             return new PlayerRankingUpdaterLockTestStatement(1);
         }
 
@@ -536,6 +596,19 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
         }
 
         throw new RuntimeException('Unexpected prepare call: ' . $query);
+    }
+
+    public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): PDOStatement|false
+    {
+        if ($query !== 'ANALYZE TABLE player_ranking_new') {
+            throw new RuntimeException('Unexpected query call: ' . $query);
+        }
+
+        $this->operations[] = $query;
+
+        return new PlayerRankingUpdaterAnalyzeTestStatement(
+            array_shift($this->analysisResults) ?? [['Msg_type' => 'status', 'Msg_text' => 'OK']]
+        );
     }
 
     private function resolveLockResult(): mixed
@@ -569,10 +642,15 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
                 unset($this->tables['player_ranking_old']);
             }
 
+            if (str_contains($statement, 'INSERT INTO player_ranking_new')) {
+                $this->operations[] = 'populate';
+            }
+
             return 0;
         }
 
         if (str_contains($statement, 'RENAME TABLE')) {
+            $this->operations[] = 'rename';
             unset($this->tables['player_ranking_new']);
             $this->tables['player_ranking_old'] = true;
             $this->tables['player_ranking'] = true;
@@ -581,6 +659,19 @@ final class PlayerRankingUpdaterLockTestDatabase extends PDO
         }
 
         throw new RuntimeException('Unexpected exec call: ' . $statement);
+    }
+}
+
+final class PlayerRankingUpdaterAnalyzeTestStatement extends PDOStatement
+{
+    /** @param list<array{Msg_type: string, Msg_text: string}> $results */
+    public function __construct(private readonly array $results)
+    {
+    }
+
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    {
+        return $this->results;
     }
 }
 
